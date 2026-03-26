@@ -11,7 +11,7 @@
                 <p class="text-blue-100 text-sm">Prenda: <span id="modalPrendaNombre" class="font-bold"></span></p>
                 <input type="hidden" id="modalPrendaId" value="">
             </div>
-            <button onclick="cerrarModalInsumos()" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
+            <button type="button" data-insumos-action="modal-insumos-close" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -42,7 +42,7 @@
             <div class="mt-6 flex gap-3 justify-between">
                 <div class="flex gap-3">
                     <button 
-                        onclick="agregarMaterialModal()"
+                        data-insumos-action="material-add-row"
                         class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition flex items-center gap-2"
                     >
                         <i class="fas fa-plus"></i> Agregar Insumo
@@ -50,13 +50,15 @@
                 </div>
                 <div class="flex gap-3">
                     <button 
-                        onclick="guardarInsumosModal()"
+                        type="button"
+                        data-insumos-action="material-save-changes"
                         class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                     >
                         <i class="fas fa-save"></i> Guardar Cambios
                     </button>
                     <button 
-                        onclick="cerrarModalInsumos()"
+                        type="button"
+                        data-insumos-action="modal-insumos-close"
                         class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 transition flex items-center gap-2"
                     >
                         <i class="fas fa-times"></i> Cerrar
@@ -78,7 +80,7 @@
                 </h2>
                 <p class="text-blue-100 text-sm">Material: <span id="observacionesMaterial" class="font-bold"></span></p>
             </div>
-            <button onclick="cerrarModalObservaciones()" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
+            <button type="button" data-insumos-action="observaciones-close" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -90,19 +92,21 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
                     rows="6"
                     placeholder="Escribe las observaciones del insumo aquí..."
-                    onkeydown="if(event.ctrlKey && event.key === 'Enter') guardarObservaciones()"
+                    data-insumos-action="observaciones-textarea"
                 ></textarea>
                 <p class="text-gray-500 text-xs mt-2">💡 Presiona <strong>Ctrl + Enter</strong> para guardar rápidamente</p>
             </div>
             <div class="flex gap-3 justify-end">
                 <button 
-                    onclick="guardarObservaciones()" 
+                    type="button"
+                    data-insumos-action="observaciones-save"
                     class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                 >
                     <i class="fas fa-save"></i> Guardar
                 </button>
                 <button 
-                    onclick="cerrarModalObservaciones()" 
+                    type="button"
+                    data-insumos-action="observaciones-close"
                     class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 transition flex items-center gap-2"
                 >
                     <i class="fas fa-times"></i> Cerrar
@@ -122,7 +126,7 @@
                     Ancho y Metraje - Recibo: <span id="anchoMetrajeRecibo" class="font-bold text-white">-</span>
                 </h2>
             </div>
-            <button onclick="cerrarModalAnchoMetraje()" class="text-white bg-blue-700 rounded-full p-2 transition hover:bg-blue-600 flex-shrink-0">
+            <button type="button" data-insumos-action="ancho-metraje-close" class="text-white bg-blue-700 rounded-full p-2 transition hover:bg-blue-600 flex-shrink-0">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
@@ -236,20 +240,23 @@
             <div class="flex gap-3 justify-end border-t border-gray-200 p-6 flex-shrink-0">
                 <button 
                     id="btnEliminarAnchoMetraje"
-                    onclick="abrirModalConfirmacionEliminar()" 
+                    type="button"
+                    data-insumos-action="ancho-metraje-open-delete-confirm"
                     class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center gap-2 hidden"
                 >
                     <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
                 <button 
-                    onclick="guardarAnchoMetraje()" 
+                    type="button"
+                    data-insumos-action="ancho-metraje-save"
                     class="px-6 py-2 text-white font-semibold rounded-lg flex items-center gap-2"
                     style="background: linear-gradient(to right, #111827, #1e3a8a) !important; color: white !important;"
                 >
                     <i class="fas fa-save"></i> Guardar
                 </button>
                 <button 
-                    onclick="cerrarModalAnchoMetraje()" 
+                    type="button"
+                    data-insumos-action="ancho-metraje-close"
                     class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
                 >
                     <i class="fas fa-times"></i> Cancelar
@@ -271,13 +278,15 @@
             <p class="text-gray-600 text-sm mb-6">Se eliminará todo el registro de ancho/metraje para esta prenda. Esta acción no se puede deshacer.</p>
             <div class="flex gap-3 justify-end">
                 <button 
-                    onclick="cerrarModalConfirmacionEliminar()" 
+                    type="button"
+                    data-insumos-action="confirm-eliminar-close"
                     class="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 flex items-center gap-2"
                 >
                     <i class="fas fa-times"></i> Cancelar
                 </button>
                 <button 
-                    onclick="confirmarEliminarAnchoMetraje()" 
+                    type="button"
+                    data-insumos-action="confirm-eliminar-submit"
                     class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 flex items-center gap-2"
                 >
                     <i class="fas fa-trash-alt"></i> Eliminar
@@ -305,14 +314,16 @@
             
             <div class="flex gap-3 justify-end">
                 <button 
-                    onclick="cerrarModalConfirmarProduccion()"
+                    type="button"
+                    data-insumos-action="produccion-confirm-close"
                     class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded hover:bg-gray-300 transition text-sm"
                 >
                     Cancelar
                 </button>
                 <button 
                     id="btnAprobarProduccion"
-                    onclick="confirmarEnvioProduccion()"
+                    type="button"
+                    data-insumos-action="produccion-confirm-submit"
                     class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm"
                 >
                     Aprobar
@@ -338,7 +349,7 @@
                 Esta acción devolverá el recibo para que sea corregido.
             </p>
 
-            <form id="formPasarRevisar" onsubmit="confirmarPasarRevisar(event)">
+            <form id="formPasarRevisar" data-insumos-action="pasar-revisar-submit">
                 <input type="hidden" id="reciboIdPasarRevisar" value="">
                 <input type="hidden" id="pedidoIdPasarRevisar" value="">
                 <div style="margin-bottom: 1rem;">
@@ -347,7 +358,7 @@
                     <small style="display: block; margin-top: 0.5rem; color: #6b7280; text-align: right;"><span id="contadorPasarRevisar">0</span>/500 caracteres</small>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="cerrarModalPasarRevisar()" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">Cancelar</button>
+                    <button type="button" data-insumos-action="pasar-revisar-close" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">Cancelar</button>
                     <button type="submit" id="btnConfirmarPasarRevisar" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;"><i class="fas fa-arrow-rotate-left"></i> Pasar a Revisión</button>
                 </div>
             </form>

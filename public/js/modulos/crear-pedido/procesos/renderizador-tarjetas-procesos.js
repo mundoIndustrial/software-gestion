@@ -123,7 +123,7 @@ window.renderizarTarjetasProcesos = function() {
     if (typeof configurarDragDropProcesos === 'function') {
         console.log('[RENDER-PROCESOS] 🚀 Llamando a configurarDragDropProcesos()');
         console.log('[RENDER-PROCESOS] 📊 Timestamp:', new Date().toISOString());
-        console.log('[RENDER-PROCESOS] 🔍 Stack trace:', new Error().stack);
+        console.log('[RENDER-PROCESOS]  Stack trace:', new Error().stack);
         configurarDragDropProcesos();
         console.log('[RENDER-PROCESOS]  Drag & drop configurado para procesos');
     } else {
@@ -1118,7 +1118,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             }
             
             console.log('[cargarDatosProcesoEnModal] 🖼️ Cargando imagen', indice, '- imgUrl:', imgUrl?.substring(0, 50) || 'N/A');
-            console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - Estado ANTES de modificar preview:', {
+            console.log('[cargarDatosProcesoEnModal]  DEBUG - Estado ANTES de modificar preview:', {
                 preview: !!preview,
                 innerHTML: preview?.innerHTML?.substring(0, 100) + '...',
                 border: preview?.style.border,
@@ -1132,7 +1132,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             `;
             
             console.log('[cargarDatosProcesoEnModal]  innerHTML reemplazado para imagen', indice);
-            console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - Estado DESPUÉS de modificar preview:', {
+            console.log('[cargarDatosProcesoEnModal]  DEBUG - Estado DESPUÉS de modificar preview:', {
                 innerHTML: preview?.innerHTML?.substring(0, 100) + '...',
                 border: preview?.style.border,
                 background: preview?.style.background,
@@ -1162,7 +1162,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         } else {
             // Es una URL existente → guardar en imagenesProcesoExistentes
             // 🔴 CRÍTICO: Guardar el OBJETO COMPLETO con id y ruta_original
-            console.log('[cargarDatosProcesoEnModal] 🔍 GUARDANDO OBJETO en imagenesProcesoExistentes[' + (previewIndex - 1) + ']:', {
+            console.log('[cargarDatosProcesoEnModal]  GUARDANDO OBJETO en imagenesProcesoExistentes[' + (previewIndex - 1) + ']:', {
                 tipoImg: typeof img,
                 esString: typeof img === 'string',
                 tieneId: !!img?.id,

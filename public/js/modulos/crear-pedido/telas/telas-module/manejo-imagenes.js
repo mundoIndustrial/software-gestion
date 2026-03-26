@@ -354,7 +354,7 @@ window.eliminarImagenTemporal = function(index) {
         }
         
         const imagenEliminada = imagenes[index];
-        console.log('[eliminarImagenTemporal] 📋 Imagen eliminada:', imagenEliminada.nombre);
+        console.log('[eliminarImagenTemporal]  Imagen eliminada:', imagenEliminada.nombre);
         
         // Eliminar del storage universal
         const resultado = window.imagenesTelaStorage.eliminarImagen(index);
@@ -380,7 +380,7 @@ window.eliminarImagenTemporal = function(index) {
         }
         
         const imagenEliminada = window.imagenesTelaModalNueva[index];
-        console.log('[eliminarImagenTemporal] 📋 Imagen eliminada:', imagenEliminada.name);
+        console.log('[eliminarImagenTemporal]  Imagen eliminada:', imagenEliminada.name);
         
         // Eliminar del array
         window.imagenesTelaModalNueva.splice(index, 1);

@@ -237,7 +237,7 @@ class PedidosControllerTest extends TestCase
         $this->assertEquals('⚠ RETRASADO', $this->reciboPrenda->estado_etiqueta);
 
         $this->reciboPrenda->estado = 'pendiente';
-        $this->assertEquals('⏳ PENDIENTE', $this->reciboPrenda->estado_etiqueta);
+        $this->assertEquals(' PENDIENTE', $this->reciboPrenda->estado_etiqueta);
     }
 
     /**

@@ -266,7 +266,7 @@ class InvoiceFromListOrchestrator {
         });
         
         // Verificar variables globales
-        console.log('\n🔍 Variables globales:');
+        console.log('\n Variables globales:');
         const modulos = [
             'InvoiceDataFetcher',
             'InvoiceModalManager',

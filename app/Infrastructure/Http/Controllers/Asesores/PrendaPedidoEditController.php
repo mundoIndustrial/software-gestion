@@ -76,7 +76,7 @@ class PrendaPedidoEditController extends Controller
                     $vAntes = (string)($camposAntes[$campo] ?? '');
                     $vDespues = (string)($dto->$campo ?? $camposAntes[$campo] ?? '');
                     if ($vAntes !== $vDespues) {
-                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '"  "' . $vDespues . '"';
                     }
                 }
             }
@@ -143,7 +143,7 @@ class PrendaPedidoEditController extends Controller
                     $vAntes = (string)($camposAntes[$campo] ?? '');
                     $vDespues = (string)$request->input($campo);
                     if ($vAntes !== $vDespues) {
-                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '"  "' . $vDespues . '"';
                     }
                 }
             }
@@ -214,7 +214,7 @@ class PrendaPedidoEditController extends Controller
                 $antes = (int)($tallasAntes[$clave]->cantidad ?? 0);
                 $despues = (int)($t['cantidad'] ?? 0);
                 if ($antes !== $despues) {
-                    $cambiosDetalle[] = ($t['genero'] ?? '?') . ' ' . ($t['talla'] ?? '?') . ': ' . $antes . 'â†’' . $despues;
+                    $cambiosDetalle[] = ($t['genero'] ?? '?') . ' ' . ($t['talla'] ?? '?') . ': ' . $antes . '' . $despues;
                 }
             }
 
@@ -293,7 +293,7 @@ class PrendaPedidoEditController extends Controller
                     $vAntes = (string)($varianteAntes[$campo] ?? '');
                     $vDespues = (string)($data[$campo] ?? '');
                     if ($vAntes !== $vDespues) {
-                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '"  "' . $vDespues . '"';
                     }
                 }
             }
@@ -354,7 +354,7 @@ class PrendaPedidoEditController extends Controller
                     $vAntes = (string)($varianteAntes[$campo] ?? '');
                     $vDespues = (string)$request->input($campo);
                     if ($vAntes !== $vDespues) {
-                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '"  "' . $vDespues . '"';
                     }
                 }
             }
@@ -415,7 +415,7 @@ class PrendaPedidoEditController extends Controller
                 ->pluck('color_id')->filter()->unique()->values()->toArray();
             $coloresDespues = \App\Models\ColorPrenda::whereIn('id', $colorIdsNuevos)->pluck('nombre')->toArray();
             $detalleColores = 'Antes: ' . (implode(', ', $coloresAntes) ?: 'ninguno')
-                . ' â†’ despues: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
+                . '  despues: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
 
             // Registrar en historial: colores de variante editados en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(
@@ -473,7 +473,7 @@ class PrendaPedidoEditController extends Controller
                 ->pluck('tela_id')->filter()->unique()->values()->toArray();
             $telasDespues = \App\Models\TelaPrenda::whereIn('id', $telaIdsNuevos)->pluck('nombre')->toArray();
             $detalleTelas = 'Antes: ' . (implode(', ', $telasAntes) ?: 'ninguna')
-                . ' â†’ despues: ' . (implode(', ', $telasDespues) ?: 'ninguna');
+                . '  despues: ' . (implode(', ', $telasDespues) ?: 'ninguna');
 
             // Registrar en historial: telas de variante editadas en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(

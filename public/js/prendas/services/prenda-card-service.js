@@ -61,7 +61,7 @@ class PrendaCardService {
             const tallasHTML = TallasBuilder.construir(prenda, indice);
             const procesosHTML = ProcesosBuilder.construir(prenda, indice);
             
-            console.log('[PrendaCardService.generar] 📄 HTML de secciones:');
+            console.log('[PrendaCardService.generar]  HTML de secciones:');
             console.log('[PrendaCardService.generar]   - Variaciones HTML length:', variacionesHTML ? variacionesHTML.length : 0);
             console.log('[PrendaCardService.generar]   - Tallas HTML length:', tallasHTML ? tallasHTML.length : 0);
             console.log('[PrendaCardService.generar]   - Procesos HTML length:', procesosHTML ? procesosHTML.length : 0);

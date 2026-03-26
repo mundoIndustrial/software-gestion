@@ -103,7 +103,7 @@
     function isBadgeRecentlySeen(pedidoId) {
         const seen = getSeenBadges();
         const seenTime = seen[pedidoId];
-        console.log(`[DEBUG-BADGE] 🔍 isBadgeRecentlySeen - Pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE]  isBadgeRecentlySeen - Pedido ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - seenTime: ${seenTime}`);
         
         if (!seenTime) {
@@ -1051,7 +1051,7 @@
         console.log(`[DEBUG] - URL completa: ${window.location.href}`);
         
         try {
-            console.log(`[DEBUG] 🔍 Buscando filas con data-pedido-id...`);
+            console.log(`[DEBUG]  Buscando filas con data-pedido-id...`);
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
             const ids = rows.map(r => r.getAttribute('data-pedido-id')).filter(Boolean);
             console.log(`[DEBUG] - Filas encontradas: ${rows.length}`);

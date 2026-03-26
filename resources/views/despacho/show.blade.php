@@ -683,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Body -->
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
         
@@ -844,11 +844,11 @@ async function marcarEntregado(button) {
     
     // Mostrar la URL para debugging
     const url = '{{ route("despacho.marcar-entregado", $pedido->id) }}';
-    console.log('🔍 URL de marcarEntregado:', url);
+    console.log(' URL de marcarEntregado:', url);
     
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
-    button.textContent = '⏳ Guardando...';
+    button.textContent = ' Guardando...';
     
     try {
         const response = await fetch(url, {
@@ -966,7 +966,7 @@ async function confirmarDeshacerEntregado() {
     
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
-    button.innerHTML = '⏳ Deshaciendo...';
+    button.innerHTML = ' Deshaciendo...';
     
     try {
         const response = await fetch('{{ route("despacho.deshacer-entregado", $pedido->id) }}', {
@@ -1094,7 +1094,7 @@ async function abrirModalFactura(pedidoId) {
     const contenido = document.getElementById('facturaContenido');
     
     modal.classList.remove('hidden');
-    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500"> Cargando factura...</span></div>';
     
     try {
         const response = await fetch(`/despacho/${pedidoId}/factura-datos`, {
@@ -1121,12 +1121,12 @@ async function abrirModalFactura(pedidoId) {
 
         if (data) {
             // DEBUG: Ver qué datos estamos recibiendo
-            console.log('🔍 [DESPACHO] Datos recibidos del backend:', data);
-            console.log('🔍 [DESPACHO] Estructura:', Object.keys(data));
+            console.log(' [DESPACHO] Datos recibidos del backend:', data);
+            console.log(' [DESPACHO] Estructura:', Object.keys(data));
             
             // Extraer datos como lo hace bodega
             const payload = (data && typeof data === 'object' && data.data) ? data.data : data;
-            console.log('🔍 [DESPACHO] Payload final:', payload);
+            console.log(' [DESPACHO] Payload final:', payload);
             
             // Generar HTML de la factura
             const htmlFactura = generarHTMLFactura(payload);
@@ -1153,15 +1153,15 @@ function cerrarModalFactura() {
  */
 function generarHTMLFactura(datos) {
     // DEBUG: Ver estructura de datos
-    console.log('📋 [DESPACHO-FACTURA] Estructura completa:', datos);
-    console.log('📋 [DESPACHO-FACTURA] Prendas:', datos.prendas);
+    console.log(' [DESPACHO-FACTURA] Estructura completa:', datos);
+    console.log(' [DESPACHO-FACTURA] Prendas:', datos.prendas);
     if (datos.prendas && datos.prendas[0]) {
-        console.log('📋 [DESPACHO-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
-        console.log('📋 [DESPACHO-FACTURA] Tallas:', datos.prendas[0].tallas);
-        console.log('📋 [DESPACHO-FACTURA] Descripción:', datos.prendas[0].descripcion);
-        console.log('📋 [DESPACHO-FACTURA] Variantes:', datos.prendas[0].variantes);
-        console.log('📋 [DESPACHO-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
-        console.log('📋 [DESPACHO-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
+        console.log(' [DESPACHO-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log(' [DESPACHO-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log(' [DESPACHO-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log(' [DESPACHO-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log(' [DESPACHO-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log(' [DESPACHO-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
     }
     
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {

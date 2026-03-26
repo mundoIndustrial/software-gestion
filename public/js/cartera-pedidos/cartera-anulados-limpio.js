@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Función para obtener la fecha de anulación correcta
 function obtenerFechaAnulacion(pedido) {
   // Debug: Ver qué datos tiene el pedido
-  console.log('🔍 DEBUG ANULADOS - Pedido:', {
+  console.log(' DEBUG ANULADOS - Pedido:', {
     id: pedido.id,
     estado: pedido.estado,
     fecha_revision: pedido.fecha_revision,
@@ -340,7 +340,7 @@ function obtenerFechaAnulacion(pedido) {
 // Función para obtener quién anuló el pedido
 function obtenerQuienAnulo(pedido) {
   // Debug: Ver quién anuló
-  console.log('🔍 DEBUG QUIEN ANULO - Pedido:', {
+  console.log(' DEBUG QUIEN ANULO - Pedido:', {
     id: pedido.id,
     anulado_por_asesora_id: pedido.anulado_por_asesora_id,
     usuario_revision: pedido.usuario_revision,
@@ -414,4 +414,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-console.log('📄 Script de Cartera Anulados cargado correctamente');
+console.log(' Script de Cartera Anulados cargado correctamente');

@@ -1,4 +1,4 @@
-# 📋 Documentación: Sistema de Procesos con Datos Extendidos por Talla
+#  Documentación: Sistema de Procesos con Datos Extendidos por Talla
 
 ## 🎯 Descripción General
 

@@ -353,7 +353,7 @@ window.manejarImagenProceso = function(input, indice) {
             console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${window.procesoActualIndex}] - resultado=${resultado}`);
         } else {
             console.warn('[manejarImagenProceso] ⚠️ No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
-            console.log('[manejarImagenProceso] 🔍 Debug:', {
+            console.log('[manejarImagenProceso]  Debug:', {
                 universalStorage: !!window.universalImagenesStorage,
                 procesoActualIndex: window.procesoActualIndex,
                 agregarImagen: typeof window.universalImagenesStorage?.agregarImagen
@@ -422,12 +422,12 @@ window._imagenAEliminarIndice = null;
 
 // Mostrar modal de confirmación para eliminar imagen
 window.mostrarModalConfirmarEliminarImagen = function(indice) {
-    console.log('[mostrarModalConfirmarEliminarImagen] 📋 INICIANDO - Mostrando modal para imagen:', indice);
+    console.log('[mostrarModalConfirmarEliminarImagen]  INICIANDO - Mostrando modal para imagen:', indice);
     window._imagenAEliminarIndice = indice;
     console.log('[mostrarModalConfirmarEliminarImagen] 📌 window._imagenAEliminarIndice establecido a:', window._imagenAEliminarIndice);
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
-    console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Modal encontrado?:', !!modal);
+    console.log('[mostrarModalConfirmarEliminarImagen]  Modal encontrado?:', !!modal);
     
     if (modal) {
         console.log('[mostrarModalConfirmarEliminarImagen]  Modal existe, mostrando...');
@@ -437,8 +437,8 @@ window.mostrarModalConfirmarEliminarImagen = function(indice) {
         console.log('[mostrarModalConfirmarEliminarImagen]  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
         console.error('[mostrarModalConfirmarEliminarImagen]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
-        console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Elementos en body:', document.body.children.length);
-        console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Buscando modales con clase modal-overlay:');
+        console.log('[mostrarModalConfirmarEliminarImagen]  Elementos en body:', document.body.children.length);
+        console.log('[mostrarModalConfirmarEliminarImagen]  Buscando modales con clase modal-overlay:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
             console.log(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}, Z-index: ${m.style.zIndex}`);
         });
@@ -590,7 +590,7 @@ window.eliminarImagenProceso = function(indice) {
     
     // Buscar el modal directamente
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
-    console.log('[eliminarImagenProceso] 🔍 Modal encontrado?:', !!modal);
+    console.log('[eliminarImagenProceso]  Modal encontrado?:', !!modal);
     
     if (modal) {
         console.log('[eliminarImagenProceso]  Modal existe, mostrando...');
@@ -600,7 +600,7 @@ window.eliminarImagenProceso = function(indice) {
     } else {
         console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
         // Listar todos los modales disponibles
-        console.log('[eliminarImagenProceso] 🔍 Modales disponibles en el DOM:');
+        console.log('[eliminarImagenProceso]  Modales disponibles en el DOM:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
             console.log(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}`);
         });
@@ -1921,7 +1921,7 @@ window.agregarProcesoAlPedido = function() {
         if (modoActual === 'editar') {
             // 🔴 CORRECCIÓN: En modo edición, usar el estado ACTUAL del modal
             // que refleja las eliminaciones hechas por el usuario
-            console.log('[agregarProcesoAlPedido] 🔍 DEBUG EDICIÓN - Estado de variables:', {
+            console.log('[agregarProcesoAlPedido]  DEBUG EDICIÓN - Estado de variables:', {
                 'window.imagenesProcesoExistentes': window.imagenesProcesoExistentes,
                 'length': window.imagenesProcesoExistentes?.length || 0,
                 'contenido': window.imagenesProcesoExistentes?.map((img, idx) => ({
@@ -1945,7 +1945,7 @@ window.agregarProcesoAlPedido = function() {
             } else {
                 // Fallback: usar imágenes del proceso guardado
                 const procesoGuardado = window.procesosSeleccionados?.[procesoActual]?.datos;
-                console.log('[agregarProcesoAlPedido] 🔍 DEBUG - procesoGuardado:', procesoGuardado);
+                console.log('[agregarProcesoAlPedido]  DEBUG - procesoGuardado:', procesoGuardado);
                 if (procesoGuardado?.imagenes && procesoGuardado.imagenes.length > 0) {
                     imagenesFinales = procesoGuardado.imagenes.filter(img => img !== null && img !== undefined);
                     console.log('[agregarProcesoAlPedido] 🔧 MODO EDICIÓN: Usando imágenes del proceso guardado (fallback):', imagenesFinales.length);
@@ -2061,7 +2061,7 @@ window.agregarProcesoAlPedido = function() {
             storageEliminadas: window.imagenesEliminadasProcesoStorage
         });
         
-        console.log('[agregarProcesoAlPedido] 🔍 DEBUG imagenesEliminadas:', {
+        console.log('[agregarProcesoAlPedido]  DEBUG imagenesEliminadas:', {
             cantidadOriginales: cantidadOriginales,
             storageLength: (window.imagenesEliminadasProcesoStorage || []).length,
             storageContent: window.imagenesEliminadasProcesoStorage,

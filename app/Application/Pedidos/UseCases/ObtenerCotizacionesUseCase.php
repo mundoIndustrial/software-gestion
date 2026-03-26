@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ObtenerCotizacionesUseCase
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Obtener cotizaciones del usuario para crear pedidos
+ *  RESPONSABILIDAD ÚNICA: Obtener cotizaciones del usuario para crear pedidos
  * 
  * Query específica con:
  * - Eager loading optimizado
@@ -19,11 +19,11 @@ use Illuminate\Support\Facades\Log;
  * - Ordenamiento
  * 
  * ¿Por qué como UseCase?
- * ✅ Query centralizada (no en controller)
- * ✅ Lógica de filtrado de estados
- * ✅ Reutilizable
- * ✅ Testeable
- * ✅ Cacheable (si necesario)
+ *  Query centralizada (no en controller)
+ *  Lógica de filtrado de estados
+ *  Reutilizable
+ *  Testeable
+ *  Cacheable (si necesario)
  */
 class ObtenerCotizacionesUseCase
 {

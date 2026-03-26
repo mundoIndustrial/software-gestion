@@ -952,7 +952,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -968,7 +968,7 @@
         <div class="px-6 py-6">
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
@@ -1022,7 +1022,7 @@ window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false'
  * Logs de diagnóstico para el diseño de la tabla
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
@@ -1078,7 +1078,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.querySelector('tbody');
     if (tbody) {
         const tbodyRect = tbody.getBoundingClientRect();
-        console.log(`📋 [DIAGNÓSTICO] Tbody:`, {
+        console.log(` [DIAGNÓSTICO] Tbody:`, {
             width: tbodyRect.width,
             height: tbodyRect.height,
             scrollWidth: tbody.scrollWidth,
@@ -1231,7 +1231,7 @@ function abrirModalHomologacionBodega(eppId) {
             `;
 
             Swal.fire({
-                title: '📋 Detalles de Homologación',
+                title: ' Detalles de Homologación',
                 html: htmlContenido,
                 icon: 'info',
                 width: '700px',
@@ -1324,7 +1324,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
     // Mostrar modal grande
     Swal.fire({
-        title: '📋 Historial de Homologaciones',
+        title: ' Historial de Homologaciones',
         html: tablaHtml,
         icon: false,
         width: '850px',

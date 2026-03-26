@@ -14,79 +14,127 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        \Log::info(' DashboardController.index() INICIADO');
+        
         $user = Auth::user();
 
         if (!$user) {
+            \Log::warning('❌ DashboardController: Usuario no autenticado');
             return redirect()->route('login');
         }
+
+        \Log::info(' Usuario autenticado', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'roles_ids' => json_encode($user->roles_ids ?? [])
+        ]);
 
         // Obtener el nombre del rol del usuario (primer rol en roles_ids)
         $userRoles = $user->roles();
         
+        \Log::info(' Obteniendo roles del usuario', [
+            'total_roles' => $userRoles ? $userRoles->count() : 0
+        ]);
+
         if ($userRoles && $userRoles->count() > 0) {
             $roleName = $userRoles->first()->name;
+            
+            \Log::info('🎭 Rol primario del usuario', [
+                'role' => $roleName,
+                'all_roles' => $userRoles->pluck('name')->toArray()
+            ]);
 
             if ($roleName === 'asesor') {
+                \Log::info('→ Redirigiendo a asesores.dashboard');
                 return redirect()->route('asesores.dashboard');
             }
 
             if ($roleName === 'bodeguero') {
+                \Log::info('→ Redirigiendo a gestion-bodega.pedidos');
                 return redirect()->route('gestion-bodega.pedidos');
             }
 
             if ($roleName === 'insumos') {
+                \Log::info('→ 🎯 PREPARANDO redirect a insumos.materiales.index');
+                try {
+                    $redirectUrl = route('insumos.materiales.index');
+                    \Log::info(' URL generada correctamente', ['url' => $redirectUrl]);
+                } catch (\Exception $e) {
+                    \Log::error('❌ ERROR generando URL para insumos.materiales.index', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw $e;
+                }
                 return redirect()->route('insumos.materiales.index');
             }
 
             if ($roleName === 'supervisor_pedidos') {
+                \Log::info('→ Redirigiendo a supervisor-pedidos.index');
                 return redirect()->route('supervisor-pedidos.index');
             }
 
             if ($roleName === 'contador') {
+                \Log::info('→ Redirigiendo a contador.index');
                 return redirect()->route('contador.index');
             }
 
             if ($roleName === 'supervisor' || $roleName === 'supervisor_planta') {
+                \Log::info('→ Redirigiendo a registros.index');
                 return redirect()->route('registros.index');
             }
 
             if ($roleName === 'aprobador_cotizaciones') {
+                \Log::info('→ Redirigiendo a cotizaciones.pendientes');
                 return redirect()->route('cotizaciones.pendientes');
             }
 
             if ($roleName === 'cortador' || $roleName === 'costurero' || $roleName === 'vista-costura') {
+                \Log::info('→ Redirigiendo a operario.dashboard');
                 return redirect()->route('operario.dashboard');
             }
 
             if ($roleName === 'lider-control-calidad' || $roleName === 'control de calidad') {
+                \Log::info('→ Redirigiendo a control-calidad.dashboard');
                 return redirect()->route('control-calidad.dashboard');
             }
 
             if ($roleName === 'visualizador_cotizaciones_logo') {
+                \Log::info('→ Redirigiendo a visualizador-logo.dashboard');
                 return redirect()->route('visualizador-logo.dashboard');
             }
 
             if ($roleName === 'supervisor_gerencia') {
+                \Log::info('→ Redirigiendo a registros.recibos-costura');
                 return redirect()->route('registros.recibos-costura');
             }
 
             if ($roleName === 'administrador-costura') {
+                \Log::info('→ Redirigiendo a operario.dashboard');
                 return redirect()->route('operario.dashboard', ['todas' => 1, 'tab' => 'costura']);
             }
 
             if ($roleName === 'cartera') {
+                \Log::info('→ Redirigiendo a cartera.pedidos');
                 return redirect()->route('cartera.pedidos');
             }
 
             if ($roleName === 'Despacho' || $roleName === 'despacho') {
+                \Log::info('→ Redirigiendo a despacho.index');
                 return redirect()->route('despacho.index');
             }
 
             if ($roleName === 'visualizador_plooter') {
+                \Log::info('→ Redirigiendo a insumos.plooter.index');
                 return redirect()->route('insumos.plooter.index');
             }
+
+            \Log::warning('⚠️ Rol no mapeado a ninguna ruta', ['role' => $roleName]);
+        } else {
+            \Log::warning('⚠️ Usuario sin roles asignados');
         }
 
+        \Log::info(' Mostrando vista de dashboard genérica');
         return view('dashboard');
     }
 

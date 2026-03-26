@@ -362,7 +362,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 - Usuario ve cambios inmediatamente
 
 ###  Feedback Visual
-- Botón muestra "⏳ Guardando..." durante proceso
+- Botón muestra " Guardando..." durante proceso
 - Vuelve a estado normal después
 - Inputs se limpian después de guardar
 - Datos guardados se cargan automáticamente

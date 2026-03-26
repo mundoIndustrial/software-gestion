@@ -275,7 +275,7 @@ function entregarTodo(pedidoId, numeroPedido) {
     // Mostrar indicador de carga
     const btn = event.target;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Procesando...';
+    btn.innerHTML = ' Procesando...';
     btn.disabled = true;
     
     fetch(`/despacho/${pedidoId}/entregar-todo`, {
@@ -356,7 +356,7 @@ function mostrarNotificacionExito(numeroPedido) {
     }, 3000);
 }
 
-console.log('🔍 Variables globales configuradas:');
+console.log(' Variables globales configuradas:');
 console.log('  - Usuario ID:', window.__despachoObsUsuarioActualId);
 console.log('  - Es Admin:', window.__despachoObsUsuarioEsAdmin);
 
@@ -367,9 +367,9 @@ const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
     console.log('🔌 Iniciando conexión WebSocket para despacho...');
-    console.log('🔍 Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
+    console.log(' Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
+    console.log(' Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
+    console.log(' Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
     
     try {
         // Usar WebSocket de Reverb con clave desde meta tags
@@ -398,7 +398,7 @@ function connectWebSocket() {
             console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
-            console.log('🔍 Debug evento recibido:', {
+            console.log(' Debug evento recibido:', {
                 'pedido_id': event.pedido_id,
                 'numero_pedido': event.numero_pedido,
                 'nuevo_estado': event.nuevo_estado,
@@ -451,7 +451,7 @@ function connectWebSocket() {
                     // Verificar si el pedido NO está en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (!pedidoRow) {
-                        console.log('📋 Pedido no encontrado en lista, recargando para mostrarlo...');
+                        console.log(' Pedido no encontrado en lista, recargando para mostrarlo...');
                         console.log('🔄 Recargando página por cambio en bodega...');
                         // Recargar la página para mostrar el nuevo pedido pendiente
                         window.location.reload();
@@ -492,7 +492,7 @@ function connectWebSocket() {
             });
 
         console.log(' WebSocket conectado para lista de despacho');
-        console.log('🔍 Verificando canal público de despacho...');
+        console.log(' Verificando canal público de despacho...');
         
         // Verificar si podemos suscribirnos al canal público
         const channel = socket.channel('despacho.pedidos');
@@ -540,8 +540,8 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
-    console.log('🔍 URL actual:', window.location.href);
-    console.log('🔍 Pathname:', window.location.pathname);
+    console.log(' URL actual:', window.location.href);
+    console.log(' Pathname:', window.location.pathname);
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {

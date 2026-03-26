@@ -66,7 +66,7 @@ class PrendaFormCollector {
             
             // Procesar imágenes: nuevas File objects + rutas de BD (NUNCA blob URLs que se revocaran)
             const imagenesCopia = imagenesTemporales.map((img, imgIdx) => {
-                console.log(`[prenda-form-collector] 🔍 PROCESANDO IMAGEN ${imgIdx}:`);
+                console.log(`[prenda-form-collector]  PROCESANDO IMAGEN ${imgIdx}:`);
                 console.log(`[prenda-form-collector]   🔴 CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
                     previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
                     url: img?.url?.substring ? img.url.substring(0, 80) : img?.url,
@@ -198,7 +198,7 @@ class PrendaFormCollector {
                 
                 const esValido = img !== null && img !== undefined && (esFile || tieneFileObj || tienePreviewUrl || tieneUrl || tieneIdBD || tieneRutaBD || esDesdeDB);
                 
-                console.log(`[prenda-form-collector] 🔍 FILTER [${filterIdx}]: esValido=${esValido}`, {
+                console.log(`[prenda-form-collector]  FILTER [${filterIdx}]: esValido=${esValido}`, {
                     esFile,
                     tieneFileObj: !!tieneFileObj,
                     tienePreviewUrl: !!tienePreviewUrl,
@@ -415,7 +415,7 @@ class PrendaFormCollector {
                     
                     // 🆕 CRÍTICO: Si tela.imagenes está vacío pero existe imagenesTelaStorage con imágenes
                     // usar las del storage como fallback (esto ocurre cuando se guardan cambios)
-                    console.log(`[prenda-form-collector]  🔍 ANTES de fallback - Tela ${telaIdx}:`, {
+                    console.log(`[prenda-form-collector]   ANTES de fallback - Tela ${telaIdx}:`, {
                         imagenesDelaTela_length: imagenesDelaTela?.length || 0,
                         imagenesDelaTela_content: imagenesDelaTela,
                         imagenesTelaStorage_exists: !!window.imagenesTelaStorage,
@@ -437,7 +437,7 @@ class PrendaFormCollector {
                     }
                     
                     const imagenesCopia = (imagenesDelaTela).map((img, imgIdx) => {
-                        // 🔍 DEBUG PROFUNDO: Analizar exactamente qué es este objeto
+                        //  DEBUG PROFUNDO: Analizar exactamente qué es este objeto
                         let imagenDiagnostico = {
                             tipo: typeof img,
                             esFile: img instanceof File,
@@ -716,7 +716,7 @@ class PrendaFormCollector {
             let asignacionesColores = {};
             
             // DIAGNÓSTICO: Verificar qué está disponible
-            console.log('[prenda-form-collector] 🔍 DIAGNÓSTICO de asignaciones:');
+            console.log('[prenda-form-collector]  DIAGNÓSTICO de asignaciones:');
             console.log('[prenda-form-collector]   - window.ColoresPorTalla existe?', !!window.ColoresPorTalla);
             console.log('[prenda-form-collector]   - window.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
                 window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
@@ -785,7 +785,7 @@ class PrendaFormCollector {
                 prendaData.flujo = 'simple';
             }
             
-            console.log('[prenda-form-collector] 📋 Flujo detectado:', prendaData.flujo);
+            console.log('[prenda-form-collector]  Flujo detectado:', prendaData.flujo);
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {

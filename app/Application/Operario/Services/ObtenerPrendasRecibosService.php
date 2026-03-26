@@ -117,7 +117,7 @@ class ObtenerPrendasRecibosService
                     // EXCLUIR si el encargado tiene rol costura-reflectivo
                     $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
                     if ($usuariosCosturaReflectivo->contains($encargadoNormalizado)) {
-                        \Log::info('🔍 [administrador-costura] Excluyendo recibo asignado a costura-reflectivo', [
+                        \Log::info(' [administrador-costura] Excluyendo recibo asignado a costura-reflectivo', [
                             'recibo_id' => $recibo->id,
                             'encargado' => $procesoCostura->encargado,
                             'prenda_id' => $recibo->prenda_id
@@ -264,7 +264,7 @@ class ObtenerPrendasRecibosService
         
         $tipoOperario = $this->obtenerTipoOperario($usuario);
 
-        \Log::info('🔍 [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [
+        \Log::info(' [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [
             'usuario' => $usuario->name,
             'usuario_id' => $usuario->id,
             'tipo_operario' => $tipoOperario,
@@ -352,7 +352,7 @@ class ObtenerPrendasRecibosService
 
         // Para costura-reflectivo y vista-costura: AGREGAR REFLECTIVO aprobados SIN validar encargado
         if ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') {
-            \Log::info('🔍 [REFLECTIVO APROBADOS] BUSCANDO prendas con PROCESO REFLECTIVO APROBADO en pedidos_procesos_prenda_detalles', [
+            \Log::info(' [REFLECTIVO APROBADOS] BUSCANDO prendas con PROCESO REFLECTIVO APROBADO en pedidos_procesos_prenda_detalles', [
                 'usuario' => $usuario->name,
                 'recibos_costura_actuales' => $recibos->count()
             ]);
@@ -366,14 +366,14 @@ class ObtenerPrendasRecibosService
                 ->pluck('prenda')
                 ->unique('id');
             
-            \Log::info('🔍 [REFLECTIVO APROBADOS] Prendas con PROCESO REFLECTIVO aprobado encontradas', [
+            \Log::info(' [REFLECTIVO APROBADOS] Prendas con PROCESO REFLECTIVO aprobado encontradas', [
                 'total_prendas_reflectivo_aprobadas' => count($prendasReflectivoAprobadas)
             ]);
             
             // Para cada prenda con reflectivo aprobado, buscar si tiene recibo REFLECTIVO
             foreach ($prendasReflectivoAprobadas as $prendaAprobada) {
                 if (!$prendaAprobada || !$prendaAprobada->pedidoProduccion) {
-                    \Log::info('🔍 [REFLECTIVO] Prenda o pedido sin relación', [
+                    \Log::info(' [REFLECTIVO] Prenda o pedido sin relación', [
                         'prenda_id' => $prendaAprobada->id ?? 'null'
                     ]);
                     continue;

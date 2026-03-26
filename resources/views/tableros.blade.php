@@ -909,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const searchStart = performance.now();
                     //  OPTIMIZACIÓN: Marcar que estamos buscando para evitar actualizaciones de seguimiento
                     isSearchingCell = true;
-                    console.log(`⏳ isSearchingCell = true (búsqueda iniciada)`);
+                    console.log(` isSearchingCell = true (búsqueda iniciada)`);
                     
                     try {
                         // Hacer la búsqueda si no está en caché
@@ -1600,7 +1600,7 @@ function agregarRegistroTiempoReal(registro, section) {
         return;
     }
     
-    // ⏳ NO actualizar el seguimiento ANTES de agregar - hacerlo DESPUÉS
+    //  NO actualizar el seguimiento ANTES de agregar - hacerlo DESPUÉS
     // Esto evita múltiples fetches innecesarios
 
     // Crear nueva fila

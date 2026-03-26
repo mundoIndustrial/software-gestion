@@ -4,7 +4,7 @@
 window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     console.log(`[setupDragAndDropProceso] 🔄 INICIO - Configurando para preview ${procesoIndex}`);
     console.log(`[setupDragAndDropProceso] 📊 Timestamp:`, new Date().toISOString());
-    console.log(`[setupDragAndDropProceso] 🔍 Stack trace:`, new Error().stack);
+    console.log(`[setupDragAndDropProceso]  Stack trace:`, new Error().stack);
     
     // 🔴 IMPORTANTE: NO clonar el elemento para evitar acumular listeners
     // En su lugar, remover listeners anteriores y agregar nuevos
@@ -327,7 +327,7 @@ console.log('[drag-drop-procesos-estilo-prenda] 📊 Timestamp:', new Date().toI
 
 for (let i = 1; i <= 3; i++) {
     const preview = document.getElementById(`proceso-foto-preview-${i}`);
-    console.log(`[drag-drop-procesos-estilo-prenda] 🔍 Buscando preview ${i}:`, !!preview);
+    console.log(`[drag-drop-procesos-estilo-prenda]  Buscando preview ${i}:`, !!preview);
     if (preview) {
         console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} encontrado, configurando setupDragAndDropProceso`);
         window.setupDragAndDropProceso(preview, i);

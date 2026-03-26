@@ -4,7 +4,7 @@
 
 El error `500 (Internal Server Error)` al aprobar pedidos en producción está causado por múltiples factores en el método `aprobarPedido` del `CarteraPedidosController`.
 
-## 🔍 Causas Raíz Identificadas
+##  Causas Raíz Identificadas
 
 ### 1. **Broadcast de WebSockets (Causa Principal)**
 - **Problema**: `broadcast(new OrdenUpdated(...))` se ejecuta sincrónicamente
@@ -206,7 +206,7 @@ tail -f storage/logs/laravel.log | grep "\[CARTERA\]"
 
 ### Largo Plazo:
 - 📊 Métricas de rendimiento disponibles
-- 🔍 Facilidad para identificar problemas
+-  Facilidad para identificar problemas
 - 🛡️ Mejor experiencia de usuario
 - 📈 Mayor estabilidad del sistema
 

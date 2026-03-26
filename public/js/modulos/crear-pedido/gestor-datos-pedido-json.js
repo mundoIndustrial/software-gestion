@@ -293,7 +293,7 @@ class GestorDatosPedidoJSON {
                 // Enviar asignaciones como JSON
                 formData.append(`prendas[${prendaIdx}][asignaciones_colores]`, JSON.stringify(prenda.asignacionesColoresPorTalla));
                 
-                console.log('[GestorDatosPedidoJSON] 🔍 Buscando ColoresPorTalla para procesar imágenes:', {
+                console.log('[GestorDatosPedidoJSON]  Buscando ColoresPorTalla para procesar imágenes:', {
                     coloresPorTallaExists: !!window.ColoresPorTalla,
                     hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function',
                     prendaIdx: prendaIdx,

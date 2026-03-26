@@ -408,7 +408,6 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;

@@ -80,7 +80,7 @@ class PedidoAggregateTest extends TestCase
             ]
         );
 
-        // Cambiar a CONFIRMADO â†’ EN_PRODUCCION â†’ COMPLETADO
+        // Cambiar a CONFIRMADO  EN_PRODUCCION  COMPLETADO
         $pedido->confirmar();
         $pedido->iniciarProduccion();
         $pedido->completar();

@@ -452,8 +452,8 @@ class CargadorPrendasCotizacion {
         } else if (prenda.variantes && typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
             // Variantes es un objeto plano (ya procesado por el backend) - extraer telas_multiples
             console.log('[transformarDatos]  Variantes es objeto plano, buscando telas_multiples');
-            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples tipo:', typeof prenda.variantes.telas_multiples);
-            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples contenido:', prenda.variantes.telas_multiples);
+            console.log('[transformarDatos]   prenda.variantes.telas_multiples tipo:', typeof prenda.variantes.telas_multiples);
+            console.log('[transformarDatos]   prenda.variantes.telas_multiples contenido:', prenda.variantes.telas_multiples);
             
             let telasMultiples = prenda.variantes.telas_multiples;
             if (typeof telasMultiples === 'string') {
@@ -466,7 +466,7 @@ class CargadorPrendasCotizacion {
                 }
             }
             
-            console.log('[transformarDatos]  📋 telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
+            console.log('[transformarDatos]   telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
             
             if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
                 console.log('[transformarDatos]  🧵 Encontradas', telasMultiples.length, 'telas en telas_multiples');
@@ -528,7 +528,7 @@ class CargadorPrendasCotizacion {
             // Enriquecer con datos de variantes si es necesario
             // 🔴 FIX: Usar múltiples estrategias de comparación para enriquecer
             telasDesdeVariantes.forEach(telaVariante => {
-                console.log('[transformarDatos] 🔍 Buscando coincidencia para variante:', {
+                console.log('[transformarDatos]  Buscando coincidencia para variante:', {
                     nombre: telaVariante.nombre_tela,
                     color: telaVariante.color,
                     referencia: telaVariante.referencia

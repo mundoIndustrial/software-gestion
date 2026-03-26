@@ -595,7 +595,7 @@
             botonGuardar.disabled = true;
             botonGuardar.style.opacity = '0.6';
             botonGuardar.style.cursor = 'not-allowed';
-            botonGuardar.textContent = '⏳ Guardando...';
+            botonGuardar.textContent = ' Guardando...';
         }
         
         if (botonCancelar) {

@@ -272,7 +272,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -285,7 +285,7 @@ window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false'
 
 // Diagnóstico de CSS y estructura de tabla
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-TABLA] Analizando estructura de tabla en despacho...');
+    console.log(' [DIAGNÓSTICO-TABLA] Analizando estructura de tabla en despacho...');
     
     // Analizar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const table = document.querySelector('table');
     if (table) {
         const tableStyle = window.getComputedStyle(table);
-        console.log('📋 [DIAGNÓSTICO-TABLA] Tabla:', {
+        console.log(' [DIAGNÓSTICO-TABLA] Tabla:', {
             tagName: table.tagName,
             classes: table.className,
             computedWidth: tableStyle.width,
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = table.querySelector('tbody');
         if (tbody) {
             const rows = tbody.querySelectorAll('tr');
-            console.log('📄 [DIAGNÓSTICO-TABLA] Filas en tbody:', rows.length);
+            console.log(' [DIAGNÓSTICO-TABLA] Filas en tbody:', rows.length);
             
             if (rows.length > 0) {
                 const firstRow = rows[0];
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (rule.selectorText) {
                         const selector = rule.selectorText.toLowerCase();
                         if (selector.includes('table') || selector.includes('thead') || selector.includes('tbody') || selector.includes('tr') || selector.includes('td') || selector.includes('th')) {
-                            console.log(`  📋 Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
+                            console.log(`   Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
                             if (rule.style && rule.style.length > 0) {
                                 for (let i = 0; i < rule.style.length; i++) {
                                     const property = rule.style[i];
@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="px-6 py-6">
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
@@ -566,7 +566,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
     // Mostrar modal grande
     Swal.fire({
-        title: '📋 Historial de Homologaciones',
+        title: ' Historial de Homologaciones',
         html: tablaHtml,
         icon: false,
         width: '850px',

@@ -18,38 +18,90 @@ class InsumosAccess
      */
     public function handle(Request $request, Closure $next)
     {
+        $url = $request->fullUrl();
+        $method = $request->getMethod();
+        $path = $request->getPathInfo();
+        
+        Log::info(' INSUMOS ACCESS MIDDLEWARE EJECUTADO', [
+            'url' => $url,
+            'method' => $method,
+            'path' => $path,
+            'is_json' => $request->expectsJson()
+        ]);
+
+        // Primero verificar autenticación
         if (!Auth::check()) {
-            Log::warning('InsumosAccess: Usuario no autenticado');
+            Log::warning('❌ InsumosAccess: Usuario NO AUTENTICADO', [
+                'url' => $url,
+                'redirect_to' => '/login'
+            ]);
             return redirect('/login');
         }
 
         $user = Auth::user();
-        Log::info('InsumosAccess: Usuario', [
-            'id' => $user->id,
-            'name' => $user->name,
-            'roles_ids' => $user->roles_ids,
+        Log::info(' InsumosAccess: Usuario AUTENTICADO', [
+            'user_id' => $user->id,
+            'user_name' => $user->name ?? 'N/A',
+            'roles_ids' => json_encode($user->roles_ids ?? []),
         ]);
 
-        // Admin, supervisor-admin, supervisor_planta y patronista pueden ver insumos
-        // Verificar directamente en roles_ids array
+        // Permitir acceso si el usuario tiene rol en roles_ids
         if (!empty($user->roles_ids) && is_array($user->roles_ids)) {
-            // Obtener los roles del usuario
-            $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids)->pluck('name')->toArray();
-            Log::info('InsumosAccess: Roles del usuario', ['roles' => $userRoles]);
+            try {
+                Log::info('InsumosAccess: Buscando roles de usuario', [
+                    'roles_ids' => json_encode($user->roles_ids)
+                ]);
 
-            if (in_array('admin', $userRoles) || in_array('supervisor-admin', $userRoles) || in_array('supervisor_planta', $userRoles) || in_array('patronista', $userRoles) || in_array('visualizador_plooter', $userRoles)) {
-                Log::info('InsumosAccess: Acceso permitido');
-                return $next($request);
+                $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids)
+                    ->pluck('name')
+                    ->toArray();
+                
+                Log::info('InsumosAccess: Roles encontrados', [
+                    'roles' => json_encode($userRoles)
+                ]);
+                
+                // Roles que pueden acceder a insumos
+                $allowedRoles = ['admin', 'supervisor-admin', 'supervisor_planta', 'patronista', 'visualizador_plooter', 'insumos'];
+                
+                foreach ($allowedRoles as $role) {
+                    if (in_array($role, $userRoles)) {
+                        Log::info(' InsumosAccess: ACCESO PERMITIDO', [
+                            'user_id' => $user->id,
+                            'role' => $role,
+                            'url' => $url
+                        ]);
+                        return $next($request);
+                    }
+                }
+                
+                Log::warning('InsumosAccess: Usuario tiene roles_ids pero NINGUNO permitido', [
+                    'user_roles' => json_encode($userRoles),
+                    'allowed_roles' => json_encode($allowedRoles)
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('InsumosAccess: ERROR AL VERIFICAR ROLES', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
+        } else {
+            Log::warning('InsumosAccess: Usuario sin roles_ids o no es array', [
+                'roles_ids' => json_encode($user->roles_ids ?? null),
+                'is_array' => is_array($user->roles_ids ?? null)
+            ]);
         }
 
-        // Verificar si el usuario tiene rol de insumos, patronista o visualizador_plooter
-        if ($user->hasRole('insumos') || $user->hasRole('patronista') || $user->hasRole('visualizador_plooter')) {
-            Log::info('InsumosAccess: Rol insumos, patronista o visualizador_plooter permitido');
-            return $next($request);
-        }
-
-        Log::warning('InsumosAccess: Acceso denegado', ['user_id' => $user->id]);
-        return redirect('/')->with('error', 'No autorizado para acceder a este módulo.');
+        // Si no tiene los roles requeridos, denegar acceso
+        Log::error('❌❌❌ InsumosAccess: ACCESO DENEGADO - ROL INSUFICIENTE', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'roles_ids' => json_encode($user->roles_ids ?? []),
+            'url' => $url,
+            'ip' => $request->getClientIp()
+        ]);
+        
+        // Devolver 403 Forbidden en lugar de redirect para evitar loops
+        abort(403, 'No autorizado para acceder a este módulo');
     }
 }

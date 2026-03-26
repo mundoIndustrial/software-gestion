@@ -9,9 +9,6 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('mundo_icon.png') }}" sizes="any">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     
@@ -59,13 +56,13 @@
         }
     </style>
     
-    @stack('styles')
-</head>
-<body class="light-theme {{ $esVisualizador ? 'sin-sidebar' : '' }}"
     @php
         $userRoles = auth()->user()->roles->pluck('name')->toArray();
         $esVisualizador = in_array('visualizador_plooter', $userRoles) && count($userRoles) === 1;
     @endphp
+
+</head>
+<body class="light-theme {{ $esVisualizador ? 'sin-sidebar' : '' }}">
 
     @if(!$esVisualizador)
     <!-- Sidebar -->
@@ -89,13 +86,6 @@
                 <span class="menu-section-title">Principal</span>
                 <nav aria-label="Menú principal">
                     <ul class="menu-list">
-                        <li class="menu-item">
-                            <a href="{{ route('insumos.dashboard') }}" 
-                               class="menu-link {{ request()->routeIs('insumos.dashboard') ? 'active' : '' }}">
-                                <span class="material-symbols-rounded">dashboard</span>
-                                <span class="menu-label">Dashboard</span>
-                            </a>
-                        </li>
                     </ul>
                 </nav>
             </div>
@@ -259,14 +249,18 @@
     
     <!-- CORE ARCHITECTURE LAYER - Hybrid DDD Implementation -->
     <!-- ⚠️  CRITICAL: Order matters! Load in this sequence:
-         1. HttpClient (no dependencies)
-         2. Domain Repository (interface)
-         3. Infrastructure Repository (depends on HttpClient)
-         4. Application Service (depends on Repository)
-         5. Bootstrap DI Container (depends on all above)
+         1. Shared Cache (base class)
+         2. HttpClient (no dependencies)
+         3. Domain Repository (interface)
+         4. Shared Infrastructure Cache Repository (depends on CacheRepository)
+         5. Infrastructure Repository (depends on HttpClient + SessionStorageCacheRepository)
+         6. Application Service (depends on Repository)
+         7. Bootstrap DI Container (depends on all above)
     -->
+    <script src="{{ asset('js/shared/CacheRepository.js') }}"></script>
     <script src="{{ asset('js/insumos/core/infrastructure/HttpClient.js') }}"></script>
     <script src="{{ asset('js/insumos/core/domain/InsumoRepository.js') }}"></script>
+    <script src="{{ asset('js/shared/infrastructure/SessionStorageCacheRepository.js') }}"></script>
     <script src="{{ asset('js/insumos/core/infrastructure/SessionStorageInsumoRepository.js') }}"></script>
     <script src="{{ asset('js/insumos/core/application/InsumoService.js') }}"></script>
     <script src="{{ asset('js/insumos/core/bootstrap.js') }}"></script>

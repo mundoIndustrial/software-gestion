@@ -3,13 +3,23 @@
  * Funciones para gestionar cambios de estado de recibos y pedidos
  * 
  * Funciones incluidas:
- * - confirmarPasarRevisar() - Pasar recibo a revisión
- * - cambiarEstadoRecibo() - Enviar recibo a producción
- * - cambiarEstadoPedido() - Enviar pedido a producción  
- * - cerrarModalConfirmarProduccion() - Cerrar modal de confirmación
- * - restaurarBotonAprobar() - Restaurar estado del botón reprobar
- * - confirmarEnvioProduccion() - Confirmar y enviar a producción
+ * - confirmarPasarRevisar() - Pasar recibo a revision
+ * - cambiarEstadoRecibo() - Enviar recibo a produccion
+ * - cambiarEstadoPedido() - Enviar pedido a produccion  
+ * - cerrarModalConfirmarProduccion() - Cerrar modal de confirmacion
+ * - restaurarBotonAprobar() - Restaurar estado del boton reprobar
+ * - confirmarEnvioProduccion() - Confirmar y enviar a produccion
  */
+
+const productionState = {
+    reciboId: null,
+    consecutivo: null,
+    pedidoId: null,
+};
+
+function getPasarARevisarHandler(name) {
+    return window.insumosHandlers?.pasarARevisar?.[name];
+}
 
 /**
  * Confirma pasar un recibo a revisión
@@ -31,7 +41,7 @@ function confirmarPasarRevisar(event) {
     btnConfirmar.disabled = true;
     btnConfirmar.textContent = 'Procesando...';
     
-    // Enviar petición
+    // Enviar peticion
     fetch(`/insumos/materiales/${reciboId}/pasar-revisar`, {
         method: 'POST',
         headers: {
@@ -46,14 +56,17 @@ function confirmarPasarRevisar(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('Recibo pasado a revisión correctamente', 'success');
-            cerrarModalPasarRevisar();
+            showToast('Recibo pasado a revision correctamente', 'success');
+            const closePasarRevisar = getPasarARevisarHandler('cerrarModalPasarRevisar');
+            if (typeof closePasarRevisar === 'function') {
+                closePasarRevisar();
+            }
             // Recargar la tabla
             setTimeout(() => {
                 location.reload();
             }, 1500);
         } else {
-            showToast(data.message || 'Error al pasar a revisión', 'error');
+            showToast(data.message || 'Error al pasar a revision', 'error');
             btnConfirmar.disabled = false;
             btnConfirmar.innerHTML = '<i class="fas fa-arrow-rotate-left"></i> Pasar a Revisar';
         }
@@ -67,13 +80,13 @@ function confirmarPasarRevisar(event) {
 }
 
 /**
- * Envía un recibo individual a producción
- * Guarda el ID del recibo en variables globales y abre modal de confirmación
+ * Envia un recibo individual a produccion
+ * Guarda el ID del recibo en variables globales y abre modal de confirmacion
  */
 function cambiarEstadoRecibo(reciboId, consecutivo) {
     // Guardar el ID del recibo y su consecutivo en variables globales
-    window.reciboParaProduccion = reciboId;
-    window.consecutivoRecibo = consecutivo;
+    productionState.reciboId = reciboId;
+    productionState.consecutivo = consecutivo;
     
     // Mostrar el modal
     document.getElementById('numeroPedidoConfirm').textContent = consecutivo;
@@ -82,40 +95,40 @@ function cambiarEstadoRecibo(reciboId, consecutivo) {
 
 /**
  * Mantener compatibilidad con llamadas anteriores
- * Envía un pedido completo a producción
+ * Envia un pedido completo a produccion
  */
 function cambiarEstadoPedido(numeroPedido, estadoActual) {
     if (estadoActual.toLowerCase() === 'pendiente' || estadoActual === 'PENDIENTE_INSUMOS') {
-        window.pedidoParaProduccion = numeroPedido;
+        productionState.pedidoId = numeroPedido;
         document.getElementById('numeroPedidoConfirm').textContent = numeroPedido;
         document.getElementById('modalConfirmarProduccion').style.display = 'flex';
     } else {
-        showToast('Este pedido ya ha sido enviado a producción', 'info');
+        showToast('Este pedido ya ha sido enviado a produccion', 'info');
     }
 }
 
 /**
- * Cierra el modal de confirmación de producción
- * Limpia variables globales y restaura botón
+ * Cierra el modal de confirmacion de produccion
+ * Limpia variables globales y restaura boton
  */
 function cerrarModalConfirmarProduccion() {
     document.getElementById('modalConfirmarProduccion').style.display = 'none';
-    window.reciboParaProduccion = null;
-    window.consecutivoRecibo = null;
-    window.pedidoParaProduccion = null;
+    productionState.reciboId = null;
+    productionState.consecutivo = null;
+    productionState.pedidoId = null;
     
-    // Restaurar botón al cerrar modal
+    // Restaurar boton al cerrar modal
     restaurarBotonAprobar();
 }
 
 /**
- * Restaura el estado original del botón Aprobar
- * Detiene la animación de carga y rehabilita el botón
+ * Restaura el estado original del boton Aprobar
+ * Detiene la animacion de carga y rehabilita el boton
  */
 function restaurarBotonAprobar() {
     const btnAprobar = document.getElementById('btnAprobarProduccion');
     if (btnAprobar) {
-        // Limpiar interval de animación
+        // Limpiar interval de animacion
         if (btnAprobar.loadingInterval) {
             clearInterval(btnAprobar.loadingInterval);
             btnAprobar.loadingInterval = null;
@@ -130,30 +143,30 @@ function restaurarBotonAprobar() {
 }
 
 /**
- * Confirma el envío a producción (recibo individual o pedido completo)
- * Muestra animación de carga y recarga la página al éxito
+ * Confirma el envio a produccion (recibo individual o pedido completo)
+ * Muestra animacion de carga y recarga la Pagina al Exito
  */
 function confirmarEnvioProduccion() {
-    const reciboId = window.reciboParaProduccion;
-    const pedidoId = window.pedidoParaProduccion;
+    const reciboId = productionState.reciboId;
+    const pedidoId = productionState.pedidoId;
     
     if (!reciboId && !pedidoId) return;
     
-    // Bloquear botón y mostrar "Cargando..."
+    // Bloquear boton y mostrar "Cargando..."
     const btnAprobar = document.getElementById('btnAprobarProduccion');
     const textoOriginal = btnAprobar.innerHTML;
     btnAprobar.disabled = true;
     btnAprobar.innerHTML = 'Cargando';
     btnAprobar.style.fontSize = '14px';
     
-    // Animación de puntos
+    // animacion de puntos
     let dots = 0;
     const loadingInterval = setInterval(() => {
         dots = (dots + 1) % 4;
         btnAprobar.innerHTML = 'Cargando' + '.'.repeat(dots);
     }, 500);
     
-    // Guardar interval para limpiar después
+    // Guardar interval para limpiar despues
     btnAprobar.loadingInterval = loadingInterval;
     
     btnAprobar.classList.remove('hover:bg-blue-700');
@@ -172,7 +185,7 @@ function confirmarEnvioProduccion() {
         url = `/insumos/materiales/${pedidoId}/cambiar-estado`;
     }
     
-    // Enviar petición al servidor
+    // Enviar peticion al servidor
     fetch(url, {
         method: 'POST',
         headers: {
@@ -183,7 +196,13 @@ function confirmarEnvioProduccion() {
             estado: proximoEstado
         }),
     })
-    .then(response => response.json())
+    .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP ${response.status}`);
+        }
+        return data;
+    })
     .then(data => {
         // Ocultar loading overlay
         document.getElementById('loadingOverlay').classList.remove('active');
@@ -193,12 +212,12 @@ function confirmarEnvioProduccion() {
             
             showToast('Recibo aprobado', 'success');
             
-            // Recargar la página después de 2 segundos
+            // Recargar la Pagina despues de 2 segundos
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
         } else {
-            // Restaurar botón
+            // Restaurar boton
             restaurarBotonAprobar();
             showToast('Error al cambiar el estado: ' + (data.message || ''), 'error');
         }
@@ -207,19 +226,27 @@ function confirmarEnvioProduccion() {
         // Ocultar loading overlay
         document.getElementById('loadingOverlay').classList.remove('active');
         
-        // Restaurar botón
+        // Restaurar boton
         restaurarBotonAprobar();
         
-        showToast('Error al cambiar el estado', 'error');
+        showToast(`Error al cambiar el estado: ${error.message || 'desconocido'}`, 'error');
     });
 }
 
-// Auto-initialize: Export all functions to window on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-    window.confirmarPasarRevisar = confirmarPasarRevisar;
-    window.cambiarEstadoRecibo = cambiarEstadoRecibo;
-    window.cambiarEstadoPedido = cambiarEstadoPedido;
-    window.cerrarModalConfirmarProduccion = cerrarModalConfirmarProduccion;
-    window.restaurarBotonAprobar = restaurarBotonAprobar;
-    window.confirmarEnvioProduccion = confirmarEnvioProduccion;
-});
+function exportStatusActionsInsumos() {
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.statusActions = {
+        confirmarPasarRevisar,
+        cambiarEstadoRecibo,
+        cambiarEstadoPedido,
+        cerrarModalConfirmarProduccion,
+        restaurarBotonAprobar,
+        confirmarEnvioProduccion,
+    };
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', exportStatusActionsInsumos);
+} else {
+    exportStatusActionsInsumos();
+}

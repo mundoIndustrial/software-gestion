@@ -24,16 +24,6 @@
   <div class="sidebar-content">
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
-      <!-- Dashboard -->
-      <li class="menu-item">
-        <a href="{{ route('insumos.dashboard') }}"
-           class="menu-link {{ request()->routeIs('insumos.dashboard') ? 'active' : '' }}"
-           aria-label="Ir al Dashboard">
-          <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
-          <span class="menu-label">Dashboard</span>
-        </a>
-      </li>
-
       <!-- Control de Insumos -->
       <li class="menu-item">
         <a href="{{ route('insumos.materiales.index') }}"

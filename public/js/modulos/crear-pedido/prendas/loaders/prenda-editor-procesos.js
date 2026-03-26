@@ -221,7 +221,7 @@ class PrendaEditorProcesos {
                 // El renderizador debe llamar a esto después de renderizar
                 console.log('[PROCESOS-LOADER] 🔄 Verificando configurarDragDropProcesos');
                 console.log('[PROCESOS-LOADER] 📊 Timestamp:', new Date().toISOString());
-                console.log('[PROCESOS-LOADER] 🔍 Stack trace:', new Error().stack);
+                console.log('[PROCESOS-LOADER]  Stack trace:', new Error().stack);
                 
                 if (typeof configurarDragDropProcesos === 'function') {
                     console.log('[PROCESOS-LOADER] 🚀 Llamando a configurarDragDropProcesos desde loader');

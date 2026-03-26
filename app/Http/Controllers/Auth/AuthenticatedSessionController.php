@@ -24,6 +24,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        \Log::info(' AuthenticatedSessionController::store() INICIADO');
+        
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -33,21 +35,30 @@ class AuthenticatedSessionController extends Controller
 
         // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();
+        
+        \Log::info(' Usuario autenticado', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'roles_ids' => json_encode($user->roles_ids ?? []),
+        ]);
 
         if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
+            \Log::info('→ Redirigiendo a visualizador-logo.pedidos-logo');
             return redirect(route('visualizador-logo.pedidos-logo', absolute: false));
         }
 
         if ($user && $user->hasRole('lider-control-calidad')) {
+            \Log::info('→ Redirigiendo a control-calidad.dashboard');
             return redirect(route('control-calidad.dashboard', absolute: false));
         }
 
         // Gestor EPP - Solo acceso a gestión de EPPs
         if ($user && $user->hasRole('gestor_epp')) {
+            \Log::info('→ Redirigiendo a epp.gestion');
             return redirect(route('epp.gestion', absolute: false));
         }
         
-        \Log::info('Login usuario', [
+        \Log::info('Login usuario - Roles check', [
             'user_id' => $user->id,
             'roles_ids' => $user->roles_ids,
             'role' => $user->role,
@@ -63,6 +74,7 @@ class AuthenticatedSessionController extends Controller
                 : json_decode($user->roles_ids ?? '[]', true);
             
             if (in_array($despachoRole->id, $rolesIds)) {
+                \Log::info('→ Redirigiendo a despacho.index');
                 return redirect(route('despacho.index', absolute: false));
             }
         }
@@ -74,7 +86,7 @@ class AuthenticatedSessionController extends Controller
         \Log::info('Bodega role check', [
             'costrura_role_exists' => $costruraRole ? $costruraRole->id : 'NULL',
             'epp_role_exists' => $eppRole ? $eppRole->id : 'NULL',
-            'user_roles_ids' => $user->roles_ids,
+            'user_roles_ids' => json_encode($user->roles_ids ?? []),
         ]);
         
         if ($costruraRole || $eppRole) {
@@ -85,18 +97,20 @@ class AuthenticatedSessionController extends Controller
             \Log::info('Bodega role check details', [
                 'costrura_role_id' => $costruraRole ? $costruraRole->id : 'NULL',
                 'epp_role_id' => $eppRole ? $eppRole->id : 'NULL',
-                'parsed_roles_ids' => $rolesIds,
+                'parsed_roles_ids' => json_encode($rolesIds),
                 'has_costrura' => $costruraRole ? in_array($costruraRole->id, $rolesIds) : false,
                 'has_epp' => $eppRole ? in_array($eppRole->id, $rolesIds) : false,
             ]);
             
             if (($costruraRole && in_array($costruraRole->id, $rolesIds)) || 
                 ($eppRole && in_array($eppRole->id, $rolesIds))) {
-                \Log::info('Redirecting to bodega.pedidos');
+                \Log::info('→ Redirigiendo a gestion-bodega.pedidos');
                 return redirect(route('gestion-bodega.pedidos', absolute: false));
             }
         }
         
+        // Si tiene role principal, usar el dashboard
+        \Log::info('→ Redirigiendo a dashboard (role-based)');
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
             

@@ -522,7 +522,7 @@ window.filterCheckboxOptions = function(filterType) {
 
 // Cargar nombres de prendas al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-reflectivo');
+    console.log('[DOMContentLoaded]  Cargando nombres de prendas en recibos-reflectivo');
     
     const filasRecibos = document.querySelectorAll('#tablaRecibosBody tr[data-orden-id]');
     
@@ -1146,7 +1146,7 @@ function crearDropdownRecibos(button) {
 
 // Ocultar el botón Volver y activar dropdowns
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Inicializando dropdowns en recibos-reflectivo');
+    console.log('[DOMContentLoaded]  Inicializando dropdowns en recibos-reflectivo');
 
     if (window.location.pathname.includes('/recibos-reflectivo')) {
         const botonVolver = document.getElementById('backToPrendasBtn');

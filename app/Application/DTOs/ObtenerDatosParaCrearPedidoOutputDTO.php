@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 /**
  * ObtenerDatosParaCrearPedidoOutputDTO
  * 
- * ✅ DTO que contiene TODOS los datos compartidos necesarios para crear un pedido
+ *  DTO que contiene TODOS los datos compartidos necesarios para crear un pedido
  * 
  * Separa:
  * - UseCase (lógica)

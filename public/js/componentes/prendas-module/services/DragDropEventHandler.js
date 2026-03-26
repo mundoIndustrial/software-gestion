@@ -161,7 +161,7 @@ class DragDropEventHandler {
         this.elemento.addEventListener('paste', (e) => {
             if (!this.estaActivo) return;
             
-            UIHelperService.log('DragDropEventHandler', '📋 EVENTO PASTE LOCAL DETECTADO');
+            UIHelperService.log('DragDropEventHandler', ' EVENTO PASTE LOCAL DETECTADO');
             
             // Obtener archivos del portapapeles
             const items = e.clipboardData.items;

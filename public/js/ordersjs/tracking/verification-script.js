@@ -2,7 +2,7 @@
 
 // Script de verificación para asegurar que todos los módulos carguen correctamente
 (function() {
-    console.log('🔍 Iniciando verificación de módulos de tracking...');
+    console.log(' Iniciando verificación de módulos de tracking...');
 
     // Lista de módulos esperados
     const expectedModules = [

@@ -425,6 +425,10 @@ window.crearDropdownVer = function(button) {
         const buttonVer = e.target.closest('.btn-ver-dropdown');
         
         if (buttonVer) {
+            if (buttonVer.hasAttribute('data-insumos-action')) {
+                return;
+            }
+
             const pedidoId = buttonVer.getAttribute('data-pedido-id');
             const pedido = buttonVer.getAttribute('data-pedido');
             const menuId = buttonVer.getAttribute('data-menu-id');
@@ -681,4 +685,3 @@ document.addEventListener('click', function(e) {
         });
     }
 });
-

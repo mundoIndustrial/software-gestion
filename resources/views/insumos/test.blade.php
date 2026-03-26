@@ -19,7 +19,6 @@
     <div class="bg-green-50 p-4 rounded-lg mb-4">
         <h2 class="text-xl font-bold text-green-900 mb-2">Rutas Disponibles:</h2>
         <ul class="list-disc list-inside text-green-900">
-            <li><a href="{{ route('insumos.dashboard') }}" class="text-blue-600 underline">Dashboard de Insumos</a></li>
             <li><a href="{{ route('insumos.materiales.index') }}" class="text-blue-600 underline">Control de Materiales</a></li>
         </ul>
     </div>

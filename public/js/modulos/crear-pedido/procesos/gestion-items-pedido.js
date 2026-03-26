@@ -624,7 +624,7 @@ class GestionItemsUI {
                 });
             }
             
-            // �🔍 LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
+            // � LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
             console.log('\n═══════════════════════════════════════════════════════════════');
             console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
             console.log('═══════════════════════════════════════════════════════════════');
@@ -842,7 +842,7 @@ class GestionItemsUI {
                         //  ANTES: Estado de la prenda antes de actualizar
                         const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
                         
-                        console.log('[guardarPrenda] 📋 ESTADO ANTES DE ACTUALIZAR:');
+                        console.log('[guardarPrenda]  ESTADO ANTES DE ACTUALIZAR:');
                         console.log('[guardarPrenda]   telasAgregadas:', prendaAnterior.telasAgregadas?.length || 'undefined');
                         if (prendaAnterior.telasAgregadas?.length > 0) {
                             console.log('[guardarPrenda]     Primera tela imagenes:', prendaAnterior.telasAgregadas[0].imagenes?.length || 0);

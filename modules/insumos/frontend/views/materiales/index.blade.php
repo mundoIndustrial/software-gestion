@@ -34,8 +34,8 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('insumos.dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+            <a href="{{ route('insumos.materiales.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Materiales
             </a>
         </div>
     </div>

@@ -14,7 +14,7 @@ use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 /**
  * CrearActualizarPedidoController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: POST/PUT endpoints para CRUD de pedidos
+ *  RESPONSABILIDAD ÚNICA: POST/PUT endpoints para CRUD de pedidos
  * 
  * HTTP Methods:
  * - POST /api/pedidos        → store()

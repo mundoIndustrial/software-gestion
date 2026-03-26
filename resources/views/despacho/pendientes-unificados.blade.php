@@ -1255,7 +1255,7 @@ function connectWebSocket() {
         
         socket = window.EchoInstance;
         
-        console.log('🔍 Usando EchoInstance existente');
+        console.log(' Usando EchoInstance existente');
         console.log('🔧 Creando canal despacho.pedidos...');
         
         // Escuchar eventos de pedidos en el canal público de despacho
@@ -1272,7 +1272,7 @@ function connectWebSocket() {
             console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
-            console.log('🔍 Debug evento recibido:', {
+            console.log(' Debug evento recibido:', {
                 'pedido_id': event.pedido_id,
                 'numero_pedido': event.numero_pedido,
                 'nuevo_estado': event.nuevo_estado,
@@ -1316,7 +1316,7 @@ function initializeWebSocket() {
             connectWebSocket();
         });
     } else {
-        console.log('⏳ waitForEcho aún no disponible, reintentando en 100ms...');
+        console.log(' waitForEcho aún no disponible, reintentando en 100ms...');
         setTimeout(initializeWebSocket, 100);
     }
 }
@@ -1324,8 +1324,8 @@ function initializeWebSocket() {
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
-    console.log('🔍 URL actual:', window.location.href);
-    console.log('🔍 Pathname:', window.location.pathname);
+    console.log(' URL actual:', window.location.href);
+    console.log(' Pathname:', window.location.pathname);
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {

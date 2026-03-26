@@ -33,9 +33,9 @@ class ResolutorImagenesService
      * @param Request $request
      * @param int $pedidoId
      * @param array $datosPrendas - Prendas normalizadas con UIDs
-     * @param callable $registrarUID - Callback para registrar mapeo UID â†’ ruta
+     * @param callable $registrarUID - Callback para registrar mapeo UID  ruta
      * 
-     * @return array Mapeo de UID â†’ ruta final
+     * @return array Mapeo de UID  ruta final
      */
     public function extraerYProcesarImagenes(
         $request,

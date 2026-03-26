@@ -315,7 +315,7 @@
             // ==========================================
             // PROCESAR IMÁGENES DE ASIGNACIONES DE COLORES (WIZARD)
             // ==========================================
-            console.log('[PayloadNormalizer] 🔍 Verificando asignaciones de colores...');
+            console.log('[PayloadNormalizer]  Verificando asignaciones de colores...');
             
             if (pedidoNormalizado && Array.isArray(pedidoNormalizado.prendas)) {
                 pedidoNormalizado.prendas.forEach(function(prenda, prendaIdx) {

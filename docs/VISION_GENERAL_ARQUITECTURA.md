@@ -263,7 +263,7 @@ try {
 
 ---
 
-## 🔍 Detalles Técnicos
+##  Detalles Técnicos
 
 ### Patrones SOLID Aplicados
 

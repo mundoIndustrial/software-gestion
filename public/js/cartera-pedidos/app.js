@@ -149,7 +149,7 @@ function abrirModalFiltro(tipo, event) {
     if (event) {
         event.stopPropagation();
     }
-    console.log('🔍 abrirModalFiltro en app.js:', tipo);
+    console.log(' abrirModalFiltro en app.js:', tipo);
     const modal = document.getElementById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
     if (modal) {
         modal.classList.add('active');
@@ -164,7 +164,7 @@ function abrirModalFiltro(tipo, event) {
 }
 
 function cerrarModalFiltro(tipo) {
-    console.log('🔍 cerrarModalFiltro en app.js:', tipo);
+    console.log(' cerrarModalFiltro en app.js:', tipo);
     const modal = document.getElementById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
     if (modal) {
         modal.classList.remove('active');
@@ -173,7 +173,7 @@ function cerrarModalFiltro(tipo) {
 }
 
 function aplicarFiltroNumero() {
-    console.log('🔍 APLICAR FILTRO NÚMERO PEDIDO desde app.js');
+    console.log(' APLICAR FILTRO NÚMERO PEDIDO desde app.js');
     const input = document.getElementById('filtroNumeroInput');
     const valor = input ? input.value.trim() : '';
     
@@ -198,7 +198,7 @@ function aplicarFiltroNumero() {
 }
 
 function aplicarFiltroCliente() {
-    console.log('🔍 APLICAR FILTRO CLIENTE desde app.js');
+    console.log(' APLICAR FILTRO CLIENTE desde app.js');
     const input = document.getElementById('filtroClienteInput');
     const valor = input ? input.value.trim() : '';
     
@@ -214,7 +214,7 @@ function aplicarFiltroCliente() {
 }
 
 function aplicarFiltroFecha() {
-    console.log('🔍 APLICAR FILTRO FECHA desde app.js');
+    console.log(' APLICAR FILTRO FECHA desde app.js');
     const input = document.getElementById('filtroFechaInput');
     const valor = input ? input.value.trim() : '';
     
@@ -238,7 +238,7 @@ function aplicarFiltroFecha() {
 }
 
 function aplicarFiltroNumero() {
-    console.log('🔍 APLICAR FILTRO NÚMERO desde app.js');
+    console.log(' APLICAR FILTRO NÚMERO desde app.js');
     const input = document.getElementById('filtroNumeroInput');
     const valor = input ? input.value.trim() : '';
     

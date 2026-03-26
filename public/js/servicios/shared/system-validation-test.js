@@ -6,7 +6,7 @@
  */
 
 (async function validateSystem() {
-    console.log('\n🔍 ===== SYSTEM VALIDATION TEST =====\n');
+    console.log('\n ===== SYSTEM VALIDATION TEST =====\n');
     
     const results = {
         passed: 0,

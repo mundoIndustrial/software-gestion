@@ -12,7 +12,7 @@ use App\Application\Pedidos\DTOs\ObtenerPrendasInput;
 /**
  * ObtenerPrendasAutocompleteController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Manejar HTTP para búsqueda autocomplete de prendas
+ *  RESPONSABILIDAD ÚNICA: Manejar HTTP para búsqueda autocomplete de prendas
  * 
  * HTTP Methods:
  * - GET /asesores/api/prendas/autocomplete  → obtenerPrendas()
@@ -21,9 +21,9 @@ use App\Application\Pedidos\DTOs\ObtenerPrendasInput;
  * - ObtenerPrendasAutocompleteUseCase: Lógica para búsqueda
  * 
  * Características:
- * ✅ Solo 1 dependencia
- * ✅ Solo adaptador HTTP
- * ✅ Validación de query en DTO
+ *  Solo 1 dependencia
+ *  Solo adaptador HTTP
+ *  Validación de query en DTO
  */
 class ObtenerPrendasAutocompleteController extends Controller
 {

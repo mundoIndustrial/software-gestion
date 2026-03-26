@@ -161,7 +161,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
     window._imagenAEliminarIndice = previewIndex;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
-    console.log('[eliminarImagenProceso] 🔍 Modal confirmación encontrado?:', !!modal);
+    console.log('[eliminarImagenProceso]  Modal confirmación encontrado?:', !!modal);
     
     if (modal) {
         // Forzar z-index MÁXIMO con setAttribute para asegurar que se aplique
@@ -174,7 +174,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         console.log('[eliminarImagenProceso] 📊 Display:', modal.style.display);
     } else {
         console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
-        console.log('[eliminarImagenProceso] 🔍 Modales en DOM:');
+        console.log('[eliminarImagenProceso]  Modales en DOM:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
             console.log('  [' + idx + '] ID: ' + m.id + ', Display: ' + m.style.display);
         });

@@ -59,7 +59,7 @@ class PrendaEditorVariaciones {
         const obsValue = prenda.variantes?.obs_manga || 
                         prenda.variantes?.manga_obs;
         
-        console.log('🔍 [Manga] Buscando manga:', {
+        console.log(' [Manga] Buscando manga:', {
             'prenda.variantes.tipo_manga': prenda.variantes?.tipo_manga,
             'prenda.variantes.manga': prenda.variantes?.manga,
             'prenda.variaciones.manga': prenda.variaciones?.manga,
@@ -113,7 +113,7 @@ class PrendaEditorVariaciones {
                         prenda.variantes?.bolsillos_obs ||
                         prenda.variaciones?.bolsillos?.observacion;
         
-        console.log('🔍 [Bolsillos] Buscando bolsillos:', {
+        console.log(' [Bolsillos] Buscando bolsillos:', {
             'prenda.variantes.tiene_bolsillos': prenda.variantes?.tiene_bolsillos,
             'prenda.variantes.bolsillos_obs': prenda.variantes?.bolsillos_obs,
             'prenda.variaciones.bolsillos': prenda.variaciones?.bolsillos,
@@ -166,7 +166,7 @@ class PrendaEditorVariaciones {
                         prenda.variantes?.broche_boton_obs ||
                         prenda.variaciones?.broche?.observacion;
         
-        console.log('🔍 [Broche] Buscando broche:', {
+        console.log(' [Broche] Buscando broche:', {
             'prenda.variantes.tipo_broche': prenda.variantes?.tipo_broche,
             'prenda.variantes.tipo_broche_boton': prenda.variantes?.tipo_broche_boton,
             'prenda.variantes.broche_boton_obs': prenda.variantes?.broche_boton_obs,

@@ -41,7 +41,7 @@ class BodegaRealtimeRefresh {
     setupEcho() {
         try {
             if (typeof window.waitForEcho !== 'function') {
-                console.log('[BodegaRealtime] ⏳ Esperando a que window.waitForEcho esté disponible...');
+                console.log('[BodegaRealtime]  Esperando a que window.waitForEcho esté disponible...');
                 setTimeout(() => this.setupEcho(), 200);
                 return;
             }

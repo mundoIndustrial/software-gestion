@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -132,7 +132,7 @@ function renderizarPedidos(pedidos) {
 // Función para obtener la fecha correcta según el estado del pedido
 function obtenerFechaAprobacion(pedido) {
   // Debug: Ver qué datos tiene el pedido
-  console.log('🔍 DEBUG APROBADOS - Pedido:', {
+  console.log(' DEBUG APROBADOS - Pedido:', {
     id: pedido.id,
     estado: pedido.estado,
     aprobado_por_cartera_en: pedido.aprobado_por_cartera_en,
@@ -339,4 +339,4 @@ document.addEventListener('DOMContentLoaded', function() {
   window.cargarPedidos();
 });
 
-console.log('📄 Script de Cartera Aprobados cargado correctamente');
+console.log(' Script de Cartera Aprobados cargado correctamente');

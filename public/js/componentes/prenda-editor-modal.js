@@ -1854,7 +1854,7 @@ window.diagnosticarDelayModalCierre = function() {
     console.log('Para identificar el causante del delay de 3 segundos:\n');
     
     // Listar todos los timers activos
-    console.log('📋 Verificando procesos activos...\n');
+    console.log(' Verificando procesos activos...\n');
     
     // Buscar listeners de eventos en el documento
     const modalOverlay = document.getElementById('modal-agregar-prenda-nueva');

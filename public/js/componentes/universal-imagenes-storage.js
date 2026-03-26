@@ -212,7 +212,7 @@ window.universalImagenesStorage = {
      * Debug: Mostrar estado actual del storage
      */
     debug: function() {
-        console.group('🔍 [UniversalStorage] ESTADO ACTUAL');
+        console.group(' [UniversalStorage] ESTADO ACTUAL');
         console.log('Resumen completo:', this.obtenerResumen());
         
         Object.keys(this._storage).forEach(tipo => {

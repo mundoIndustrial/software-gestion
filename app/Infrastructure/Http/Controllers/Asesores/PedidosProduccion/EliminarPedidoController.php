@@ -12,7 +12,7 @@ use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
 /**
  * EliminarPedidoController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: DELETE endpoint para eliminar pedido
+ *  RESPONSABILIDAD ÚNICA: DELETE endpoint para eliminar pedido
  * 
  * HTTP Methods:
  * - DELETE /api/pedidos/{id}  → destroy()

@@ -11,7 +11,7 @@ use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 /**
  * ObtenerPedidoController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: GET endpoint para obtener un pedido específico
+ *  RESPONSABILIDAD ÚNICA: GET endpoint para obtener un pedido específico
  * 
  * HTTP Methods:
  * - GET /api/pedidos/{id}  → show()

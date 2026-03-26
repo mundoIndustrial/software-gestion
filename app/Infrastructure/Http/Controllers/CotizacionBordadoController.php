@@ -1576,7 +1576,7 @@ class CotizacionBordadoController extends Controller
                 $tecnicasArray = $tecnicasJson;
             }
             
-            Log::info('📄 Técnicas en request JSON:', [
+            Log::info(' Técnicas en request JSON:', [
                 'count' => count($tecnicasArray)
             ]);
 

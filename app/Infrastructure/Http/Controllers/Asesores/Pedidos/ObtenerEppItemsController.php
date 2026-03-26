@@ -12,7 +12,7 @@ use App\Application\Pedidos\UseCases\ObtenerItemsEppDeCotizacionUseCase;
 /**
  * ObtenerEppItemsController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Manejar HTTP para obtener items EPP de una cotización
+ *  RESPONSABILIDAD ÚNICA: Manejar HTTP para obtener items EPP de una cotización
  * 
  * HTTP Methods:
  * - GET /asesores/api/cotizaciones/{id}/items-epp  → obtenerItems()
@@ -21,9 +21,9 @@ use App\Application\Pedidos\UseCases\ObtenerItemsEppDeCotizacionUseCase;
  * - ObtenerItemsEppDeCotizacionUseCase: Lógica para obtener items
  * 
  * Características:
- * ✅ Solo 1 dependencia
- * ✅ Solo adaptador HTTP
- * ✅ Autorización en el controller (validar propiedad)
+ *  Solo 1 dependencia
+ *  Solo adaptador HTTP
+ *  Autorización en el controller (validar propiedad)
  */
 class ObtenerEppItemsController extends Controller
 {

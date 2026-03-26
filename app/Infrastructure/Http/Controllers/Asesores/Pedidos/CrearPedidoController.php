@@ -13,7 +13,7 @@ use App\Application\UseCases\Pedidos\CrearPedidoInput;
 /**
  * CrearPedidoController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Manejar HTTP para creación de pedidos
+ *  RESPONSABILIDAD ÚNICA: Manejar HTTP para creación de pedidos
  * 
  * HTTP Methods:
  * - POST /asesores/pedidos                 → crearPedido()
@@ -22,11 +22,11 @@ use App\Application\UseCases\Pedidos\CrearPedidoInput;
  * - CrearPedidoCompleteUseCase: Lógica de negocio para crear
  * 
  * Características:
- * ✅ Solo 1 dependencia (antes 21)
- * ✅ Solo adaptador HTTP (no contiene lógica)
- * ✅ Fácil de testear
- * ✅ Fácil de mantener
- * ✅ Clear responsibility
+ *  Solo 1 dependencia (antes 21)
+ *  Solo adaptador HTTP (no contiene lógica)
+ *  Fácil de testear
+ *  Fácil de mantener
+ *  Clear responsibility
  */
 class CrearPedidoController extends Controller
 {

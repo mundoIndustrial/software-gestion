@@ -235,7 +235,7 @@ class CotizacionesTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo (crear â†’ editar â†’ enviar)
+     * Test: Flujo completo (crear  editar  enviar)
      */
     public function test_flujo_completo_cotizacion()
     {

@@ -1715,7 +1715,7 @@
                 // Si se pasó prenda_id desde el dashboard, calcular el índice correcto
                 if (prendaIdParam) {
                     const prendaIdInt = parseInt(prendaIdParam, 10);
-                    console.log('🔍 [PRENDA ID] Buscando prenda con ID:', prendaIdInt);
+                    console.log(' [PRENDA ID] Buscando prenda con ID:', prendaIdInt);
                     
                     // Encontrar el índice de la prenda en el array
                     if (data.prendas && Array.isArray(data.prendas)) {

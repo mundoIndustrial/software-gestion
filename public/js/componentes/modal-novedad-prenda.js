@@ -280,7 +280,7 @@ class ModalNovedadPrenda {
      */
     mostrarCargando() {
         Swal.fire({
-            title: '⏳ Cargando',
+            title: ' Cargando',
             html: '<div style="display: flex; align-items: center; gap: 1rem;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6;"></i><div style="text-align: left;"><p style="margin: 0; font-size: 1rem; color: #374151;">Guardando prenda en la base de datos...</p><p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Por favor espera</p></div></div>',
             allowOutsideClick: false,
             allowEscapeKey: false,

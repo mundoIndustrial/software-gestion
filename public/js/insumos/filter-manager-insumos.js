@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Filter Manager for Insumos/Materiales Module
  * Handles filter modal and filter operations
  */
@@ -32,19 +32,21 @@ function showFilterModal(column, values) {
     
     const columnNames = {
         'pedido': 'Pedido',
+        'numero_pedido': 'N° Pedido',
+        'consecutivo_actual': 'N° Recibo',
         'cliente': 'Cliente',
         'estado': 'Estado',
-        'area': 'Área',
+        'area': 'Area',
         'fecha': 'Fecha',
         'created_at': 'Fecha de Inicio'
     };
 
     // Valores predefinidos para ciertos filtros
     const predefinedValues = {
-        'area': ['Corte', 'Creación de Orden'],
+        'area': ['Corte', 'Creacion de Orden'],
         'estado': {
-            db: ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'],
-            display: ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora']
+            db: ['Pendiente', 'No iniciado', 'En Ejecucion', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'],
+            display: ['Pendiente', 'No iniciado', 'En Ejecucion', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora']
         }
     };
 
@@ -61,16 +63,16 @@ function showFilterModal(column, values) {
         <div style="background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Filtrar Insumos por: ${columnNames[column] || column}</h3>
-                <button onclick="document.getElementById('filterModalInsumos').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+                <button data-insumos-action="filter-close-modal" style="background: none; border: none; font-size: 24px; cursor: pointer;">—</button>
             </div>
             
             <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
                 <input type="text" id="filterSearchInsumos" placeholder="Buscar valores..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                <button onclick="applyFilters()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;">✓ Aplicar</button>
-                <button onclick="selectAllFilters()" class="filter-btn-tooltip" data-tooltip="Marcar todos" style="padding: 10px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);">
+                <button data-insumos-action="filter-apply" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;"> Aplicar</button>
+                <button data-insumos-action="filter-select-all" class="filter-btn-tooltip" data-tooltip="Marcar todos" style="padding: 10px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);">
                         <i class="fas fa-check-double"></i>
                     </button>
-                    <button onclick="deselectAllFilters()" class="filter-btn-tooltip" data-tooltip="Desmarcar todos" style="padding: 10px 12px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                    <button data-insumos-action="filter-deselect-all" class="filter-btn-tooltip" data-tooltip="Desmarcar todos" style="padding: 10px 12px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
                         <i class="fas fa-times-circle"></i>
                     </button>
             </div>
@@ -143,7 +145,7 @@ function showFilterModal(column, values) {
             filterList.innerHTML = '<p style="text-align: center; color: #f00; padding: 20px;">Error al cargar valores</p>';
         });
     
-    // Agregar búsqueda
+    // Agregar busqueda
     document.getElementById('filterSearchInsumos').addEventListener('keyup', function() {
         const searchTerm = this.value.toLowerCase();
         
@@ -177,7 +179,7 @@ function renderFilterValues(values, searchTerm, column) {
         return { db: val, display: val };
     });
     
-    // Filtrar valores según búsqueda
+    // Filtrar valores segun busqueda
     let filteredValues = displayMappedValues.filter(valObj => {
         // Convertir a string si no lo es
         const valStr = String(valObj.display || '').trim();
@@ -189,13 +191,13 @@ function renderFilterValues(values, searchTerm, column) {
         return;
     }
     
-    // Si no hay búsqueda, mostrar solo los primeros 15
+    // Si no hay busqueda, mostrar solo los primeros 15
     const displayValues = searchTerm === '' ? filteredValues.slice(0, 15) : filteredValues;
     
-    // Mostrar información de cuántos valores hay
+    // Mostrar informacion de cuantos valores hay
     let totalText = '';
     if (searchTerm === '' && filteredValues.length > 15) {
-        totalText = `<p style="text-align: center; color: #666; padding: 10px; font-size: 12px;">Mostrando ${Math.min(15, filteredValues.length)} de ${filteredValues.length} valores. Busca para ver más.</p>`;
+        totalText = `<p style="text-align: center; color: #666; padding: 10px; font-size: 12px;">Mostrando ${Math.min(15, filteredValues.length)} de ${filteredValues.length} valores. Busca para ver mas.</p>`;
     }
     
     // Renderizar checkboxes
@@ -204,7 +206,7 @@ function renderFilterValues(values, searchTerm, column) {
         const dbVal = String(valObj.db || '').trim();
         const displayVal = String(valObj.display || '').trim();
         
-        // Buscar si este valor está en los filtros del MISMO TIPO DE COLUMNA
+        // Buscar si este valor esta en los filtros del MISMO TIPO DE COLUMNA
         let isChecked = false;
         filterColumns.forEach((col, idx) => {
             if (col === column && filterValuesArray[idx] === dbVal) {
@@ -238,7 +240,7 @@ function clearAllFilters() {
 }
 
 function clearAllTableFilters() {
-    // Redirigir a la página sin filtros (asume que existe route)
+    // Redirigir a la pagina sin filtros (asume que existe route)
     const baseUrl = window.location.pathname.split('?')[0];
     window.location.href = baseUrl;
 }
@@ -246,7 +248,7 @@ function clearAllTableFilters() {
 function applyFilters() {
     const selected = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
     if (selected.length === 0) {
-        // Si no hay selección, ir a la página sin filtros
+        // Si no hay seleccion, ir a la pagina sin filtros
         const baseUrl = window.location.pathname.split('?')[0];
         window.location.href = baseUrl;
     } else {
@@ -274,14 +276,21 @@ function applyFilters() {
         // Construir nueva URL con los filtros
         const newUrl = new URL(window.location);
         newUrl.search = '';
-        
-        // Agregar filtros a la URL
-        Object.keys(existingFilters).forEach(col => {
-            existingFilters[col].forEach(val => {
-                newUrl.searchParams.append('filter_columns[]', col);
-                newUrl.searchParams.append('filter_values[]', val);
+
+        const columnas = Object.keys(existingFilters).filter(col => Array.isArray(existingFilters[col]) && existingFilters[col].length > 0);
+        if (columnas.length === 1 && existingFilters[columnas[0]].length === 1) {
+            // URL corta para caso simple de 1 columna / 1 valor
+            newUrl.searchParams.set('filter_column', columnas[0]);
+            newUrl.searchParams.set('filter_value', existingFilters[columnas[0]][0]);
+        } else {
+            // Formato multi-filtro
+            columnas.forEach(col => {
+                existingFilters[col].forEach(val => {
+                    newUrl.searchParams.append('filter_columns[]', col);
+                    newUrl.searchParams.append('filter_values[]', val);
+                });
             });
-        });
+        }
         
         // Navegar a la nueva URL
         window.location.href = newUrl.toString();
@@ -290,7 +299,7 @@ function applyFilters() {
 
 // ===== INIT EVENT LISTENERS =====
 
-document.addEventListener('DOMContentLoaded', function() {
+function initFilterManagerInsumos() {
     // Setup filter button listeners
     document.querySelectorAll('.filter-btn-insumos').forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -304,12 +313,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Export functions to window
-    window.showFilterModal = showFilterModal;
-    window.renderFilterValues = renderFilterValues;
-    window.selectAllFilters = selectAllFilters;
-    window.deselectAllFilters = deselectAllFilters;
-    window.clearAllFilters = clearAllFilters;
-    window.clearAllTableFilters = clearAllTableFilters;
-    window.applyFilters = applyFilters;
-});
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.filterManager = {
+        showFilterModal,
+        renderFilterValues,
+        selectAllFilters,
+        deselectAllFilters,
+        clearAllFilters,
+        clearAllTableFilters,
+        applyFilters,
+    };
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFilterManagerInsumos);
+} else {
+    initFilterManagerInsumos();
+}

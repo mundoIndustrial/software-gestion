@@ -144,7 +144,7 @@ window.EPPManagerLoader = (function() {
             
             // Si ya está en progreso, esperar
             if (isLoading) {
-                console.log('[EPPManagerLoader] ⏳ Carga en progreso, esperando...');
+                console.log('[EPPManagerLoader]  Carga en progreso, esperando...');
                 return new Promise((resolve, reject) => {
                     const checkInterval = setInterval(() => {
                         if (isLoaded) {

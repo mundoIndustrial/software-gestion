@@ -34,6 +34,11 @@ Route::get('/storage/pedidos/{path}', [App\Http\Controllers\StorageController::c
     ->where('path', '.*')
     ->name('storage.pedidos');
 
+// ========================================
+// INSUMOS ROUTES - MODULO INSUMOS
+// ========================================
+require base_path('routes/insumos.php');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access', 'block-costura-reflectivo-dashboard'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

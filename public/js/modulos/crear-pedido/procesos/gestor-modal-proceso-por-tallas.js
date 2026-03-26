@@ -39,7 +39,7 @@ window.pasteListenerPorTallas = function(e) {
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal || modal.style.display === 'none') return;
     
-    console.log('[pasteListenerPorTallas] 📋 PASTE detectado en document');
+    console.log('[pasteListenerPorTallas]  PASTE detectado en document');
     handlePasteGlobalPorTallas(e);
 };
 
@@ -373,7 +373,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     const tablaResumenBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
     
     if (tablaResumenBody && tablaResumenBody.querySelectorAll('tr').length > 0) {
-        console.log('[por-tallas] 📋 FUENTE 1 - Leyendo desde tabla de resumen (PRIORITARIO)');
+        console.log('[por-tallas]  FUENTE 1 - Leyendo desde tabla de resumen (PRIORITARIO)');
         console.log('[por-tallas] Filas encontradas en tabla:', tablaResumenBody.querySelectorAll('tr').length);
         
         const filasDebug = [];
@@ -628,7 +628,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     // Restaurar datos si el proceso ya tiene datos guardados
     const datosExistentes = window.procesosSeleccionados?.[tipoProceso]?.datos?.datosExtendidos;
     
-    console.log('[por-tallas] 🔍 DEBUGGING abrirModalProcesoPorTallas', {
+    console.log('[por-tallas]  DEBUGGING abrirModalProcesoPorTallas', {
         tipoProceso,
         procesoCompleto: window.procesosSeleccionados?.[tipoProceso],
         datosCompletos: window.procesosSeleccionados?.[tipoProceso]?.datos,
@@ -1162,7 +1162,7 @@ function configurarDragDropPasteTalla(galeria, key) {
  * Handler global de paste (Ctrl+V) — activo mientras el modal por tallas esté abierto
  */
 function handlePasteGlobalPorTallas(e) {
-    console.log('[handlePasteGlobalPorTallas] 📋 PASTE event processing');
+    console.log('[handlePasteGlobalPorTallas]  PASTE event processing');
 
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal || modal.style.display === 'none') {

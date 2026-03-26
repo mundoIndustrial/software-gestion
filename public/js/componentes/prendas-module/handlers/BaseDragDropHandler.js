@@ -72,7 +72,7 @@ class BaseDragDropHandler {
                     const archivos = [];
                     
                     for (const item of items) {
-                        UIHelperService.log(`${this.constructor.name}`, `🔍 Tipos en item: ${item.types.join(', ')}`);
+                        UIHelperService.log(`${this.constructor.name}`, ` Tipos en item: ${item.types.join(', ')}`);
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {

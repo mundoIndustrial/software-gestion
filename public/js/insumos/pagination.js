@@ -1,7 +1,7 @@
 /**
  * Paginación para Materiales del Rol Insumos
  */
-document.addEventListener('DOMContentLoaded', function() {
+function initInsumosPagination() {
     const paginationControls = document.getElementById('paginationControls');
     
     if (paginationControls) {
@@ -21,5 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = url.toString();
         });
     }
-});
+}
 
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInsumosPagination);
+} else {
+    initInsumosPagination();
+}

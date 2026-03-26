@@ -123,7 +123,7 @@ function abrirModalCeldaConFormato(titulo, prendas) {
                 prendaHtml = generarDescripcionSimple(prendaData);
             }
             
-            console.log(`[abrirModalCeldaConFormato] 📄 HTML generado:`, prendaHtml);
+            console.log(`[abrirModalCeldaConFormato]  HTML generado:`, prendaHtml);
             
             htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
                 ${prendaHtml}
@@ -251,7 +251,7 @@ function generarDescripcionSimple(prenda) {
         }
     }
     
-    console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
+    console.log('[generarDescripcionSimple]  OUTPUT HTML:', html);
 }
 
 // Función para normalizar datos de prenda
@@ -307,7 +307,7 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             return response.json();
         })
         .then(datosRecibo => {
-            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datosRecibo);
+            console.log(`[obtenerDatosPrendaRecibo]  Datos del recibo recibidos:`, datosRecibo);
             
             if (!datosRecibo.success || !datosRecibo.data || !datosRecibo.data.prendas) {
                 console.error('No se encontraron datos del recibo:', pedidoId);
@@ -320,11 +320,11 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             
             // Filtrar para mostrar solo la prenda asociada al recibo
             const prendaFiltrada = todasLasPrendas.filter(prenda => {
-                console.log(`[obtenerDatosPrendaRecibo] 🔍 Comparando prenda.id=${prenda.id} con prendaId=${prendaId}`);
+                console.log(`[obtenerDatosPrendaRecibo]  Comparando prenda.id=${prenda.id} con prendaId=${prendaId}`);
                 return prenda.id == prendaId; // Comparación flexible para manejar string/int
             });
             
-            console.log(`[obtenerDatosPrendaRecibo] 📋 Prendas filtradas: ${prendaFiltrada.length}`);
+            console.log(`[obtenerDatosPrendaRecibo]  Prendas filtradas: ${prendaFiltrada.length}`);
             
             if (prendaFiltrada.length === 0) {
                 console.warn('No se encontró la prenda asociada al recibo:', prendaId);

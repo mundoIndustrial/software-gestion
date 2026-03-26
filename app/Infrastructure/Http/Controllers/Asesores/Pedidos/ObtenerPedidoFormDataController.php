@@ -15,7 +15,7 @@ use App\Infrastructure\Http\Presenters\CrearPedidoPresenter;
 /**
  * ObtenerPedidoFormDataController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Manejar vistas (GET) para formularios de creación de pedidos
+ *  RESPONSABILIDAD ÚNICA: Manejar vistas (GET) para formularios de creación de pedidos
  * 
  * HTTP Methods:
  * - GET /asesores/pedidos/crear-desde-cotizacion  → crearDesdeCotizacion()
@@ -27,10 +27,10 @@ use App\Infrastructure\Http\Presenters\CrearPedidoPresenter;
  * - CrearPedidoPresenter: Formatear datos para Blade
  * 
  * Características:
- * ✅ Solo 3 dependencias (antes: 21)
- * ✅ Solo orquesta obtención de datos
- * ✅ Presenter maneja formateo para vista
- * ✅ Fácil agregar nuevas vistas
+ *  Solo 3 dependencias (antes: 21)
+ *  Solo orquesta obtención de datos
+ *  Presenter maneja formateo para vista
+ *  Fácil agregar nuevas vistas
  */
 class ObtenerPedidoFormDataController extends Controller
 {

@@ -63,8 +63,8 @@ class TodosTiposCotizacionesTest extends TestCase
         echo " PRUEBA EXITOSA\n";
         echo "=================\n";
         echo "Todos los tipos de cotizaciones comparten la MISMA secuencia global.\n";
-        echo "â†’ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeración\n";
-        echo "â†’ Sin duplicados, consecutivos, independiente del asesor o tipo\n\n";
+        echo " Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeración\n";
+        echo " Sin duplicados, consecutivos, independiente del asesor o tipo\n\n";
     }
 }
 

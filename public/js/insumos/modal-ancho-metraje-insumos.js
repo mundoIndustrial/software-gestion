@@ -946,17 +946,25 @@ function actualizarReciboConAnchoMetraje() {
     console.log('[actualizarReciboConAnchoMetraje] Recibo actualizado con ancho y metraje');
 }
 
-// Auto-initialize: Export all functions to window on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-    window.abrirModalAnchoMetraje = abrirModalAnchoMetraje;
-    window.generarInputsPorColor = generarInputsPorColor;
-    window.generarInputsPorTallaColor = generarInputsPorTallaColor;
-    window.generarInputsPorPieza = generarInputsPorPieza;
-    window.cambiarModoAnchoMetraje = cambiarModoAnchoMetraje;
-    window.cerrarModalAnchoMetraje = cerrarModalAnchoMetraje;
-    window.abrirModalConfirmacionEliminar = abrirModalConfirmacionEliminar;
-    window.cerrarModalConfirmacionEliminar = cerrarModalConfirmacionEliminar;
-    window.confirmarEliminarAnchoMetraje = confirmarEliminarAnchoMetraje;
-    window.guardarAnchoMetraje = guardarAnchoMetraje;
-    window.actualizarReciboConAnchoMetraje = actualizarReciboConAnchoMetraje;
-});
+function exportModalAnchoMetraje() {
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.modalAnchoMetraje = {
+        abrirModalAnchoMetraje,
+        generarInputsPorColor,
+        generarInputsPorTallaColor,
+        generarInputsPorPieza,
+        cambiarModoAnchoMetraje,
+        cerrarModalAnchoMetraje,
+        abrirModalConfirmacionEliminar,
+        cerrarModalConfirmacionEliminar,
+        confirmarEliminarAnchoMetraje,
+        guardarAnchoMetraje,
+        actualizarReciboConAnchoMetraje,
+    };
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', exportModalAnchoMetraje);
+} else {
+    exportModalAnchoMetraje();
+}

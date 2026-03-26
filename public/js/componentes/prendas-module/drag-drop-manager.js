@@ -131,7 +131,7 @@ class DragDropManager {
         }
 
         document.addEventListener('paste', (e) => {
-            UIHelperService.log('DragDropManager', '📋 EVENTO PASTE DETECTADO');
+            UIHelperService.log('DragDropManager', ' EVENTO PASTE DETECTADO');
             
             // ── PASO 0: Sub-modales registrados tienen prioridad ──
             // Verificar ANTES del check de campo de texto para que Ctrl+V funcione
@@ -311,7 +311,7 @@ class DragDropManager {
                     visible: esVisible,
                     prioridad: esVisible ? 1 : 999
                 });
-                UIHelperService.log('DragDropManager', `🔍 Modal EPP evaluado: visible=${esVisible}`);
+                UIHelperService.log('DragDropManager', ` Modal EPP evaluado: visible=${esVisible}`);
             }
             
             // Agregar modal de creación de prenda si existe
@@ -324,7 +324,7 @@ class DragDropManager {
                     visible: esVisible,
                     prioridad: esVisible ? 2 : 999
                 });
-                UIHelperService.log('DragDropManager', `🔍 Modal prenda-creacion evaluado: visible=${esVisible}`);
+                UIHelperService.log('DragDropManager', ` Modal prenda-creacion evaluado: visible=${esVisible}`);
             }
             
             // Agregar modal de edición de prenda si existe
@@ -337,7 +337,7 @@ class DragDropManager {
                     visible: esVisible,
                     prioridad: esVisible ? 3 : 999
                 });
-                UIHelperService.log('DragDropManager', `🔍 Modal prenda-edicion evaluado: visible=${esVisible}`);
+                UIHelperService.log('DragDropManager', ` Modal prenda-edicion evaluado: visible=${esVisible}`);
             }
             
             // Agregar modal de proceso genérico si existe
@@ -354,7 +354,7 @@ class DragDropManager {
                         visible: esVisible,
                         prioridad: esVisible ? 0 : 999  // Máxima prioridad para procesos si están visibles
                     });
-                    UIHelperService.log('DragDropManager', `🔍 Modal proceso-generico evaluado: visible=${esVisible}`);
+                    UIHelperService.log('DragDropManager', ` Modal proceso-generico evaluado: visible=${esVisible}`);
                 }
             }
             
@@ -370,7 +370,7 @@ class DragDropManager {
                         visible: esVisible,
                         prioridad: esVisible ? 4 : 999
                     });
-                    UIHelperService.log('DragDropManager', `🔍 Modal prenda-generico evaluado: visible=${esVisible}`);
+                    UIHelperService.log('DragDropManager', ` Modal prenda-generico evaluado: visible=${esVisible}`);
                 }
             }
             

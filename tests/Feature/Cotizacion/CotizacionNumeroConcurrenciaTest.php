@@ -87,7 +87,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
      *  TEST 3: El lock pessimista previene duplicados
      * 
      * Simula dos transacciones que inician casi simultaneamente.
-     * Con el lock, uno espera al otro â†’ no hay duplicados
+     * Con el lock, uno espera al otro  no hay duplicados
      */
     public function test_lock_pessimista_previene_duplicados()
     {

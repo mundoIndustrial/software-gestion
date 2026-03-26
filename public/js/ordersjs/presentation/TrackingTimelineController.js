@@ -260,12 +260,12 @@ export class TrackingTimelineController {
 
     const iconSvg = this.svgIcons.get(area);
     
-    // ✅ USAR FECHAS DEL BACKEND si están disponibles, formatearlas si es necesario
+    //  USAR FECHAS DEL BACKEND si están disponibles, formatearlas si es necesario
     const fechaLlegada = fechasFormateadas?.fecha_llegada || this.formatDate(data.fecha_inicio) || '---';
     const fechaAsignacion = fechasFormateadas?.fecha_asignacion || this.formatDate(data.fecha_de_asignacion_encargado) || '---';
     const fechaFin = fechasFormateadas?.fecha_fin || this.formatDate(data.fecha_fin) || this.formatDate(data.fecha_completado) || '---';
 
-    // ✅ USAR VALORES DEL BACKEND: duraciones.total_dias_numero que el backend calcula
+    //  USAR VALORES DEL BACKEND: duraciones.total_dias_numero que el backend calcula
     const formatDuracionDias = (dias) => {
       if (dias === null || dias === undefined) return '---';
       dias = Number(dias);

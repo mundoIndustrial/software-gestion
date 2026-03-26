@@ -5,6 +5,9 @@
 @section('page-title', 'Control de Insumos del Pedido')
 
 @section('content')
+@php
+    $currentRoleName = auth()->user()->role->name ?? 'guest';
+@endphp
 <link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
 {{-- Todos los estilos CSS extraídos a public/css/insumos/materiales.css --}}
@@ -82,7 +85,7 @@
                     </svg>
                     Buscar
                 </button>
-                @if((request('filter_column') && request('filter_values')) || (request('filter_columns') && request('filter_values')))
+                @if((request('filter_column') && request('filter_value')) || (request('filter_columns') && request('filter_values')))
                     <a href="{{ route('insumos.materiales.index') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition shadow-sm flex items-center gap-2 whitespace-nowrap border border-gray-300">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
@@ -123,24 +126,82 @@
                         <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                             <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                             <th class="text-left py-4 px-6 font-bold">
-                                <span>N° Recibo</span>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span>N° Recibo</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="consecutivo_actual"
+                                        title="Filtrar N° Recibo"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
                             </th>
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>N° Pedido</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="numero_pedido"
+                                        title="Filtrar N° Pedido"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
                                 </div>
                             </th>
                             <th class="text-left py-4 px-6 font-bold">
-                                <span>Cliente</span>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span>Cliente</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="cliente"
+                                        title="Filtrar Cliente"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
                             </th>
                             <th class="text-center py-4 px-6 font-bold">
-                                <span>Estado</span>
+                                <div class="flex items-center justify-center gap-2">
+                                    <span>Estado</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="estado"
+                                        title="Filtrar Estado"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
                             </th>
                             <th class="text-center py-4 px-6 font-bold">
-                                <span>Área</span>
+                                <div class="flex items-center justify-center gap-2">
+                                    <span>Área</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="area"
+                                        title="Filtrar Área"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
                             </th>
                             <th class="text-center py-4 px-6 font-bold">
-                                <span>Fecha de Inicio</span>
+                                <div class="flex items-center justify-center gap-2">
+                                    <span>Fecha de Inicio</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="created_at"
+                                        title="Filtrar Fecha de Inicio"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
                             </th>
                         </tr>
                     </thead>
@@ -185,7 +246,7 @@
                                         {{-- Botón Check (marca) en purple --}}
                                         <button 
                                             class="btn-check-row btn-tooltip p-2 text-purple-600 hover:bg-purple-50 rounded transition @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) checked @endif"
-                                            onclick="toggleRowCheck(this, event)"
+                                            data-insumos-action="toggle-row-check"
                                             data-tooltip="Marcar fila"
                                             title="Marcar fila"
                                         >
@@ -194,8 +255,8 @@
 
                                         {{-- Dropdown Ver Recibo / Seguimiento --}}
                                         <button 
-                                            class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
-                                            onclick="abrirTrackingDesdeBotonVer(event, this)"
+                                            class="btn-ver-insumos-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
+                                            data-insumos-action="ver-recibo-dropdown"
                                             data-pedido-id="{{ $pedidoProduccionId }}"
                                             data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                             data-prenda-id="{{ $orden->prenda_id ?? '' }}"
@@ -211,7 +272,9 @@
                                             @if($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos')
                                                 <button 
                                                     class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                    onclick="cambiarEstadoRecibo('{{ $reciboId }}', '{{ $orden->consecutivo_actual }}'); cerrarDropdownAcciones();"
+                                                    data-insumos-action="enviar-produccion"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-consecutivo="{{ $orden->consecutivo_actual }}"
                                                     data-tooltip="Enviar a producción"
                                                     title="Enviar a producción"
                                                 >
@@ -221,7 +284,7 @@
                                             
                                             <button 
                                                 class="btn-acciones p-2 text-gray-600 hover:bg-gray-100 rounded transition"
-                                                onclick="crearDropdownAcciones(event, this)"
+                                                data-insumos-action="acciones-dropdown"
                                                 data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                                 data-prenda-id="{{ $orden->prenda_id ?? '' }}"
                                                 data-recibo-id="{{ $reciboId }}"
@@ -347,7 +410,7 @@
 
 {{-- Modal para ver orden --}}
 <!-- Modal de Detalle de Orden -->
-<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<div id="modal-overlay" data-insumos-action="close-modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;"></div>
 
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
@@ -369,43 +432,7 @@
 <script defer src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script defer src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
-<script defer src="{{ asset('js/insumos/pagination.js') }}"></script>
-
-<!-- Módulos de Insumos - Critical Path (carga inmediata) -->
-<script type="module" src="{{ asset('js/insumos/index.js') }}"></script>
-
-<!-- FASE 1-2: Módulos base (critical) -->
-<script src="{{ asset('js/insumos/modal-handlers-insumos.js') }}"></script>
-<script src="{{ asset('js/insumos/table-handlers-insumos.js') }}"></script>
-<script src="{{ asset('js/insumos/filter-manager-insumos.js') }}"></script>
-
-<!-- Inicializar sistema de festivos (API externa + fallback local) -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof inicializarFestivos === 'function') {
-        inicializarFestivos().catch(error => {
-            console.error('[Init] Error inicializando festivos:', error);
-        });
-    }
-});
-</script>
-<script src="{{ asset('js/insumos/material-operations-insumos.js') }}"></script>
-<script src="{{ asset('js/insumos/form-handlers-insumos.js') }}"></script>
-
-<!-- FASE 3-6: Módulos adicionales (defer) -->
-<script defer src="{{ asset('js/insumos/status-actions-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/modal-ancho-metraje-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/filter-modal-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/insumos-modal-management.js') }}"></script>
-<script defer src="{{ asset('js/insumos/notifications-realtime-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/recibos-selector-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/pasar-a-revisar-insumos.js') }}"></script>
-<script defer src="{{ asset('js/insumos/index-blade-handlers.js') }}"></script>
-<!-- Dropdowns y seguimiento (carga después de index-blade-handlers para sobrescribir abrirModalInsumos) -->
-<script defer src="{{ asset('js/insumos/dropdown-handlers-insumos.js') }}"></script>
-
-<!-- Performance - Utilidades (defer) -->
-<script defer src="{{ asset('js/insumos/search-debounce.js') }}"></script>
+<script defer src="{{ asset('js/insumos/materiales-page-loader.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts no-críticos (defer) -->
 <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
@@ -423,11 +450,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 <script defer src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
-<script defer src="{{ asset('js/insumos/insumos-galeria.js') }}"></script>
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
@@ -437,9 +462,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Configuración de rol del usuario -->
 <script>
-    window.userRole = '{{ $roleName ?? "guest" }}';
+    window.userRole = '{{ $currentRoleName }}';
     window.isInsumos = window.userRole === 'insumos';
 </script>
 
 @endsection
-

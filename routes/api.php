@@ -94,9 +94,3 @@ require base_path('routes/prendas-entregas.php');
  * Gestión de usuarios por rol
  */
 require base_path('routes/usuarios.php');
-
-/**
- * Insumos Routes
- * Gestión de insumos y cálculo de demoras
- */
-require base_path('routes/insumos.php');

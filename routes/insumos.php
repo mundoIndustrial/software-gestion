@@ -10,7 +10,6 @@ use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 // RUTAS DE INSUMOS
 // ========================================
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
-    Route::get('/dashboard', [InsumosController::class, 'dashboard'])->name('dashboard');
     Route::get('/materiales', [InsumosController::class, 'materiales'])->name('materiales.index');
     Route::post('/materiales/{pedido}/guardar', [InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
     Route::post('/materiales/{pedido}/eliminar', [InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
@@ -25,6 +24,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/api/materiales/{pedido}', [InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
     Route::get('/api/contar-costura-pendiente', [InsumosController::class, 'contarCosturaPendiente'])->name('api.contar.costura.pendiente');
+    Route::get('/api/recibos-costura-pendiente', [InsumosController::class, 'obtenerRecibosCosTuraPendiente'])->name('api.recibos.costura.pendiente');
     Route::post('/api/recibo/{id}/marcar-visto', [InsumosController::class, 'marcarReciboVisto'])->name('api.recibo.marcar-visto');
     Route::post('/guardar-observaciones', [InsumosController::class, 'guardarObservaciones'])->name('guardar-observaciones');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');

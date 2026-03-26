@@ -288,6 +288,53 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->singleton(ActualizarProcesoSeguimientoUseCase::class);
         $this->app->singleton(ActualizarEstadoProcesoUseCase::class);
         $this->app->singleton(EliminarProcesoSeguimientoUseCase::class);
+
+        // ========================================
+        // INSUMOS DDD - Repositories + Use Cases
+        // ========================================
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\MaterialesReadRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentMaterialesReadRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\MaterialesWriteRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentMaterialesWriteRepository::class
+        );
+
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerMaterialesPedidoUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarMaterialesDetalladosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\EliminarMaterialPorNombreUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarObservacionesMaterialUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerPrendasPedidoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerReciboPrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerOpcionesFiltroInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\MarcarNotificacionesInsumosLeidasUseCase::class);
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\RecibosPendientesRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentRecibosPendientesRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\PedidoWorkflowRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentPedidoWorkflowRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\PrendaMaterialMetricsRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentPrendaMaterialMetricsRepository::class
+        );
+
+        $this->app->singleton(\App\Application\Insumos\UseCases\CambiarEstadoReciboInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\CambiarEstadoPedidoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerResumenRecibosPendientesInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerRecibosCosturaPendientesInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\MarcarReciboVistoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarAnchoMetrajePrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\EliminarAnchoMetrajePrendaInsumosUseCase::class);
     }
 
     public function boot(): void

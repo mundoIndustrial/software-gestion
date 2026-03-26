@@ -504,7 +504,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -578,7 +578,7 @@ function cerrarModalFactura() {
  * Logs de diagnóstico para el diseño de la tabla - Costura
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-COSTURA] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO-COSTURA] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;

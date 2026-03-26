@@ -105,7 +105,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         
         if (response.success) {
             // 🔴 DIAGNÓSTICO: Verificar estructura de respuesta
-            console.log('[Builder] 🔍 DIAGNÓSTICO de pedido_id:', {
+            console.log('[Builder]  DIAGNÓSTICO de pedido_id:', {
                 valor: response.pedido_id,
                 esUndefined: response.pedido_id === undefined,
                 esNull: response.pedido_id === null,
@@ -124,7 +124,7 @@ window.crearPedidoConBuilderUnificado = async function() {
                 console.log('[Builder]  Usando pedido_id directamente:', pedidoId);
             } else {
                 console.error('[Builder]  Estructura de pedido_id no válida:', response.pedido_id);
-                console.log('[Builder] 🔍 Buscando otros campos posibles...');
+                console.log('[Builder]  Buscando otros campos posibles...');
                 
                 // Buscar en otros campos posibles
                 const posiblesIds = ['id', 'pedido_id', 'pedidoId', 'pedido'];
@@ -141,7 +141,7 @@ window.crearPedidoConBuilderUnificado = async function() {
             
             if (!pedidoId || pedidoId === undefined || pedidoId === 'undefined') {
                 console.error('[Builder]  No se pudo determinar un ID de pedido válido');
-                console.log('[Builder] 🔍 Response completa para debugging:', JSON.stringify(response, null, 2));
+                console.log('[Builder]  Response completa para debugging:', JSON.stringify(response, null, 2));
                 throw new Error('No se recibió ID de pedido válido del servidor');
             }
             

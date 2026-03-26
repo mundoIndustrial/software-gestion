@@ -621,7 +621,7 @@ window.filterCheckboxOptions = function(filterType) {
 
 // Cargar nombres de prendas al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-costura');
+    console.log('[DOMContentLoaded]  Cargando nombres de prendas en recibos-costura');
     
     // Diagnóstico del sistema de agregar proceso
     console.log('[DIAGNÓSTICO] Verificando sistema de agregar proceso desde badge...');
@@ -714,7 +714,7 @@ function verDetallesRecibo(reciboId) {
         const pedidoIdMatch = href.match(/\/registros\/(\d+)/);
         if (pedidoIdMatch) {
             pedidoId = parseInt(pedidoIdMatch[1]);
-            console.log(`[verDetallesRecibo] 📋 Pedido ID encontrado desde enlace: ${pedidoId}`);
+            console.log(`[verDetallesRecibo]  Pedido ID encontrado desde enlace: ${pedidoId}`);
         }
     }
     
@@ -723,7 +723,7 @@ function verDetallesRecibo(reciboId) {
         const pedidoIdAttr = fila.getAttribute('data-pedido-id');
         if (pedidoIdAttr) {
             pedidoId = parseInt(pedidoIdAttr);
-            console.log(`[verDetallesRecibo] 📋 Pedido ID encontrado desde data-pedido-id: ${pedidoId}`);
+            console.log(`[verDetallesRecibo]  Pedido ID encontrado desde data-pedido-id: ${pedidoId}`);
         }
     }
     
@@ -734,7 +734,7 @@ function verDetallesRecibo(reciboId) {
             const dropdownIdAttr = dropdownDiaEntrega.getAttribute('data-orden-id');
             if (dropdownIdAttr) {
                 pedidoId = parseInt(dropdownIdAttr);
-                console.log(`[verDetallesRecibo] 📋 Pedido ID encontrado desde dropdown día entrega: ${pedidoId}`);
+                console.log(`[verDetallesRecibo]  Pedido ID encontrado desde dropdown día entrega: ${pedidoId}`);
             }
         }
     }
@@ -742,7 +742,7 @@ function verDetallesRecibo(reciboId) {
     // Si todavía no hay pedidoId, mostrar error detallado
     if (!pedidoId) {
         console.error(`[verDetallesRecibo]  No se pudo encontrar el ID del pedido para el recibo: ${reciboId}`);
-        console.log(`[verDetallesRecibo] 🔍 Contenido de la fila:`, fila.innerHTML);
+        console.log(`[verDetallesRecibo]  Contenido de la fila:`, fila.innerHTML);
         alert('No se encontró información del pedido asociada a este recibo. El recibo puede no estar correctamente vinculado a un pedido.');
         return;
     }
@@ -1519,7 +1519,7 @@ function crearDropdownRecibos(button) {
 
 // Ocultar el botón Volver y activar dropdowns estilo insumos
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Inicializando dropdowns estilo insumos en recibos-costura');
+    console.log('[DOMContentLoaded]  Inicializando dropdowns estilo insumos en recibos-costura');
 
     if (window.location.pathname.includes('/recibos-costura')) {
         const botonVolver = document.getElementById('backToPrendasBtn');
@@ -1779,7 +1779,7 @@ function showRecibAprobadoNotification(data) {
              <strong>Recibo Aprobado</strong>
         </div>
         <div style="font-size: 13px; opacity: 0.9;">
-            <div>📋 Recibo #${data.consecutivo}</div>
+            <div> Recibo #${data.consecutivo}</div>
             <div>👤 Cliente: ${data.cliente || 'N/A'}</div>
             <div>📦 Área: ${data.area || 'N/A'}</div>
         </div>

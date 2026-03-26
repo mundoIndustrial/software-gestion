@@ -54,7 +54,7 @@ class PedidosRealtimeRefresh {
     init() {
         // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
         if (!window.shared?.isReady) {
-            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady en init...');
+            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady en init...');
             setTimeout(() => this.init(), 50);
             return;
         }
@@ -66,7 +66,7 @@ class PedidosRealtimeRefresh {
         
         // Validar que Echo esté disponible
         if (typeof window.waitForEcho !== 'function') {
-            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando inicialización de Echo...');
+            if (this.debug) console.log(' [PedidosRealtime] Esperando inicialización de Echo...');
             setTimeout(() => this.init(), 100);
             return;
         }
@@ -85,7 +85,7 @@ class PedidosRealtimeRefresh {
     initializeServices() {
         // Esperar a que window.shared esté disponible (CRÍTICO para evitar race condition)
         if (!window.shared?.isReady) {
-            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady...');
+            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady...');
             setTimeout(() => this.initializeServices(), 50);
             return;
         }
@@ -119,7 +119,7 @@ class PedidosRealtimeRefresh {
     setupWebSocket() {
         // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
         if (!window.shared?.isReady) {
-            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady en setupWebSocket...');
+            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady en setupWebSocket...');
             setTimeout(() => this.setupWebSocket(), 50);
             return;
         }
@@ -364,7 +364,7 @@ class PedidosRealtimeRefresh {
      * Verificar cambios en lista de pedidos
      */
     async checkForChanges(pedidosNuevos) {
-        if (this.debug) console.log('🔍 Analizando', pedidosNuevos.length, 'pedidos');
+        if (this.debug) console.log(' Analizando', pedidosNuevos.length, 'pedidos');
         
         const hayCambios = this.detectarCambios(pedidosNuevos);
         
@@ -466,7 +466,7 @@ class PedidosRealtimeRefresh {
             // Buscar el contenedor principal
             const contenedorTabla = document.querySelector('.table-scroll-container');
             if (!contenedorTabla) {
-                console.log('[PedidosRealtime] 📋 Contenedor de tabla no encontrado');
+                console.log('[PedidosRealtime]  Contenedor de tabla no encontrado');
                 this.pedidoMovido = false;
                 return;
             }
@@ -474,7 +474,7 @@ class PedidosRealtimeRefresh {
             // Buscar el header
             const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
             if (!header) {
-                console.log('[PedidosRealtime] 📋 Header de tabla no encontrado');
+                console.log('[PedidosRealtime]  Header de tabla no encontrado');
                 this.pedidoMovido = false;
                 return;
             }
@@ -484,7 +484,7 @@ class PedidosRealtimeRefresh {
                 .filter(fila => fila !== header); // Excluir el header
             
             if (filas.length === 0) {
-                console.log('[PedidosRealtime] 📋 No se encontraron filas de pedidos');
+                console.log('[PedidosRealtime]  No se encontraron filas de pedidos');
                 this.pedidoMovido = false;
                 return;
             }
@@ -514,7 +514,7 @@ class PedidosRealtimeRefresh {
                 const numero = parseInt(numeroTexto) || 0;
                 const id = fila.getAttribute('data-pedido-id');
                 
-                console.log('[PedidosRealtime] 📋 Pedido encontrado:', { id, numero, texto: numeroElement?.textContent });
+                console.log('[PedidosRealtime]  Pedido encontrado:', { id, numero, texto: numeroElement?.textContent });
                 
                 return { fila, numero, id };
             });
@@ -522,10 +522,10 @@ class PedidosRealtimeRefresh {
             // Ordenar por número de pedido en orden ascendente (más antiguo primero)
             filasConNumero.sort((a, b) => a.numero - b.numero);
             
-            console.log('[PedidosRealtime] 📋 Pedidos antes de reordenar:', 
+            console.log('[PedidosRealtime]  Pedidos antes de reordenar:', 
                 filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
             );
-            console.log('[PedidosRealtime] 📋 Pedidos después de ordenar (ascendente):', 
+            console.log('[PedidosRealtime]  Pedidos después de ordenar (ascendente):', 
                 filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
             );
             
@@ -556,7 +556,7 @@ class PedidosRealtimeRefresh {
             });
             
             this.pedidoMovido = true;
-            console.log('[PedidosRealtime] 📋 Tabla reordenada por número de pedido (ascendente)');
+            console.log('[PedidosRealtime]  Tabla reordenada por número de pedido (ascendente)');
             
         } catch (error) {
             console.error('[PedidosRealtime]  Error al reordenar tabla:', error);

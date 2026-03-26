@@ -20,7 +20,7 @@ let dropdownVerAbiertoButton = null;
 
 /**
  * Calcula los días de demora entre Fecha Pedido y Fecha Llegada.
- * Delega el cálculo a window.calcularDemoraAsync (definida en utilities.js).
+ * Delega el cálculo a insumosHandlers.utilities.calcularDemoraAsync.
  */
 async function calcularDemora(materialId) {
     const idParts = materialId.split('_');
@@ -40,7 +40,10 @@ async function calcularDemora(materialId) {
         return;
     }
 
-    const demora = await window.calcularDemoraAsync(fechaPedidoInput.value, fechaLlegadaInput.value);
+    const calcularDemoraAsync = window.insumosHandlers?.utilities?.calcularDemoraAsync;
+    if (typeof calcularDemoraAsync !== 'function') return;
+
+    const demora = await calcularDemoraAsync(fechaPedidoInput.value, fechaLlegadaInput.value);
     diasSpan.textContent = demora.texto;
     diasSpan.className = `inline-block px-3 py-1 rounded-full text-sm font-semibold ${demora.clase_bg} ${demora.clase_text}`;
 }
@@ -86,27 +89,28 @@ function crearDropdownVerRecibo(event, button) {
     `;
 
     dropdown.innerHTML = `
-        <button style="
+        <button data-insumos-action="dropdown-ver-detalle-recibo"
+            data-pedido-id="${pedidoId}"
+            data-prenda-id="${prendaId ?? 'null'}"
+            data-tipo-recibo="COSTURA"
+            style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
             transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
             font-weight:500;border-bottom:1px solid #f3f4f6;
-        "
-            onclick="abrirDetalleRecibo('${pedidoId}', '${prendaId ?? 'null'}', 'COSTURA'); cerrarDropdownVerRecibo();"
-            onmouseover="this.style.background='#dbeafe'"
-            onmouseout="this.style.background='transparent'">
+        ">
             <i class="fas fa-file-lines" style="color:#3b82f6;font-size:1rem;"></i>
             <span>Ver recibo</span>
         </button>
-        <button style="
+        <button data-insumos-action="dropdown-ver-seguimiento"
+            data-pedido-id="${pedidoId}"
+            data-prenda-id="${prendaId ?? ''}"
+            style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
             transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
             font-weight:500;
-        "
-            onclick="abrirSeguimientoRecibo('${pedidoId}', '${prendaId ?? ''}'); cerrarDropdownVerRecibo();"
-            onmouseover="this.style.background='#e0f2fe'"
-            onmouseout="this.style.background='transparent'">
+        ">
             <i class="fas fa-map-location-dot" style="color:#0284c7;font-size:1rem;"></i>
             <span>Seguimiento</span>
         </button>
@@ -147,7 +151,7 @@ function abrirTrackingDesdeBotonVer(event, button) {
         tipoRecibo  = btnAcciones.getAttribute('data-tipo-recibo');
     }
 
-    abrirModalInsumos(pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo);
+    abrirSeguimientoRecibo(pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo);
 }
 
 // ===== DROPDOWN: ACCIONES (...) =====
@@ -195,27 +199,30 @@ function crearDropdownAcciones(event, button) {
     `;
 
     let html = `
-        <button style="
+        <button data-insumos-action="dropdown-acciones-gestionar-insumos"
+            data-pedido-produccion-id="${pedidoProduccionId}"
+            data-prenda-id="${prendaId}"
+            data-consecutivo="${consecutivo}"
+            data-estado="${estado}"
+            data-tipo-recibo="${tipoRecibo}"
+            style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
             transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
             font-weight:500;border-bottom:1px solid #f3f4f6;
-        "
-            onclick="abrirModalInsumos('${pedidoProduccionId}', '${prendaId}', '${consecutivo}', '${estado}', '${tipoRecibo}'); cerrarDropdownAcciones();"
-            onmouseover="this.style.background='#f0fdf4'"
-            onmouseout="this.style.background='transparent'">
+        ">
             <i class="fas fa-box" style="color:#10b981;font-size:1rem;"></i>
             <span>Gestionar insumos</span>
         </button>
-        <button style="
+        <button data-insumos-action="dropdown-acciones-ancho-metraje"
+            data-pedido-produccion-id="${pedidoProduccionId}"
+            data-prenda-id="${prendaId}"
+            style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
             transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
             font-weight:500;border-bottom:1px solid #f3f4f6;
-        "
-            onclick="abrirModalAnchoMetraje('${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();"
-            onmouseover="this.style.background='#fef3c7'"
-            onmouseout="this.style.background='transparent'">
+        ">
             <i class="fas fa-ruler" style="color:#f59e0b;font-size:1rem;"></i>
             <span>Ancho y metraje</span>
         </button>
@@ -226,15 +233,15 @@ function crearDropdownAcciones(event, button) {
 
     if (estado !== 'DEVUELTO_ASESOR' && !yaEnProduccion) {
         html += `
-        <button style="
+        <button data-insumos-action="dropdown-acciones-pasar-revisar"
+            data-recibo-id="${reciboId}"
+            data-pedido-produccion-id="${pedidoProduccionId}"
+            style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
             transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
             font-weight:500;border-bottom:1px solid #f3f4f6;
-        "
-            onclick="abrirModalPasarRevisar('${reciboId}', '${pedidoProduccionId}'); cerrarDropdownAcciones();"
-            onmouseover="this.style.background='#fde4e4'"
-            onmouseout="this.style.background='transparent'">
+        ">
             <i class="fas fa-arrow-rotate-left" style="color:#dc2626;font-size:1rem;"></i>
             <span>Pasar a Revisar</span>
         </button>
@@ -349,19 +356,6 @@ function aplicarModoReadonly() {
     }
 }
 
-// ===== MODAL DE INSUMOS (delegado a seguimiento) =====
-
-/**
- * Puente que abre el seguimiento cuando se llama desde "Gestionar insumos" o el botón VER.
- * Sobreescribe definiciones anteriores de abrirModalInsumos para esta vista.
- */
-function abrirModalInsumos(pedido, prendaId, consecutivo = null, estado = null, tipoRecibo = null) {
-    abrirSeguimientoRecibo(pedido, prendaId, consecutivo, estado, tipoRecibo);
-}
-
-function cerrarModalInsumos() {
-    // El modal de tracking se cierra con su propio handler
-}
 
 // ===== CERRAR DROPDOWNS CON SCROLL O CLIC FUERA =====
 
@@ -387,15 +381,14 @@ document.addEventListener('click', function (e) {
     }
 }, false);
 
-// ===== EXPONER GLOBALMENTE =====
-
-window.calcularDemora             = calcularDemora;
-window.crearDropdownVerRecibo     = crearDropdownVerRecibo;
-window.cerrarDropdownVerRecibo    = cerrarDropdownVerRecibo;
-window.abrirTrackingDesdeBotonVer = abrirTrackingDesdeBotonVer;
-window.crearDropdownAcciones      = crearDropdownAcciones;
-window.cerrarDropdownAcciones     = cerrarDropdownAcciones;
-window.abrirSeguimientoRecibo     = abrirSeguimientoRecibo;
-window.aplicarModoReadonly        = aplicarModoReadonly;
-window.abrirModalInsumos          = abrirModalInsumos;
-window.cerrarModalInsumos         = cerrarModalInsumos;
+window.insumosHandlers = window.insumosHandlers || {};
+window.insumosHandlers.dropdownHandlers = {
+    calcularDemora,
+    crearDropdownVerRecibo,
+    cerrarDropdownVerRecibo,
+    abrirTrackingDesdeBotonVer,
+    crearDropdownAcciones,
+    cerrarDropdownAcciones,
+    abrirSeguimientoRecibo,
+    aplicarModoReadonly,
+};

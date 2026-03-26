@@ -58,11 +58,18 @@ const SearchDebounce = {
 /**
  * Inicializar cuando el DOM esté listo
  */
-document.addEventListener('DOMContentLoaded', function() {
+function initSearchDebounceInsumos() {
     SearchDebounce.init();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchDebounceInsumos);
+} else {
+    initSearchDebounceInsumos();
+}
 
 /**
  * Exportar para uso en otros módulos
  */
-window.SearchDebounce = SearchDebounce;
+window.insumosHandlers = window.insumosHandlers || {};
+window.insumosHandlers.searchDebounce = { SearchDebounce };

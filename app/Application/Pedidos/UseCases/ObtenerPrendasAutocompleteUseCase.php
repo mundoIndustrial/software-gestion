@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ObtenerPrendasAutocompleteUseCase
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Buscar prendas por término y retornar para autocomplete
+ *  RESPONSABILIDAD ÚNICA: Buscar prendas por término y retornar para autocomplete
  */
 class ObtenerPrendasAutocompleteUseCase
 {

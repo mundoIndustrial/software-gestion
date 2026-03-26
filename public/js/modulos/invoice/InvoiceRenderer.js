@@ -922,7 +922,7 @@ class InvoiceRenderer {
                             </div>
                             <!-- Overlay de hover -->
                             <div class="hover-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;">
-                                <div style="color: white; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🔍</div>
+                                <div style="color: white; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></div>
                             </div>
                         </div>
                     `;

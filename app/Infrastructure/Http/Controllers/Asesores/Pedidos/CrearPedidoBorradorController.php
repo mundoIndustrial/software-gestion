@@ -15,7 +15,7 @@ use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
 /**
  * CrearPedidoBorradorController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Manejar HTTP para guardar/actualizar borradores de pedidos
+ *  RESPONSABILIDAD ÚNICA: Manejar HTTP para guardar/actualizar borradores de pedidos
  * 
  * HTTP Methods:
  * - POST /asesores/pedidos/borrador              → guardarBorrador()
@@ -26,9 +26,9 @@ use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
  * - ActualizarBorradorUseCase: Lógica para actualizar existente
  * 
  * Características:
- * ✅ Solo 2 dependencias
- * ✅ Solo adaptador HTTP
- * ✅ Clara separación saveVS update
+ *  Solo 2 dependencias
+ *  Solo adaptador HTTP
+ *  Clara separación saveVS update
  */
 class CrearPedidoBorradorController extends Controller
 {

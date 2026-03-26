@@ -208,9 +208,18 @@ function limpiarFormulario(ordenId) {
 
 // ===== EXPORT TO WINDOW =====
 
-document.addEventListener('DOMContentLoaded', function() {
-    window.toggleRowCheck = toggleRowCheck;
-    window.guardarEstadoMarcado = guardarEstadoMarcado;
-    window.guardarCambios = guardarCambios;
-    window.limpiarFormulario = limpiarFormulario;
-});
+function exportFormHandlersInsumos() {
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.formHandlers = {
+        toggleRowCheck,
+        guardarEstadoMarcado,
+        guardarCambios,
+        limpiarFormulario,
+    };
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', exportFormHandlersInsumos);
+} else {
+    exportFormHandlersInsumos();
+}

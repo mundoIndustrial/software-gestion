@@ -683,7 +683,7 @@ async function desmarcarPedido(pedidoId, button) {
     // Deshabilitar botón y mostrar estado de carga
     const originalContent = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = '⏳';
+    button.innerHTML = '';
     
     try {
         const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/desmarcar`, {
@@ -800,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const notificacion = document.createElement('div');
                     notificacion.innerHTML = `
                         <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                            📋 Pedido #${e.pedido.numero_pedido} actualizado
+                             Pedido #${e.pedido.numero_pedido} actualizado
                         </div>
                     `;
                     document.body.appendChild(notificacion);

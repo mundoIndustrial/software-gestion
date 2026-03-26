@@ -31,7 +31,7 @@ class EppMenuHandlerBase {
     inicializar() {
         console.log(`[${this.constructor.name}] 🔄 Inicializando...`);
         if (!this.inicializado) {
-            console.log(`[${this.constructor.name}] 📋 Primer inicialización - configurando listeners`);
+            console.log(`[${this.constructor.name}]  Primer inicialización - configurando listeners`);
             this.attachEventListeners();
             this.inicializado = true;
             console.log(`[${this.constructor.name}]  Inicializado correctamente`);

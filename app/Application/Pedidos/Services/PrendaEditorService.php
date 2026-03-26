@@ -9,7 +9,6 @@ use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
 
 /**
  * Application Service: PrendaEditorService
- * 
  * Orquesta el flujo de edición de prendas
  * Coordina entre el dominio y la infraestructura
  */

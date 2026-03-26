@@ -197,7 +197,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo BORRADOR â†’ APROBADA_COTIZACIONES
+     * Test: Flujo completo BORRADOR  APROBADA_COTIZACIONES
      */
     public function test_flujo_completo_cotizacion()
     {

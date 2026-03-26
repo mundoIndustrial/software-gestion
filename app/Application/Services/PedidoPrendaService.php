@@ -145,7 +145,7 @@ class PedidoPrendaService
      */
     private function guardarPrenda(PedidoProduccion $pedido, mixed $prendaData, int $index = 1): PrendaPedido
     {
-        // Normalizar datos de prenda (DTO â†’ array)
+        // Normalizar datos de prenda (DTO  array)
         $prendaData = $this->dataNormalizer->normalizarPrendaData($prendaData);
 
         //  LOG: Ver que datos llegan

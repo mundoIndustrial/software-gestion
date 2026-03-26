@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ObtenerItemsEppDeCotizacionUseCase
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Obtener items EPP asociados a una cotización
+ *  RESPONSABILIDAD ÚNICA: Obtener items EPP asociados a una cotización
  */
 class ObtenerItemsEppDeCotizacionUseCase
 {

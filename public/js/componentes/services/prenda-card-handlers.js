@@ -72,8 +72,8 @@ window.PrendaCardHandlers = {
 
                 const content = header.nextElementSibling;
                 
-                console.log('[PrendaCardHandlers] 📄 Content element:', content);
-                console.log('[PrendaCardHandlers] 📄 Content classes:', content ? content.className : 'No encontrado');
+                console.log('[PrendaCardHandlers]  Content element:', content);
+                console.log('[PrendaCardHandlers]  Content classes:', content ? content.className : 'No encontrado');
                 
                 if (content && content.classList.contains('seccion-expandible-content')) {
                     console.log('[PrendaCardHandlers]  Content válido, toggling classes');
@@ -84,8 +84,8 @@ window.PrendaCardHandlers = {
                     
                     const isActive = content.classList.contains('active');
                     console.log('[PrendaCardHandlers]  Toggle completado:', { wasActive, isActive });
-                    console.log('[PrendaCardHandlers] 📄 Nuevas clases content:', content.className);
-                    console.log('[PrendaCardHandlers] 📄 Nuevas clases header:', header.className);
+                    console.log('[PrendaCardHandlers]  Nuevas clases content:', content.className);
+                    console.log('[PrendaCardHandlers]  Nuevas clases header:', header.className);
                     
                     // Usar clases CSS en lugar de estilos inline para evitar conflictos con !important
                     if (isActive) {

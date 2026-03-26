@@ -109,7 +109,7 @@ class RealtimeReciboListener {
                  <strong>Recibo Aprobado</strong>
             </div>
             <div style="font-size: 13px; opacity: 0.9;">
-                <div>📋 Recibo #${data.consecutivo}</div>
+                <div> Recibo #${data.consecutivo}</div>
                 <div>👤 Cliente: ${data.cliente || 'N/A'}</div>
                 <div>📦 Área: ${data.area || 'N/A'}</div>
             </div>

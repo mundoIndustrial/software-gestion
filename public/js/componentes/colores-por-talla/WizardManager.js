@@ -270,7 +270,7 @@ window.WizardManager = (function() {
         pasoSiguiente() {
             // 🛡️ GUARD: Prevenir múltiples llamadas rápidas (por listeners duplicados)
             if (this._navegacionEnProgreso) {
-                console.log('[WizardManager] ⏳ Navegación ya en progreso, ignorando llamada duplicada a pasoSiguiente()');
+                console.log('[WizardManager]  Navegación ya en progreso, ignorando llamada duplicada a pasoSiguiente()');
                 return false;
             }
             this._navegacionEnProgreso = true;
@@ -403,7 +403,7 @@ window.WizardManager = (function() {
         pasoAnterior() {
             // 🛡️ GUARD: Prevenir múltiples llamadas rápidas
             if (this._navegacionEnProgreso) {
-                console.log('[WizardManager] ⏳ Navegación ya en progreso, ignorando llamada duplicada');
+                console.log('[WizardManager]  Navegación ya en progreso, ignorando llamada duplicada');
                 return;
             }
             this._navegacionEnProgreso = true;
@@ -1416,7 +1416,7 @@ window.WizardManager = (function() {
                 
                 // Paso 3: NO ir a paso 1 inmediatamente - esperar a que toggleVistaAsignacion lo haga
                 // (porque si hay múltiples telas, mostrarSelectoreTelasSiNecesario() ocultará paso 1)
-                console.log('[WizardManager] ⏳ Esperando que toggleVistaAsignacion maneje los pasos...');
+                console.log('[WizardManager]  Esperando que toggleVistaAsignacion maneje los pasos...');
                 
                 console.log('[WizardManager]  Wizard reseteado y listo para reconfigurarse');
             } catch (error) {

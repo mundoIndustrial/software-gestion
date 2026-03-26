@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 Quick Start
+##  Quick Start
 
 ### 1. Incluir en Blade (único archivo necesario)
 

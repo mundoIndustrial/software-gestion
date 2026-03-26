@@ -27,7 +27,7 @@
                 <div id="novedadesContainer" class="space-y-3">
                     <!-- Las novedades se cargarán aquí dinámicamente -->
                     <div class="flex justify-center items-center py-8">
-                        <span class="text-slate-500">⏳ Cargando novedades...</span>
+                        <span class="text-slate-500"> Cargando novedades...</span>
                     </div>
                 </div>
             </div>
@@ -233,7 +233,7 @@ async function cargarNovedadesAdvanced(pedidoId) {
     // Mostrar loading
     container.innerHTML = `
         <div class="flex justify-center items-center py-8">
-            <span class="text-slate-500">⏳ Cargando novedades...</span>
+            <span class="text-slate-500"> Cargando novedades...</span>
         </div>
     `;
     

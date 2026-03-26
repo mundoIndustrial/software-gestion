@@ -90,7 +90,7 @@ function cerrarModalAlerta() {
  */
 function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
     console.log('[abrirModalNovedadesRecibo] 🚀 Iniciando apertura de modal');
-    console.log('[abrirModalNovedadesRecibo] 📋 Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
+    console.log('[abrirModalNovedadesRecibo]  Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
     
     try {
         window.__novedadesContext = {
@@ -149,7 +149,7 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
  */
 async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
     console.log('[cargarNovedadesRecibo] 🚀 Iniciando carga de novedades');
-    console.log('[cargarNovedadesRecibo] 📋 Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
+    console.log('[cargarNovedadesRecibo]  Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
     
     try {
         const historial = document.getElementById('novedadesHistorial');
@@ -158,8 +158,8 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
         if (!historial) return;
 
         // Mostrar loading
-        historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">⏳ Cargando novedades...</span></div>';
-        console.log('[cargarNovedadesRecibo] ⏳ Loading mostrado');
+        historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500"> Cargando novedades...</span></div>';
+        console.log('[cargarNovedadesRecibo]  Loading mostrado');
 
         const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`);
         console.log('[cargarNovedadesRecibo] 📡 Response status:', response.status);
@@ -187,7 +187,7 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
                     : '';
                 
                 // Debug: verificar IDs
-                console.log('[cargarNovedadesRecibo] 🔍 Procesando novedad:', {
+                console.log('[cargarNovedadesRecibo]  Procesando novedad:', {
                     id: novedad.id,
                     creado_por: novedad.creado_por,
                     creado_por_nombre: novedad.creado_por_nombre,
@@ -281,7 +281,7 @@ async function guardarNovedad() {
         const numeroRecibo = ctx.numero_recibo;
         const nuevaContent = document.getElementById('novedadesNuevaContent');
         
-        console.log('[guardarNovedad] 📋 Contexto:', ctx);
+        console.log('[guardarNovedad]  Contexto:', ctx);
         console.log('[guardarNovedad] 📦 Textarea encontrado:', !!nuevaContent);
         
         if (!pedidoId || !numeroRecibo || !nuevaContent) {
@@ -304,7 +304,7 @@ async function guardarNovedad() {
         if (btnGuardar) {
             btnGuardar.disabled = true;
             btnGuardar.innerHTML = 'Guardando...';
-            console.log('[guardarNovedad] ⏳ Botón en estado loading');
+            console.log('[guardarNovedad]  Botón en estado loading');
         }
 
         console.log('[guardarNovedad] 📡 Enviando request a API...');
@@ -410,7 +410,7 @@ async function eliminarNovedad(novedadId) {
         const btnCancelar = document.querySelector('#modalConfirmarEliminar button[onclick="cerrarModalConfirmarEliminar()"]');
         const btnCerrar = document.querySelector('#modalConfirmarEliminar .bg-red-600 button');
         
-        console.log('[eliminarNovedad] 🔍 Botones encontrados:');
+        console.log('[eliminarNovedad]  Botones encontrados:');
         console.log('[eliminarNovedad]   - btnConfirmar:', !!btnConfirmar);
         console.log('[eliminarNovedad]   - btnCancelar:', !!btnCancelar);
         console.log('[eliminarNovedad]   - btnCerrar:', !!btnCerrar);
@@ -430,7 +430,7 @@ async function eliminarNovedad(novedadId) {
                 // Mostrar loading
                 this.disabled = true;
                 this.innerHTML = 'Eliminando...';
-                console.log('[eliminarNovedad] ⏳ Botón en estado loading');
+                console.log('[eliminarNovedad]  Botón en estado loading');
                 
                 try {
                     console.log('[eliminarNovedad] 📡 Enviando DELETE request...');

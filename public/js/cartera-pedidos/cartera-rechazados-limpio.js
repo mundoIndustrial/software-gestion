@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -142,7 +142,7 @@ function obtenerFechaRechazo(pedido) {
 
 // Ver motivo de rechazo completo
 function verMotivoRechazo(motivo) {
-  console.log('🔍 INICIANDO verMotivoRechazo:', {motivo});
+  console.log(' INICIANDO verMotivoRechazo:', {motivo});
   
   // Crear modal para mostrar el motivo completo
   const modalWrapper = document.createElement('div');
@@ -199,7 +199,7 @@ function verMotivoRechazo(motivo) {
     }
   });
   
-  console.log('🔍 Modal de motivo abierto');
+  console.log(' Modal de motivo abierto');
 }
 
 // Cerrar modal de motivo
@@ -207,7 +207,7 @@ function cerrarModalMotivo() {
   const modal = document.getElementById('motivo-rechazo-modal-wrapper');
   if (modal) {
     document.body.removeChild(modal);
-    console.log('🔍 Modal de motivo cerrado');
+    console.log(' Modal de motivo cerrado');
   }
 }
 
@@ -405,4 +405,4 @@ document.addEventListener('DOMContentLoaded', function() {
   window.cargarPedidos();
 });
 
-console.log('📄 Script de Cartera Rechazados cargado correctamente');
+console.log(' Script de Cartera Rechazados cargado correctamente');

@@ -35,7 +35,7 @@ window.PrendaEditorPreloader = (function() {
         //  ESPERAR A QUE PrendaEditorLoader esté disponible
         // El loader se carga dinámicamente, así que necesitamos polling
         if (!window.PrendaEditorLoader) {
-            console.log('[PrendaEditorPreloader] ⏳ Esperando PrendaEditorLoader...');
+            console.log('[PrendaEditorPreloader]  Esperando PrendaEditorLoader...');
             
             // Polling: intentar cada 100ms hasta que esté disponible
             const checkLoader = setInterval(() => {
@@ -169,7 +169,7 @@ window.PrendaEditorPreloader = (function() {
 
             // Si ya está cargando, esperar
             if (config.isPreloading) {
-                console.log('[PrendaEditorPreloader] ⏳ Esperando precarguía en background...');
+                console.log('[PrendaEditorPreloader]  Esperando precarguía en background...');
                 
                 // Mostrar Swal con loader
                 showLoaderModal(opts);

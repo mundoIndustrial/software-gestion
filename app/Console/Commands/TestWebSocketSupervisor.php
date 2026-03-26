@@ -43,7 +43,7 @@ class TestWebSocketSupervisor extends Command
         // Crear objeto simulado
         $orden = (object) $ordenData;
         
-        $this->info("📋 Pedido: {$orden->numero_pedido}");
+        $this->info(" Pedido: {$orden->numero_pedido}");
         $this->info("🔄 Acción: created");
         $this->info(" Canales: supervisor-pedidos, ordenes");
         

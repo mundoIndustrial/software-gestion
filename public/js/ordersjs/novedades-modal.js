@@ -53,7 +53,7 @@ function cargarNovedadesPedido(ordenId) {
     // Mostrar loading
     historialDiv.innerHTML = `
         <div class="flex justify-center items-center py-8">
-            <span class="text-slate-500">⏳ Cargando novedades...</span>
+            <span class="text-slate-500"> Cargando novedades...</span>
         </div>
     `;
     

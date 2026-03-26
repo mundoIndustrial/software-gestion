@@ -12,7 +12,7 @@ use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 /**
  * CambiarEstadoPedidoController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: PUT endpoint para cambiar estado de pedido
+ *  RESPONSABILIDAD ÚNICA: PUT endpoint para cambiar estado de pedido
  * 
  * HTTP Methods:
  * - PUT /api/pedidos/{id}/estado  → cambiarEstado()

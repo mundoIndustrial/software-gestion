@@ -160,7 +160,7 @@ class PrendaEditorTest {
             
             // Debug: buscar otros posibles contenedores
             if (procesosCargados === 0) {
-                console.log('🔍 [CASO 2] Debug procesos - buscando contenedores alternativos...');
+                console.log(' [CASO 2] Debug procesos - buscando contenedores alternativos...');
                 const alternativas = [
                     document.getElementById('procesos'),
                     document.querySelector('[id*="proceso"]'),

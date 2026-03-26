@@ -198,11 +198,25 @@
                     @endphp
                     
                     @if($plooter->fecha_llegada)
-                        <button type="button" class="btn btn-sm btn-warning" onclick="eliminarFechaLlegada({{ $plooter->recibo->id }}, {{ $plooter->id }})" title="Eliminar fecha de llegada">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-warning"
+                            data-plooter-action="open-delete-modal"
+                            data-recibo-id="{{ $plooter->recibo->id }}"
+                            data-plooter-id="{{ $plooter->id }}"
+                            title="Eliminar fecha de llegada"
+                        >
                             <i class="fas fa-undo"></i>
                         </button>
                     @else
-                        <button type="button" class="btn btn-sm btn-primary" onclick="registrarFechaLlegadaHoy({{ $plooter->recibo->id }}, {{ $plooter->id }})" title="Registrar fecha de llegada">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            data-plooter-action="registrar-fecha-hoy"
+                            data-recibo-id="{{ $plooter->recibo->id }}"
+                            data-plooter-id="{{ $plooter->id }}"
+                            title="Registrar fecha de llegada"
+                        >
                             <i class="fas fa-check"></i>
                         </button>
                     @endif
@@ -238,7 +252,7 @@
             <h5 style="margin: 0; color: #000; font-weight: 600; font-size: 18px;">
                 <i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i>Eliminar Fecha de Llegada
             </h5>
-            <button type="button" onclick="cerrarModalEliminar()" style="background: none; border: none; font-size: 28px; color: #000; cursor: pointer; padding: 0; margin: 0;">
+            <button type="button" data-plooter-action="close-delete-modal" style="background: none; border: none; font-size: 28px; color: #000; cursor: pointer; padding: 0; margin: 0;">
                 &times;
             </button>
         </div>
@@ -255,10 +269,10 @@
         
         <!-- Footer -->
         <div style="padding: 15px; border-top: 1px solid #e9ecef; display: flex; gap: 10px; justify-content: flex-end;">
-            <button type="button" onclick="cerrarModalEliminar()" style="background-color: #6c757d; border: none; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+            <button type="button" data-plooter-action="close-delete-modal" style="background-color: #6c757d; border: none; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
                 Cancelar
             </button>
-            <button type="button" onclick="confirmarEliminarFecha()" style="background-color: #dc3545; border: none; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+            <button type="button" data-plooter-action="confirm-delete-fecha" style="background-color: #dc3545; border: none; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
                 Sí, Eliminar
             </button>
         </div>
@@ -272,6 +286,11 @@
 </style>
 
 <script>
+    const deleteState = {
+        reciboId: null,
+        plooterId: null,
+    };
+
     function registrarFechaLlegadaHoy(reciboId, plooterId) {
         // Registrar fecha de llegada con la fecha de hoy
         const today = new Date().toISOString().split('T')[0];
@@ -301,9 +320,9 @@
     }
     
     function eliminarFechaLlegada(reciboId, plooterId) {
-        // Guardar los IDs en variables globales
-        window.reciboIdToDelete = reciboId;
-        window.plooterIdToDelete = plooterId;
+        // Guardar los IDs a eliminar
+        deleteState.reciboId = reciboId;
+        deleteState.plooterId = plooterId;
         
         // Abrir el modal con JavaScript vanilla
         const modal = document.getElementById('modalEliminarFecha');
@@ -318,7 +337,7 @@
     function confirmarEliminarFecha() {
         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
-        fetch(`/insumos/plooter/${window.reciboIdToDelete}/registrar-fecha-llegada`, {
+        fetch(`/insumos/plooter/${deleteState.reciboId}/registrar-fecha-llegada`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -341,5 +360,40 @@
             alert('Error al eliminar fecha de llegada');
         });
     }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('[data-plooter-action]');
+        if (!trigger) return;
+
+        const action = trigger.getAttribute('data-plooter-action');
+        if (!action) return;
+
+        if (action === 'registrar-fecha-hoy') {
+            event.preventDefault();
+            const reciboId = trigger.getAttribute('data-recibo-id');
+            const plooterId = trigger.getAttribute('data-plooter-id');
+            registrarFechaLlegadaHoy(reciboId, plooterId);
+            return;
+        }
+
+        if (action === 'open-delete-modal') {
+            event.preventDefault();
+            const reciboId = trigger.getAttribute('data-recibo-id');
+            const plooterId = trigger.getAttribute('data-plooter-id');
+            eliminarFechaLlegada(reciboId, plooterId);
+            return;
+        }
+
+        if (action === 'close-delete-modal') {
+            event.preventDefault();
+            cerrarModalEliminar();
+            return;
+        }
+
+        if (action === 'confirm-delete-fecha') {
+            event.preventDefault();
+            confirmarEliminarFecha();
+        }
+    });
 </script>
 @endsection

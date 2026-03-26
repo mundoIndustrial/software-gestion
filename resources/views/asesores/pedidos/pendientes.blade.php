@@ -48,7 +48,7 @@
         }
 
         .search-box::before {
-            content: '🔍';
+            content: '';
             position: absolute;
             left: 15px;
             top: 50%;

@@ -53,7 +53,7 @@ window.sincronizarTallasConModalProceso = function() {
         );
         const esEdicion = hayDatosExistentes;
         
-        console.log(`[sincronizarTallasConModalProceso] 🔍 Modo detectado: ${esEdicion ? 'EDICIÓN' : 'CREACIÓN'}`);
+        console.log(`[sincronizarTallasConModalProceso]  Modo detectado: ${esEdicion ? 'EDICIÓN' : 'CREACIÓN'}`);
         
         // 1. SINCRONIZAR window.tallasCantidadesProceso desde window.tallasRelacionales
         // En CREACIÓN: reemplazar todo

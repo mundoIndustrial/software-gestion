@@ -171,7 +171,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-3 py-1.5 text-[11px] font-semibold bg-amber-50 text-amber-700 uppercase tracking-wider rounded">
-                                                    ⏳ Pendiente
+                                                     Pendiente
                                                 </span>
                                             @endif
                                             
@@ -554,7 +554,7 @@
         <!-- Body -->
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -577,7 +577,7 @@
             <!-- Historial de Notas -->
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
@@ -1045,7 +1045,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;
-    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.textContent = ' Guardando...';
     btnGuardar.disabled = true;
 
     fetch('/gestion-bodega/detalles-talla/guardar', {

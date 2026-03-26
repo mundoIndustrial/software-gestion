@@ -27,7 +27,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transición valida BORRADOR â†’ ENVIADA_CONTADOR
+     * Test: Transición valida BORRADOR  ENVIADA_CONTADOR
      */
     public function test_transicion_valida_borrador_a_enviada_contador()
     {
@@ -36,7 +36,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transición invalida BORRADOR â†’ FINALIZADA
+     * Test: Transición invalida BORRADOR  FINALIZADA
      */
     public function test_transicion_invalida_borrador_a_finalizada()
     {

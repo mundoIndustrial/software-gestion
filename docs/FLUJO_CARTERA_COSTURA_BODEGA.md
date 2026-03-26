@@ -179,11 +179,11 @@ try {
 8.  Sintaxis PHP validada (sin errores)
 
 ###  Por Probar (Testing)
-1. ⏳ Aprobar un pedido desde módulo de Cartera
-2. ⏳ Verificar que COSTURA-BODEGA se crea en BD
-3. ⏳ Verificar que consecutivo se incrementa
-4. ⏳ Verificar que bodeguero ve el pedido en dashboard
-5. ⏳ Verificar logs en `storage/logs/`
+1.  Aprobar un pedido desde módulo de Cartera
+2.  Verificar que COSTURA-BODEGA se crea en BD
+3.  Verificar que consecutivo se incrementa
+4.  Verificar que bodeguero ve el pedido en dashboard
+5.  Verificar logs en `storage/logs/`
 
 ---
 

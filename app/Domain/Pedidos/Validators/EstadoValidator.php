@@ -20,10 +20,10 @@ use InvalidArgumentException;
  * - cancelado: Pedido cancelado (no se puede cambiar)
  * 
  * Transiciones permitidas:
- * - activo â†’ pendiente, completado, cancelado
- * - pendiente â†’ activo, completado
- * - completado â†’ NO PERMITIDO
- * - cancelado â†’ NO PERMITIDO
+ * - activo  pendiente, completado, cancelado
+ * - pendiente  activo, completado
+ * - completado  NO PERMITIDO
+ * - cancelado  NO PERMITIDO
  */
 class EstadoValidator implements Validator
 {

@@ -7,42 +7,50 @@
  * - cerrarModalPasarRevisar()
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+let pasarARevisarInitialized = false;
+
+function abrirModalPasarRevisar(reciboId, pedidoId) {
+    const modal = document.getElementById('modalPasarRevisar');
+    if (!modal) {
+        console.error('Modal no encontrado');
+        return;
+    }
+    
+    // Actualizar datos en el modal
+    const reciboIdField = document.getElementById('reciboIdPasarRevisar');
+    const pedidoIdField = document.getElementById('pedidoIdPasarRevisar');
+    const form = document.getElementById('formPasarRevisar');
+    const counter = document.getElementById('contadorPasarRevisar');
+    
+    if (reciboIdField) reciboIdField.value = reciboId;
+    if (pedidoIdField) pedidoIdField.value = pedidoId;
+    if (form) form.reset();
+    if (counter) counter.textContent = '0';
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+}
+
+function cerrarModalPasarRevisar() {
+    const modal = document.getElementById('modalPasarRevisar');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function initPasarARevisarInsumos() {
+    if (pasarARevisarInitialized) return;
+    pasarARevisarInitialized = true;
+
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.pasarARevisar = {
+        abrirModalPasarRevisar,
+        cerrarModalPasarRevisar,
+    };
+
     /**
      * Abre el modal para pasar a revisar
      */
-    window.abrirModalPasarRevisar = function(reciboId, pedidoId) {
-        const modal = document.getElementById('modalPasarRevisar');
-        if (!modal) {
-            console.error('Modal no encontrado');
-            return;
-        }
-        
-        // Actualizar datos en el modal
-        const reciboIdField = document.getElementById('reciboIdPasarRevisar');
-        const pedidoIdField = document.getElementById('pedidoIdPasarRevisar');
-        const form = document.getElementById('formPasarRevisar');
-        const counter = document.getElementById('contadorPasarRevisar');
-        
-        if (reciboIdField) reciboIdField.value = reciboId;
-        if (pedidoIdField) pedidoIdField.value = pedidoId;
-        if (form) form.reset();
-        if (counter) counter.textContent = '0';
-        
-        // Mostrar modal
-        modal.style.display = 'flex';
-    };
-
-    /**
-     * Cierra el modal de pasar a revisar
-     */
-    window.cerrarModalPasarRevisar = function() {
-        const modal = document.getElementById('modalPasarRevisar');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    };
-
     /**
      * Actualizar contador de caracteres en tiempo real
      */
@@ -61,12 +69,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         const modal = document.getElementById('modalPasarRevisar');
         if (modal && e.target === modal) {
-            window.cerrarModalPasarRevisar();
+            cerrarModalPasarRevisar();
         }
     });
 
-    // Auto-inicializar si el documento ya está cargado
-    if (document.readyState !== 'loading') {
-        // Ya está cargado
-    }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPasarARevisarInsumos);
+} else {
+    initPasarARevisarInsumos();
+}

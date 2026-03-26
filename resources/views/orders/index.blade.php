@@ -533,7 +533,7 @@
                         prendaHtml = generarDescripcionSimple(prendaData);
                     }
                     
-                    console.log(`[abrirModalCeldaConFormato] 📄 HTML generado:`, prendaHtml);
+                    console.log(`[abrirModalCeldaConFormato]  HTML generado:`, prendaHtml);
                     
                     htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
                         ${prendaHtml}
@@ -626,7 +626,7 @@
                 console.log('[generarDescripcionSimple]  No hay tallas');
             }
             
-            console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
+            console.log('[generarDescripcionSimple]  OUTPUT HTML:', html);
             return html;
         }
         
@@ -1117,7 +1117,7 @@
             console.log(`[GLOBAL-CLICK] Target:`, targetInfo);
             
             // Detectar si es un botón de toggle
-            if (target.textContent && target.textContent.includes('📄')) {
+            if (target.textContent && target.textContent.includes('')) {
                 console.log(`[GLOBAL-CLICK]  BOTÓN DE FACTURA DETECTADO`);
             }
             if (target.textContent && target.textContent.includes('🖼️')) {

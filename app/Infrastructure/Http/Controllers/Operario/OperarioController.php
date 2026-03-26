@@ -130,7 +130,7 @@ class OperarioController extends Controller
      */
     public function verPedido($numeroPedido)
     {
-        \Log::info('[OperarioController] 📄 INICIO verPedido', [
+        \Log::info('[OperarioController]  INICIO verPedido', [
             'numero_pedido' => $numeroPedido
         ]);
 

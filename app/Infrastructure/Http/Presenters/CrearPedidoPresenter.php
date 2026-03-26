@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 /**
  * CrearPedidoPresenter
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Formatear datos para presentación en vistas Blade
+ *  RESPONSABILIDAD ÚNICA: Formatear datos para presentación en vistas Blade
  * 
  * Separa:
  * - Lógica de negocio (UseCases)
@@ -18,10 +18,10 @@ use Illuminate\Support\Collection;
  * UseCase → OutputDTO → Presenter → View
  * 
  * Beneficios:
- * ✅ Controller sin lógica de formateo
- * ✅ Presenter reutilizable en múltiples controladores
- * ✅ Fácil cambiar estructura de datos sin tocar lógica
- * ✅ Testeable (presenter = puro formateo)
+ *  Controller sin lógica de formateo
+ *  Presenter reutilizable en múltiples controladores
+ *  Fácil cambiar estructura de datos sin tocar lógica
+ *  Testeable (presenter = puro formateo)
  */
 class CrearPedidoPresenter
 {

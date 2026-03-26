@@ -70,14 +70,14 @@ function validateWizardState() {
 
     const status = window.ColoresPorTallaV2.getWizardStatus();
     
-    console.log('\n📋 INFORMACIÓN DEL WIZARD:');
+    console.log('\n INFORMACIÓN DEL WIZARD:');
     console.log(`  Inicializado: ${status.initialized ? '' : ''}`);
     console.log(`  Estado actual: ${status.state || 'N/A'}`);
     console.log(`  Historial de estados: ${status.stateHistory?.length || 0} transiciones`);
     console.log(`  Historial de eventos: ${status.eventHistory?.length || 0} eventos`);
 
     if (status.stateHistory && status.stateHistory.length > 0) {
-        console.log('\n🔍 ÚLTIMOS ESTADOS:');
+        console.log('\n ÚLTIMOS ESTADOS:');
         status.stateHistory.slice(-5).forEach((entry, idx) => {
             console.log(`  ${idx + 1}. ${entry.state}`);
         });
@@ -225,7 +225,7 @@ async function validateAll() {
     console.log('  3. Interactuar con el wizard normalmente');
     console.log('  4. Verificar que todo funciona sin errores');
     
-    console.log('\n🔍 DEBUGGING:');
+    console.log('\n DEBUGGING:');
     console.log('  - Ver estado: window.ColoresPorTallaV2.getWizardStatus()');
     console.log('  - Ver arquitectura: window.getArchitectureStatus()');
     console.log('  - Limpiar: window.ColoresPorTallaV2.cleanupWizard()');

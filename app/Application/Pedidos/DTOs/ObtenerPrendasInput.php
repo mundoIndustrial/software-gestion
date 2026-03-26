@@ -7,13 +7,13 @@ use Illuminate\Http\Request;
 /**
  * ObtenerPrendasInput
  * 
- * ✅ DTO para solicitud de búsqueda autocomplete de prendas
+ *  DTO para solicitud de búsqueda autocomplete de prendas
  * 
  * Beneficios:
- * ✅ Validación centralizada
- * ✅ Valores por defecto
- * ✅ Conversión de tipos (string → int)
- * ✅ Documentacion de parámetros
+ *  Validación centralizada
+ *  Valores por defecto
+ *  Conversión de tipos (string → int)
+ *  Documentacion de parámetros
  */
 class ObtenerPrendasInput
 {

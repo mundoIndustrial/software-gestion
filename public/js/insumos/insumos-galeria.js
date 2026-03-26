@@ -1,6 +1,6 @@
-/**
- * Galería personalizada para insumos
- * Evita conflictos con otros módulos
+﻿/**
+ * Galeria personalizada para insumos
+ * Evita conflictos con otros modulos
  */
 
 class InsumosGaleria {
@@ -11,7 +11,7 @@ class InsumosGaleria {
     }
 
     /**
-     * Alterna entre vista de recibo y galería
+     * Alterna entre vista de recibo y galeria
      */
     toggle() {
         console.log('[InsumosGaleria] Toggle iniciado');
@@ -19,7 +19,7 @@ class InsumosGaleria {
         
         const modalWrapper = document.getElementById('order-detail-modal-wrapper');
         if (!modalWrapper) {
-            console.error('[InsumosGaleria] No se encontró el modal wrapper');
+            console.error('[InsumosGaleria] No se encontro el modal wrapper');
             return;
         }
         
@@ -27,36 +27,36 @@ class InsumosGaleria {
         let galeria = document.getElementById('galeria-modal-costura');
         
         console.log('[InsumosGaleria] Estado actual - Card:', card ? 'visible' : 'no encontrado');
-        console.log('[InsumosGaleria] Estado actual - Galería:', galeria ? (galeria.style.display === 'flex' ? 'visible' : 'oculta') : 'no encontrado');
+        console.log('[InsumosGaleria] Estado actual - Galeria:', galeria ? (galeria.style.display === 'flex' ? 'visible' : 'oculta') : 'no encontrado');
         
         // Determinar estado actual - usar display en lugar de opacity
         const estaEnGaleria = galeria && galeria.style.display === 'flex';
         
-        console.log('[InsumosGaleria] ¿Está en galería?:', estaEnGaleria);
+        console.log('[InsumosGaleria] ¿Está en galeria?:', estaEnGaleria);
         
-        // El botón X de cierre lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
+        // El boton X de cierre lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
         
         if (estaEnGaleria) {
-            // Estamos en galería, volver al recibo
-            console.log('[InsumosGaleria] Cerrando galería y mostrando recibo');
+            // Estamos en galeria, volver al recibo
+            console.log('[InsumosGaleria] Cerrando galeria y mostrando recibo');
             this.cerrarGaleria(card, galeria);
         } else {
-            // Estamos en recibo, mostrar galería
-            console.log('[InsumosGaleria] Abriendo galería y ocultando recibo');
+            // Estamos en recibo, mostrar galeria
+            console.log('[InsumosGaleria] Abriendo galeria y ocultando recibo');
             this.abrirGaleria(card, galeria, modalWrapper);
         }
     }
 
     /**
-     * Cierra la galería y muestra el recibo (público)
+     * Cierra la galeria y muestra el recibo (publico)
      */
     cerrarGaleria(card, galeria) {
-        console.log('[cerrarGaleria] Iniciando cierre de galería');
+        console.log('[cerrarGaleria] Iniciando cierre de galeria');
         console.log('[cerrarGaleria] Card:', card ? 'encontrado' : 'no encontrado');
-        console.log('[cerrarGaleria] Galería:', galeria ? 'encontrada' : 'no encontrado');
+        console.log('[cerrarGaleria] Galeria:', galeria ? 'encontrada' : 'no encontrado');
         
         if (galeria) {
-            console.log('[cerrarGaleria] Ocultando galería');
+            console.log('[cerrarGaleria] Ocultando galeria');
             galeria.style.display = 'none';
         }
         
@@ -70,20 +70,20 @@ class InsumosGaleria {
         const btnGaleria = document.getElementById('btn-galeria');
         
         if (btnFactura) {
-            console.log('[cerrarGaleria] Mostrando botón factura');
+            console.log('[cerrarGaleria] Mostrando boton factura');
             btnFactura.style.display = 'block';
             btnFactura.style.visibility = 'visible';
             btnFactura.style.zIndex = '10';
-            // Cambiar icono a galería cuando estamos en recibo
+            // Cambiar icono a galeria cuando estamos en recibo
             const iconoFactura = btnFactura.querySelector('i');
             if (iconoFactura) {
                 iconoFactura.className = 'fas fa-images';
-                btnFactura.title = 'Ver galería';
+                btnFactura.title = 'Ver galeria';
             }
         }
         
         if (btnGaleria) {
-            console.log('[cerrarGaleria] Ocultando botón galería');
+            console.log('[cerrarGaleria] Ocultando boton galeria');
             btnGaleria.style.display = 'none';
             btnGaleria.style.visibility = 'hidden';
             btnGaleria.style.zIndex = '-1';
@@ -93,7 +93,7 @@ class InsumosGaleria {
     }
     
     /**
-     * Cierra completamente el modal (tanto recibo como galería)
+     * Cierra completamente el modal (tanto recibo como galeria)
      */
     cerrarModal() {
         // Log inmediato para verificar si se llama al método
@@ -126,7 +126,6 @@ class InsumosGaleria {
             
             // Limpiar datos
             console.log('[cerrarModal] Limpiando datos...');
-            window.receiptManager = null;
             this.imagenesActuales = [];
             this.estilosOriginalesCard = null;
             
@@ -138,24 +137,24 @@ class InsumosGaleria {
     }
 
     /**
-     * Abre la galería y oculta el recibo (público)
+     * Abre la galeria y oculta el recibo (público)
      */
     abrirGaleria(card, galeria, modalWrapper) {
-        console.log('[abrirGaleria] Iniciando apertura de galería');
+        console.log('[abrirGaleria] Iniciando apertura de Galeria');
         console.log('[abrirGaleria] Card:', card ? 'encontrado' : 'no encontrado');
-        console.log('[abrirGaleria] Galería:', galeria ? 'encontrada' : 'no encontrado');
+        console.log('[abrirGaleria] Galeria:', galeria ? 'encontrada' : 'no encontrado');
         
-        // Obtener el contenedor donde está el card
+        // Obtener el contenedor donde esta el card
         const container = modalWrapper.querySelector('.order-detail-modal-container');
         
         if (!container) {
-            console.error('[abrirGaleria] No se encontró el contenedor del modal');
+            console.error('[abrirGaleria] No se encontro el contenedor del modal');
             return;
         }
         
         // Logs del contenedor
         const containerRect = container.getBoundingClientRect();
-        console.log('[abrirGaleria] Posición del contenedor:', {
+        console.log('[abrirGaleria] Posicion del contenedor:', {
             width: containerRect.width,
             height: containerRect.height,
             top: containerRect.top,
@@ -172,7 +171,7 @@ class InsumosGaleria {
         }
         
         if (!galeria) {
-            console.log('[abrirGaleria] Creando nueva galería');
+            console.log('[abrirGaleria] Creando nueva Galeria');
             galeria = document.createElement('div');
             galeria.id = 'galeria-modal-costura';
             
@@ -196,7 +195,7 @@ class InsumosGaleria {
             `;
             container.appendChild(galeria);
         } else {
-            console.log('[abrirGaleria] Mostrando galería existente');
+            console.log('[abrirGaleria] Mostrando Galeria existente');
             galeria.style.display = 'flex';
             galeria.style.visibility = 'visible';
             galeria.style.pointerEvents = 'auto';
@@ -206,10 +205,10 @@ class InsumosGaleria {
             galeria.style.padding = '30px';
         }
         
-        // Logs de la galería recién creada
+        // Logs de la Galeria recien creada
         setTimeout(() => {
             const galeriaRect = galeria.getBoundingClientRect();
-            console.log('[abrirGaleria] Posición de la galería:', {
+            console.log('[abrirGaleria] Posicion de la Galeria:', {
                 width: galeriaRect.width,
                 height: galeriaRect.height,
                 top: galeriaRect.top,
@@ -221,7 +220,7 @@ class InsumosGaleria {
             });
         }, 10);
         
-        // Construir galería con los datos existentes
+        // Construir Galeria con los datos existentes
         this.construirGaleria(galeria);
         
         // Actualizar botones
@@ -229,18 +228,18 @@ class InsumosGaleria {
         const btnGaleria = document.getElementById('btn-galeria');
         
         if (btnFactura) {
-            console.log('[abrirGaleria] Ocultando botón factura');
+            console.log('[abrirGaleria] Ocultando boton factura');
             btnFactura.style.display = 'none';
             btnFactura.style.visibility = 'hidden';
             btnFactura.style.zIndex = '-1';
         }
         
         if (btnGaleria) {
-            console.log('[abrirGaleria] Mostrando botón galería');
+            console.log('[abrirGaleria] Mostrando boton Galeria');
             btnGaleria.style.display = 'block';
             btnGaleria.style.visibility = 'visible';
             btnGaleria.style.zIndex = '10';
-            // Cambiar icono a recibos cuando estamos en galería
+            // Cambiar icono a recibos cuando estamos en Galeria
             const iconoGaleria = btnGaleria.querySelector('i');
             if (iconoGaleria) {
                 iconoGaleria.className = 'fas fa-receipt';
@@ -252,12 +251,12 @@ class InsumosGaleria {
     }
 
     /**
-     * Construye la galería usando los datos del pedido actual
+     * Construye la Galeria usando los datos del pedido actual
      */
     construirGaleria(container) {
-        console.log('[construirGaleria] Iniciando construcción de galería');
+        console.log('[construirGaleria] Iniciando construccion de Galeria');
         
-        // Obtener los datos del pedido actual - intentar múltiples fuentes
+        // Obtener los datos del pedido actual - intentar multiples fuentes
         let datosActuales = window.receiptManager ? window.receiptManager.datosFactura : null;
         
         // Fallback: Si no hay receiptManager, intentar con PedidosRecibosModule
@@ -276,7 +275,7 @@ class InsumosGaleria {
             container.innerHTML = `
                 <div style="padding: 2rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
                     <i class="fas fa-image" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
-                    <p style="color: #6b7280; font-size: 1rem;">No hay imágenes disponibles para esta prenda</p>
+                    <p style="color: #6b7280; font-size: 1rem;">No hay imagenes disponibles para esta prenda</p>
                 </div>
             `;
             return;
@@ -299,14 +298,14 @@ class InsumosGaleria {
         let tieneImagenes = false;
         this.imagenesActuales = [];
         
-        // Recorrer prendas y mostrar imágenes
+        // Recorrer prendas y mostrar imagenes
         datosActuales.prendas.forEach((prenda, prendaIndex) => {
             const nombrePrenda = prenda.nombre || prenda.nombre_prenda || `Prenda ${prendaIndex + 1}`;
             console.log(`[construirGaleria] Analizando prenda ${prendaIndex}:`, nombrePrenda);
             
             if (prenda.imagenes && prenda.imagenes.length > 0) {
                 tieneImagenes = true;
-                console.log(`[construirGaleria] Encontradas ${prenda.imagenes.length} imágenes en prenda ${prendaIndex}`);
+                console.log(`[construirGaleria] Encontradas ${prenda.imagenes.length} imagenes en prenda ${prendaIndex}`);
                 html += `
                     <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
                         <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda}</h3>
@@ -333,9 +332,7 @@ class InsumosGaleria {
                             transition: all 0.3s ease;
                             background: white;
                             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                        " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
-                        onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
-                        onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
+                        " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
                             <img src="${rutaImg}" alt="${nombrePrenda}" style="
                                 width: 100%; 
                                 height: 220px; 
@@ -354,10 +351,10 @@ class InsumosGaleria {
                 html += `</div></div>`;
             }
             
-            // Agregar imágenes de telas
+            // Agregar imagenes de telas
             if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
                 tieneImagenes = true;
-                console.log(`[construirGaleria] Encontradas ${prenda.imagenes_tela.length} imágenes de tela en prenda ${prendaIndex}`);
+                console.log(`[construirGaleria] Encontradas ${prenda.imagenes_tela.length} imagenes de tela en prenda ${prendaIndex}`);
                 html += `
                     <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
                         <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - Telas</h3>
@@ -384,9 +381,7 @@ class InsumosGaleria {
                             transition: all 0.3s ease;
                             background: white;
                             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                        " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
-                        onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
-                        onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
+                        " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
                             <img src="${rutaImg}" alt="${nombrePrenda} - Tela" style="
                                 width: 100%; 
                                 height: 220px; 
@@ -405,14 +400,14 @@ class InsumosGaleria {
                 html += `</div></div>`;
             }
             
-            // Agregar imágenes de procesos
+            // Agregar imagenes de procesos
             if (prenda.procesos && prenda.procesos.length > 0) {
                 console.log(`[construirGaleria] Analizando ${prenda.procesos.length} procesos de prenda ${prendaIndex}`);
                 
                 prenda.procesos.forEach(proceso => {
                     if (proceso.imagenes && proceso.imagenes.length > 0) {
                         tieneImagenes = true;
-                        console.log(`[construirGaleria] Encontradas ${proceso.imagenes.length} imágenes en proceso: ${proceso.tipo_proceso}`);
+                        console.log(`[construirGaleria] Encontradas ${proceso.imagenes.length} imagenes en proceso: ${proceso.tipo_proceso}`);
                         html += `
                             <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
                                 <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - ${proceso.tipo_proceso}</h3>
@@ -440,9 +435,7 @@ class InsumosGaleria {
                                     transition: all 0.3s ease;
                                     background: white;
                                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                                " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
-                                onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
-                                onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
+                                " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
                                     <img src="${rutaImgProc}" alt="${nombrePrenda} - ${proceso.tipo_proceso}" style="
                                         width: 100%; 
                                         height: 220px; 
@@ -465,29 +458,29 @@ class InsumosGaleria {
         });
         
         if (!tieneImagenes) {
-            console.warn('[construirGaleria] No se encontraron imágenes en el pedido');
+            console.warn('[construirGaleria] No se encontraron imagenes en el pedido');
             html = `
                 <div style="padding: 3rem; text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">📷</div>
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">ðŸ“·</div>
                     <p style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">No hay fotos de costura disponibles para este pedido</p>
-                    <p style="color: #9ca3af; font-size: 0.875rem;">Las imágenes se mostrarán aquí cuando estén disponibles</p>
+                    <p style="color: #9ca3af; font-size: 0.875rem;">Las imagenes se mostraron aqui cuando estan disponibles</p>
                 </div>
             `;
         }
         
         html += '</div>';
         
-        console.log('[construirGaleria] Galería construida con', tieneImagenes ? 'con imágenes' : 'sin imágenes');
-        console.log('[construirGaleria] Total de imágenes guardadas:', this.imagenesActuales.length);
+        console.log('[construirGaleria] Galeria construida con', tieneImagenes ? 'con imagenes' : 'sin imagenes');
+        console.log('[construirGaleria] Total de imagenes guardadas:', this.imagenesActuales.length);
         console.log('[construirGaleria] HTML generado:', html.substring(0, 200) + '...');
         
         container.innerHTML = html;
         
-        // Logs después de asignar el HTML
+        // Logs despues de asignar el HTML
         setTimeout(() => {
-            console.log('[construirGaleria] Container innerHTML después de asignar:', container.innerHTML.substring(0, 200) + '...');
+            console.log('[construirGaleria] Container innerHTML despues de asignar:', container.innerHTML.substring(0, 200) + '...');
             const containerRect = container.getBoundingClientRect();
-            console.log('[construirGaleria] Dimensión final del contenedor:', {
+            console.log('[construirGaleria] Dimension final del contenedor:', {
                 width: containerRect.width,
                 height: containerRect.height,
                 scrollHeight: container.scrollHeight
@@ -496,14 +489,14 @@ class InsumosGaleria {
     }
     
     /**
-     * @deprecated El botón de cierre ahora lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
+     * @deprecated El boton de cierre ahora lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
      */
     agregarBotonCerrar(container) {
         // No-op: unificado en CloseButtonManager.js
     }
 
     /**
-     * Muestra una imagen en tamaño grande con navegación
+     * Muestra una imagen en tamaño grande con navegacion
      */
     mostrarImagen(indice) {
         if (this.imagenesActuales.length === 0) return;
@@ -555,7 +548,7 @@ class InsumosGaleria {
         
         console.log('[mostrarImagen] Overlay creado con cssText aplicado');
         
-        // Agregar animación si no existe
+        // Agregar animacion si no existe
         if (!document.getElementById('galeria-animations-fullscreen')) {
             const style = document.createElement('style');
             style.id = 'galeria-animations-fullscreen';
@@ -570,7 +563,7 @@ class InsumosGaleria {
             console.log('[mostrarImagen] Animaciones agregadas');
         }
         
-        // Imagen GRANDE - SIN LÍMITES
+        // Imagen GRANDE - SIN Limites
         const img = document.createElement('img');
         let isZoomed = false;
         img.style.cssText = `
@@ -632,9 +625,9 @@ class InsumosGaleria {
             console.log('[mostrarImagen] Double-click zoom:', isZoomed);
         };
         
-        // Botón cerrar - ESQUINA SUPERIOR DERECHA
+        // boton cerrar - ESQUINA SUPERIOR DERECHA
         const btnCerrar = document.createElement('button');
-        btnCerrar.innerHTML = '✕';
+        btnCerrar.innerHTML = '•';
         btnCerrar.style.cssText = `
             position: fixed !important;
             top: 20px !important;
@@ -668,13 +661,13 @@ class InsumosGaleria {
         btnCerrar.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[mostrarImagen] Botón cerrar clickeado');
+            console.log('[mostrarImagen] boton cerrar clickeado');
             this.cerrarModal();
         };
         
-        // Botón anterior - LADO IZQUIERDO
+        // boton anterior - LADO IZQUIERDO
         const btnAnterior = document.createElement('button');
-        btnAnterior.innerHTML = '‹';
+        btnAnterior.innerHTML = 'â€¹';
         btnAnterior.style.cssText = `
             position: fixed !important;
             left: 30px !important;
@@ -711,9 +704,9 @@ class InsumosGaleria {
             this.navegarImagen('anterior');
         };
         
-        // Botón siguiente - LADO DERECHO
+        // boton siguiente - LADO DERECHO
         const btnSiguiente = document.createElement('button');
-        btnSiguiente.innerHTML = '›';
+        btnSiguiente.innerHTML = 'â€º';
         btnSiguiente.style.cssText = `
             position: fixed !important;
             right: 30px !important;
@@ -768,7 +761,7 @@ class InsumosGaleria {
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
         `;
         
-        // Título - ARRIBA CENTRO
+        // Titulo - ARRIBA CENTRO
         const titulo = document.createElement('div');
         titulo.style.cssText = `
             position: fixed !important;
@@ -817,7 +810,7 @@ class InsumosGaleria {
     }
 
     /**
-     * Navega entre imágenes
+     * Navega entre imagenes
      */
     navegarImagen(direccion) {
         if (direccion === 'anterior') {
@@ -846,10 +839,10 @@ class InsumosGaleria {
             this.tituloActual.textContent = imagenActual.titulo;
             this.contadorActual.textContent = `${this.indiceActual + 1} / ${this.imagenesActuales.length}`;
             
-            // Log del elemento img después de asignar src
+            // Log del elemento img despues de asignar src
             setTimeout(() => {
                 const rect = this.imgActual.getBoundingClientRect();
-                console.log('[actualizarImagen] Imagen después de asignar src:', {
+                console.log('[actualizarImagen] Imagen despues de asignar src:', {
                     src: this.imgActual.src,
                     width: this.imgActual.width,
                     height: this.imgActual.height,
@@ -876,10 +869,10 @@ class InsumosGaleria {
                 const mostrarBotones = this.imagenesActuales.length > 1;
                 this.btnAnterior.style.display = mostrarBotones ? 'flex' : 'none';
                 this.btnSiguiente.style.display = mostrarBotones ? 'flex' : 'none';
-                console.log('[actualizarImagen] Botones de navegación:', mostrarBotones ? 'visibles' : 'ocultos');
+                console.log('[actualizarImagen] Botones de navegacion:', mostrarBotones ? 'visibles' : 'ocultos');
             }
         } else {
-            console.warn('[actualizarImagen] ERROR - No hay imágenes o imgActual no existe', {
+            console.warn('[actualizarImagen] ERROR - No hay imagenes o imgActual no existe', {
                 imagenesActualesLength: this.imagenesActuales.length,
                 imgActualExists: !!this.imgActual
             });
@@ -925,29 +918,25 @@ class InsumosGaleria {
     }
 }
 
-// Crear instancia global
-window.insumosGaleria = new InsumosGaleria();
+const insumosGaleria = new InsumosGaleria();
 
-// Función global para compatibilidad
-window.toggleGaleriaInsumos = function() {
-    return window.insumosGaleria.toggle();
-};
+function toggleGaleriaInsumos() {
+    return insumosGaleria.toggle();
+}
 
-// Función toggleGaleria que redirige a nuestra implementación
-window.toggleGaleria = function() {
+function toggleGaleria() {
     console.log('[toggleGaleria] Redirigiendo a insumosGaleria');
     console.log('[toggleGaleria] Estado actual - ReceiptManager disponible:', !!window.receiptManager);
     console.log('[toggleGaleria] Modal wrapper disponible:', !!document.getElementById('order-detail-modal-wrapper'));
-    return window.insumosGaleria.toggle();
-};
+    return insumosGaleria.toggle();
+}
 
-// Función toggleFactura para compatibilidad con botones flotantes
-window.toggleFactura = function() {
-    console.log('[toggleFactura] Toggle entre recibo y galería');
+function toggleFactura() {
+    console.log('[toggleFactura] Toggle entre recibo y Galeria');
     
     const modalWrapper = document.getElementById('order-detail-modal-wrapper');
     if (!modalWrapper) {
-        console.error('[toggleFactura] No se encontró el modal wrapper');
+        console.error('[toggleFactura] No se encontro el modal wrapper');
         return;
     }
     
@@ -955,32 +944,42 @@ window.toggleFactura = function() {
     const galeria = document.getElementById('galeria-modal-costura');
     
     console.log('[toggleFactura] Estado actual - Card:', card ? 'visible' : 'no encontrado');
-    console.log('[toggleFactura] Estado actual - Galería:', galeria ? (galeria.style.display === 'flex' ? 'visible' : 'oculta') : 'no encontrada');
+    console.log('[toggleFactura] Estado actual - Galeria:', galeria ? (galeria.style.display === 'flex' ? 'visible' : 'oculta') : 'no encontrada');
     
     // Determinar estado actual
     const estaEnGaleria = galeria && galeria.style.display === 'flex';
     
-    console.log('[toggleFactura] ¿Está en galería?:', estaEnGaleria);
+    console.log('[toggleFactura] Â¿esta en Galeria?:', estaEnGaleria);
     
     if (estaEnGaleria) {
-        // Estamos en galería, volver al recibo
-        console.log('[toggleFactura] Cerrando galería y mostrando recibo');
-        window.insumosGaleria.cerrarGaleria(card, galeria);
+        // Estamos en Galeria, volver al recibo
+        console.log('[toggleFactura] Cerrando Galeria y mostrando recibo');
+        insumosGaleria.cerrarGaleria(card, galeria);
     } else {
-        // Estamos en recibo, mostrar galería
-        console.log('[toggleFactura] Abriendo galería y ocultando recibo');
-        window.insumosGaleria.abrirGaleria(card, galeria, modalWrapper);
+        // Estamos en recibo, mostrar Galeria
+        console.log('[toggleFactura] Abriendo Galeria y ocultando recibo');
+        insumosGaleria.abrirGaleria(card, galeria, modalWrapper);
     }
-};
+}
 
-// Función global para cerrar el modal
-window.cerrarModal = function() {
+function cerrarModal() {
     console.log('[cerrarModal] Cerrando modal global');
-    return window.insumosGaleria.cerrarModal();
-};
+    return insumosGaleria.cerrarModal();
+}
 
-// Función global para inicializar el botón X cuando se carga el recibo
-// Botón X de cierre unificado en CloseButtonManager (btn-cerrar-modal-dinamico)
-window.inicializarBotonCerrarInsumos = function() {
-    // No-op: el botón de cierre lo maneja CloseButtonManager
+// Funcion global para inicializar el boton X cuando se carga el recibo
+// boton X de cierre unificado en CloseButtonManager (btn-cerrar-modal-dinamico)
+function inicializarBotonCerrarInsumos() {
+    // No-op: el boton de cierre lo maneja CloseButtonManager
+}
+
+window.insumosHandlers = window.insumosHandlers || {};
+window.insumosHandlers.galeria = {
+    insumosGaleria,
+    toggleGaleriaInsumos,
+    toggleGaleria,
+    toggleFactura,
+    cerrarModal,
+    inicializarBotonCerrarInsumos,
+    mostrarImagen: (index) => insumosGaleria.mostrarImagen(index),
 };

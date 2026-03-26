@@ -107,7 +107,7 @@ $result = $service->mapearImagenesTelas([
 
 ---
 
-## ✅ SOLUCIÓN: REFACTORIZACIÓN COMPLETA
+##  SOLUCIÓN: REFACTORIZACIÓN COMPLETA
 
 ### 🏗️ NUEVA ARQUITECTURA
 
@@ -138,7 +138,7 @@ app/
 // Domain/Pedidos/ValueObjects/ImagenPrenda.php
 
 class ImagenPrenda {
-    // ✅ VENTAJAS:
+    //  VENTAJAS:
     // 1. Valida que la imagen sea válida
     // 2. Estructura clara: qué fields tiene
     // 3. Factory methods para cada tipo
@@ -166,7 +166,7 @@ Array crudo → ImagenPrenda::from() → Validación + Estructura → VO
 // Infrastructure/Mappers/Imagenes/ImagenDTOToPrendaArrayMapper.php
 
 class ImagenDTOToPrendaArrayMapper {
-    // ✅ RESPONSABILIDAD ÚNICA:
+    //  RESPONSABILIDAD ÚNICA:
     // Convertir ImagenPrenda (VO) → array para BD
     
     public function mapear(ImagenPrenda $imagen): array {
@@ -187,7 +187,7 @@ ImagenPrenda (VO) → mapper.mapear() → array para BD
 // Infrastructure/Mappers/Imagenes/PrendaImagenesMapper.php
 
 class PrendaImagenesMapper {
-    // ✅ RESPONSABILIDAD ÚNICA:
+    //  RESPONSABILIDAD ÚNICA:
     // Orquestar mapeo de MÚLTIPLES imágenes
     
     public function mapear(array $imagenes): array {
@@ -219,7 +219,7 @@ Array de imágenes crudo
 // Infrastructure/Services/Pedidos/ImagenesService.php
 
 class ImagenesService {
-    // ✅ Interfaz pública simple
+    //  Interfaz pública simple
     // El resto de la app solo ve esto
     
     public function mapearImagenesPrenda(array $item): array
@@ -250,7 +250,7 @@ Array para BD
 - Difícil de cambiar (afecta ambos métodos)
 - Difícil de reutilizar (lógica no aislada)
 
-### ✅ DESPUÉS (Separado por responsabilidad)
+###  DESPUÉS (Separado por responsabilidad)
 ```
 Frontend Data
     ↓
@@ -262,10 +262,10 @@ Array para BD
 ```
 
 **Beneficios:**
-- ✅ Fácil de testear (pequeñas unidades)
-- ✅ Fácil de cambiar (responsabilidad aislada)
-- ✅ Fácil de reutilizar (componentes aislados)
-- ✅ Fácil de extender (agregar nuevos mappers)
+-  Fácil de testear (pequeñas unidades)
+-  Fácil de cambiar (responsabilidad aislada)
+-  Fácil de reutilizar (componentes aislados)
+-  Fácil de extender (agregar nuevos mappers)
 
 ---
 
@@ -336,7 +336,7 @@ public function testMapearPrenda() {
 }
 ```
 
-### ✅ Después (Fácil)
+###  Después (Fácil)
 ```php
 public function testImagenPrendaFromPreviewUrl() {
     $imagen = ImagenPrenda::fromPreviewUrl([
@@ -374,10 +374,10 @@ public function testPrendaImagenesMapper() {
 ```
 
 **Ventajas:**
-- ✅ Cada test es pequeño y aislado
-- ✅ No necesita dependencias complejas
-- ✅ Fácil de entender qué se está testando
-- ✅ Rápido de ejecutar
+-  Cada test es pequeño y aislado
+-  No necesita dependencias complejas
+-  Fácil de entender qué se está testando
+-  Rápido de ejecutar
 
 ---
 
@@ -385,11 +385,11 @@ public function testPrendaImagenesMapper() {
 
 | Principio | Antes | Después |
 |-----------|-------|---------|
-| S (Single Responsibility) | ❌ Múltiples | ✅ Una cada clase |
-| O (Open/Closed) | ❌ Cerrado a cambios | ✅ Abierto a extensión |
-| L (Liskov Substitution) | ❌ N/A | ✅ Interfaces claras |
-| I (Interface Segregation) | ❌ Métodos gordos | ✅ Métodos pequeños |
-| D (Dependency Inversion) | ❌ Acoplado a servicios | ✅ Inyección de deps |
+| S (Single Responsibility) | ❌ Múltiples |  Una cada clase |
+| O (Open/Closed) | ❌ Cerrado a cambios |  Abierto a extensión |
+| L (Liskov Substitution) | ❌ N/A |  Interfaces claras |
+| I (Interface Segregation) | ❌ Métodos gordos |  Métodos pequeños |
+| D (Dependency Inversion) | ❌ Acoplado a servicios |  Inyección de deps |
 
 ---
 
@@ -455,12 +455,12 @@ Esta refactorización sigue:
 
 | Aspecto | Beneficio |
 |---------|-----------|
-| **Mantenibilidad** | ✅ Cada componente es independiente |
-| **Testabilidad** | ✅ Tests unitarios simples y rápidos |
-| **Extensibilidad** | ✅ Agregar nuevos mappers = una nueva clase |
-| **Readabilidad** | ✅ Código autodocumentado con VOs y names claros |
-| **Reusabilidad** | ✅ ImagenPrenda se puede usar en cualquier lado |
-| **Type Safety** | ✅ Value Objects garantizan estructura |
-| **Error Handling** | ✅ Errores detectados temprano en VOs |
-| **Performance** | ✅ Sin cambios (mismo número de operaciones) |
+| **Mantenibilidad** |  Cada componente es independiente |
+| **Testabilidad** |  Tests unitarios simples y rápidos |
+| **Extensibilidad** |  Agregar nuevos mappers = una nueva clase |
+| **Readabilidad** |  Código autodocumentado con VOs y names claros |
+| **Reusabilidad** |  ImagenPrenda se puede usar en cualquier lado |
+| **Type Safety** |  Value Objects garantizan estructura |
+| **Error Handling** |  Errores detectados temprano en VOs |
+| **Performance** |  Sin cambios (mismo número de operaciones) |
 

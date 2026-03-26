@@ -17,7 +17,7 @@ use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
 /**
  * ListarPedidosController
  * 
- * ✅ RESPONSABILIDAD ÚNICA: GET endpoints para listar y buscar pedidos
+ *  RESPONSABILIDAD ÚNICA: GET endpoints para listar y buscar pedidos
  * 
  * HTTP Methods:
  * - GET /api/pedidos                           → index()

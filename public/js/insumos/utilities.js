@@ -544,6 +544,8 @@ function showConfirmDialog(title, message, options = {}) {
 export {
     showToast,
     debounce,
+    inicializarFestivos,
+    calcularDemoraAsync,
     calcularDiasLaborales,
     getColorByDias,
     sanitizeForId,

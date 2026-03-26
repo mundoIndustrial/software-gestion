@@ -46,7 +46,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
             return;
         }
         
-        // ⏳ Swal no está disponible, esperar
+        //  Swal no está disponible, esperar
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
             if (typeof Swal !== 'undefined') {

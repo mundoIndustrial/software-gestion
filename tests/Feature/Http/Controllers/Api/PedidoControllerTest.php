@@ -14,9 +14,9 @@ use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion\CrearActualiz
  * Test para endpoints de Pedidos (Fase 3)
  * 
  * Validar:
- * - POST /api/pedidos â†’ Crear pedido
- * - PATCH /api/pedidos/{id}/confirmar â†’ Confirmar pedido (cuando haya persistencia)
- * - GET /api/pedidos/{id} â†’ Obtener pedido (cuando haya persistencia)
+ * - POST /api/pedidos  Crear pedido
+ * - PATCH /api/pedidos/{id}/confirmar  Confirmar pedido (cuando haya persistencia)
+ * - GET /api/pedidos/{id}  Obtener pedido (cuando haya persistencia)
  */
 class PedidoControllerTest extends TestCase
 {

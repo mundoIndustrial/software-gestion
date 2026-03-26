@@ -52,7 +52,7 @@ class LoggerApp {
             SharedPrendaData:       '🗄️',
             SharedPrendaValidation: '',
             EventBus:               '📡',
-            FormatDetector:         '🔍',
+            FormatDetector:         '',
             PrendasEditorHelper:    '',
             GestionItemsUI:         '📌',
             TelaProcessor:          '🧵',

@@ -116,7 +116,7 @@
                             return false;
                         }
                     } else {
-                        console.log('⏳ [FACTURA-EDITABLE] Esperando datos...', {
+                        console.log(' [FACTURA-EDITABLE] Esperando datos...', {
                             tieneGenerarHTMLFactura: typeof window.generarHTMLFactura === 'function',
                             tienePedidoEdicionData: !!window.pedidoEdicionData,
                             tienePrendas: !!window.pedidoEdicionData?.pedido?.prendas

@@ -41,7 +41,7 @@ window.actualizarTablaTelas = function() {
     }
     
     // Identificar la fila de INPUTS usando el botón "Agregar" (selector robusto)
-    console.log('[actualizarTablaTelas] 🔍 Buscando fila de INPUTS en tabla...');
+    console.log('[actualizarTablaTelas]  Buscando fila de INPUTS en tabla...');
     const todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
     console.log('[actualizarTablaTelas] 📊 Total de filas en tabla:', todasLasFilas.length);
     

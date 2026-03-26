@@ -8,13 +8,13 @@ Sistema modular desacoplado para el manejo de telas, colores, referencias e imá
 
 ```
 📁 public/js/modulos/crear-pedido/telas/telas-module/
-├── 📄 estado-validacion.js          # Estado global y validaciones
-├── 📄 gestion-telas.js              # CRUD de telas
-├── 📄 manejo-imagenes.js            # Galería y preview de imágenes
-├── 📄 ui-renderizado.js              # UI y renderizado de tabla
-├── 📄 storage-datos.js              # Storage y obtención de datos
-├── 📄 telas-module-main.js           # Loader principal
-├── 📄 README.md                     # Documentación completa
+├──  estado-validacion.js          # Estado global y validaciones
+├──  gestion-telas.js              # CRUD de telas
+├──  manejo-imagenes.js            # Galería y preview de imágenes
+├──  ui-renderizado.js              # UI y renderizado de tabla
+├──  storage-datos.js              # Storage y obtención de datos
+├──  telas-module-main.js           # Loader principal
+├──  README.md                     # Documentación completa
 ```
 
 ## 🎯 Componentes del Módulo

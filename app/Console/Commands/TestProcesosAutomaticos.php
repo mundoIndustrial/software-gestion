@@ -3,9 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\Insumos\ProcesoAutomaticoService;
-use App\Services\Insumos\MaterialesService;
-use App\Repositories\Insumos\MaterialesRepository;
+use App\Application\Insumos\Services\ProcesoAutomaticoService;
+use App\Application\Insumos\Services\PedidoAprobacionService;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesosPrenda;
@@ -105,15 +104,15 @@ class TestProcesosAutomaticos extends Command
             $this->line("     Fecha inicio: {$proceso->fecha_inicio}, Código: {$proceso->codigo_referencia}");
         }
 
-        // 5. Probar el flujo completo del MaterialesService
+        // 5. Probar el flujo completo del servicio de aprobacion
         $this->line('');
-        $this->info('5. Probando flujo completo del MaterialesService...');
+        $this->info('5. Probando flujo completo de PedidoAprobacionService...');
         
         // Primero revertir el estado del pedido para probar el flujo completo
         $pedidoPendiente->update(['estado' => 'Pendiente']);
         
-        $materialesService = new MaterialesService(new MaterialesRepository());
-        $resultadoCompleto = $materialesService->cambiarEstadoPedido($pedidoPendiente->numero_pedido, 'En Ejecución');
+        $pedidoAprobacionService = app(PedidoAprobacionService::class);
+        $resultadoCompleto = $pedidoAprobacionService->cambiarEstadoPedido($pedidoPendiente->numero_pedido, 'En Ejecución');
 
         if ($resultadoCompleto['success']) {
             $this->info(' Flujo completo exitoso');

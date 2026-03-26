@@ -41,7 +41,7 @@ FILAS DE ARTÍCULOS
 
 | Estado | Badge | Color | Botón |
 |--------|-------|-------|-------|
-| **PENDIENTE** | ⏳ PENDIENTE | Ámbar (#f59e0b) | ENTREGAR (border-black) |
+| **PENDIENTE** |  PENDIENTE | Ámbar (#f59e0b) | ENTREGAR (border-black) |
 | **ENTREGADO** | ✓ OK | Azul (#2563eb) | Deshabilitado (badge azul) |
 | **RETRASADO** | ⚠ RETRASADO | Rojo (#dc2626) | ENTREGAR (borde rojo) |
 

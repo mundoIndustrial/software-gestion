@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ObtenerDatosParaCrearPedidoUseCase
  * 
- * ✅ RESPONSABILIDAD ÚNICA: Obtener datos básicos para crear un nuevo pedido
+ *  RESPONSABILIDAD ÚNICA: Obtener datos básicos para crear un nuevo pedido
  * 
  * Datos que obtiene:
  * - Pedidos recientes del usuario

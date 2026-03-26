@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 class PrendaDataNormalizerService
 {
     /**
-     * Normalizar datos de prenda (DTO â†’ array)
+     * Normalizar datos de prenda (DTO  array)
      * 
      * Convierte objetos DTO a arrays para procesamiento uniforme
      */

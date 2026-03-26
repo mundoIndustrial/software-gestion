@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
  * FLUJO:
  * 1. Se recibe JSON con referencias de imagenes (UID + nombre_archivo)
  * 2. Se crean prendas/telas/procesos en BD (obtienen IDs)
- * 3. Este servicio mapea: UID â†’ ID_BD y crea PrendaFotoPedido, PrendaFotoTelaPedido, etc
+ * 3. Este servicio mapea: UID  ID_BD y crea PrendaFotoPedido, PrendaFotoTelaPedido, etc
  * 
  * FLUJO DETALADO:
  * 
@@ -52,20 +52,20 @@ use Illuminate\Support\Facades\Log;
  * - prendas.0.procesos.0.imagenes.0 = File (archivo bordado_001.jpg)
  * 
  * PROCESO:
- * 1. CrearPedidoEditableController â†’ ResolutorImagenesService
+ * 1. CrearPedidoEditableController  ResolutorImagenesService
  *    - Extrae archivos de FormData
  *    - Guarda en storage/pedidos/{id}/{carpeta}/
- *    - Mapea: UID â†’ ruta final
+ *    - Mapea: UID  ruta final
  * 
  * 2. Crea entidades en BD:
  *    - PrendaProduccion (obtiene ID: 3432)
  *    - PrendaPedidoColorTela (obtiene ID: 60)
- *    - TipoProceso â†’ ProcesoPrendaDetalle (obtiene ID: 77)
+ *    - TipoProceso  ProcesoPrendaDetalle (obtiene ID: 77)
  * 
- * 3. MapeoImagenesService (este archivo) â†’ crea registros en:
- *    - PrendaFotoPedido (uid_img_3 â†’ ruta final)
- *    - PrendaFotoTelaPedido (uid_img_1 â†’ ruta final)
- *    - ProcesoPrendaFoto (uid_img_2 â†’ ruta final)
+ * 3. MapeoImagenesService (este archivo)  crea registros en:
+ *    - PrendaFotoPedido (uid_img_3  ruta final)
+ *    - PrendaFotoTelaPedido (uid_img_1  ruta final)
+ *    - ProcesoPrendaFoto (uid_img_2  ruta final)
  */
 
 class MapeoImagenesService
@@ -106,7 +106,7 @@ class MapeoImagenesService
         $tiempoResolver = round((microtime(true) - $inicioResolver) * 1000, 2);
 
         // LOG DETALLADO: Mostrar todos los keys en el mapeo
-        Log::info('[MAPEO-IMAGENES]  MAPEO COMPLETO DE UIDâ†’RUTA', [
+        Log::info('[MAPEO-IMAGENES]  MAPEO COMPLETO DE UIDRUTA', [
             'total_keys' => count($mapeoUidARuta),
             'mapeo_keys_rutas' => array_map(function($key) use ($mapeoUidARuta) {
                 return [
@@ -117,7 +117,7 @@ class MapeoImagenesService
             }, array_keys($mapeoUidARuta)),
         ]);
 
-        Log::info('[MAPEO-IMAGENES]  Mapeo UIDâ†’Ruta completado', [
+        Log::info('[MAPEO-IMAGENES]  Mapeo UIDRuta completado', [
             'imagenes_mapeadas' => count($mapeoUidARuta),
             'tiempo_resolver_ms' => $tiempoResolver,
         ]);
@@ -128,7 +128,7 @@ class MapeoImagenesService
         $tiempoRegistros = round((microtime(true) - $inicioRegistros) * 1000, 2);
         
         $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
-        Log::info('[MAPEO-IMAGENES] âœ¨ MAPEO COMPLETADO', [
+        Log::info('[MAPEO-IMAGENES] ¨ MAPEO COMPLETADO', [
             'tiempo_total_ms' => $tiempoTotal,
             'tiempo_resolver_ms' => $tiempoResolver,
             'tiempo_crear_registros_ms' => $tiempoRegistros,

@@ -514,7 +514,7 @@
       </li>
 
       <li class="menu-item">
-        <a href="{{ route('insumos.dashboard') }}"
+        <a href="{{ route('insumos.materiales.index') }}"
            class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
            aria-label="Ver módulo de insumos">
           <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
@@ -591,7 +591,7 @@
       <span class="menu-section-title">Módulos</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('insumos.dashboard') }}"
+        <a href="{{ route('insumos.materiales.index') }}"
            class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
            aria-label="Ver módulo de insumos">
           <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>

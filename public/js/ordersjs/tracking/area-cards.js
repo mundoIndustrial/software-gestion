@@ -58,7 +58,7 @@ class AreaCards {
     const shouldHideEncargado = isInsumos || !needsEncargado;
 
     const hasFechaCompletado = !isInsumos && Boolean(typeof toDateObject === 'function' ? toDateObject(data.fecha_completado) : null);
-    // ✅ Usar estado_display del backend si disponible, si no calcular
+    //  Usar estado_display del backend si disponible, si no calcular
     const estadoDisplay = (data.duraciones?.estado_display) || 
                           (isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente'));
     const estaActivoDisplay = (data.duraciones?.esta_activo_display !== undefined) ? 
@@ -166,7 +166,7 @@ class AreaCards {
       console.log('[totalDiasAreaDisplay] Iniciando cálculo - area:', area, 'needsEncargado:', needsEncargado);
       console.log('[totalDiasAreaDisplay] Datos - fecha_inicio:', data.fecha_inicio, 'fecha_asignacion_encargado:', data.fecha_de_asignacion_encargado, 'fechaFinRaw:', fechaFinRaw);
       
-      // ✅ SIMPLIFICACIÓN: Si el backend ya calculó duraciones, usarlas directamente
+      //  SIMPLIFICACIÓN: Si el backend ya calculó duraciones, usarlas directamente
       if (data.duraciones && typeof data.duraciones.total_dias_numero !== 'undefined') {
         const totalDias = data.duraciones.total_dias_numero;
         console.log('[totalDiasAreaDisplay] USANDO BACKEND: duraciones.total_dias_numero =', totalDias);

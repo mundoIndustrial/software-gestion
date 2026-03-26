@@ -201,14 +201,14 @@ Route::withoutMiddleware(['api'])
 Route::prefix('cotizacion')->name('cotizacion.')->middleware(['auth'])->group(function () {
     
     // Guardar prenda nueva en cotización
-    Route::post('prendas', [App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'guardarPrenda'])
+    Route::post('prendas', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'guardarPrenda'])
         ->name('prendas.guardar');
     
     // Obtener prendas de una cotización
-    Route::get('{cotizacionId}/prendas', [App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'obtenerPrendas'])
+    Route::get('{cotizacionId}/prendas', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'obtenerPrendas'])
         ->name('prendas.obtener');
     
     // Eliminar una prenda de cotización
-    Route::delete('prendas/{prendaId}', [App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'eliminarPrenda'])
+    Route::delete('prendas/{prendaId}', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'eliminarPrenda'])
         ->name('prendas.eliminar');
 });

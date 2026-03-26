@@ -980,7 +980,7 @@ class ModalNovedadEdicion {
                         // Es un File nuevo
                         imagenesNuevas.push(archivoReal);
                         formData.append(`imagenes[${imagenesNuevas.length - 1}]`, archivoReal);
-                        console.log('[modal-novedad-edicion] 📄 Imagen nueva detectada:', {
+                        console.log('[modal-novedad-edicion]  Imagen nueva detectada:', {
                             esFileDirecto: img instanceof File,
                             tieneFileProperty: !!(img?.file),
                             propiedades: {
@@ -1444,7 +1444,7 @@ class ModalNovedadEdicion {
 
     mostrarCargando() {
         Swal.fire({
-            title: '⏳ Actualizando...',
+            title: ' Actualizando...',
             html: '<p>Por favor espera</p>',
             allowOutsideClick: false,
             allowEscapeKey: false,

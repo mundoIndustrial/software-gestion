@@ -176,7 +176,7 @@ if (typeof window.cargarNotas !== 'function') {
 
             const historial = document.getElementById('notasHistorial');
             if (historial && debeRenderizarHistorial) {
-                historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">⏳ Cargando notas...</span></div>';
+                historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500"> Cargando notas...</span></div>';
             }
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -659,7 +659,7 @@ async function actualizarTabla() {
     const btnActualizar = document.getElementById('btnActualizar');
     if (btnActualizar) {
         btnActualizar.disabled = true;
-        btnActualizar.innerHTML = '⏳ Actualizando...';
+        btnActualizar.innerHTML = ' Actualizando...';
     }
 
     try {
@@ -903,7 +903,7 @@ async function abrirModalFactura(pedidoId) {
     
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
-    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500"> Cargando factura...</span></div>';
     
     try {
         const response = await fetch(`${basePedido}/${pedidoId}/factura-datos`, {
@@ -1014,15 +1014,15 @@ function imprimirModalFactura() {
  */
 function generarHTMLFactura(datos) {
     // DEBUG: Ver estructura de datos
-    console.log('📋 [BODEGA-FACTURA] Estructura completa:', datos);
-    console.log('📋 [BODEGA-FACTURA] Prendas:', datos.prendas);
+    console.log(' [BODEGA-FACTURA] Estructura completa:', datos);
+    console.log(' [BODEGA-FACTURA] Prendas:', datos.prendas);
     if (datos.prendas && datos.prendas[0]) {
-        console.log('📋 [BODEGA-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
-        console.log('📋 [BODEGA-FACTURA] Tallas:', datos.prendas[0].tallas);
-        console.log('📋 [BODEGA-FACTURA] Descripción:', datos.prendas[0].descripcion);
-        console.log('📋 [BODEGA-FACTURA] Variantes:', datos.prendas[0].variantes);
-        console.log('📋 [BODEGA-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
-        console.log('📋 [BODEGA-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
+        console.log(' [BODEGA-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log(' [BODEGA-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log(' [BODEGA-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log(' [BODEGA-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log(' [BODEGA-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log(' [BODEGA-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
     }
     
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
@@ -1688,7 +1688,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     const fila = btnGuardar.closest('tr');
     const rowHash = fila ? fila.getAttribute('data-row-hash') : null;
     
-    console.log('🔍 [GUARDAR-FILA] Buscando elementos:', { 
+    console.log(' [GUARDAR-FILA] Buscando elementos:', { 
         rowHash, 
         numeroPedido, 
         talla, 

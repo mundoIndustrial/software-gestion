@@ -341,7 +341,7 @@ class ItemAPIService {
                 console.debug('[crearPedido] PASO 2 completo - Prendas:', pedidoNormalizado.prendas.length, '- EPPs:', pedidoNormalizado.epps.length);
                 
                 // DIAGNÓSTICO: Verificar prendas normalizadas
-                console.log('[crearPedido] 🔍 DIAGNÓSTICO - Primera prenda normalizada:');
+                console.log('[crearPedido]  DIAGNÓSTICO - Primera prenda normalizada:');
                 if (pedidoNormalizado.prendas.length > 0) {
                     const prendaNorm = pedidoNormalizado.prendas[0];
                     console.log('[crearPedido]   - nombre:', prendaNorm.nombre_prenda);

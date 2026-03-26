@@ -365,7 +365,7 @@ export class Formatters {
                 
                 if (tallasAMostrar) {
                     // Comparar si son diferentes a las de la prenda
-                    console.log('[Formatters] 🔍 Comparando tallas para REFLECTIVO:', {
+                    console.log('[Formatters]  Comparando tallas para REFLECTIVO:', {
                         tallasProceso: tallasAMostrar,
                         tallasPrenda: prenda.tallas,
                         de_bodega: prenda.de_bodega
@@ -415,8 +415,8 @@ export class Formatters {
         }
 
         const resultado = lineas.join('<br>') || '<em>Sin información</em>';
-        console.log('[Formatters.construirDescripcionCostura] 📄 OUTPUT completo:', resultado);
-        console.log('[Formatters.construirDescripcionCostura] 📄 Cantidad de líneas:', lineas.length);
+        console.log('[Formatters.construirDescripcionCostura]  OUTPUT completo:', resultado);
+        console.log('[Formatters.construirDescripcionCostura]  Cantidad de líneas:', lineas.length);
         return resultado;
     }
 
@@ -803,7 +803,7 @@ export class Formatters {
      * Comparar si dos objetos de tallas son idénticos
      */
     static _sonTallasIguales(tallas1, tallas2) {
-        console.log('[Formatters._sonTallasIguales] 🔍 Comparando tallas:', {
+        console.log('[Formatters._sonTallasIguales]  Comparando tallas:', {
             tallas1,
             tallas2
         });
@@ -1035,10 +1035,10 @@ export class Formatters {
         
         // Debug detallado de la estructura
         if (typeof tallas === 'object' && tallas !== null) {
-            console.log('[Formatters._agregarTallasFormato] 🔍 Claves de tallas:', Object.keys(tallas));
+            console.log('[Formatters._agregarTallasFormato]  Claves de tallas:', Object.keys(tallas));
             Object.keys(tallas).forEach(key => {
                 const value = tallas[key];
-                console.log(`[Formatters._agregarTallasFormato] 🔍 Key "${key}":`, {
+                console.log(`[Formatters._agregarTallasFormato]  Key "${key}":`, {
                     tipo: typeof value,
                     esArray: Array.isArray(value),
                     valor: value,
@@ -1137,7 +1137,7 @@ export class Formatters {
                     
                     // Si es array de objetos (estructura del backend)
                     if (Array.isArray(value)) {
-                        console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando array de tallas para género: ${genero}`);
+                        console.log(`[Formatters._agregarTallasFormato]     Procesando array de tallas para género: ${genero}`);
                         value.forEach((item, idx) => {
                             console.log(`[Formatters._agregarTallasFormato]      Item[${idx}]:`, item);
                             
@@ -1169,7 +1169,7 @@ export class Formatters {
                         });
                     } else {
                         // Procesamiento original para objetos simples
-                        console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando objeto simple para género: ${genero}`);
+                        console.log(`[Formatters._agregarTallasFormato]     Procesando objeto simple para género: ${genero}`);
                         Object.entries(value).forEach(([tallaKey, cantidadRaw]) => {
                             //  NUEVO: Detectar si es array de colores
                             if (Array.isArray(cantidadRaw) && cantidadRaw.length > 0 && cantidadRaw[0] && cantidadRaw[0].color) {
@@ -1316,7 +1316,7 @@ export class Formatters {
         // Renderizar CABALLERO
         renderizarTallasGenero(tallasCalballero, 'CABALLERO');
         
-        console.log('[Formatters._agregarTallasFormato] 📄 Lineas después:', lineas);
+        console.log('[Formatters._agregarTallasFormato]  Lineas después:', lineas);
     }
 
     /**

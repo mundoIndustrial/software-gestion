@@ -124,9 +124,9 @@ class ImagenRelocalizadorService
      * Extraer tipo (prenda, tela, proceso) desde ruta temporal
      * 
      * Soporta TRES formatos:
-     * 1. CENTRALIZADO: 'temp/uuid/prendas/webp/file.webp' â†’ 'prendas'
-     * 2. ANTIGUO TEMP: 'prendas/temp/uuid/file.webp' â†’ 'prendas'
-     * 3. ANTIGUO: 'prendas/2026/01/file.jfif' â†’ 'prendas'
+     * 1. CENTRALIZADO: 'temp/uuid/prendas/webp/file.webp'  'prendas'
+     * 2. ANTIGUO TEMP: 'prendas/temp/uuid/file.webp'  'prendas'
+     * 3. ANTIGUO: 'prendas/2026/01/file.jfif'  'prendas'
      * 
      * @param string $ruta
      * @return string|null

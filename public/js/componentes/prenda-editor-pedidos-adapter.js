@@ -471,7 +471,7 @@
                     procesosArray = Object.entries(procesosRaw).map(([tipo, proc]) => {
                         const d = proc?.datos || proc || {};
                         
-                        console.log(`[PedidosAdapter] 🔍 DIAGNÓSTICO Proceso ${tipo}:`, {
+                        console.log(`[PedidosAdapter]  DIAGNÓSTICO Proceso ${tipo}:`, {
                             tieneImagenes: !!d.imagenes,
                             tieneImagenesEliminadas: !!d.imagenesEliminadas,
                             cantidadImagenes: d.imagenes?.length || 0,
@@ -533,7 +533,7 @@
                         
                         // 🔴 CRÍTICO: También incluir imágenes que fueron eliminadas (marcadas como null)
                         if (d.imagenesEliminadas && Array.isArray(d.imagenesEliminadas)) {
-                            console.log(`[PedidosAdapter] 🔍 DEBUGGING imagenesEliminadas para ${tipo}:`, {
+                            console.log(`[PedidosAdapter]  DEBUGGING imagenesEliminadas para ${tipo}:`, {
                                 length: d.imagenesEliminadas.length,
                                 items: d.imagenesEliminadas.map((img, idx) => ({
                                     idx,
@@ -632,7 +632,7 @@
             const imagenesExistentes = [];
             const imgs = datos.imagenes || [];
             
-            console.log('[PedidosAdapter] 🔍 DIAGNÓSTICO DE IMÁGENES:', {
+            console.log('[PedidosAdapter]  DIAGNÓSTICO DE IMÁGENES:', {
                 'datos.imagenes': datos.imagenes,
                 'typeof datos.imagenes': typeof datos.imagenes,
                 'imgs.length': imgs.length,

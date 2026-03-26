@@ -206,14 +206,14 @@ export class PedidosRecibosModule {
             }
 
             // Encontrar la prenda
-            console.log(`[PedidosRecibosModule] 🔍 Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
-            console.log(`[PedidosRecibosModule] 📋 IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
+            console.log(`[PedidosRecibosModule]  Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
+            console.log(`[PedidosRecibosModule]  IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
             
             const prendaData = datos.prendas.find(p => p.id == prendaId);
             
             if (!prendaData) {
                 console.error(`[PedidosRecibosModule]  Prenda ${prendaId} no encontrada`);
-                console.error(`[PedidosRecibosModule] 🔍 Búsqueda realizada con:`, {
+                console.error(`[PedidosRecibosModule]  Búsqueda realizada con:`, {
                     buscarPor: 'id',
                     valorBuscado: prendaId,
                     tipoDeComparacion: '== (flexible)',
@@ -682,7 +682,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
             const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
 
-            console.log('[printReceiptModal] 📋 DATOS EXTRAÍDOS:', {
+            console.log('[printReceiptModal]  DATOS EXTRAÍDOS:', {
                 datosPedido,
                 prendaData,
                 recibos,
@@ -1012,7 +1012,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const tallasResumen = (() => {
                 // Para procesos, priorizar tallas_detalle que viene desde la BD
                 let tallasProceso = null;
-                console.log('[printReceiptModal] 🔍 DEBUG - Datos de tallas disponibles:', {
+                console.log('[printReceiptModal]  DEBUG - Datos de tallas disponibles:', {
                     tipoProceso,
                     reciboActual,
                     prendaData,

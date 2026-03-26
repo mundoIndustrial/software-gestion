@@ -292,7 +292,7 @@ gzip_min_length 1000;
 
 ### Día 2-3 (Si necesarias más mejoras):
 ```
-⏳ Fase 2a: Fáciles (30 min)
+ Fase 2a: Fáciles (30 min)
 1. Eliminar arrays vacíos
 2. Gzip (verificar)
 - Ganancia estimada: +20-30% más rápido
@@ -300,7 +300,7 @@ gzip_min_length 1000;
 
 ### Día 4-5 (Si sigue siendo lento):
 ```
-⏳ Fase 2b: Medianas (1-2h)
+ Fase 2b: Medianas (1-2h)
 1. Redis Caching
 2. Lazy loading
 - Ganancia estimada: +30-50% más rápido
@@ -308,7 +308,7 @@ gzip_min_length 1000;
 
 ### Semana 2 (Optimización final):
 ```
-⏳ Fase 2c: Avanzadas (2h+)
+ Fase 2c: Avanzadas (2h+)
 1. Pagination
 2. Select() specifics
 - Ganancia estimada: +50-80% + escalabilidad

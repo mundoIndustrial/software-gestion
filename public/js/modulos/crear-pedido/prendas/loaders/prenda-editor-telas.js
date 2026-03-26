@@ -419,7 +419,7 @@ window.cargarDatalistTelasColores = async function() {
                 telas = Object.values(telas);
             }
             const datalistTelas = document.getElementById('opciones-telas');
-            console.log('[cargarDatalistTelasColores] 🔍 Datalist telas encontrado:', !!datalistTelas);
+            console.log('[cargarDatalistTelasColores]  Datalist telas encontrado:', !!datalistTelas);
             console.log('[cargarDatalistTelasColores] 📊 Telas array válido:', Array.isArray(telas), 'cantidad:', telas?.length);
             
             if (datalistTelas && Array.isArray(telas)) {
@@ -454,7 +454,7 @@ window.cargarDatalistTelasColores = async function() {
                 colores = Object.values(colores);
             }
             const datalistColores = document.getElementById('opciones-colores');
-            console.log('[cargarDatalistTelasColores] 🔍 Datalist colores encontrado:', !!datalistColores);
+            console.log('[cargarDatalistTelasColores]  Datalist colores encontrado:', !!datalistColores);
             console.log('[cargarDatalistTelasColores] 📊 Colores array válido:', Array.isArray(colores), 'cantidad:', colores?.length);
             
             if (datalistColores && Array.isArray(colores)) {
@@ -548,7 +548,7 @@ window.configurarDragDropTela = function() {
 window.configurarDragDropProcesos = function() {
     console.log('[configurarDragDropProcesos] 🔄 INICIO - Configurando drag & drop para procesos');
     console.log('[configurarDragDropProcesos] 📊 Timestamp:', new Date().toISOString());
-    console.log('[configurarDragDropProcesos] 🔍 Stack trace:', new Error().stack);
+    console.log('[configurarDragDropProcesos]  Stack trace:', new Error().stack);
     
     // Configurar para cada preview de proceso (1, 2, 3)
     for (let i = 1; i <= 3; i++) {
@@ -658,7 +658,7 @@ window.configurarDragDropProcesos = function() {
             console.log(`[configurarDragDropProcesos] 🎯 PASTE en preview ${i}`);
             e.preventDefault();
             const items = e.clipboardData.items;
-            console.log(`[configurarDragDropProcesos] 📋 Items en clipboard:`, items.length);
+            console.log(`[configurarDragDropProcesos]  Items en clipboard:`, items.length);
             
             for (let item of items) {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
@@ -689,8 +689,8 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = PrendaEditorTelas;
 }
 
-// 🔍 DIAGNÓSTICO: Probar APIs al cargar el módulo
-console.log('[PrendaEditorTelas] 🔍 Módulo cargado, probando APIs...');
+//  DIAGNÓSTICO: Probar APIs al cargar el módulo
+console.log('[PrendaEditorTelas]  Módulo cargado, probando APIs...');
 setTimeout(() => {
     if (typeof probarApisTelasColores === 'function') {
         probarApisTelasColores();

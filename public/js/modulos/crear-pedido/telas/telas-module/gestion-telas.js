@@ -34,7 +34,7 @@ window.agregarTelaNueva = async function() {
         }
         
         // Obtener elementos del DOM
-        console.log('[agregarTelaNueva] 🔍 Buscando elementos en el DOM...');
+        console.log('[agregarTelaNueva]  Buscando elementos en el DOM...');
         const colorElement = document.getElementById('nueva-prenda-color');
         const telaElement = document.getElementById('nueva-prenda-tela');
         const referenciaElement = document.getElementById('nueva-prenda-referencia');

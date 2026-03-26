@@ -5,9 +5,24 @@ namespace App\Infrastructure\Http\Controllers\Insumos;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Http\Controllers\Traits\HandlesExceptions;
 use App\Infrastructure\Http\Controllers\Traits\CalculateWorkingDays;
-use App\Services\Insumos\MaterialesService;
-use App\Services\Insumos\RecibosQueryService;
-use App\Models\PedidoProduccion;
+use App\Application\Insumos\UseCases\EliminarMaterialPorNombreUseCase;
+use App\Application\Insumos\UseCases\GuardarMaterialesDetalladosUseCase;
+use App\Application\Insumos\UseCases\GuardarObservacionesMaterialUseCase;
+use App\Application\Insumos\UseCases\MarcarNotificacionesInsumosLeidasUseCase;
+use App\Application\Insumos\UseCases\MarcarReciboVistoInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerRecibosCosturaPendientesInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerResumenRecibosPendientesInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerMaterialesPedidoUseCase;
+use App\Application\Insumos\UseCases\ObtenerOpcionesFiltroInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerPrendasPedidoInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerReciboPrendaInsumosUseCase;
+use App\Application\Insumos\UseCases\CambiarEstadoReciboInsumosUseCase;
+use App\Application\Insumos\UseCases\CambiarEstadoPedidoInsumosUseCase;
+use App\Application\Insumos\UseCases\EliminarAnchoMetrajePrendaInsumosUseCase;
+use App\Application\Insumos\UseCases\GuardarAnchoMetrajePrendaInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase;
+use App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase;
+use App\Application\Insumos\Services\RecibosQueryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -19,25 +34,63 @@ class InsumosController extends Controller
     use HandlesExceptions;
     use CalculateWorkingDays;
 
-    protected $materialesService;
+    protected $obtenerOpcionesFiltroUseCase;
+    protected $guardarMaterialesDetalladosUseCase;
+    protected $eliminarMaterialPorNombreUseCase;
+    protected $obtenerMaterialesPedidoUseCase;
+    protected $marcarNotificacionesLeidasUseCase;
+    protected $obtenerPrendasPedidoUseCase;
+    protected $obtenerReciboPrendaUseCase;
+    protected $guardarObservacionesMaterialUseCase;
+    protected $cambiarEstadoReciboUseCase;
+    protected $obtenerResumenRecibosPendientesUseCase;
+    protected $obtenerRecibosCosturaPendientesUseCase;
+    protected $marcarReciboVistoUseCase;
+    protected $cambiarEstadoPedidoUseCase;
+    protected $obtenerColoresPrendaUseCase;
+    protected $obtenerAnchoMetrajePrendaUseCase;
+    protected $guardarAnchoMetrajePrendaUseCase;
+    protected $eliminarAnchoMetrajePrendaUseCase;
     protected $recibosQueryService;
 
-    public function __construct(MaterialesService $materialesService, RecibosQueryService $recibosQueryService)
-    {
-        $this->materialesService = $materialesService;
+    public function __construct(
+        ObtenerOpcionesFiltroInsumosUseCase $obtenerOpcionesFiltroUseCase,
+        GuardarMaterialesDetalladosUseCase $guardarMaterialesDetalladosUseCase,
+        EliminarMaterialPorNombreUseCase $eliminarMaterialPorNombreUseCase,
+        ObtenerMaterialesPedidoUseCase $obtenerMaterialesPedidoUseCase,
+        MarcarNotificacionesInsumosLeidasUseCase $marcarNotificacionesLeidasUseCase,
+        ObtenerPrendasPedidoInsumosUseCase $obtenerPrendasPedidoUseCase,
+        ObtenerReciboPrendaInsumosUseCase $obtenerReciboPrendaUseCase,
+        GuardarObservacionesMaterialUseCase $guardarObservacionesMaterialUseCase,
+        CambiarEstadoReciboInsumosUseCase $cambiarEstadoReciboUseCase,
+        ObtenerResumenRecibosPendientesInsumosUseCase $obtenerResumenRecibosPendientesUseCase,
+        ObtenerRecibosCosturaPendientesInsumosUseCase $obtenerRecibosCosturaPendientesUseCase,
+        MarcarReciboVistoInsumosUseCase $marcarReciboVistoUseCase,
+        CambiarEstadoPedidoInsumosUseCase $cambiarEstadoPedidoUseCase,
+        ObtenerColoresPrendaInsumosUseCase $obtenerColoresPrendaUseCase,
+        ObtenerAnchoMetrajePrendaInsumosUseCase $obtenerAnchoMetrajePrendaUseCase,
+        GuardarAnchoMetrajePrendaInsumosUseCase $guardarAnchoMetrajePrendaUseCase,
+        EliminarAnchoMetrajePrendaInsumosUseCase $eliminarAnchoMetrajePrendaUseCase,
+        RecibosQueryService $recibosQueryService
+    ) {
+        $this->obtenerOpcionesFiltroUseCase = $obtenerOpcionesFiltroUseCase;
+        $this->guardarMaterialesDetalladosUseCase = $guardarMaterialesDetalladosUseCase;
+        $this->eliminarMaterialPorNombreUseCase = $eliminarMaterialPorNombreUseCase;
+        $this->obtenerMaterialesPedidoUseCase = $obtenerMaterialesPedidoUseCase;
+        $this->marcarNotificacionesLeidasUseCase = $marcarNotificacionesLeidasUseCase;
+        $this->obtenerPrendasPedidoUseCase = $obtenerPrendasPedidoUseCase;
+        $this->obtenerReciboPrendaUseCase = $obtenerReciboPrendaUseCase;
+        $this->guardarObservacionesMaterialUseCase = $guardarObservacionesMaterialUseCase;
+        $this->cambiarEstadoReciboUseCase = $cambiarEstadoReciboUseCase;
+        $this->obtenerResumenRecibosPendientesUseCase = $obtenerResumenRecibosPendientesUseCase;
+        $this->obtenerRecibosCosturaPendientesUseCase = $obtenerRecibosCosturaPendientesUseCase;
+        $this->marcarReciboVistoUseCase = $marcarReciboVistoUseCase;
+        $this->cambiarEstadoPedidoUseCase = $cambiarEstadoPedidoUseCase;
+        $this->obtenerColoresPrendaUseCase = $obtenerColoresPrendaUseCase;
+        $this->obtenerAnchoMetrajePrendaUseCase = $obtenerAnchoMetrajePrendaUseCase;
+        $this->guardarAnchoMetrajePrendaUseCase = $guardarAnchoMetrajePrendaUseCase;
+        $this->eliminarAnchoMetrajePrendaUseCase = $eliminarAnchoMetrajePrendaUseCase;
         $this->recibosQueryService = $recibosQueryService;
-    }
-
-    /**
-     * Dashboard del rol insumos
-     */
-    public function dashboard()
-    {
-        $user = Auth::user();
-        
-        return view('insumos.dashboard', [
-            'user' => $user,
-        ]);
     }
 
     /**
@@ -46,7 +99,7 @@ class InsumosController extends Controller
     public function obtenerValoresFiltro($column)
     {
         try {
-            $resultado = $this->materialesService->obtenerOpcionesFiltro($column);
+            $resultado = $this->obtenerOpcionesFiltroUseCase->execute($column);
             return response()->json([
                 'success' => true,
                 'column' => $column,
@@ -68,13 +121,31 @@ class InsumosController extends Controller
     public function materiales(Request $request)
     {
         try {
+            Log::info(' InsumosController.materiales() INICIADO', [
+                'url' => $request->fullUrl(),
+                'user_id' => Auth::id(),
+                'user_name' => Auth::user()?->name ?? 'unknown',
+            ]);
+
             $user = Auth::user();
+            
+            if (!$user) {
+                Log::error('❌ No hay usuario autenticado en materiales()');
+                return redirect('/login');
+            }
+
+            Log::info(' Llamando a recibosQueryService.obtenerRecibosConPaginacion()');
             
             // TODA la lógica de query/filtrado/paginación está en el servicio
             $ordenes = $this->recibosQueryService->obtenerRecibosConPaginacion(
                 $request,
                 fn($fecha) => $this->calcularDiasHabiles($fecha)
             );
+
+            Log::info(' Recibos obtenidos exitosamente', [
+                'total' => count($ordenes),
+                'first_page' => $ordenes->currentPage() ?? 'N/A'
+            ]);
             
             return view('insumos.materiales.index', [
                 'ordenes' => $ordenes,
@@ -82,6 +153,11 @@ class InsumosController extends Controller
                 'search' => $request->get('search', ''),
             ]);
         } catch (\Exception $e) {
+            Log::error('❌ ERROR en InsumosController.materiales()', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'url' => $request->fullUrl(),
+            ]);
             return $this->handleException($e, 'obtener recibos de costura');
         }
     }
@@ -105,7 +181,7 @@ class InsumosController extends Controller
                 'prenda_id' => 'nullable|integer|exists:prendas_pedido,id',
             ]);
 
-            $resultado = $this->materialesService->guardarMaterialesDetallados(
+            $resultado = $this->guardarMaterialesDetalladosUseCase->execute(
                 (string) $ordenId,
                 $validated['materiales'] ?? [],
                 $validated['prenda_id'] ?? null
@@ -144,7 +220,7 @@ class InsumosController extends Controller
                 'prenda_id' => 'nullable|integer|exists:prendas_pedido,id',
             ]);
 
-            $resultado = $this->materialesService->eliminarMaterialPorNombre(
+            $resultado = $this->eliminarMaterialPorNombreUseCase->execute(
                 (string) $ordenId,
                 $validated['nombre_material'],
                 $validated['prenda_id'] ?? null
@@ -169,7 +245,7 @@ class InsumosController extends Controller
     public function obtenerMateriales($pedido)
     {
         try {
-            $resultado = $this->materialesService->obtenerMaterialesPedido(
+            $resultado = $this->obtenerMaterialesPedidoUseCase->execute(
                 (string) $pedido,
                 request('prenda_id') ? (int) request('prenda_id') : null
             );
@@ -196,7 +272,7 @@ class InsumosController extends Controller
             $user = Auth::user();
 
             return response()->json(
-                $this->materialesService->marcarTodasNotificacionesLeidas((int) $user->id)
+                $this->marcarNotificacionesLeidasUseCase->execute((int) $user->id)
             );
         } catch (\Exception $e) {
             return response()->json([
@@ -211,9 +287,6 @@ class InsumosController extends Controller
     public function cambiarEstado(Request $request, $numeroPedido)
     {
         try {
-            $user = Auth::user();
-
-            
             // Validar datos
             $validated = $request->validate([
                 'estado' => [
@@ -223,15 +296,9 @@ class InsumosController extends Controller
                 ],
             ]);
             
-            // Buscar el pedido
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
-                ->lockForUpdate()
-                ->firstOrFail();
-            
-            // Delegar al servicio
-            $resultado = $this->materialesService->cambiarEstado($pedido->id, $validated['estado']);
-            
-            return response()->json($resultado);
+            return response()->json(
+                $this->cambiarEstadoPedidoUseCase->execute((string) $numeroPedido, $validated['estado'])
+            );
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
@@ -247,14 +314,11 @@ class InsumosController extends Controller
     public function cambiarEstadoRecibo(Request $request, $reciboId)
     {
         try {
-            $user = Auth::user();
-
-            
             $validated = $request->validate([
                 'estado' => ['required', 'string', Rule::in(['No iniciado', 'En Ejecución'])],
             ]);
             
-            $resultado = $this->materialesService->cambiarEstadoRecibo($reciboId, $validated['estado']);
+            $resultado = $this->cambiarEstadoReciboUseCase->execute((int) $reciboId, $validated['estado']);
             return response()->json($resultado);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -277,7 +341,7 @@ class InsumosController extends Controller
     {
         try {
             return response()->json(
-                $this->materialesService->obtenerPrendasPedido((string) $numeroPedido)
+                $this->obtenerPrendasPedidoUseCase->execute((string) $numeroPedido)
             );
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -308,16 +372,9 @@ class InsumosController extends Controller
     public function obtenerColoresPrenda($numeroPedido, $prendaId)
     {
         try {
-            $user = Auth::user();
-
-            
-            $pedido = PedidoProduccion::find($numeroPedido)
-                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
-            
-            // Delegar al servicio
-            $resultado = $this->materialesService->obtenerColoresPrenda($pedido->id, $prendaId);
-            
-            return response()->json($resultado);
+            return response()->json(
+                $this->obtenerColoresPrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
+            );
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
@@ -332,16 +389,9 @@ class InsumosController extends Controller
     public function obtenerAnchoMetrajePrenda($numeroPedido, $prendaId)
     {
         try {
-            $user = Auth::user();
-
-            
-            $pedido = PedidoProduccion::find($numeroPedido)
-                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
-            
-            // Delegar al servicio
-            $resultado = $this->materialesService->obtenerAnchoMetrajePrenda($pedido->id, $prendaId);
-            
-            return response()->json($resultado);
+            return response()->json(
+                $this->obtenerAnchoMetrajePrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
+            );
         } catch (\Exception $e) {
             \Log::error('Error al obtener ancho/metraje de prenda: ' . $e->getMessage());
             return response()->json([
@@ -357,22 +407,15 @@ class InsumosController extends Controller
     public function guardarAnchoMetrajePrenda(GuardarAnchoMetrajeRequest $request, $numeroPedido)
     {
         try {
-            $user = Auth::user();
-
             $validated = $request->validated();
-            
-            // Buscar el pedido
-            $pedido = PedidoProduccion::find($numeroPedido)
-                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
-            
-            // Delegar al servicio con pedido, prenda y datos validados
-            $resultado = $this->materialesService->guardarAnchoMetrajePrenda(
-                $pedido->id,
-                $validated['prenda_pedido_id'],
-                $validated
+
+            return response()->json(
+                $this->guardarAnchoMetrajePrendaUseCase->execute(
+                    (string) $numeroPedido,
+                    (int) $validated['prenda_pedido_id'],
+                    $validated
+                )
             );
-            
-            return response()->json($resultado);
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
@@ -387,22 +430,17 @@ class InsumosController extends Controller
     public function eliminarAnchoMetrajePrenda(Request $request, $numeroPedido)
     {
         try {
-            $user = Auth::user();
-
-            
             // Validar datos
             $validated = $request->validate([
                 'prenda_id' => 'required|integer|exists:prendas_pedido,id'
             ]);
-            
-            // Buscar el pedido
-            $pedido = PedidoProduccion::find($numeroPedido)
-                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
-            
-            // Delegar al servicio
-            $resultado = $this->materialesService->eliminarAnchoMetrajePrenda($pedido->id, $validated['prenda_id']);
-            
-            return response()->json($resultado);
+
+            return response()->json(
+                $this->eliminarAnchoMetrajePrendaUseCase->execute(
+                    (string) $numeroPedido,
+                    (int) $validated['prenda_id']
+                )
+            );
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
@@ -418,7 +456,7 @@ class InsumosController extends Controller
     {
         try {
             return response()->json(
-                $this->materialesService->obtenerReciboPrenda((string) $numeroPedido, (int) $prendaId)
+                $this->obtenerReciboPrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
             );
             
         } catch (\Exception $e) {
@@ -440,29 +478,35 @@ class InsumosController extends Controller
             $user = Auth::user();
 
 
-            $resultado = $this->materialesService->contarCosturaPendiente($user->id);
-
-            $lista = collect($resultado['recibos'])->map(function ($recibo) {
-                return [
-                    'id' => $recibo->id,
-                    'numero_recibo' => $recibo->consecutivo_actual,
-                    'cliente' => $recibo->pedido->cliente ?? 'Sin cliente',
-                    'pedido_id' => $recibo->pedido_produccion_id,
-                    'fecha' => $recibo->created_at ? $recibo->created_at->format('d/m/Y H:i') : '',
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'total' => $resultado['total'] ?? count($lista),
-                'recibos' => $lista,
-            ]);
+            return response()->json(
+                $this->obtenerResumenRecibosPendientesUseCase->execute((int) $user->id)
+            );
 
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
                 'Error al obtener contador',
                 ['context' => 'contar costura pendiente']
+            );
+        }
+    }
+
+    /**
+     * Obtener TODOS los recibos de costura en estado PENDIENTE_INSUMOS
+     * Endpoint: GET /insumos/api/recibos-costura-pendiente
+     * Retorna: JSON con listado completo de recibos
+     */
+    public function obtenerRecibosCosTuraPendiente()
+    {
+        try {
+            return response()->json(
+                $this->obtenerRecibosCosturaPendientesUseCase->execute()
+            );
+        } catch (\Exception $e) {
+            return $this->handleExceptionWithContext(
+                $e,
+                'Error al obtener recibos de costura pendiente',
+                ['context' => 'obtener-recibos-costura-pendiente']
             );
         }
     }
@@ -478,7 +522,7 @@ class InsumosController extends Controller
 
 
             // Delegar al servicio
-            $resultado = $this->materialesService->marcarReciboVisto($id, $user->id);
+            $resultado = $this->marcarReciboVistoUseCase->execute((int) $id, (int) $user->id);
             
             return response()->json($resultado);
 
@@ -504,7 +548,7 @@ class InsumosController extends Controller
         ]);
 
         try {
-            $resultado = $this->materialesService->guardarObservaciones(
+            $resultado = $this->guardarObservacionesMaterialUseCase->execute(
                 $validated['numero_pedido'],
                 $validated['nombre_material'],
                 $validated['observaciones'] ?? null

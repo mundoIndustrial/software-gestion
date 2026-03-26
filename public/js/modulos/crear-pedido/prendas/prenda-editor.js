@@ -315,7 +315,7 @@ class PrendaEditor {
             if (typeof configurarDragDropProcesos === 'function') {
                 console.log('[PrendaEditor] 🔄 Llamando a configurarDragDropProcesos desde PrendaEditor');
                 console.log('[PrendaEditor] 📊 Timestamp:', new Date().toISOString());
-                console.log('[PrendaEditor] 🔍 Stack trace:', new Error().stack);
+                console.log('[PrendaEditor]  Stack trace:', new Error().stack);
                 configurarDragDropProcesos();
                 console.log('[PrendaEditor]  Drag & drop de procesos configurado');
             } else {

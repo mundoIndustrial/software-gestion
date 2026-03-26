@@ -597,7 +597,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                     const archivos = [];
                     
                     for (const item of items) {
-                        UIHelperService.log('PrendaDragDropHandler', `🔍 Tipos en item: ${item.types.join(', ')}`);
+                        UIHelperService.log('PrendaDragDropHandler', ` Tipos en item: ${item.types.join(', ')}`);
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {

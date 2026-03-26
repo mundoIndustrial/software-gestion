@@ -362,12 +362,12 @@
 <div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100000;">
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
-            <h2 class="text-lg font-semibold text-white">📄 Pedido</h2>
+            <h2 class="text-lg font-semibold text-white"> Pedido</h2>
             <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -511,7 +511,7 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     
     // Deshabilitar botón durante el guardado
     button.disabled = true;
-    button.textContent = '⏳ Guardando...';
+    button.textContent = ' Guardando...';
     
     fetch('/gestion-bodega/guardar-fila', {
         method: 'POST',
@@ -561,7 +561,7 @@ document.addEventListener('keydown', function(e) {
  * Logs de diagnóstico para el diseño de la tabla - EPP
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-EPP] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO-EPP] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
@@ -691,7 +691,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
     // Mostrar modal grande
     Swal.fire({
-        title: '📋 Historial de Homologaciones',
+        title: ' Historial de Homologaciones',
         html: tablaHtml,
         icon: false,
         width: '850px',

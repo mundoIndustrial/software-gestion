@@ -20,10 +20,10 @@ use App\Models\TipoProceso;
  * - Actualizar fotos de referencia (prenda_fotos_pedido)
  * 
  * Responsabilidades SEPARADAS en otros Use Cases:
- * - Actualizar variantes â†’ ActualizarVariantePrendaUseCase
- * - Actualizar colores y telas â†’ ActualizarColorTelaUseCase
- * - Actualizar tallas â†’ ActualizarTallaPrendaUseCase
- * - Actualizar procesos â†’ ActualizarProcesoPrendaUseCase
+ * - Actualizar variantes  ActualizarVariantePrendaUseCase
+ * - Actualizar colores y telas  ActualizarColorTelaUseCase
+ * - Actualizar tallas  ActualizarTallaPrendaUseCase
+ * - Actualizar procesos  ActualizarProcesoPrendaUseCase
  * 
  * Antes: 70 lineas | despues: ~60 lineas | Reducción: ~14%
  */
@@ -363,7 +363,7 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
         
-        // 🔍 VERIFICACIÓN FINAL: Mostrar todas las tallas que quedaron
+        //  VERIFICACIÓN FINAL: Mostrar todas las tallas que quedaron
         $tallasFinales = $prenda->tallas()->get();
         \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Completado', [
             'prenda_id' => $prenda->id,

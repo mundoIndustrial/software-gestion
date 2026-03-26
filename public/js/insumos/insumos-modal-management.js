@@ -2,7 +2,7 @@
  * Insumos Modal Management - FASE 4b
  * Maneja el modal de insumos, materiales y observaciones
  * 
- * Funciones extraídas:
+ * Funciones extranas:
  * - abrirModalInsumos()
  * - cerrarModalInsumos()
  * - llenarTablaInsumos()
@@ -13,15 +13,15 @@
  * - cerrarModalObservaciones()
  * - guardarObservaciones()
  * - eliminarFilaMaterial()
- * - confirmarEliminacion()
  * - actualizarDiasDemora()
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+function initInsumosModalManagement() {
+    let currentObservacionesMaterialId = null;
     /**
      * Llena la tabla de insumos del modal
      */
-    window.llenarTablaInsumos = function(materiales) {
+    function llenarTablaInsumos(materiales) {
         const tbody = document.getElementById('insumosTableBody');
         if (!tbody) {
             console.error('[llenarTablaInsumos] Tabla body no encontrada');
@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         materiales.forEach((materialData, index) => {
-            if (typeof window.crearFilaMaterial === 'function') {
-                window.crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
+            if (typeof crearFilaMaterial === 'function') {
+                crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
             }
         });
     };
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Crea una fila de material en la tabla
      */
-    window.crearFilaMaterial = function(nombreMaterial, materialData, index, pedido, tbody) {
+    function crearFilaMaterial(nombreMaterial, materialData, index, pedido, tbody) {
         const sanitizedMaterial = nombreMaterial.replace(/\s+/g, '_').toLowerCase();
         const materialId = `material_modal_${pedido}_${index}_${sanitizedMaterial}`;
 
@@ -132,7 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="py-3 px-3 text-center">
                 <button 
-                    onclick="window.abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
+                    data-insumos-action="material-open-observaciones"
+                    data-material-id="${materialId}"
+                    data-material-name="${nombreMaterial.replace(/"/g, '&quot;')}"
                     class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Ver/Editar observaciones"
                 >
@@ -142,7 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="py-3 px-3 text-center">
                 <button 
-                    onclick="window.eliminarFilaMaterial('${materialId}')"
+                    data-insumos-action="material-delete-row"
+                    data-material-id="${materialId}"
                     class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Eliminar"
                 >
@@ -157,11 +160,11 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Muestra modal para agregar nuevo material
      */
-    window.agregarMaterialModal = function() {
+    function agregarMaterialModal() {
         const materialesEstandar = [
-            'Tela', 'Reflectivo', 'Cierre', 'Cuello y puños',
+            'Tela', 'Reflectivo', 'Cierre', 'Cuello y puño',
             'Sesgo Relleno', 'Sesgo Tela', 'Sesgo en la misma Tela',
-            'Hiladillo', 'Citafalla', 'Cordón'
+            'Hiladillo', 'Citafalla', 'Cordon'
         ];
         const tbody = document.getElementById('insumosTableBody');
         
@@ -222,15 +225,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                window.agregarMaterialATabla(nombreMaterial);
+                agregarMaterialATabla(nombreMaterial);
             }
         });
     };
 
     /**
-     * Añade un material a la tabla
+     * añade un material a la tabla
      */
-    window.agregarMaterialATabla = function(nombreMaterial) {
+    function agregarMaterialATabla(nombreMaterial) {
         const tbody = document.getElementById('insumosTableBody');
         const pedido = document.getElementById('modalPedido').textContent;
         const index = tbody.children.length;
@@ -277,7 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="py-3 px-3 text-center">
                 <button 
-                    onclick="window.abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
+                    data-insumos-action="material-open-observaciones"
+                    data-material-id="${materialId}"
+                    data-material-name="${nombreMaterial.replace(/"/g, '&quot;')}"
                     class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Ver/Editar observaciones"
                 >
@@ -286,7 +291,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="py-3 px-3 text-center">
                 <button 
-                    onclick="window.eliminarFilaMaterial('${materialId}')"
+                    data-insumos-action="material-delete-row"
+                    data-material-id="${materialId}"
                     class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Eliminar"
                 >
@@ -302,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Abre modal de observaciones para un material
      */
-    window.abrirModalObservaciones = function(materialId, nombreMaterial) {
+    function abrirModalObservaciones(materialId, nombreMaterial) {
         const modal = document.getElementById('observacionesModal');
         const textArea = document.getElementById('observacionesTexto');
         const observacionesInput = document.getElementById(`observaciones_${materialId}`);
@@ -311,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         textArea.value = observacionesInput ? observacionesInput.value : '';
         
         // Guardar referencia del material actual
-        window.currentObservacionesMaterialId = materialId;
+        currentObservacionesMaterialId = materialId;
         
         modal.style.display = 'flex';
     };
@@ -319,20 +325,21 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Cierra modal de observaciones
      */
-    window.cerrarModalObservaciones = function() {
+    function cerrarModalObservaciones() {
         const modal = document.getElementById('observacionesModal');
         modal.style.display = 'none';
+        currentObservacionesMaterialId = null;
     };
 
     /**
      * Guarda observaciones del material en el backend
      */
-    window.guardarObservaciones = async function() {
+    async function guardarObservaciones() {
         const textArea = document.getElementById('observacionesTexto');
-        const materialId = window.currentObservacionesMaterialId;
+        const materialId = currentObservacionesMaterialId;
         
         if (!materialId) {
-            showToast('Error: No se identificó el material', 'error');
+            showToast('Error: No se identifica el material', 'error');
             return;
         }
         
@@ -376,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Si no es JSON, loguear el texto para debug
             const textContent = await response.text();
             if (!textContent) {
-                showToast('Error: Respuesta vacía del servidor', 'error');
+                showToast('Error: Respuesta vacia del servidor', 'error');
                 return;
             }
             
@@ -385,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data = JSON.parse(textContent);
             } catch (e) {
                 console.error('[guardarObservaciones] Respuesta no es JSON:', textContent.substring(0, 200));
-                showToast('Error: El servidor no respondió correctamente (¿rutas cacheadas?)', 'error');
+                showToast('Error: El servidor no respondio correctamente (Â¿rutas cacheadas?)', 'error');
                 return;
             }
             
@@ -397,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 showToast(' Observaciones guardadas exitosamente', 'success');
-                window.cerrarModalObservaciones();
+                cerrarModalObservaciones();
                 
                 console.log('[guardarObservaciones] Guardadas correctamente:', data);
             } else {
@@ -406,14 +413,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('[guardarObservaciones] Error de red:', error);
-            showToast('Error de conexión al guardar observaciones: ' + error.message, 'error');
+            showToast('Error de conexion al guardar observaciones: ' + error.message, 'error');
         }
     };
 
     /**
      * Elimina una fila de material
      */
-    window.eliminarFilaMaterial = function(materialId) {
+    function eliminarFilaMaterial(materialId) {
         const row = document.getElementById(`row_${materialId}`);
         if (row) {
             row.remove();
@@ -422,9 +429,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     /**
-     * Actualiza los días de demora en tiempo real
+     * Actualiza los dias de demora en tiempo real
      */
-    window.actualizarDiasDemora = async function(fila) {
+    async function actualizarDiasDemora(fila) {
         const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
         const diasSpan = fila.querySelector('span[class*="bg-"]');
         
@@ -438,8 +445,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (typeof window.calcularDemoraAsync === 'function') {
-            const demora = await window.calcularDemoraAsync(todosInputsFecha[0].value, todosInputsFecha[1].value);
+        if (typeof window.insumosHandlers?.utilities?.calcularDemoraAsync === 'function') {
+            const demora = await window.insumosHandlers?.utilities?.calcularDemoraAsync(todosInputsFecha[0].value, todosInputsFecha[1].value);
             diasSpan.textContent = demora.texto;
             diasSpan.className = `inline-block px-3 py-1 rounded-full text-sm font-semibold ${demora.clase_bg} ${demora.clase_text}`;
         }
@@ -447,33 +454,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listeners para checkboxes y cambios de fecha
     document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('material-checkbox')) {
-            const checkbox = e.target;
-            const materialId = checkbox.id.replace('checkbox_', '');
-            window.confirmarEliminacion(checkbox, materialId);
-        }
         
         if (e.target.type === 'date') {
             const fila = e.target.closest('tr');
             if (fila) {
-                window.actualizarDiasDemora(fila);
+                actualizarDiasDemora(fila);
             }
         }
     });
 
-    /**
-     * Confirma eliminación de material
-     */
-    window.confirmarEliminacion = function(checkbox, materialId) {
-        // Implementar según lógica de negocio
-    };
 
     // Cerrar modal al hacer clic fuera
     const insumosModal = document.getElementById('insumosModal');
     if (insumosModal) {
         insumosModal.addEventListener('click', function(e) {
             if (e.target === this) {
-                window.cerrarModalInsumos();
+                (window.insumosHandlers?.modalHandlers?.cerrarModalInsumos || function(){})();
             }
         });
     }
@@ -482,8 +478,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (observacionesModal) {
         observacionesModal.addEventListener('click', function(e) {
             if (e.target === this) {
-                window.cerrarModalObservaciones();
+                cerrarModalObservaciones();
             }
         });
     }
-});
+
+    window.insumosHandlers = window.insumosHandlers || {};
+    window.insumosHandlers.insumosModalManagement = {
+        llenarTablaInsumos,
+        crearFilaMaterial,
+        agregarMaterialModal,
+        agregarMaterialATabla,
+        abrirModalObservaciones,
+        cerrarModalObservaciones,
+        guardarObservaciones,
+        eliminarFilaMaterial,
+        actualizarDiasDemora,
+    };
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInsumosModalManagement);
+} else {
+    initInsumosModalManagement();
+}

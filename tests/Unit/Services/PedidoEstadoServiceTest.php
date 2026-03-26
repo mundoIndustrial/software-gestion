@@ -210,7 +210,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo PENDIENTE â†’ FINALIZADO
+     * Test: Flujo completo PENDIENTE  FINALIZADO
      */
     public function test_flujo_completo_pedido()
     {
