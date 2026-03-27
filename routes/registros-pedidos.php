@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
-use App\Infrastructure\Http\Controllers\Legacy\RegistroBodegaController;
+use App\Infrastructure\Http\Controllers\Bodega\RegistroBodegaController;
 use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
-use App\Infrastructure\Http\Controllers\Legacy\InvoiceController;
+use App\Infrastructure\Http\Controllers\Facturacion\InvoiceController;
 
 // ========================================
 // RUTAS PARA REGISTROS Y PEDIDOS
@@ -114,4 +114,3 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // ========================================
     Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
 });
-

@@ -117,8 +117,33 @@ class EloquentOrderRepository implements OrderRepository
             new OrderStatus($model->estado),
             $model->cliente ?? '',
             $model->numero_pedido ?? '',
-            $model->aprobado_por_supervisor_en,
+            $this->toNullableDateTime($model->aprobado_por_supervisor_en),
             $model->novedades ?? ''
         );
+    }
+
+    private function toNullableDateTime(mixed $value): ?\DateTime
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof \DateTime) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return new \DateTime($value->format('Y-m-d H:i:s'));
+        }
+
+        if (is_string($value)) {
+            try {
+                return new \DateTime($value);
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

@@ -15,6 +15,7 @@ class ListOrdersRequest
     private ?string $forma_pago = null;
     private ?string $estado = null;
     private ?string $asesora = null;
+    private ?string $fecha = null;
     private ?string $fecha_desde = null;
     private ?string $fecha_hasta = null;
     private int $page = 1;
@@ -33,6 +34,7 @@ class ListOrdersRequest
         $this->forma_pago = $params['forma_pago'] ?? null;
         $this->estado = $params['estado'] ?? null;
         $this->asesora = $params['asesora'] ?? null;
+        $this->fecha = $params['fecha'] ?? null;
         $this->fecha_desde = $params['fecha_desde'] ?? null;
         $this->fecha_hasta = $params['fecha_hasta'] ?? null;
         $this->page = $params['page'] ?? 1;
@@ -48,6 +50,7 @@ class ListOrdersRequest
     public function getFormaPago(): ?string { return $this->forma_pago; }
     public function getEstado(): ?string { return $this->estado; }
     public function getAsesora(): ?string { return $this->asesora; }
+    public function getFecha(): ?string { return $this->fecha; }
     public function getFechaDesde(): ?string { return $this->fecha_desde; }
     public function getFechaHasta(): ?string { return $this->fecha_hasta; }
     public function getPage(): int { return $this->page; }
@@ -66,6 +69,7 @@ class ListOrdersRequest
             'forma_pago' => $this->rawParams['forma_pago'] ?? null,
             'estado' => $this->rawParams['estado'] ?? null,
             'asesora' => $this->rawParams['asesora'] ?? null,
+            'fecha' => $this->rawParams['fecha'] ?? null,
             'fecha_desde' => $this->rawParams['fecha_desde'] ?? null,
             'fecha_hasta' => $this->rawParams['fecha_hasta'] ?? null,
         ]);

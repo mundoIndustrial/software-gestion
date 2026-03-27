@@ -731,7 +731,7 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                             />
                             <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
                                 ${talla.tallaOriginal}
-                                ${isSelected ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem;">âœ“ Asignado</span>' : ''}
+                                ${isSelected ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem;"> Asignado</span>' : ''}
                             </div>
                             <input
                                 type="number"

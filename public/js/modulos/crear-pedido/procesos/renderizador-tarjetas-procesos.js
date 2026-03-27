@@ -3,7 +3,7 @@
  * Muestra las tarjetas de procesos configurados dentro del modal de prenda
  */
 
-const iconosProcesos = {
+var iconosProcesos = {
     reflectivo: '<span class="material-symbols-rounded" style="color: #f59e0b;">wb_twilight</span>',
     bordado: '<span class="material-symbols-rounded" style="color: #1e40af;">auto_awesome</span>',
     estampado: '<span class="material-symbols-rounded" style="color: #ec4899;">format_paint</span>',
@@ -11,7 +11,7 @@ const iconosProcesos = {
     sublimado: '<span class="material-symbols-rounded" style="color: #3b82f6;">water_drop</span>'
 };
 
-const nombresProcesos = {
+var nombresProcesos = {
     reflectivo: 'Reflectivo',
     bordado: 'Bordado',
     estampado: 'Estampado',
@@ -1873,7 +1873,6 @@ function eliminarProcesoLocalmente(tipo) {
         window.actualizarResumenProcesos();
     }
 }
-
 
 
 

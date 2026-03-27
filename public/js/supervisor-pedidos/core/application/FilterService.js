@@ -27,6 +27,9 @@ class FilterService {
             return this._splitParam(url, 'numero');
         }
         if (columna === 'fecha') {
+            const fechas = this._splitParam(url, 'fecha');
+            if (fechas.length > 0) return fechas;
+
             const desde = url.searchParams.get('fecha_desde') || '';
             const hasta = url.searchParams.get('fecha_hasta') || '';
             return [desde, hasta].filter(Boolean);
@@ -61,8 +64,16 @@ class FilterService {
         const url = new URL(window.location.href);
 
         if (columna === 'fecha') {
+            url.searchParams.delete('fecha');
             url.searchParams.delete('fecha_desde');
             url.searchParams.delete('fecha_hasta');
+
+            if (valores.length > 0) {
+                url.searchParams.set('fecha', valores.join(','));
+                return url.toString();
+            }
+
+            // Compatibilidad: conservar soporte para rango si se usa desde otra vista.
             if (fechas.desde) url.searchParams.set('fecha_desde', fechas.desde);
             if (fechas.hasta) url.searchParams.set('fecha_hasta', fechas.hasta);
             return url.toString();

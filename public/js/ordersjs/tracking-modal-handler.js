@@ -136,6 +136,7 @@ const trackingTimelineController = new TrackingTimelineController({
 // Se expone globalmente para que otros módulos puedan acceder
 let daysSelector = null;
 window.trackingDaysSelector = null;
+let trackingModalListenersInitialized = false;
 
 /**
  * Reinitialize the days selector when the modal opens
@@ -202,6 +203,11 @@ function updateDaysSelectorWithRetry(dias, intento = 0) {
 
 // Inicializar listeners del modal
 function initTrackingModalListeners() {
+  if (trackingModalListenersInitialized) {
+    return;
+  }
+  trackingModalListenersInitialized = true;
+
   const binder = new ModalEventBinder('orderTrackingModal');
   
   binder.bindCloseButtons({
@@ -213,7 +219,7 @@ function initTrackingModalListeners() {
 
   const closeBtn = document.querySelector('.tracking-modal-close');
   if (closeBtn) {
-    closeBtn.addEventListener('click', closeTrackingModal);
+    closeBtn.onclick = closeTrackingModal;
   }
 
   setupAddProcesoModalListeners();
@@ -285,12 +291,12 @@ function initTrackingModalListeners() {
 
   const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
   if (closeAddProcesoBtn) {
-    closeAddProcesoBtn.addEventListener('click', closeAddProcesoModal);
+    closeAddProcesoBtn.onclick = closeAddProcesoModal;
   }
 
   const btnCancelAddProceso = document.getElementById('btnCancelAddProceso');
   if (btnCancelAddProceso) {
-    btnCancelAddProceso.addEventListener('click', closeAddProcesoModal);
+    btnCancelAddProceso.onclick = closeAddProcesoModal;
   }
 
   function closeTrackingModal() {
@@ -341,6 +347,8 @@ function initTrackingModalListeners() {
   function setupEncargadoDynamicSelector() {
     const procesoArea = document.getElementById('procesoArea');
     if (!procesoArea) return;
+    if (procesoArea.dataset.trackingEncargadoBound === '1') return;
+    procesoArea.dataset.trackingEncargadoBound = '1';
 
     procesoArea.addEventListener('change', async function(e) {
       const area = e.target.value;
@@ -870,7 +878,7 @@ function initTrackingModalListeners() {
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTrackingModalListeners);
+    document.addEventListener('DOMContentLoaded', initTrackingModalListeners, { once: true });
   } else {
     initTrackingModalListeners();
   }

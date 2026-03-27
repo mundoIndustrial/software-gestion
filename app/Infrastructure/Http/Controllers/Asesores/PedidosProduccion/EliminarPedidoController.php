@@ -2,46 +2,50 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Domain\Shared\CQRS\CommandBus;
 use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
+use App\Domain\Shared\CQRS\CommandBus;
+use App\Http\Controllers\Controller;
+use App\Infrastructure\Http\Requests\Asesores\EliminarPedidoProduccionRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 /**
  * EliminarPedidoController
- * 
- *  RESPONSABILIDAD ÚNICA: DELETE endpoint para eliminar pedido
- * 
- * HTTP Methods:
- * - DELETE /api/pedidos/{id}  → destroy()
- * 
- * Nota: Usa CQRS CommandBus para ejecutar comando de eliminación
+ *
+ * Responsabilidad unica: endpoint DELETE para eliminar pedido.
  */
 class EliminarPedidoController extends Controller
 {
     public function __construct(
-        private CommandBus $commandBus,
-    ) {}
+        private readonly CommandBus $commandBus,
+    ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
 
     /**
      * DELETE /api/pedidos/{id}
-     * 
-     * Eliminar pedido (soft delete)
      */
-    public function destroy(Request $request, int|string $id): JsonResponse
+    public function destroy(EliminarPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[EliminarPedidoController::destroy] Iniciado', [
                 'pedido_id' => $id,
             ]);
 
-            $validated = $request->validate([
-                'razon' => 'sometimes|string|max:500',
-            ]);
+            $validated = $request->validated();
 
-            // Usar CQRS Command para eliminar
             $command = new EliminarPedidoCommand(
                 (int) $id,
                 $validated['razon'] ?? 'Sin especificar'
@@ -52,30 +56,23 @@ class EliminarPedidoController extends Controller
                 'pedido_id' => $id,
             ]);
 
-            return response()->json([], 204);
-
+            return $this->json([], 204);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[EliminarPedidoController::destroy] Validación fallida', [
+            Log::warning('[EliminarPedidoController::destroy] Validacion fallida', [
                 'pedido_id' => $id,
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Parámetros inválidos',
+            return $this->failure('Parametros invalidos', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\Exception $e) {
             Log::error('[EliminarPedidoController::destroy] Error', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error eliminando pedido: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error eliminando pedido: ' . $e->getMessage(), 500);
         }
     }
 }

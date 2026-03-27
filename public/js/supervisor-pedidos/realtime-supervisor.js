@@ -25,6 +25,30 @@ if (!window.shared?.notify) {
 
 const _rtRepo = window.supervisorPedidos.repository;
 const _rtNotify = window.shared.notify;
+const SUPERVISOR_GRID_TEMPLATE = '60px 220px 120px 200px 150px 140px 150px 150px 150px';
+const SUPERVISOR_GRID_GAP = '1.2rem';
+
+function _formatFechaPedido(fechaRaw) {
+    if (!fechaRaw) return new Date().toLocaleString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).replace(',', '');
+
+    const fecha = new Date(fechaRaw);
+    if (Number.isNaN(fecha.getTime())) return String(fechaRaw);
+    return fecha.toLocaleString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).replace(',', '');
+}
 
 function actualizarFilaEnTabla(fila, orden) {
     const celdas = fila.querySelectorAll('[data-field]');
@@ -44,42 +68,7 @@ function actualizarFilaEnTabla(fila, orden) {
 }
 
 function agregarNuevaFilaATabla(orden) {
-    const tableContainer = document.querySelector('.table-scroll-container');
-    if (!tableContainer) {
-        return;
-    }
-    const numeroPedido = orden.numero_pedido || orden.numero;
-    const filaHTML = `
-        <div data-pedido-id="${orden.id}" style="
-            display: grid;
-            grid-template-columns: 200px 140px 200px 140px 150px 150px;
-            gap: 1.2rem;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-            align-items: center;
-            min-width: min-content;
-            background: #f0f9ff;
-            animation: slideInDown 0.5s ease;
-            transition: background 0.2s ease;
-        " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#f0f9ff'">
-            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                <button class="btn-ver-dropdown" onclick="editarPedido(${orden.id})" title="Editar" style="
-                    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-                    color: white; border: none; padding: 0.5rem; border-radius: 6px;
-                    cursor: pointer; font-size: 1rem; transition: all 0.3s ease;
-                ">
-                    <span class="material-symbols-rounded">edit</span>
-                </button>
-            </div>
-            <div data-field="numero_pedido" style="font-weight: 600; color: #1e3a8a;">#${numeroPedido}</div>
-            <div data-field="cliente" style="color: #2c3e50;">${orden.cliente || 'Sin especificar'}</div>
-            <div data-field="novedades" style="color: #666; font-size: 0.9rem;">${orden.novedades || '-'}</div>
-            <div data-field="asesor" style="color: #666;">${orden.asesor?.name || orden.asesor || 'Sin asignar'}</div>
-            <div data-field="forma_pago" style="color: #666;">${orden.forma_pago || 'No especificada'}</div>
-        </div>
-    `;
-    tableContainer.innerHTML += filaHTML;
-    tableContainer.scrollLeft = tableContainer.scrollWidth;
+    supervisorPedidosInsertarFilaNuevaAlInicio(orden);
 }
 
 function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
@@ -134,7 +123,7 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
     const tableContainer = document.querySelector('.table-scroll-container');
     if (!tableContainer) return;
 
-    const header       = tableContainer.querySelector('[style*="grid-template-columns: 200px 140px 200px 150px 140px 150px 150px"]');
+    const header       = tableContainer.firstElementChild;
     const numeroPedido = orden?.numero_pedido || orden?.numero || 'N/A';
     const estado       = orden?.estado || 'PENDIENTE_SUPERVISOR';
 
@@ -155,28 +144,48 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
     fila.setAttribute('data-pedido-id', String(orden?.id || ''));
     fila.style.cssText = `
         display: grid;
-        grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
-        gap: 1.2rem; padding: 1rem; border-bottom: 1px solid #e5e7eb;
-        align-items: center; min-width: min-content;
+        grid-template-columns: ${SUPERVISOR_GRID_TEMPLATE};
+        gap: ${SUPERVISOR_GRID_GAP}; padding: 1rem; border-bottom: 1px solid #e5e7eb;
+        align-items: center; min-width: max-content;
         background: #f0f9ff; animation: slideInDown 0.5s ease; transition: background 0.2s ease;
     `;
-    fila.onmouseover = function() { this.style.background = '#f9fafb'; };
-    fila.onmouseout  = function() { this.style.background = 'white'; };
+    fila.setAttribute('data-seleccionado', 'false');
+    fila.setAttribute('data-pedido-row', 'true');
+    fila.onmouseover = function() {
+        if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') {
+            this.style.background = '#f9fafb';
+        }
+    };
+    fila.onmouseout  = function() {
+        this.style.background = this.dataset.seleccionado === 'true' ? '#d1d5db' : 'white';
+    };
+
+    const fechaCreacion = _formatFechaPedido(orden?.created_at || orden?.fecha_creacion || orden?.fecha);
     fila.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <input type="checkbox" class="pedido-checkbox" data-pedido-id="${orden?.id || ''}" title="Seleccionar pedido" style="width: 18px; height: 18px; cursor: pointer;">
+        </div>
+
         <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-            <button class="btn-ver-dropdown"
+            <button class="btn-accion btn-accion--ver btn-ver-dropdown"
                 data-menu-id="menu-ver-${safeNumero}"
                 data-pedido="${safeNumero}"
                 data-pedido-id="${orden?.id || ''}"
-                title="Ver Opciones"
-                style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-                    color: white; border: none; padding: 0.5rem; border-radius: 6px;
-                    cursor: pointer; font-size: 1rem; transition: all 0.3s ease;
-                    display: flex; align-items: center; justify-content: center;
-                    width: 36px; height: 36px; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                title="Ver Opciones">
                 <i class="fas fa-eye"></i>
             </button>
+
+            <button class="btn-accion btn-accion--ocultar"
+                onclick="if (typeof abrirModalOcultar === 'function') abrirModalOcultar(${orden?.id || 'null'}, '${safeNumero}')"
+                title="Ocultar Pedido">
+                <i class="fas fa-eye-slash"></i>
+            </button>
         </div>
+
+        <div>
+            <span style="font-size: 0.85rem; color: #6b7280;">${fechaCreacion}</span>
+        </div>
+
         <div><span style="font-weight: 600; color: #1e5ba8;">#${numeroPedido}</span></div>
         <div><span>${orden?.cliente || ''}</span></div>
         <div>

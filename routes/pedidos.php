@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->name('pedidos.estado.')->group(function () {
     // Supervisor de Pedidos: Aprobar pedido
-    Route::post('/pedidos/{pedido}/aprobar-supervisor', [App\Infrastructure\Http\Controllers\Legacy\PedidoEstadoController::class, 'aprobarSupervisor'])
+    Route::post('/pedidos/{pedido}/aprobar-supervisor', [App\Infrastructure\Http\Controllers\Pedidos\PedidosEstadoController::class, 'aprobarSupervisor'])
         ->name('aprobar-supervisor');
     
     // Ver historial de cambios
-    Route::get('/pedidos/{pedido}/historial', [App\Infrastructure\Http\Controllers\Legacy\PedidoEstadoController::class, 'historial'])
+    Route::get('/pedidos/{pedido}/historial', [App\Infrastructure\Http\Controllers\Pedidos\PedidosEstadoController::class, 'historial'])
         ->name('historial');
     
     // Ver seguimiento de pedido
-    Route::get('/pedidos/{pedido}/seguimiento', [App\Infrastructure\Http\Controllers\Legacy\PedidoEstadoController::class, 'seguimiento'])
+    Route::get('/pedidos/{pedido}/seguimiento', [App\Infrastructure\Http\Controllers\Pedidos\PedidosEstadoController::class, 'seguimiento'])
         ->name('seguimiento');
 });

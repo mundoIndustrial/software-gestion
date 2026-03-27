@@ -15,13 +15,13 @@ class TrackingModalManager {
     // Cerrar modal al hacer clic en el overlay
     const overlay = document.getElementById('trackingModalOverlay');
     if (overlay) {
-      overlay.addEventListener('click', () => this.closeTrackingModal());
+      overlay.onclick = () => this.closeTrackingModal();
     }
 
     // Cerrar modal con botón X (si existe)
     const closeBtn = document.querySelector('.tracking-modal-close');
     if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.closeTrackingModal());
+      closeBtn.onclick = () => this.closeTrackingModal();
     }
 
     // Configurar listeners del modal agregar proceso
@@ -202,7 +202,9 @@ class TrackingModalManager {
 
 // Exportar para uso global
 window.TrackingModalManager = TrackingModalManager;
-window.trackingModalManager = new TrackingModalManager();
+if (!window.trackingModalManager) {
+  window.trackingModalManager = new TrackingModalManager();
+}
 
 // Funciones globales para compatibilidad
 window.openAddProcesoModal = () => window.trackingModalManager.openAddProcesoModal();

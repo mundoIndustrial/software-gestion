@@ -7,13 +7,13 @@ use App\Application\Asesores\UseCases\ObtenerDatosCotizacionModalUseCase;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 /**
  * CotizacionesViewController - Controller para vistas de cotizaciones
- * 
- * Responsabilidad: Retornar vistas HTML con datos obtenidos de Handlers DDD
  */
 final class CotizacionesViewController extends Controller
 {
@@ -24,17 +24,27 @@ final class CotizacionesViewController extends Controller
     ) {
     }
 
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
     /**
-     * Mostrar vista de cotizaciones del usuario
      * GET /asesores/cotizaciones
-     * GET /asesores/cotizaciones?search=MINCIVIL
      */
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request)
     {
         try {
-            // Obtener parámetro de búsqueda
             $searchTerm = $request->query('search', '');
-            
+
             $query = ListarCotizacionesQuery::crear(
                 usuarioId: Auth::id(),
                 pagina: $request->integer('pagina', 1),
@@ -45,7 +55,7 @@ final class CotizacionesViewController extends Controller
                 ->map(function ($cotizacionDto) {
                     $createdAt = $cotizacionDto->createdAt ?? $cotizacionDto->fechaInicio;
 
-                    return (object)[
+                    return (object) [
                         'id' => $cotizacionDto->id,
                         'numero_cotizacion' => $cotizacionDto->numeroCotizacion,
                         'tipo' => $cotizacionDto->tipo,
@@ -62,13 +72,11 @@ final class CotizacionesViewController extends Controller
                     ];
                 });
 
-            // Aplicar filtro de búsqueda si existe
             if (!empty($searchTerm)) {
                 $searchLower = strtolower($searchTerm);
-                $cotizaciones = $cotizaciones->filter(function($cot) use ($searchLower) {
-                    return 
-                        stripos($cot->cliente, $searchLower) !== false ||
-                        stripos($cot->numero_cotizacion, $searchLower) !== false;
+                $cotizaciones = $cotizaciones->filter(function ($cot) use ($searchLower) {
+                    return stripos($cot->cliente, $searchLower) !== false
+                        || stripos($cot->numero_cotizacion, $searchLower) !== false;
                 });
             }
 
@@ -76,21 +84,17 @@ final class CotizacionesViewController extends Controller
                 'total' => $cotizaciones->count(),
                 'usuario_id' => Auth::id(),
                 'search_term' => $searchTerm,
-                'sample' => $cotizaciones->first() ? (array)$cotizaciones->first() : null,
+                'sample' => $cotizaciones->first() ? (array) $cotizaciones->first() : null,
                 'es_borrador_values' => $cotizaciones->pluck('es_borrador')->unique()->toArray(),
             ]);
 
-            // Separar cotizaciones enviadas (no borradores) de borradores
             $cotizacionesEnviadas = $cotizaciones->filter(fn($c) => $c->es_borrador !== true && $c->es_borrador !== 1);
-            
-            // Mostrar solo cotizaciones enviadas en el tab de Cotizaciones
-            // y solo las que tienen es_borrador = 1 en el tab de Borradores
+
             $cotizacionesTodas = $this->paginate($cotizacionesEnviadas, 15);
             $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
             $cotizacionesLogo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'L'), 15);
             $cotizacionesPrendaBordado = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
 
-            // Separar borradores por tipo (solo las que tienen es_borrador = 1)
             $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);
             $borradoresTodas = $this->paginate($borradoresCollection, 15);
             $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
@@ -127,33 +131,25 @@ final class CotizacionesViewController extends Controller
     }
 
     /**
-     * Obtener datos de una cotización para el modal de comparación
      * GET /cotizaciones/{id}/datos
-     * 
-     * Trae información de todas las tablas relacionadas:
-     * - prendas_cot (prendas)
-     * - prenda_fotos_cot (fotos)
-     * - prenda_telas_cot (telas)
-     * - prenda_tallas_cot (tallas)
-     * - prenda_variantes_cot (variantes)
-     * 
-     * @param int $cotizacion
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getDatosForModal($cotizacion)
+    public function getDatosForModal(int|string $cotizacion): JsonResponse
     {
         try {
             $datos = $this->obtenerDatosCotizacionModalUseCase->ejecutar((int) $cotizacion);
 
             if ($datos === null) {
-                \Log::warning('CotizacionesViewController@getDatosForModal: Cotización no encontrada', [
+                \Log::warning('CotizacionesViewController@getDatosForModal: Cotizacion no encontrada', [
                     'cotizacion_id' => $cotizacion,
                 ]);
 
-                return response()->json(['error' => 'Cotización no encontrada'], 404);
+                return $this->failure('Cotizacion no encontrada', 404);
             }
 
-            return response()->json($datos);
+            return $this->json([
+                'success' => true,
+                'data' => $datos,
+            ]);
         } catch (\Exception $e) {
             \Log::error('CotizacionesViewController@getDatosForModal: Error', [
                 'error' => $e->getMessage(),
@@ -161,22 +157,19 @@ final class CotizacionesViewController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json(['error' => 'Error al obtener los datos'], 500);
+            return $this->failure('Error al obtener los datos', 500);
         }
     }
 
     /**
-     * Obtener contador de cotizaciones pendientes para aprobador
      * GET /pendientes-count
-     * 
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function cotizacionesPendientesAprobadorCount()
+    public function cotizacionesPendientesAprobadorCount(): JsonResponse
     {
         try {
             $count = $this->contarCotizacionesPorEstadoUseCase->ejecutar('APROBADA_CONTADOR');
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'count' => $count,
             ]);
@@ -185,17 +178,12 @@ final class CotizacionesViewController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
+            return $this->failure('Error al obtener el contador', 500, [
                 'count' => 0,
-                'error' => 'Error al obtener el contador',
-            ], 500);
+            ]);
         }
     }
 
-    /**
-     * Paginar una colección manualmente
-     */
     private function paginate($items, $perPage = 15)
     {
         $page = request()->get('page', 1);
@@ -212,4 +200,3 @@ final class CotizacionesViewController extends Controller
         );
     }
 }
-

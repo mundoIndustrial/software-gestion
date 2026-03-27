@@ -42,6 +42,9 @@ document.addEventListener('click', function(e) {
     }
 });
 
+window.addEventListener('resize', () => closeAllVerMenus());
+document.addEventListener('scroll', () => closeAllVerMenus(), true);
+
 // ===== FILTROS HELPERS =====
 function getValoresFiltroDesdeURL(columna) {
     return _spFilter.getActiveFilterValues(columna);
@@ -64,16 +67,7 @@ function actualizarIndicadoresFiltros() {
     if (!botones || botones.length === 0) return;
 
     botones.forEach(btn => {
-        const title = btn.getAttribute('title') || '';
-        let columna = '';
-        switch(title) {
-            case 'Filtrar Número':  columna = 'numero';    break;
-            case 'Filtrar Cliente': columna = 'cliente';   break;
-            case 'Filtrar Estado':  columna = 'estado';    break;
-            case 'Filtrar Asesora': columna = 'asesora';   break;
-            case 'Filtrar Forma Pago': columna = 'forma_pago'; break;
-            default: columna = '';
-        }
+        const columna = resolveFilterColumn(btn);
         const valores = columna ? getValoresFiltroDesdeURL(columna) : [];
         const cantidad = valores.length;
         const badge = asegurarBadgeEnBoton(btn);
@@ -87,29 +81,154 @@ function actualizarIndicadoresFiltros() {
     });
 }
 
+
+function resolveFilterColumn(btn) {
+    if (!btn) return '';
+
+    const col = (btn.getAttribute('data-col') || '').trim();
+    if (col) return col;
+
+    // Compatibilidad con botones viejos sin data-col
+    const title = btn.getAttribute('title') || '';
+    switch (title) {
+        case 'Filtrar Fecha': return 'fecha';
+        case 'Filtrar N�mero':
+        case 'Filtrar Número': return 'numero';
+        case 'Filtrar Cliente': return 'cliente';
+        case 'Filtrar Estado': return 'estado';
+        case 'Filtrar Asesora': return 'asesora';
+        case 'Filtrar Forma Pago': return 'forma_pago';
+        default: return '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     actualizarIndicadoresFiltros();
 });
 
 // ===== MENU VER ORDEN =====
-function toggleVerMenu(event, ordenId) {
-    event.stopPropagation();
-    const menu = document.getElementById(`ver-menu-${ordenId}`);
+const SP_VER_MENU_CLASS = 'sp-ver-dropdown-menu';
 
-    document.querySelectorAll('.ver-submenu[style*="display: block"]').forEach(m => {
-        if (m.id !== `ver-menu-${ordenId}`) {
-            m.style.display = 'none';
+function closeAllVerMenus(exceptId = null) {
+    document.querySelectorAll(`.${SP_VER_MENU_CLASS}`).forEach((menu) => {
+        if (!exceptId || menu.id !== exceptId) {
+            menu.style.display = 'none';
         }
     });
+}
 
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+function getOrCreateVerMenu(button) {
+    const pedidoId = button.getAttribute('data-pedido-id');
+    const numeroPedido = button.getAttribute('data-pedido') || pedidoId;
+    const menuId = button.getAttribute('data-menu-id') || `menu-ver-${pedidoId}`;
+    let menu = document.getElementById(menuId);
+
+    if (menu) return menu;
+
+    menu = document.createElement('div');
+    menu.id = menuId;
+    menu.className = SP_VER_MENU_CLASS;
+    menu.style.cssText = `
+        position: fixed;
+        min-width: 220px;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+        overflow: hidden;
+        z-index: 999999;
+        display: none;
+    `;
+
+    const buildMenuOption = (btn, iconClass, text) => {
+        btn.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:10px;">
+                <i class="${iconClass}" style="width:16px;text-align:center;color:#374151;"></i>
+                <span>${text}</span>
+            </span>
+        `;
+    };
+
+    const opcionVer = document.createElement('button');
+    opcionVer.type = 'button';
+    buildMenuOption(opcionVer, 'fas fa-eye', 'Ver Pedido');
+    opcionVer.style.cssText = 'width:100%;border:none;background:#ffffff;padding:12px 14px;text-align:left;cursor:pointer;color:#111827;font-size:15px;font-weight:600;line-height:1.2;transition:background-color .15s ease;';
+    opcionVer.onmouseover = () => { opcionVer.style.backgroundColor = '#eef2ff'; };
+    opcionVer.onmouseout = () => { opcionVer.style.backgroundColor = '#ffffff'; };
+    opcionVer.onclick = () => {
+        closeAllVerMenus();
+        verOrdenDetalles(pedidoId, numeroPedido);
+    };
+
+    menu.appendChild(opcionVer);
+
+    if (typeof window.abrirSelectorRecibos === 'function') {
+        const separadorRecibos = document.createElement('div');
+        separadorRecibos.style.cssText = 'height:1px;background:#e5e7eb;';
+
+        const opcionRecibos = document.createElement('button');
+        opcionRecibos.type = 'button';
+        buildMenuOption(opcionRecibos, 'fas fa-receipt', 'Ver Recibos');
+        opcionRecibos.style.cssText = 'width:100%;border:none;background:#ffffff;padding:12px 14px;text-align:left;cursor:pointer;color:#111827;font-size:15px;font-weight:600;line-height:1.2;transition:background-color .15s ease;';
+        opcionRecibos.onmouseover = () => { opcionRecibos.style.backgroundColor = '#eef2ff'; };
+        opcionRecibos.onmouseout = () => { opcionRecibos.style.backgroundColor = '#ffffff'; };
+        opcionRecibos.onclick = () => {
+            closeAllVerMenus();
+            window.abrirSelectorRecibos(pedidoId);
+        };
+
+        menu.appendChild(separadorRecibos);
+        menu.appendChild(opcionRecibos);
+    }
+
+    const separadorSeguimiento = document.createElement('div');
+    separadorSeguimiento.style.cssText = 'height:1px;background:#e5e7eb;';
+
+    const opcionSeguimiento = document.createElement('button');
+    opcionSeguimiento.type = 'button';
+    buildMenuOption(opcionSeguimiento, 'fas fa-tasks', 'Seguimiento');
+    opcionSeguimiento.style.cssText = 'width:100%;border:none;background:#ffffff;padding:12px 14px;text-align:left;cursor:pointer;color:#111827;font-size:15px;font-weight:600;line-height:1.2;transition:background-color .15s ease;';
+    opcionSeguimiento.onmouseover = () => { opcionSeguimiento.style.backgroundColor = '#eef2ff'; };
+    opcionSeguimiento.onmouseout = () => { opcionSeguimiento.style.backgroundColor = '#ffffff'; };
+    opcionSeguimiento.onclick = () => {
+        closeAllVerMenus();
+        abrirSeguimiento(pedidoId);
+    };
+
+    menu.appendChild(separadorSeguimiento);
+    menu.appendChild(opcionSeguimiento);
+
+    document.body.appendChild(menu);
+    return menu;
+}
+
+function positionVerMenu(button, menu) {
+    const rect = button.getBoundingClientRect();
+    const margin = 8;
+    const menuWidth = menu.offsetWidth || 180;
+    const menuHeight = menu.offsetHeight || 130;
+
+    // Abrir a la derecha del botón por defecto.
+    let left = rect.right + margin;
+    let top = rect.top;
+
+    // Si no hay espacio a la derecha, usar el lado izquierdo como respaldo.
+    if (left + menuWidth > window.innerWidth - margin) {
+        left = rect.left - menuWidth - margin;
+    }
+
+    if (left < margin) left = margin;
+    if (top + menuHeight > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - menuHeight - margin);
+    }
+
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
 }
 
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.ver-menu-container')) {
-        document.querySelectorAll('.ver-submenu').forEach(menu => {
-            menu.style.display = 'none';
-        });
+    if (!e.target.closest('.btn-ver-dropdown') && !e.target.closest(`.${SP_VER_MENU_CLASS}`)) {
+        closeAllVerMenus();
     }
 });
 
@@ -138,22 +257,9 @@ function abrirModalFiltro(columna) {
             campoNombre = 'cliente';
             break;
         case 'fecha':
-            modalTitulo.textContent = 'Filtrar por Fecha';
-            filtroContenido.innerHTML = `
-                <label for="filtroDesde">Desde:</label>
-                <input type="date" id="filtroDesde" name="fecha_desde" class="form-control">
-                <label for="filtroHasta" style="margin-top: 1rem;">Hasta:</label>
-                <input type="date" id="filtroHasta" name="fecha_hasta" class="form-control">
-            `;
-            {
-                const url = new URL(window.location.href);
-                const desdeEl = document.getElementById('filtroDesde');
-                const hastaEl = document.getElementById('filtroHasta');
-                if (desdeEl) desdeEl.value = url.searchParams.get('fecha_desde') || '';
-                if (hastaEl) hastaEl.value = url.searchParams.get('fecha_hasta') || '';
-            }
-            modal.style.display = 'flex';
-            return;
+            titulo = 'Filtrar por Fecha';
+            campoNombre = 'fecha';
+            break;
         case 'estado': {
             titulo = 'Filtrar por Estado';
             campoNombre = 'estado';
@@ -198,7 +304,7 @@ function abrirModalFiltro(columna) {
             break;
     }
 
-    if (campoNombre && columna !== 'fecha' && columna !== 'estado') {
+    if (campoNombre && columna !== 'estado') {
         cargarOpcionesFiltro(campoNombre, titulo, modal, filtroContenido);
     }
 }
@@ -213,13 +319,26 @@ function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
                 <div class="form-group">
                     <input type="text" id="buscadorFiltro" class="form-control" placeholder="Buscar..." style="margin-bottom: 1rem;">
                     <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;"></div>
+                    <div id="paginacionFiltro" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-top:0.75rem;">
+                        <button type="button" id="btnFiltroPrev" class="btn btn-sm btn-light" style="border:1px solid #d1d5db;">Anterior</button>
+                        <span id="filtroPaginaInfo" style="font-size:0.85rem;color:#6b7280;"></span>
+                        <button type="button" id="btnFiltroNext" class="btn btn-sm btn-light" style="border:1px solid #d1d5db;">Siguiente</button>
+                    </div>
                 </div>
             `;
 
             const buscador = document.getElementById('buscadorFiltro');
             const lista    = document.getElementById('listaOpciones');
+            const paginacion = document.getElementById('paginacionFiltro');
+            const btnPrev = document.getElementById('btnFiltroPrev');
+            const btnNext = document.getElementById('btnFiltroNext');
+            const paginaInfo = document.getElementById('filtroPaginaInfo');
             const columnaMap = (campo === 'forma_pago') ? 'forma_pago' : campo;
             const seleccionados = new Set(getValoresFiltroDesdeURL(columnaMap));
+            const opciones = Array.isArray(data.opciones) ? data.opciones : [];
+            const pageSize = 20;
+            let currentPage = 1;
+            let lastQuery = '';
 
             function normalizarTexto(v) {
                 return String(v || '').toLowerCase();
@@ -227,23 +346,54 @@ function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
 
             function renderOpciones(query) {
                 const q = normalizarTexto(query).trim();
-                const opciones = Array.isArray(data.opciones) ? data.opciones : [];
-                let list = q === ''
-                    ? opciones.slice(0, campo === 'cliente' ? 5 : opciones.length)
+                const queryChanged = q !== lastQuery;
+                if (queryChanged) currentPage = 1;
+                lastQuery = q;
+
+                const filtered = q === ''
+                    ? opciones
                     : opciones.filter(op => normalizarTexto(op).includes(q));
+
+                const totalItems = filtered.length;
+                const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+                if (currentPage > totalPages) currentPage = totalPages;
+                const start = (currentPage - 1) * pageSize;
+                const end = start + pageSize;
+                const list = filtered.slice(start, end);
 
                 if (!lista) return;
 
-                lista.innerHTML = list.map(opcion => {
+                if (list.length === 0) {
+                    lista.innerHTML = `<div style="padding:0.5rem;color:#6b7280;">Sin resultados</div>`;
+                } else {
+                    lista.innerHTML = list.map(opcion => {
                     const safeValue = (opcion === null || opcion === undefined) ? '' : String(opcion);
                     const checked = seleccionados.has(safeValue) ? 'checked' : '';
+                    let labelValue = safeValue || '(Sin especificar)';
+
+                    if (campo === 'fecha' && safeValue) {
+                        // Mostrar fecha amigable manteniendo valor ISO para el filtro.
+                        const parts = safeValue.split('-');
+                        if (parts.length === 3) {
+                            labelValue = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                        }
+                    }
                     return `
                         <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
                             <input type="checkbox" name="${campo}" value="${safeValue}" class="filtro-checkbox" ${checked}>
-                            <span>${safeValue || '(Sin especificar)'}</span>
+                            <span>${labelValue}</span>
                         </label>
                     `;
-                }).join('');
+                    }).join('');
+                }
+
+                if (paginacion && btnPrev && btnNext && paginaInfo) {
+                    const shouldShowPagination = totalItems > pageSize;
+                    paginacion.style.display = shouldShowPagination ? 'flex' : 'none';
+                    btnPrev.disabled = currentPage <= 1;
+                    btnNext.disabled = currentPage >= totalPages;
+                    paginaInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+                }
             }
 
             if (lista) {
@@ -260,6 +410,17 @@ function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
             if (buscador) {
                 buscador.addEventListener('input', e => renderOpciones(e.target.value));
             }
+
+            btnPrev?.addEventListener('click', function() {
+                if (currentPage <= 1) return;
+                currentPage -= 1;
+                renderOpciones(lastQuery);
+            });
+
+            btnNext?.addEventListener('click', function() {
+                currentPage += 1;
+                renderOpciones(lastQuery);
+            });
 
             modal.style.display = 'flex';
         })
@@ -281,14 +442,7 @@ function aplicarFiltroColumna(event) {
         document.querySelectorAll('.filtro-checkbox:checked')
     ).map(cb => cb.value);
 
-    let filteredUrl;
-    if (filtroActual === 'fecha') {
-        const desde = document.getElementById('filtroDesde')?.value;
-        const hasta = document.getElementById('filtroHasta')?.value;
-        filteredUrl = _spFilter.buildFilteredUrl(filtroActual, [], { desde, hasta });
-    } else {
-        filteredUrl = _spFilter.buildFilteredUrl(filtroActual, valoresSeleccionados);
-    }
+    const filteredUrl = _spFilter.buildFilteredUrl(filtroActual, valoresSeleccionados);
 
     cerrarModalFiltro();
     navegarSupervisorPedidos(filteredUrl);
@@ -377,6 +531,22 @@ document.getElementById('modalExitoOcultar')?.addEventListener('click', function
 
 // Delegado: novedades y filtros de columna
 document.addEventListener('click', function(e) {
+    const btnVerDropdown = e.target.closest('.btn-ver-dropdown');
+    if (btnVerDropdown) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = getOrCreateVerMenu(btnVerDropdown);
+        const isOpen = menu.style.display === 'block';
+        closeAllVerMenus(menu.id);
+        if (!isOpen) {
+            menu.style.display = 'block';
+            positionVerMenu(btnVerDropdown, menu);
+        } else {
+            menu.style.display = 'none';
+        }
+        return;
+    }
+
     const btnNovedades = e.target.closest('.btn-novedades');
     if (btnNovedades) {
         e.preventDefault();
@@ -395,16 +565,8 @@ document.addEventListener('click', function(e) {
     if (btnFiltro) {
         e.preventDefault();
         e.stopPropagation();
-        const title = btnFiltro.getAttribute('title');
-        let columna = '';
-        switch(title) {
-            case 'Filtrar Número':     columna = 'numero';    break;
-            case 'Filtrar Cliente':    columna = 'cliente';   break;
-            case 'Filtrar Estado':     columna = 'estado';    break;
-            case 'Filtrar Asesora':    columna = 'asesora';   break;
-            case 'Filtrar Forma Pago': columna = 'forma_pago'; break;
-            default:                   columna = 'cliente';
-        }
+        const columna = resolveFilterColumn(btnFiltro);
+        if (!columna) return;
         abrirModalFiltro(columna);
     }
 });
@@ -448,10 +610,23 @@ async function aprobarOrden(ordenId, numeroOrden) {
     }
 }
 
-function verOrdenDetalles(ordenId) {
+function verOrdenDetalles(ordenId, numeroPedido = null) {
     const menu = document.getElementById(`ver-menu-${ordenId}`);
     if (menu) menu.style.display = 'none';
-    openOrderDetailModal(ordenId);
+
+    if (typeof window.verFacturaDelPedido !== 'function') {
+        console.error('[verOrdenDetalles] verFacturaDelPedido no esta disponible');
+        _spNotify.error('No se pudo abrir el detalle del pedido.');
+        return;
+    }
+
+    try {
+        const numero = String(numeroPedido || ordenId || '');
+        window.verFacturaDelPedido(numero, Number(ordenId));
+    } catch (error) {
+        console.error('[verOrdenDetalles] Error abriendo factura:', error);
+        _spNotify.error('No se pudo abrir la factura del pedido.');
+    }
 }
 
 function abrirSeguimiento(ordenId) {
@@ -527,3 +702,6 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
+
+
+

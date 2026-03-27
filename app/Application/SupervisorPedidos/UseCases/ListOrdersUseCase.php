@@ -163,6 +163,18 @@ class ListOrdersUseCase
 
     private function applyDateFilters($query, ListOrdersRequest $request): void
     {
+        if ($request->getFecha()) {
+            $fechas = array_values(array_filter(array_map('trim', explode(',', $request->getFecha()))));
+            if (!empty($fechas)) {
+                $query->where(function($q) use ($fechas) {
+                    foreach ($fechas as $fecha) {
+                        $q->orWhereDate('created_at', $fecha);
+                    }
+                });
+            }
+            return;
+        }
+
         if ($request->getFechaDesde()) {
             $query->whereDate('created_at', '>=', $request->getFechaDesde());
         }

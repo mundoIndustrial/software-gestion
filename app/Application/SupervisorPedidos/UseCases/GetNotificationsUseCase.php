@@ -91,7 +91,7 @@ class GetNotificationsUseCase
                 ->leftJoin('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
                 ->select([
                     'pedidos_produccion.id', 'numero_pedido', 'cliente', 'asesor_id',
-                    'created_at', 'estado', 'forma_de_pago', 'u.name as asesor'
+                    'pedidos_produccion.created_at', 'estado', 'forma_de_pago', 'u.name as asesor'
                 ])
                 ->orderBy('pedidos_produccion.created_at', 'desc')
                 ->get();

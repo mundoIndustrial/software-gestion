@@ -12,29 +12,23 @@ class GetPendingQualityControlReceiptsUseCase
     public function execute(GetPendingSewingReceiptsRequest $request): GetPendingSewingReceiptsResponse
     {
         try {
-            // Obtener procesos de Control de Calidad pendientes SOLO de COSTURA
-            $query = DB::table('procesos_prenda as pp')
-                ->join('prendas_pedido as prenda', 'pp.prenda_pedido_id', '=', 'prenda.id')
-                ->join('pedidos_produccion as p', 'pp.numero_pedido', '=', 'p.numero_pedido')
+            // Obtener recibos COSTURA activos cuya area actual sea Control de Calidad.
+            $query = DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
                 ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
-                ->join('consecutivos_recibos_pedidos as crp', function($join) {
-                    $join->on('crp.pedido_produccion_id', '=', 'p.id')
-                        ->on('crp.consecutivo_actual', '=', 'pp.numero_recibo');
-                })
                 ->select([
                     'p.created_at as fecha_creacion',
-                    'pp.numero_recibo',
-                    'pp.prenda_pedido_id as prenda_id',
+                    'crp.consecutivo_actual as numero_recibo',
+                    'crp.prenda_id as prenda_id',
                     'p.cliente',
                     'p.id as pedido_id',
                     'u.name as asesor',
                     'crp.color_costura',
-                    'pp.proceso as area',
+                    'crp.area',
                 ])
-                ->where('pp.proceso', 'Control de Calidad')
-                ->where('pp.estado_proceso', 'Pendiente')
                 ->where('crp.tipo_recibo', 'COSTURA')
                 ->where('crp.activo', 1)
+                ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->orderBy('p.created_at', 'desc');
 
             // Aplicar filtros
@@ -62,7 +56,7 @@ class GetPendingQualityControlReceiptsUseCase
         if (!empty($request->getNumeroRecibo())) {
             $numeros = array_filter(array_map('trim', explode(',', $request->getNumeroRecibo())));
             if (count($numeros) > 0) {
-                $query->whereIn('pp.numero_recibo', $numeros);
+                $query->whereIn('crp.consecutivo_actual', $numeros);
             }
         }
 
@@ -83,7 +77,12 @@ class GetPendingQualityControlReceiptsUseCase
         if (!empty($request->getPrendas())) {
             $prendas = array_filter(array_map('trim', explode(',', $request->getPrendas())));
             if (count($prendas) > 0) {
-                $query->whereIn('prenda.nombre_prenda', $prendas);
+                $query->whereExists(function ($q) use ($prendas) {
+                    $q->select(DB::raw(1))
+                        ->from('prendas_pedido as pp')
+                        ->whereColumn('pp.id', 'crp.prenda_id')
+                        ->whereIn('pp.nombre_prenda', $prendas);
+                });
             }
         }
 
@@ -145,4 +144,3 @@ class GetPendingQualityControlReceiptsUseCase
         return $proceso;
     }
 }
-

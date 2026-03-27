@@ -2,45 +2,48 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion;
 
+use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
+use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
+use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
+use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Http\Controllers\Controller;
+use App\Infrastructure\Http\Requests\Asesores\FiltrarPedidosPorEstadoRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
-use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
-use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
-use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
-use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
-use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
 
 /**
  * ListarPedidosController
- * 
- *  RESPONSABILIDAD ÚNICA: GET endpoints para listar y buscar pedidos
- * 
- * HTTP Methods:
- * - GET /api/pedidos                           → index()
- * - GET /api/pedidos/filtro/estado             → filtrarPorEstado()
- * - GET /api/pedidos/buscar/{numero}           → buscarPorNumero()
- * 
- * Dependencias:
- * - ListarProduccionPedidosUseCase
- * - FiltrarPedidosPorEstadoUseCase
- * - BuscarPedidoPorNumeroUseCase
+ *
+ * Responsabilidad unica: endpoints GET para listar y buscar pedidos.
  */
 class ListarPedidosController extends Controller
 {
     public function __construct(
-        private ListarProduccionPedidosUseCase $listarPedidosUseCase,
-        private FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
-        private BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
-    ) {}
+        private readonly ListarProduccionPedidosUseCase $listarPedidosUseCase,
+        private readonly FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
+        private readonly BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
+    ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
 
     /**
      * GET /api/pedidos
-     * 
-     * Listar todos los pedidos con paginación
      */
     public function index(Request $request): JsonResponse
     {
@@ -69,36 +72,25 @@ class ListarPedidosController extends Controller
                 'total' => is_object($pedidos) && method_exists($pedidos, 'total') ? $pedidos->total() : count($pedidos),
             ]);
 
-            return response()->json($pedidos, 200);
-
+            return $this->json($pedidos);
         } catch (\Exception $e) {
             Log::error('[ListarPedidosController::index] Error', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error listando pedidos: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error listando pedidos: ' . $e->getMessage(), 500);
         }
     }
 
     /**
      * GET /api/pedidos/filtro/estado
-     * 
-     * Filtrar pedidos por estado
      */
-    public function filtrarPorEstado(Request $request): JsonResponse
+    public function filtrarPorEstado(FiltrarPedidosPorEstadoRequest $request): JsonResponse
     {
         try {
+            $validated = $request->validated();
             Log::info('[ListarPedidosController::filtrarPorEstado] Iniciado', [
-                'estado' => $request->get('estado'),
-            ]);
-
-            $validated = $request->validate([
-                'estado' => 'required|string|in:activo,pendiente,completado,cancelado',
-                'page' => 'sometimes|integer|min:1',
-                'per_page' => 'sometimes|integer|min:1|max:100',
+                'estado' => $validated['estado'] ?? null,
             ]);
 
             $dto = FiltrarPedidosPorEstadoDTO::fromRequest($validated);
@@ -109,35 +101,26 @@ class ListarPedidosController extends Controller
                 'total' => is_object($pedidos) && method_exists($pedidos, 'total') ? $pedidos->total() : count($pedidos),
             ]);
 
-            return response()->json($pedidos, 200);
-
+            return $this->json($pedidos);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[ListarPedidosController::filtrarPorEstado] Validación fallida', [
+            Log::warning('[ListarPedidosController::filtrarPorEstado] Validacion fallida', [
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Parámetros inválidos',
+            return $this->failure('Parametros invalidos', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\Exception $e) {
             Log::error('[ListarPedidosController::filtrarPorEstado] Error', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error filtrando pedidos: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error filtrando pedidos: ' . $e->getMessage(), 500);
         }
     }
 
     /**
      * GET /api/pedidos/buscar/{numero}
-     * 
-     * Buscar pedido por número
      */
     public function buscarPorNumero(string $numero): JsonResponse
     {
@@ -154,10 +137,7 @@ class ListarPedidosController extends Controller
                     'numero' => $numero,
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado',
-                ], 404);
+                return $this->failure('Pedido no encontrado', 404);
             }
 
             Log::info('[ListarPedidosController::buscarPorNumero] Completado', [
@@ -165,18 +145,14 @@ class ListarPedidosController extends Controller
                 'pedido_id' => $pedido->id ?? null,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\Exception $e) {
             Log::error('[ListarPedidosController::buscarPorNumero] Error', [
                 'numero' => $numero,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error buscando pedido: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error buscando pedido: ' . $e->getMessage(), 500);
         }
     }
 }

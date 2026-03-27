@@ -22,6 +22,19 @@ class TelasColoresApiController extends Controller
     ) {
     }
 
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500): JsonResponse
+    {
+        return $this->json([
+            'success' => false,
+            'message' => $message,
+        ], $status);
+    }
+
     /**
      * Retorna todas las telas disponibles
      */
@@ -30,7 +43,7 @@ class TelasColoresApiController extends Controller
         try {
             $telas = $this->obtenerCatalogoTelasAsesorUseCase->ejecutar();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $telas,
                 'count' => count($telas),
@@ -40,10 +53,7 @@ class TelasColoresApiController extends Controller
                 'error' => $e->getMessage(),
             ]);
             
-            return response()->json([
-                'success' => false,
-                'error' => 'Error al obtener telas.',
-            ], 500);
+            return $this->failure('Error al obtener telas.', 500);
         }
     }
 
@@ -55,7 +65,7 @@ class TelasColoresApiController extends Controller
         try {
             $colores = $this->obtenerCatalogoColoresAsesorUseCase->ejecutar();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $colores,
                 'count' => count($colores),
@@ -65,10 +75,7 @@ class TelasColoresApiController extends Controller
                 'error' => $e->getMessage(),
             ]);
             
-            return response()->json([
-                'success' => false,
-                'error' => 'Error al obtener colores.',
-            ], 500);
+            return $this->failure('Error al obtener colores.', 500);
         }
     }
 }

@@ -13,15 +13,21 @@ class GetPendingOrdersCountUseCase
     public function execute(GetPendingOrdersCountRequest $request): GetPendingOrdersCountResponse
     {
         try {
-            // Contar órdenes con estado 'PENDIENTE_SUPERVISOR'
-            $totalPendientes = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')->count();
+            // Contar solo pedidos pendientes visibles en supervisor-pedidos.
+            $baseQuery = PedidoProduccion::query()
+                ->where('estado', 'PENDIENTE_SUPERVISOR')
+                ->whereNull('ocultado_en')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '');
+
+            $totalPendientes = (clone $baseQuery)->count();
 
             $logoTipoId = TipoCotizacion::getIdPorCodigo('logo');
 
             // Contar solo las órdenes de logo pendientes
             $pendientesLogo = 0;
             if ($logoTipoId) {
-                $pendientesLogo = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
+                $pendientesLogo = (clone $baseQuery)
                     ->whereHas('cotizacion', function ($q) use ($logoTipoId) {
                         $q->where('tipo_cotizacion_id', $logoTipoId);
                     })

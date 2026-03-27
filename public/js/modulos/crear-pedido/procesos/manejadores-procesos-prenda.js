@@ -5,7 +5,9 @@
  * Coordina la apertura de modales genéricos y el resumen de procesos seleccionados
  */
 
-let procesosSeleccionados = {};
+var procesosSeleccionados = window.procesosSeleccionados && typeof window.procesosSeleccionados === 'object'
+    ? window.procesosSeleccionados
+    : {};
 
 // Exponer en window para acceso global
 window.procesosSeleccionados = procesosSeleccionados;
@@ -14,7 +16,7 @@ window.procesosSeleccionados = procesosSeleccionados;
 // Estructura: { 'reflectivo': { tipo: 'reflectivo', datos: {...}, indiceResultado: 1 }, ... }
 window.procesosGuardados = window.procesosGuardados || {};
 
-const procesosIconos = {
+var procesosIconos = {
     reflectivo: 'light_mode',
     bordado: 'auto_awesome',
     estampado: 'format_paint',
@@ -22,7 +24,7 @@ const procesosIconos = {
     sublimado: 'palette'
 };
 
-const procesosNombres = {
+var procesosNombres = {
     reflectivo: 'Reflectivo',
     bordado: 'Bordado',
     estampado: 'Estampado',
@@ -135,5 +137,4 @@ window.limpiarProcesosSeleccionados = function() {
     
 
 };
-
 

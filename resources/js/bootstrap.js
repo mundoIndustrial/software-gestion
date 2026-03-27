@@ -3,7 +3,7 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-//  CREAR STUB DE STORAGE POR SEGURIDAD (por si acaso no esté disponible)
+// Create storage stubs for edge environments
 if (typeof window.localStorage === 'undefined') {
     window.localStorage = {
         getItem: () => null,
@@ -11,7 +11,7 @@ if (typeof window.localStorage === 'undefined') {
         removeItem: () => {},
         clear: () => {},
         key: () => null,
-        length: 0
+        length: 0,
     };
 }
 if (typeof window.sessionStorage === 'undefined') {
@@ -21,36 +21,18 @@ if (typeof window.sessionStorage === 'undefined') {
         removeItem: () => {},
         clear: () => {},
         key: () => null,
-        length: 0
+        length: 0,
     };
 }
 
-// Importar Pusher JS SINCRÓNICAMENTE
-import Pusher from 'pusher-js';
-window.Pusher = Pusher;
+// Echo readiness coordination
+window.echoReady = window.echoReady || false;
+window.echoReadyCallbacks = window.echoReadyCallbacks || [];
+window.EchoConstructor = window.EchoConstructor || null;
+window.EchoInstance = window.EchoInstance || null;
+window.Echo = window.Echo || null;
 
-// Importar Echo SINCRÓNICAMENTE
-import Echo from 'laravel-echo';
-
-
-
-// Guardar el constructor Echo en una variable separada
-window.EchoConstructor = Echo;
-
-// Exportar Echo al scope global para que esté disponible en todas partes
-window.Echo = Echo;
-
-
-
-//  Sistema para esperar a que Echo esté listo
-window.echoReady = false;
-window.echoReadyCallbacks = [];
-
-/**
- * Esperar a que Echo esté completamente inicializado
- * Uso: window.waitForEcho(() => { callback code })
- */
-window.waitForEcho = function(callback) {
+window.waitForEcho = function (callback) {
     if (window.echoReady && window.Echo) {
         callback();
     } else {
@@ -58,20 +40,9 @@ window.waitForEcho = function(callback) {
     }
 };
 
-/**
- * Callbacks pendientes a ejecutar cuando Echo esté listo
- */
-window.echoReadyCallbacks = window.echoReadyCallbacks || [];
-window.echoReady = window.echoReady || false;
-
-/**
- * Notificar que Echo está listo (llamado al final de inicializeEcho)
- */
-window.notifyEchoReady = function() {
-    
+window.notifyEchoReady = function () {
     window.echoReady = true;
 
-    // Ejecutar todos los callbacks pendientes
     while (window.echoReadyCallbacks.length > 0) {
         const callback = window.echoReadyCallbacks.shift();
         try {
@@ -82,72 +53,93 @@ window.notifyEchoReady = function() {
     }
 };
 
-/**
- * Inicializar Echo después de que todo esté cargado
- */
-function initializeEcho() {
-    //  Leer config desde meta tags inyectados por Laravel (dinámico, no compilado)
-    const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
-    const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
-    
-    // Usar la misma IP/hostname de la página actual (evita problemas de red)
-    const currentHost = window.location.hostname;
-    
-    // Fallback a variables de entorno compiladas (para compatibilidad)
-    let wsHost = metaReverbHost || currentHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
-    let wsPort = parseInt(metaReverbPort || import.meta.env.VITE_REVERB_PORT) || 8080;
-    
-    // Detectar si está en producción por el hostname
-    const hostname = window.location.hostname;
-    const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
-    
-    // En producción, usar proxy de Nginx (puerto 443/80) en lugar de conexión directa
-    // En desarrollo, usar conexión directa al puerto de Reverb
-    let useProxy = isProduction;
-    let wsPortFinal = useProxy ? (window.location.protocol === 'https:' ? 443 : 80) : wsPort;
-    let wsHostFinal = useProxy ? window.location.hostname : wsHost;
-    let forceTLSFinal = useProxy ? (window.location.protocol === 'https:') : false;
+let echoInitPromise = null;
 
-    try {
-        
-        // WebSockets habilitados para Reverb (Supervisor Pedidos en tiempo real)
-        const echoInstance = new window.EchoConstructor({
-            broadcaster: 'reverb',
-            key: import.meta.env.VITE_REVERB_APP_KEY || 'mundo-industrial-key',
-            wsHost: wsHostFinal,
-            wsPort: wsPortFinal,
-            wssPort: wsPortFinal,
-            forceTLS: forceTLSFinal,
-            enabledTransports: ['ws', 'wss'], //  Habilitar WebSockets
-            disableStats: true,
-            authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                },
-            },
-            wsErrorMessage: 'WebSocket connection failed',
-        });
-        
-        // Guardar la instancia en window.Echo (no como constructor)
-        window.Echo = echoInstance;
-        window.EchoInstance = echoInstance;
-        
-
-        
-        // Notificar que Echo está listo inmediatamente
-        window.notifyEchoReady();
-        
-    } catch (error) {
-        console.error('[Echo]  Error inicializando Echo:', error);
+async function loadEchoDependencies() {
+    if (window.EchoConstructor && window.Pusher) {
+        return;
     }
+
+    const [{ default: Pusher }, { default: Echo }] = await Promise.all([
+        import('pusher-js'),
+        import('laravel-echo'),
+    ]);
+
+    window.Pusher = Pusher;
+    window.EchoConstructor = Echo;
 }
 
-// Inicializar cuando el documento esté listo
+async function initializeEcho() {
+    if (window.EchoInstance) {
+        window.notifyEchoReady();
+        return window.EchoInstance;
+    }
+
+    if (echoInitPromise) {
+        return echoInitPromise;
+    }
+
+    echoInitPromise = (async () => {
+        await loadEchoDependencies();
+
+        // Read runtime config from meta tags first
+        const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
+        const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
+
+        const currentHost = window.location.hostname;
+
+        let wsHost = metaReverbHost || currentHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
+        let wsPort = parseInt(metaReverbPort || import.meta.env.VITE_REVERB_PORT, 10) || 8080;
+
+        const hostname = window.location.hostname;
+        const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
+
+        const useProxy = isProduction;
+        const wsPortFinal = useProxy ? (window.location.protocol === 'https:' ? 443 : 80) : wsPort;
+        const wsHostFinal = useProxy ? window.location.hostname : wsHost;
+        const forceTLSFinal = useProxy ? window.location.protocol === 'https:' : false;
+
+        try {
+            const echoInstance = new window.EchoConstructor({
+                broadcaster: 'reverb',
+                key: import.meta.env.VITE_REVERB_APP_KEY || 'mundo-industrial-key',
+                wsHost: wsHostFinal,
+                wsPort: wsPortFinal,
+                wssPort: wsPortFinal,
+                forceTLS: forceTLSFinal,
+                enabledTransports: ['ws', 'wss'],
+                disableStats: true,
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    },
+                },
+                wsErrorMessage: 'WebSocket connection failed',
+            });
+
+            window.Echo = echoInstance;
+            window.EchoInstance = echoInstance;
+            window.notifyEchoReady();
+
+            return echoInstance;
+        } catch (error) {
+            console.error('[Echo] Error inicializando Echo:', error);
+            throw error;
+        }
+    })();
+
+    return echoInitPromise;
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        initializeEcho();
+        initializeEcho().catch((error) => {
+            console.error('[Echo] Fallo inicializacion diferida:', error);
+        });
     });
 } else {
-    initializeEcho();
+    initializeEcho().catch((error) => {
+        console.error('[Echo] Fallo inicializacion diferida:', error);
+    });
 }

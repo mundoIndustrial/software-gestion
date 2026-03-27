@@ -701,7 +701,12 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initObservacionesDespacho() {
+        if (window.__observacionesDespachoInitialized) {
+            return;
+        }
+        window.__observacionesDespachoInitialized = true;
+
         refrescarBadgesObservacionesDespachoAsesores();
 
         // Setup WebSocket para tiempo real
@@ -750,7 +755,13 @@
                 }
             }
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initObservacionesDespacho);
+    } else {
+        initObservacionesDespacho();
+    }
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
 })();

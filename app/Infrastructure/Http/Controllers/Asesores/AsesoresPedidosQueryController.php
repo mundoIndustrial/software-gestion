@@ -11,6 +11,7 @@ use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,20 @@ final class AsesoresPedidosQueryController extends Controller
     ) {
     }
 
-    public function obtenerNotasPedido($id)
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
+    public function obtenerNotasPedido(int|string $id): JsonResponse
     {
         try {
             $usuarioId = (int) (Auth::id() ?? 0);
@@ -36,48 +50,41 @@ final class AsesoresPedidosQueryController extends Controller
             $pedidoRef = $this->pedidoProduccionRepository->obtenerPorIdYAsesor($pedidoId, $usuarioId);
 
             if ($pedidoRef === null || $pedidoRef->numeroPedido === null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado',
-                ], 404);
+                return $this->failure('Pedido no encontrado', 404);
             }
 
             $notas = $this->obtenerNotasPedidoUseCase->ejecutar((string) $pedidoRef->numeroPedido);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $notas,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error al obtener notas del pedido', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al cargar las notas',
-            ], 500);
+            return $this->failure('Error al cargar las notas', 500);
         }
     }
 
-    public function contarPendientesAsesor()
+    public function contarPendientesAsesor(): JsonResponse
     {
         try {
             $user = Auth::user();
             $asesorNombre = $user->name ?? '';
             $conteo = $this->contarPendientesAsesorUseCase->ejecutar($asesorNombre);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'conteo' => $conteo,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error al contar pendientes del asesor', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
+            return $this->failure('Error al contar pendientes del asesor', 500, [
                 'conteo' => 0,
-            ], 500);
+            ]);
         }
     }
 
-    public function obtenerPendientesAsesor(Request $request)
+    public function obtenerPendientesAsesor(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -91,37 +98,33 @@ final class AsesoresPedidosQueryController extends Controller
                 (int) $request->query('per_page', 20)
             );
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $resultado['data'],
                 'meta' => $resultado['meta'],
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error al obtener pendientes del asesor', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener pendientes.',
-            ], 500);
+            return $this->failure('Error al obtener pendientes.', 500);
         }
     }
 
-    public function getNextPedido()
+    public function getNextPedido(): JsonResponse
     {
         try {
             $dto = ObtenerProximoNumeroPedidoDTO::crear();
             $siguientePedido = $this->obtenerProximoNumeroPedidoUseCase->ejecutar($dto);
 
-            return response()->json([
+            return $this->json([
+                'success' => true,
                 'siguiente_pedido' => $siguientePedido,
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'error' => 'Error al obtener próximo número',
-            ], 500);
+            return $this->failure('Error al obtener proximo numero', 500);
         }
     }
 
-    public function apiListar(Request $request)
+    public function apiListar(Request $request): JsonResponse
     {
         try {
             $filtros = [];
@@ -155,17 +158,13 @@ final class AsesoresPedidosQueryController extends Controller
                 ];
             })->toArray();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $pedidosArray,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error en apiListar', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'error' => 'Error al listar pedidos',
-            ], 500);
+            return $this->failure('Error al listar pedidos', 500);
         }
     }
 }
-

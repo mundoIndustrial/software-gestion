@@ -230,7 +230,7 @@
     </div>
 
     <!-- Scripts -->
-    @vite(['resources/js/app.js'])
+    @vite(['resources/js/app.js', 'resources/js/operario/entry.js'])
     <script>
         // Configuración de rutas para JavaScript
         window.APP_ROUTES = {

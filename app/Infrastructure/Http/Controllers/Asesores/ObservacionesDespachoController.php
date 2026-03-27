@@ -4,9 +4,10 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Application\Services\Asesores\ObservacionesDespachoApplicationService;
 use App\Events\ObservacionDespachoCreada;
+use App\Infrastructure\Http\Requests\Asesores\GuardarObservacionDespachoRequest;
+use App\Infrastructure\Http\Requests\Asesores\ResumenObservacionesDespachoRequest;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -18,81 +19,93 @@ class ObservacionesDespachoController extends Controller
     ) {
     }
 
-    public function obtener(Request $request, int|string $id): JsonResponse
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
+    private function handleAccessException(\Throwable $e): JsonResponse
+    {
+        if ($e instanceof AuthenticationException) {
+            return $this->failure('No autenticado', 401);
+        }
+
+        if ($e instanceof NotFoundHttpException) {
+            return $this->failure($e->getMessage(), 404);
+        }
+
+        if ($e instanceof AccessDeniedHttpException) {
+            return $this->failure($e->getMessage(), 403);
+        }
+
+        return $this->failure('Error interno', 500);
+    }
+
+    public function obtener(int|string $id): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $this->service->obtenerObservacionesUnificadas($pedidoId),
             ]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function resumen(Request $request): JsonResponse
+    public function resumen(ResumenObservacionesDespachoRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'pedido_ids' => 'required|array',
-                'pedido_ids.*' => 'integer',
-            ]);
+            $validated = $request->validated();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'data' => $this->service->obtenerResumen($validated['pedido_ids'], auth()->user()),
             ]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function marcarBodegaVistas(Request $request, int|string $id): JsonResponse
+    public function marcarBodegaVistas(int|string $id): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
             $this->service->marcarBodegaVistas($pedidoId);
 
-            return response()->json(['success' => true]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function marcarLeidas(Request $request, int|string $id): JsonResponse
+    public function marcarLeidas(int|string $id): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
             $this->service->marcarDespachoLeidas($pedidoId);
 
-            return response()->json(['success' => true]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function guardar(Request $request, int|string $id): JsonResponse
+    public function guardar(GuardarObservacionDespachoRequest $request, int|string $id): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
-
-            $validated = $request->validate([
-                'contenido' => 'required|string|max:5000',
-            ]);
+            $validated = $request->validated();
 
             $row = $this->service->guardar(
                 $pedidoId,
@@ -103,28 +116,21 @@ class ObservacionesDespachoController extends Controller
 
             broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Observacion guardada exitosamente',
                 'data' => $this->service->mapPayload($row),
             ]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function actualizar(Request $request, int|string $id, string $observacionId): JsonResponse
+    public function actualizar(GuardarObservacionDespachoRequest $request, int|string $id, string $observacionId): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
-
-            $validated = $request->validate([
-                'contenido' => 'required|string|max:5000',
-            ]);
+            $validated = $request->validated();
 
             $row = $this->service->actualizar(
                 $pedidoId,
@@ -135,21 +141,17 @@ class ObservacionesDespachoController extends Controller
 
             broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Observacion actualizada correctamente',
                 'data' => $this->service->mapPayload($row),
             ]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 
-    public function eliminar(Request $request, int|string $id, string $observacionId): JsonResponse
+    public function eliminar(int|string $id, string $observacionId): JsonResponse
     {
         try {
             $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
@@ -157,16 +159,12 @@ class ObservacionesDespachoController extends Controller
 
             broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Observacion eliminada correctamente',
             ]);
-        } catch (AuthenticationException $e) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (AccessDeniedHttpException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
     }
 }

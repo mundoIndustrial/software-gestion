@@ -2,24 +2,25 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Application\Pedidos\UseCases\EliminarEppUseCase;
 use App\Application\Pedidos\UseCases\HomologarEppUseCase;
 use App\Application\Services\Asesores\PrendaPedidoEdicionAuditoriaService;
+use App\Infrastructure\Http\Requests\Asesores\EliminarEppRequest;
+use App\Infrastructure\Http\Requests\Asesores\HomologarEppRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 /**
  * EppsPedidoController
  *
- * Responsabilidad: Gestionar operaciones sobre EPPs de un pedido de producción.
+ * Responsabilidad: Gestionar operaciones sobre EPPs de un pedido de produccion.
  * - Eliminar EPP de un pedido
  * - Homologar EPP (reemplazar con otro)
  *
- * Patrón: CQRS + Dependency Injection
- * SRP: Solo operaciones de EPPs, sin lógica de negocio
+ * Patron: CQRS + Dependency Injection
+ * SRP: Solo operaciones de EPPs, sin logica de negocio
  */
 class EppsPedidoController
 {
@@ -29,21 +30,31 @@ class EppsPedidoController
         private PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService,
     ) {}
 
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
     /**
      * POST /asesores/pedidos/{id}/eliminar-epp
      * Eliminar EPP de un pedido
      */
-    public function eliminarEpp(Request $request, int|string $id): JsonResponse
+    public function eliminarEpp(EliminarEppRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[EppsPedidoController] POST /asesores/pedidos/{id}/eliminar-epp', [
                 'pedido_id' => $id,
             ]);
 
-            $validated = $request->validate([
-                'epp_id' => 'required|numeric|min:1',
-                'motivo' => 'required|string|min:5|max:1000',
-            ]);
+            $validated = $request->validated();
 
             $resultado = $this->eliminarEppUseCase->ejecutar(
                 (int) $id,
@@ -51,30 +62,22 @@ class EppsPedidoController
                 $validated['motivo']
             );
 
-            return response()->json($resultado, 200);
-
+            return $this->json($resultado, 200);
         } catch (ModelNotFoundException $e) {
             Log::warning('[EppsPedidoController] EPP o pedido no encontrado', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'EPP o pedido no encontrado',
-            ], 404);
-
+            return $this->failure('EPP o pedido no encontrado', 404);
         } catch (ValidationException $e) {
-            Log::warning('[EppsPedidoController] Validación fallida al eliminar EPP', [
+            Log::warning('[EppsPedidoController] Validacion fallida al eliminar EPP', [
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Validación fallida',
+            return $this->failure('Validacion fallida', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\Exception $e) {
             Log::error('[EppsPedidoController] Error eliminando EPP', [
                 'pedido_id' => $id,
@@ -82,10 +85,7 @@ class EppsPedidoController
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar EPP: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error al eliminar EPP: ' . $e->getMessage(), 500);
         }
     }
 
@@ -93,20 +93,14 @@ class EppsPedidoController
      * POST /asesores/pedidos/{id}/homologar-epp
      * Homologar EPP: marcar como eliminado y crear uno nuevo con datos editados
      */
-    public function homologarEpp(Request $request, int|string $id): JsonResponse
+    public function homologarEpp(HomologarEppRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[EppsPedidoController] POST /asesores/pedidos/{id}/homologar-epp', [
                 'pedido_id' => $id,
             ]);
 
-            $validated = $request->validate([
-                'pedido_epp_id' => 'required|numeric|min:1',
-                'motivo' => 'required|string|min:5|max:1000',
-                'cantidad' => 'required|numeric|min:1',
-                'observaciones' => 'nullable|string',
-                'epp_id' => 'nullable|numeric',
-            ]);
+            $validated = $request->validated();
 
             $resultado = $this->homologarEppUseCase->ejecutar(
                 (int) $id,
@@ -123,30 +117,22 @@ class EppsPedidoController
                 (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0)
             );
 
-            return response()->json($resultado, 200);
-
+            return $this->json($resultado, 200);
         } catch (ModelNotFoundException $e) {
             Log::warning('[EppsPedidoController] EPP o pedido no encontrado', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'EPP o pedido no encontrado',
-            ], 404);
-
+            return $this->failure('EPP o pedido no encontrado', 404);
         } catch (ValidationException $e) {
-            Log::warning('[EppsPedidoController] Validación fallida al homologar EPP', [
+            Log::warning('[EppsPedidoController] Validacion fallida al homologar EPP', [
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Validación fallida',
+            return $this->failure('Validacion fallida', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\Exception $e) {
             Log::error('[EppsPedidoController] Error homologando EPP', [
                 'pedido_id' => $id,
@@ -154,10 +140,7 @@ class EppsPedidoController
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al homologar EPP: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error al homologar EPP: ' . $e->getMessage(), 500);
         }
     }
 }

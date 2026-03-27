@@ -4,10 +4,9 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 
 use Illuminate\Support\Facades\Auth;
-use App\Application\Services\Asesores\ObtenerDatosCotizacionService;
-use App\Application\Services\Asesores\ObtenerDatosFacturaService;
-use App\Application\Services\Asesores\ObtenerDatosPrendaPedidoService;
-use App\Application\Services\Asesores\ObtenerPrendaCompletaDesdeCotizacionService;
+use App\Application\Services\Asesores\PedidosProduccionViewApplicationFacadeService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
 
 /**
  * PedidosProduccionViewController
@@ -21,53 +20,49 @@ use App\Application\Services\Asesores\ObtenerPrendaCompletaDesdeCotizacionServic
 class PedidosProduccionViewController
 {
     public function __construct(
-        private readonly ObtenerDatosCotizacionService $obtenerDatosCotizacionService,
-        private readonly ObtenerDatosFacturaService $obtenerDatosFacturaService,
-        private readonly ObtenerDatosPrendaPedidoService $obtenerDatosPrendaPedidoService,
-        private readonly ObtenerPrendaCompletaDesdeCotizacionService $obtenerPrendaCompletaDesdeCotizacionService
+        private readonly PedidosProduccionViewApplicationFacadeService $facade
     ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'error' => $message,
+        ], $extra), $status);
     }
 
     /**
      * Obtener datos de cotizacion (AJAX)
      */
-    public function obtenerDatosCotizacion($cotizacionId)
+    public function obtenerDatosCotizacion(int|string $cotizacionId): JsonResponse
     {
         try {
             $usuarioId = (int) Auth::id();
-            $datos = $this->obtenerDatosCotizacionService->obtenerParaAsesor((int) $cotizacionId, $usuarioId);
-
-            if ($datos === null) {
-                return response()->json([
-                    'error' => 'cotizacion no encontrada o no tienes permisos para acceder a ella',
-                ], 404);
-            }
-
-            return response()->json([
-                'error' => null,
-                'prendas' => $datos['prendas'],
-                'logo' => $datos['logo'],
-                'tiene_prendas' => $datos['tiene_prendas'],
-                'tiene_logo' => $datos['tiene_logo'],
-            ]);
+            $resultado = $this->facade->resolverDatosCotizacion((int) $cotizacionId, $usuarioId);
+            return $this->json($resultado['payload'], $resultado['status']);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerDatosCotizacion', [
                 'cotizacion_id' => $cotizacionId,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error al obtener datos de cotizacion',
+            return $this->failure('Error al obtener datos de cotizacion', 500, [
                 'prendas' => [],
                 'logo' => null,
-            ], 500);
+            ]);
         }
     }
 
     /**
      * Mostrar plantilla de pedido
      */
-    public function plantilla($id)
+    public function plantilla(int|string $id): View
     {
         return view('asesores.pedidos.show', [
             'pedido_id' => $id
@@ -78,24 +73,18 @@ class PedidosProduccionViewController
      * Obtener datos del pedido para edicion modal
      * GET /asesores/pedidos-produccion/{id}/datos-edicion
      */
-    public function obtenerDatosEdicion($pedidoId)
+    public function obtenerDatosEdicion(int|string $pedidoId): JsonResponse
     {
         try {
-            $datos = $this->obtenerDatosFacturaService->obtener($pedidoId);
-            
-            \Log::info('[DATOS-EDICION] Datos cargados', ['pedido_id' => $pedidoId, 'prendas' => count($datos['prendas'] ?? [])]);
-
-            // Retornar en formato que la modal espera
-            return response()->json([
-                'success' => true,
-                'datos' => $datos
+            $resultado = $this->facade->obtenerDatosEdicion((int) $pedidoId);
+            \Log::info('[DATOS-EDICION] Datos cargados', [
+                'pedido_id' => $pedidoId,
+                'prendas' => $resultado['meta']['prendas_count'] ?? 0,
             ]);
+            return $this->json($resultado['payload'], $resultado['status']);
         } catch (\Exception $e) {
             \Log::error('[DATOS-EDICION] Error:', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al cargar datos del pedido'
-            ], 500);
+            return $this->failure('Error al cargar datos del pedido', 500);
         }
     }
 
@@ -104,22 +93,11 @@ class PedidosProduccionViewController
      * Usa Unicamente las 7 tablas transaccionales del pedido
      * GET /asesores/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos
      */
-    public function obtenerDatosUnaPrenda($pedidoId, $prendaId)
+    public function obtenerDatosUnaPrenda(int|string $pedidoId, int|string $prendaId): JsonResponse
     {
         try {
-            $datos = $this->obtenerDatosPrendaPedidoService->obtenerParaEdicion((int) $pedidoId, (int) $prendaId);
-
-            if ($datos === null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Prenda no encontrada'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'prenda' => $datos
-            ]);
+            $resultado = $this->facade->resolverDatosUnaPrenda((int) $pedidoId, (int) $prendaId);
+            return $this->json($resultado['payload'], $resultado['status']);
         } catch (\Exception $e) {
             \Log::error('[PRENDA-DATOS] Error obteniendo datos de prenda', [
                 'pedido_id' => $pedidoId,
@@ -127,48 +105,26 @@ class PedidosProduccionViewController
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos de la prenda',
-            ], 500);
+            return $this->failure('Error al obtener datos de la prenda', 500);
         }
     }
     /**
      * Obtener prenda completa desde cotización (para crear/editar pedido)
      * GET /asesores/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}
      */
-    public function obtenerPrendaCompleta($cotizacionId, $prendaId)
+    public function obtenerPrendaCompleta(int|string $cotizacionId, int|string $prendaId): JsonResponse
     {
-        $payload = ['error' => 'Error al obtener prenda completa'];
-        $statusCode = 500;
-
         try {
-            $resultado = $this->obtenerPrendaCompletaDesdeCotizacionService->obtener((int) $cotizacionId, (int) $prendaId);
-            $status = $resultado['status'] ?? null;
-
-            if ($status === 'cotizacion_no_encontrada') {
-                $payload = ['error' => 'cotizacion no encontrada'];
-                $statusCode = 404;
-            } elseif ($status === 'prenda_no_encontrada') {
-                $payload = ['error' => 'Prenda no encontrada'];
-                $statusCode = 404;
-            } elseif ($status === 'ok') {
-                $payload = array_merge([
-                    'success' => true,
-                ], $resultado['data']);
-                $statusCode = 200;
-            }
+            $resultado = $this->facade->resolverPrendaCompleta((int) $cotizacionId, (int) $prendaId);
+            return $this->json($resultado['payload'], $resultado['status']);
         } catch (\Exception $e) {
             \Log::error('[OBTENER-PRENDA-COMPLETA] Error obteniendo prenda completa', [
                 'cotizacion_id' => $cotizacionId,
                 'prenda_id' => $prendaId,
                 'error' => $e->getMessage(),
             ]);
+            return $this->failure('Error al obtener prenda completa', 500);
         }
-
-        return response()->json($payload, $statusCode);
     }
 }
-
-
 

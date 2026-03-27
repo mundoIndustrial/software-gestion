@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Infrastructure\Http\Controllers\Legacy\SupervisorAsesoresController;
+use App\Infrastructure\Http\Controllers\SupervisorAsesores\SupervisorAsesoresController;
 
 // ========================================
 // RUTAS PARA SUPERVISOR DE ASESORES
@@ -35,4 +35,3 @@ Route::middleware(['auth', 'role:supervisor_asesores,supervisor_gerencia,admin,l
     Route::get('/perfil/stats', [SupervisorAsesoresController::class, 'profileStats'])->name('profile.stats');
     Route::post('/perfil/password-update', [SupervisorAsesoresController::class, 'profilePasswordUpdate'])->name('profile.password-update');
 });
-

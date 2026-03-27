@@ -541,8 +541,6 @@ class PedidosController extends Controller
     private function obtenerPendientesPorArea(Request $request, string $area): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         try {
-            \Log::info("Iniciando obtenerPendientes{$area} - Verificando tabla bodega_detalles_talla");
-            
             // Verificar si la tabla existe
             if (!\Schema::hasTable('bodega_detalles_talla')) {
                 \Log::error('La tabla bodega_detalles_talla no existe en la base de datos');
@@ -550,11 +548,17 @@ class PedidosController extends Controller
             }
             
             $query = BodegaDetalleTalla::porArea($area)
-                ->porEstado('Pendiente');
+                ->porEstado('Pendiente')
+                ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'bodega_detalles_talla.numero_pedido');
+
+            // LEFT JOIN a bodega_detalles_visto solo si es EPP para evitar N+1 queries
+            if ($area === 'EPP') {
+                $query->leftJoin('bodega_detalles_visto as bdv', 'bdv.bodega_detalle_id', '=', 'bodega_detalles_talla.id');
+            }
 
             // Excluir pedidos anulados para ambas áreas
             // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
-            $query->whereNotIn('numero_pedido', function($subquery) {
+            $query->whereNotIn('bodega_detalles_talla.numero_pedido', function($subquery) {
                 $subquery->select('numero_pedido')
                     ->from('pedidos_produccion')
                     ->where('estado', 'Anulada')
@@ -562,47 +566,49 @@ class PedidosController extends Controller
             });
 
             // Excluir pedidos entregados del principal para ambas áreas (Costura y EPP)
-            $query->whereNotIn('numero_pedido', function($subquery) {
+            $query->whereNotIn('bodega_detalles_talla.numero_pedido', function($subquery) {
                 $subquery->select('numero_pedido')
                     ->from('pedidos_produccion')
                     ->where('estado', 'Entregado')
                     ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
             });
 
-            \Log::info('Query construida, total registros: ' . $query->count());
-
             // Agrupar por numero_pedido para evitar duplicación
             $query->select([
-                'numero_pedido',
-                DB::raw('MIN(id) as id'),
-                DB::raw('MIN(empresa) as empresa'),
-                DB::raw('MIN(asesor) as asesor'),
-                DB::raw('MIN(prenda_nombre) as prenda_nombre'),
-                DB::raw('MIN(area) as area'),
-                DB::raw('MIN(estado_bodega) as estado_bodega'),
-                DB::raw('MIN(fecha_entrega) as fecha_entrega'),
-                DB::raw('MIN(created_at) as created_at'),
-                DB::raw('SUM(cantidad) as cantidad_total'),
-                DB::raw('SUM(pendientes) as pendientes_total'),
-                DB::raw('MIN(talla) as talla_ejemplo')
+                'bodega_detalles_talla.numero_pedido',
+                DB::raw('MIN(bodega_detalles_talla.id) as id'),
+                DB::raw('MIN(pp.id) as pedido_produccion_id'),
+                DB::raw('MIN(bodega_detalles_talla.empresa) as empresa'),
+                DB::raw('MIN(bodega_detalles_talla.asesor) as asesor'),
+                DB::raw('MIN(bodega_detalles_talla.prenda_nombre) as prenda_nombre'),
+                DB::raw('MIN(bodega_detalles_talla.area) as area'),
+                DB::raw('MIN(bodega_detalles_talla.estado_bodega) as estado_bodega'),
+                DB::raw('MIN(bodega_detalles_talla.fecha_pedido) as fecha_pedido'),
+                DB::raw('MIN(bodega_detalles_talla.fecha_entrega) as fecha_entrega'),
+                DB::raw('MIN(bodega_detalles_talla.observaciones_bodega) as observaciones_bodega'),
+                DB::raw('MIN(bodega_detalles_talla.usuario_bodega_nombre) as usuario_bodega_nombre'),
+                DB::raw('MIN(bodega_detalles_talla.created_at) as created_at'),
+                DB::raw('MIN(bodega_detalles_talla.updated_at) as updated_at'),
+                DB::raw('SUM(bodega_detalles_talla.cantidad) as cantidad_total'),
+                DB::raw('SUM(bodega_detalles_talla.pendientes) as pendientes_total'),
+                DB::raw('MIN(bodega_detalles_talla.talla) as talla_ejemplo'),
+                DB::raw($area === 'EPP' ? 'MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists' : '"0" as visto_exists')
             ])
-            ->groupBy('numero_pedido')
-            ->orderBy($area === 'EPP' ? DB::raw('CAST(numero_pedido AS UNSIGNED)') : 'numero_pedido', 'desc');
-
-            \Log::info('Query con groupBy construida');
+            ->groupBy('bodega_detalles_talla.numero_pedido')
+            ->orderBy($area === 'EPP' ? DB::raw('CAST(bodega_detalles_talla.numero_pedido AS UNSIGNED)') : 'bodega_detalles_talla.numero_pedido', 'desc');
 
             // Aplicar búsqueda general
             if ($request->filled('search')) {
                 $search = $request->get('search');
                 $query->where(function($q) use ($search, $area) {
-                    $q->where('numero_pedido', 'LIKE', "%{$search}%")
-                      ->orWhere('empresa', 'LIKE', "%{$search}%")
-                      ->orWhere('asesor', 'LIKE', "%{$search}%")
-                      ->orWhere('prenda_nombre', 'LIKE', "%{$search}%");
+                    $q->where('bodega_detalles_talla.numero_pedido', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.empresa', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.asesor', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.prenda_nombre', 'LIKE', "%{$search}%");
                     
                     // Para EPP, añadir búsqueda en talla
                     if ($area === 'EPP') {
-                        $q->orWhere('talla', 'LIKE', "%{$search}%");
+                        $q->orWhere('bodega_detalles_talla.talla', 'LIKE', "%{$search}%");
                     }
                 });
             }
@@ -612,49 +618,41 @@ class PedidosController extends Controller
             
             if ($request->filled('numero_pedido')) {
                 $numerosPedido = explode(',', $request->get('numero_pedido'));
-                $query->whereIn('numero_pedido', $numerosPedido);
+                $query->whereIn('bodega_detalles_talla.numero_pedido', $numerosPedido);
                 $filtrosAplicados['numero_pedido'] = $numerosPedido;
-                \Log::info('Aplicando filtro numero_pedido: ' . json_encode($numerosPedido));
             }
             
             if ($request->filled('cliente')) {
                 $clientes = explode(',', $request->get('cliente'));
-                $query->whereIn('empresa', $clientes);
+                $query->whereIn('bodega_detalles_talla.empresa', $clientes);
                 $filtrosAplicados['cliente'] = $clientes;
-                \Log::info('Aplicando filtro cliente: ' . json_encode($clientes));
             }
             
             if ($request->filled('asesor')) {
                 $asesores = explode(',', $request->get('asesor'));
-                $query->whereIn('asesor', $asesores);
+                $query->whereIn('bodega_detalles_talla.asesor', $asesores);
                 $filtrosAplicados['asesor'] = $asesores;
-                \Log::info('Aplicando filtro asesor: ' . json_encode($asesores));
             }
             
             if ($request->filled('estado')) {
                 $estados = explode(',', $request->get('estado'));
-                $query->whereIn('estado_bodega', $estados);
+                $query->whereIn('bodega_detalles_talla.estado_bodega', $estados);
                 $filtrosAplicados['estado'] = $estados;
-                \Log::info('Aplicando filtro estado: ' . json_encode($estados));
             }
             
             if ($request->filled('fecha_entrega')) {
                 $fechas = explode(',', $request->get('fecha_entrega'));
-                \Log::info('Fechas recibidas: ' . json_encode($fechas));
-                
                 $query->where(function($q) use ($fechas) {
                     foreach ($fechas as $index => $fecha) {
                         $fechaDecodificada = urldecode(trim($fecha));
-                        \Log::info("Procesando fecha {$index}: '{$fechaDecodificada}'");
                         
                         try {
                             $fechaFormateada = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaDecodificada)->format('Y-m-d');
-                            \Log::info("Fecha formateada: '{$fechaFormateada}'");
                             
                             if ($index === 0) {
-                                $q->whereDate('fecha_entrega', $fechaFormateada);
+                                $q->whereDate('bodega_detalles_talla.fecha_entrega', $fechaFormateada);
                             } else {
-                                $q->orWhereDate('fecha_entrega', $fechaFormateada);
+                                $q->orWhereDate('bodega_detalles_talla.fecha_entrega', $fechaFormateada);
                             }
                         } catch (\Exception $e) {
                             \Log::error("Error al procesar fecha '{$fechaDecodificada}': " . $e->getMessage());
@@ -664,7 +662,6 @@ class PedidosController extends Controller
                 });
                 
                 $filtrosAplicados['fecha_entrega'] = $fechas;
-                \Log::info('Aplicando filtro fecha_entrega: ' . json_encode($fechas));
             }
 
             // Filtrar por retrasados si se solicita
@@ -676,55 +673,24 @@ class PedidosController extends Controller
             // Paginación
             $porPagina = 15;
             $paginaActual = $request->get('page', 1);
-            $totalPedidos = $query->count();
             
-            \Log::info("Total pedidos encontrados: {$totalPedidos}, página: {$paginaActual}");
-            
+            // Clonar query para contar ANTES de paginar para evitar duplicación
+            $queryParaContar = clone $query;
+            $totalPedidos = $queryParaContar->count();
+
             $pedidosPorPagina = $query->skip(($paginaActual - 1) * $porPagina)
                                         ->take($porPagina)
                                         ->get();
 
-            // Obtener estadísticas
-            if ($area === 'Costura') {
-                $estadisticas = BodegaDetalleTalla::obtenerEstadisticasCostura();
-            } else {
-                // Para EPP
-                $entregedosSubquery = function($subquery) {
-                    $subquery->select('numero_pedido')
-                        ->from('pedidos_produccion')
-                        ->where('estado', 'Entregado');
-                };
-                
-                $anuladosSubquery = function($subquery) {
-                    $subquery->select('numero_pedido')
-                        ->from('pedidos_produccion')
-                        ->where('estado', 'Anulada');
-                };
-                
-                $estadisticas = [
-                    'total' => BodegaDetalleTalla::porArea('EPP')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'pendientes' => BodegaDetalleTalla::porArea('EPP')->porEstado('Pendiente')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'entregados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Entregado')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'anulados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Anulado')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'retrasados' => BodegaDetalleTalla::porArea('EPP')->retrasados()->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                ];
-            }
+            // Obtener estadísticas solo si es EPP, y solo si la vista las necesita
+            // Por ahora diferidas: calcular solo si se solicitan explícitamente
+            $estadisticas = [];
             
-            \Log::info('Estadísticas obtenidas: ' . json_encode($estadisticas));
-
             // Preparar datos para la vista
             $pedidosFormateados = $pedidosPorPagina->map(function($detalle) use ($area) {
-                $pedidoProduccion = DB::table('pedidos_produccion')
-                    ->where('numero_pedido', $detalle->numero_pedido)
-                    ->first();
-                
-                $estaVisto = $area === 'EPP' ? 
-                    \App\Models\BodegaDetalleVisto::where('bodega_detalle_id', $detalle->id)->exists() : 
-                    null;
-                
                 $datos = [
                     'id' => $detalle->id,
-                    'pedido_produccion_id' => $pedidoProduccion?->id,
+                    'pedido_produccion_id' => $detalle->pedido_produccion_id,
                     'numero_pedido' => $detalle->numero_pedido,
                     'cliente' => $detalle->empresa,
                     'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
@@ -746,15 +712,13 @@ class PedidosController extends Controller
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];
                 
-                // Agregar 'visto' solo si es EPP
+                // Agregar 'visto' solo si es EPP - traído desde la query principal, sin N+1
                 if ($area === 'EPP') {
-                    $datos['visto'] = $estaVisto;
+                    $datos['visto'] = (bool) $detalle->visto_exists;
                 }
                 
                 return $datos;
             })->toArray();
-
-            \Log::info('Pedidos formateados: ' . count($pedidosFormateados));
 
             $viewName = $area === 'Costura' ? 'bodega.pendiente-costura' : 'bodega.pendiente-epp';
             

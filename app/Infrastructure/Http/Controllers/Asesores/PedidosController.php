@@ -2,54 +2,66 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use App\Domain\Shared\CQRS\CommandBus;
-use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
-use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
-use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
-use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
-use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
-use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
-use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
-use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
-use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
-use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
-use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
-use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
-use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
+use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
+use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
+use App\Domain\Shared\CQRS\CommandBus;
+use App\Infrastructure\Http\Requests\Asesores\ActualizarPedidoProduccionRequest;
+use App\Infrastructure\Http\Requests\Asesores\CambiarEstadoPedidoProduccionRequest;
+use App\Infrastructure\Http\Requests\Asesores\CrearPedidoProduccionRequest;
+use App\Infrastructure\Http\Requests\Asesores\EliminarPedidoProduccionRequest;
+use App\Infrastructure\Http\Requests\Asesores\FiltrarPedidosPorEstadoRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * PedidosController
  *
- * Responsabilidad: Gestionar el ciclo de vida de pedidos de producción.
- * - Listar, crear, ver, actualizar y eliminar pedidos
- * - Cambiar estado de pedido
- * - Filtrar por estado y buscar por número
- *
- * Patrón: CQRS + Dependency Injection
- * SRP: Solo operaciones CRUD de pedidos, sin lógica de negocio
+ * Responsabilidad: Gestionar el ciclo de vida de pedidos de produccion.
  */
 class PedidosController
 {
     public function __construct(
-        private CommandBus $commandBus,
-        private ListarProduccionPedidosUseCase $listarPedidosUseCase,
-        private ObtenerProduccionPedidoUseCase $obtenerPedidoUseCase,
-        private CrearProduccionPedidoUseCase $crearPedidoUseCase,
-        private ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
-        private CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
-        private FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
-        private BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
-    ) {}
+        private readonly CommandBus $commandBus,
+        private readonly ListarProduccionPedidosUseCase $listarPedidosUseCase,
+        private readonly ObtenerProduccionPedidoUseCase $obtenerPedidoUseCase,
+        private readonly CrearProduccionPedidoUseCase $crearPedidoUseCase,
+        private readonly ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
+        private readonly CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
+        private readonly FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
+        private readonly BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
+    ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function errorResponse(string $error, string $message, int $status): JsonResponse
+    {
+        return $this->json([
+            'error' => $error,
+            'message' => $message,
+        ], $status);
+    }
 
     /**
      * GET /pedidos-produccion
-     * Listar todos los pedidos con paginación
      */
     public function index(Request $request): JsonResponse
     {
@@ -74,23 +86,18 @@ class PedidosController
                 'total' => $pedidos->total(),
             ]);
 
-            return response()->json($pedidos, 200);
-
+            return $this->json($pedidos);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error listando pedidos', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error listando pedidos',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error listando pedidos', $e->getMessage(), 500);
         }
     }
 
     /**
      * GET /pedidos-produccion/{id}
-     * Obtener un pedido específico
      */
     public function show(int|string $id): JsonResponse
     {
@@ -102,7 +109,7 @@ class PedidosController
 
             if (!$pedido) {
                 Log::warning('[PedidosController] Pedido no encontrado', ['id' => $id]);
-                return response()->json([
+                return $this->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
@@ -111,131 +118,88 @@ class PedidosController
                 'pedido_id' => $pedido->id,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error obteniendo pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error obteniendo pedido',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error obteniendo pedido', $e->getMessage(), 500);
         }
     }
 
     /**
      * POST /api/pedidos
-     * Crear nuevo pedido
      */
-    public function store(Request $request): JsonResponse
+    public function store(CrearPedidoProduccionRequest $request): JsonResponse
     {
         try {
             Log::info('[PedidosController] POST /api/pedidos');
 
-            $validated = $request->validate([
-                'numero_pedido' => 'required|string|max:50',
-                'cliente' => 'required|string|max:255',
-                'forma_pago' => 'required|string|in:contado,credito,transferencia,cheque',
-                'asesor_id' => 'required|integer|min:1',
-                'cantidad_inicial' => 'sometimes|integer|min:0',
-                'epps' => 'sometimes|array',
-                'epps.*.epp_id' => 'required_with:epps|integer|min:1',
-                'epps.*.cantidad' => 'sometimes|integer|min:1',
-                'epps.*.observaciones' => 'sometimes|nullable|string|max:1000',
-            ]);
+            $validated = $request->validated();
             $validated['cantidad_inicial'] ??= 0;
 
             $dto = CrearProduccionPedidoDTO::fromRequest($validated);
             $pedido = $this->crearPedidoUseCase->ejecutar($dto);
 
-            return response()->json($pedido, 201);
-
+            return $this->json($pedido, 201);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PedidosController] Validación de negocio fallida', [
+            Log::warning('[PedidosController] Validacion de negocio fallida', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Validación de negocio fallida',
-                'message' => $e->getMessage(),
-            ], 422);
-
+            return $this->errorResponse('Validacion de negocio fallida', $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error creando pedido', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error creando pedido',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error creando pedido', $e->getMessage(), 500);
         }
     }
 
     /**
      * PUT /api/pedidos/{id}
-     * Actualizar pedido
      */
-    public function update(Request $request, int|string $id): JsonResponse
+    public function update(ActualizarPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
 
-            $validated = $request->validate([
-                'cliente' => 'sometimes|string|max:255',
-                'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
-            ]);
-
-            $dto = ActualizarProduccionPedidoDTO::fromRequest($id, $validated);
+            $dto = ActualizarProduccionPedidoDTO::fromRequest($id, $request->validated());
             $pedido = $this->actualizarPedidoUseCase->ejecutar($dto);
 
             Log::info('[PedidosController] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PedidosController] Validación fallida', [
+            Log::warning('[PedidosController] Validacion fallida', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Validación fallida',
-                'message' => $e->getMessage(),
-            ], 422);
-
+            return $this->errorResponse('Validacion fallida', $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error actualizando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error actualizando pedido',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error actualizando pedido', $e->getMessage(), 500);
         }
     }
 
     /**
      * PUT /api/pedidos/{id}/estado
-     * Cambiar estado de pedido
      */
-    public function cambiarEstado(Request $request, int|string $id): JsonResponse
+    public function cambiarEstado(CambiarEstadoPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[PedidosController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
 
-            $validated = $request->validate([
-                'nuevo_estado' => 'required|string|in:activo,pendiente,completado,cancelado',
-                'razon' => 'sometimes|string|max:500',
-            ]);
-
-            $dto = CambiarEstadoPedidoDTO::fromRequest($id, $validated);
+            $dto = CambiarEstadoPedidoDTO::fromRequest($id, $request->validated());
             $pedido = $this->cambiarEstadoUseCase->ejecutar($dto);
 
             Log::info('[PedidosController] Estado cambiado exitosamente', [
@@ -243,82 +207,61 @@ class PedidosController
                 'nuevo_estado' => $pedido->estado,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PedidosController] Transición no permitida', [
+            Log::warning('[PedidosController] Transicion no permitida', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Transición de estado no permitida',
-                'message' => $e->getMessage(),
-            ], 422);
-
+            return $this->errorResponse('Transicion de estado no permitida', $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error cambiando estado', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error cambiando estado',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error cambiando estado', $e->getMessage(), 500);
         }
     }
 
     /**
      * DELETE /api/pedidos/{id}
-     * Eliminar pedido (soft delete)
      */
-    public function destroy(Request $request, int|string $id): JsonResponse
+    public function destroy(EliminarPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
             Log::info('[PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
 
-            $validated = $request->validate([
-                'razon' => 'sometimes|string|max:500',
-            ]);
+            $validated = $request->validated();
 
             $command = new EliminarPedidoCommand(
-                (int)$id,
+                (int) $id,
                 $validated['razon'] ?? 'Sin especificar'
             );
             $this->commandBus->execute($command);
 
             Log::info('[PedidosController] Pedido eliminado', ['pedido_id' => $id]);
 
-            return response()->json([], 204);
-
+            return $this->json([], 204);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error eliminando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error eliminando pedido',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error eliminando pedido', $e->getMessage(), 500);
         }
     }
 
     /**
      * GET /api/pedidos/filtro/estado
-     * Filtrar pedidos por estado
      */
-    public function filtrarPorEstado(Request $request): JsonResponse
+    public function filtrarPorEstado(FiltrarPedidosPorEstadoRequest $request): JsonResponse
     {
         try {
             Log::info('[PedidosController] GET /api/pedidos/filtro/estado');
 
-            $validated = $request->validate([
-                'estado' => 'required|string|in:activo,pendiente,completado,cancelado',
-                'page' => 'sometimes|integer|min:1',
-                'per_page' => 'sometimes|integer|min:1|max:100',
-            ]);
-
+            $validated = $request->validated();
             $dto = FiltrarPedidosPorEstadoDTO::fromRequest($validated);
             $pedidos = $this->filtrarEstadoUseCase->ejecutar($dto);
 
@@ -327,33 +270,24 @@ class PedidosController
                 'total' => is_object($pedidos) && method_exists($pedidos, 'total') ? $pedidos->total() : count($pedidos),
             ]);
 
-            return response()->json($pedidos, 200);
-
+            return $this->json($pedidos);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PedidosController] Estado inválido', [
+            Log::warning('[PedidosController] Estado invalido', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Estado inválido',
-                'message' => $e->getMessage(),
-            ], 422);
-
+            return $this->errorResponse('Estado invalido', $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error filtrando por estado', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error filtrando pedidos',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error filtrando pedidos', $e->getMessage(), 500);
         }
     }
 
     /**
      * GET /api/pedidos/buscar/{numero}
-     * Buscar pedido por número
      */
     public function buscarPorNumero(string $numero): JsonResponse
     {
@@ -365,7 +299,7 @@ class PedidosController
 
             if (!$pedido) {
                 Log::warning('[PedidosController] Pedido no encontrado', ['numero' => $numero]);
-                return response()->json([
+                return $this->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
@@ -375,18 +309,14 @@ class PedidosController
                 'pedido_id' => $pedido->id,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error buscando pedido', [
                 'numero' => $numero,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'Error buscando pedido',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Error buscando pedido', $e->getMessage(), 500);
         }
     }
 }

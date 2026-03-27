@@ -19,6 +19,21 @@ window.EPPManagerLoader = (function() {
     let isLoaded = false;
     let loadError = null;
 
+    function getScriptPath(src) {
+        try {
+            return new URL(src, window.location.origin).pathname;
+        } catch (error) {
+            return String(src || '').split('?')[0];
+        }
+    }
+
+    function getGlobalLoadedScriptsRegistry() {
+        if (!(window.__spLoadedScriptPaths instanceof Set)) {
+            window.__spLoadedScriptPaths = new Set();
+        }
+        return window.__spLoadedScriptPaths;
+    }
+
     const scriptsToLoad = [
         // ========== SERVICIOS BASE (Orden crítico) ==========
         '/js/modulos/crear-pedido/epp/services/epp-api-service.js',
@@ -65,11 +80,33 @@ window.EPPManagerLoader = (function() {
                 
                 const src = scriptsToLoad[loaded];
                 const filename = src.split('/').pop();
+                const scriptPath = getScriptPath(src);
+                const registry = getGlobalLoadedScriptsRegistry();
+
+                if (registry.has(scriptPath)) {
+                    loaded++;
+                    loadNext();
+                    return;
+                }
+
+                const existente = Array.from(document.scripts || []).find((scriptTag) => {
+                    const rawSrc = scriptTag.getAttribute('src') || '';
+                    const normalizedSrc = scriptTag.src || '';
+                    return getScriptPath(rawSrc || normalizedSrc) === scriptPath;
+                });
+
+                if (existente) {
+                    registry.add(scriptPath);
+                    loaded++;
+                    loadNext();
+                    return;
+                }
                 
                 const script = document.createElement('script');
                 script.src = src;
                 script.defer = true;
                 script.type = 'text/javascript';
+                registry.add(scriptPath);
                 
                 // Timeout por script
                 const timeout = setTimeout(() => {
@@ -87,6 +124,7 @@ window.EPPManagerLoader = (function() {
                     clearTimeout(timeout);
                     const error = `Failed to load: ${filename}`;
                     console.error(`[EPPManagerLoader]  ${error}`);
+                    registry.delete(scriptPath);
                     reject(new Error(error));
                 };
                 

@@ -1,8 +1,5 @@
 import './bootstrap';
 
-import './operario/layout/index';
-import './operario/dashboard/index';
-
 /*
 |--------------------------------------------------------------------------
 | Alpine y Chart

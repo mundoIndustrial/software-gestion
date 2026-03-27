@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Infrastructure\Http\Controllers\Legacy\TablerosController;
-use App\Infrastructure\Http\Controllers\Legacy\TablerosOrdenesController;
-use App\Infrastructure\Http\Controllers\Legacy\BalanceoController;
-use App\Infrastructure\Http\Controllers\Legacy\VistasController;
-use App\Infrastructure\Http\Controllers\Legacy\ConfiguracionController;
+use App\Infrastructure\Http\Controllers\Tableros\TablerosController;
+use App\Infrastructure\Http\Controllers\Tableros\TablerosOrdenesController;
+use App\Infrastructure\Http\Controllers\Tableros\BalanceoController;
+use App\Infrastructure\Http\Controllers\Tableros\VistasController;
+use App\Infrastructure\Http\Controllers\Tableros\ConfiguracionController;
 
 // ========================================
 // Rutas para tableros_ordenes
@@ -96,4 +96,3 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/configuracion/download-backup', [ConfiguracionController::class, 'downloadBackup'])->name('configuracion.downloadBackup');
     Route::post('/configuracion/upload-google-drive', [ConfiguracionController::class, 'uploadToGoogleDrive'])->name('configuracion.uploadGoogleDrive');
 });
-

@@ -1,49 +1,63 @@
+@php
+    $columnTemplate = '60px 220px 120px 200px 150px 140px 150px 150px 150px';
+    $gridGap = '1.2rem';
+@endphp
+
+<style>
+    .sp-orders-grid {
+        display: grid;
+        grid-template-columns: {{ $columnTemplate }};
+        gap: {{ $gridGap }};
+        min-width: max-content;
+        box-sizing: border-box;
+    }
+
+    .sp-orders-grid > div {
+        min-width: 0;
+    }
+</style>
 <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
     <!-- Contenedor con Scroll -->
     <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
         <!-- Header Azul -->
-        <div style="
+        <div class="sp-orders-grid" style="
             background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
             color: white;
             padding: 0.75rem 1rem;
-            display: grid;
-            grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
-            gap: 1.2rem;
             font-weight: 600;
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            min-width: min-content;
             border-radius: 6px;
         ">
-            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <span>Listo</span>
             </div>
-            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <span>Acciones</span>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Fecha</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Número</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Número" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Número" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Cliente</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Estado</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
@@ -52,13 +66,13 @@
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Asesora</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Forma Pago</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
@@ -73,14 +87,10 @@
         @else
             @foreach($ordenes as $orden)
                 @php $estaSeleccionado = in_array($orden->id, $pedidosSeleccionados); @endphp
-                <div style="
-                    display: grid;
-                    grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
-                    gap: 1.2rem;
+                <div class="sp-orders-grid" style="
                     padding: 1rem;
                     border-bottom: 1px solid #e5e7eb;
                     align-items: center;
-                    min-width: min-content;
                     background: {{ $estaSeleccionado ? '#d1d5db' : 'white' }};
                     transition: background 0.2s ease;
                 "
@@ -296,3 +306,5 @@
         </span>
     </div>
 @endif
+
+

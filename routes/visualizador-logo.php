@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Infrastructure\Http\Controllers\Legacy\VisualizadorLogoController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFLogoController;
+use App\Infrastructure\Http\Controllers\Pdf\LogoPdfController;
+use App\Infrastructure\Http\Controllers\VisualizadorLogo\VisualizadorLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController;
 
@@ -56,6 +56,5 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
 // Estas rutas NO deben vivir bajo el prefijo /asesores porque el usuario del visualizador
 // no necesariamente tiene rol asesor y se bloquea con 403.
 Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,supervisor_produccion,contador,aprobador_cotizaciones,asesor'])->group(function () {
-    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('visualizador.cotizacion.pdf.logo');
+    Route::get('/cotizacion/{id}/pdf/logo', [LogoPdfController::class, 'show'])->name('visualizador.cotizacion.pdf.logo');
 });
-

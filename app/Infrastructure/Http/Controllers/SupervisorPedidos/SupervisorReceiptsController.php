@@ -25,6 +25,7 @@ use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
 /**
  * SupervisorReceiptsController
@@ -239,6 +240,24 @@ class SupervisorReceiptsController extends Controller
         $procesosConCantidad = $response->getReceipts();
 
         return view('supervisor-pedidos.pendientes-control-calidad', compact('procesosConCantidad'));
+    }
+
+    /**
+     * Obtener contador de recibos COSTURA activos en control de calidad.
+     * Endpoint: GET /supervisor-pedidos/pendientes-control-calidad-count
+     */
+    public function pendientesControlCalidadCount(): JsonResponse
+    {
+        $count = DB::table('consecutivos_recibos_pedidos')
+            ->where('tipo_recibo', 'COSTURA')
+            ->where('activo', 1)
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
+        ]);
     }
 
     /**

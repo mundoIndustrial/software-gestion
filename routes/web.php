@@ -3,9 +3,9 @@
 use App\Infrastructure\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\UserController;
-use App\Infrastructure\Http\Controllers\Legacy\DashboardController;
-use App\Infrastructure\Http\Controllers\Legacy\EntregaController;
-use App\Infrastructure\Http\Controllers\Legacy\EntregasCompletasController;
+use App\Infrastructure\Http\Controllers\Web\DashboardController;
+use App\Infrastructure\Http\Controllers\Web\EntregaController;
+use App\Infrastructure\Http\Controllers\Web\EntregasCompletasController;
 
 
 Route::get('/', function () {
@@ -17,20 +17,20 @@ Route::get('/', function () {
 // ========================================
 // Logica centralizada en StorageService para mejor organizacion
 
-Route::get('/storage/{tipo}/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serve'])
+Route::get('/storage/{tipo}/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serve'])
     ->where(['tipo' => 'cotizaciones|prendas|pedidos', 'path' => '.*'])
     ->name('storage.files');
 
 // Rutas con nombre específico para compatibilidad
-Route::get('/storage/cotizaciones/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serveCotizaciones'])
+Route::get('/storage/cotizaciones/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serveCotizaciones'])
     ->where('path', '.*')
     ->name('storage.cotizaciones');
 
-Route::get('/storage/prendas/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'servePrendas'])
+Route::get('/storage/prendas/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'servePrendas'])
     ->where('path', '.*')
     ->name('storage.prendas');
 
-Route::get('/storage/pedidos/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'servePedidos'])
+Route::get('/storage/pedidos/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'servePedidos'])
     ->where('path', '.*')
     ->name('storage.pedidos');
 
@@ -113,7 +113,7 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
 // RUTA PARA SERVIR IMAGENES DE STORAGE
 // ========================================
 
-Route::get('/storage-serve/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serve'])
+Route::get('/storage-serve/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serveLegacy'])
     ->where('path', '.*')
     ->name('storage.serve');
 

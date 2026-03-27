@@ -1,48 +1,49 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Infrastructure\Http\Controllers\Legacy\ContadorController;
-use App\Infrastructure\Http\Controllers\Legacy\CostoPrendaController;
+use App\Infrastructure\Http\Controllers\Contador\CostoPrendaController;
+use App\Infrastructure\Http\Controllers\Contador\ContadorModuleController;
+use App\Infrastructure\Http\Controllers\Contador\CotizacionAccionesController;
+use App\Infrastructure\Http\Controllers\Contador\CotizacionCostosController;
+use App\Infrastructure\Http\Controllers\Pdf\CotizacionPdfController;
 
 // ========================================
 // RUTAS PARA CONTADOR (Modulo INDEPENDIENTE)
 // ========================================
 // Admin puede acceder a contador ADEMAS del rol contador
 Route::middleware(['auth', 'role:contador,admin,lider_produccion,supervisor_produccion'])->prefix('contador')->name('contador.')->group(function () {
-    Route::get('/dashboard', [ContadorController::class, 'index'])->name('index');
-    Route::get('/todas', [ContadorController::class, 'todas'])->name('todas');
-    Route::get('/por-revisar', [ContadorController::class, 'porRevisar'])->name('por-revisar');
-    Route::get('/aprobadas', [ContadorController::class, 'aprobadas'])->name('aprobadas');
-    Route::delete('/cotizacion/{id}', [ContadorController::class, 'deleteCotizacion'])->name('cotizacion-delete');
+    Route::get('/dashboard', [ContadorModuleController::class, 'index'])->name('index');
+    Route::get('/todas', [ContadorModuleController::class, 'todas'])->name('todas');
+    Route::get('/por-revisar', [ContadorModuleController::class, 'porRevisar'])->name('por-revisar');
+    Route::get('/aprobadas', [ContadorModuleController::class, 'aprobadas'])->name('aprobadas');
+    Route::delete('/cotizacion/{id}', [CotizacionAccionesController::class, 'destroy'])->name('cotizacion-delete');
     
     // Rutas para costos de prendas
     Route::post('/costos/guardar', [CostoPrendaController::class, 'guardar'])->name('costos.guardar');
     Route::get('/costos/obtener/{cotizacion_id}', [CostoPrendaController::class, 'obtener'])->name('costos.obtener');
     
     // Rutas para notas de tallas
-    Route::post('/prenda/{prendaId}/notas-tallas', [ContadorController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
+    Route::post('/prenda/{prendaId}/notas-tallas', [ContadorModuleController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
     
     // Ruta para texto personalizado de tallas (modulo contador)
-    Route::post('/prenda/{prendaId}/texto-personalizado-tallas', [ContadorController::class, 'guardarTextoPersonalizadoTallas'])->name('prenda.guardar-texto-personalizado-tallas');
+    Route::post('/prenda/{prendaId}/texto-personalizado-tallas', [ContadorModuleController::class, 'guardarTextoPersonalizadoTallas'])->name('prenda.guardar-texto-personalizado-tallas');
     
     // Rutas para PDF
-    Route::get('/cotizacion/{id}/pdf', [App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    Route::get('/cotizacion/{id}/pdf', [CotizacionPdfController::class, 'show'])->name('cotizacion.pdf');
     
     // Ruta para cambiar estado de cotizacion
-    Route::patch('/cotizacion/{id}/estado', [ContadorController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
+    Route::patch('/cotizacion/{id}/estado', [CotizacionAccionesController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
     
     // Ruta para obtener costos de prendas
-    Route::get('/cotizacion/{id}/costos', [ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
+    Route::get('/cotizacion/{id}/costos', [CotizacionCostosController::class, 'show'])->name('cotizacion.costos');
     
     // Ruta para guardar tallas costos
-    Route::post('/tallas-costos', [ContadorController::class, 'guardarTallasCostos'])->name('tallas-costos.guardar');
+    Route::post('/tallas-costos', [ContadorModuleController::class, 'guardarTallasCostos'])->name('tallas-costos.guardar');
     
     // Ruta para obtener contador de cotizaciones pendientes
-    Route::get('/cotizaciones-pendientes-count', [ContadorController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
+    Route::get('/cotizaciones-pendientes-count', [CotizacionAccionesController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
     
     // Ruta para perfil del contador
-    Route::get('/perfil', [ContadorController::class, 'profile'])->name('profile')->middleware('auth');
-    Route::post('/perfil/update', [ContadorController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/perfil', [ContadorModuleController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [ContadorModuleController::class, 'updateProfile'])->name('profile.update');
 });
-
-

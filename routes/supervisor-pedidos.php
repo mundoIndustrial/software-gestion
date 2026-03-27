@@ -44,6 +44,7 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Pendientes Control Calidad
     Route::get('/pendientes-control-calidad', [SupervisorReceiptsController::class, 'pendientesControlCalidad'])->name('pendientes-control-calidad');
     Route::get('/pendientes-control-calidad/filtro-opciones/{campo}', [SupervisorReceiptsController::class, 'obtenerOpcionesFiltroPendientesControlCalidad'])->name('pendientes-control-calidad.filtro-opciones');
+    Route::get('/pendientes-control-calidad-count', [SupervisorReceiptsController::class, 'pendientesControlCalidadCount'])->name('pendientes-control-calidad-count');
 
     Route::post('/{pedidoId}/costura/{prendaId}/activar-recibo', [SupervisorReceiptsController::class, 'activarReciboCostura'])
         ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])

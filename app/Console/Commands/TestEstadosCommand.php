@@ -199,12 +199,12 @@ class TestEstadosCommand extends Command
     {
         $this->line("\n✓ TEST 7: Verificar Controllers");
         try {
-            $controllerC = new \App\Infrastructure\Http\Controllers\Legacy\CotizacionEstadoController(
+            $controllerC = new \App\Infrastructure\Http\Controllers\Cotizaciones\CotizacionEstadoController(
                 app(CotizacionEstadoService::class)
             );
             $this->line("  ✓ CotizacionEstadoController instanciado");
 
-            $controllerP = new \App\Infrastructure\Http\Controllers\Legacy\PedidoEstadoController(
+            $controllerP = new \App\Infrastructure\Http\Controllers\Pedidos\PedidosEstadoController(
                 app(PedidoEstadoService::class)
             );
             $this->line("  ✓ PedidoEstadoController instanciado");
@@ -233,3 +233,5 @@ class TestEstadosCommand extends Command
         }
     }
 }
+
+

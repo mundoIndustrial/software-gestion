@@ -6,6 +6,7 @@ use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
 use App\Application\Pedidos\DTOs\ObtenerNotificacionesDTO;
 use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 
@@ -17,48 +18,60 @@ final class AsesoresNotificacionesController extends Controller
     ) {
     }
 
-    public function getNotificaciones()
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
+    public function getNotificaciones(): JsonResponse
     {
         $dto = ObtenerNotificacionesDTO::crear();
         $notificaciones = $this->obtenerNotificacionesUseCase->ejecutar($dto);
 
-        return response()->json($notificaciones);
+        return $this->json($notificaciones);
     }
 
-    public function getNotifications()
+    public function getNotifications(): JsonResponse
     {
         return $this->getNotificaciones();
     }
 
-    public function markAllAsRead()
+    public function markAllAsRead(): JsonResponse
     {
         try {
             $dto = MarcarNotificacionLeidaDTO::marcarTodos();
             $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
-            return response()->json($resultado);
+
+            return $this->json($resultado);
         } catch (\Throwable $e) {
             Log::error('Error al marcar notificaciones', ['error' => $e->getMessage()]);
-            return response()->json([
-                'error' => 'Error al marcar notificaciones',
-            ], 500);
+
+            return $this->failure('Error al marcar notificaciones', 500);
         }
     }
 
-    public function markNotificationAsRead($notificationId)
+    public function markNotificationAsRead(int|string $notificationId): JsonResponse
     {
         try {
             $dto = MarcarNotificacionLeidaDTO::fromRequest($notificationId);
             $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
-            return response()->json($resultado);
+
+            return $this->json($resultado);
         } catch (\Throwable $e) {
-            Log::error('Error al marcar notificación', [
+            Log::error('Error al marcar notificacion', [
                 'notification_id' => $notificationId,
                 'error' => $e->getMessage(),
             ]);
-            return response()->json([
-                'error' => 'Error al marcar notificación',
-            ], 500);
+
+            return $this->failure('Error al marcar notificacion', 500);
         }
     }
 }
-

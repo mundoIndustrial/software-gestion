@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
  
-    <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ filemtime(public_path('css/tracking-modal.css')) }}">
 
     <!-- 🚨 FIX: Asegurar z-index correcto para modal de prendas en supervisor-pedidos -->
     <style>
@@ -106,129 +106,58 @@
 <!-- Modal para Selector de Recibos (desde asesores) -->
 @include('components.modals.recibos-process-selector')
 
-<!-- Modal Editar Pedido (desde asesores) - Componente completo para edición de pedidos -->
-@include('asesores.pedidos.components.modal-editar-pedido')
-
-<!-- Componentes de módulos de edición (desde asesores) -->
-@include('asesores.pedidos.components.modal-prendas-lista')
-@include('asesores.pedidos.components.modal-agregar-prenda')
-@include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
-@include('asesores.pedidos.components.modal-editar-prenda')
-<!-- Modal Agregar EPP (mismo modal que en creación) -->
-@include('asesores.pedidos.modals.modal-agregar-editar-epp')
-
-@include('asesores.pedidos.components.modal-editar-epp')
-
-<!-- Modal para Seleccionar Tallas -->
-@include('asesores.pedidos.modals.modal-seleccionar-tallas')
-
-<!-- Modal Selector de Modo de Proceso -->
-@include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
-
-<!-- Modal para Editar Procesos Genéricos -->
-@include('asesores.pedidos.modals.modal-proceso-generico')
-
-<!-- Modal para Confirmar Eliminación de Imagen de Proceso -->
-@include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
+<!-- Modales de edición compartidos (encapsulan dependencias heredadas de asesores) -->
+@include('supervisor-pedidos.partials.modales-edicion-compartidos')
 
 @push('scripts')
-    <!--  MODALES DE ACCIONES (CARGADO TEMPRANO - Aprobación, Anulación, Ocultación) -->
-    <script src="{{ asset('js/supervisor-pedidos/modales-acciones.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/index.js') }}?v={{ time() }}"></script>
+    <script defer src="{{ asset('js/supervisor-pedidos/index.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/index.js')) }}"></script>
 
     <!--  SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
-    <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
-    <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
-    <script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
-    <script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
+    <script defer src="/js/utilidades/validation-service.js"></script>
+    <script defer src="/js/utilidades/ui-modal-service.js"></script>
+    <script defer src="/js/utilidades/deletion-service.js"></script>
+    <script defer src="/js/utilidades/galeria-service.js"></script>
 
     <!--  SERVICIO DE ALMACENAMIENTO DE IMÁGENES (Requerido para agregar/eliminar imágenes) -->
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
 
     <!--  LAZY LOADERS: Cargan módulos bajo demanda (Requeridos para modal-editar-pedido) -->
-    <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
-    <script src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
-    <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
+    <script defer src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
+    <script defer src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
+    <script defer src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
     <script defer src="{{ asset('js/componentes/epp-agregar-pedido.js') }}"></script>
 
     <!-- Scripts para edición de prendas desde lista de pedidos (requeridos por editarPrendaDePedido) -->
-    <script defer src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}"></script>
-    <script defer src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
-    <script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-form-collector.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-adapter.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-agregar-pedido.js') }}"></script>
 
     <!-- Inicializador de servicios de imágenes -->
-    <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>
 
     <!-- Manejadores de procesos - Para edición de procesos desde supervisor -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-    <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
-    <script src="{{ asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}"></script>
 
     <!-- Scripts para funcionalidad de asesores - Módulos Desacoplados -->
-    <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
-    <script src="{{ asset('js/asesores/observaciones-despacho.js') }}"></script>
-    <script src="{{ asset('js/asesores/pedidos-modal-edit.js') }}"></script>
+    <script defer src="/js/ordersjs/order-detail-modal-manager.js"></script>
     <!-- Scripts para Vista Previa en Vivo de Factura - Módulos Desacoplados -->
-    <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ filemtime(public_path('js/modulos/invoice/ImageGalleryManager.js')) }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ filemtime(public_path('js/modulos/invoice/FormDataCaptureService.js')) }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceRenderer.js')) }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ filemtime(public_path('js/modulos/invoice/ModalManager.js')) }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceExportService.js')) }}"></script>
+    <script defer src="{{ asset('js/invoice-preview-live.js') }}"></script>
     <!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->
-    <script src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
-    <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
-    <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
-    <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceLazyLoader.js')) }}"></script>
 
     <!-- Scripts específicos de supervisor -->
-    <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
-    <!-- Sistema de Tracking Modular -->
-    <!-- DAYS SELECTOR HANDLER - DEBE cargarse PRIMERO -->
-    <script src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}?v={{ time() }}"></script>
-
-    <script src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
-    <!-- TRACKING MODAL HANDLER - DEBE cargarse ANTES de ui-components.js -->
-    <script type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
-
-    <!-- Script para abrir el modal de seguimiento -->
-    <script src="{{ asset('js/supervisor-pedidos/tracking-modal-init.js') }}?v={{ time() }}"></script>
-
 
     <!-- Scripts para Recibos/Procesos -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
     <!-- Novedades, Galería y Toggle Factura -->
-    <script src="{{ asset('js/supervisor-pedidos/novedades-galeria.js') }}?v={{ time() }}"></script>
     <!-- Limpiar asignaciones y selección de pedidos -->
-    <script src="{{ asset('js/supervisor-pedidos/limpiar-asignaciones.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/seleccion-pedidos.js') }}"></script>
+    <script defer src="{{ asset('js/supervisor-pedidos/limpiar-asignaciones.js') }}"></script>
+    <script defer src="{{ asset('js/supervisor-pedidos/seleccion-pedidos.js') }}"></script>
 
     <!-- Realtime: suscripción WebSocket para actualizaciones en vivo -->
-    @auth
-    <script defer src="{{ asset('js/supervisor-pedidos/realtime-supervisor.js') }}"></script>
-    @endauth
 
 @endpush
 

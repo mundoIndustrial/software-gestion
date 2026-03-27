@@ -1,15 +1,15 @@
 <?php
 
-use App\Infrastructure\Http\Controllers\Legacy\Auth\AuthenticatedSessionController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\ConfirmablePasswordController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\EmailVerificationNotificationController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\EmailVerificationPromptController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\NewPasswordController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\PasswordController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\PasswordResetLinkController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\RegisteredUserController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\VerifyEmailController;
-use App\Infrastructure\Http\Controllers\Legacy\Auth\GoogleAuthController;
+use App\Infrastructure\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Infrastructure\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Infrastructure\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Infrastructure\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Infrastructure\Http\Controllers\Auth\NewPasswordController;
+use App\Infrastructure\Http\Controllers\Auth\PasswordController;
+use App\Infrastructure\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Infrastructure\Http\Controllers\Auth\RegisteredUserController;
+use App\Infrastructure\Http\Controllers\Auth\VerifyEmailController;
+use App\Infrastructure\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 

@@ -15,6 +15,21 @@ window.PrendaEditorLoader = (function() {
     let isLoaded = false;
     let loadError = null;
 
+    function getScriptPath(src) {
+        try {
+            return new URL(src, window.location.origin).pathname;
+        } catch (error) {
+            return String(src || '').split('?')[0];
+        }
+    }
+
+    function getGlobalLoadedScriptsRegistry() {
+        if (!(window.__spLoadedScriptPaths instanceof Set)) {
+            window.__spLoadedScriptPaths = new Set();
+        }
+        return window.__spLoadedScriptPaths;
+    }
+
     /**
      * Cargar todos los módulos necesarios
      */
@@ -28,33 +43,33 @@ window.PrendaEditorLoader = (function() {
         // 📦 Módulos a cargar (en orden)
         const modulesToLoad = [
             // Servicios especializados (sin dependencias)
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-loader-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-normalizer-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-cotizacion-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-data-loader.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-service.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-loader-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-normalizer-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-cotizacion-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-data-loader.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-service.js',
             
             // Gestión del modal
-            '/js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js',
 
             // Loaders (sin dependencias mutuas)
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js',
 
             // 🚫 NOTA: prenda-editor.js ya se carga directamente en blade.php
             // para evitar duplicación y SyntaxError de redeclaración
 
             // Módulos dependientes (manejadores de variaciones, etc.)
-            '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js',
 
             // Procesos: renderizador de tarjetas y manejadores de checkboxes
-            '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js',
+            '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js',
         ];
 
         //  Cargar scripts en paralelo
@@ -78,20 +93,36 @@ window.PrendaEditorLoader = (function() {
      */
     function loadScript(url) {
         return new Promise((resolve, reject) => {
-            // Extraer path sin query string para comparar
-            const urlPath = url.split('?')[0];
-            
-            // Verificar si el script ya está en el DOM (cargado por <script defer> del blade)
-            const existente = document.querySelector(`script[src*="${urlPath}"]`);
-            if (existente) {
+            const scriptPath = getScriptPath(url);
+            const registry = getGlobalLoadedScriptsRegistry();
+
+            if (registry.has(scriptPath)) {
                 return resolve();
             }
-            
+
+            // Verificar si el script ya está en el DOM (cargado por entry/blade)
+            const existente = Array.from(document.scripts || []).find((scriptTag) => {
+                const rawSrc = scriptTag.getAttribute('src') || '';
+                const normalizedSrc = scriptTag.src || '';
+                const currentPath = getScriptPath(rawSrc || normalizedSrc);
+                return currentPath === scriptPath;
+            });
+            if (existente) {
+                registry.add(scriptPath);
+                return resolve();
+            }
+
+            // Reserva para evitar carreras con otros loaders.
+            registry.add(scriptPath);
+
             const script = document.createElement('script');
             script.src = url;
             script.async = false;
             script.onload = resolve;
-            script.onerror = () => reject(new Error(`Error cargando ${url}`));
+            script.onerror = () => {
+                registry.delete(scriptPath);
+                reject(new Error(`Error cargando ${url}`));
+            };
             document.head.appendChild(script);
         });
     }

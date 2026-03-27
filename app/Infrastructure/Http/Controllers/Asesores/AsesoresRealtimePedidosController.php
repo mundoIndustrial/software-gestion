@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -15,12 +16,25 @@ final class AsesoresRealtimePedidosController extends Controller
     ) {
     }
 
-    public function listar(Request $request)
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status): JsonResponse
+    {
+        return $this->json([
+            'success' => false,
+            'message' => $message,
+        ], $status);
+    }
+
+    public function listar(Request $request): JsonResponse
     {
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return $this->failure('Unauthorized', 403);
         }
 
         $hasPermission = $user->hasRole('asesor')
@@ -30,7 +44,7 @@ final class AsesoresRealtimePedidosController extends Controller
             || $user->hasRole('insumos');
 
         if (!$hasPermission) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return $this->failure('Unauthorized', 403);
         }
 
         $dto = ListarProduccionPedidosDTO::fromRequest(
@@ -42,10 +56,9 @@ final class AsesoresRealtimePedidosController extends Controller
 
         $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
 
-        return response()->json([
+        return $this->json([
             'success' => true,
             'data' => $pedidos->getCollection()->values()->all(),
         ]);
     }
 }
-

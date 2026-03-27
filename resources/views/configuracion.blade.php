@@ -1,23 +1,43 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $totalStorage = $usedStorage + $availableStorage;
+    $usedPercentage = $totalStorage > 0 ? round(($usedStorage / $totalStorage) * 100, 1) : 0;
+    $availablePercentage = max(0, round(100 - $usedPercentage, 1));
+@endphp
 <style>
+    .config-shell {
+        --config-bg: linear-gradient(180deg, #f4f8fb 0%, #eaf2f7 100%);
+        --config-card: rgba(255, 255, 255, 0.94);
+        --config-border: #d7e4ea;
+        --config-title: #123548;
+        --config-text: #516674;
+        --config-primary: #2f6f8f;
+        --config-secondary: #5b8fa8;
+        --config-accent: #78b7b1;
+        --config-used: #2f6f8f;
+        --config-free: #9ed6c8;
+    }
+
     .config-card {
-        background: #1e293b;
-        border-radius: 12px;
-        padding: 24px;
+        background: var(--config-card);
+        border-radius: 24px;
+        padding: 28px;
         margin-bottom: 24px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: 1px solid #334155;
+        box-shadow: 0 20px 45px rgba(32, 70, 92, 0.12);
+        border: 1px solid var(--config-border);
+        backdrop-filter: blur(8px);
     }
     
     .config-card-header {
-        font-size: 18px;
-        font-weight: 600;
-        color: #f1f5f9;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #f97316;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: var(--config-title);
+        margin-bottom: 22px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #d9e8ee;
     }
     
     .backup-btn {
@@ -26,18 +46,19 @@
         justify-content: center;
         gap: 8px;
         padding: 14px 20px;
-        border-radius: 8px;
-        font-weight: 600;
+        border-radius: 16px;
+        font-weight: 700;
         font-size: 15px;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.22);
         cursor: pointer;
         transition: all 0.3s ease;
         width: 100%;
+        min-height: 58px;
     }
     
     .backup-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-3px);
+        box-shadow: 0 16px 28px rgba(47, 111, 143, 0.18);
     }
     
     .backup-btn:active {
@@ -45,29 +66,24 @@
     }
     
     .backup-btn-orange {
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        background: linear-gradient(135deg, #2f6f8f 0%, #5b8fa8 100%);
         color: white;
     }
     
     .backup-btn-blue {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        background: linear-gradient(135deg, #4a88a8 0%, #78b7b1 100%);
         color: white;
     }
     
     .backup-btn-green {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #5ca48f 0%, #8ad0b6 100%);
         color: white;
     }
-    
-    .backup-btn-primary {
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-        color: white;
-    }
-    
+
     .form-select-custom {
-        background-color: #334155;
-        color: #f1f5f9;
-        border: 1px solid #475569;
+        background-color: #f7fbfc;
+        color: var(--config-title);
+        border: 1px solid var(--config-border);
         border-radius: 8px;
         padding: 10px 14px;
         font-size: 14px;
@@ -77,14 +93,14 @@
     
     .form-select-custom:focus {
         outline: none;
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        border-color: var(--config-primary);
+        box-shadow: 0 0 0 3px rgba(47, 111, 143, 0.12);
     }
     
     .form-input-custom {
-        background-color: #334155;
-        color: #f1f5f9;
-        border: 1px solid #475569;
+        background-color: #f7fbfc;
+        color: var(--config-title);
+        border: 1px solid var(--config-border);
         border-radius: 8px;
         padding: 10px 14px;
         font-size: 14px;
@@ -94,16 +110,16 @@
     
     .form-input-custom:focus {
         outline: none;
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        border-color: var(--config-primary);
+        box-shadow: 0 0 0 3px rgba(47, 111, 143, 0.12);
     }
     
     .form-input-custom::placeholder {
-        color: #94a3b8;
+        color: #8fa4af;
     }
     
     .form-label-custom {
-        color: #cbd5e1;
+        color: var(--config-text);
         font-size: 14px;
         font-weight: 500;
         margin-bottom: 8px;
@@ -111,14 +127,135 @@
     }
     
     .backup-description {
-        color: #94a3b8;
+        color: var(--config-text);
         font-size: 14px;
         margin-bottom: 20px;
         text-align: center;
     }
+
+    .backup-db-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: #e8f2f7;
+        color: var(--config-primary);
+        font-weight: 700;
+        border: 1px solid #d2e3eb;
+    }
+
+    .storage-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f4faf9 100%);
+    }
+
+    .storage-intro {
+        text-align: center;
+        color: var(--config-text);
+        font-size: 14px;
+        margin-bottom: 18px;
+    }
+
+    .storage-chart-wrap {
+        position: relative;
+        max-width: 260px;
+        margin: 0 auto 22px;
+    }
+
+    .storage-chart-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .storage-chart-center strong {
+        color: var(--config-title);
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .storage-chart-center span {
+        color: var(--config-text);
+        font-size: 0.9rem;
+        margin-top: 6px;
+    }
+
+    .storage-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .storage-metric {
+        background: #f8fcfc;
+        border: 1px solid #d8e8e7;
+        border-radius: 18px;
+        padding: 16px 14px;
+    }
+
+    .storage-metric-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--config-text);
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .storage-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+    .storage-dot-used {
+        background: var(--config-used);
+    }
+
+    .storage-dot-free {
+        background: var(--config-free);
+    }
+
+    .storage-metric strong {
+        display: block;
+        color: var(--config-title);
+        font-size: 1.5rem;
+        line-height: 1.1;
+    }
+
+    .storage-metric small {
+        color: var(--config-text);
+        font-size: 0.85rem;
+    }
+
+    .storage-caption {
+        background: #eef6f8;
+        border-radius: 16px;
+        padding: 12px 14px;
+        color: var(--config-text);
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @media (max-width: 768px) {
+        .config-card {
+            padding: 22px;
+            border-radius: 20px;
+        }
+
+        .storage-summary {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 config-shell" style="background: var(--config-bg); border-radius: 28px;">
     <div class="row justify-content-center">
         <div class="col-12" style="max-width: 1200px;">
             <div class="row g-4">
@@ -126,7 +263,7 @@
                 <div class="col-lg-7">
                     <div class="config-card h-100">
                         <div class="config-card-header text-center"> Backup de Base de Datos</div>
-                        <p class="backup-description">Base de datos: <strong style="color: #f97316;">{{ $currentDatabase }}</strong></p>
+                        <p class="backup-description">Base de datos activa: <span class="backup-db-badge">{{ $currentDatabase }}</span></p>
                         
                         <div class="row g-2 px-3">
                             <div class="col-12">
@@ -160,84 +297,41 @@
                                 </button>
                             </div>
 
-                            <hr style="margin: 15px 0; border-top: 2px dashed #e5e7eb;">
-
-                            <div class="col-12">
-                                <button type="button" class="backup-btn backup-btn-purple" id="backupInsertOnlyBtn" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 19V5M5 12h14"></path>
-                                    </svg>
-                                    Backup (No Duplicar Datos)
-                                </button>
-                            </div>
-
-                            <div class="col-12">
-                                <button type="button" class="backup-btn backup-btn-teal" id="backupDownloadInsertOnlyBtn" style="background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Descargar (No Duplicar)
-                                </button>
-                            </div>
-
-                            <div class="col-12">
-                                <button type="button" class="backup-btn" id="backupFlexibleBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: white;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Backup Flexible (Diferente Estructura)
-                                </button>
-                            </div>
-
-                            <div class="col-12">
-                                <button type="button" class="backup-btn" id="backupFlexibleAdvBtn" style="background: linear-gradient(135deg, #ec4899 0%, #1e40af 100%); color: white;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
-                                    </svg>
-                                    Flexible Avanzado (Seleccionar BD Destino)
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Modal para seleccionar BD Destino -->
-                <div id="selectDbModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-                    <div style="background-color: #fefefe; margin: 10% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <div style="background-color: #1e40af; color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
-                            <h5 style="margin: 0; font-size: 18px; font-weight: bold;">
-                                Seleccionar Base de Datos Destino
-                            </h5>
-                            <button onclick="closeSelectDbModal()" style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
-                        </div>
-                        <div style="padding: 30px; text-align: center;">
-                            <label style="display: block; margin-bottom: 15px; text-align: left;">
-                                <strong>Selecciona la base de datos destino:</strong>
-                                <select id="destDbSelect" style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                                    <option value="">-- Seleccionar base de datos --</option>
-                                    @foreach($databases as $db)
-                                        @if($db !== $currentDatabase)
-                                            <option value="{{ $db }}">{{ $db }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </label>
-                            <button onclick="downloadFlexibleAdv()" style="background-color: #1e40af; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">Descargar Backup</button>
-                            <button onclick="closeSelectDbModal()" style="background-color: #e5e7eb; color: #374151; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Gráfico de Almacenamiento -->
                 <div class="col-lg-5">
-                    <div class="config-card h-100">
+                    <div class="config-card storage-card h-100">
                         <div class="config-card-header text-center"> Uso de Almacenamiento</div>
-                        <div style="max-width: 350px; margin: 0 auto; padding: 20px;">
+                        <p class="storage-intro">Resumen visual del espacio usado en la base actual. Los porcentajes y valores quedan visibles sin pasar el mouse.</p>
+                        <div class="storage-chart-wrap">
                             <canvas id="storageChart"></canvas>
+                            <div class="storage-chart-center">
+                                <strong>{{ $usedPercentage }}%</strong>
+                                <span>ocupado</span>
+                            </div>
+                        </div>
+                        <div class="storage-summary">
+                            <div class="storage-metric">
+                                <div class="storage-metric-label">
+                                    <span class="storage-dot storage-dot-used"></span>
+                                    <span>Espacio usado</span>
+                                </div>
+                                <strong>{{ number_format($usedStorage, 2) }} MB</strong>
+                                <small>{{ $usedPercentage }}% del total disponible</small>
+                            </div>
+                            <div class="storage-metric">
+                                <div class="storage-metric-label">
+                                    <span class="storage-dot storage-dot-free"></span>
+                                    <span>Espacio disponible</span>
+                                </div>
+                                <strong>{{ number_format($availableStorage, 2) }} MB</strong>
+                                <small>{{ $availablePercentage }}% libre actualmente</small>
+                            </div>
+                        </div>
+                        <div class="storage-caption">
+                            Capacidad estimada total: {{ number_format($totalStorage, 2) }} MB. Si el porcentaje usado crece, conviene generar y descargar respaldo con más frecuencia.
                         </div>
                     </div>
                 </div>
@@ -247,9 +341,9 @@
 </div>
 
 <!-- Modal de Backup -->
-<div id="backupModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-    <div style="background-color: #fefefe; margin: 10% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <div style="background-color: #f97316; color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
+<div id="backupModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(22,46,61,0.28); backdrop-filter: blur(3px);">
+    <div style="background: linear-gradient(180deg, #ffffff 0%, #f5faf9 100%); margin: 10% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 500px; box-shadow: 0 24px 40px rgba(32,70,92,0.16); border: 1px solid #d7e4ea;">
+        <div style="background: linear-gradient(135deg, #2f6f8f 0%, #5b8fa8 100%); color: white; padding: 20px; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center;">
             <h5 style="margin: 0; font-size: 18px; font-weight: bold;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -262,7 +356,7 @@
         </div>
         <div style="padding: 30px; text-align: center;">
             <div id="backupLoading" style="display: none;">
-                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <div style="border: 4px solid #e7eff3; border-top: 4px solid #2f6f8f; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
                 <p style="margin-top: 20px; color: #374151; font-size: 16px;" id="backupLoadingMessage">Creando backup, por favor espere...</p>
                 <p style="margin-top: 10px; color: #6b7280; font-size: 14px;">Este proceso puede tardar varios minutos dependiendo del tamaño de la base de datos.</p>
             </div>
@@ -311,14 +405,28 @@
                 labels: ['Usado', 'Disponible'],
                 datasets: [{
                     data: [{{ $usedStorage }}, {{ $availableStorage }}],
-                    backgroundColor: ['#f97316', '#374151'],
+                    backgroundColor: ['#2f6f8f', '#9ed6c8'],
+                    borderColor: ['#ffffff', '#ffffff'],
+                    borderWidth: 6,
+                    hoverOffset: 4,
                 }]
             },
             options: {
                 responsive: true,
+                cutout: '72%',
                 plugins: {
                     legend: {
-                        position: 'top',
+                        display: false,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((sum, value) => sum + value, 0);
+                                const value = Number(context.raw || 0);
+                                const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return `${context.label}: ${value.toFixed(2)} MB (${percentage}%)`;
+                            }
+                        }
                     },
                 }
             }
@@ -437,72 +545,7 @@
             });
         } else {
         }
-
-        // Manejar el botón de backup Insert Only (guardar en servidor)
-        const backupInsertOnlyBtn = document.getElementById('backupInsertOnlyBtn');
-        if (backupInsertOnlyBtn) {
-            backupInsertOnlyBtn.addEventListener('click', function() {
-                // Redirigir a la ruta de descarga
-                window.location.href = '{{ route('configuracion.backupInsertOnly') }}';
-            });
-        } else {
-        }
-
-        // Manejar el botón de descarga Insert Only
-        const backupDownloadInsertOnlyBtn = document.getElementById('backupDownloadInsertOnlyBtn');
-        if (backupDownloadInsertOnlyBtn) {
-            backupDownloadInsertOnlyBtn.addEventListener('click', function() {
-                // Redirigir a la ruta de descarga
-                window.location.href = '{{ route('configuracion.downloadBackupInsertOnly') }}';
-            });
-        } else {
-        }
-
-        // Manejar el botón de backup flexible
-        const backupFlexibleBtn = document.getElementById('backupFlexibleBtn');
-        if (backupFlexibleBtn) {
-            backupFlexibleBtn.addEventListener('click', function() {
-                // Redirigir a la ruta de descarga
-                window.location.href = '{{ route('configuracion.backupFlexible') }}';
-            });
-        } else {
-        }
-
-        // Manejar el botón de backup flexible avanzado
-        const backupFlexibleAdvBtn = document.getElementById('backupFlexibleAdvBtn');
-        if (backupFlexibleAdvBtn) {
-            backupFlexibleAdvBtn.addEventListener('click', function() {
-                document.getElementById('selectDbModal').style.display = 'block';
-            });
-        } else {
-        }
     });
-
-    function downloadFlexibleAdv() {
-        const destDb = document.getElementById('destDbSelect').value;
-        if (!destDb) {
-            alert('Por favor selecciona una base de datos destino');
-            return;
-        }
-        closeSelectDbModal();
-        window.location.href = '{{ route('configuracion.backupFlexible') }}?dest_db=' + encodeURIComponent(destDb);
-    }
-
-    function closeSelectDbModal() {
-        document.getElementById('selectDbModal').style.display = 'none';
-    }
-
-    // Cerrar modal al hacer clic fuera de él
-    window.onclick = function(event) {
-        const selectDbModal = document.getElementById('selectDbModal');
-        if (event.target == selectDbModal) {
-            selectDbModal.style.display = 'none';
-        }
-        const backupModal = document.getElementById('backupModal');
-        if (event.target == backupModal) {
-            backupModal.style.display = 'none';
-        }
-    }
 
 
     // Función para cerrar los modales
@@ -516,10 +559,7 @@
         if (event.target == backupModal) {
             backupModal.style.display = 'none';
         }
-        const selectDbModal = document.getElementById('selectDbModal');
-        if (event.target == selectDbModal) {
-            selectDbModal.style.display = 'none';
-        }
     }
 </script>
 @endsection
+

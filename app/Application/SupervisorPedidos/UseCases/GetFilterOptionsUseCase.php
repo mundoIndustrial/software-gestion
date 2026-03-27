@@ -36,6 +36,7 @@ class GetFilterOptionsUseCase
             'estado' => $this->getStates(),
             'asesora' => $this->getAdvisors(),
             'forma_pago' => $this->getPaymentMethods(),
+            'fecha' => $this->getCreatedDates(),
             default => []
         };
     }
@@ -88,6 +89,19 @@ class GetFilterOptionsUseCase
             ->pluck('forma_de_pago')
             ->filter()
             ->sort()
+            ->values()
+            ->toArray();
+    }
+
+    private function getCreatedDates(): array
+    {
+        return PedidoProduccion::query()
+            ->selectRaw('DATE(created_at) as fecha')
+            ->whereNotNull('created_at')
+            ->distinct()
+            ->orderByDesc('fecha')
+            ->pluck('fecha')
+            ->filter()
             ->values()
             ->toArray();
     }

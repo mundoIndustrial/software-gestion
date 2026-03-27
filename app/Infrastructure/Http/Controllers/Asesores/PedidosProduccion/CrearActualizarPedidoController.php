@@ -2,53 +2,54 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
-use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
-use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Http\Controllers\Controller;
+use App\Infrastructure\Http\Requests\Asesores\ActualizarPedidoProduccionRequest;
+use App\Infrastructure\Http\Requests\Asesores\CrearPedidoProduccionRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 /**
  * CrearActualizarPedidoController
- * 
- *  RESPONSABILIDAD ÚNICA: POST/PUT endpoints para CRUD de pedidos
- * 
- * HTTP Methods:
- * - POST /api/pedidos        → store()
- * - PUT /api/pedidos/{id}    → update()
+ *
+ * Responsabilidad unica: endpoints POST/PUT para crear y actualizar pedidos.
  */
 class CrearActualizarPedidoController extends Controller
 {
     public function __construct(
-        private CrearProduccionPedidoUseCase $crearPedidoUseCase,
-        private ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
-    ) {}
+        private readonly CrearProduccionPedidoUseCase $crearPedidoUseCase,
+        private readonly ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
+    ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
 
     /**
      * POST /api/pedidos
-     * 
-     * Crear nuevo pedido
      */
-    public function store(Request $request): JsonResponse
+    public function store(CrearPedidoProduccionRequest $request): JsonResponse
     {
         try {
-            Log::info('[CrearActualizarPedidoController::store] Iniciado');
-
-            $validated = $request->validate([
-                'numero_pedido' => 'required|string|max:50',
-                'cliente' => 'required|string|max:255',
-                'forma_pago' => 'required|string|in:contado,credito,transferencia,cheque',
-                'asesor_id' => 'required|integer|min:1',
-                'cantidad_inicial' => 'sometimes|integer|min:0',
-                'epps' => 'sometimes|array',
-                'epps.*.epp_id' => 'required_with:epps|integer|min:1',
-                'epps.*.cantidad' => 'sometimes|integer|min:1',
-                'epps.*.observaciones' => 'sometimes|nullable|string|max:1000',
-            ]);
+            $validated = $request->validated();
             $validated['cantidad_inicial'] ??= 0;
+
+            Log::info('[CrearActualizarPedidoController::store] Iniciado', [
+                'numero_pedido' => $validated['numero_pedido'] ?? null,
+            ]);
 
             $dto = CrearProduccionPedidoDTO::fromRequest($validated);
             $pedido = $this->crearPedidoUseCase->ejecutar($dto);
@@ -58,56 +59,40 @@ class CrearActualizarPedidoController extends Controller
                 'epps_procesados' => count($validated['epps'] ?? []),
             ]);
 
-            return response()->json($pedido, 201);
-
+            return $this->json($pedido, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[CrearActualizarPedidoController::store] Validación fallida', [
+            Log::warning('[CrearActualizarPedidoController::store] Validacion fallida', [
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
+            return $this->failure('Datos invalidos', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[CrearActualizarPedidoController::store] Validación de negocio fallida', [
+            Log::warning('[CrearActualizarPedidoController::store] Validacion de negocio fallida', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Validación de negocio fallida: ' . $e->getMessage(),
-            ], 422);
-
+            return $this->failure('Validacion de negocio fallida: ' . $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[CrearActualizarPedidoController::store] Error', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error creando pedido: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error creando pedido: ' . $e->getMessage(), 500);
         }
     }
 
     /**
      * PUT /api/pedidos/{id}
-     * 
-     * Actualizar pedido
      */
-    public function update(Request $request, int|string $id): JsonResponse
+    public function update(ActualizarPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
+            $validated = $request->validated();
+
             Log::info('[CrearActualizarPedidoController::update] Iniciado', [
                 'pedido_id' => $id,
-            ]);
-
-            $validated = $request->validate([
-                'cliente' => 'sometimes|string|max:255',
-                'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
             ]);
 
             $dto = ActualizarProduccionPedidoDTO::fromRequest($id, $validated);
@@ -117,41 +102,30 @@ class CrearActualizarPedidoController extends Controller
                 'pedido_id' => $pedido->id ?? $id,
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[CrearActualizarPedidoController::update] Validación fallida', [
+            Log::warning('[CrearActualizarPedidoController::update] Validacion fallida', [
                 'pedido_id' => $id,
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
+            return $this->failure('Datos invalidos', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[CrearActualizarPedidoController::update] Validación de negocio fallida', [
+            Log::warning('[CrearActualizarPedidoController::update] Validacion de negocio fallida', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Validación de negocio fallida: ' . $e->getMessage(),
-            ], 422);
-
+            return $this->failure('Validacion de negocio fallida: ' . $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[CrearActualizarPedidoController::update] Error', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error actualizando pedido: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error actualizando pedido: ' . $e->getMessage(), 500);
         }
     }
 }

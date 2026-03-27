@@ -3,6 +3,9 @@
 // Archivo principal que inicializa todos los módulos de tracking
 class TrackingMain {
   constructor() {
+    this.mainListenersBound = false;
+    this._escHandler = null;
+    this._ctrlNHandler = null;
     this.init();
   }
 
@@ -35,11 +38,16 @@ class TrackingMain {
   }
 
   setupMainListeners() {
+    if (this.mainListenersBound) {
+      return;
+    }
+    this.mainListenersBound = true;
+
     // Configurar listeners globales si son necesarios
     // Por ejemplo, atajos de teclado, eventos globales, etc.
     
     // Ejemplo: cerrar modales con ESC
-    document.addEventListener('keydown', (e) => {
+    this._escHandler = (e) => {
       if (e.key === 'Escape') {
         // Cerrar cualquier modal abierto
         const modals = document.querySelectorAll('.modal.show, [class*="modal"].show');
@@ -55,10 +63,11 @@ class TrackingMain {
           }
         });
       }
-    });
+    };
+    document.addEventListener('keydown', this._escHandler);
 
     // Ejemplo: atajos de teclado para acciones comunes
-    document.addEventListener('keydown', (e) => {
+    this._ctrlNHandler = (e) => {
       // Ctrl+N para agregar nuevo proceso
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
@@ -69,7 +78,8 @@ class TrackingMain {
           }
         }
       }
-    });
+    };
+    document.addEventListener('keydown', this._ctrlNHandler);
   }
 
   // Método para verificar que todos los módulos estén cargados

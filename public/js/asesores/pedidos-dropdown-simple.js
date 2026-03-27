@@ -3,7 +3,12 @@
  * Crea dropdowns dinámicamente fuera de la tabla
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+function initPedidosDropdownSimple() {
+    if (window.__pedidosDropdownSimpleInitialized) {
+        return;
+    }
+    window.__pedidosDropdownSimpleInitialized = true;
+
     const container = document.getElementById('dropdowns-container');
     const menuHeight = 150;
     
@@ -521,7 +526,13 @@ window.crearDropdownVer = function(button) {
             }
         });
     }, true);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPedidosDropdownSimple);
+} else {
+    initPedidosDropdownSimple();
+}
 
 // Función para cerrar el dropdown (usada en los botones del menú) - GLOBAL
 window.closeDropdown = function() {

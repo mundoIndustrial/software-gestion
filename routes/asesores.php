@@ -28,11 +28,11 @@ use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController;
 use App\Infrastructure\Http\Controllers\Asesores\TelasColoresApiController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFPrendaController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionCombiadaController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFLogoController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFEppController;
+use App\Infrastructure\Http\Controllers\Pdf\CotizacionPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\PrendaPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\CombinadaPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\LogoPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\EppPdfController;
 use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
@@ -170,11 +170,11 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // PDF GENERATION - NEW REFACTORED STRUCTURE
     // ========================================
     // IMPORTANTE: Las rutas especificas deben ir ANTES que la generica
-    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
-    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
-    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo'); // Route for logo PDF
-    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])->name('cotizacion.pdf.epp');
-    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf'); // Legacy route - DEBE SER ULTIMO
+    Route::get('/cotizacion/{id}/pdf/prenda', [PrendaPdfController::class, 'show'])->name('cotizacion.pdf.prenda');
+    Route::get('/cotizacion/{id}/pdf/combinada', [CombinadaPdfController::class, 'show'])->name('cotizacion.pdf.combinada');
+    Route::get('/cotizacion/{id}/pdf/logo', [LogoPdfController::class, 'show'])->name('cotizacion.pdf.logo'); // Route for logo PDF
+    Route::get('/cotizacion/{id}/pdf/epp', [EppPdfController::class, 'show'])->name('cotizacion.pdf.epp');
+    Route::get('/cotizacion/{id}/pdf', [CotizacionPdfController::class, 'show'])->name('cotizacion.pdf'); // Ruta compartida migrada a Infrastructure (seam)
     
     Route::delete('/cotizaciones/imagenes/prenda/{id}', [ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');
     Route::delete('/cotizaciones/imagenes/tela/{id}', [ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
@@ -230,5 +230,3 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
             ->where('pedidoId', '[0-9]+');
     });
 });
-
-

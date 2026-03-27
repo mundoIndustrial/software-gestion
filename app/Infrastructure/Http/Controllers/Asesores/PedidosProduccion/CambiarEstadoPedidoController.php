@@ -2,43 +2,48 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Http\Controllers\Controller;
+use App\Infrastructure\Http\Requests\Asesores\CambiarEstadoPedidoProduccionRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 /**
  * CambiarEstadoPedidoController
- * 
- *  RESPONSABILIDAD ÚNICA: PUT endpoint para cambiar estado de pedido
- * 
- * HTTP Methods:
- * - PUT /api/pedidos/{id}/estado  → cambiarEstado()
+ *
+ * Responsabilidad unica: endpoint para cambiar estado de pedido.
  */
 class CambiarEstadoPedidoController extends Controller
 {
     public function __construct(
-        private CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
-    ) {}
+        private readonly CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
+    ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
 
     /**
      * PUT /api/pedidos/{id}/estado
-     * 
-     * Cambiar estado de pedido
      */
-    public function cambiarEstado(Request $request, int|string $id): JsonResponse
+    public function cambiarEstado(CambiarEstadoPedidoProduccionRequest $request, int|string $id): JsonResponse
     {
         try {
+            $validated = $request->validated();
             Log::info('[CambiarEstadoPedidoController::cambiarEstado] Iniciado', [
                 'pedido_id' => $id,
-                'nuevo_estado' => $request->get('nuevo_estado'),
-            ]);
-
-            $validated = $request->validate([
-                'nuevo_estado' => 'required|string|in:activo,pendiente,completado,cancelado',
-                'razon' => 'sometimes|string|max:500',
+                'nuevo_estado' => $validated['nuevo_estado'] ?? null,
             ]);
 
             $dto = CambiarEstadoPedidoDTO::fromRequest($id, $validated);
@@ -49,41 +54,30 @@ class CambiarEstadoPedidoController extends Controller
                 'nuevo_estado' => $pedido->estado ?? $validated['nuevo_estado'],
             ]);
 
-            return response()->json($pedido, 200);
-
+            return $this->json($pedido);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[CambiarEstadoPedidoController::cambiarEstado] Validación fallida', [
+            Log::warning('[CambiarEstadoPedidoController::cambiarEstado] Validacion fallida', [
                 'pedido_id' => $id,
                 'errors' => $e->errors(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Parámetros inválidos',
+            return $this->failure('Parametros invalidos', 422, [
                 'errors' => $e->errors(),
-            ], 422);
-
+            ]);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[CambiarEstadoPedidoController::cambiarEstado] Transición no permitida', [
+            Log::warning('[CambiarEstadoPedidoController::cambiarEstado] Transicion no permitida', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Transición de estado no permitida: ' . $e->getMessage(),
-            ], 422);
-
+            return $this->failure('Transicion de estado no permitida: ' . $e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('[CambiarEstadoPedidoController::cambiarEstado] Error', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error cambiando estado: ' . $e->getMessage(),
-            ], 500);
+            return $this->failure('Error cambiando estado: ' . $e->getMessage(), 500);
         }
     }
 }

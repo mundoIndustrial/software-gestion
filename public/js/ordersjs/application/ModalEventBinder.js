@@ -1,11 +1,11 @@
-/**
+﻿/**
  * MODAL EVENT BINDER
  * 
- * Responsabilidad: Patrón reutilizable para bindear eventos de modales
- * Elimina duplicación en setupAddProcesoModalListeners y setupConfirmDeleteModalListeners
+ * Responsabilidad: Patron reutilizable para bindear eventos de modales
+ * Elimina duplicidad en setupAddProcesoModalListeners y setupConfirmDeleteModalListeners
  * 
- * ANTES: Búsqueda manual de elementos + binding onclick en múltiples funciones
- * DESPUÉS: Interfaz declarativa y reutilizable
+ * ANTES: Busqueda manual de elementos + binding onclick en multiples funciones
+ * Despues: Interfaz declarativa y reutilizable
  * 
  * Arquitectura: DIP + Strategy Pattern
  */
@@ -13,7 +13,7 @@
 export class ModalEventBinder {
   /**
    * @param {string} modalId - ID del modal (ej: 'addProcesoModal')
-   * @param {Object} options - Opciones de configuración
+   * @param {Object} options - Opciones de configuracion
    */
   constructor(modalId, options = {}) {
     this.modalId = modalId;
@@ -52,7 +52,7 @@ export class ModalEventBinder {
       callback = null
     } = config;
 
-    // Botón X (close)
+    // Boton X (close)
     const closeBtn = this._querySelector(`#${closeButtonId}`);
     if (closeBtn) {
       closeBtn.onclick = (e) => {
@@ -60,10 +60,10 @@ export class ModalEventBinder {
         this._executeCallback(callback);
       };
       this.boundElements.set(`${closeButtonId}:close`, closeBtn);
-      this.logger.log(`[ModalEventBinder] ✓ Botón cerrar bind para: ${closeButtonId}`);
+      this.logger.log(`[ModalEventBinder]  Boton cerrar bind para: ${closeButtonId}`);
     }
 
-    // Botón Cancel
+    // Boton Cancel
     const cancelBtn = this._querySelector(`#${cancelButtonId}`);
     if (cancelBtn) {
       cancelBtn.onclick = (e) => {
@@ -71,7 +71,7 @@ export class ModalEventBinder {
         this._executeCallback(callback);
       };
       this.boundElements.set(`${cancelButtonId}:cancel`, cancelBtn);
-      this.logger.log(`[ModalEventBinder] ✓ Botón cancelar bind para: ${cancelButtonId}`);
+      this.logger.log(`[ModalEventBinder]  Boton cancelar bind para: ${cancelButtonId}`);
     }
 
     // Overlay
@@ -84,14 +84,14 @@ export class ModalEventBinder {
         }
       };
       this.boundElements.set(`${overlaySelector}:overlay`, overlay);
-      this.logger.log(`[ModalEventBinder] ✓ Overlay bind para: ${overlaySelector}`);
+      this.logger.log(`[ModalEventBinder]  Overlay bind para: ${overlaySelector}`);
     }
 
     return this;
   }
 
   /**
-   * Bindear botón de acción principal (confirmación, agregar, etc.)
+   * Bindear boton de accion principal (confirmacion, agregar, etc.)
    * @param {Object} config - { buttonId, callback, loadingConfig }
    * @returns {ModalEventBinder} this (para chaining)
    */
@@ -115,21 +115,21 @@ export class ModalEventBinder {
         try {
           await this._executeCallback(callback);
         } finally {
-          // Restaurar estado del botón
+          // Restaurar estado del boton
           if (loadingConfig) {
             this._setButtonLoading(btn, false, loadingConfig);
           }
         }
       };
       this.boundElements.set(`${buttonId}:action`, btn);
-      this.logger.log(`[ModalEventBinder] ✓ Botón de acción bind para: ${buttonId}`);
+      this.logger.log(`[ModalEventBinder]  Boton de accion bind para: ${buttonId}`);
     }
 
     return this;
   }
 
   /**
-   * Bindear múltiples botones a través de selectores
+   * Bindear multiples botones a traves de selectores
    * @param {Object[]} buttons - Array de configuraciones {selector, handler, event}
    * @returns {ModalEventBinder} this (para chaining)
    */
@@ -143,13 +143,24 @@ export class ModalEventBinder {
 
       const element = this._querySelector(selector);
       if (element) {
-        element.addEventListener(event, (e) => {
+        const bindingKey = `${this.modalId}:${selector}:${event}`;
+        if (!element.__modalBinderHandlers) {
+          element.__modalBinderHandlers = {};
+        }
+        if (element.__modalBinderHandlers[bindingKey]) {
+          element.removeEventListener(event, element.__modalBinderHandlers[bindingKey]);
+        }
+
+        const handlerFn = (e) => {
           e.preventDefault();
           e.stopPropagation();
           this._executeCallback(handler);
-        });
+        };
+
+        element.addEventListener(event, handlerFn);
+        element.__modalBinderHandlers[bindingKey] = handlerFn;
         this.boundElements.set(`${selector}:${event}`, element);
-        this.logger.log(`[ModalEventBinder] ✓ Botón bind para: ${selector} (${event})`);
+        this.logger.log(`[ModalEventBinder] bind para: ${selector} (${event})`);
       }
     });
 
@@ -157,7 +168,7 @@ export class ModalEventBinder {
   }
 
   /**
-   * Bindear selector dinámico (dropdown, autocomplete, etc.)
+   * Bindear selector dinamico (dropdown, autocomplete, etc.)
    * @param {Object} config - { triggerId, menuSelector, itemSelector, onSelect, onToggle }
    * @returns {ModalEventBinder} this (para chaining)
    */
@@ -190,7 +201,7 @@ export class ModalEventBinder {
       this._executeCallback(onToggle);
     });
 
-    // Click en items del menú
+    // Click en items del menu
     menu.addEventListener('click', (e) => {
       const item = e.target.closest(itemSelector);
       if (item) {
@@ -202,14 +213,14 @@ export class ModalEventBinder {
       }
     });
 
-    // Cerrar menú al hacer clic afuera
+    // Cerrar menu al hacer clic afuera
     document.addEventListener('click', (e) => {
       if (!trigger.contains(e.target) && !menu.contains(e.target)) {
         menu.style.display = 'none';
       }
     });
 
-    // Cerrar menú con Escape
+    // Cerrar menu con Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         menu.style.display = 'none';
@@ -217,13 +228,13 @@ export class ModalEventBinder {
     });
 
     this.boundElements.set(`${triggerId}:selector`, { trigger, menu });
-    this.logger.log(`[ModalEventBinder] ✓ Selector dinámico bind para: ${triggerId}`);
+    this.logger.log(`[ModalEventBinder]  Selector dinamico bind para: ${triggerId}`);
 
     return this;
   }
 
   /**
-   * Ejecutar callback (función o async)
+   * Ejecutar callback (funcion o async)
    * @private
    */
   async _executeCallback(callback, args = []) {
@@ -240,7 +251,7 @@ export class ModalEventBinder {
   }
 
   /**
-   * Establecer estado de loading del botón
+   * Establecer estado de loading del boton
    * @private
    */
   _setButtonLoading(btn, isLoading, loadingConfig = {}) {
@@ -277,7 +288,7 @@ export class ModalEventBinder {
       element.remove?.();
     });
     this.boundElements.clear();
-    this.logger.log(`[ModalEventBinder] ✓ Todos los eventos desbindeados para: ${this.modalId}`);
+    this.logger.log(`[ModalEventBinder]  Todos los eventos desbindeados para: ${this.modalId}`);
   }
 
   /**
@@ -290,3 +301,4 @@ export class ModalEventBinder {
 }
 
 export default ModalEventBinder;
+

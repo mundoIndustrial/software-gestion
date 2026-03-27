@@ -6,9 +6,9 @@ use App\Application\Pedidos\DTOs\ActualizarPerfilAsesorDTO;
 use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
 use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
-use Illuminate\Http\Request;
+use App\Infrastructure\Http\Requests\Asesores\ActualizarPerfilAsesorRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 final class AsesoresPerfilController extends Controller
@@ -17,6 +17,19 @@ final class AsesoresPerfilController extends Controller
         private readonly ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase,
         private readonly ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase
     ) {
+    }
+
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
     }
 
     public function profile()
@@ -31,39 +44,23 @@ final class AsesoresPerfilController extends Controller
         }
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile(ActualizarPerfilAsesorRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
-                'telefono' => 'nullable|string|max:20',
-                'ciudad' => 'nullable|string|max:255',
-                'departamento' => 'nullable|string|max:255',
-                'bio' => 'nullable|string|max:500',
-                'password' => 'nullable|string|min:8|confirmed',
-                'avatar' => 'nullable|image|mimes:jpeg,png,gif,webp|max:2048',
-            ]);
-
+            $validated = $request->validated();
             $archivoAvatar = $request->hasFile('avatar') ? $request->file('avatar') : null;
             $dto = ActualizarPerfilAsesorDTO::fromRequest($validated, $archivoAvatar);
             $resultado = $this->actualizarPerfilAsesorUseCase->ejecutar($dto);
 
-            return response()->json($resultado);
+            return $this->json($resultado);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Errores de validación', ['errors' => $e->errors()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación',
+            Log::error('Errores de validacion', ['errors' => $e->errors()]);
+            return $this->failure('Error de validacion', 422, [
                 'errors' => $e->errors(),
-            ], 422);
+            ]);
         } catch (\Throwable $e) {
             Log::error('Error al actualizar perfil', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar el perfil.',
-            ], 500);
+            return $this->failure('Error al actualizar el perfil.', 500);
         }
     }
 }
-

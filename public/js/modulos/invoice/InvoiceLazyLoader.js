@@ -8,6 +8,7 @@ class InvoiceLazyLoader {
         this.modulosCargados = new Set();
         this.modulosCargando = new Set();
         this.callbacksPendientes = new Map();
+        this.precargaInteligenteEjecutada = false;
         this.init();
     }
 
@@ -288,6 +289,11 @@ class InvoiceLazyLoader {
      * Precarga inteligente basada en la página actual
      */
     precargaInteligente() {
+        if (this.precargaInteligenteEjecutada) {
+            return;
+        }
+        this.precargaInteligenteEjecutada = true;
+
         if (!this.necesitaFactura()) {
             return;
         }
@@ -313,29 +319,25 @@ class InvoiceLazyLoader {
     }
 }
 
-// Inicializar el lazy loader
-document.addEventListener('DOMContentLoaded', () => {
-    window.invoiceLazyLoader = new InvoiceLazyLoader();
-    
-    // Iniciar precarga inteligente
-    setTimeout(() => {
-        window.invoiceLazyLoader.precargaInteligente();
-    }, 1000);
-});
+function initInvoiceLazyLoaderOnce() {
+    if (window.__invoiceLazyLoaderInitialized) {
+        return;
+    }
+    window.__invoiceLazyLoaderInitialized = true;
 
-// También permitir inicialización manual
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    if (!window.invoiceLazyLoader) {
         window.invoiceLazyLoader = new InvoiceLazyLoader();
-        setTimeout(() => {
-            window.invoiceLazyLoader.precargaInteligente();
-        }, 1000);
-    });
-} else {
-    window.invoiceLazyLoader = new InvoiceLazyLoader();
+    }
+
     setTimeout(() => {
         window.invoiceLazyLoader.precargaInteligente();
     }, 1000);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInvoiceLazyLoaderOnce, { once: true });
+} else {
+    initInvoiceLazyLoaderOnce();
 }
 
 // Funciones globales para debugging

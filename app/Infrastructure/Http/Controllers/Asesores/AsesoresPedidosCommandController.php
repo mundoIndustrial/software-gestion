@@ -11,6 +11,11 @@ use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
 use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
+use App\Infrastructure\Http\Requests\Asesores\ActualizarPedidoAsesorRequest;
+use App\Infrastructure\Http\Requests\Asesores\AgregarPrendaSimpleAsesorRequest;
+use App\Infrastructure\Http\Requests\Asesores\AnularPedidoAsesorRequest;
+use App\Infrastructure\Http\Requests\Asesores\AnularPedidoNovedadAsesorRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -27,74 +32,56 @@ final class AsesoresPedidosCommandController extends Controller
     ) {
     }
 
-    public function update(Request $request, $id)
+    private function json(mixed $payload, int $status = 200): JsonResponse
     {
-        $validated = $request->validate([
-            'cliente' => 'sometimes|required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'novedades' => 'nullable|string',
-            'forma_de_pago' => 'nullable|string|max:69',
-            'estado' => 'nullable|string|in:Pendiente,Entregado,En Ejecución,No iniciado,Anulada,PENDIENTE_SUPERVISOR',
-            'area' => 'nullable|string|max:255',
-            'prendas' => 'sometimes|array',
-            'prendas.*.id' => 'nullable|exists:prendas_pedido,id',
-            'prendas.*.nombre_prenda' => 'required_with:prendas|string',
-            'prendas.*.talla' => 'nullable|string',
-            'prendas.*.cantidad' => 'required_with:prendas|integer|min:1',
-            'prendas.*.precio_unitario' => 'nullable|numeric|min:0',
-            'epp' => 'sometimes|array',
-            'epp.*.id' => 'required_with:epp|integer|exists:pedido_epp,id',
-            'epp.*.cantidad' => 'required_with:epp|integer|min:0',
-            'epp.*.observaciones' => 'nullable|string',
-        ]);
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
+    public function update(ActualizarPedidoAsesorRequest $request, int|string $id): JsonResponse
+    {
+        $validated = $request->validated();
 
         try {
             $dto = ActualizarProduccionPedidoDTO::fromRequest((string) $id, $validated);
             $this->actualizarProduccionPedidoUseCase->ejecutar($dto);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Pedido actualizado exitosamente',
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar el pedido.',
-            ], 500);
+            return $this->failure('Error al actualizar el pedido.', 500);
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(AnularPedidoAsesorRequest $request, int|string $id): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'razon' => 'required|string|max:500',
-            ]);
+            $validated = $request->validated();
 
             $dto = AnularProduccionPedidoDTO::fromRequest((string) $id, $validated);
             $this->anularProduccionPedidoUseCase->ejecutarConDTO($dto);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Pedido anulado exitosamente',
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al anular el pedido.',
-            ], 500);
+            return $this->failure('Error al anular el pedido.', 500);
         }
     }
 
-    public function anularPedido(Request $request, $id)
+    public function anularPedido(AnularPedidoNovedadAsesorRequest $request, int|string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'novedad' => 'required|string|min:10|max:500',
-        ], [
-            'novedad.required' => 'La novedad es obligatoria',
-            'novedad.min' => 'La novedad debe tener al menos 10 caracteres',
-            'novedad.max' => 'La novedad no puede exceder 500 caracteres',
-        ]);
+        $validated = $request->validated();
 
         try {
             $usuario = Auth::user();
@@ -108,30 +95,27 @@ final class AsesoresPedidosCommandController extends Controller
 
             $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutarConDTO($dto);
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
                 'message' => 'Pedido anulado correctamente',
                 'pedido' => $pedidoAnulado,
             ]);
         } catch (\Throwable $e) {
             \Log::error('[anularPedido] Error', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al anular el pedido.',
-            ], 500);
+            return $this->failure('Error al anular el pedido.', 500);
         }
     }
 
-    public function confirmarCorreccion(Request $request, $id)
+    public function confirmarCorreccion(Request $request, int|string $id): JsonResponse
     {
         try {
             $usuario = Auth::user();
             $pedidoId = $this->resolverPedidoIdAsesorUseCase->ejecutar((string) $id, (int) ($usuario?->id ?? 0));
             $resultado = $this->confirmarCorreccionPedidoUseCase->ejecutar($pedidoId, $usuario?->name ?? 'Sistema');
 
-            return response()->json([
+            return $this->json([
                 'success' => true,
-                'message' => 'Corrección confirmada. El pedido ha sido enviado a supervisión.',
+                'message' => 'Correccion confirmada. El pedido ha sido enviado a supervision.',
                 'data' => [
                     'pedido_id' => $resultado['pedido_id'],
                     'numero_pedido' => $resultado['numero_pedido'],
@@ -140,35 +124,28 @@ final class AsesoresPedidosCommandController extends Controller
             ]);
         } catch (\Throwable $e) {
             \Log::error('[confirmarCorreccion] Error', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al confirmar corrección.',
-            ], 500);
+            return $this->failure('Error al confirmar correccion.', 500);
         }
     }
 
-    public function agregarPrendaSimple(Request $request, $pedidoId)
+    public function agregarPrendaSimple(AgregarPrendaSimpleAsesorRequest $request, int|string $pedidoId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'nombre_prenda' => 'required|string|max:255',
-                'cantidad' => 'required|integer|min:1',
-                'descripcion' => 'nullable|string|max:1000',
-            ]);
+            $validated = $request->validated();
 
             $dto = AgregarPrendaSimpleDTO::fromRequest((string) $pedidoId, $validated);
             $resultado = $this->agregarPrendaSimpleUseCase->ejecutar($dto);
 
-            return response()->json($resultado, 201);
+            return $this->json($resultado, 201);
         } catch (\Throwable $e) {
             \Log::error('[agregarPrendaSimple] Error', ['error' => $e->getMessage()]);
-            return response()->json([
+            return $this->json([
                 'error' => 'Error agregando la prenda.',
             ], 400);
         }
     }
 
-    public function destroyBorrador(Request $request, $id)
+    public function destroyBorrador(Request $request, int|string $id)
     {
         try {
             $user = Auth::user();
@@ -181,4 +158,3 @@ final class AsesoresPedidosCommandController extends Controller
         }
     }
 }
-

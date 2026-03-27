@@ -2,9 +2,11 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use App\Http\Controllers\Controller;
 use App\Application\Services\Asesores\ClientesAsesorService;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Infrastructure\Http\Requests\Asesores\ActualizarClienteAsesorRequest;
+use App\Infrastructure\Http\Requests\Asesores\CrearClienteAsesorRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -15,80 +17,61 @@ class ClientesController extends Controller
     ) {
     }
 
-    // Listar clientes
+    private function json(mixed $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status);
+    }
+
+    private function failure(string $message, int $status = 500, array $extra = []): JsonResponse
+    {
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
+    }
+
     public function index()
     {
         $clientes = $this->clientesAsesorService->listarPorUsuario((int) Auth::id(), 15);
-        
+
         return view('asesores.clientes.index', compact('clientes'));
     }
 
-    // Crear cliente
-    public function store(Request $request)
+    public function store(CrearClienteAsesorRequest $request): JsonResponse
     {
-        $request->validate([
-            'nombre' => 'required|unique:clientes,nombre',
-            'email' => 'nullable|email',
-            'telefono' => 'nullable',
-            'ciudad' => 'nullable',
-            'notas' => 'nullable'
-        ]);
+        $this->clientesAsesorService->crear((int) Auth::id(), $request->validated());
 
-        $this->clientesAsesorService->crear((int) Auth::id(), $request->only([
-            'nombre',
-            'email',
-            'telefono',
-            'ciudad',
-            'notas',
-        ]));
-
-        return response()->json([
+        return $this->json([
             'success' => true,
-            'message' => 'Cliente creado correctamente'
+            'message' => 'Cliente creado correctamente',
         ]);
     }
 
-    // Actualizar cliente
-    public function update(Request $request, $id)
+    public function update(ActualizarClienteAsesorRequest $request, int|string $id): JsonResponse
     {
-        $request->validate([
-            'nombre' => 'required|unique:clientes,nombre,' . $id,
-            'email' => 'nullable|email',
-            'telefono' => 'nullable',
-            'ciudad' => 'nullable',
-            'notas' => 'nullable'
-        ]);
-
         try {
-            $this->clientesAsesorService->actualizar((int) Auth::id(), (int) $id, $request->only([
-                'nombre',
-                'email',
-                'telefono',
-                'ciudad',
-                'notas',
-            ]));
-        } catch (AccessDeniedHttpException $e) {
-            abort(403);
-        }
+            $this->clientesAsesorService->actualizar((int) Auth::id(), (int) $id, $request->validated());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cliente actualizado'
-        ]);
+            return $this->json([
+                'success' => true,
+                'message' => 'Cliente actualizado',
+            ]);
+        } catch (AccessDeniedHttpException $e) {
+            return $this->failure('No autorizado para actualizar este cliente', 403);
+        }
     }
 
-    // Eliminar cliente
-    public function destroy($id)
+    public function destroy(int|string $id): JsonResponse
     {
         try {
             $this->clientesAsesorService->eliminar((int) Auth::id(), (int) $id);
-        } catch (AccessDeniedHttpException $e) {
-            abort(403);
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cliente eliminado'
-        ]);
+            return $this->json([
+                'success' => true,
+                'message' => 'Cliente eliminado',
+            ]);
+        } catch (AccessDeniedHttpException $e) {
+            return $this->failure('No autorizado para eliminar este cliente', 403);
+        }
     }
 }

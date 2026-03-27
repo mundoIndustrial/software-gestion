@@ -3,13 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
+use App\Infrastructure\Http\Controllers\Cotizaciones\CotizacionEstadoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
-use App\Infrastructure\Http\Controllers\Legacy\ContadorController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFPrendaController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionCombiadaController;
-use App\Infrastructure\Http\Controllers\Legacy\PDFEppController;
-use App\Infrastructure\Http\Controllers\Legacy\CotizacionEstadoController;
+use App\Infrastructure\Http\Controllers\Contador\CotizacionDetalleController;
+use App\Infrastructure\Http\Controllers\Contador\CotizacionCostosController;
+use App\Infrastructure\Http\Controllers\Pdf\CotizacionPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\PrendaPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\CombinadaPdfController;
+use App\Infrastructure\Http\Controllers\Pdf\EppPdfController;
 
 // ========================================
 // RUTAS PARA COTIZACIONES - PRENDA (DDD REFACTORIZADO)
@@ -87,7 +88,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('cotizaciones.obtener-datos');
 
     // Obtener costos de cotizacion (AJAX)
-    Route::get('/cotizaciones/{cotizacion}/costos', [ContadorController::class, 'obtenerCostos'])
+    Route::get('/cotizaciones/{cotizacion}/costos', [CotizacionCostosController::class, 'show'])
         ->name('cotizaciones.obtener-costos');
 
     // Obtener contador de cotizaciones pendientes para aprobador (AJAX)
@@ -95,12 +96,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('cotizaciones.pendientes-count');
 
     // Acceso a modal de ver cotizacion desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
-    Route::get('/contador/cotizacion/{id}', [ContadorController::class, 'getCotizacionDetail'])
+    Route::get('/contador/cotizacion/{id}', [CotizacionDetalleController::class, 'show'])
         ->middleware('auth')
         ->name('aprobador.cotizacion.detail');
 
     // Acceso a costos de cotizacion desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
-    Route::get('/contador/cotizacion/{cotizacion}/costos', [ContadorController::class, 'obtenerCostos'])
+    Route::get('/contador/cotizacion/{cotizacion}/costos', [CotizacionCostosController::class, 'show'])
         ->name('aprobador.cotizacion.costos');
 });
 
@@ -108,7 +109,7 @@ Route::middleware(['auth'])->group(function () {
 // RUTA DE PDF COMPARTIDA (Accesible para asesores, contador, visualizador_cotizaciones_logo y admin)
 // ========================================
 Route::middleware(['auth'])->group(function () {
-    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    Route::get('/cotizacion/{id}/pdf', [CotizacionPdfController::class, 'show'])->name('cotizacion.pdf');
 });
 
 // ========================================
@@ -116,9 +117,9 @@ Route::middleware(['auth'])->group(function () {
 // ========================================
 // Necesarias para que modulos como Contador puedan descargar PDFs sin depender de /asesores.
 Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones'])->group(function () {
-    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate']);
-    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate']);
-    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate']);
+    Route::get('/cotizacion/{id}/pdf/prenda', [PrendaPdfController::class, 'show']);
+    Route::get('/cotizacion/{id}/pdf/combinada', [CombinadaPdfController::class, 'show']);
+    Route::get('/cotizacion/{id}/pdf/epp', [EppPdfController::class, 'show']);
 });
 
 // ========================================
@@ -207,4 +208,3 @@ Route::prefix('cotizacion')->name('cotizacion.')->middleware(['auth'])->group(fu
     Route::delete('prendas/{prendaId}', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'eliminarPrenda'])
         ->name('prendas.eliminar');
 });
-
