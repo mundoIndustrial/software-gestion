@@ -44,7 +44,8 @@
     40 => 'App\\Providers\\BladeDirectivesServiceProvider',
     41 => 'App\\Providers\\DomainServiceProvider',
     42 => 'App\\Providers\\CQRSServiceProvider',
-    43 => 'App\\Providers\\BodegaServiceProvider',
+    43 => 'App\\Providers\\PedidosServiceProvider',
+    44 => 'App\\Providers\\BodegaServiceProvider',
   ),
   'eager' => 
   array (
@@ -73,7 +74,8 @@
     22 => 'App\\Providers\\BladeDirectivesServiceProvider',
     23 => 'App\\Providers\\DomainServiceProvider',
     24 => 'App\\Providers\\CQRSServiceProvider',
-    25 => 'App\\Providers\\BodegaServiceProvider',
+    25 => 'App\\Providers\\PedidosServiceProvider',
+    26 => 'App\\Providers\\BodegaServiceProvider',
   ),
   'deferred' => 
   array (

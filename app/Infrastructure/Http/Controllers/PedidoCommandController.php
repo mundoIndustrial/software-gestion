@@ -7,10 +7,16 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
-use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
+use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPedidoCamposUseCase;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Application\Asesores\UseCases\ResolverPedidoIdAsesorUseCase;
 use App\Application\Pedidos\DTOs\CrearPedidoDTO;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Application\Pedidos\DTOs\ConfirmarPedidoInputDTO;
+use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarPedidoCamposDTO;
+use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 use App\Domain\Pedidos\Exceptions\PedidoNoEncontrado;
 use App\Domain\Pedidos\Exceptions\EstadoPedidoInvalido;
 
@@ -25,9 +31,11 @@ class PedidoCommandController extends Controller
     public function __construct(
         private CrearPedidoUseCase $crearPedidoUseCase,
         private ConfirmarPedidoUseCase $confirmarPedidoUseCase,
-        private CancelarPedidoUseCase $cancelarPedidoUseCase,
+        private AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase,
         private CalcularFechaEntregaEstimadaUseCase $calcularFechaEntregaEstimadaUseCase,
-        private PedidoRepository $pedidoRepository
+        private ActualizarPedidoCamposUseCase $actualizarPedidoCamposUseCase,
+        private CambiarEstadoPedidoUseCase $cambiarEstadoPedidoUseCase,
+        private ResolverPedidoIdAsesorUseCase $resolverPedidoIdAsesorUseCase
     ) {}
 
     /**
@@ -83,7 +91,8 @@ class PedidoCommandController extends Controller
     public function confirmar(int $id): JsonResponse
     {
         try {
-            $response = $this->confirmarPedidoUseCase->ejecutar($id);
+            $dto = ConfirmarPedidoInputDTO::fromId($id);
+            $response = $this->confirmarPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
@@ -120,14 +129,37 @@ class PedidoCommandController extends Controller
     /**
      * DELETE /api/pedidos/{id}/cancelar
      */
-    public function cancelar(int $id): JsonResponse
+    public function cancelar(Request $request, int $id): JsonResponse
     {
         try {
-            $response = $this->cancelarPedidoUseCase->ejecutar($id);
+            $request->validate([
+                'novedad' => 'required|string|min:10|max:500',
+            ], [
+                'novedad.required' => 'La novedad es obligatoria',
+                'novedad.min' => 'La novedad debe tener al menos 10 caracteres',
+                'novedad.max' => 'La novedad no puede exceder 500 caracteres',
+            ]);
+
+            $usuario = auth()->user();
+            $usuarioId = (int) ($usuario?->id ?? 0);
+            $pedidoId = $this->resolverPedidoIdAsesorUseCase->ejecutar((string) $id, $usuarioId);
+            $nombreUsuario = $usuario?->name ?: 'Sistema';
+
+            $rolUsuario = 'Sin rol';
+            if ($usuario && method_exists($usuario, 'roles')) {
+                $rolUsuario = $usuario->roles()->first()?->name ?? 'Sin rol';
+            }
+
+            $dto = AnularProduccionPedidoDTO::fromRequest((string) $pedidoId, [
+                'razon' => (string) $request->input('novedad'),
+                'nombreUsuario' => $nombreUsuario,
+                'rolUsuario' => $rolUsuario,
+            ]);
+            $response = $this->anularProduccionPedidoUseCase->ejecutarConDTO($dto);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido cancelado exitosamente',
+                'message' => 'Pedido anulado correctamente',
                 'data' => $response->toArray()
             ], 200);
 
@@ -137,10 +169,17 @@ class PedidoCommandController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors(),
+            ], 422);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cancelar pedido: ' . $e->getMessage()
+                'message' => 'Error al anular pedido: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -165,79 +204,37 @@ class PedidoCommandController extends Controller
                 'justificacion' => 'nullable|string|max:1000'
             ]);
 
-            $pedido = \App\Models\PedidoProduccion::findOrFail($id);
-
-            if ($request->has('cliente') && !is_null($request->input('cliente'))) {
-                $pedido->cliente = $request->input('cliente');
+            $usuario = auth()->user();
+            $nombreUsuario = $usuario?->name ?: 'Sistema';
+            $rolUsuario = 'Sin rol';
+            if ($usuario && method_exists($usuario, 'roles')) {
+                $rolUsuario = $usuario->roles()->first()?->name ?? 'Sin rol';
             }
 
-            if ($request->has('forma_de_pago') && !is_null($request->input('forma_de_pago'))) {
-                $pedido->forma_de_pago = $request->input('forma_de_pago');
-            }
-
-            if ($request->has('novedades') && !is_null($request->input('novedades'))) {
-                $pedido->novedades = $request->input('novedades');
-            }
-
-            if ($request->has('justificacion') && !is_null($request->input('justificacion')) && !empty($request->input('justificacion'))) {
-                $justificacion = $request->input('justificacion');
-                $novedadesActuales = $pedido->novedades ?: '';
-
-                $usuario = auth()->user();
-
-                \Log::info('[actualizarDescripcion] Usuario autenticado:', [
-                    'usuario' => $usuario ? $usuario->toArray() : null,
-                    'auth_check' => auth()->check(),
-                    'usuario_id' => auth()->id(),
-                ]);
-
-                $nombreUsuario = 'Sistema';
-                $rolUsuario = 'Sin rol';
-
-                if ($usuario) {
-                    $nombreUsuario = $usuario->name ?: 'Usuario';
-                    $rolesUsuario = $usuario->roles();
-
-                    \Log::info('[actualizarDescripcion] Roles del usuario:', [
-                        'roles_ids' => $usuario->roles_ids,
-                        'roles_count' => $rolesUsuario->count(),
-                        'roles_data' => $rolesUsuario->get()->toArray(),
-                    ]);
-
-                    if ($rolesUsuario && $rolesUsuario->count() > 0) {
-                        $rolUsuario = $rolesUsuario->first()->name ?? 'Sin rol';
-                    }
-                }
-
-                \Log::info('[actualizarDescripcion] Registro de novedad:', [
-                    'usuario_final' => $nombreUsuario,
-                    'rol_final' => $rolUsuario,
-                ]);
-
-                $fechaActual = now()->format('d/m/Y H:i');
-                $registroNovedad = "[{$nombreUsuario} - {$rolUsuario} - {$fechaActual}]\n{$justificacion}";
-
-                if (!empty($novedadesActuales)) {
-                    $pedido->novedades = $novedadesActuales . "\n\n" . $registroNovedad;
-                } else {
-                    $pedido->novedades = $registroNovedad;
-                }
-            }
-
-            $pedido->save();
+            $dto = ActualizarPedidoCamposDTO::fromRequest(
+                pedidoId: $id,
+                data: $request->all(),
+                usuarioId: auth()->id(),
+                nombreUsuario: $nombreUsuario,
+                rolUsuario: $rolUsuario
+            );
+            $pedidoActualizado = $this->actualizarPedidoCamposUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cambios guardados exitosamente',
-                'data' => $pedido->toArray()
+                'data' => $pedidoActualizado
             ], 200);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (\RuntimeException $e) {
+            if ($e->getCode() !== 404) {
+                throw $e;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Pedido no encontrado'
             ], 404);
-
         } catch (\Exception $e) {
             \Log::error('[actualizarDescripcion] Error:', [
                 'pedido_id' => $id,
@@ -270,8 +267,6 @@ class PedidoCommandController extends Controller
                 'estado' => 'required|string|in:Pendiente,No iniciado,En Ejecución,Entregado,Anulada,PENDIENTE_SUPERVISOR,PENDIENTE_INSUMOS,pendiente_cartera,RECHAZADO_CARTERA,DEVUELTO_A_ASESORA'
             ]);
 
-            $nuevoEstado = $request->input('estado');
-
             $pedido = \App\Models\PedidoProduccion::find($id);
             if (!$pedido) {
                 \Log::warning('[actualizarEstado] Pedido no encontrado', ['pedido_id' => $id]);
@@ -281,13 +276,15 @@ class PedidoCommandController extends Controller
                 ], 404);
             }
 
-            $estadoAnterior = $pedido->estado;
+            $nuevoEstado = (string) $request->input('estado');
+            $estadoAnterior = (string) ($pedido->estado ?? '');
 
             if ($estadoAnterior === $nuevoEstado) {
                 \Log::info('[actualizarEstado] El estado es el mismo, no se actualiza', [
                     'pedido_id' => $id,
                     'estado' => $nuevoEstado
                 ]);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'El estado ya es el mismo',
@@ -299,28 +296,17 @@ class PedidoCommandController extends Controller
                 ]);
             }
 
-            $pedido->estado = $nuevoEstado;
-            $pedido->save();
+            $dto = CambiarEstadoPedidoDTO::fromRequest($id, [
+                'estado' => $nuevoEstado,
+                'nombre_usuario' => auth()->user()?->name ?? 'Sistema',
+                'registrar_novedad' => true,
+            ]);
+            $pedidoActualizado = $this->cambiarEstadoPedidoUseCase->ejecutar($dto);
 
-            if ($estadoAnterior !== $nuevoEstado) {
-                $usuario = auth()->user();
-                $nombreUsuario = $usuario ? $usuario->name : 'Sistema';
-
-                $novedad = "Estado cambiado de '{$estadoAnterior}' a '{$nuevoEstado}' por {$nombreUsuario}";
-
-                if (!empty($pedido->novedades)) {
-                    $pedido->novedades .= "\n\n" . $novedad;
-                } else {
-                    $pedido->novedades = $novedad;
-                }
-
-                $pedido->save();
-
-                \Log::info('[actualizarEstado] Novedad registrada', [
-                    'pedido_id' => $id,
-                    'novedad' => $novedad
-                ]);
-            }
+            \Log::info('[actualizarEstado] Novedad registrada', [
+                'pedido_id' => $id,
+                'novedad' => "Estado cambiado de '{$estadoAnterior}' a '{$nuevoEstado}' por " . (auth()->user()?->name ?? 'Sistema')
+            ]);
 
             \Log::info('[actualizarEstado] Estado actualizado exitosamente', [
                 'pedido_id' => $id,
@@ -332,10 +318,10 @@ class PedidoCommandController extends Controller
                 'success' => true,
                 'message' => 'Estado actualizado correctamente',
                 'data' => [
-                    'id' => $pedido->id,
+                    'id' => $pedidoActualizado->id ?? $id,
                     'estado' => $nuevoEstado,
                     'estado_anterior' => $estadoAnterior,
-                    'novedades' => $pedido->novedades
+                    'novedades' => $pedidoActualizado->novedades ?? null
                 ]
             ]);
 
@@ -351,35 +337,6 @@ class PedidoCommandController extends Controller
                 'message' => 'Error al actualizar estado: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * POST /asesores/pedidos/confirm
-     *
-     * @deprecated Alias de confirmar(). Usar PATCH /api/pedidos/{id}/confirmar
-     */
-    public function confirm(Request $request): JsonResponse
-    {
-        $id = $request->input('pedido_id') ?: $request->route('id');
-
-        if (!$id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Se requiere el ID del pedido'
-            ], 400);
-        }
-
-        return $this->confirmar($id);
-    }
-
-    /**
-     * POST /asesores/pedidos/{id}/anular
-     *
-     * @deprecated Alias de cancelar(). Usar DELETE /api/pedidos/{id}/cancelar
-     */
-    public function anularPedido(Request $request, $id): JsonResponse
-    {
-        return $this->cancelar($id);
     }
 
     /**

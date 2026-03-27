@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
     // ========================================
     // RUTAS DE LECTURA - Datos Públicos de Pedidos (consultas, sin lógica de negocio)
     // ========================================
-    Route::get('/pedidos-public/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])
+    Route::get('/pedidos-public/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidoDocumentosController::class, 'obtenerDatosFactura'])
         ->where('id', '[0-9]+')
         ->name('pedidos.public.factura-datos');
     

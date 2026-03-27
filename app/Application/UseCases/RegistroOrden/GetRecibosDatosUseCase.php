@@ -38,7 +38,7 @@ class GetRecibosDatosUseCase
 
         try {
             // Resolver el pedido explícitamente
-            $pedidoModel = $this->_resolvePedido($pedido);
+            $pedidoModel = $this->resolvePedido($pedido);
             $pedidoId = $pedidoModel->id;
 
             \Log::info('[GetRecibosDatosUseCase] Obteniendo datos', [
@@ -78,19 +78,16 @@ class GetRecibosDatosUseCase
 
     /**
      * Resolver pedido de forma explícita
-     * 
      * Estrategia clara:
      * 1. Si es 'sin-numero', buscar pedidos sin número asignado
      * 2. Si es numérico, buscar por ID
      * 3. Si es alfanumérico, buscar por número de pedido
-     * 
      * NO hay fallback automático - ser explícito con el identificador
-     * 
      * @param string $pedido
      * @return PedidoProduccion
      * @throws GetRecibosDatosException
      */
-    private function _resolvePedido(string $pedido): PedidoProduccion
+    private function resolvePedido(string $pedido): PedidoProduccion
     {
         // Caso especial: 'sin-numero'
         if ($pedido === 'sin-numero') {

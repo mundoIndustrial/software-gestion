@@ -11,8 +11,14 @@
  * - Cotizaciones: Gestión de cotizaciones
  */
 
-use App\Infrastructure\Http\Controllers\Asesores\AsesoresController;
-use App\Infrastructure\Http\Controllers\PedidoCommandController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresRealtimePedidosController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresDashboardController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresPerfilController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresNotificacionesController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosViewController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosQueryController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosCommandController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
@@ -35,48 +41,46 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // DASHBOARD Y NOTIFICACIONES
     // ========================================
-    Route::get('/dashboard', [AsesoresController::class, 'dashboard'])->name('dashboard');
-    Route::get('/dashboard-data', [AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
+    Route::get('/dashboard', [AsesoresDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard-data', [AsesoresDashboardController::class, 'getDashboardData'])->name('dashboard-data');
     
-    Route::post('/notifications/mark-all-read', [AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifications/{notificationId}/mark-read', [AsesoresController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
-    Route::get('/notifications', [AsesoresController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-all-read', [AsesoresNotificacionesController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/{notificationId}/mark-read', [AsesoresNotificacionesController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
+    Route::get('/notifications', [AsesoresNotificacionesController::class, 'getNotifications'])->name('notifications');
 
     // ========================================
     // PERFIL
     // ========================================
-    Route::get('/perfil', [AsesoresController::class, 'profile'])->name('profile')->middleware('auth');
-    Route::post('/perfil/update', [AsesoresController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/perfil', [AsesoresPerfilController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [AsesoresPerfilController::class, 'updateProfile'])->name('profile.update');
 
     // ========================================
     // PEDIDOS - VISTAS Y CRUD
     // ========================================
-    Route::get('/pedidos', [AsesoresController::class, 'index'])->name('pedidos.index');
-    Route::get('/pedidos/borradores', [AsesoresController::class, 'borradores'])->name('pedidos.borradores');
-    Route::get('/pendientes', [AsesoresController::class, 'pendientes'])->name('pendientes');
-    Route::get('/pendientes/{id}', [AsesoresController::class, 'pendientesDetalle'])->name('pendientes.detalle');
-    Route::get('/api/pendientes-asesor', [AsesoresController::class, 'obtenerPendientesAsesor'])->name('api.pendientes-asesor');
-    Route::get('/api/conteo-pendientes-asesor', [AsesoresController::class, 'contarPendientesAsesor'])->name('api.conteo-pendientes-asesor');
-    Route::get('/pendientes/{id}/notas', [AsesoresController::class, 'obtenerNotasPedido'])->name('pendientes.notas');
-    Route::get('/cotizaciones/create', [AsesoresController::class, 'create'])->name('pedidos.create');
-    Route::get('/pedidos/next-pedido', [AsesoresController::class, 'getNextPedido'])->name('next-pedido');
-    Route::get('/pedidos/{id}', [AsesoresController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
-    Route::get('/pedidos/{id}/edit', [AsesoresController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
-    Route::put('/pedidos/{id}', [AsesoresController::class, 'update'])->where('id', '[0-9]+')->name('pedidos.update');
-    Route::delete('/pedidos/borradores/{id}', [AsesoresController::class, 'destroyBorrador'])->where('id', '[0-9]+')->name('pedidos.borradores.destroy');
-    Route::delete('/pedidos/{id}', [AsesoresController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
+    Route::get('/pedidos', [AsesoresPedidosViewController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/borradores', [AsesoresPedidosViewController::class, 'borradores'])->name('pedidos.borradores');
+    Route::get('/pendientes', [AsesoresPedidosViewController::class, 'pendientes'])->name('pendientes');
+    Route::get('/pendientes/{id}', [AsesoresPedidosViewController::class, 'pendientesDetalle'])->name('pendientes.detalle');
+    Route::get('/api/pendientes-asesor', [AsesoresPedidosQueryController::class, 'obtenerPendientesAsesor'])->name('api.pendientes-asesor');
+    Route::get('/api/conteo-pendientes-asesor', [AsesoresPedidosQueryController::class, 'contarPendientesAsesor'])->name('api.conteo-pendientes-asesor');
+    Route::get('/pendientes/{id}/notas', [AsesoresPedidosQueryController::class, 'obtenerNotasPedido'])->name('pendientes.notas');
+    Route::get('/cotizaciones/create', [AsesoresPedidosViewController::class, 'create'])->name('pedidos.create');
+    Route::get('/pedidos/next-pedido', [AsesoresPedidosQueryController::class, 'getNextPedido'])->name('next-pedido');
+    Route::get('/pedidos/{id}', [AsesoresPedidosViewController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
+    Route::get('/pedidos/{id}/edit', [AsesoresPedidosViewController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
+    Route::put('/pedidos/{id}', [AsesoresPedidosCommandController::class, 'update'])->where('id', '[0-9]+')->name('pedidos.update');
+    Route::delete('/pedidos/borradores/{id}', [AsesoresPedidosCommandController::class, 'destroyBorrador'])->where('id', '[0-9]+')->name('pedidos.borradores.destroy');
+    Route::delete('/pedidos/{id}', [AsesoresPedidosCommandController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
 
     // ========================================
     // PEDIDOS - APIs DDD (DEPRECATED)
     // ========================================
     // NOTA: La creación de pedidos se centraliza en /asesores/pedidos/*
     // y no debe existir otro punto de entrada para crear pedidos.
-    Route::post('/pedidos/confirm', [PedidoCommandController::class, 'confirm'])->name('pedidos.api.confirm');
-    Route::post('/pedidos/{id}/anular', [AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [PedidoQueryController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // API para listado de pedidos en tiempo real
-    Route::get('/pedidos-api-listar', [AsesoresController::class, 'apiListar']);
+    Route::get('/pedidos-api-listar', [AsesoresPedidosQueryController::class, 'apiListar']);
     
     // Ruta de prueba
     Route::get('/test', function() {
@@ -99,7 +103,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/pedidos-produccion/{pedidoId}/datos-edicion', [\App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'obtenerDatosEdicion'])->where('pedidoId', '[0-9]+')->name('pedidos.datos-edicion');
     
     // Agregar prenda simple al pedido
-    Route::post('/pedidos/{pedidoId}/agregar-prenda-simple', [AsesoresController::class, 'agregarPrendaSimple'])->where('pedidoId', '[0-9]+')->name('pedidos.agregar-prenda-simple');
+    Route::post('/pedidos/{pedidoId}/agregar-prenda-simple', [AsesoresPedidosCommandController::class, 'agregarPrendaSimple'])->where('pedidoId', '[0-9]+')->name('pedidos.agregar-prenda-simple');
     
     // Agregar prenda completa (con telas y procesos) al pedido en edición
     Route::post('/pedidos/{id}/agregar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'agregarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.agregar-prenda-completa');
@@ -182,7 +186,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // INVENTARIO Y RECURSOS
     // ========================================
-    Route::get('/inventario-telas', [AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
+    Route::get('/inventario-telas', [AsesoresInventarioTelasController::class, 'index'])->name('inventario.telas');
     
     // ========================================
     // PRENDAS - AUTOCOMPLETE
@@ -198,7 +202,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // API REALTIME - PEDIDOS
     // ========================================
-    Route::get('/realtime/pedidos', [AsesoresController::class, 'listarRealtimePedidos'])->name('realtime.pedidos.listar');
+    Route::get('/realtime/pedidos', [AsesoresRealtimePedidosController::class, 'listar'])->name('realtime.pedidos.listar');
 
     // ========================================
     // PEDIDOS (UNICA FUENTE PARA CREACION)

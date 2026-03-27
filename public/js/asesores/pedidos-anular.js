@@ -176,8 +176,8 @@ function anularPedido(pedidoId, novedad, numeroPedido) {
     }
     
     // Enviar petición
-    fetch(`/asesores/pedidos/${pedidoId}/anular`, {
-        method: 'POST',
+    fetch(`/api/pedidos/${pedidoId}/cancelar`, {
+        method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,

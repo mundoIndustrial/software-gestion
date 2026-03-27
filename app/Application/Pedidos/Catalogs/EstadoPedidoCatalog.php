@@ -32,7 +32,16 @@ final class EstadoPedidoCatalog
      * Estados validos del sistema
      */
     public const ESTADOS_VALIDOS = [
+        'Pendiente',
+        'No iniciado',
+        'En Ejecución',
+        'Entregado',
+        'Anulada',
         'PENDIENTE_SUPERVISOR',
+        'PENDIENTE_INSUMOS',
+        'pendiente_cartera',
+        'RECHAZADO_CARTERA',
+        'DEVUELTO_A_ASESORA',
         'APROBADO_SUPERVISOR',
         'EN_PRODUCCION',
         'FINALIZADO',
@@ -42,7 +51,16 @@ final class EstadoPedidoCatalog
      * Transiciones permitidas: desde_estado => [a_estados_permitidos]
      */
     private const TRANSICIONES_PERMITIDAS = [
+        'Pendiente' => [],
+        'No iniciado' => [],
+        'En Ejecución' => [],
+        'Entregado' => [],
+        'Anulada' => [],
         'PENDIENTE_SUPERVISOR' => ['APROBADO_SUPERVISOR'],
+        'PENDIENTE_INSUMOS' => [],
+        'pendiente_cartera' => [],
+        'RECHAZADO_CARTERA' => [],
+        'DEVUELTO_A_ASESORA' => [],
         'APROBADO_SUPERVISOR' => ['EN_PRODUCCION'],
         'EN_PRODUCCION' => ['FINALIZADO'],
         'FINALIZADO' => [],
@@ -64,7 +82,16 @@ final class EstadoPedidoCatalog
      * Colores para UI
      */
     private const COLORES_UI = [
+        'Pendiente' => '#3b82f6',
+        'No iniciado' => '#6366f1',
+        'En Ejecución' => '#f97316',
+        'Entregado' => '#10b981',
+        'Anulada' => '#ef4444',
         'PENDIENTE_SUPERVISOR' => '#3b82f6',    // Azul
+        'PENDIENTE_INSUMOS' => '#8b5cf6',
+        'pendiente_cartera' => '#f59e0b',
+        'RECHAZADO_CARTERA' => '#dc2626',
+        'DEVUELTO_A_ASESORA' => '#0ea5e9',
         'APROBADO_SUPERVISOR' => '#f59e0b',     // Naranja
         'EN_PRODUCCION' => '#f97316',           // Naranja oscuro
         'FINALIZADO' => '#10b981',              // Verde
@@ -74,7 +101,16 @@ final class EstadoPedidoCatalog
      * Etiquetas legibles
      */
     private const ETIQUETAS = [
+        'Pendiente' => 'Pendiente',
+        'No iniciado' => 'No iniciado',
+        'En Ejecución' => 'En Ejecución',
+        'Entregado' => 'Entregado',
+        'Anulada' => 'Anulada',
         'PENDIENTE_SUPERVISOR' => 'Pendiente de Supervisor',
+        'PENDIENTE_INSUMOS' => 'Pendiente de Insumos',
+        'pendiente_cartera' => 'Pendiente Cartera',
+        'RECHAZADO_CARTERA' => 'Rechazado Cartera',
+        'DEVUELTO_A_ASESORA' => 'Devuelto a Asesora',
         'APROBADO_SUPERVISOR' => 'Aprobado por Supervisor',
         'EN_PRODUCCION' => 'En Producción',
         'FINALIZADO' => 'Finalizado',
@@ -98,6 +134,9 @@ final class EstadoPedidoCatalog
         }
 
         $transiciones = self::TRANSICIONES_PERMITIDAS[$estadoActual] ?? [];
+        if (empty($transiciones)) {
+            return true;
+        }
         return in_array($estadoNuevo, $transiciones, true);
     }
 
@@ -158,4 +197,3 @@ final class EstadoPedidoCatalog
         return $estados;
     }
 }
-

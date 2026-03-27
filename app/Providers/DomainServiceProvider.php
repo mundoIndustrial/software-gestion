@@ -29,7 +29,6 @@ use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\UseCases\ListarPedidosPorClienteUseCase;
-use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarDescripcionPedidoUseCase;
 use App\Application\Pedidos\UseCases\IniciarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CompletarPedidoUseCase;
@@ -169,10 +168,6 @@ class DomainServiceProvider extends ServiceProvider
 
         $this->app->singleton(ListarPedidosPorClienteUseCase::class, function ($app) {
             return new ListarPedidosPorClienteUseCase($app->make(PedidoRepository::class));
-        });
-
-        $this->app->singleton(CancelarPedidoUseCase::class, function ($app) {
-            return new CancelarPedidoUseCase($app->make(PedidoRepository::class));
         });
 
         $this->app->singleton(ActualizarDescripcionPedidoUseCase::class, function ($app) {

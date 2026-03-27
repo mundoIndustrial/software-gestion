@@ -121,7 +121,7 @@
                                             <!-- Botones PDF dinámicos según tipo y relaciones -->
                                             <?php
                                                 $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
-                                                $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
+                                                $tieneLogo = (bool) ($cot->tiene_logo ?? false);
                                                 
                                                 // Verificar si es LOGO por tipo_cotizacion_id (2 = L) o código tipo
                                                 $esLogo = $cot->tipo_cotizacion_id == 2 || $cot->tipo === 'L';

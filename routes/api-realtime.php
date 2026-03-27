@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Infrastructure\Http\Controllers\Asesores\AsesoresController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosQueryController;
 
 /**
  * API Routes para Sistema de Tiempo Real
@@ -12,7 +12,7 @@ use App\Infrastructure\Http\Controllers\Asesores\AsesoresController;
 
 Route::middleware(['auth'])->group(function () {
     // API para listar pedidos en tiempo real (solo datos JSON)
-    Route::get('/realtime/pedidos', [AsesoresController::class, 'apiListar'])->name('realtime.pedidos.listar');
+    Route::get('/realtime/pedidos', [AsesoresPedidosQueryController::class, 'apiListar'])->name('realtime.pedidos.listar');
     
     // API para cartera en tiempo real
     Route::get('/realtime/cartera-pedidos', function () {

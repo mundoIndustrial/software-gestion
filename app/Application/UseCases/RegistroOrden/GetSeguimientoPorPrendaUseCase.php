@@ -11,7 +11,6 @@ use App\Services\CalculadorDiasService;
 
 /**
  * GetSeguimientoPorPrendaUseCase
- * 
  * Orquesta la obtención del seguimiento de prendas por pedido
  * Cumple DDD: Application Layer - UseCase
  * Delega queries a Repositories, lógica de negocio aquí
@@ -68,7 +67,7 @@ class GetSeguimientoPorPrendaUseCase
                     'id' => $pedidoModel->id,
                     'numero_pedido' => $pedidoModel->numero_pedido,
                     'cliente' => $pedidoModel->cliente,
-                    'created_at' => $pedidoModel->created_at ?? $pedidoModel->created_at,
+                    'created_at' => $pedidoModel->created_at,
                     'recibo_principal' => $this->resolveReciboPrincipal($prendas),
                 ],
                 'prendas' => $prendas,
@@ -138,7 +137,7 @@ class GetSeguimientoPorPrendaUseCase
 
         $seguimientosPorArea = $this->agruparProcesosPorArea($procesosSeguimiento);
 
-        $seguimientosPorArea = $this->inyectarAreaInsumos($seguimientosPorArea, $consecutivos, $pedidoModel);
+        $seguimientosPorArea = $this->inyectarAreaInsumos($seguimientosPorArea, $consecutivos);
 
         $datosActivacion = $this->calcularDatosActivacionRecibo($consecutivos, $pedidoModel);
 
@@ -175,6 +174,7 @@ class GetSeguimientoPorPrendaUseCase
             'seguimientos_por_area' => $seguimientosPorArea,
             'procesos' => $procesosArray,
             'consecutivos' => $consecutivos->toArray(),
+            'datos_activacion' => $datosActivacion,
         ];
     }
 
@@ -224,19 +224,16 @@ class GetSeguimientoPorPrendaUseCase
             $clone->fecha_inicio = $proceso->created_at;
             $clone->fecha_fin = $siguienteProceso ? $siguienteProceso->created_at : null;
 
-            $metadata = $this->resolveAreaMetadata($proceso->proceso);
             $fechaCompletado = $completadosPorArea[strtolower(trim((string) $proceso->proceso))] ?? null;
             
             // Agregar fecha_completado al objeto para que el frontend lo tenga disponible
             $clone->fecha_completado = $fechaCompletado;
 
             $clone->duraciones = $this->calcularDuracionesArea(
-                $proceso->proceso,
                 $proceso->created_at,
                 $proceso->fecha_de_asignacion_encargado,
                 $fechaCompletado,
-                $siguienteProceso ? $siguienteProceso->created_at : null,
-                $proceso->estado_proceso
+                $siguienteProceso ? $siguienteProceso->created_at : null
             );
 
             $procesosCalculados[] = $clone;
@@ -288,37 +285,14 @@ class GetSeguimientoPorPrendaUseCase
     }
 
     /**
-     * Resolver metadata de un área
-     */
-    private function resolveAreaMetadata(string $area): array
-    {
-        $areaLower = strtolower(trim($area));
-
-        return [
-            'isInsumos' => $areaLower === 'insumos',
-            'isCorte' => str_contains($areaLower, 'corte'),
-            'isCostura' => str_contains($areaLower, 'costura'),
-            'isControlCalidad' => str_contains($areaLower, 'control') && str_contains($areaLower, 'calidad'),
-            'needsEncargado' => (
-                str_contains($areaLower, 'corte') ||
-                str_contains($areaLower, 'costura') ||
-                (str_contains($areaLower, 'control') && str_contains($areaLower, 'calidad'))
-            ),
-        ];
-    }
-
-    /**
      * Calcular duraciones de un área
      */
     private function calcularDuracionesArea(
-        string $area,
         $fechaInicio,
         $fechaAsignacion,
         $fechaCompletado,
-        $fechaFin,
-        string $estado
+        $fechaFin
     ): array {
-        $metadata = $this->resolveAreaMetadata($area);
 
         // Calcular duración de asignación (desde inicio hasta asignación)
         $duracionAsignacion = null;
@@ -353,7 +327,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Inyectar área virtual Insumos
      */
-    private function inyectarAreaInsumos(array $seguimientosPorArea, $consecutivos, $pedidoModel): array
+    private function inyectarAreaInsumos(array $seguimientosPorArea, $consecutivos): array
     {
         $hasInsumos = false;
         foreach (array_keys($seguimientosPorArea) as $k) {
@@ -391,12 +365,10 @@ class GetSeguimientoPorPrendaUseCase
 
         // Calcular duraciones para Insumos
         $duracionesInsumos = $this->calcularDuracionesArea(
-            'Insumos',
             $reciboCostura->created_at,
             null, // no hay fecha de asignación para insumos
             $fechaEnvioProduccion, // fecha de completado
-            $fechaEnvioProduccion, // fecha fin
-            $yaEnviado ? 'Completado' : 'Pendiente'
+            $fechaEnvioProduccion  // fecha fin
         );
 
         $insumosArea = [

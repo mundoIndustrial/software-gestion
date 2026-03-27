@@ -3,10 +3,70 @@
 namespace App\Infrastructure\Repositories\Cotizacion;
 
 use App\Domain\Cotizacion\Repositories\CotizacionDetalleRepositoryInterface;
+use App\Models\Cotizacion;
 use Illuminate\Support\Facades\DB;
 
 class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterface
 {
+    public function obtenerCotizacionParaModal(int $cotizacionId): ?object
+    {
+        return Cotizacion::with([
+            'cliente',
+            'asesor',
+            'prendas' => function ($query) {
+                $query->with([
+                    'fotos',
+                    'telas',
+                    'telas.color',
+                    'telas.tela',
+                    'telaFotos',
+                    'tallas',
+                    'variantes' => function ($q) {
+                        $q->with(['manga', 'broche']);
+                    },
+                ]);
+            },
+        ])->find($cotizacionId);
+    }
+
+    public function obtenerResumenCotizacion(int $cotizacionId): ?array
+    {
+        $cot = DB::table('cotizaciones')
+            ->where('id', $cotizacionId)
+            ->first();
+
+        if ($cot === null) {
+            return null;
+        }
+
+        $tipoCodigo = null;
+        if (!empty($cot->tipo_cotizacion_id)) {
+            $tipoCodigo = DB::table('tipo_cotizaciones')
+                ->where('id', $cot->tipo_cotizacion_id)
+                ->value('codigo');
+        }
+
+        $clienteNombre = null;
+        if (!empty($cot->cliente_id)) {
+            $clienteNombre = DB::table('clientes')
+                ->where('id', $cot->cliente_id)
+                ->value('nombre');
+        }
+
+        return [
+            'id' => (int) $cot->id,
+            'asesor_id' => $cot->asesor_id !== null ? (int) $cot->asesor_id : null,
+            'tipo_codigo' => is_string($tipoCodigo) ? $tipoCodigo : null,
+            'tipo_venta' => $cot->tipo_venta,
+            'iva' => $cot->iva,
+            'especificaciones' => $cot->especificaciones,
+            'cliente_nit' => $cot->cliente_nit,
+            'cliente_direccion' => $cot->cliente_direccion,
+            'cliente_telefono' => $cot->cliente_telefono,
+            'cliente_nombre' => $clienteNombre,
+        ];
+    }
+
     public function obtenerCotizacionConEpp(int $cotizacionId): array
     {
         $eppCot = DB::table('epp_cotizacion')

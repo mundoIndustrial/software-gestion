@@ -47,12 +47,23 @@ final class CambiarEstadoPedidoUseCase
         // CENTRALIZADO: Validar transición es permitida (trait + catalog)
         $this->validarTransicion($pedido->estado ?? 'PENDIENTE_SUPERVISOR', $dto->nuevoEstado);
 
+        $estadoAnterior = (string) ($pedido->estado ?? '');
+
         // Actualizar estado
         $pedido->estado = $dto->nuevoEstado;
         if ($dto->razon) {
             $pedido->razon_cambio_estado = $dto->razon;
         }
         $pedido->save();
+
+        if ($dto->registrarNovedad) {
+            $nombreUsuario = $dto->nombreUsuario ?: 'Sistema';
+            $novedad = "Estado cambiado de '{$estadoAnterior}' a '{$dto->nuevoEstado}' por {$nombreUsuario}";
+            $pedido->novedades = !empty($pedido->novedades)
+                ? $pedido->novedades . "\n\n" . $novedad
+                : $novedad;
+            $pedido->save();
+        }
 
         Log::info('[CambiarEstadoPedidoUseCase] Estado cambiado exitosamente', [
             'pedido_id' => $pedido->id,
@@ -62,5 +73,4 @@ final class CambiarEstadoPedidoUseCase
         return $pedido;
     }
 }
-
 

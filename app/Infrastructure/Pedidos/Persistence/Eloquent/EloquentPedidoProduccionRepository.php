@@ -195,4 +195,24 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             pedidoId: (int) $prenda->pedido_produccion_id,
         );
     }
+
+    public function obtenerPedidoPorId(int $pedidoId): ?array
+    {
+        $pedido = PedidoProduccion::query()->find($pedidoId);
+
+        if ($pedido === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido !== null ? (int) $pedido->numero_pedido : null,
+            'cliente' => $pedido->cliente,
+            'asesor_id' => $pedido->asesor_id !== null ? (int) $pedido->asesor_id : null,
+            'estado' => (string) $pedido->estado,
+            'forma_de_pago' => $pedido->forma_de_pago,
+            'novedades' => $pedido->novedades,
+            'created_at' => $pedido->created_at,
+        ];
+    }
 }

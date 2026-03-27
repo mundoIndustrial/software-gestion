@@ -31,4 +31,6 @@ interface PedidoProduccionReadRepository
     public function actualizarDatosEpp(int $pedidoEppId, array $datos): void;
 
     public function obtenerPrendaDelPedido(int $pedidoId, int $prendaId): ?PedidoPrendaRef;
+
+    public function obtenerPedidoPorId(int $pedidoId): ?array;
 }

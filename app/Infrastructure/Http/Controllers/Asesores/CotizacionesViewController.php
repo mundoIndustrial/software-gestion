@@ -2,11 +2,12 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
+use App\Application\Asesores\UseCases\ContarCotizacionesPorEstadoUseCase;
+use App\Application\Asesores\UseCases\ObtenerDatosCotizacionModalUseCase;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Http\Controllers\Controller;
-use App\Helpers\DescripcionPrendaHelper;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -17,7 +18,9 @@ use Illuminate\Support\Facades\Auth;
 final class CotizacionesViewController extends Controller
 {
     public function __construct(
-        private readonly ListarCotizacionesHandler $listarHandler
+        private readonly ListarCotizacionesHandler $listarHandler,
+        private readonly ContarCotizacionesPorEstadoUseCase $contarCotizacionesPorEstadoUseCase,
+        private readonly ObtenerDatosCotizacionModalUseCase $obtenerDatosCotizacionModalUseCase
     ) {
     }
 
@@ -32,47 +35,32 @@ final class CotizacionesViewController extends Controller
             // Obtener parámetro de búsqueda
             $searchTerm = $request->query('search', '');
             
-            // Obtener cotizaciones directamente del modelo con relaciones
-            $cotizacionesModelo = \App\Models\Cotizacion::where('asesor_id', Auth::id())
-                ->with([
-                    'cliente',
-                    'tipoCotizacion',
-                    'prendas.fotos',
-                    'prendas.tallas',
-                    'prendas.variantes',
-                    'prendas.telas',
-                    'logoCotizacion.fotos'
-                ])
-                ->orderBy('created_at', 'desc')
-                ->get();
-            // Mapeo de tipo_cotizacion_id a código
-            $mapeoTipos = [
-                1 => 'PL',  // Combinada
-                2 => 'L',   // Logo
-                3 => 'P',   // Prenda
-            ];
+            $query = ListarCotizacionesQuery::crear(
+                usuarioId: Auth::id(),
+                pagina: $request->integer('pagina', 1),
+                porPagina: 500
+            );
 
-            // Convertir modelos a objetos para la vista
-            $cotizaciones = $cotizacionesModelo->map(function($cot) use ($mapeoTipos) {
-                $tipo = ($cot->tipoCotizacion && $cot->tipoCotizacion->codigo)
-                    ? $cot->tipoCotizacion->codigo
-                    : ($mapeoTipos[$cot->tipo_cotizacion_id] ?? 'PL');
-                $obj = (object)[
-                    'id' => $cot->id,
-                    'numero_cotizacion' => $cot->numero_cotizacion,
-                    'tipo' => $tipo,
-                    'tipo_cotizacion_id' => $cot->tipo_cotizacion_id,
-                    'estado' => $cot->estado,
-                    'es_borrador' => $cot->es_borrador,
-                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
-                    'created_at' => $cot->created_at,
-                    'fecha_inicio' => $cot->fecha_inicio,
-                    'fecha_envio' => $cot->fecha_envio,
-                    'prendas' => $cot->prendas,
-                    'logoCotizacion' => $cot->logoCotizacion,
-                ];
-                return $obj;
-            });
+            $cotizaciones = collect($this->listarHandler->handle($query))
+                ->map(function ($cotizacionDto) {
+                    $createdAt = $cotizacionDto->createdAt ?? $cotizacionDto->fechaInicio;
+
+                    return (object)[
+                        'id' => $cotizacionDto->id,
+                        'numero_cotizacion' => $cotizacionDto->numeroCotizacion,
+                        'tipo' => $cotizacionDto->tipo,
+                        'tipo_cotizacion_id' => $cotizacionDto->tipoCotizacionId,
+                        'estado' => $cotizacionDto->estado,
+                        'es_borrador' => $cotizacionDto->esBorrador,
+                        'cliente' => $cotizacionDto->cliente ?? 'Sin cliente',
+                        'created_at' => Carbon::instance($createdAt),
+                        'fecha_inicio' => $cotizacionDto->fechaInicio,
+                        'fecha_envio' => $cotizacionDto->fechaEnvio,
+                        'prendas' => $cotizacionDto->prendas,
+                        'logoCotizacion' => $cotizacionDto->logo,
+                        'tiene_logo' => !empty($cotizacionDto->logo),
+                    ];
+                });
 
             // Aplicar filtro de búsqueda si existe
             if (!empty($searchTerm)) {
@@ -155,126 +143,17 @@ final class CotizacionesViewController extends Controller
     public function getDatosForModal($cotizacion)
     {
         try {
-            // Obtener la cotización con TODAS sus relaciones anidadas
-            $cotizacionModelo = \App\Models\Cotizacion::with([
-                'cliente',
-                'asesor',
-                'prendas' => function($query) {
-                    $query->with([
-                        'fotos',
-                        'telas',
-                        'telas.color',
-                        'telas.tela',
-                        'telaFotos',
-                        'tallas',
-                        'variantes' => function($q) {
-                            $q->with(['manga', 'broche']);
-                        }
-                    ]);
-                }
-            ])->findOrFail($cotizacion);
+            $datos = $this->obtenerDatosCotizacionModalUseCase->ejecutar((int) $cotizacion);
 
-            \Log::info('=== COTIZACION CARGADA ===', [
-                'cotizacion_id' => $cotizacion,
-                'prendas_count' => $cotizacionModelo->prendas->count(),
-            ]);
-            
-            foreach ($cotizacionModelo->prendas as $idx => $prenda) {
-                \Log::info("Prenda {$idx}", [
-                    'prenda_id' => $prenda->id,
-                    'nombre' => $prenda->nombre_producto,
-                    'telas_cargadas' => $prenda->telas->count(),
-                    'variantes_cargadas' => $prenda->variantes->count(),
+            if ($datos === null) {
+                \Log::warning('CotizacionesViewController@getDatosForModal: Cotización no encontrada', [
+                    'cotizacion_id' => $cotizacion,
                 ]);
-                
-                if ($prenda->telas->count() > 0) {
-                    foreach ($prenda->telas as $tidx => $tela) {
-                        \Log::info("  Tela {$tidx}", [
-                            'tela_id' => $tela->id,
-                            'tela_relation_loaded' => $tela->relationLoaded('tela'),
-                            'color_relation_loaded' => $tela->relationLoaded('color'),
-                        ]);
-                    }
-                }
+
+                return response()->json(['error' => 'Cotización no encontrada'], 404);
             }
 
-            // Preparar datos de la cotización
-            $datos = [
-                'cotizacion' => [
-                    'id' => $cotizacionModelo->id,
-                    'numero_cotizacion' => $cotizacionModelo->numero_cotizacion,
-                    'asesora_nombre' => $cotizacionModelo->asesor ? $cotizacionModelo->asesor->name : 'N/A',
-                    'empresa' => $cotizacionModelo->empresa_solicitante ?? 'N/A',
-                    'nombre_cliente' => $cotizacionModelo->cliente ? $cotizacionModelo->cliente->nombre : 'N/A',
-                    'created_at' => $cotizacionModelo->created_at,
-                    'estado' => $cotizacionModelo->estado,
-                ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
-                    // Generar descripción formateada usando el método del modelo
-                    $descripcionFormateada = app(PrendaPedidoDescriptionFormatter::class)->formatDetailed($prenda, $index + 1);
-                    
-                    return [
-                        'id' => $prenda->id,
-                        'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
-                        'cantidad' => $prenda->cantidad ?? 0,
-                        'descripcion' => $prenda->descripcion ?? null,
-                        'descripcion_formateada' => $descripcionFormateada,
-                        'detalles_proceso' => $prenda->descripcion ?? null,
-                        // Fotos de la prenda - URLs completas
-                        'fotos' => $prenda->fotos ? $prenda->fotos->map(function($foto) {
-                            return $foto->url;  // Usar el accessor 'url' del modelo que maneja /storage/ correctamente
-                        })->toArray() : [],
-                        // Telas asociadas - URLs de imagen
-                        'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
-                            return [
-                                'id' => $tela->id,
-                                'color' => $tela->color ?? null,
-                                'nombre_tela' => $tela->tela->nombre ?? null,
-                                'referencia' => $tela->tela->referencia ?? null,
-                                'url_imagen' => $tela->url ?? asset($tela->ruta_webp),  // Usar url si existe, sino asset
-                            ];
-                        })->toArray() : [],
-                        // Fotos de telas - URLs completas
-                        'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
-                            return $foto->url;  // Usar el accessor 'url' del modelo que maneja /storage/ correctamente
-                        })->toArray() : [],
-                        // Tallas
-                        'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {
-                            return [
-                                'id' => $talla->id,
-                                'talla' => $talla->talla,
-                                'cantidad' => $talla->cantidad,
-                            ];
-                        })->toArray() : [],
-                        // Variantes
-                        'variantes' => $prenda->variantes ? $prenda->variantes->map(function($variante) {
-                            return [
-                                'id' => $variante->id,
-                                'tipo_prenda' => $variante->tipo_prenda ?? null,
-                                'es_jean_pantalon' => $variante->es_jean_pantalon ?? null,
-                                'tipo_jean_pantalon' => $variante->tipo_jean_pantalon ?? null,
-                                'genero_id' => $variante->genero_id ?? null,
-                                'color' => $variante->color ?? null,
-                                'tiene_bolsillos' => $variante->tiene_bolsillos ?? null,
-                                'aplica_manga' => $variante->aplica_manga ?? null,
-                                'tipo_manga' => $variante->tipo_manga ?? null,
-                                'aplica_broche' => $variante->aplica_broche ?? null,
-                                'tipo_broche_id' => $variante->tipo_broche_id ?? null,
-                                'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
-                                'descripcion_adicional' => $variante->descripcion_adicional ?? null,
-                                'telas_multiples' => $variante->telas_multiples ? json_decode($variante->telas_multiples, true) : null,
-                            ];
-                        })->toArray() : [],
-                    ];
-                })->toArray(),
-            ];
-
             return response()->json($datos);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::warning('CotizacionesViewController@getDatosForModal: Cotización no encontrada', [
-                'cotizacion_id' => $cotizacion,
-            ]);
-            return response()->json(['error' => 'Cotización no encontrada'], 404);
         } catch (\Exception $e) {
             \Log::error('CotizacionesViewController@getDatosForModal: Error', [
                 'error' => $e->getMessage(),
@@ -295,9 +174,7 @@ final class CotizacionesViewController extends Controller
     public function cotizacionesPendientesAprobadorCount()
     {
         try {
-            // Contar cotizaciones en estado APROBADA_CONTADOR
-            $count = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
-                ->count();
+            $count = $this->contarCotizacionesPorEstadoUseCase->ejecutar('APROBADA_CONTADOR');
 
             return response()->json([
                 'success' => true,
@@ -335,3 +212,4 @@ final class CotizacionesViewController extends Controller
         );
     }
 }
+
