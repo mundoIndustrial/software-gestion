@@ -1,4 +1,4 @@
-import { httpJsonBody } from '../api/http';
+﻿import { httpJsonBody } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
 export function pasarAControlCalidad(btn) {
@@ -94,3 +94,4 @@ export function pasarAControlCalidad(btn) {
             btn.style.pointerEvents = '';
         });
 }
+

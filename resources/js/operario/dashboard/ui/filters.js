@@ -33,6 +33,10 @@ export function initReciboFilters() {
 
             if (filtro === 'todos') {
                 card.style.display = '';
+                const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
+                elementosFiltrables.forEach((elemento) => {
+                    elemento.style.display = '';
+                });
                 mostradas++;
                 return;
             }
@@ -42,6 +46,15 @@ export function initReciboFilters() {
             if (tipos.includes(filtro)) {
                 console.log(`  Mostrando (contiene "${filtro}" en [${tipos.join(', ')}])`);
                 card.style.display = '';
+                const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
+                elementosFiltrables.forEach((elemento) => {
+                    const filtrosElemento = (elemento.dataset.visibleFiltro || '')
+                        .split(',')
+                        .map((valor) => valor.trim())
+                        .filter(Boolean);
+
+                    elemento.style.display = filtrosElemento.includes(filtro) ? '' : 'none';
+                });
                 mostradas++;
             } else {
                 console.log(`  Ocultando (no contiene "${filtro}" en [${tipos.join(', ')}])`);

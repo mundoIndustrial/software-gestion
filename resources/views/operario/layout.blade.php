@@ -60,7 +60,17 @@
     </style>
 
 </head>
-<body data-user-role="{{ auth()->user()->roles->first()->name ?? 'default' }}">
+@php
+    $rolOperarioLayout = auth()->user()->hasRole('administrador-costura') ? 'administrador-costura'
+        : (auth()->user()->hasRole('vista-costura') ? 'vista-costura'
+        : (auth()->user()->hasRole('costura-reflectivo') ? 'costura-reflectivo'
+        : (auth()->user()->hasRole('lider-reflectivo') ? 'lider-reflectivo'
+        : (auth()->user()->hasRole('confeccion-sobremedida') ? 'confeccion-sobremedida'
+        : (auth()->user()->hasRole('costurero') ? 'costurero'
+        : (auth()->user()->hasRole('cortador') ? 'cortador'
+        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : 'default')))))));
+@endphp
+<body data-user-role="{{ $rolOperarioLayout }}">
     <!-- Loading overlay global -->
     <div id="loading-overlay">
         <!-- Spinner mejorado -->
@@ -125,8 +135,15 @@
                 <script>
                     window.OPERARIO_USUARIO = {
                         id: {{ Auth::id() }},
-                        nombre: '{{ Auth::user()->name ?? '' }}'
+                        nombre: '{{ Auth::user()->name ?? '' }}',
+                        rol: '{{ $rolOperarioLayout }}'
                     };
+                    window.USUARIO_ACTUAL = {
+                        id: {{ Auth::id() }},
+                        nombre: '{{ Auth::user()->name ?? '' }}',
+                        rol: '{{ $rolOperarioLayout }}'
+                    };
+                    console.log('[Operario Layout] Usuario realtime inicializado', window.USUARIO_ACTUAL);
                 </script>
 
                 <div class="top-nav-actions">
@@ -224,4 +241,3 @@
     @stack('scripts')
 </body>
 </html>
-

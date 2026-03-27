@@ -16,9 +16,13 @@ use App\Application\Operario\UseCases\PasarACosturaUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Events\EncargadoCosturaAsignado;
+use App\Events\OperarioRecibosActualizados;
+use App\Events\ReciboAsignadoCosturero;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\User;
 
 class ReciboCosturaController extends Controller
 {
@@ -81,7 +85,9 @@ class ReciboCosturaController extends Controller
                 ], 404);
             }
 
-            $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoRecibo, $consecutivoOriginal, $request) {
+            $tipoReciboReal = (string) $recibo->tipo_recibo;
+
+            $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $request) {
                 $procesoPadre = ProcesoPrenda::query()
                     ->where('numero_pedido', $pedido->numero_pedido)
                     ->where('prenda_pedido_id', $prendaId)
@@ -165,7 +171,7 @@ class ReciboCosturaController extends Controller
                     $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
                         'pedido_produccion_id' => (int) $pedidoId,
                         'prenda_pedido_id' => $prendaId,
-                        'tipo_recibo' => $tipoRecibo,
+                        'tipo_recibo' => $tipoReciboReal,
                         'consecutivo_original' => $consecutivoOriginal,
                         'consecutivo_parcial' => $consecutivoParcialDb,
                         'created_at' => now(),
@@ -194,6 +200,7 @@ class ReciboCosturaController extends Controller
                         'proceso_id' => (int) $procesoHijo->id,
                         'numero_recibo' => null,
                         'numero_recibo_parcial' => $consecutivoParcialDb,
+                        'parcial_id' => (int) $reciboParteId,
                         'encargado' => $encargado,
                     ];
                 }
@@ -204,6 +211,13 @@ class ReciboCosturaController extends Controller
                     'recibo_id' => (int) $recibo->id,
                 ];
             });
+
+            $this->notificarParcialesDistribuidos(
+                pedido: $pedido,
+                prendaId: $prendaId,
+                tipoRecibo: $tipoReciboReal,
+                parcialesCreados: (array) ($resultado['hijos'] ?? [])
+            );
 
             return response()->json([
                 'success' => true,
@@ -227,6 +241,200 @@ class ReciboCosturaController extends Controller
                 'success' => false,
                 'message' => 'Error al distribuir por módulos: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function notificarParcialesDistribuidos(PedidoProduccion $pedido, int $prendaId, string $tipoRecibo, array $parcialesCreados): void
+    {
+        if (empty($parcialesCreados)) {
+            return;
+        }
+
+        $prenda = \App\Models\PrendaPedido::find($prendaId);
+        $nombrePrenda = (string) ($prenda?->nombre_prenda ?? 'Prenda sin nombre');
+        $cliente = (string) ($pedido->cliente ?? '-');
+        $tipoReciboUpper = strtoupper(trim($tipoRecibo));
+
+        $usuariosAdminCostura = User::query()->get()->filter(function ($user) {
+            return $user->hasRole('administrador-costura');
+        })->values();
+
+        $usuariosVistaCostura = User::query()->get()->filter(function ($user) {
+            return $user->hasRole('vista-costura');
+        })->values();
+
+        foreach ($parcialesCreados as $parcial) {
+            $encargado = trim((string) ($parcial['encargado'] ?? ''));
+            $numeroReciboParcial = trim((string) ($parcial['numero_recibo_parcial'] ?? ''));
+            $procesoId = (int) ($parcial['proceso_id'] ?? 0);
+            $parcialId = (int) ($parcial['parcial_id'] ?? 0);
+
+            if ($encargado === '' || $numeroReciboParcial === '' || $parcialId <= 0) {
+                continue;
+            }
+
+            $mensajeAsignado = "Se te asignó el recibo parcial #{$numeroReciboParcial} de {$nombrePrenda}";
+            $mensajeGlobal = "El recibo parcial #{$numeroReciboParcial} ({$nombrePrenda}) fue asignado a {$encargado}";
+
+            $encargadoUsuario = User::query()
+                ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($encargado)])
+                ->first();
+
+            $encargadoRol = null;
+            try {
+                $encargadoRol = $encargadoUsuario?->roles?->first()?->name;
+            } catch (\Exception $e) {
+                $encargadoRol = null;
+            }
+
+            broadcast(new EncargadoCosturaAsignado(
+                $pedido->id,
+                $prendaId,
+                $numeroReciboParcial,
+                $encargado,
+                $procesoId,
+                $nombrePrenda,
+                now()->toIso8601String(),
+                null,
+                $cliente,
+                $encargadoRol
+            ));
+
+            if ($encargadoUsuario) {
+                broadcast(new ReciboAsignadoCosturero(
+                    $pedido->id,
+                    $prendaId,
+                    $numeroReciboParcial,
+                    $nombrePrenda,
+                    $encargado,
+                    $procesoId,
+                    $encargado
+                ));
+
+                broadcast(new OperarioRecibosActualizados(
+                    userId: (int) $encargadoUsuario->id,
+                    payload: [
+                        'area' => 'Costura',
+                        'accion' => 'asignado',
+                        'pedido_id' => (int) $pedido->id,
+                        'numero_pedido' => (int) $pedido->numero_pedido,
+                        'prenda_id' => $prendaId,
+                        'proceso_id' => $procesoId,
+                        'tipo_recibo' => 'PARCIAL',
+                        'numero_recibo' => $numeroReciboParcial,
+                        'pedido_parcial_id' => $parcialId,
+                        'es_parcial' => true,
+                        'encargado' => $encargado,
+                        'mensaje' => $mensajeAsignado,
+                    ]
+                ));
+            }
+
+            foreach ($usuariosAdminCostura as $usuarioAdmin) {
+                Log::info('[COSTURA][DISTRIBUIR] Notificando parcial a administrador-costura', [
+                    'user_id' => (int) $usuarioAdmin->id,
+                    'user_name' => (string) $usuarioAdmin->name,
+                    'parcial_id' => $parcialId,
+                    'numero_recibo_parcial' => $numeroReciboParcial,
+                ]);
+
+                broadcast(new OperarioRecibosActualizados(
+                    userId: (int) $usuarioAdmin->id,
+                    payload: [
+                        'area' => 'Costura',
+                        'accion' => 'asignado',
+                        'pedido_id' => (int) $pedido->id,
+                        'numero_pedido' => (int) $pedido->numero_pedido,
+                        'prenda_id' => $prendaId,
+                        'proceso_id' => $procesoId,
+                        'tipo_recibo' => 'PARCIAL',
+                        'numero_recibo' => $numeroReciboParcial,
+                        'pedido_parcial_id' => $parcialId,
+                        'es_parcial' => true,
+                        'encargado' => $encargado,
+                        'mensaje' => $mensajeGlobal,
+                    ]
+                ));
+            }
+
+            foreach ($usuariosVistaCostura as $usuarioVista) {
+                Log::info('[COSTURA][DISTRIBUIR] Notificando parcial a vista-costura', [
+                    'user_id' => (int) $usuarioVista->id,
+                    'user_name' => (string) $usuarioVista->name,
+                    'parcial_id' => $parcialId,
+                    'numero_recibo_parcial' => $numeroReciboParcial,
+                ]);
+
+                broadcast(new OperarioRecibosActualizados(
+                    userId: (int) $usuarioVista->id,
+                    payload: [
+                        'area' => 'Costura',
+                        'accion' => 'asignado',
+                        'pedido_id' => (int) $pedido->id,
+                        'numero_pedido' => (int) $pedido->numero_pedido,
+                        'prenda_id' => $prendaId,
+                        'proceso_id' => $procesoId,
+                        'tipo_recibo' => 'PARCIAL',
+                        'numero_recibo' => $numeroReciboParcial,
+                        'pedido_parcial_id' => $parcialId,
+                        'es_parcial' => true,
+                        'encargado' => $encargado,
+                        'mensaje' => $mensajeGlobal,
+                    ]
+                ));
+            }
+
+            if ($tipoReciboUpper === 'REFLECTIVO') {
+                $usuariosReflectivos = User::all()->filter(function ($user) {
+                    return $user->hasRole('costura-reflectivo') || $user->hasRole('lider-reflectivo');
+                });
+
+                foreach ($usuariosReflectivos as $usuarioReflectivo) {
+                    broadcast(new OperarioRecibosActualizados(
+                        userId: (int) $usuarioReflectivo->id,
+                        payload: [
+                            'area' => 'Costura',
+                            'accion' => 'recibo_asignado_reflectivo',
+                            'pedido_id' => (int) $pedido->id,
+                            'numero_pedido' => (int) $pedido->numero_pedido,
+                            'prenda_id' => $prendaId,
+                            'proceso_id' => $procesoId,
+                            'tipo_recibo' => 'REFLECTIVO',
+                            'numero_recibo' => $numeroReciboParcial,
+                            'pedido_parcial_id' => $parcialId,
+                            'es_parcial' => true,
+                            'encargado' => $encargado,
+                            'mensaje' => "El recibo parcial #{$numeroReciboParcial} de REFLECTIVO fue asignado a {$encargado}",
+                        ]
+                    ));
+                }
+            }
+
+            if (in_array($tipoReciboUpper, ['COSTURA', 'COSTURA-BODEGA'], true) && $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo')) {
+                $usuariosLiderReflectivo = User::all()->filter(function ($user) {
+                    return $user->hasRole('lider-reflectivo');
+                });
+
+                foreach ($usuariosLiderReflectivo as $usuarioLider) {
+                    broadcast(new OperarioRecibosActualizados(
+                        userId: (int) $usuarioLider->id,
+                        payload: [
+                            'area' => 'Costura',
+                            'accion' => 'recibo_asignado_costura',
+                            'pedido_id' => (int) $pedido->id,
+                            'numero_pedido' => (int) $pedido->numero_pedido,
+                            'prenda_id' => $prendaId,
+                            'proceso_id' => $procesoId,
+                            'tipo_recibo' => $tipoReciboUpper,
+                            'numero_recibo' => $numeroReciboParcial,
+                            'pedido_parcial_id' => $parcialId,
+                            'es_parcial' => true,
+                            'encargado' => $encargado,
+                            'mensaje' => "El recibo parcial #{$numeroReciboParcial} de {$tipoReciboUpper} fue asignado a {$encargado}",
+                        ]
+                    ));
+                }
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-import { httpJson, httpJsonBody } from '../api/http';
+﻿import { httpJson, httpJsonBody } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
 export function abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRecibo) {
@@ -307,3 +307,4 @@ export function eliminarNovedad(novedadId) {
             mostrarError('Error', 'Error eliminando novedad');
         });
 }
+

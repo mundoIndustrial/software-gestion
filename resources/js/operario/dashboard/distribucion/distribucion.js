@@ -1,5 +1,263 @@
-import { httpJson } from '../api/http';
+﻿import { httpJson } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
+import { abrirModalCostura } from '../costura/modal-asignacion';
+
+function normalizarColorDistribucion(color) {
+    const colorLimpio = String(color || '').trim().toLowerCase();
+    if (!colorLimpio || colorLimpio === 'sin color') {
+        return 'sin_color';
+    }
+
+    return colorLimpio.replace(/\s+/g, '_');
+}
+
+function esperarDatosDistribucion(timeoutMs = 10000) {
+    if (window.datosDistribucion) {
+        return Promise.resolve(window.datosDistribucion);
+    }
+
+    return new Promise((resolve, reject) => {
+        let timeoutId = null;
+
+        const onReady = (event) => {
+            window.removeEventListener('costura:datos-distribucion-listos', onReady);
+            if (timeoutId) clearTimeout(timeoutId);
+            resolve(event?.detail || window.datosDistribucion || null);
+        };
+
+        window.addEventListener('costura:datos-distribucion-listos', onReady, { once: true });
+
+        timeoutId = setTimeout(() => {
+            window.removeEventListener('costura:datos-distribucion-listos', onReady);
+            reject(new Error('timeout_datos_distribucion'));
+        }, timeoutMs);
+    });
+}
+
+export function abrirEditarEncargados(btn) {
+    const reciboId = btn.dataset.reciboId;
+    const prendaId = btn.dataset.prendaId;
+    const numeroRecibo = btn.dataset.numeroRecibo;
+    const numeroPedido = btn.dataset.numeroPedido;
+    const pedidoId = btn.dataset.pedidoId;
+    const nombre = btn.dataset.nombre;
+    const tipoRecibo = btn.dataset.tipoRecibo;
+
+    console.log('[EDITAR ENCARGADOS] Abriendo modal para editar:', {
+        reciboId,
+        prendaId,
+        numeroRecibo,
+        numeroPedido,
+        pedidoId,
+        nombre,
+        tipoRecibo
+    });
+
+    if (!reciboId || !prendaId || !pedidoId || !numeroPedido) {
+        mostrarError('Error: Faltan datos necesarios para editar los encargados');
+        return;
+    }
+
+    // Obtener la distribución actual para cargar los datos en el modal
+    const urlApi = `/operario/api/recibos/${reciboId}/distribucion`;
+    
+    httpJson(urlApi, 'GET')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Abrir el modal de asignación con los datos cargados
+                abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, numeroRecibo, data, numeroPedido);
+            } else {
+                mostrarError(data.message || 'Error obteniendo la distribución actual');
+            }
+        })
+        .catch(error => {
+            console.error('[EDITAR ENCARGADOS] Error:', error);
+            mostrarError('Error al obtener la distribución: ' + error.message);
+        });
+}
+
+function abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, recibo, datosDistribucion, numeroPedido) {
+    // Abrir el modal normalmente
+    abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido);
+    
+    // Marcar que estamos en modo edición
+    if (window.datosModalCostura) {
+        window.datosModalCostura.esEdicion = true;
+    }
+    
+    // Esperar a que el modal esté listo y seleccionar automáticamente la opción de distribución
+    setTimeout(() => {
+        // Seleccionar automáticamente la opción de distribuir
+        if (typeof window.seleccionarOpcionAsignacion === 'function') {
+            window.seleccionarOpcionAsignacion('distribuir');
+        }
+        
+        // Esperar a que mostrarContenidoDistribuirModulos se ejecute y establezca window.datosDistribucion
+        setTimeout(() => {
+            console.log('[EDITAR ENCARGADOS] Verificando si window.datosDistribucion está disponible...');
+            console.log('[EDITAR ENCARGADOS] window.datosDistribucion:', window.datosDistribucion);
+            
+            if (window.datosDistribucion) {
+                // Ahora que los datos de distribución están disponibles, cargar los datos existentes
+                if (datosDistribucion && datosDistribucion.parciales) {
+                    console.log('[EDITAR ENCARGADOS] Cargando datos existentes...');
+                    cargarDatosDistribucionExistente(datosDistribucion.parciales);
+                }
+            } else {
+                console.warn('[EDITAR ENCARGADOS] window.datosDistribucion no está disponible después de esperar');
+                // Intentar de nuevo después de un tiempo
+                setTimeout(() => {
+                    if (window.datosDistribucion && datosDistribucion && datosDistribucion.parciales) {
+                        console.log('[EDITAR ENCARGADOS] Reintentando cargar datos existentes...');
+                        cargarDatosDistribucionExistente(datosDistribucion.parciales);
+                    } else {
+                        esperarDatosDistribucion(10000).then(() => { if (datosDistribucion && datosDistribucion.parciales) { console.log('[EDITAR ENCARGADOS] Datos de distribucion recibidos tras espera extendida'); cargarDatosDistribucionExistente(datosDistribucion.parciales); } }).catch(() => { console.error('[EDITAR ENCARGADOS] No se pudo cargar window.datosDistribucion dentro del tiempo esperado'); });
+                    }
+                }, 500);
+            }
+        }, 500); // Aumentar el tiempo para esperar a que mostrarContenidoDistribuirModulos termine
+    }, 100);
+}
+
+function cargarDatosDistribucionExistente(parciales) {
+    if (!window.datosDistribucion) {
+        // Si no hay datos de distribución, esperar un poco y reintentar
+        setTimeout(() => {
+            if (window.datosDistribucion) {
+                procesarCargarDatosExistente(parciales);
+            } else {
+                console.warn('[EDITAR ENCARGADOS] No se pudieron cargar los datos de distribución después de esperar');
+            }
+        }, 500);
+        return;
+    }
+    
+    procesarCargarDatosExistente(parciales);
+}
+
+function procesarCargarDatosExistente(parciales) {
+    console.log('[PROCESAR DATOS] Iniciando procesamiento de datos existentes');
+    console.log('[PROCESAR DATOS] window.datosDistribución:', window.datosDistribucion);
+    console.log('[PROCESAR DATOS] parciales recibidos:', parciales);
+    
+    if (!window.datosDistribucion) {
+        console.warn('[PROCESAR DATOS] No hay window.datosDistribucion');
+        return;
+    }
+    
+    // Limpiar asignaciones anteriores
+    window.asignacionesPorModulo = {};
+    
+    const modulos = window.datosDistribucion.modulos;
+    const tallas = window.datosDistribucion.tallas;
+    
+    console.log('[PROCESAR DATOS] Módulos disponibles:', modulos);
+    console.log('[PROCESAR DATOS] Tallas disponibles:', tallas);
+    
+    // Crear un mapa de tallas con sus colores para lookup rápido
+    const mapaTallasConColores = {};
+    tallas.forEach(talla => {
+        const clave = `${talla.tallaOriginal || talla.talla}_${talla.genero || ''}`;
+        mapaTallasConColores[clave] = talla.color;
+        
+        // Si la talla tiene colores_detalle, guardarlos también
+        if (talla.colores_detalle && Array.isArray(talla.colores_detalle)) {
+            mapaTallasConColores[clave + '_detalles'] = talla.colores_detalle;
+        }
+    });
+    
+    console.log('[PROCESAR DATOS] Mapa de tallas con colores:', mapaTallasConColores);
+    
+    parciales.forEach(parcial => {
+        const encargado = parcial.encargado_costura || parcial.encargado;
+        console.log(`[PROCESAR DATOS] Procesando parcial con encargado: ${encargado}`);
+        
+        if (!encargado) return;
+        
+        // Buscar el módulo correspondiente al encargado
+        const modulo = modulos.find(m => 
+            m.encargado.toLowerCase().trim() === encargado.toLowerCase().trim()
+        );
+        
+        console.log(`[PROCESAR DATOS] Módulo encontrado para ${encargado}:`, modulo);
+        
+        if (!modulo) return;
+        
+        // Procesar las tallas de este parcial
+        const tallasParcial = parcial.tallas || [];
+        console.log(`[PROCESAR DATOS] Tallas del parcial ${encargado}:`, tallasParcial);
+        
+        tallasParcial.forEach(talla => {
+            const nombreTalla = talla.talla;
+            const cantidad = parseInt(talla.cantidad) || 0;
+            let color = talla.color_nombre || null;
+            
+            // Si el color es null, intentar obtenerlo del mapa de tallas
+            if (!color) {
+                // Buscar en las tallas disponibles una que coincida
+                const tallaDisponible = tallas.find(t => 
+                    (t.tallaOriginal || t.talla) === nombreTalla
+                );
+                
+                if (tallaDisponible) {
+                    color = tallaDisponible.color;
+                    console.log(`[PROCESAR DATOS] Color encontrado para ${nombreTalla}: ${color} (desde tallas disponibles)`);
+                }
+            }
+            
+            // Crear ID único que incluya el color (manejar minúsculas y espacios)
+            const colorNormalizado = normalizarColorDistribucion(color);
+            const tallaIdUnico = `${nombreTalla}_${colorNormalizado}`;
+            
+            console.log(`[PROCESAR DATOS] Procesando talla: ${nombreTalla}, cantidad: ${cantidad}, color: ${color}, ID único: ${tallaIdUnico}`);
+            
+            if (nombreTalla && cantidad > 0) {
+                if (!window.asignacionesPorModulo[modulo.id]) {
+                    window.asignacionesPorModulo[modulo.id] = {};
+                }
+                
+                // Guardar la talla con su ID único (que incluye color)
+                window.asignacionesPorModulo[modulo.id][tallaIdUnico] = {
+                    cantidad: cantidad,
+                    color: color,
+                    tallaOriginal: nombreTalla // Guardar el nombre original para referencia
+                };
+                
+                console.log(`[PROCESAR DATOS] Guardada asignación - Módulo ${modulo.id}, ID ${tallaIdUnico}:`, window.asignacionesPorModulo[modulo.id][tallaIdUnico]);
+            }
+        });
+    });
+    
+    console.log('[PROCESAR DATOS] Asignaciones finales:', window.asignacionesPorModulo);
+    
+    // Actualizar la interfaz para mostrar los datos cargados
+    setTimeout(() => {
+        console.log('[PROCESAR DATOS] Intentando actualizar interfaz...');
+        console.log('[PROCESAR DATOS] window.datosDistribucion disponible:', !!window.datosDistribucion);
+        console.log('[PROCESAR DATOS] window.mostrarCardsEncargados disponible:', typeof window.mostrarCardsEncargados);
+        
+        if (window.datosDistribucion) {
+            const modulosConAsignaciones = Object.keys(window.asignacionesPorModulo || {});
+            console.log('[PROCESAR DATOS] Módulos con asignaciones:', modulosConAsignaciones);
+            
+            // En modo edición, mostrar las cards de encargados en lugar de usar el selector
+            if (typeof window.mostrarCardsEncargados === 'function') {
+                console.log('[PROCESAR DATOS] Mostrando cards de encargados...');
+                window.mostrarCardsEncargados(window.datosDistribucion.tallas, window.datosDistribucion.modulos);
+            } else {
+                console.error('[PROCESAR DATOS] La función mostrarCardsEncargados no está disponible');
+            }
+        } else {
+            console.error('[PROCESAR DATOS] window.datosDistribucion no está disponible');
+        }
+    }, 500);
+}
 
 export function abrirDistribucionRecibo(btn) {
     const reciboId = btn.dataset.reciboId;
@@ -148,7 +406,8 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
 
     // Generar tarjetas para cada parcial
     const parcialCards = parciales.map((parcial, index) => {
-        const badgeClass = `badge-estado-${parcial.proceso_estado?.toLowerCase().replace(/\s+/g, '-')}`;
+        const estadoParcial = String(parcial.proceso_estado || 'En Progreso');
+        const badgeClass = `badge-estado-${estadoParcial.toLowerCase().replace(/\s+/g, '-')}`;
         
         // Generar el HTML de tallas (S: 23, M: 1, L: 20, etc.)
         const tallasHTML = generarTallasHTML(parcial.tallas || []);
@@ -161,7 +420,7 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
                         <span class="parcial-tipo-recibo">${parcial.tipo_recibo}</span>
                     </div>
                     <span class="badge-estado ${badgeClass}">
-                        ${parcial.proceso_estado || 'Pendiente'}
+                        ${estadoParcial}
                     </span>
                 </div>
                 
@@ -397,3 +656,5 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
 window.deshacerParcial = deshacerParcial;
 window.verReciboParcial = verReciboParcial;
+
+

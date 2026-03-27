@@ -117,5 +117,5 @@ Broadcast::channel('costurero.{nombreCosturero}', function ($user, $nombreCostur
     // Permitir acceso si:
     // 1. El usuario es un costurero Y
     // 2. Su nombre normalizado coincide con el nombre del canal
-    return $user->hasRole('costurero') && $nombreUsuarioNormalizado === $nombreNormalizado;
+    return $user->hasAnyRole(['costurero', 'confeccion-sobremedida']) && $nombreUsuarioNormalizado === $nombreNormalizado;
 });

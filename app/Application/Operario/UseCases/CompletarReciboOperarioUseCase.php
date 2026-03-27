@@ -7,7 +7,9 @@ use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboCompletado;
+use App\Models\ConsecutivoReciboPedido;
 use App\Models\PrendaPedido;
+use App\Models\ReciboPorPartes;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,21 +21,61 @@ class CompletarReciboOperarioUseCase
         private readonly ProcesoPrendaRepository $procesos,
     ) {}
 
-    public function execute(int $idRecibo): ReciboCommandResultDTO
+    public function execute(int $idRecibo, bool $esParcial = false): ReciboCommandResultDTO
     {
         try {
             $usuario = Auth::user();
 
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
+            $esConfeccionSobremedida = $usuario->hasRole('confeccion-sobremedida');
             $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
             $esLiderReflectivo = $usuario->hasRole('lider-reflectivo');
             $esAdminCostura = $usuario->hasRole('administrador-costura');
             $areaOperario = $esCortador
                 ? 'Corte'
-                : (($esCosturero || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
+                : (($esCosturero || $esConfeccionSobremedida || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return new ReciboCommandResultDTO(false, 'Rol no autorizado', 403);
+            }
+
+            if ($esParcial && $areaOperario !== 'Costura') {
+                return new ReciboCommandResultDTO(false, 'Solo los roles de Costura pueden completar parciales', 403);
+            }
+
+            if ($esParcial) {
+                $parcial = ReciboPorPartes::query()->with(['pedido', 'prenda'])->find((int) $idRecibo);
+
+                if (!$parcial || !$parcial->pedido || !$parcial->prenda) {
+                    return new ReciboCommandResultDTO(false, 'Parcial no encontrado', 404);
+                }
+
+                $nombreOperario = (string) $usuario->name;
+                if ($esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) {
+                    $procesoParcial = $this->buscarProcesoCosturaParcial($parcial);
+                    $encargadoActual = is_string($procesoParcial?->encargado) ? trim($procesoParcial->encargado) : $procesoParcial?->encargado;
+
+                    if (empty($encargadoActual)) {
+                        return new ReciboCommandResultDTO(false, 'El parcial no tiene encargado de Costura asignado', 422);
+                    }
+
+                    $nombreOperario = (string) $encargadoActual;
+                }
+
+                DB::table('prenda_recibo_completado')->updateOrInsert(
+                    ['id_parcial' => (int) $parcial->id, 'area' => $areaOperario],
+                    [
+                        'id_recibo' => null,
+                        'numero_recibo' => $parcial->consecutivo_parcial,
+                        'nombre_operario' => $nombreOperario,
+                        'fecha_completado' => now(),
+                    ]
+                );
+
+                $estadoOriginal = $this->sincronizarCompletadoOriginalDesdeParciales($parcial, $areaOperario, $nombreOperario);
+                $this->notificarVistaCosturaCompletadoParcial($parcial, $areaOperario, $nombreOperario, $estadoOriginal);
+
+                return new ReciboCommandResultDTO(true, 'Parcial marcado como completado', 200);
             }
 
             $recibo = $this->recibos->findActiveById((int) $idRecibo);
@@ -109,6 +151,7 @@ class CompletarReciboOperarioUseCase
             DB::table('prenda_recibo_completado')->updateOrInsert(
                 ['id_recibo' => (int) $recibo->id, 'area' => $areaOperario],
                 [
+                    'id_parcial' => null,
                     'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
                     'nombre_operario' => $nombreOperario,
                     'fecha_completado' => now(),
@@ -126,31 +169,19 @@ class CompletarReciboOperarioUseCase
                     'nombre_operario' => (string) $nombreOperario,
                 ]));
 
-                // Notificar a todos los usuarios con rol vista-costura
-                $usuariosVistaCostura = User::all()->filter(function ($user) {
-                    return $user->hasRole('vista-costura');
-                });
-
-                foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
-                    broadcast(new OperarioRecibosActualizados(
-                        userId: (int) $usuarioVistaCostura->id,
-                        payload: [
-                            'area' => (string) $areaOperario,
-                            'accion' => 'recibo_completado',
-                            'recibo_id' => (int) $recibo->id,
-                            'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
-                            'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
-                            'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
-                            'nombre_operario' => (string) $nombreOperario,
-                            'mensaje' => "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
-                        ]
-                    ));
-                }
-
-                \Log::info('[OperarioController] Broadcast a vista-costura enviado', [
-                    'recibo_id' => (int) $idRecibo,
-                    'total_vista_costura' => $usuariosVistaCostura->count(),
-                ]);
+                $this->notificarVistaCosturaCompletadoRecibo(
+                    reciboId: (int) $recibo->id,
+                    consecutivo: (string) ($recibo->consecutivo_actual ?? '0'),
+                    pedidoId: (int) ($recibo->pedido_produccion_id ?? 0),
+                    prendaId: $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                    tipoRecibo: (string) ($recibo->tipo_recibo ?? ''),
+                    nombreOperario: (string) $nombreOperario,
+                    mensaje: "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
+                    esParcial: false,
+                    pedidoParcialId: null,
+                    consecutivoParcial: null,
+                    originalCompletado: true
+                );
             } catch (\Exception $e) {
                 \Log::warning('[OperarioController] Error al broadcast ReciboCompletado', [
                     'recibo_id' => (int) $idRecibo,
@@ -167,5 +198,166 @@ class CompletarReciboOperarioUseCase
 
             return new ReciboCommandResultDTO(false, 'Error al completar el recibo', 500);
         }
+    }
+
+    private function buscarProcesoCosturaParcial(ReciboPorPartes $parcial): ?\App\Models\ProcesoPrenda
+    {
+        $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
+        if ($numeroPedido <= 0) {
+            return null;
+        }
+
+        return \App\Models\ProcesoPrenda::query()
+            ->where('numero_pedido', $numeroPedido)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+            ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+            ->whereNull('deleted_at')
+            ->latest('created_at')
+            ->first();
+    }
+
+    private function sincronizarCompletadoOriginalDesdeParciales(ReciboPorPartes $parcial, string $areaOperario, string $nombreOperario): array
+    {
+        $parcialIds = ReciboPorPartes::query()
+            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->where('tipo_recibo', $parcial->tipo_recibo)
+            ->where('consecutivo_original', $parcial->consecutivo_original)
+            ->pluck('id');
+
+        if ($parcialIds->isEmpty()) {
+            return ['original_completado' => false, 'recibo_original_id' => null];
+        }
+
+        $totalCompletados = DB::table('prenda_recibo_completado')
+            ->where('area', $areaOperario)
+            ->whereIn('id_parcial', $parcialIds->all())
+            ->count();
+
+        $reciboOriginal = ConsecutivoReciboPedido::query()
+            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('prenda_id', $parcial->prenda_pedido_id)
+            ->where('tipo_recibo', $parcial->tipo_recibo)
+            ->where('consecutivo_actual', $parcial->consecutivo_original)
+            ->where('activo', true)
+            ->first();
+
+        if (!$reciboOriginal) {
+            return ['original_completado' => false, 'recibo_original_id' => null];
+        }
+
+        if ($totalCompletados >= $parcialIds->count()) {
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                ['id_recibo' => (int) $reciboOriginal->id, 'area' => $areaOperario],
+                [
+                    'id_parcial' => null,
+                    'numero_recibo' => $reciboOriginal->consecutivo_actual,
+                    'nombre_operario' => $nombreOperario,
+                    'fecha_completado' => now(),
+                ]
+            );
+            return ['original_completado' => true, 'recibo_original_id' => (int) $reciboOriginal->id];
+        }
+
+        DB::table('prenda_recibo_completado')
+            ->where('id_recibo', (int) $reciboOriginal->id)
+            ->where('area', $areaOperario)
+            ->delete();
+
+        return ['original_completado' => false, 'recibo_original_id' => (int) $reciboOriginal->id];
+    }
+
+    private function notificarVistaCosturaCompletadoParcial(
+        ReciboPorPartes $parcial,
+        string $areaOperario,
+        string $nombreOperario,
+        array $estadoOriginal
+    ): void {
+        $usuariosVistaCostura = User::query()
+            ->get()
+            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+
+        foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
+            broadcast(new OperarioRecibosActualizados(
+                userId: (int) $usuarioVistaCostura->id,
+                payload: [
+                    'area' => $areaOperario,
+                    'accion' => 'recibo_completado',
+                    'es_parcial' => true,
+                    'pedido_parcial_id' => (int) $parcial->id,
+                    'id_parcial' => (int) $parcial->id,
+                    'recibo_id' => (int) $parcial->id,
+                    'consecutivo' => (string) $this->formatearConsecutivoParcial($parcial->consecutivo_parcial),
+                    'consecutivo_parcial' => (string) $this->formatearConsecutivoParcial($parcial->consecutivo_parcial),
+                    'consecutivo_original' => (string) $this->formatearConsecutivoParcial($parcial->consecutivo_original),
+                    'pedido_produccion_id' => (int) $parcial->pedido_produccion_id,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'tipo_recibo' => (string) ($parcial->tipo_recibo ?: 'PARCIAL'),
+                    'nombre_operario' => $nombreOperario,
+                    'original_completado' => (bool) ($estadoOriginal['original_completado'] ?? false),
+                    'recibo_original_id' => $estadoOriginal['recibo_original_id'] ?? null,
+                    'mensaje' => "El parcial #{$this->formatearConsecutivoParcial($parcial->consecutivo_parcial)} fue completado por {$nombreOperario}",
+                ]
+            ));
+        }
+    }
+
+    private function notificarVistaCosturaCompletadoRecibo(
+        int $reciboId,
+        string $consecutivo,
+        int $pedidoId,
+        ?int $prendaId,
+        string $tipoRecibo,
+        string $nombreOperario,
+        string $mensaje,
+        bool $esParcial,
+        ?int $pedidoParcialId,
+        ?string $consecutivoParcial,
+        bool $originalCompletado
+    ): void {
+        $usuariosVistaCostura = User::query()
+            ->get()
+            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+
+        foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
+            broadcast(new OperarioRecibosActualizados(
+                userId: (int) $usuarioVistaCostura->id,
+                payload: [
+                    'area' => 'Costura',
+                    'accion' => 'recibo_completado',
+                    'es_parcial' => $esParcial,
+                    'recibo_id' => $reciboId,
+                    'pedido_parcial_id' => $pedidoParcialId,
+                    'consecutivo' => $consecutivo,
+                    'consecutivo_parcial' => $consecutivoParcial,
+                    'pedido_produccion_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'tipo_recibo' => $tipoRecibo,
+                    'nombre_operario' => $nombreOperario,
+                    'original_completado' => $originalCompletado,
+                    'mensaje' => $mensaje,
+                ]
+            ));
+        }
+    }
+
+    private function formatearConsecutivoParcial($valor): string
+    {
+        $texto = trim((string) $valor);
+        if ($texto === '') {
+            return '0';
+        }
+
+        if (is_numeric($texto)) {
+            $numero = (float) $texto;
+            if (abs($numero - (int) $numero) < 0.00001) {
+                return (string) (int) $numero;
+            }
+
+            return rtrim(rtrim(number_format($numero, 2, '.', ''), '0'), '.');
+        }
+
+        return $texto;
     }
 }

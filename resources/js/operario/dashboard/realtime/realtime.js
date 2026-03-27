@@ -1,4 +1,4 @@
-import { actualizarContadorTarjetas } from '../ui/counters';
+﻿import { actualizarContadorTarjetas } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
 
 function shouldShowDashboardNotif(key) {
@@ -78,6 +78,56 @@ async function actualizarListaSinRecargar() {
     }
 }
 
+function ocultarOriginalReflectivoDistribuido(evento) {
+    const rol = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+    const tipoRecibo = String(evento?.tipo_recibo || '').toUpperCase();
+    const accion = String(evento?.accion || '').toLowerCase();
+    const numeroRecibo = String(evento?.numero_recibo || evento?.consecutivo || '').trim();
+    const prendaId = String(evento?.prenda_id || '').trim();
+
+    const esLiderReflectivo = rol === 'lider-reflectivo';
+    const esParcial = Boolean(evento?.es_parcial);
+    const esReflectivo = tipoRecibo === 'REFLECTIVO' || accion === 'recibo_asignado_reflectivo';
+
+    if (!esLiderReflectivo || !esParcial || !esReflectivo || !numeroRecibo.includes('.')) {
+        return;
+    }
+
+    const consecutivoOriginal = numeroRecibo.split('.')[0];
+    let removidas = 0;
+
+    document.querySelectorAll('.orden-card-simple').forEach((card) => {
+        const tipoCard = String(card.dataset.tipoRecibo || '')
+            .split(',')
+            .map((valor) => valor.trim().toLowerCase());
+        const prendaCard = String(card.dataset.prendaId || '').trim();
+        const numeroCard = card.querySelector('.orden-numero')?.textContent?.trim() || '';
+
+        if (!tipoCard.includes('reflectivo')) {
+            return;
+        }
+
+        if (prendaId && prendaCard && prendaId !== prendaCard) {
+            return;
+        }
+
+        if (numeroCard === `#${consecutivoOriginal}`) {
+            card.remove();
+            removidas++;
+        }
+    });
+
+    if (removidas > 0) {
+        console.log('[Operario Dashboard] Original reflectivo ocultado tras recibir parcial realtime', {
+            prendaId,
+            numeroReciboParcial: numeroRecibo,
+            consecutivoOriginal,
+            removidas,
+        });
+        actualizarContadorTarjetas();
+    }
+}
+
 export function initRealtimeListeners() {
     // Verificar si es la página del operario-dashboard
     // De lo contrario, retornar sin hacer nada (ej: /asesores/dashboard)
@@ -92,14 +142,7 @@ export function initRealtimeListeners() {
 
     console.log('[Operario Dashboard] Iniciando escuchadores de tiempo real (Phase 5)');
 
-    // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
-    if (!window.shared?.isReady) {
-        console.log('[Operario Dashboard] Esperando window.shared.isReady...');
-        setTimeout(initRealtimeListeners, 50);
-        return;
-    }
-
-    // Usar window.waitForEcho para esperar WebSocket disponible
+    // Usar window.waitForEcho para esperar Echo disponible
     if (typeof window.waitForEcho !== 'function') {
         console.warn('[Operario Dashboard] waitForEcho no disponible, reintentando...');
         setTimeout(initRealtimeListeners, 500);
@@ -108,10 +151,6 @@ export function initRealtimeListeners() {
 
     window.waitForEcho(() => {
         const ws = window.shared?.websocket;
-        if (!ws) {
-            console.error('[Operario Dashboard] WebSocket abstraction no disponible');
-            return;
-        }
 
         try {
             // Verificar disponibilidad de datos globales
@@ -120,17 +159,21 @@ export function initRealtimeListeners() {
                 return;
             }
 
-            console.log('[Operario Dashboard] Configurando listeners con WebSocket', {
+            console.log('[Operario Dashboard] Configurando listeners realtime', {
                 usuario: window.USUARIO_ACTUAL,
                 privateChannel: `App.Models.User.${window.USUARIO_ACTUAL.id}`,
                 publicChannels: ['operarios.corte', 'recibos-costura'],
+                hasSharedWebsocket: !!ws,
             });
 
-            // Canal privado del usuario
-            setupPrivateUserChannel(ws);
-            
-            // Canales públicos
-            setupPublicChannels(ws);
+            if (ws) {
+                setupPrivateUserChannel(ws);
+                setupPublicChannels(ws);
+            } else {
+                console.warn('[Operario Dashboard] WebSocket abstraction no disponible, usando fallback Echo');
+            }
+
+            setupEchoFallbackListeners();
             
             console.log('[Operario Dashboard]  Listeners configurados');
         } catch (error) {
@@ -139,10 +182,100 @@ export function initRealtimeListeners() {
     });
 }
 
+function setupEchoFallbackListeners() {
+    const rol = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+    const userId = window.USUARIO_ACTUAL?.id;
+
+    if (!userId || !window.EchoInstance) {
+        return;
+    }
+
+    if (window.__operarioEchoFallbackReady) {
+        return;
+    }
+    window.__operarioEchoFallbackReady = true;
+
+    try {
+        console.log('[Operario Dashboard] Registrando fallback Echo', {
+            userId,
+            rol,
+        });
+
+        const mostrarNotificacion = (e) => {
+            try {
+                const encargadoStr = String(e?.encargado || '').trim();
+                const numeroRecibo = String(e?.numero_recibo || '').trim();
+                const mensaje = e?.mensaje || `Pedido #${e?.pedido_id || ''} · Recibo #${numeroRecibo} asignado a ${encargadoStr}`;
+                const notifKey = `${rol}|fallback|${e?.accion || ''}|${e?.proceso_id || ''}|${numeroRecibo}|${encargadoStr}`;
+
+                if (!shouldShowDashboardNotif(notifKey)) {
+                    return;
+                }
+
+                let titulo = 'Recibo asignado';
+                if (e?.accion === 'recibo_asignado_reflectivo') {
+                    titulo = e?.es_parcial ? 'Recibo parcial REFLECTIVO asignado' : 'Recibo REFLECTIVO asignado';
+                } else if (e?.accion === 'recibo_asignado_costura' || String(e?.tipo_recibo || '').toUpperCase() === 'COSTURA') {
+                    titulo = e?.es_parcial ? 'Recibo parcial COSTURA asignado' : 'Recibo COSTURA asignado';
+                } else if (String(e?.tipo_recibo || '').toUpperCase() === 'PARCIAL') {
+                    titulo = 'Recibo parcial asignado';
+                }
+
+                if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                    window.NotificacionesPush.add({
+                        id: notifKey,
+                        title: titulo,
+                        message: mensaje,
+                        type: 'info',
+                        icon: String(e?.tipo_recibo || '').toUpperCase() === 'REFLECTIVO' ? 'auto_awesome' : 'checkroom',
+                        duration: 8000,
+                    });
+                }
+            } catch (error) {
+                console.warn('[Operario Dashboard] Error creando notificación fallback', error);
+            }
+        };
+
+        const actualizarEstadoVisual = (e) => {
+            aplicarEstadoReciboEnDOM(e);
+        };
+
+        if (rol === 'administrador-costura' || rol === 'costura-reflectivo' || rol === 'lider-reflectivo') {
+            window.EchoInstance.private(`App.Models.User.${userId}`)
+                .listen('.operario.recibos.actualizados', async (e) => {
+                    console.log('[Operario Dashboard] Fallback privado operario.recibos.actualizados:', { rol, evento: e });
+                    mostrarNotificacion(e);
+                    actualizarEstadoVisual(e);
+                    await actualizarListaSinRecargar();
+                    ocultarOriginalReflectivoDistribuido(e);
+                });
+        }
+
+        if (rol === 'administrador-costura') {
+            window.EchoInstance.channel('recibos-costura')
+                .listen('.encargado.costura.asignado', (e) => {
+                    console.log('[Operario Dashboard] Admin-costura fallback público encargado.costura.asignado:', e);
+                    mostrarNotificacion(e);
+                    actualizarEstadoVisual(e);
+                    actualizarListaSinRecargar();
+                });
+
+            window.EchoInstance.channel('operarios.corte')
+                .listen('.encargado.costura.asignado', (e) => {
+                    console.log('[Operario Dashboard] Admin-costura fallback operarios.corte encargado.costura.asignado:', e);
+                    mostrarNotificacion(e);
+                    actualizarEstadoVisual(e);
+                    actualizarListaSinRecargar();
+                });
+        }
+    } catch (error) {
+        console.warn('[Operario Dashboard] No se pudo registrar fallback Echo', error);
+    }
+}
 function setupPrivateUserChannel(ws) {
     const userId = window.USUARIO_ACTUAL.id;
     
-    ws.subscribe(`private-App.Models.User.${userId}`, '.operario.recibos.actualizados', (e) => {
+    ws.subscribe(`private-App.Models.User.${userId}`, '.operario.recibos.actualizados', async (e) => {
         console.log('[Operario Dashboard] Evento operario.recibos.actualizados recibido (privado):', e);
 
         const accionesNotificar = [
@@ -184,9 +317,9 @@ function setupPrivateUserChannel(ws) {
 
             let titulo = 'Recibo de ' + (tipoRecibo || 'Costura') + ' asignado';
             if (e?.accion === 'recibo_completado') {
-                titulo = 'Recibo completado';
+                titulo = e?.es_parcial ? 'Parcial completado' : 'Recibo completado';
             } else if (e?.accion === 'recibo_deshecho') {
-                titulo = 'Recibo deshecho';
+                titulo = e?.es_parcial ? 'Parcial deshecho' : 'Recibo deshecho';
             }
 
             const notifStableId = [
@@ -213,31 +346,145 @@ function setupPrivateUserChannel(ws) {
         }
 
         if (e?.accion === 'recibo_completado' && e?.prenda_id) {
-            const card = document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`);
-            if (card) {
-                card.classList.add('card-completado-costura');
-                const body = card.querySelector('.orden-body');
-                if (body) {
-                    body.classList.add('recibo-completado-area');
-                }
-                asegurarBadgeCompletado(card, true);
-            }
+            aplicarEstadoReciboEnDOM(e);
         }
 
         if (e?.accion === 'recibo_deshecho' && e?.prenda_id) {
-            const card = document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`);
-            if (card) {
-                card.classList.remove('card-completado-costura');
-                const body = card.querySelector('.orden-body');
-                if (body) {
-                    body.classList.remove('recibo-completado-area');
-                }
-                asegurarBadgeCompletado(card, false);
+            revertirEstadoReciboEnDOM(e);
+        }
+
+        await actualizarListaSinRecargar();
+        ocultarOriginalReflectivoDistribuido(e);
+    });
+}
+
+function obtenerCardReciboDesdeEvento(e) {
+    const esParcial = Boolean(e?.es_parcial || e?.pedido_parcial_id || e?.id_parcial);
+
+    if (esParcial) {
+        const parcialId = e?.pedido_parcial_id || e?.id_parcial;
+        if (parcialId) {
+            const cardModalParcial = document.querySelector(`.parcial-card[data-parcial-id="${parcialId}"]`);
+            if (cardModalParcial) {
+                return cardModalParcial;
+            }
+
+            const cardParcial = document.querySelector(`.orden-card-simple[data-pedido-parcial-id="${parcialId}"]`);
+            if (cardParcial) {
+                return cardParcial;
+            }
+        }
+    }
+
+    if (e?.prenda_id) {
+        const cardPorPrenda = document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`);
+        if (cardPorPrenda) {
+            return cardPorPrenda;
+        }
+    }
+
+    if (e?.recibo_id) {
+        return document.querySelector(`.orden-card-simple[data-numero-recibo="${e.recibo_id}"]`);
+    }
+
+    return null;
+}
+
+function aplicarEstadoReciboEnDOM(e) {
+    const card = obtenerCardReciboDesdeEvento(e);
+    if (!card) {
+        return;
+    }
+
+    const esParcial = Boolean(e?.es_parcial || e?.pedido_parcial_id || e?.id_parcial);
+    const originalCompletado = Boolean(e?.original_completado);
+    const body = card.querySelector('.orden-body');
+    const badgesEstado = card.querySelectorAll('.estado-badge, .badge-estado, .badge-completado-corte');
+    const textoCompleto = esParcial ? 'COMPLETADO' : 'COMPLETADO COSTURA';
+
+    if (esParcial) {
+        card.classList.add('card-completado-costura');
+        if (body) {
+            body.classList.add('recibo-completado-area');
+        }
+        badgesEstado.forEach((badge) => {
+            badge.classList.remove('badge-estado-en-progreso');
+            badge.classList.add('badge-estado-completado');
+            badge.textContent = textoCompleto;
+        });
+        asegurarBadgeCompletado(card, true);
+
+        if (originalCompletado && e?.prenda_id) {
+            const cardOriginal = document.querySelector(
+                `.orden-card-simple[data-prenda-id="${e.prenda_id}"]:not([data-pedido-parcial-id])`
+            );
+            if (cardOriginal && cardOriginal !== card) {
+                aplicarEstadoEnCardOriginal(cardOriginal, e);
             }
         }
 
-        actualizarListaSinRecargar();
+        return;
+    }
+
+    if (originalCompletado) {
+        aplicarEstadoEnCardOriginal(card, e);
+    }
+}
+
+function aplicarEstadoEnCardOriginal(card, e) {
+    if (!card) return;
+
+    const body = card.querySelector('.orden-body');
+    const badgesEstado = card.querySelectorAll('.estado-badge, .badge-estado, .badge-completado-corte');
+
+    card.classList.add('card-completado-costura');
+    if (body) {
+        body.classList.add('recibo-completado-area');
+    }
+    badgesEstado.forEach((badge) => {
+        badge.classList.remove('badge-estado-en-progreso');
+        badge.classList.add('badge-estado-completado');
+        badge.textContent = e?.es_parcial ? 'COMPLETADO COSTURA' : 'COMPLETADO COSTURA';
     });
+    asegurarBadgeCompletado(card, true);
+}
+
+function revertirEstadoReciboEnDOM(e) {
+    const parcialCard = obtenerCardReciboDesdeEvento(e);
+    const originalCard = e?.prenda_id
+        ? document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`)
+        : null;
+
+    const revertirCard = (card, esOriginal = false) => {
+        if (!card) return;
+
+        const body = card.querySelector('.orden-body');
+        const badgesEstado = card.querySelectorAll('.estado-badge, .badge-estado, .badge-completado-corte');
+
+        card.classList.remove('card-completado-costura');
+        if (body) {
+            body.classList.remove('recibo-completado-area');
+        }
+
+        badgesEstado.forEach((badge) => {
+            badge.classList.remove('badge-estado-completado');
+            badge.textContent = esOriginal ? 'PENDIENTE COSTURA' : 'PENDIENTE';
+        });
+
+        asegurarBadgeCompletado(card, false);
+    };
+
+    if (parcialCard) {
+        revertirCard(parcialCard, false);
+    }
+
+    if (e?.original_completado === false && originalCard) {
+        revertirCard(originalCard, true);
+    }
+
+    if (e?.original_completado === true && originalCard) {
+        aplicarEstadoReciboEnDOM({ ...e, es_parcial: false, pedido_parcial_id: null, id_parcial: null });
+    }
 }
 
 function setupPublicChannels(ws) {
@@ -339,7 +586,7 @@ function setupPublicChannels(ws) {
 
                     const area = String(e?.area || '').trim();
                     const operario = String(e?.nombre_operario || '').trim();
-                    let titulo = 'Recibo completado';
+                    let titulo = e?.es_parcial ? 'Parcial completado' : 'Recibo completado';
                     if (area) titulo += ` en ${area}`;
 
                     window.NotificacionesPush.add({
@@ -375,7 +622,7 @@ function setupPublicChannels(ws) {
         });
     }
 
-    if (rol === 'costurero') {
+    if (rol === 'costurero' || rol === 'confeccion-sobremedida') {
         const nombreCosturero = String(window.USUARIO_ACTUAL?.nombre || '').trim();
         if (nombreCosturero) {
             const nombreNormalizado = nombreCosturero.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
@@ -392,18 +639,20 @@ function setupPublicChannels(ws) {
                 const tipoRecibo = String(e?.tipo_recibo || '').toUpperCase();
                 let mensaje = e?.mensaje || `Tienes un nuevo recibo: ${e?.nombre_prenda} #${e?.numero_recibo}`;
 
+                const tituloNotif = e?.es_parcial ? 'Nuevo recibo parcial asignado' : 'Nuevo recibo de costura asignado';
+
                 if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
                     const stableId = `nuevo_recibo_${e?.numero_recibo || ''}`;
                     window.NotificacionesPush.add({
                         id: stableId,
-                        title: 'Nuevo recibo de costura asignado',
+                        title: tituloNotif,
                         message: mensaje,
                         type: 'info',
                         icon: 'checkroom',
                         duration: 10000,
                     });
                 } else if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('Nuevo recibo de costura asignado', {
+                    new Notification(tituloNotif, {
                         body: mensaje,
                         icon: '/icon.png',
                     });
@@ -471,3 +720,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export { actualizarListaSinRecargar };
+
+
+
+
+

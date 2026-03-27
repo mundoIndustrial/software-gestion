@@ -1,4 +1,4 @@
-function setActiveAdminTab(tab) {
+﻿function setActiveAdminTab(tab) {
     document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
         btn.classList.toggle('badge-filtro-active', btn.dataset.adminTab === tab);
     });
@@ -66,3 +66,4 @@ export function initAdminTabs() {
         setActiveAdminTab(tab);
     });
 }
+

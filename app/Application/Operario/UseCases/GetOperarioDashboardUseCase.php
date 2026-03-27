@@ -56,7 +56,7 @@ class GetOperarioDashboardUseCase
                     ->map(function ($prenda) use ($usuariosSobremedida) {
                         $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
                             $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
-                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
                                 return false;
                             }
 
@@ -77,7 +77,7 @@ class GetOperarioDashboardUseCase
                     ->map(function ($prenda) use ($usuariosSobremedida) {
                         $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
                             $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
-                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
                                 return false;
                             }
 
@@ -98,7 +98,9 @@ class GetOperarioDashboardUseCase
             }
         }
 
-        $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+        $areaOperario = $usuario->hasRole('cortador')
+            ? 'Corte'
+            : ($usuario->hasAnyRole(['costurero', 'confeccion-sobremedida']) ? 'Costura' : null);
         if ($areaOperario) {
             $idsRecibos = $prendasConRecibos
                 ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))

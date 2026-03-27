@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\PrendaPedido;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidosProcesosPrendaDetalle;
+use App\Models\ProcesoPrenda;
+use App\Models\ReciboPorPartes;
 use Illuminate\Support\Collection;
 
 class ObtenerPrendasRecibosService
@@ -94,20 +96,7 @@ class ObtenerPrendasRecibosService
                         : collect();
 
                     $numeroRecibo = $recibo->consecutivo_actual;
-                    $procesoCostura = $procesos
-                        ->filter(function ($p) use ($numeroRecibo) {
-                            if (!is_string($p->proceso ?? null) || strtolower(trim((string) $p->proceso)) !== 'costura') {
-                                return false;
-                            }
-
-                            if (!empty($numeroRecibo) && !empty($p->numero_recibo)) {
-                                return (string) $p->numero_recibo === (string) $numeroRecibo;
-                            }
-
-                            return true;
-                        })
-                        ->sortByDesc(fn($p) => $p->created_at)
-                        ->first();
+                    $procesoCostura = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
 
                     // Solo incluir si tiene encargado asignado
                     if (!$procesoCostura || empty($procesoCostura->encargado)) {
@@ -190,20 +179,7 @@ class ObtenerPrendasRecibosService
                             : collect();
 
                         $numeroRecibo = $recibo->consecutivo_actual;
-                        $procesoCostura = $procesos
-                            ->filter(function ($p) use ($numeroRecibo) {
-                                if (!is_string($p->proceso ?? null) || strtolower(trim((string) $p->proceso)) !== 'costura') {
-                                    return false;
-                                }
-
-                                if (!empty($numeroRecibo) && !empty($p->numero_recibo)) {
-                                    return (string) $p->numero_recibo === (string) $numeroRecibo;
-                                }
-
-                                return true;
-                            })
-                            ->sortByDesc(fn($p) => $p->created_at)
-                            ->first();
+                        $procesoCostura = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
 
                         $procesoCorte = $procesos
                             ->filter(fn($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'corte')
@@ -256,7 +232,12 @@ class ObtenerPrendasRecibosService
             return $resultados;
         })->values();
 
-        return $prendasAgrupadas;
+        return $prendasAgrupadas
+            ->concat($this->obtenerPrendasParcialesCostura(null, true))
+            ->sortByDesc(function ($item) {
+                return $item['fecha_creacion'] ?? null;
+            })
+            ->values();
     }
 
     public function obtenerPrendasConRecibos(User $usuario): Collection
@@ -652,6 +633,100 @@ class ObtenerPrendasRecibosService
                         }
                     }
                 }
+
+                if (in_array($tipoOperario, ['costurero', 'confeccion-sobremedida'], true)
+                    && in_array(strtoupper((string) $tipoRecibo), ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                    $usuarioNombre = strtolower(trim($usuario->name));
+
+                    $recibosDelTipo = $recibosDelTipo->filter(function ($recibo) use ($prenda, $pedido, $usuarioNombre) {
+                        $procesoCostura = ProcesoPrenda::query()
+                            ->where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo', $recibo->consecutivo_actual)
+                            ->where(function ($query) {
+                                $query->whereNull('numero_recibo_parcial')
+                                    ->orWhere('numero_recibo_parcial', 0);
+                            })
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+
+                        if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                            return false;
+                        }
+
+                        return strtolower(trim((string) $procesoCostura->encargado)) === $usuarioNombre;
+                    })->values();
+
+                    if ($recibosDelTipo->isEmpty()) {
+                        continue;
+                    }
+                }
+
+                if ($tipoOperario === 'costura-reflectivo'
+                    && in_array(strtoupper((string) $tipoRecibo), ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                    $usuarioNombre = strtolower(trim($usuario->name));
+                    $usuarioLiderReflectivo = $usuario->hasRole('lider-reflectivo');
+
+                    $recibosDelTipo = $recibosDelTipo->filter(function ($recibo) use ($prenda, $pedido, $usuarioNombre, $usuarioLiderReflectivo) {
+                        $procesoCostura = ProcesoPrenda::query()
+                            ->where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo', $recibo->consecutivo_actual)
+                            ->where(function ($query) {
+                                $query->whereNull('numero_recibo_parcial')
+                                    ->orWhere('numero_recibo_parcial', 0);
+                            })
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+
+                        if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                            return false;
+                        }
+
+                        $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
+
+                        if ($usuarioLiderReflectivo) {
+                            $encargadoUsuario = \App\Models\User::query()
+                                ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                                ->first();
+
+                            return $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo');
+                        }
+
+                        return $encargadoNormalizado === $usuarioNombre;
+                    })->values();
+
+                    if ($recibosDelTipo->isEmpty()) {
+                        continue;
+                    }
+                }
+
+                if (($usuario?->hasRole('lider-reflectivo') ?? false) && strtoupper((string) $tipoRecibo) === 'REFLECTIVO') {
+                    $recibosDelTipo = $recibosDelTipo->filter(function ($recibo) {
+                        $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                        $esParcial = $notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas) === 1;
+
+                        if ($esParcial) {
+                            return true;
+                        }
+
+                        $tieneParciales = \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                            ->where('prenda_pedido_id', $recibo->prenda_id)
+                            ->where('tipo_recibo', 'REFLECTIVO')
+                            ->where('consecutivo_original', $recibo->consecutivo_actual)
+                            ->exists();
+
+                        return !$tieneParciales;
+                    })->values();
+
+                    if ($recibosDelTipo->isEmpty()) {
+                        continue;
+                    }
+                }
                 
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
@@ -673,7 +748,7 @@ class ObtenerPrendasRecibosService
                             'colores' => $talla->colores,
                         ];
                     })->toArray() : [],
-                    'recibos' => $recibosDelTipo->map(function ($recibo) {
+                    'recibos' => $recibosDelTipo->map(function ($recibo) use ($pedido) {
                         // Buscar el proceso de Control Calidad más reciente para este recibo
                         $procesoCC = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
@@ -681,8 +756,14 @@ class ObtenerPrendasRecibosService
                             ->latest('created_at')
                             ->first();
 
-                        $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                        $procesoCostura = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo', $recibo->consecutivo_actual)
+                            ->where(function ($query) {
+                                $query->whereNull('numero_recibo_parcial')
+                                      ->orWhere('numero_recibo_parcial', 0);
+                            })
                             ->whereNull('deleted_at')
                             ->latest('created_at')
                             ->first();
@@ -765,7 +846,20 @@ class ObtenerPrendasRecibosService
             return $resultados;
         })->values();
 
-        return $prendasAgrupadas;
+        if ($tipoOperario === 'vista-costura') {
+            return $prendasAgrupadas
+                ->sortByDesc(function ($item) {
+                    return $item['fecha_creacion'] ?? null;
+                })
+                ->values();
+        }
+
+        return $prendasAgrupadas
+            ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
+            ->sortByDesc(function ($item) {
+                return $item['fecha_creacion'] ?? null;
+            })
+            ->values();
     }
 
     /**
@@ -866,6 +960,182 @@ class ObtenerPrendasRecibosService
         })->values();
 
         return $prendas;
+    }
+
+    private function obtenerPrendasParcialesCostura(?User $usuario, bool $modoTodosCostura): Collection
+    {
+        $tipoOperario = $usuario ? $this->obtenerTipoOperario($usuario) : 'administrador-costura';
+        $encargadoNormalizado = strtolower(trim((string) ($usuario?->name ?? '')));
+        $esLiderReflectivo = (bool) ($usuario?->hasRole('lider-reflectivo'));
+
+        $tiposParcial = ['COSTURA', 'COSTURA-BODEGA'];
+        if ($tipoOperario === 'costura-reflectivo') {
+            $tiposParcial[] = 'REFLECTIVO';
+        }
+
+        $parciales = ReciboPorPartes::query()
+            ->with(['pedido', 'prenda.tallas', 'tallas'])
+            ->whereIn('tipo_recibo', $tiposParcial)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $parciales->map(function (ReciboPorPartes $parcial) {
+            $pedido = $parcial->pedido;
+            $prenda = $parcial->prenda;
+
+            if (!$pedido || !$prenda) {
+                return null;
+            }
+
+            $proceso = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->whereNull('deleted_at')
+                ->latest('created_at')
+                ->first();
+
+            return [
+                'parcial' => $parcial,
+                'pedido' => $pedido,
+                'prenda' => $prenda,
+                'proceso' => $proceso,
+                'encargado_normalizado' => strtolower(trim((string) ($proceso->encargado ?? $parcial->encargado ?? ''))),
+            ];
+        })
+            ->filter()
+            ->filter(function (array $item) use ($modoTodosCostura, $tipoOperario, $encargadoNormalizado, $esLiderReflectivo) {
+                $encargado = $item['encargado_normalizado'];
+                if ($encargado === '') {
+                    return false;
+                }
+
+                if ($modoTodosCostura || $tipoOperario === 'vista-costura') {
+                    $encargadoUsuario = \App\Models\User::query()
+                        ->whereRaw('LOWER(TRIM(name)) = ?', [$encargado])
+                        ->first();
+
+                    if ($encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo')) {
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                if (in_array($tipoOperario, ['costurero', 'confeccion-sobremedida'], true)) {
+                    return $encargado === $encargadoNormalizado;
+                }
+
+                if ($tipoOperario === 'costura-reflectivo') {
+                    if ($esLiderReflectivo) {
+                        $encargadoUsuario = \App\Models\User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargado])
+                            ->first();
+
+                        return $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo');
+                    }
+
+                    return $encargado === $encargadoNormalizado;
+                }
+
+                return false;
+            })
+            ->map(function (array $item) {
+                /** @var ReciboPorPartes $parcial */
+                $parcial = $item['parcial'];
+                $pedido = $item['pedido'];
+                /** @var PrendaPedido $prenda */
+                $prenda = $item['prenda'];
+                /** @var ProcesoPrenda|null $proceso */
+                $proceso = $item['proceso'];
+
+                $consecutivoParcial = $this->formatearConsecutivoParcial($parcial->consecutivo_parcial);
+                $completadoCostura = \DB::table('prenda_recibo_completado')
+                    ->where('area', 'Costura')
+                    ->where('id_parcial', $parcial->id)
+                    ->exists();
+
+                return [
+                    'prenda_id' => $prenda->id,
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'descripcion' => $prenda->descripcion,
+                    'de_bodega' => $prenda->de_bodega ?? false,
+                    'tallas' => $parcial->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'genero' => $talla->genero ?? null,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'tipo_talla' => null,
+                            'es_sobremedida' => false,
+                            'tela' => null,
+                            'colores' => $talla->color_nombre ? [$talla->color_nombre] : [],
+                        ];
+                    })->toArray(),
+                    'recibos' => [[
+                        'id' => null,
+                        'tipo_recibo' => (string) ($parcial->tipo_recibo ?: 'PARCIAL'),
+                        'consecutivo_actual' => $consecutivoParcial,
+                        'consecutivo_inicial' => $this->formatearConsecutivoParcial($parcial->consecutivo_original),
+                        'consecutivo_parcial' => $consecutivoParcial,
+                        'notas' => 'parcial_id:' . $parcial->id,
+                        'creado_en' => $parcial->created_at,
+                        'area' => 'Costura',
+                        'proceso_id' => $proceso?->id,
+                        'proceso_id_costura' => $proceso?->id,
+                        'encargado_costura' => $proceso?->encargado ?? $parcial->encargado,
+                        'encargado_corte' => null,
+                        'encargado_control_calidad' => null,
+                        'completado_area' => $completadoCostura,
+                        'completado_corte' => false,
+                        'completado_costura' => $completadoCostura,
+                        'completado_control_calidad' => false,
+                        'es_parcial' => true,
+                        'pedido_parcial_id' => $parcial->id,
+                        'tiene_parciales' => false,
+                    ]],
+                    'total_recibos' => 1,
+                    'fecha_creacion' => $parcial->created_at,
+                ];
+            })
+            ->values();
+    }
+
+    private function formatearConsecutivoParcial($valor): string
+    {
+        $texto = trim((string) $valor);
+        if ($texto === '') {
+            return '';
+        }
+
+        if (!str_contains($texto, '.')) {
+            return $texto;
+        }
+
+        return rtrim(rtrim($texto, '0'), '.');
+    }
+
+    private function buscarProcesoCosturaOriginal(Collection $procesos, $numeroRecibo): ?ProcesoPrenda
+    {
+        return $procesos
+            ->filter(function ($proceso) use ($numeroRecibo) {
+                if (!is_string($proceso->proceso ?? null) || strtolower(trim((string) $proceso->proceso)) !== 'costura') {
+                    return false;
+                }
+
+                if ((string) ($proceso->numero_recibo ?? '') !== (string) $numeroRecibo) {
+                    return false;
+                }
+
+                $numeroReciboParcial = $proceso->numero_recibo_parcial ?? null;
+                return $numeroReciboParcial === null || (float) $numeroReciboParcial === 0.0;
+            })
+            ->sortByDesc(fn($proceso) => $proceso->created_at)
+            ->first();
     }
 
     /**

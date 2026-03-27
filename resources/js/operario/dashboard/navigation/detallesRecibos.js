@@ -1,4 +1,4 @@
-export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null) {
+﻿export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null) {
     console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
     console.log(' Parámetros recibidos:', {
         numeroPedido: numeroPedido,
@@ -6,6 +6,7 @@ export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoR
         nombrePrenda: nombrePrenda,
         tipoRecibo: tipoRecibo,
         pedidoParcialId: pedidoParcialId,
+        consecutivoParcial: consecutivoParcial,
     });
 
     if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
@@ -31,7 +32,13 @@ export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoR
     }
 
     if (pedidoParcialId) {
-        params.append('pedido_parcial_id', pedidoParcialId);
+        params.append('parcial_id', pedidoParcialId);
+        if (consecutivoParcial !== null && consecutivoParcial !== undefined && String(consecutivoParcial).trim() !== '') {
+            params.append('consecutivo_parcial', String(consecutivoParcial).trim());
+        }
+        if (!tipoRecibo || String(tipoRecibo).toUpperCase() === 'VER RECIBO') {
+            params.set('tipo_recibo', 'PARCIAL');
+        }
         console.log(' Pedido Parcial ID:', pedidoParcialId);
     }
 
@@ -51,3 +58,4 @@ export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoR
         return false;
     }
 }
+

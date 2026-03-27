@@ -15,12 +15,21 @@
         }
         return 'pendiente';
     }
+
+    $rolDashboardActual = auth()->user()->hasRole('administrador-costura') ? 'administrador-costura'
+        : (auth()->user()->hasRole('vista-costura') ? 'vista-costura'
+        : (auth()->user()->hasRole('costura-reflectivo') ? 'costura-reflectivo'
+        : (auth()->user()->hasRole('lider-reflectivo') ? 'lider-reflectivo'
+        : (auth()->user()->hasRole('confeccion-sobremedida') ? 'confeccion-sobremedida'
+        : (auth()->user()->hasRole('costurero') ? 'costurero'
+        : (auth()->user()->hasRole('cortador') ? 'cortador'
+        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : '')))))));
 @endphp
 
 @section('content')
 <div class="operario-dashboard {{ auth()->user()->hasRole('vista-costura') ? 'is-vista-costura' : '' }}"
      data-user-id="{{ Auth::id() }}"
-     data-user-role="{{ Auth::user()->roles->first()->name ?? '' }}"
+     data-user-role="{{ $rolDashboardActual }}"
      data-user-name="{{ Auth::user()->name ?? '' }}">
     <!-- Búsqueda -->
     <div class="search-section">
@@ -88,7 +97,7 @@
                         // Para otros roles: solo muestra reflectivos
                         $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
                         $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
-                        $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos);
+                        $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos) || in_array('PARCIAL', $tiposRecibos);
                         
                         // Obtener el área del recibo principal para filtros
                         $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
@@ -112,7 +121,7 @@
                         // - costurero: mostrar COSTURA por defecto
                         // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
                         $displayInicial = '';
-                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero') || auth()->user()->hasRole('administrador-costura')) {
+                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('administrador-costura')) {
                             // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                             $displayInicial = $tieneCostura ? '' : 'none';
                         } elseif (auth()->user()->hasRole('cortador')) {
@@ -133,10 +142,11 @@
                         $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
                     @endphp
 
-                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
+                    <div class="orden-card-simple {{ ((auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-prenda-id="{{ $prenda['prenda_id'] }}"
+                         data-pedido-parcial-id="{{ $prenda['recibos'][0]['pedido_parcial_id'] ?? '' }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
                          data-tipo-recibo="{{ $esReflectivo }}"
                          data-numero-recibo="{{ $prenda['recibos'][0]['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
@@ -177,12 +187,18 @@
                                     $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
+                                $tieneParcialesEnRecibos = collect($prenda['recibos'] ?? [])->contains(function ($recibo) {
+                                    return (bool) ($recibo['tiene_parciales'] ?? false);
+                                });
+                                $textoEncargadoVista = $tieneParcialesEnRecibos
+                                    ? 'DISTRIBUIDO EN MODULOS'
+                                    : ($encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO');
                                 
                                 // Obtener encargado de corte para mostrar en el card (excepto cortadores)
                                 $encargadoCorte = $reciboPrincipal['encargado_corte'] ?? null;
                                 $encargadoCorte = is_string($encargadoCorte) ? trim($encargadoCorte) : $encargadoCorte;
                             @endphp
-                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costurero'))
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
@@ -203,7 +219,7 @@
                                     </span>
                                     <strong class="label-encargado">Encargado:</strong>
                                     <span class="badge-encargado">
-                                        {{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}
+                                        {{ $textoEncargadoVista }}
                                     </span>
                                 </div>
                             @endif
@@ -218,7 +234,7 @@
                                         <span class="estado-badge {{ $estadoClass }}" data-estado="recibo-costura">
                                             {{ count(array_unique(array_map(fn($r) => strtoupper($r['tipo_recibo']), $prenda['recibos']))) }} RECIBOS
                                         </span>
-                                        @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
+                                        @if(auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
                                         @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
@@ -232,7 +248,7 @@
                                         @endif
                                     </div>
                                     <!-- Badge completado para costurero - posicionado en esquina superior derecha solo en mobile -->
-                                    @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
+                                    @if(auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) && $reciboCompletadoCostura)
                                         <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                     @endif
                                     <!-- Badge completado para costura-reflectivo - posicionado en esquina superior derecha solo en mobile -->
@@ -260,7 +276,7 @@
 
                                 <!-- Botón Ver Recibo (debajo del estado para mobile) -->
                                 <div class="mobile-ver-recibo-section">
-                                    <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
+                                    <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }}, '{{ $prenda['recibos'][0]['consecutivo_parcial'] ?? ($prenda['recibos'][0]['consecutivo_actual'] ?? '') }}')">
                                         <span class="material-symbols-rounded">visibility</span>
                                         VER RECIBO
                                     </button>
@@ -315,38 +331,43 @@
                                         @endif
                                     @endif
                                     
-                                    @if(auth()->user()->hasRole('costurero'))
+                                    @if(auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
                                         @php
                                             $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                             $areaRecibo = strtolower(trim((string)($reciboPrincipal['area'] ?? '')));
                                             $esCosturaRecibo = $areaRecibo === 'costura';
-                                            $reciboId = $reciboPrincipal['id'] ?? null;
+                                            $reciboAccionId = $reciboPrincipal['pedido_parcial_id'] ?? ($reciboPrincipal['id'] ?? null);
+                                            $esReciboParcial = !empty($reciboPrincipal['pedido_parcial_id']);
                                             $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                         @endphp
                                         
                                         {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
-                                        @if($esCosturaRecibo && $reciboId && !$reciboCompletadoCostura)
+                                        @if($esCosturaRecibo && $reciboAccionId && !$reciboCompletadoCostura)
                                             <button class="btn-completar-costura" 
+                                                    type="button"
                                                     id="btn-completar-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-recibo-id="{{ $reciboAccionId }}"
+                                                    data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    onclick="completarCostura(this)">
+                                                    onclick="completarCostura(this); return false;">
                                                 <span class="material-symbols-rounded">check_circle</span>
                                                 COMPLETAR
                                             </button>
                                         @endif
                                         
                                         {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
-                                        @if($esCosturaRecibo && $reciboId && $reciboCompletadoCostura)
+                                        @if($esCosturaRecibo && $reciboAccionId && $reciboCompletadoCostura)
                                             <button class="btn-deshacer-costura" 
+                                                    type="button"
                                                     id="btn-deshacer-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-recibo-id="{{ $reciboAccionId }}"
+                                                    data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    onclick="deshacerCostura(this)">
+                                                    onclick="deshacerCostura(this); return false;">
                                                 <span class="material-symbols-rounded">undo</span>
                                                 DESHACER
                                             </button>
@@ -374,6 +395,7 @@
                                         {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
                                         @if($esTipoReciboCostura && !$tieneParciales)
                                             <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
+                                                    data-visible-filtro="costura"
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-numero-pedido="{{ $prenda['numero_pedido'] }}"
@@ -393,6 +415,7 @@
                                         {{-- Botón "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
                                         @if(!$tieneParciales)
                                         <button class="btn-pasar-cc" 
+                                                data-visible-filtro="costura"
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                 data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -410,6 +433,7 @@
                                         {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
                                         @if($reciboId && $tieneParciales)
                                             <button class="btn-ver-distribucion" 
+                                                    data-visible-filtro="costura"
                                                     id="btn-distribucion-{{ $prenda['prenda_id'] }}"
                                                     data-recibo-id="{{ $reciboId }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -417,6 +441,20 @@
                                                     onclick="abrirDistribucionRecibo(this)">
                                                 <span class="material-symbols-rounded">share</span>
                                                 VER DISTRIBUCIÓN
+                                            </button>
+                                            <button class="btn-ver-distribucion"
+                                                    data-visible-filtro="costura"
+                                                    id="btn-editar-encargados-{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-numero-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
+                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="COSTURA"
+                                                    onclick="abrirEditarEncargados(this)">
+                                                <span class="material-symbols-rounded">edit</span>
+                                                EDITAR ENCARGADOS
                                             </button>
                                         @endif
                                     @endif
@@ -431,6 +469,8 @@
                                                 return strtoupper((string)($r['tipo_recibo'] ?? '')) === 'REFLECTIVO';
                                             });
                                             $tieneReciboReflectivo = !empty($reciboReflectivo);
+                                            $reciboReflectivoId = $reciboReflectivo['id'] ?? null;
+                                            $tieneParcialesReflectivo = $reciboReflectivo['tiene_parciales'] ?? false;
                                             $encargadoCosturaRef = $reciboReflectivo['encargado_costura'] ?? null;
                                             $encargadoCosturaRef = is_string($encargadoCosturaRef) ? trim($encargadoCosturaRef) : $encargadoCosturaRef;
                                             $tieneEncargadoCosturaRef = !empty($encargadoCosturaRef);
@@ -439,18 +479,50 @@
                                         @endphp
                                         
                                         {{-- Botón PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
-                                        @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
+                                            @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
                                             @php
                                                 $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                                $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
+                                                $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboId;
+                                                $esReciboReflectivoParcial = !empty($pedidoParcialId);
                                             @endphp
                                             
                                             {{-- Botón VER RECIBO para vista-costura --}}
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
+
+                                            @if($reciboReflectivoId && $tieneParcialesReflectivo)
+                                                <button class="btn-ver-distribucion"
+                                                        data-visible-filtro="reflectivo"
+                                                        id="btn-distribucion-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                        data-recibo-id="{{ $reciboReflectivoId }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-numero-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                        onclick="abrirDistribucionRecibo(this)">
+                                                    <span class="material-symbols-rounded">share</span>
+                                                    VER DISTRIBUCIÓN
+                                                </button>
+                                                <button class="btn-ver-distribucion"
+                                                        data-visible-filtro="reflectivo"
+                                                        id="btn-editar-encargados-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                        data-recibo-id="{{ $reciboReflectivoId }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-numero-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                        data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        data-tipo-recibo="REFLECTIVO"
+                                                        onclick="abrirEditarEncargados(this)">
+                                                    <span class="material-symbols-rounded">edit</span>
+                                                    EDITAR ENCARGADOS
+                                                </button>
+                                            @endif
                                             
+                                            @if(!$tieneParcialesReflectivo)
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
+                                                    data-visible-filtro="reflectivo"
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-numero-pedido="{{ $prenda['numero_pedido'] }}"
@@ -465,6 +537,7 @@
                                                 <span class="material-symbols-rounded">{{ $tieneEncargadoCosturaRef ? 'undo' : 'checkroom' }}</span>
                                                 {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                             </button>
+                                            @endif
                                         @endif
                                         
                                         {{-- Botones de completar/deshacer para REFLECTIVO (solo para costura-reflectivo y lider-reflectivo) --}}
@@ -494,36 +567,43 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                 
                                                 $tipoReciboNormalizado = strtolower('REFLECTIVO');
                                                 $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                                $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
+                                                $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboId;
+                                                $esReciboReflectivoParcial = !empty($pedidoParcialId);
                                             @endphp
                                             
                                             {{-- Botón VER RECIBO para REFLECTIVO --}}
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
                                             
-                                            @if($reciboId && $esCosturaAreaRef && $tieneEncargadoAsignado)
+                                            @if($reciboReflectivoAccionId && $esCosturaAreaRef && $tieneEncargadoAsignado)
                                                 @if(!$reciboCompletadoArea)
                                                     <button class="btn-completar-costura" 
+                                                            type="button"
                                                             id="btn-completar-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
                                                             data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                             data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-recibo-id="{{ $reciboReflectivoAccionId }}"
+                                                            data-es-parcial="{{ $esReciboReflectivoParcial ? '1' : '0' }}"
                                                             data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                             data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                            onclick="completarCostura(this)">
+                                                            onclick="completarCostura(this); return false;">
                                                         <span class="material-symbols-rounded">check_circle</span>
                                                         COMPLETAR {{ strtoupper('REFLECTIVO') }}
                                                     </button>
                                                 @else
                                                     <button class="btn-deshacer-costura" 
+                                                            type="button"
                                                             id="btn-deshacer-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
                                                             data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                             data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-recibo-id="{{ $reciboReflectivoAccionId }}"
+                                                            data-es-parcial="{{ $esReciboReflectivoParcial ? '1' : '0' }}"
                                                             data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                             data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                            onclick="deshacerCostura(this)">
+                                                            onclick="deshacerCostura(this); return false;">
                                                         <span class="material-symbols-rounded">undo</span>
                                                         DESHACER {{ strtoupper('REFLECTIVO') }}
                                                     </button>
@@ -547,8 +627,9 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                     return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                 });
                                                 $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
+                                                $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                             @endphp
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
@@ -570,6 +651,9 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                         return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                     });
                                                     $reciboId = $reciboTipo['id'] ?? null;
+                                                    $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
+                                                    $reciboAccionId = $pedidoParcialId ?: $reciboId;
+                                                    $esReciboParcial = !empty($pedidoParcialId);
                                                     $areaRecibo = strtolower(trim((string)($reciboTipo['area'] ?? '')));
                                                     $esCosturaArea = $areaRecibo === 'costura';
                                                     $reciboCompletadoArea = false;
@@ -601,28 +685,32 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                     $tipoReciboNormalizado = strtolower($tipoReciboUnico);
                                                 @endphp
                                                 
-                                                @if($reciboId && $esCosturaArea && $tieneEncargadoAsignado)
+                                                @if($reciboAccionId && $esCosturaArea && $tieneEncargadoAsignado)
                                                     @if(!$reciboCompletadoArea)
                                                         <button class="btn-completar-costura" 
+                                                                type="button"
                                                                 id="btn-completar-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
                                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                                 data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                data-recibo-id="{{ $reciboId }}"
+                                                                data-recibo-id="{{ $reciboAccionId }}"
+                                                                data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                                 data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                                 data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                                onclick="completarCostura(this)">
+                                                                 onclick="completarCostura(this); return false;">
                                                             <span class="material-symbols-rounded">check_circle</span>
                                                             COMPLETAR {{ strtoupper($tipoReciboUnico) }}
                                                         </button>
                                                     @else
                                                         <button class="btn-deshacer-costura" 
+                                                                type="button"
                                                                 id="btn-deshacer-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
                                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                                 data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                data-recibo-id="{{ $reciboId }}"
+                                                                data-recibo-id="{{ $reciboAccionId }}"
+                                                                data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                                 data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                                 data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                                onclick="deshacerCostura(this)">
+                                                                 onclick="deshacerCostura(this); return false;">
                                                             <span class="material-symbols-rounded">undo</span>
                                                             DESHACER {{ strtoupper($tipoReciboUnico) }}
                                                         </button>
@@ -632,7 +720,7 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                         @endif
                                     @else
                                         {{-- Para otros operarios, un solo botón con tipo de recibo --}}
-                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
+                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }}, '{{ $prenda['recibos'][0]['consecutivo_parcial'] ?? ($prenda['recibos'][0]['consecutivo_actual'] ?? '') }}')">
                                             <span class="material-symbols-rounded">visibility</span>
                                             VER RECIBOS
                                         </button>
@@ -677,36 +765,41 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                         @endif
                                     @endif
                                     
-                                    @if(auth()->user()->hasRole('costurero'))
+                                    @if(auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
                                         @php
                                             $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                             $areaRecibo = strtolower(trim((string)($reciboPrincipal['area'] ?? '')));
                                             $esCosturaRecibo = $areaRecibo === 'costura';
-                                            $reciboId = $reciboPrincipal['id'] ?? null;
+                                            $reciboAccionId = $reciboPrincipal['pedido_parcial_id'] ?? ($reciboPrincipal['id'] ?? null);
+                                            $esReciboParcial = !empty($reciboPrincipal['pedido_parcial_id']);
                                             $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                         @endphp
                                         
                                         {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
-                                        @if($esCosturaRecibo && $reciboId && !$reciboCompletadoCostura)
+                                        @if($esCosturaRecibo && $reciboAccionId && !$reciboCompletadoCostura)
                                             <button class="btn-completar-costura" 
+                                                    type="button"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-recibo-id="{{ $reciboAccionId }}"
+                                                    data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    onclick="completarCostura(this)">
+                                                     onclick="completarCostura(this); return false;">
                                                 <span class="material-symbols-rounded">check_circle</span>
                                                 COMPLETAR
                                             </button>
                                         @endif
                                         
                                         {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
-                                        @if($esCosturaRecibo && $reciboId && $reciboCompletadoCostura)
+                                        @if($esCosturaRecibo && $reciboAccionId && $reciboCompletadoCostura)
                                             <button class="btn-deshacer-costura" 
+                                                    type="button"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-recibo-id="{{ $reciboAccionId }}"
+                                                    data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    onclick="deshacerCostura(this)">
+                                                     onclick="deshacerCostura(this); return false;">
                                                 <span class="material-symbols-rounded">undo</span>
                                                 DESHACER
                                             </button>
@@ -714,7 +807,7 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                     @endif
                                     
                                     {{-- Botones mobile para costura-reflectivo --}}
-                                    @if(auth()->user()->hasRole('costura-reflectivo'))
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                         @endphp
@@ -724,6 +817,9 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                     return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                 });
                                                 $reciboId = $reciboTipo['id'] ?? null;
+                                                $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
+                                                $reciboAccionId = $pedidoParcialId ?: $reciboId;
+                                                $esReciboParcial = !empty($pedidoParcialId);
                                                 $areaRecibo = strtolower(trim((string)($reciboTipo['area'] ?? '')));
                                                 $esCosturaArea = $areaRecibo === 'costura';
                                                 $reciboCompletadoArea = false;
@@ -738,26 +834,30 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                 $tipoReciboNormalizado = strtolower($tipoReciboUnico);
                                             @endphp
                                             
-                                            @if($reciboId && $esCosturaArea)
+                                            @if($reciboAccionId && $esCosturaArea)
                                                 @if(!$reciboCompletadoArea)
                                                     <button class="btn-completar-costura" 
+                                                            type="button"
                                                             data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                             data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-recibo-id="{{ $reciboAccionId }}"
+                                                            data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                             data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                             data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                            onclick="completarCostura(this)">
+                                                             onclick="completarCostura(this); return false;">
                                                         <span class="material-symbols-rounded">check_circle</span>
                                                         COMPLETAR {{ strtoupper($tipoReciboUnico) }}
                                                     </button>
                                                 @else
                                                     <button class="btn-deshacer-costura" 
+                                                            type="button"
                                                             data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                             data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-recibo-id="{{ $reciboAccionId }}"
+                                                            data-es-parcial="{{ $esReciboParcial ? '1' : '0' }}"
                                                             data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                             data-tipo-recibo="{{ $tipoReciboNormalizado }}"
-                                                            onclick="deshacerCostura(this)">
+                                                             onclick="deshacerCostura(this); return false;">
                                                         <span class="material-symbols-rounded">undo</span>
                                                         DESHACER {{ strtoupper($tipoReciboUnico) }}
                                                     </button>
@@ -825,14 +925,15 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                     return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                 });
                                                 $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
+                                                $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                             @endphp
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
                                         @endforeach
                                     @else
-                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
+                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }}, '{{ $prenda['recibos'][0]['consecutivo_parcial'] ?? ($prenda['recibos'][0]['consecutivo_actual'] ?? '') }}')">
                                             <span class="material-symbols-rounded">visibility</span>
                                             VER RECIBOS
                                         </button>
@@ -888,7 +989,7 @@ if (auth()->user()->hasRole('administrador-costura')) {
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
                                 <div class="orden-right-center">
-                                    <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
+                                    <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }}, '{{ $prenda['recibos'][0]['consecutivo_parcial'] ?? ($prenda['recibos'][0]['consecutivo_actual'] ?? '') }}'); return false;">
                                         <span class="material-symbols-rounded">arrow_forward</span>
                                     </a>
                                 </div>

@@ -1,4 +1,4 @@
-import { abrirDetallesRecibos } from '../navigation/detallesRecibos';
+﻿import { abrirDetallesRecibos } from '../navigation/detallesRecibos';
 import {
     abrirModalNovedad,
     cerrarModalNovedad,
@@ -21,6 +21,7 @@ import { completarCorte, deshacerCorte, completarCostura, deshacerCostura } from
 import { mostrarExito, mostrarError, mostrarMensaje, cerrarModalMensaje } from '../ui/messages';
 import { actualizarContadorTarjetas } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
+import { abrirEditarEncargados } from '../distribucion/distribucion';
 
 // Importar el modal-asignacion.js para que se cargue
 import '../costura/modal-asignacion';
@@ -42,6 +43,7 @@ export function registerDashboardGlobals() {
     window.confirmarAsignacion = confirmarAsignacion;
     window.seleccionarOpcionAsignacion = seleccionarOpcionAsignacion;
     window.volverAOpciones = volverAOpciones;
+    window.abrirEditarEncargados = abrirEditarEncargados;
 
     // Control de Calidad
     window.pasarAControlCalidad = pasarAControlCalidad;
@@ -63,3 +65,4 @@ export function registerDashboardGlobals() {
     window.actualizarContadorTarjetas = actualizarContadorTarjetas;
     window.asegurarBadgeCompletado = asegurarBadgeCompletado;
 }
+

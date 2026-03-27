@@ -1,4 +1,4 @@
-import { initDashboardUser } from './state/user';
+﻿import { initDashboardUser } from './state/user';
 import { initAdminTabs } from './tabs/adminTabs';
 import { initDashboardSearch } from './ui/search';
 import { initReciboFilters } from './ui/filters';
@@ -36,3 +36,4 @@ if (document.readyState === 'loading') {
 } else {
     initOperarioDashboard();
 }
+

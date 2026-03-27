@@ -991,10 +991,19 @@ class OperarioController extends Controller
                     if ($parcial && isset($responseData['prendas']) && is_array($responseData['prendas']) && count($responseData['prendas']) > 0) {
                         $tallasParcial = $parcial->tallas ?? collect();
                         $tallasMap = [];
+                        $tallasColorMap = [];
                         foreach ($tallasParcial as $t) {
                             $key = strtoupper(trim((string) $t->talla));
                             if ($key === '') continue;
-                            $tallasMap[$key] = (int) $t->cantidad;
+
+                            $cantidad = (int) $t->cantidad;
+                            $tallasMap[$key] = ($tallasMap[$key] ?? 0) + $cantidad;
+
+                            $colorKey = strtoupper(trim((string) ($t->color_nombre ?? 'SIN COLOR')));
+                            if (!isset($tallasColorMap[$key])) {
+                                $tallasColorMap[$key] = [];
+                            }
+                            $tallasColorMap[$key][$colorKey] = ($tallasColorMap[$key][$colorKey] ?? 0) + $cantidad;
                         }
 
                         foreach ($responseData['prendas'] as &$prenda) {
@@ -1007,7 +1016,7 @@ class OperarioController extends Controller
                                 continue;
                             }
 
-                            // Mantener solo 1 variante por talla (la primera que coincida)
+                            // Mantener solo 1 variante por talla, pero conservando el detalle real por color del parcial.
                             $variantesNuevas = [];
                             $tallasUsadas = [];
                             foreach ($prenda['variantes'] as $var) {
@@ -1019,7 +1028,46 @@ class OperarioController extends Controller
                                     continue;
                                 }
                                 $tallasUsadas[$tallaVar] = true;
-                                $var['cantidad'] = (int) $tallasMap[$tallaVar];
+
+                                $coloresParcial = $tallasColorMap[$tallaVar] ?? [];
+                                $coloresDetalleOriginal = isset($var['colores_detalle']) && is_array($var['colores_detalle'])
+                                    ? $var['colores_detalle']
+                                    : [];
+
+                                if (!empty($coloresDetalleOriginal)) {
+                                    $coloresDetalleFiltrados = [];
+                                    foreach ($coloresDetalleOriginal as $colorDetalle) {
+                                        $colorNombre = strtoupper(trim((string) ($colorDetalle['color'] ?? 'SIN COLOR')));
+                                        if (!array_key_exists($colorNombre, $coloresParcial)) {
+                                            continue;
+                                        }
+
+                                        $cantidadColor = (int) $coloresParcial[$colorNombre];
+                                        if ($cantidadColor <= 0) {
+                                            continue;
+                                        }
+
+                                        $colorDetalle['cantidad'] = $cantidadColor;
+                                        $coloresDetalleFiltrados[] = $colorDetalle;
+                                    }
+
+                                    if (!empty($coloresDetalleFiltrados)) {
+                                        $var['colores_detalle'] = $coloresDetalleFiltrados;
+                                        $var['cantidad'] = array_sum(array_map(function ($detalle) {
+                                            return (int) ($detalle['cantidad'] ?? 0);
+                                        }, $coloresDetalleFiltrados));
+                                        $var['color_info'] = implode(', ', array_map(function ($detalle) {
+                                            return ((int) ($detalle['cantidad'] ?? 0)) . '-' . (string) ($detalle['color'] ?? 'SIN COLOR');
+                                        }, $coloresDetalleFiltrados));
+                                    } else {
+                                        $var['cantidad'] = (int) $tallasMap[$tallaVar];
+                                        $var['colores_detalle'] = [];
+                                        $var['color_info'] = '';
+                                    }
+                                } else {
+                                    $var['cantidad'] = (int) $tallasMap[$tallaVar];
+                                }
+
                                 $variantesNuevas[] = $var;
                             }
 
@@ -1417,7 +1465,10 @@ class OperarioController extends Controller
 
     public function completarRecibo(Request $request, $idRecibo)
     {
-        $result = $this->completarReciboOperarioUseCase->execute((int) $idRecibo);
+        $result = $this->completarReciboOperarioUseCase->execute(
+            (int) $idRecibo,
+            $request->boolean('es_parcial')
+        );
 
         return response()->json([
             'success' => $result->success,
@@ -1427,7 +1478,10 @@ class OperarioController extends Controller
 
     public function deshacerRecibo(Request $request, $idRecibo)
     {
-        $result = $this->deshacerReciboOperarioUseCase->execute((int) $idRecibo);
+        $result = $this->deshacerReciboOperarioUseCase->execute(
+            (int) $idRecibo,
+            $request->boolean('es_parcial')
+        );
 
         return response()->json([
             'success' => $result->success,
@@ -1872,6 +1926,10 @@ class OperarioController extends Controller
                     $encargado = $proceso->encargado ?? $parcial->encargado ?? 'SIN ASIGNAR';
                     // Usar área (proceso) de procesos_prenda si está disponible, sino de recibo_por_partes
                     $area = $proceso->proceso ?? $parcial->area ?? 'SIN ASIGNAR';
+                    $estaCompletado = \DB::table('prenda_recibo_completado')
+                        ->where('id_parcial', $parcial->id)
+                        ->where('area', 'Costura')
+                        ->exists();
 
                     return [
                         'id' => $parcial->id,
@@ -1880,7 +1938,9 @@ class OperarioController extends Controller
                         'tipo_recibo' => $parcial->tipo_recibo,
                         'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
                         'consecutivo_original' => (float) $parcial->consecutivo_original,
-                        'proceso_estado' => $proceso->estado_proceso ?? 'Pendiente',
+                        'proceso_estado' => $estaCompletado
+                            ? 'COMPLETADO'
+                            : (($proceso->estado_proceso ?? 'En Progreso') ?: 'En Progreso'),
                         'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ?? null,
                         'observaciones' => $proceso->observaciones ?? '',
                         'pedido_produccion_id' => $parcial->pedido_produccion_id,
@@ -1970,11 +2030,18 @@ class OperarioController extends Controller
                 $tallasEliminadas = \App\Models\ReciboPorPartesTalla::where('recibo_por_partes_id', $id)->delete();
                 \Log::info('[DeshacerParcial] Tallas eliminadas', ['count' => $tallasEliminadas]);
 
-                // 2. Eliminar procesos_prenda asociados
-                $procesosEliminados = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                // 2. Eliminar COMPLETAMENTE procesos_prenda asociados al parcial
+                $procesosParcial = \App\Models\ProcesoPrenda::withTrashed()
+                    ->where('numero_pedido', $numeroPedido)
                     ->where('prenda_pedido_id', $prendaPedidoId)
                     ->where('numero_recibo_parcial', $numeroReciboParcial)
-                    ->delete();
+                    ->get();
+
+                $procesosEliminados = 0;
+                foreach ($procesosParcial as $procesoParcial) {
+                    $procesoParcial->forceDelete();
+                    $procesosEliminados++;
+                }
                 \Log::info('[DeshacerParcial] Procesos eliminados', ['count' => $procesosEliminados]);
 
                 // 3. Eliminar el parcial

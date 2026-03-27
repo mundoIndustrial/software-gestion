@@ -1,4 +1,4 @@
-export function toggleMobileActions(prendaId) {
+﻿export function toggleMobileActions(prendaId) {
     const drawer = document.getElementById(`mobile-drawer-${prendaId}`);
     const toggleBtns = document.querySelectorAll(`.mobile-actions-toggle[onclick*="${prendaId}"]`);
 
@@ -29,3 +29,4 @@ export function toggleMobileActions(prendaId) {
         toggleBtns.forEach((btn) => btn.classList.remove('active'));
     }
 }
+

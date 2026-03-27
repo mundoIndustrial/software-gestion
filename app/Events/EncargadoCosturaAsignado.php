@@ -51,7 +51,10 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new Channel('operarios.corte');
+        return [
+            new Channel('operarios.corte'),
+            new Channel('recibos-costura'),
+        ];
     }
 
     /**

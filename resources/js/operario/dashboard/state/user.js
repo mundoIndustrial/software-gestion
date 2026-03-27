@@ -1,4 +1,4 @@
-function readUserFromDom() {
+﻿function readUserFromDom() {
     const root = document.querySelector('.operario-dashboard');
     if (!root) return null;
 
@@ -13,12 +13,17 @@ function readUserFromDom() {
 
 export function initDashboardUser() {
     // Compatibilidad: si el Blade todavía define window.USUARIO_ACTUAL, respetarlo.
-    if (window.USUARIO_ACTUAL && window.USUARIO_ACTUAL.id) {
+    if (window.USUARIO_ACTUAL && window.USUARIO_ACTUAL.id && window.USUARIO_ACTUAL.rol) {
         return;
     }
 
     const u = readUserFromDom();
     if (!u) return;
 
-    window.USUARIO_ACTUAL = u;
+    window.USUARIO_ACTUAL = {
+        ...(window.USUARIO_ACTUAL || {}),
+        ...u,
+    };
 }
+
+

@@ -1,4 +1,4 @@
-import { httpJson } from '../api/http';
+﻿import { httpJson } from '../api/http';
 import { asegurarBadgeCompletado } from '../ui/badges';
 
 function actualizarInterfazCorte(container, accion, btnActual) {
@@ -7,6 +7,8 @@ function actualizarInterfazCorte(container, accion, btnActual) {
     const prendaId = btnActual.dataset.prendaId;
     const reciboId = btnActual.dataset.reciboId;
     const nombre = btnActual.dataset.nombre;
+    const esParcial = btnActual.dataset.esParcial === '1';
+    const tipoRecibo = btnActual.dataset.tipoRecibo || '';
 
     if (accion === 'completado') {
         const nuevoBtn = document.createElement('button');
@@ -55,6 +57,8 @@ function actualizarInterfazCostura(container, accion, btnActual) {
     const prendaId = btnActual.dataset.prendaId;
     const reciboId = btnActual.dataset.reciboId;
     const nombre = btnActual.dataset.nombre;
+    const esParcial = btnActual.dataset.esParcial === '1';
+    const tipoRecibo = btnActual.dataset.tipoRecibo || '';
 
     if (accion === 'completado') {
         const card = container.closest('.orden-card-simple') || container;
@@ -68,6 +72,8 @@ function actualizarInterfazCostura(container, accion, btnActual) {
         nuevoBtn.setAttribute('data-prenda-id', prendaId);
         nuevoBtn.setAttribute('data-recibo-id', reciboId);
         nuevoBtn.setAttribute('data-nombre', nombre);
+        nuevoBtn.setAttribute('data-es-parcial', esParcial ? '1' : '0');
+        if (tipoRecibo) nuevoBtn.setAttribute('data-tipo-recibo', tipoRecibo);
         nuevoBtn.setAttribute('onclick', 'deshacerCostura(this)');
         nuevoBtn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
 
@@ -92,6 +98,8 @@ function actualizarInterfazCostura(container, accion, btnActual) {
         nuevoBtn.setAttribute('data-prenda-id', prendaId);
         nuevoBtn.setAttribute('data-recibo-id', reciboId);
         nuevoBtn.setAttribute('data-nombre', nombre);
+        nuevoBtn.setAttribute('data-es-parcial', esParcial ? '1' : '0');
+        if (tipoRecibo) nuevoBtn.setAttribute('data-tipo-recibo', tipoRecibo);
         nuevoBtn.setAttribute('onclick', 'completarCostura(this)');
         nuevoBtn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> COMPLETAR';
 
@@ -111,6 +119,7 @@ export function completarCorte(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
+    const esParcial = btn.dataset.esParcial === '1';
 
     if (!reciboId) {
         return;
@@ -125,6 +134,7 @@ export function completarCorte(btn) {
         headers: {
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ es_parcial: esParcial }),
     })
         .then((response) => response.json())
         .then((data) => {
@@ -153,6 +163,7 @@ export function deshacerCorte(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
+    const esParcial = btn.dataset.esParcial === '1';
 
     if (!reciboId) {
         return;
@@ -167,6 +178,7 @@ export function deshacerCorte(btn) {
         headers: {
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ es_parcial: esParcial }),
     })
         .then((response) => response.json())
         .then((data) => {
@@ -195,6 +207,7 @@ export function completarCostura(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
+    const esParcial = btn.dataset.esParcial === '1';
 
     if (!reciboId) {
         return;
@@ -209,6 +222,7 @@ export function completarCostura(btn) {
         headers: {
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ es_parcial: esParcial }),
     })
         .then((response) => response.json())
         .then((data) => {
@@ -244,6 +258,7 @@ export function deshacerCostura(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
+    const esParcial = btn.dataset.esParcial === '1';
 
     if (!reciboId) {
         console.error('[DESHACER-COSTURA] No se encontró reciboId en el botón');
@@ -259,6 +274,7 @@ export function deshacerCostura(btn) {
         headers: {
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ es_parcial: esParcial }),
     })
         .then((response) => response.json())
         .then((data) => {
@@ -284,3 +300,4 @@ export function deshacerCostura(btn) {
             btn.innerHTML = originalText;
         });
 }
+

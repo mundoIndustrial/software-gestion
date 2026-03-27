@@ -1,4 +1,4 @@
-export function injectDashboardStyles() {
+﻿export function injectDashboardStyles() {
     if (document.getElementById('operario-dashboard-injected-styles')) {
         return;
     }
@@ -84,6 +84,12 @@ export function injectDashboardStyles() {
             box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
         }
 
+        .badge-estado-completado {
+            background: #e3f2fd !important;
+            color: #0d47a1 !important;
+            border: 1px solid #90caf9 !important;
+        }
+
         /* Posicionamiento especial para mobile */
         .badge-completado-costura.mobile-top-right {
             position: absolute;
@@ -162,3 +168,4 @@ export function injectDashboardStyles() {
 
     document.head.appendChild(style);
 }
+
