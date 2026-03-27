@@ -39,7 +39,6 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider para servicios de Pedidos
- * 
  * Responsabilidad: Registrar y configurar servicios con binding
  * Patrón: Service Provider + Dependency Injection
  * Principio: DIP - Dependency Inversion Principle
@@ -53,7 +52,7 @@ class PedidosServiceProvider extends ServiceProvider
     {
         // Registrar PrendaProcessorService como singleton
         // (reutilizable sin estado)
-        $this->app->singleton(PrendaProcessorService::class, function ($app) {
+        $this->app->singleton(PrendaProcessorService::class, function () {
             return new PrendaProcessorService();
         });
 
@@ -72,12 +71,12 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar PedidoLogoService como singleton (DDD)
-        $this->app->singleton(PedidoLogoService::class, function ($app) {
+        $this->app->singleton(PedidoLogoService::class, function () {
             return new PedidoLogoService();
         });
 
         // Registrar CopiarImagenesCotizacionAPedidoService como singleton
-        $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function ($app) {
+        $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function () {
             return new CopiarImagenesCotizacionAPedidoService();
         });
 
@@ -86,7 +85,7 @@ class PedidosServiceProvider extends ServiceProvider
         // ========================================
 
         // Registrar interfaz DesparChoParcialesRepository con implementación
-        $this->app->bind(DesparChoParcialesRepository::class, function ($app) {
+        $this->app->bind(DesparChoParcialesRepository::class, function () {
             return new DesparChoParcialesRepositoryImpl();
         });
 
@@ -95,7 +94,7 @@ class PedidosServiceProvider extends ServiceProvider
         // ========================================
 
         // Registrar ImagenRelocalizadorService como singleton
-        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+        $this->app->singleton(ImagenRelocalizadorService::class, function () {
             return new ImagenRelocalizadorService();
         });
 
@@ -107,12 +106,12 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar DespachoEstadoService como singleton
-        $this->app->singleton(DespachoEstadoService::class, function ($app) {
+        $this->app->singleton(DespachoEstadoService::class, function () {
             return new DespachoEstadoService();
         });
 
         // Registrar DespachoValidadorService como singleton
-        $this->app->singleton(DespachoValidadorService::class, function ($app) {
+        $this->app->singleton(DespachoValidadorService::class, function () {
             return new DespachoValidadorService();
         });
 
@@ -171,17 +170,17 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar CalcularDiasUseCase (sin depedencias)
-        $this->app->singleton(CalcularDiasUseCase::class, function ($app) {
+        $this->app->singleton(CalcularDiasUseCase::class, function () {
             return new CalcularDiasUseCase();
         });
 
         // Registrar CalcularDiasBatchUseCase (sin dependencias)
-        $this->app->singleton(CalcularDiasBatchUseCase::class, function ($app) {
+        $this->app->singleton(CalcularDiasBatchUseCase::class, function () {
             return new CalcularDiasBatchUseCase();
         });
 
         // Registrar CalcularFechaEstimadaUseCase (sin dependencias)
-        $this->app->singleton(CalcularFechaEstimadaUseCase::class, function ($app) {
+        $this->app->singleton(CalcularFechaEstimadaUseCase::class, function () {
             return new CalcularFechaEstimadaUseCase();
         });
 
@@ -193,12 +192,12 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar GetNovedadesUseCase (sin dependencias)
-        $this->app->singleton(GetNovedadesUseCase::class, function ($app) {
+        $this->app->singleton(GetNovedadesUseCase::class, function () {
             return new GetNovedadesUseCase();
         });
 
         // Registrar ImagenRelocalizadorService como singleton
-        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+        $this->app->singleton(ImagenRelocalizadorService::class, function () {
             return new ImagenRelocalizadorService();
         });
 

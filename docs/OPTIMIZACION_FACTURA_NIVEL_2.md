@@ -58,7 +58,7 @@ if (!empty($fotosColorTela)) {
 ```
 
 ### Beneficio:
-- **Tamaño JSON:** -30% a -50% en muchos casos
+- **tamano JSON:** -30% a -50% en muchos casos
 - **Tiempo Parsing:** -10-15%
 - **Tiempo Transfer:** -30-50%
 
@@ -141,7 +141,7 @@ const imagenesResponse = await fetch(`/gestion-bodega/pedidos/4/imagenes`);
 ```
 
 ### Beneficio:
-- **Tamaño inicial:** -60% a -80%
+- **tamano inicial:** -60% a -80%
 - **Tiempo respuesta:** -50-70%
 
 ---
@@ -173,7 +173,7 @@ public function obtenerDatosFacturaJSON($id, Request $request)
 ```
 
 ### Beneficio:
-- **Primera página:** -70% tamaño
+- **Primera página:** -70% tamano
 - **Tiempo respuesta:** -60-80%
 
 ---
@@ -198,7 +198,7 @@ public function obtenerPorId(int $id): ?PedidoProduccion
 ```
 
 ### Beneficio:
-- **Tamaño datos BD:** -20-30%
+- **tamano datos BD:** -20-30%
 - **Tiempo transferencia:** -10-20%
 
 ---
@@ -251,7 +251,7 @@ gzip_min_length 1000;
 ```
 
 ### Beneficio:
-- **Tamaño transferencia:** -60% a -80%
+- **tamano transferencia:** -60% a -80%
 - **Automático para navegadores**
 
 ---
@@ -320,13 +320,13 @@ gzip_min_length 1000;
 
 ### Antes de cambios:
 ```bash
-time curl -w "\nTiempo: %{time_total}s\nTamaño: %{size_download} bytes" \
+time curl -w "\nTiempo: %{time_total}s\ntamano: %{size_download} bytes" \
   http://localhost:8000/gestion-bodega/pedidos/4/factura-datos
 ```
 
 ### Después:
 - Comparar tiempos
-- Comparar tamaños de respuesta
+- Comparar tamanos de respuesta
 - Usar Chrome DevTools → Network
 
 ### Benchmark Script:
@@ -367,11 +367,11 @@ include('test-factura-performance.php')
    ```bash
    curl -i http://localhost:8000/gestion-bodega/pedidos/4/factura-datos
    ```
-   Anotarb: Tiempo + Tamaño (Content-Length)
+   Anotarb: Tiempo + tamano (Content-Length)
 
 2. **Decidir cuál implementar:**
    - Si el tiempo es lo crítico → Redis Caching
-   - Si es tamaño → Arrays vacíos + Gzip
+   - Si es tamano → Arrays vacíos + Gzip
    - Si hay muchos pedidos grandes → Pagination
 
 3. **Implementar una por una:**

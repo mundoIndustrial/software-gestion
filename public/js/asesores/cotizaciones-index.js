@@ -261,119 +261,7 @@ function eliminarBorrador(id) {
     });
 }
 
-/**
- * Elimina una cotización enviada con confirmación SweetAlert
- * @param {number} id - ID de la cotización a eliminar
- */
-function eliminarCotizacion(id) {
 
-    Swal.fire({
-        title: '¿Eliminar cotización?',
-        text: 'Esta acción no se puede deshacer',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        customClass: {
-            popup: 'swal-custom-popup',
-            title: 'swal-custom-title',
-            confirmButton: 'swal-custom-confirm',
-            cancelButton: 'swal-custom-cancel'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-
-            fetch(`/asesores/cotizaciones/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => {
-
-                return response.json();
-            })
-            .then(data => {
-
-                if (data.success) {
-
-                    // Animación de eliminación
-                    const rows = document.querySelectorAll('table tbody tr');
-
-                    let rowRemoved = false;
-                    rows.forEach(row => {
-                        if (!rowRemoved) {
-                            const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
-                            if (cell) {
-
-                                row.style.transition = 'opacity 0.3s ease';
-                                row.style.opacity = '0';
-                                setTimeout(() => {
-                                    row.remove();
-
-                                }, 300);
-                                rowRemoved = true;
-                            }
-                        }
-                    });
-                    
-                    // Toast de éxito
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: '¡Cotización eliminada!',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true,
-                        didOpen: (toast) => {
-                            toast.addEventListener('mouseenter', Swal.stopTimer)
-                            toast.addEventListener('mouseleave', Swal.resumeTimer)
-                        },
-                        customClass: {
-                            popup: 'swal-toast-popup',
-                            title: 'swal-toast-title'
-                        }
-                    });
-                } else {
-
-                    Swal.fire({
-                        title: 'Error',
-                        text: data.message || 'No se pudo eliminar la cotización',
-                        icon: 'error',
-                        confirmButtonColor: '#1e40af',
-                        customClass: {
-                            popup: 'swal-custom-popup',
-                            title: 'swal-custom-title',
-                            confirmButton: 'swal-custom-confirm'
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Ocurrió un error al eliminar la cotización',
-                    icon: 'error',
-                    confirmButtonColor: '#1e40af',
-                    customClass: {
-                        popup: 'swal-custom-popup',
-                        title: 'swal-custom-title',
-                        confirmButton: 'swal-custom-confirm'
-                    }
-                });
-            });
-        }
-    });
-}
-
-/**
- * Filtra las filas de la tabla actual en tiempo real
- * @param {string} searchTerm - Término de búsqueda
- */
 function filtrarTablaEnVista(searchTerm) {
     const searchTermLower = searchTerm.toLowerCase();
     const tables = document.querySelectorAll('table tbody');
@@ -406,7 +294,13 @@ function filtrarTablaEnVista(searchTerm) {
                     emptyMsg = document.createElement('div');
                     emptyMsg.className = 'empty-message';
                     emptyMsg.style.cssText = 'background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;';
-                    emptyMsg.innerHTML = '<p style="margin: 0; color: #666;"> No se encontraron resultados para: <strong>' + searchTerm + '</strong></p>';
+                    const paragraph = document.createElement('p');
+                    paragraph.style.cssText = 'margin: 0; color: #666;';
+                    paragraph.append(' No se encontraron resultados para: ');
+                    const strong = document.createElement('strong');
+                    strong.textContent = searchTerm;
+                    paragraph.appendChild(strong);
+                    emptyMsg.appendChild(paragraph);
                     parent.insertBefore(emptyMsg, tbody.closest('div'));
                 }
                 emptyMsg.style.display = 'block';
@@ -415,6 +309,17 @@ function filtrarTablaEnVista(searchTerm) {
             }
         }
     });
+}
+
+function actualizarVisibilidadBotonLimpiarFiltros() {
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    if (!btnLimpiar) return;
+
+    const filtrosActivos = (typeof filtroEmbudo !== 'undefined' && filtroEmbudo && filtroEmbudo.filtrosActivos)
+        ? Object.keys(filtroEmbudo.filtrosActivos).length
+        : 0;
+
+    btnLimpiar.style.display = filtrosActivos > 0 ? 'flex' : 'none';
 }
 
 /**
@@ -477,18 +382,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Mostrar/ocultar botón de limpiar filtros según estado
-    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
-    
-    if (btnLimpiar) {
-        setInterval(() => {
-            if (typeof filtroEmbudo !== 'undefined' && Object.keys(filtroEmbudo.filtrosActivos).length > 0) {
-                btnLimpiar.style.display = 'flex';
-            } else {
-                btnLimpiar.style.display = 'none';
-            }
-        }, 100);
-    }
+    // Mostrar/ocultar botón por eventos (sin polling)
+    actualizarVisibilidadBotonLimpiarFiltros();
+
+    window.addEventListener('cotizaciones:filtros-actualizados', actualizarVisibilidadBotonLimpiarFiltros);
 });
 
 /**
@@ -497,9 +394,12 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {string} numeroCotizacion - Número de la cotización
  */
 function eliminarCotizacion(id, numeroCotizacion) {
+    const numero = (numeroCotizacion === undefined || numeroCotizacion === null || numeroCotizacion === '')
+        ? String(id)
+        : String(numeroCotizacion);
     Swal.fire({
         title: '¿Eliminar cotización?',
-        text: `Esta acción no se puede deshacer. Se eliminará la cotización #${numeroCotizacion}`,
+        text: `Esta accion no se puede deshacer. Se eliminara la cotizacion #${numero}`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',

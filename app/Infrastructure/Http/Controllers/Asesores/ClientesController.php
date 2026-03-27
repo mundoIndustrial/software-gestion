@@ -3,18 +3,22 @@
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cliente;
+use App\Application\Services\Asesores\ClientesAsesorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ClientesController extends Controller
 {
+    public function __construct(
+        private readonly ClientesAsesorService $clientesAsesorService
+    ) {
+    }
+
     // Listar clientes
     public function index()
     {
-        $clientes = Cliente::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $clientes = $this->clientesAsesorService->listarPorUsuario((int) Auth::id(), 15);
         
         return view('asesores.clientes.index', compact('clientes'));
     }
@@ -30,14 +34,13 @@ class ClientesController extends Controller
             'notas' => 'nullable'
         ]);
 
-        Cliente::create([
-            'user_id' => Auth::id(),
-            'nombre' => $request->nombre,
-            'email' => $request->email,
-            'telefono' => $request->telefono,
-            'ciudad' => $request->ciudad,
-            'notas' => $request->notas
-        ]);
+        $this->clientesAsesorService->crear((int) Auth::id(), $request->only([
+            'nombre',
+            'email',
+            'telefono',
+            'ciudad',
+            'notas',
+        ]));
 
         return response()->json([
             'success' => true,
@@ -48,12 +51,6 @@ class ClientesController extends Controller
     // Actualizar cliente
     public function update(Request $request, $id)
     {
-        $cliente = Cliente::findOrFail($id);
-        
-        if ($cliente->user_id !== Auth::id()) {
-            abort(403);
-        }
-
         $request->validate([
             'nombre' => 'required|unique:clientes,nombre,' . $id,
             'email' => 'nullable|email',
@@ -62,7 +59,17 @@ class ClientesController extends Controller
             'notas' => 'nullable'
         ]);
 
-        $cliente->update($request->all());
+        try {
+            $this->clientesAsesorService->actualizar((int) Auth::id(), (int) $id, $request->only([
+                'nombre',
+                'email',
+                'telefono',
+                'ciudad',
+                'notas',
+            ]));
+        } catch (AccessDeniedHttpException $e) {
+            abort(403);
+        }
 
         return response()->json([
             'success' => true,
@@ -73,13 +80,11 @@ class ClientesController extends Controller
     // Eliminar cliente
     public function destroy($id)
     {
-        $cliente = Cliente::findOrFail($id);
-        
-        if ($cliente->user_id !== Auth::id()) {
+        try {
+            $this->clientesAsesorService->eliminar((int) Auth::id(), (int) $id);
+        } catch (AccessDeniedHttpException $e) {
             abort(403);
         }
-
-        $cliente->delete();
 
         return response()->json([
             'success' => true,

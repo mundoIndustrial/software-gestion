@@ -14,12 +14,16 @@ class ControlEntregasDTO
     public function __construct(
         public int|string $pedidoId,
         public string $numeroPedido,
-        public string $cliente,
-        public ?Carbon $fechaHora = null,
+        public string $cliente = '',
+        public Carbon|string|null $fechaHora = null,
         public ?string $clienteEmpresa = null,
         /** @var DespachoParcialesDTO[] */
         public array $despachos = [],
     ) {
+        if (is_string($this->fechaHora) && $this->fechaHora !== '') {
+            $this->fechaHora = Carbon::parse($this->fechaHora);
+        }
+
         if ($this->fechaHora === null) {
             $this->fechaHora = now();
         }

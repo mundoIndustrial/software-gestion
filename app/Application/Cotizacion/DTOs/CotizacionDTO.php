@@ -11,6 +11,8 @@ use DateTimeImmutable;
  */
 final readonly class CotizacionDTO
 {
+    private const DATE_FORMAT = 'Y-m-d H:i:s';
+
     public function __construct(
         public int $id,
         public int $usuarioId,
@@ -55,11 +57,7 @@ final readonly class CotizacionDTO
             fechaInicio: $datos['fecha_inicio'] instanceof DateTimeImmutable
                 ? $datos['fecha_inicio']
                 : new DateTimeImmutable($datos['fecha_inicio'] ?? 'now'),
-            fechaEnvio: isset($datos['fecha_envio'])
-                ? ($datos['fecha_envio'] instanceof DateTimeImmutable
-                    ? $datos['fecha_envio']
-                    : new DateTimeImmutable($datos['fecha_envio']))
-                : null,
+            fechaEnvio: self::convertirADateTimeImmutable($datos['fecha_envio'] ?? null),
             cliente: self::extractClienteName($datos['cliente'] ?? $datos['nombre_cliente'] ?? null),
             prendas: $datos['prendas'] ?? [],
             logo: $datos['logo'] ?? null,
@@ -73,23 +71,35 @@ final readonly class CotizacionDTO
      */
     private static function extractClienteName($cliente): ?string
     {
+        $nombre = null;
+
         if ($cliente === null) {
+            $nombre = null;
+        } elseif (is_string($cliente)) {
+            $nombre = $cliente;
+        } elseif (is_array($cliente)) {
+            $nombre = $cliente['nombre'] ?? null;
+        } elseif (is_object($cliente)) {
+            $nombre = $cliente->nombre ?? null;
+        }
+
+        return $nombre;
+    }
+
+    /**
+     * Convertir a DateTimeImmutable si no lo es ya
+     */
+    private static function convertirADateTimeImmutable($fecha): ?DateTimeImmutable
+    {
+        if ($fecha === null) {
             return null;
         }
 
-        if (is_string($cliente)) {
-            return $cliente;
+        if ($fecha instanceof DateTimeImmutable) {
+            return $fecha;
         }
 
-        if (is_array($cliente)) {
-            return $cliente['nombre'] ?? null;
-        }
-
-        if (is_object($cliente)) {
-            return $cliente->nombre ?? null;
-        }
-
-        return null;
+        return new DateTimeImmutable($fecha);
     }
 
     /**
@@ -106,9 +116,9 @@ final readonly class CotizacionDTO
             'cliente_id' => $this->clienteId,
             'cliente' => $this->cliente,
             'es_borrador' => $this->esBorrador,
-            'created_at' => $this->createdAt->format('Y-m-d H:i:s'),
-            'fecha_inicio' => $this->fechaInicio->format('Y-m-d H:i:s'),
-            'fecha_envio' => $this->fechaEnvio?->format('Y-m-d H:i:s'),
+            'created_at' => $this->createdAt->format(self::DATE_FORMAT),
+            'fecha_inicio' => $this->fechaInicio->format(self::DATE_FORMAT),
+            'fecha_envio' => $this->fechaEnvio?->format(self::DATE_FORMAT),
             'prendas' => $this->prendas,
             'logo' => $this->logo,
             'tipo_cotizacion_id' => $this->tipoCotizacionId,

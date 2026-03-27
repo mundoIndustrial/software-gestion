@@ -238,7 +238,7 @@
     };
 
     window.eliminarPrendaCotizacion = function(index) {
-        console.log('[renderizador-cotizaciones] 🗑️ Eliminando prenda:', index);
+        console.log('[renderizador-cotizaciones]  Eliminando prenda:', index);
         // Aquí se puede agregar la lógica para eliminar la prenda
     };
 

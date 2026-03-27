@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PrendaEntregaController;
+use App\Infrastructure\Http\Controllers\Legacy\PrendaEntregaController;
 
 /**
  * API Routes for Prenda Entregas (Supervisor de Pedidos)
@@ -21,3 +21,4 @@ Route::withoutMiddleware(['api'])
     Route::get('{prendaPedidoId}/estado', [PrendaEntregaController::class, 'obtenerEstado'])
         ->name('estado');
 });
+

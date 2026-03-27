@@ -4,96 +4,32 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Application\UseCases\Orders\GetOrdersQueryUseCase;
-use App\Application\UseCases\Orders\GetOrderImagesQueryUseCase;
-use App\Application\UseCases\Orders\GetOrderDetailsQueryUseCase;
-use App\Services\RegistroOrdenExtendedQueryService;
-use App\Services\RegistroOrdenSearchExtendedService;
-use App\Services\RegistroOrdenFilterExtendedService;
-use App\Services\RegistroOrdenTransformService;
-use App\Services\RegistroOrdenProcessService;
-use App\Services\RegistroOrdenStatsService;
-use App\Services\RegistroOrdenProcessesService;
-use App\Services\RegistroOrdenEnumService;
+use App\Infrastructure\Containers\RegistroOrdenQueryServicesContainer;
+use App\Infrastructure\Containers\RegistroOrdenUseCasesFacade;
 use App\Application\Orders\Services\OrderDescriptionService;
-use Carbon\Carbon;
 
 /**
  * RegistroOrdenQueryController - Query/Search/Filter Layer
- * 
  * Responsabilidad única: Búsquedas, filtros y consultas de órdenes
  * Cumple: SRP
- * 
  * NOTA: Métodos CRUD (getNextPedido, validatePedido) fueron movidos a RegistroOrdenController
  */
 class RegistroOrdenQueryController extends Controller
 {
     use RegistroOrdenExceptionHandler;
 
-    protected $extendedQueryService;
-    protected $extendedSearchService;
-    protected $extendedFilterService;
-    protected $transformService;
-    protected $processService;
-    protected $statsService;
-    protected $processesService;
-    protected $enumService;
-    protected GetOrdersQueryUseCase $getOrdersQueryUseCase;
+    protected RegistroOrdenQueryServicesContainer $queryServicesContainer;
+    protected RegistroOrdenUseCasesFacade $useCasesFacade;
     protected OrderDescriptionService $orderDescriptionService;
-    protected GetOrderImagesQueryUseCase $getOrderImagesQueryUseCase;
-    protected GetOrderDetailsQueryUseCase $getOrderDetailsQueryUseCase;
-    protected \App\Application\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase $getSeguimientoPorPrendaUseCase;
-    protected \App\Application\UseCases\RegistroOrden\GetDescripcionPrendasUseCase $getDescripcionPrendasUseCase;
-    protected \App\Application\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase $getConsecutivoCosturaUseCase;
-    protected \App\Application\UseCases\RegistroOrden\CalcularDiasUseCase $calcularDiasUseCase;
-    protected \App\Application\UseCases\RegistroOrden\CalcularDiasBatchUseCase $calcularDiasBatchUseCase;
-    protected \App\Application\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase $calcularFechaEstimadaUseCase;
-    protected \App\Application\UseCases\RegistroOrden\GetRecibosDatosUseCase $getRecibosDatosUseCase;
-    protected \App\Application\UseCases\RegistroOrden\GetNovedadesUseCase $getNovedadesUseCase;
 
     public function __construct(
-        RegistroOrdenExtendedQueryService $extendedQueryService,
-        RegistroOrdenSearchExtendedService $extendedSearchService,
-        RegistroOrdenFilterExtendedService $extendedFilterService,
-        RegistroOrdenTransformService $transformService,
-        RegistroOrdenProcessService $processService,
-        RegistroOrdenStatsService $statsService,
-        RegistroOrdenProcessesService $processesService,
-        RegistroOrdenEnumService $enumService,
-        GetOrdersQueryUseCase $getOrdersQueryUseCase,
+        RegistroOrdenQueryServicesContainer $queryServicesContainer,
+        RegistroOrdenUseCasesFacade $useCasesFacade,
         OrderDescriptionService $orderDescriptionService,
-        GetOrderImagesQueryUseCase $getOrderImagesQueryUseCase,
-        GetOrderDetailsQueryUseCase $getOrderDetailsQueryUseCase,
-        \App\Application\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase $getSeguimientoPorPrendaUseCase,
-        \App\Application\UseCases\RegistroOrden\GetDescripcionPrendasUseCase $getDescripcionPrendasUseCase,
-        \App\Application\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase $getConsecutivoCosturaUseCase,
-        \App\Application\UseCases\RegistroOrden\CalcularDiasUseCase $calcularDiasUseCase,
-        \App\Application\UseCases\RegistroOrden\CalcularDiasBatchUseCase $calcularDiasBatchUseCase,
-        \App\Application\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase $calcularFechaEstimadaUseCase,
-        \App\Application\UseCases\RegistroOrden\GetRecibosDatosUseCase $getRecibosDatosUseCase,
-        \App\Application\UseCases\RegistroOrden\GetNovedadesUseCase $getNovedadesUseCase
-    )
-    {
-        $this->extendedQueryService = $extendedQueryService;
-        $this->extendedSearchService = $extendedSearchService;
-        $this->extendedFilterService = $extendedFilterService;
-        $this->transformService = $transformService;
-        $this->processService = $processService;
-        $this->statsService = $statsService;
-        $this->processesService = $processesService;
-        $this->enumService = $enumService;
-        $this->getOrdersQueryUseCase = $getOrdersQueryUseCase;
+    ) {
+        $this->queryServicesContainer = $queryServicesContainer;
+        $this->useCasesFacade = $useCasesFacade;
         $this->orderDescriptionService = $orderDescriptionService;
-        $this->getOrderImagesQueryUseCase = $getOrderImagesQueryUseCase;
-        $this->getOrderDetailsQueryUseCase = $getOrderDetailsQueryUseCase;
-        $this->getSeguimientoPorPrendaUseCase = $getSeguimientoPorPrendaUseCase;
-        $this->getDescripcionPrendasUseCase = $getDescripcionPrendasUseCase;
-        $this->getConsecutivoCosturaUseCase = $getConsecutivoCosturaUseCase;
-        $this->calcularDiasUseCase = $calcularDiasUseCase;
-        $this->calcularDiasBatchUseCase = $calcularDiasBatchUseCase;
-        $this->calcularFechaEstimadaUseCase = $calcularFechaEstimadaUseCase;
-        $this->getRecibosDatosUseCase = $getRecibosDatosUseCase;
-        $this->getNovedadesUseCase = $getNovedadesUseCase;
     }
 
     /**
@@ -102,7 +38,7 @@ class RegistroOrdenQueryController extends Controller
      */
     public function index(Request $request)
     {
-        $result = $this->getOrdersQueryUseCase->execute($request);
+        $result = $this->useCasesFacade->getOrdersQueryUseCase->execute($request);
 
         if (($result['type'] ?? null) === 'json') {
             return response()->json($result['data'] ?? [], $result['status'] ?? 200);
@@ -117,7 +53,7 @@ class RegistroOrdenQueryController extends Controller
      */
     public function show($pedido)
     {
-        $result = $this->getOrderDetailsQueryUseCase->execute((string) $pedido);
+        $result = $this->useCasesFacade->getOrderDetailsQueryUseCase->execute((string) $pedido);
         return response()->json($result['data'] ?? [], $result['status'] ?? 200);
     }
 
@@ -129,7 +65,7 @@ class RegistroOrdenQueryController extends Controller
     public function getOrderImages($pedido)
     {
         $tipo = request()->query('tipo'); // 'logo' o null
-        $result = $this->getOrderImagesQueryUseCase->execute((string) $pedido, $tipo);
+        $result = $this->useCasesFacade->getOrderImagesQueryUseCase->execute((string) $pedido, $tipo);
         return response()->json($result['data'] ?? [], $result['status'] ?? 200);
     }
 
@@ -139,9 +75,25 @@ class RegistroOrdenQueryController extends Controller
      */
     public function getDescripcionPrendas($pedido)
     {
-        $result = $this->getDescripcionPrendasUseCase->execute($pedido);
-        $statusCode = $result['success'] ? 200 : ($result['success'] === false ? 404 : 500);
+        $result = $this->useCasesFacade->getDescripcionPrendasUseCase->execute($pedido);
+        $statusCode = $this->resolveStatusCode($result['success'] ?? null);
         return response()->json($result, $statusCode);
+    }
+
+    /**
+     * Resolver código de status basado en el resultado
+     */
+    private function resolveStatusCode($success): int
+    {
+        if ($success === true) {
+            return 200;
+        }
+
+        if ($success === false) {
+            return 404;
+        }
+
+        return 500;
     }
 
     /**
@@ -150,7 +102,7 @@ class RegistroOrdenQueryController extends Controller
      */
     public function calcularDiasAPI(Request $request, $numeroPedido)
     {
-        $result = $this->calcularDiasUseCase->execute($numeroPedido);
+        $result = $this->useCasesFacade->calcularDiasUseCase->execute($numeroPedido);
         $statusCode = $result['success'] ? 200 : 404;
         return response()->json(['success' => $result['success'], ...$result['data'] ?? []], $statusCode);
     }
@@ -162,7 +114,7 @@ class RegistroOrdenQueryController extends Controller
     public function calcularDiasBatchAPI(Request $request)
     {
         $numeroPedidos = $request->input('numero_pedidos', []);
-        $result = $this->calcularDiasBatchUseCase->execute($numeroPedidos);
+        $result = $this->useCasesFacade->calcularDiasBatchUseCase->execute($numeroPedidos);
         $statusCode = $result['success'] ? 200 : 404;
         return response()->json(['success' => $result['success'], ...$result['data'] ?? []], $statusCode);
     }
@@ -170,14 +122,13 @@ class RegistroOrdenQueryController extends Controller
     /**
      * Calcular fecha estimada de entrega
      * POST /api/registros/{id}/calcular-fecha-estimada
-     * 
      * Lanza: CalcularFechaEstimadaException (manejada por ExceptionHandler)
      */
     public function calcularFechaEstimada(Request $request, $id)
     {
         $validated = $request->validate(['dia_de_entrega' => 'required|integer|min:1']);
         
-        $result = $this->calcularFechaEstimadaUseCase->execute((int)$id, (int)$validated['dia_de_entrega']);
+        $result = $this->useCasesFacade->calcularFechaEstimadaUseCase->execute((int)$id, (int)$validated['dia_de_entrega']);
         
         return response()->json(['success' => true, ...$result], 200);
     }
@@ -192,7 +143,7 @@ class RegistroOrdenQueryController extends Controller
     {
         try {
             $esInsumos = request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'insumos/materiales');
-            $result = $this->getRecibosDatosUseCase->execute($pedido, $esInsumos);
+            $result = $this->useCasesFacade->getRecibosDatosUseCase->execute($pedido, $esInsumos);
             
             return response()->json([
                 'success' => true,
@@ -200,25 +151,35 @@ class RegistroOrdenQueryController extends Controller
             ], 200);
         } catch (\App\Exceptions\GetRecibosDatosException $e) {
             return $this->handleRegistroOrdenException($e);
-        } catch (\DomainException $e) {
+        } catch (\DomainException|\Exception $e) {
+            return $this->buildErrorResponse($pedido, $e);
+        }
+    }
+
+    /**
+     * Construir respuesta de error para getRecibosDatos
+     */
+    private function buildErrorResponse(string $pedido, \Throwable $e)
+    {
+        if ($e instanceof \DomainException) {
             return response()->json([
                 'success' => false,
                 'error_code' => 'DOMAIN_ERROR',
                 'message' => $e->getMessage()
             ], 403);
-        } catch (\Exception $e) {
-            \Log::error('[RegistroOrdenQueryController::getRecibosDatos] Error inesperado', [
-                'pedido' => $pedido,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'error_code' => 'SERVER_ERROR',
-                'message' => 'Error al obtener datos del pedido'
-            ], 500);
         }
+
+        \Log::error('[RegistroOrdenQueryController::getRecibosDatos] Error inesperado', [
+            'pedido' => $pedido,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'error_code' => 'SERVER_ERROR',
+            'message' => 'Error al obtener datos del pedido'
+        ], 500);
     }
     
     /**
@@ -235,55 +196,64 @@ class RegistroOrdenQueryController extends Controller
                 'prenda_id' => $prendaId
             ]);
             
-            $result = $this->getConsecutivoCosturaUseCase->execute($pedido, $prendaId);
+            $result = $this->useCasesFacade->getConsecutivoCosturaUseCase->execute($pedido, $prendaId);
             
             \Log::info('[getConsecutivoCostura] Resultado exitoso', [
                 'consecutivo' => $result['consecutivo'] ?? null,
                 'area' => $result['area'] ?? null
             ]);
             
-            // El UseCase devuelve datos directamente, no incluye 'success'
-            // Si llegó aquí sin excepciones, es éxito
             return response()->json(array_merge(
                 ['success' => true],
                 $result
             ), 200);
             
         } catch (\App\Exceptions\GetConsecutivoCosturaException $e) {
-            \Log::error('[getConsecutivoCostura] GetConsecutivoCosturaException: ' . $e->getMessage(), [
-                'pedido' => $pedido,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'error_code' => $e->getCode()
-            ], 404);
-            
-        } catch (\App\Exceptions\DomainException $e) {
-            \Log::error('[getConsecutivoCostura] DomainException: ' . $e->getMessage(), [
-                'pedido' => $pedido,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-            
-        } catch (\Exception $e) {
-            \Log::error('[getConsecutivoCostura] Exception: ' . $e->getMessage(), [
-                'pedido' => $pedido,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos del consecutivo de costura',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->handleConsecutivoCosturaException($e, $pedido);
+        } catch (\DomainException|\Exception $e) {
+            return $this->handleConsecutivoCosturaError($e, $pedido);
         }
+    }
+
+    /**
+     * Manejar excepción específica de GetConsecutivoCosturaException
+     */
+    private function handleConsecutivoCosturaException(\App\Exceptions\GetConsecutivoCosturaException $e, string $pedido)
+    {
+        \Log::error('[getConsecutivoCostura] GetConsecutivoCosturaException: ' . $e->getMessage(), [
+            'pedido' => $pedido,
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'error_code' => $e->getCode()
+        ], 404);
+    }
+
+    /**
+     * Manejar errores de dominio y genéricos en getConsecutivoCostura
+     */
+    private function handleConsecutivoCosturaError(\Throwable $e, string $pedido)
+    {
+        $statusCode = $e instanceof \DomainException ? 400 : 500;
+        $logMessage = $e instanceof \DomainException
+            ? 'DomainException'
+            : 'Exception';
+        
+        \Log::error("[getConsecutivoCostura] $logMessage: " . $e->getMessage(), [
+            'pedido' => $pedido,
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => $e instanceof \DomainException
+                ? $e->getMessage()
+                : 'Error al obtener datos del consecutivo de costura',
+            'error' => $e instanceof \DomainException ? null : $e->getMessage()
+        ], $statusCode);
     }
 
     /**
@@ -293,7 +263,7 @@ class RegistroOrdenQueryController extends Controller
     public function getSeguimientoPorPrenda($pedido)
     {
         try {
-            $result = $this->getSeguimientoPorPrendaUseCase->execute($pedido);
+            $result = $this->useCasesFacade->getSeguimientoPorPrendaUseCase->execute($pedido);
             
             if (!$result['success']) {
                 return response()->json($result, 404);
@@ -324,7 +294,7 @@ class RegistroOrdenQueryController extends Controller
      */
     public function getNovedades($id)
     {
-        $result = $this->getNovedadesUseCase->execute($id);
+        $result = $this->useCasesFacade->getNovedadesUseCase->execute($id);
         $statusCode = $result['success'] ? 200 : 404;
         return response()->json([...($result['data'] ?? []), 'message' => $result['message']], $statusCode);
     }

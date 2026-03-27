@@ -190,7 +190,7 @@ function agregarImagenesGenerales(files) {
     validos.forEach((file, idx) => {
         console.log('[agregarImagenesGenerales]   Archivo', idx, ':', file.name, file.size, 'bytes');
         
-        // Crear una clave única para el archivo basada en nombre + tamaño + tipo
+        // Crear una clave única para el archivo basada en nombre + tamano + tipo
         // (no es un hash criptográfico real, pero funciona para detectar duplicados)
         const fileKey = `${file.name}_${file.size}_${file.type}`;
         

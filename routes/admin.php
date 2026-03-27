@@ -1,13 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ContadorController;
-use App\Http\Controllers\CostoPrendaController;
+use App\Infrastructure\Http\Controllers\Legacy\ContadorController;
+use App\Infrastructure\Http\Controllers\Legacy\CostoPrendaController;
 
 // ========================================
-// RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
+// RUTAS PARA CONTADOR (Modulo INDEPENDIENTE)
 // ========================================
-// Admin puede acceder a contador además del rol contador
+// Admin puede acceder a contador ADEMAS del rol contador
 Route::middleware(['auth', 'role:contador,admin,lider_produccion,supervisor_produccion'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [ContadorController::class, 'index'])->name('index');
     Route::get('/todas', [ContadorController::class, 'todas'])->name('todas');
@@ -22,13 +22,13 @@ Route::middleware(['auth', 'role:contador,admin,lider_produccion,supervisor_prod
     // Rutas para notas de tallas
     Route::post('/prenda/{prendaId}/notas-tallas', [ContadorController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
     
-    // Ruta para texto personalizado de tallas (módulo contador)
+    // Ruta para texto personalizado de tallas (modulo contador)
     Route::post('/prenda/{prendaId}/texto-personalizado-tallas', [ContadorController::class, 'guardarTextoPersonalizadoTallas'])->name('prenda.guardar-texto-personalizado-tallas');
     
     // Rutas para PDF
-    Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    Route::get('/cotizacion/{id}/pdf', [App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
     
-    // Ruta para cambiar estado de cotización
+    // Ruta para cambiar estado de cotizacion
     Route::patch('/cotizacion/{id}/estado', [ContadorController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
     
     // Ruta para obtener costos de prendas

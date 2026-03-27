@@ -71,14 +71,14 @@ window.imagenesPrendaStorage = {
                         file: imagen,
                         previewUrl: URL.createObjectURL(imagen),
                         nombre: imagen.name,
-                        tamaño: imagen.size,
+                        tamano: imagen.size,
                         fileType: imagen.type,
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
                     console.log('[PrendaStorageAdapter] 📦 File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
-                        tamaño: imagenCompleta.tamaño,
+                        tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
                     });
                 } else {
@@ -204,14 +204,14 @@ window.imagenesTelaStorage = {
                         file: imagen,
                         previewUrl: URL.createObjectURL(imagen),
                         nombre: imagen.name,
-                        tamaño: imagen.size,
+                        tamano: imagen.size,
                         fileType: imagen.type,
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
                     console.log('[TelaStorageAdapter] 📦 File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
-                        tamaño: imagenCompleta.tamaño,
+                        tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
                     });
                 } else {

@@ -476,7 +476,7 @@ class EppModalManager {
         }
         // IMPORTANTE: NO ocultar listaImagenesSubidas aquí
         // Solo vaciar el contenedor. habilitarCampos() lo mostrará cuando sea necesario
-        console.log('🗑️ [ModalManager] limpiarImagenes() completado');
+        console.log(' [ModalManager] limpiarImagenes() completado');
     }
 }
 // Exportar instancia global

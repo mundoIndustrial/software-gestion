@@ -260,7 +260,7 @@
                 const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
                     <button onclick="editarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
 
                 const fecha = item.updated_at || item.created_at || '';
@@ -703,10 +703,17 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         refrescarBadgesObservacionesDespachoAsesores();
-        setInterval(refrescarBadgesObservacionesDespachoAsesores, 30000);
 
         // Setup WebSocket para tiempo real
         setupObservacionesRealtimeAsesores();
+
+        // Refresco por eventos de ciclo de vida (sin polling)
+        window.addEventListener('focus', refrescarBadgesObservacionesDespachoAsesores);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                refrescarBadgesObservacionesDespachoAsesores();
+            }
+        });
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
         // Marcar como visto solo cuando el usuario hace clic en el botón 💬 o dropdown

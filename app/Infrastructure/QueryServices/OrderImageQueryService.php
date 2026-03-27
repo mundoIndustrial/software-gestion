@@ -95,15 +95,6 @@ class OrderImageQueryService
         return $row?->numero_pedido ?: null;
     }
 
-    /**
-     * @return \Illuminate\Support\Collection<int, object>
-     */
-    public function getLogoImagenesByPrenda(int $prendaPedidoId)
-    {
-        return DB::table('prenda_fotos_logo_pedido')
-            ->where('prenda_pedido_id', $prendaPedidoId)
-            ->orderBy('orden', 'asc')
-            ->get(['ruta_original', 'ruta_webp', 'ubicacion', 'orden', 'ancho', 'alto']);
-    }
+
 }
 

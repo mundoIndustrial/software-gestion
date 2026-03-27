@@ -5,12 +5,11 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use App\Http\Controllers\Controller;
 use App\DTOs\Edit\EditPrendaPedidoDTO;
 use App\DTOs\Edit\EditPrendaVariantePedidoDTO;
+use App\Application\Services\Asesores\PrendaPedidoEdicionAuditoriaService;
+use App\Application\Services\Asesores\PrendaPedidoFinderService;
 use App\Infrastructure\Services\Edit\PrendaPedidoEditService;
 use App\Infrastructure\Services\Edit\PrendaVariantePedidoEditService;
 use App\Infrastructure\Services\Procesos\ProcesoActualizarService;
-use App\Models\PrendaPedido;
-use App\Models\PrendaVariantePed;
-use App\Models\PedidoAnexoHistorial;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -23,15 +22,21 @@ class PrendaPedidoEditController extends Controller
     protected PrendaPedidoEditService $prendaEditService;
     protected PrendaVariantePedidoEditService $varianteEditService;
     protected ProcesoActualizarService $procesoActualizarService;
+    protected PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService;
+    protected PrendaPedidoFinderService $prendaPedidoFinderService;
 
     public function __construct(
         PrendaPedidoEditService $prendaEditService,
         PrendaVariantePedidoEditService $varianteEditService,
-        ProcesoActualizarService $procesoActualizarService
+        ProcesoActualizarService $procesoActualizarService,
+        PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService,
+        PrendaPedidoFinderService $prendaPedidoFinderService
     ) {
         $this->prendaEditService = $prendaEditService;
         $this->varianteEditService = $varianteEditService;
         $this->procesoActualizarService = $procesoActualizarService;
+        $this->prendaPedidoEdicionAuditoriaService = $prendaPedidoEdicionAuditoriaService;
+        $this->prendaPedidoFinderService = $prendaPedidoFinderService;
     }
 
     /**
@@ -57,7 +62,7 @@ class PrendaPedidoEditController extends Controller
     public function editPrenda(int $id, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($id);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($id);
 
             // Crear DTO desde payload
             $dto = EditPrendaPedidoDTO::fromPayload($request->all());
@@ -82,7 +87,7 @@ class PrendaPedidoEditController extends Controller
             }
 
             // Registrar en historial: prenda editada en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -129,7 +134,7 @@ class PrendaPedidoEditController extends Controller
     public function editPrendaFields(int $id, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($id);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($id);
 
             // Capturar campos antes del cambio
             $camposAntes = $prenda->only(['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega']);
@@ -149,7 +154,7 @@ class PrendaPedidoEditController extends Controller
             }
 
             // Registrar en historial: prenda editada en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -191,7 +196,7 @@ class PrendaPedidoEditController extends Controller
     public function editTallas(int $id, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($id);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($id);
 
             if (!$request->has('tallas')) {
                 return response()->json([
@@ -219,7 +224,7 @@ class PrendaPedidoEditController extends Controller
             }
 
             // Registrar en historial: prenda editada (tallas) en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -264,8 +269,8 @@ class PrendaPedidoEditController extends Controller
     public function editVariante(int $prendaId, int $varianteId, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($prendaId);
-            $variante = $prenda->variantes()->findOrFail($varianteId);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $variante = $this->prendaPedidoFinderService->findVarianteOrFail($prenda, $varianteId);
 
             // Crear DTO
             $dto = EditPrendaVariantePedidoDTO::fromPayload($request->all());
@@ -299,7 +304,7 @@ class PrendaPedidoEditController extends Controller
             }
 
             // Registrar en historial: variante de prenda editada en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $prendaId,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -339,8 +344,8 @@ class PrendaPedidoEditController extends Controller
     public function editVarianteFields(int $prendaId, int $varianteId, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($prendaId);
-            $variante = $prenda->variantes()->findOrFail($varianteId);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $variante = $this->prendaPedidoFinderService->findVarianteOrFail($prenda, $varianteId);
 
             // Capturar campos de variante antes del cambio
             $varianteAntes = $variante->only(['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs']);
@@ -360,7 +365,7 @@ class PrendaPedidoEditController extends Controller
             }
 
             // Registrar en historial: campos de variante editados en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $prendaId,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -390,8 +395,8 @@ class PrendaPedidoEditController extends Controller
     public function editVarianteColores(int $prendaId, int $varianteId, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($prendaId);
-            $variante = $prenda->variantes()->findOrFail($varianteId);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $variante = $this->prendaPedidoFinderService->findVarianteOrFail($prenda, $varianteId);
 
             if (!$request->has('colores')) {
                 return response()->json([
@@ -413,12 +418,12 @@ class PrendaPedidoEditController extends Controller
             // Capturar colores despues del cambio (desde request)
             $colorIdsNuevos = collect($request->input('colores', []))
                 ->pluck('color_id')->filter()->unique()->values()->toArray();
-            $coloresDespues = \App\Models\ColorPrenda::whereIn('id', $colorIdsNuevos)->pluck('nombre')->toArray();
+            $coloresDespues = $this->prendaPedidoEdicionAuditoriaService->obtenerNombresColores($colorIdsNuevos);
             $detalleColores = 'Antes: ' . (implode(', ', $coloresAntes) ?: 'ninguno')
                 . '  despues: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
 
             // Registrar en historial: colores de variante editados en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $prendaId,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -448,8 +453,8 @@ class PrendaPedidoEditController extends Controller
     public function editVarianteTelas(int $prendaId, int $varianteId, Request $request): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($prendaId);
-            $variante = $prenda->variantes()->findOrFail($varianteId);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $variante = $this->prendaPedidoFinderService->findVarianteOrFail($prenda, $varianteId);
 
             if (!$request->has('telas')) {
                 return response()->json([
@@ -471,12 +476,12 @@ class PrendaPedidoEditController extends Controller
             // Capturar telas despues del cambio (desde request)
             $telaIdsNuevos = collect($request->input('telas', []))
                 ->pluck('tela_id')->filter()->unique()->values()->toArray();
-            $telasDespues = \App\Models\TelaPrenda::whereIn('id', $telaIdsNuevos)->pluck('nombre')->toArray();
+            $telasDespues = $this->prendaPedidoEdicionAuditoriaService->obtenerNombresTelas($telaIdsNuevos);
             $detalleTelas = 'Antes: ' . (implode(', ', $telasAntes) ?: 'ninguna')
                 . '  despues: ' . (implode(', ', $telasDespues) ?: 'ninguna');
 
             // Registrar en historial: telas de variante editadas en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $prendaId,
                 $prenda->nombre_prenda ?? 'PRENDA',
@@ -504,7 +509,7 @@ class PrendaPedidoEditController extends Controller
     public function getPrendaState(int $id): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($id);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($id);
             $estado = $this->prendaEditService->getCurrentState($prenda);
 
             return response()->json([
@@ -531,8 +536,8 @@ class PrendaPedidoEditController extends Controller
     public function getVarianteState(int $prendaId, int $varianteId): JsonResponse
     {
         try {
-            $prenda = PrendaPedido::findOrFail($prendaId);
-            $variante = $prenda->variantes()->findOrFail($varianteId);
+            $prenda = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $variante = $this->prendaPedidoFinderService->findVarianteOrFail($prenda, $varianteId);
             $estado = $this->varianteEditService->getCurrentState($variante);
 
             return response()->json([
@@ -550,8 +555,8 @@ class PrendaPedidoEditController extends Controller
     public function actualizarProcesoEspecifico(int $prendaId, int $procesoId, Request $request): JsonResponse
     {
         try {
-            $prenda  = PrendaPedido::findOrFail($prendaId);
-            $proceso = $prenda->procesos()->findOrFail($procesoId);
+            $prenda  = $this->prendaPedidoFinderService->findOrFail($prendaId);
+            $proceso = $this->prendaPedidoFinderService->findProcesoOrFail($prenda, $procesoId);
 
             // FormData enviado como POST + _method=PATCH: usar all() con fallback a $_POST
             $inputData = $request->all();
@@ -594,3 +599,5 @@ class PrendaPedidoEditController extends Controller
         }
     }
 }
+
+

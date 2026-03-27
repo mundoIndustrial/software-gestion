@@ -337,7 +337,7 @@ Rutas migradas:
 Resultado:
 
 - `AsesoresController` deja de ser punto de entrada operativo para el modulo de asesores en rutas principales.
-- Se reduce fuertemente el acoplamiento y el tamaño del agregado HTTP.
+- Se reduce fuertemente el acoplamiento y el tamano del agregado HTTP.
 
 ## Continuacion de Refactor (2026-03-27 - Fase 10: Retiro de Legacy Controller)
 
@@ -350,3 +350,467 @@ Verificacion:
 
 - No quedan referencias activas a `AsesoresController` en rutas de asesores/realtime.
 - Validacion sintactica OK de controllers/rutas nuevas.
+
+## Continuacion de Refactor (2026-03-27 - Fase 11: Cotizaciones Filtros y Catalogos)
+
+Se refactorizaron endpoints auxiliares de cotizaciones para eliminar acceso directo a modelos en controllers:
+
+Nuevos use cases:
+
+- `app/Application/Asesores/UseCases/ObtenerValoresFiltrosCotizacionesAsesorUseCase.php`
+- `app/Application/Asesores/UseCases/ObtenerCatalogoTelasAsesorUseCase.php`
+- `app/Application/Asesores/UseCases/ObtenerCatalogoColoresAsesorUseCase.php`
+
+Cambios de controllers:
+
+- `app/Infrastructure/Http/Controllers/Asesores/CotizacionesFiltrosController.php`
+  - Delega listado/calculo de filtros a UseCase.
+  - Mantiene mapeo de estado para presentacion.
+- `app/Infrastructure/Http/Controllers/Asesores/TelasColoresApiController.php`
+  - Elimina queries directas de `TelaPrenda/ColorPrenda`.
+  - Delega catalogos a UseCases.
+  - Estandariza errores para no exponer detalles internos.
+
+Soporte en servicio de aplicacion:
+
+- `app/Application/Services/ColorGeneroMangaBrocheService.php`
+  - Nuevo metodo `obtenerTelas()`.
+
+Pruebas agregadas:
+
+- `tests/Unit/Application/Asesores/UseCases/ObtenerValoresFiltrosCotizacionesAsesorUseCaseTest.php`
+- `tests/Unit/Application/Asesores/UseCases/ObtenerCatalogosAsesorUseCasesTest.php`
+
+## Continuacion de Refactor (2026-03-27 - Fase 12: ObservacionesDespacho Thin Controller)
+
+Se aplico refactor SOLID/DDD en `ObservacionesDespachoController` para dejarlo como adaptador HTTP:
+
+Nuevo servicio de aplicacion:
+
+- `app/Application/Services/Asesores/ObservacionesDespachoApplicationService.php`
+
+Responsabilidades movidas fuera del controller:
+
+- Validacion de acceso por pedido/rol.
+- Lectura unificada de observaciones (despacho + bodega).
+- Calculo de resumen de no leidas por pedido.
+- Guardar, actualizar y eliminar observaciones.
+- Marcar observaciones de despacho/bodega como vistas.
+- Mapeo de payload de observaciones.
+
+Controller actualizado:
+
+- `app/Infrastructure/Http/Controllers/Asesores/ObservacionesDespachoController.php`
+  - Sin queries Eloquent directas.
+  - Manejo explicito de errores 401/403/404.
+  - Mantiene solo validacion HTTP + llamada a servicio + respuesta/broadcast.
+
+## Validacion de esta iteracion
+
+- `php artisan test tests/Unit/Application/Asesores/UseCases`
+- Resultado: `15 passed, 1 risky` (la marca `risky` es de test harness/error handler, no de fallo funcional).
+
+Estimacion de avance DDD en Asesores tras Fase 12:
+
+- Rango previo: 91-94%
+- Rango actual: 94-96%
+
+## Continuacion de Refactor (2026-03-27 - Fase 13: PedidosProduccionViewController - Extraccion de SQL transaccional)
+
+Se realizo una extraccion importante para adelgazar `PedidosProduccionViewController` y reforzar SRP/SOLID:
+
+Nuevo servicio de aplicacion:
+
+- `app/Application/Services/Asesores/ObtenerDatosPrendaPedidoService.php`
+
+Responsabilidades movidas fuera del controller:
+
+- Carga de prenda base desde tablas transaccionales.
+- Carga/normalizacion de imagenes de prenda.
+- Carga de telas+colores+imagenes de tela.
+- Carga de variantes.
+- Carga de procesos+imagenes+tallas relacionales por proceso.
+- Carga y agrupacion de tallas por genero.
+- Construccion del payload final de `prenda` para modal de edicion.
+
+Cambios en controller:
+
+- `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php`
+  - Se agrego inyeccion por constructor de:
+    - `ObtenerDatosFacturaService`
+    - `ObtenerDatosPrendaPedidoService`
+  - `obtenerDatosEdicion()` ya no usa service locator `app(...)`.
+  - `obtenerDatosUnaPrenda()` quedo como adaptador HTTP delgado delegando al servicio.
+
+Resultado tecnico de acoplamiento:
+
+- En `PedidosProduccionViewController` se eliminaron referencias directas a `\DB::table`.
+- En `PedidosProduccionViewController` se elimino uso de service locator `app(...)`.
+
+Validacion:
+
+- `php -l app/Application/Services/Asesores/ObtenerDatosPrendaPedidoService.php` OK
+- `php -l app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php` OK
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`
+
+## Continuacion de Refactor (2026-03-27 - Fase 14: PedidosProduccionViewController casi completamente delgado)
+
+Se completo la extraccion de los dos metodos mas grandes que quedaban en el controller:
+
+Nuevos servicios de aplicacion:
+
+- `app/Application/Services/Asesores/ObtenerDatosCotizacionService.php`
+- `app/Application/Services/Asesores/ObtenerPrendaCompletaDesdeCotizacionService.php`
+
+Cambios en controller:
+
+- `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php`
+  - `obtenerDatosCotizacion()` ahora delega completamente a `ObtenerDatosCotizacionService`.
+  - `obtenerPrendaCompleta()` ahora delega completamente a `ObtenerPrendaCompletaDesdeCotizacionService`.
+  - Se mantiene el controller como adaptador HTTP (status codes + formato respuesta).
+
+Resultado de acoplamiento (controller):
+
+- Sin `use App\\Models` en este controller.
+- Sin `Cotizacion::...` ni `LogoCotizacionTecnicaPrendaFoto::...` en este controller.
+- Sin `\\DB::table` en este controller.
+- Sin `app(...)` service locator en este controller.
+
+Validacion:
+
+- `php -l` de los 3 archivos modificados: OK.
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`.
+
+## Continuacion de Refactor (2026-03-27 - Fase 15: Variantes y Clientes)
+
+### VariantesPrendaController
+
+Se elimino acceso directo a infraestructura dentro del controller para auditoria de cambios:
+
+- Nuevo servicio:
+  - `app/Application/Services/Asesores/VariantesPrendaAuditoriaService.php`
+- Controller actualizado:
+  - `app/Infrastructure/Http/Controllers/Asesores/VariantesPrendaController.php`
+
+Cambios aplicados:
+
+- Se movio la captura de estado actual de variante/prenda (antes `DB::table(...)`) a servicio.
+- Se movio el armado de diff y registro en historial a servicio.
+- El controller ahora solo orquesta request -> use case -> servicio auditoria -> response.
+
+### ClientesController
+
+Se aplico refactor a capa de aplicacion para CRUD de clientes de asesor:
+
+- Nuevo servicio:
+  - `app/Application/Services/Asesores/ClientesAsesorService.php`
+- Controller actualizado:
+  - `app/Infrastructure/Http/Controllers/Asesores/ClientesController.php`
+
+Cambios aplicados:
+
+- Se removio `Cliente::...` del controller.
+- Listar/crear/actualizar/eliminar ahora delega en servicio.
+- Se mantiene control de ownership y contrato HTTP actual.
+
+### Validacion
+
+- `php -l` OK en servicios y controllers intervenidos.
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`.
+
+### Estado de deuda pendiente (controllers asesores)
+
+Referencias directas restantes principales:
+
+- `PrendaPedidoEditController`
+- `PrendasPedidoController`
+- `EppsPedidoController`
+- `Pedidos/ObtenerEppItemsController`
+- `ObservacionesDespachoController` (usa `PedidoProduccion` por route-model-binding)
+
+## Continuacion de Refactor (2026-03-27 - Fase 16: PrendaPedidoEditController - Auditoria desacoplada)
+
+Se redujo acoplamiento directo en `PrendaPedidoEditController` moviendo auditoria y consultas de catalogos a servicio de aplicacion:
+
+- Nuevo servicio:
+  - `app/Application/Services/Asesores/PrendaPedidoEdicionAuditoriaService.php`
+- Controller ajustado:
+  - `app/Infrastructure/Http/Controllers/Asesores/PrendaPedidoEditController.php`
+
+Cambios aplicados:
+
+- Se elimino uso directo de `PedidoAnexoHistorial::registrarPrendaEditada(...)` en controller.
+- Se elimino uso directo de `ColorPrenda::...` y `TelaPrenda::...` en controller.
+- Se removio import no usado `PrendaVariantePed`.
+- La auditoria y resolucion de nombres (colores/telas) ahora vive en servicio dedicado.
+
+Validacion:
+
+- `php -l` OK en archivos nuevos/ajustados.
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`.
+
+Estado de deuda visible en controllers Asesores (actual):
+
+- `PrendaPedidoEditController` (aun usa `PrendaPedido` para carga principal).
+- `PrendasPedidoController`
+- `EppsPedidoController`
+- `Pedidos/ObtenerEppItemsController`
+- `ObservacionesDespachoController` (route-model-binding con `PedidoProduccion`).
+
+## Continuacion de Refactor (2026-03-27 - Fase 17: Prendas y EPP)
+
+Se continuo desacoplando controllers de Asesores hacia capa de aplicacion:
+
+### PrendasPedidoController
+
+- Archivo: `app/Infrastructure/Http/Controllers/Asesores/PrendasPedidoController.php`
+- Cambio: se removieron llamadas directas a `PedidoAnexoHistorial::...` del controller.
+- Ahora delega en `PrendaPedidoEdicionAuditoriaService`:
+  - `registrarPrendaNueva(...)`
+  - `registrarPrendaEditada(...)`
+
+### EppsPedidoController
+
+- Archivo: `app/Infrastructure/Http/Controllers/Asesores/EppsPedidoController.php`
+- Cambio: se removio `PedidoAnexoHistorial::registrarEppNuevo(...)` del controller.
+- Ahora delega en `PrendaPedidoEdicionAuditoriaService::registrarEppNuevo(...)`.
+
+### ObtenerEppItemsController
+
+- Archivo: `app/Infrastructure/Http/Controllers/Asesores/Pedidos/ObtenerEppItemsController.php`
+- Cambio: se elimino dependencia directa a `App\\Models\\Cotizacion` en controller.
+- Se incorporo servicio de autorizacion/ownership:
+  - `app/Application/Services/Asesores/ObtenerCotizacionAsesorService.php`
+- El endpoint ahora recibe `cotizacionId` y valida pertenencia via servicio antes de ejecutar use case.
+
+### PrendaPedidoEditController
+
+- Archivo: `app/Infrastructure/Http/Controllers/Asesores/PrendaPedidoEditController.php`
+- Cambio: se elimino dependencia directa a `PrendaPedido` en controller.
+- Nuevo servicio finder:
+  - `app/Application/Services/Asesores/PrendaPedidoFinderService.php`
+- Busqueda de prenda/variante/proceso movida a servicio.
+
+### Estado de acoplamiento en controllers Asesores
+
+Busqueda `use App\\Models|\\DB::|app\(` sobre `app/Infrastructure/Http/Controllers/Asesores`:
+
+- Solo queda: `ObservacionesDespachoController` con `PedidoProduccion` (route-model-binding).
+
+Validacion:
+
+- `php -l` OK en archivos nuevos/modificados.
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`.
+
+## Continuacion de Refactor (2026-03-27 - Fase 18: Cierre de Controllers Asesores sin modelos directos)
+
+Se completo el ultimo punto pendiente de acoplamiento directo en controllers del modulo Asesores.
+
+### ObservacionesDespachoController
+
+- Archivo: `app/Infrastructure/Http/Controllers/Asesores/ObservacionesDespachoController.php`
+- Se elimino dependencia a `App\\Models\\PedidoProduccion` en la firma de metodos.
+- Los endpoints ahora reciben `id` (pedidoId) y delegan validacion/ownership al servicio de aplicacion.
+
+### ObservacionesDespachoApplicationService
+
+- Archivo: `app/Application/Services/Asesores/ObservacionesDespachoApplicationService.php`
+- Nuevo metodo: `validarAccesoPedidoPorId(..., int $pedidoId): int`
+  - valida autenticacion,
+  - verifica existencia de pedido,
+  - valida ownership para rol asesor,
+  - retorna `pedidoId` autorizado.
+
+### Resultado de barrido en controllers Asesores
+
+Comando:
+
+- `rg "use App\\\\Models|\\\\DB::|app\\(" app/Infrastructure/Http/Controllers/Asesores`
+
+Resultado:
+
+- Sin coincidencias.
+
+Esto deja la capa HTTP de Asesores alineada al criterio de controller delgado (DDD/SOLID) en cuanto a acceso directo a infraestructura/modelos.
+
+### Validacion
+
+- `php -l` OK en archivos intervenidos.
+- `php artisan test tests/Unit/Application/Asesores/UseCases` => `15 passed, 1 risky`.
+
+## Continuacion de Refactor (2026-03-27 - Fase 6: Migracion fisica de controllers legacy)
+
+Objetivo de fase:
+
+- Sacar implementaciones legacy de `app/Http/Controllers` y dejarlas en `app/Infrastructure/Http/Controllers/Legacy` sin romper compatibilidad.
+
+Cambios aplicados:
+
+- Se migro la implementacion real de estos controllers a infraestructura (legacy):
+  - `BalanceoController`
+  - `ConfiguracionController`
+  - `ContadorController`
+  - `CostoPrendaController`
+  - `CotizacionEstadoController`
+  - `DashboardController`
+  - `EntregaController`
+  - `EntregasCompletasController`
+  - `InvoiceController`
+  - `PDFCotizacionCombiadaController`
+  - `PDFCotizacionController`
+  - `PDFEppController`
+  - `PDFLogoController`
+  - `PDFPrendaController`
+  - `PrendaEntregaController`
+  - `RegistroBodegaController`
+  - `SupervisorAsesoresController`
+  - `TablerosController`
+  - `TablerosOrdenesController`
+  - `VistasController`
+  - `VisualizadorLogoController`
+- En `app/Http/Controllers`, cada uno quedo como shim de compatibilidad (`extends \App\Infrastructure\Http\Controllers\Legacy\...`).
+- Se mantuvieron rutas apuntando a `App\Infrastructure\Http\Controllers\Legacy\...` (sin cambio de contrato HTTP).
+
+Validacion ejecutada:
+
+- `php -l` sobre los controllers migrados (legacy + shims): OK.
+- `php artisan route:list --path=supervisor-asesores`: OK.
+- `php artisan route:list --path=asesores`: OK.
+
+Impacto DDD:
+
+- La capa `app/Http/Controllers` ya no contiene logica de esos flujos; ahora actua como compatibilidad temporal.
+- Se consolida `Infrastructure` como capa de entrada HTTP para el legado mientras se sigue separando logica a Application/Domain.
+
+Pendiente siguiente recomendado:
+
+1. Repetir el mismo patron en `app/Infrastructure/Http/Controllers/Legacy/Auth/*`.
+2. Iniciar descomposicion interna de `Legacy\SupervisorAsesoresController` (muy grande) en controllers CQRS por caso de uso.
+
+## Continuacion de Refactor (2026-03-27 - Fase 7: Migracion fisica Legacy/Auth)
+
+Objetivo de fase:
+
+- Completar la misma estrategia de migracion fisica en controladores de autenticacion legacy.
+
+Cambios aplicados:
+
+- Se movio la implementacion real de `app/Http/Controllers/Auth/*` a:
+  - `app/Infrastructure/Http/Controllers/Legacy/Auth/*`
+- Se dejaron shims de compatibilidad en `app/Http/Controllers/Auth/*` que extienden la clase equivalente en infraestructura.
+
+Controllers auth migrados en esta fase:
+
+- `AuthenticatedSessionController`
+- `ConfirmablePasswordController`
+- `EmailVerificationNotificationController`
+- `EmailVerificationPromptController`
+- `GoogleAuthController`
+- `NewPasswordController`
+- `PasswordController`
+- `PasswordResetLinkController`
+- `RegisteredUserController`
+- `VerifyEmailController`
+
+Validacion ejecutada:
+
+- `php -l` sobre todos los controllers en:
+  - `app/Infrastructure/Http/Controllers/Legacy/Auth`
+  - `app/Http/Controllers/Auth`
+- `php artisan route:list --path=login`: OK
+- `php artisan route:list --path=register`: OK
+- `php artisan route:list --path=verify-email`: OK
+
+Impacto DDD:
+
+- Se reduce mas el peso de `app/Http` como capa de implementacion.
+- Se mantiene compatibilidad mientras consolidamos el entrypoint HTTP en `Infrastructure`.
+
+Siguiente fase sugerida:
+
+1. Iniciar particion de `App\Infrastructure\Http\Controllers\Legacy\SupervisorAsesoresController` (controlador grande) en controladores por responsabilidad.
+2. Mover reglas de negocio restantes a UseCases/servicios de aplicacion y dejar controllers solo como orquestadores HTTP.
+
+## Continuacion de Refactor (2026-03-27 - Fase 8: limpieza de controllers activos en Http)
+
+Objetivo de fase:
+
+- Migrar los controllers activos por rutas que aun vivian en `app/Http/Controllers`.
+
+Controllers migrados a infraestructura (legacy):
+
+- `NotificationController`
+- `PedidoEstadoController`
+- `StorageController`
+
+Ubicacion actual:
+
+- `app/Infrastructure/Http/Controllers/Legacy/NotificationController.php`
+- `app/Infrastructure/Http/Controllers/Legacy/PedidoEstadoController.php`
+- `app/Infrastructure/Http/Controllers/Legacy/StorageController.php`
+
+Compatibilidad:
+
+- Se dejaron shims en `app/Http/Controllers/*` para no romper referencias internas.
+
+Rutas actualizadas:
+
+- `routes/notifications.php`
+  - ahora usa `App\Infrastructure\Http\Controllers\Legacy\NotificationController`
+  - y `App\Infrastructure\Http\Controllers\Legacy\ContadorController`
+- `routes/pedidos.php`
+  - ahora usa `App\Infrastructure\Http\Controllers\Legacy\PedidoEstadoController`
+- `routes/web.php`
+  - rutas `storage*` ahora usan `App\Infrastructure\Http\Controllers\Legacy\StorageController`
+- `routes/admin.php`
+  - ajuste final para usar `App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController`
+
+Validacion ejecutada:
+
+- `php -l` en controllers migrados y shims: OK.
+- `php artisan route:list --path=notifications`: OK.
+- `php artisan route:list --path=storage`: OK.
+- `php artisan route:list --path=pedidos --except-vendor`: OK.
+
+Estado tras la fase:
+
+- Referencias en rutas a `App\Http\Controllers`: 0.
+- En `app/Http/Controllers` quedan con logica real solo:
+  - `CotizacionController`
+  - `DisenosLogoPedidoController`
+  - `VistaCorteController`
+- Resumen actual en `app/Http/Controllers`:
+  - total: 39
+  - shims: 34
+  - con logica real: 3
+
+## Continuacion de Refactor (2026-03-27 - Fase 9: eliminacion de shims en app/Http/Controllers)
+
+Objetivo de fase:
+
+- Eliminar fisicamente los controladores shim de `app/Http/Controllers` despues de consolidar rutas y controladores en `Infrastructure`.
+
+Cambios aplicados:
+
+- Se actualizaron referencias residuales en comando de prueba:
+  - `app/Console/Commands/TestEstadosCommand.php`
+  - De `App\\Http\\Controllers\\CotizacionEstadoController` y `App\\Http\\Controllers\\PedidoEstadoController`
+  - A `App\\Infrastructure\\Http\\Controllers\\Legacy\\CotizacionEstadoController` y `...\\PedidoEstadoController`.
+
+- Se eliminaron los shims de `app/Http/Controllers` (incluyendo `Auth/*`).
+
+Estado final de `app/Http/Controllers`:
+
+- Se conserva solo:
+  - `Controller.php` (base controller usada por Infrastructure)
+  - `PDFCotizacionHelper.php` (helper usado por controladores PDF legacy en Infrastructure)
+
+Validacion:
+
+- `php artisan route:list` por paths criticos (`login`, `verify-email`, `notifications`, `pedidos`, `storage`): OK.
+- Busqueda de referencias a `App\\Http\\Controllers\\` (excepto base/helper): sin uso runtime relevante.
+
+Impacto DDD:
+
+- La capa HTTP operativa queda efectivamente en `app/Infrastructure/Http/Controllers`.
+- `app/Http/Controllers` queda reducido a utilidades base/compatibilidad tecnica minima.

@@ -564,7 +564,7 @@ function inicializarEventListenersEpp() {
             const btn = e.target.closest('.btn-eliminar-epp');
             const eppIndex = parseInt(btn.dataset.eppIndex);
             
-            console.log('[EPP] 🗑️ Eliminando EPP con índice:', eppIndex);
+            console.log('[EPP]  Eliminando EPP con índice:', eppIndex);
             
             // Confirmar eliminación
             if (confirm('¿Estás seguro de que deseas eliminar este EPP?')) {

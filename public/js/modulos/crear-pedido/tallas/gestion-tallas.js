@@ -252,7 +252,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
         console.log(`[gestion-tallas]  Talla guardada: ${genero} - ${talla}: ${cantInt}`);
     } else {
         delete window.tallasRelacionales[genero][talla];
-        console.log(`[gestion-tallas] 🗑️ Talla eliminada: ${genero} - ${talla}`);
+        console.log(`[gestion-tallas]  Talla eliminada: ${genero} - ${talla}`);
     }
     
     // Log del estado actual de todas las tallas

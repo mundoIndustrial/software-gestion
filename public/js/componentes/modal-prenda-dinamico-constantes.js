@@ -1,5 +1,5 @@
 /**
- * CONSTANTES - MODAL PRENDA DIN�MICO
+ * CONSTANTES - MODAL PRENDA DINAMICO
  * 
  *  NOTA IMPORTANTE: El modal HTML viene del template Blade
  * Archivo: resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php
@@ -11,7 +11,7 @@
 // Constante vacia - el modal real viene del Blade template
 const MODAL_PRENDA_DINAMICO_HTML = `<!-- MODAL: Viene del Blade template -->
 <!-- Ver: resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php -->
-<!-- No inyectar din�micamente para evitar conflictos con el modal Blade -->
+<!-- No inyectar dinamicamente para evitar conflictos con el modal Blade -->
 `;
 
 

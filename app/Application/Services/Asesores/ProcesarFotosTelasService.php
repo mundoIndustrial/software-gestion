@@ -100,7 +100,7 @@ class ProcesarFotosTelasService
                     Log::info(' [FOTOS-TELAS] Foto guardada', [
                         'nombre' => $archivoFoto->getClientOriginalName(),
                         'ruta' => $rutaGuardada,
-                        'tamaño' => $archivoFoto->getSize(),
+                        'tamano' => $archivoFoto->getSize(),
                     ]);
 
                     $fotosGuardadas[] = [
@@ -109,7 +109,7 @@ class ProcesarFotosTelasService
                         'ruta_miniatura' => null,
                         'ancho' => null,
                         'alto' => null,
-                        'tamaño' => $archivoFoto->getSize(),
+                        'tamano' => $archivoFoto->getSize(),
                     ];
                 } catch (\Exception $e) {
                     Log::error(' [FOTOS-TELAS] Error al guardar', [
@@ -143,7 +143,7 @@ class ProcesarFotosTelasService
                             'ruta_original' => Storage::url($rutaGuardada),
                             'ruta_webp' => null,
                             'url' => Storage::url($rutaGuardada),
-                            'tamaño_archivo' => $imagen->getSize(),
+                            'tamano_archivo' => $imagen->getSize(),
                             'tipo_archivo' => $imagen->getMimeType(),
                             'orden' => 0
                         ];

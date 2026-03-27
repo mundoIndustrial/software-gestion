@@ -2,189 +2,37 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" onload="window._PAGE_FULLY_LOADED=true">
 <head>
     
-    <!--  PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO  -->
-    <script>
-        // PASO 0: Capturar el error ANTES de que se lance - en el evento dispatchEvent
-        const originalDispatchEvent = Element.prototype.dispatchEvent;
-        Element.prototype.dispatchEvent = function(event) {
-            if (event.message && event.message.includes('storage is not allowed')) {
-                event.stopImmediatePropagation();
-                event.preventDefault();
-                return false;
-            }
-            return originalDispatchEvent.call(this, event);
-        };
-        
-        // PASO 0.5: Interceptar Error constructor
-        const OriginalError = window.Error;
-        window.Error = class extends OriginalError {
-            constructor(message) {
-                super(message);
-                if (message && message.includes('storage is not allowed')) {
-                    // Retornar un error silencioso
-                    this.message = '[BLOCKED] storage error';
-                }
-            }
-        };
-        window.Error.prototype = OriginalError.prototype;
-    </script>
-
-    <!-- PASO 1: Capturar errores ANTES de que se registren - MÁS AGRESIVO -->
-    <script>
-        window._storageErrors = [];
-        
-        // Reemplazar console.error completamente
-        const originalError = console.error;
-        console.error = function(...args) {
-            const msg = String(args[0]);
-            if (msg.includes('storage is not allowed') || msg.includes('message channel closed')) {
-                window._storageErrors.push(msg);
-                return; // No pasar a console
-            }
-            return originalError.apply(console, args);
-        };
-        
-        // Reemplazar console.warn también
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = String(args[0]);
-            if (msg.includes('storage is not allowed') || msg.includes('message channel closed')) {
-                return; // No pasar a console
-            }
-            return originalWarn.apply(console, args);
-        };
-        
-        // Capturar promesas rechazadas INMEDIATAMENTE - BLOQUEAR COMPLETAMENTE
-        window.addEventListener('unhandledrejection', (event) => {
-            const reason = String(event.reason);
-            if (reason.includes('storage is not allowed') || reason.includes('message channel closed')) {
-                event.preventDefault();
-                window._storageErrors.push(reason);
-                // NO permitir que se propague
-                return false;
-            }
-        }, true); // Usar captura, no bubbling
-        
-        // Capturar errores síncronos - BLOQUEAR COMPLETAMENTE
-        window.addEventListener('error', (event) => {
-            if (event.message && (event.message.includes('storage is not allowed') || event.message.includes('message channel'))) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                return true;
-            }
-        }, true);
-        
-        // Capturar en window.onerror - BLOQUEAR COMPLETAMENTE
-        window.onerror = function(msg, url, line, col, error) {
-            if (msg && (msg.includes('storage is not allowed') || msg.includes('message channel'))) {
-                return true; // Prevenir el error
-            }
-            return false;
-        };
-        
-        // EXTRA: Bandera de debug basada en entorno Laravel
-        window.APP_DEBUG = {{ app()->environment('local', 'staging') ? 'true' : 'false' }};
-
-        // ─── Protección global contra errores de storage/extensiones ───
-        // En producción: suprimir logs directos (los servicios usan Logger que ya controla esto)
-        // En desarrollo: permitir todo, solo filtrar errores de storage de extensiones
-        if (!window.APP_DEBUG) {
-            const _origLog = console.log;
-            const _origDebug = console.debug;
-            console.log = function() {}; // Producción: silenciar console.log directo
-            console.debug = function() {}; // Producción: silenciar console.debug
-            // console.warn y console.error permanecen intactos SIEMPRE
-        }
-        
-        // PASO 2: Si es una extensión, interceptar chrome.runtime.onMessage
-        if (typeof chrome !== 'undefined' && chrome.runtime) {
-            const originalAddListener = chrome.runtime.onMessage.addListener;
-            chrome.runtime.onMessage.addListener = function(callback) {
-                // Envolver el callback para ignorar errores de storage
-                return originalAddListener.call(this, function(message, sender, sendResponse) {
-                    try {
-                        return callback(message, sender, sendResponse);
-                    } catch (error) {
-                        if (String(error).includes('storage is not allowed')) {
-                            // Ignorar silenciosamente
-                            return;
-                        }
-                        throw error;
-                    }
-                });
-            };
-        }
-    </script>
-
-    <!-- PASO 3: Reemplazo ultra-temprano de storage -->
+    <!-- Manejo defensivo de errores de extensiones/storage sin monkey patches -->
     <script>
         (function() {
             'use strict';
-            
-            const memLS = {};
-            const memSS = {};
-            
-            const proxyLS = new Proxy({}, {
-                get(t, k) {
-                    if (k === 'getItem') return (key) => memLS[key] ?? null;
-                    if (k === 'setItem') return (key, val) => { memLS[key] = String(val); };
-                    if (k === 'removeItem') return (key) => { delete memLS[key]; };
-                    if (k === 'clear') return () => { for (let k in memLS) delete memLS[k]; };
-                    if (k === 'key') return (i) => Object.keys(memLS)[i] ?? null;
-                    if (k === 'length') return Object.keys(memLS).length;
-                    return undefined;
+
+            const ignoredPatterns = ['storage is not allowed', 'message channel closed'];
+            window.APP_DEBUG = {{ app()->environment('local', 'staging') ? 'true' : 'false' }};
+            window._storageErrors = window._storageErrors || [];
+
+            function shouldIgnoreStorageError(value) {
+                const text = String(value || '').toLowerCase();
+                return ignoredPatterns.some((pattern) => text.includes(pattern));
+            }
+
+            window.__miShouldIgnoreStorageError = shouldIgnoreStorageError;
+
+            window.addEventListener('unhandledrejection', function(event) {
+                if (!shouldIgnoreStorageError(event.reason)) {
+                    return;
                 }
-            });
-            
-            const proxySS = new Proxy({}, {
-                get(t, k) {
-                    if (k === 'getItem') return (key) => memSS[key] ?? null;
-                    if (k === 'setItem') return (key, val) => { memSS[key] = String(val); };
-                    if (k === 'removeItem') return (key) => { delete memSS[key]; };
-                    if (k === 'clear') return () => { for (let k in memSS) delete memSS[k]; };
-                    if (k === 'key') return (i) => Object.keys(memSS)[i] ?? null;
-                    if (k === 'length') return Object.keys(memSS).length;
-                    return undefined;
+                window._storageErrors.push(String(event.reason));
+                event.preventDefault();
+            }, true);
+
+            window.addEventListener('error', function(event) {
+                if (!shouldIgnoreStorageError(event.message || event.error)) {
+                    return;
                 }
-            });
-            
-            // Reemplazar brutalmente
-            try {
-                Object.defineProperty(window, 'localStorage', {
-                    get: () => proxyLS,
-                    set: () => {},
-                    configurable: false
-                });
-            } catch (e) {
-                window.localStorage = proxyLS;
-            }
-            
-            try {
-                Object.defineProperty(window, 'sessionStorage', {
-                    get: () => proxySS,
-                    set: () => {},
-                    configurable: false
-                });
-            } catch (e) {
-                window.sessionStorage = proxySS;
-            }
-            
-            if (typeof globalThis !== 'undefined' && globalThis !== window) {
-                try {
-                    Object.defineProperty(globalThis, 'localStorage', {
-                        get: () => proxyLS,
-                        set: () => {},
-                        configurable: false
-                    });
-                    Object.defineProperty(globalThis, 'sessionStorage', {
-                        get: () => proxySS,
-                        set: () => {},
-                        configurable: false
-                    });
-                } catch (e) {}
-            }
-            
-            window._STORAGE_PROXY_READY = true;
+                window._storageErrors.push(String(event.message || event.error));
+                event.preventDefault();
+            }, true);
         })();
     </script>
 

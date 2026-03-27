@@ -18,8 +18,12 @@ class DeshacerEntregadoDespachoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->usuario = User::factory()->create();
+
+        $suffix = now()->format('YmdHisv') . '_' . bin2hex(random_bytes(3));
+        $this->usuario = User::factory()->create([
+            'name' => "Despacho Test {$suffix}",
+            'email' => "despacho_test_{$suffix}@test.local",
+        ]);
         $this->actingAs($this->usuario);
     }
 
@@ -97,7 +101,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
         $response->assertStatus(404);
         $response->assertJson([
             'success' => false,
-            'message' => 'No se encontró registro de entrega para deshacer',
+            'message' => 'No se encontro registro de entrega para deshacer',
         ]);
     }
 
@@ -158,7 +162,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
         ]);
 
         // Cerrar sesión
-        $this->actingAs(null);
+        auth()->logout();
 
         // Intentar deshacer sin autenticación
         $response = $this->postJson(route('despacho.deshacer-entregado', $pedido->id), [
@@ -208,7 +212,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
             'item_id' => 1,
         ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
         $response->assertJson([
             'success' => false,
         ]);
@@ -249,5 +253,3 @@ class DeshacerEntregadoDespachoTest extends TestCase
         $this->assertNotEquals('Entregado', $pedidoActualizado->estado);
     }
 }
-
-

@@ -103,7 +103,7 @@
                                         console.error('[ONCLICK-ERROR] abrirModalEliminarPrenda no disponible');
                                     }
                                 }).call(this)">
-                                    🗑️ Eliminar
+                                     Eliminar
                                 </button>
                             </div>
                         </div>

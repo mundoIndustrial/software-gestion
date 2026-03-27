@@ -351,8 +351,8 @@ class ValidadorPrenda {
     static validarImagenes(imagenes) {
         const errores = [];
         const extensionesValidas = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        const tamañoMaxMB = 5;
-        const tamañoMaxBytes = tamañoMaxMB * 1024 * 1024;
+        const tamanoMaxMB = 5;
+        const tamanoMaxBytes = tamanoMaxMB * 1024 * 1024;
 
         if (!Array.isArray(imagenes)) {
             errores.push('Imágenes debe ser un array');
@@ -364,8 +364,8 @@ class ValidadorPrenda {
                 errores.push(`Imagen ${idx}: Falta nombre`);
             }
 
-            if (img.tamaño && img.tamaño > tamañoMaxBytes) {
-                errores.push(`Imagen ${idx}: Excede tamaño máximo (${tamañoMaxMB}MB)`);
+            if (img.tamano && img.tamano > tamanoMaxBytes) {
+                errores.push(`Imagen ${idx}: Excede tamano máximo (${tamanoMaxMB}MB)`);
             }
 
             if (img.nombre) {

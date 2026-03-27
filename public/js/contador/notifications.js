@@ -1,7 +1,9 @@
 // ========================================
 // NOTIFICATIONS SYSTEM - CONTADOR
 // ========================================
-let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas como leídas
+
+let lastMarkAllReadTime = 0;
+let contadorRealtimeNotificationsBound = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeNotifications();
@@ -10,23 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeNotifications() {
     // Cargar notificaciones iniciales
     loadNotifications();
-    
-    // Actualizar notificaciones cada 30 segundos
-    // PERO: Si hace poco marcamos todas como leídas, esperar más tiempo
-    setInterval(() => {
-        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
-        // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
-        // Si no, cargar normalmente
-        if (timeSinceMarkAllRead < 120000) {
+    setupContadorRealtimeNotifications();
 
-            return;
-        }
-        loadNotifications();
-    }, 30000);
-    
     // Toggle del dropdown de notificaciones
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationMenu = document.getElementById('notificationMenu');
+    const userMenu = document.getElementById('userMenu');
     
     if (notificationBtn && notificationMenu) {
         notificationBtn.addEventListener('click', function(e) {
@@ -34,7 +25,6 @@ function initializeNotifications() {
             e.stopPropagation();
             
             // Cerrar menú de usuario si está abierto
-            const userMenu = document.getElementById('userMenu');
             if (userMenu) {
                 userMenu.classList.remove('show');
             }
@@ -53,23 +43,6 @@ function initializeNotifications() {
         }, false);
     }
     
-    // Toggle del dropdown de usuario
-    // COMENTADO: El manejo del dropdown de usuario se hace en top-nav.js para evitar conflictos
-    /*
-    const userBtn = document.getElementById('userBtn');
-    const userMenu = document.getElementById('userMenu');
-    
-    if (userBtn && userMenu) {
-        userBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userMenu.classList.toggle('show');
-            if (notificationMenu) {
-                notificationMenu.classList.remove('show');
-            }
-        });
-    }
-    */
-    
     // Cerrar dropdowns al hacer clic afuera
     document.addEventListener('click', function() {
         if (notificationMenu) {
@@ -85,6 +58,45 @@ function initializeNotifications() {
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllAsRead);
     }
+}
+
+
+function setupContadorRealtimeNotifications() {
+    if (contadorRealtimeNotificationsBound) {
+        return;
+    }
+
+    if (!window.shared?.isReady || typeof window.waitForEcho !== 'function') {
+        setTimeout(setupContadorRealtimeNotifications, 300);
+        return;
+    }
+
+    const refreshNotifications = () => {
+        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
+        if (timeSinceMarkAllRead < 1500) {
+            return;
+        }
+        loadNotifications();
+    };
+
+    window.waitForEcho(() => {
+        try {
+            const ws = window.shared?.websocket;
+            if (!ws) {
+                setTimeout(setupContadorRealtimeNotifications, 500);
+                return;
+            }
+
+            ws.subscribe('notifications', '.new-notification', refreshNotifications);
+            ws.subscribe('notifications', '.notifications-marked-read', refreshNotifications);
+            ws.subscribe('cotizaciones', '.cotizacion.creada', refreshNotifications);
+            ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', refreshNotifications);
+
+            contadorRealtimeNotificationsBound = true;
+        } catch (_) {
+            setTimeout(setupContadorRealtimeNotifications, 500);
+        }
+    });
 }
 
 async function loadNotifications() {

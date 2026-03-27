@@ -82,7 +82,7 @@ window.manejarArchivosFotosTela = function(archivos, prendaIndex, telaIndex) {
         tela.imagenes.push({
             file: file,
             nombre: file.name,
-            tamaño: file.size,
+            tamano: file.size,
             blobUrl: blobUrl
         });
         

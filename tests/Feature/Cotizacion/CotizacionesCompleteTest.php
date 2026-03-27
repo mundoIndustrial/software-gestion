@@ -8,16 +8,15 @@ use App\Models\User;
 use App\Models\Cliente;
 use App\Models\Genero;
 use App\Models\TipoManga;
-use App\Models\TipoBroche;
-use App\Models\Tela;
-use App\Models\Color;
+use App\Models\TipoBrocheBoton;
+use App\Models\TelaPrenda;
+use App\Models\ColorPrenda;
 use App\Models\PrendaCot;
 use App\Models\PrendaVarianteCot;
 use App\Models\PrendaTallaCot;
 use App\Models\PrendaTelaCot;
 use App\Models\PrendaFotoCot;
 use App\Models\LogoCotizacion;
-use App\Models\LogoFoto;
 use Tests\TestCase;
 
 /**
@@ -64,12 +63,13 @@ class CotizacionesCompleteTest extends TestCase
     private function crearDatosBase(): void
     {
         // Crear 3 asesores
-        $this->asesor1 = User::factory()->create(['name' => 'Asesor 1']);
-        $this->asesor2 = User::factory()->create(['name' => 'Asesor 2']);
-        $this->asesor3 = User::factory()->create(['name' => 'Asesor 3']);
+        $suffix = now()->format('YmdHisv') . '_' . bin2hex(random_bytes(3));
+        $this->asesor1 = User::factory()->create(['name' => 'Asesor 1', 'email' => "asesor1_{$suffix}@test.local"]);
+        $this->asesor2 = User::factory()->create(['name' => 'Asesor 2', 'email' => "asesor2_{$suffix}@test.local"]);
+        $this->asesor3 = User::factory()->create(['name' => 'Asesor 3', 'email' => "asesor3_{$suffix}@test.local"]);
 
         // Crear cliente
-        $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
+        $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test ' . now()->format('Hisv')]);
 
         // Crear tipos de cotización
         $this->tipoM = TipoCotizacion::firstOrCreate(
@@ -95,12 +95,10 @@ class CotizacionesCompleteTest extends TestCase
     {
         // generos
         $this->generos['masculino'] = Genero::firstOrCreate(
-            ['nombre' => 'Masculino'],
-            ['abreviatura' => 'M']
+            ['nombre' => 'Masculino']
         );
         $this->generos['femenino'] = Genero::firstOrCreate(
-            ['nombre' => 'Femenino'],
-            ['abreviatura' => 'F']
+            ['nombre' => 'Femenino']
         );
 
         // Tipos de Manga
@@ -108,31 +106,31 @@ class CotizacionesCompleteTest extends TestCase
         $this->tiposManga['larga'] = TipoManga::firstOrCreate(['nombre' => 'Larga']);
 
         // Tipos de Broche
-        $this->tiposBroche['botones'] = TipoBroche::firstOrCreate(['nombre' => 'Botones']);
-        $this->tiposBroche['cierre'] = TipoBroche::firstOrCreate(['nombre' => 'Cierre']);
+        $this->tiposBroche['botones'] = TipoBrocheBoton::firstOrCreate(['nombre' => 'Botones']);
+        $this->tiposBroche['cierre'] = TipoBrocheBoton::firstOrCreate(['nombre' => 'Cierre']);
 
         // Telas
-        $this->telas['algodon'] = Tela::firstOrCreate(
+        $this->telas['algodon'] = TelaPrenda::firstOrCreate(
             ['nombre' => 'Algodón'],
             ['descripcion' => 'Algodón 100%', 'codigo' => 'ALG']
         );
-        $this->telas['polyester'] = Tela::firstOrCreate(
+        $this->telas['polyester'] = TelaPrenda::firstOrCreate(
             ['nombre' => 'Poliester'],
-            ['descripcion' => 'Poliester 100%', 'codigo' => 'POL']
+            ['descripcion' => 'Poliester 100%', 'referencia' => 'POL', 'activo' => true]
         );
 
         // Colores
-        $this->colores['azul'] = Color::firstOrCreate(
+        $this->colores['azul'] = ColorPrenda::firstOrCreate(
             ['nombre' => 'Azul'],
-            ['codigo' => 'AZU']
+            ['codigo' => 'AZU', 'activo' => true]
         );
-        $this->colores['blanco'] = Color::firstOrCreate(
+        $this->colores['blanco'] = ColorPrenda::firstOrCreate(
             ['nombre' => 'Blanco'],
-            ['codigo' => 'BLA']
+            ['codigo' => 'BLA', 'activo' => true]
         );
-        $this->colores['negro'] = Color::firstOrCreate(
+        $this->colores['negro'] = ColorPrenda::firstOrCreate(
             ['nombre' => 'Negro'],
-            ['codigo' => 'NEG']
+            ['codigo' => 'NEG', 'activo' => true]
         );
     }
 
@@ -422,7 +420,7 @@ class CotizacionesCompleteTest extends TestCase
             'fecha_envio' => now(),
             'es_borrador' => false,
             'estado' => 'enviada',
-            'tipo_venta' => 'P',
+            'tipo_venta' => 'M',
             'especificaciones' => [],
         ]);
 
@@ -471,7 +469,7 @@ class CotizacionesCompleteTest extends TestCase
             'fecha_envio' => now(),
             'es_borrador' => false,
             'estado' => 'enviada',
-            'tipo_venta' => 'G',
+            'tipo_venta' => 'M',
             'especificaciones' => [],
         ]);
 
@@ -545,20 +543,6 @@ class CotizacionesCompleteTest extends TestCase
             'tipo_venta' => 'bordado',
         ]);
 
-        // Crear fotos del logo
-        for ($i = 1; $i <= 4; $i++) {
-            LogoFoto::create([
-                'logo_cotizacion_id' => $logo->id,
-                'ruta_original' => "storage/logos/logo_{$numero}_{$i}.png",
-                'ruta_webp' => "storage/logos/logo_{$numero}_{$i}.webp",
-                'ruta_miniatura' => "storage/logos/logo_{$numero}_{$i}_thumb.png",
-                'orden' => $i,
-                'ancho' => 500,
-                'alto' => 500,
-                'tamano' => 102400,
-            ]);
-        }
-
         return $cotizacion->fresh();
     }
 
@@ -586,7 +570,7 @@ class CotizacionesCompleteTest extends TestCase
         $variante = PrendaVarianteCot::create([
             'prenda_cot_id' => $prenda->id,
             'tipo_prenda' => 'camisa',
-            'genero_id' => $this->generos['masculino']->id,
+            'genero_id' => json_encode([$this->generos['masculino']->id]),
             'color' => 'Azul',
             'tipo_manga_id' => $this->tiposManga['corta']->id,
             'aplica_manga' => true,
@@ -608,9 +592,6 @@ class CotizacionesCompleteTest extends TestCase
                 'ruta_webp' => "storage/prendas/prenda_{$prenda->id}_foto_{$i}.webp",
                 'ruta_miniatura' => "storage/prendas/prenda_{$prenda->id}_foto_{$i}_thumb.jpg",
                 'orden' => $i,
-                'ancho' => 1920,
-                'alto' => 1080,
-                'tamano' => 524288,
             ]);
         }
 
@@ -685,7 +666,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertNotNull($cotizacion->fecha_inicio);
 
         // Validar estado
-        $this->assertIn($cotizacion->estado, ['enviada', 'aceptada', 'rechazada']);
+        $this->assertContains($cotizacion->estado, ['enviada', 'aceptada', 'rechazada']);
 
         // Si no es borrador, debe tener numero y fecha de Envio
         if (!$cotizacion->es_borrador) {

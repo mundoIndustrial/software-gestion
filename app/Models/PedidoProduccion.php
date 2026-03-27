@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasLegibleEstado;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -57,7 +58,7 @@ use Carbon\Carbon;
  */
 class PedidoProduccion extends Model
 {
-    use SoftDeletes, HasLegibleEstado;
+    use HasFactory, SoftDeletes, HasLegibleEstado;
 
     protected $table = 'pedidos_produccion';
 
@@ -247,7 +248,28 @@ class PedidoProduccion extends Model
      */
     public function pedidoEpps(): HasMany
     {
-        return $this->hasMany(PedidoEpp::class, 'pedido_id');
+        return $this->hasMany(PedidoEpp::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Alias legacy para compatibilidad con servicios/tests existentes.
+     */
+    public function pedidosEpp(): HasMany
+    {
+        return $this->pedidoEpps();
+    }
+
+    /**
+     * Compatibilidad: aceptar valores como "PED-001" en numero_pedido.
+     */
+    public function setNumeroPedidoAttribute($value): void
+    {
+        if (is_string($value)) {
+            $digits = preg_replace('/\D+/', '', $value);
+            $value = $digits !== '' ? (int) $digits : null;
+        }
+
+        $this->attributes['numero_pedido'] = $value;
     }
 
     /**

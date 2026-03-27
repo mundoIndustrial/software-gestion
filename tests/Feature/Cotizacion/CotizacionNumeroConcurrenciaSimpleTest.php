@@ -32,10 +32,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     $this->fail('Secuencia no encontrada. Â¿Ejecutaste el seeder?');
                 }
 
-                $proximoNumero = $secuencia->proximo_numero;
+                $proximoNumero = $secuencia->siguiente;
                 DB::table('numero_secuencias')
                     ->where('tipo', 'cotizaciones_prenda')
-                    ->update(['proximo_numero' => $proximoNumero + 1]);
+                    ->update(['siguiente' => $proximoNumero + 1]);
 
                 return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
             });
@@ -61,7 +61,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         
         echo "\n SECUENCIAS ENCONTRADAS:\n";
         foreach ($secuencias as $sec) {
-            echo "  - {$sec->tipo}: próximo_numero = {$sec->proximo_numero}\n";
+            echo "  - {$sec->tipo}: siguiente = {$sec->siguiente}\n";
         }
     }
 
@@ -79,10 +79,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     ->where('tipo', 'cotizaciones_bordado')
                     ->first();
 
-                $proximoNumero = $secuencia->proximo_numero;
+                $proximoNumero = $secuencia->siguiente;
                 DB::table('numero_secuencias')
                     ->where('tipo', 'cotizaciones_bordado')
-                    ->update(['proximo_numero' => $proximoNumero + 1]);
+                    ->update(['siguiente' => $proximoNumero + 1]);
 
                 return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
             });
@@ -104,10 +104,9 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
      */
     public function test_cotizaciones_existen_en_bd()
     {
-        $count = DB::table('cotizacions')->count();
+        $count = DB::table('cotizaciones')->count();
         echo "\n COTIZACIONES EN BD: $count\n";
         
         $this->assertGreaterThan(0, $count, 'No hay cotizaciones. Crea algunas primero.');
     }
 }
-

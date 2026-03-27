@@ -76,7 +76,7 @@ class PrendaDataNormalizerService
         
         if (is_string($cantidadesInput)) {
             $cantidadesInput = json_decode($cantidadesInput, true) ?? [];
-            Log::info('ðŸ”„ JSON decodificado');
+            Log::info('„ JSON decodificado');
         }
         
         if (is_array($cantidadesInput)) {

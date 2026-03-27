@@ -6,8 +6,8 @@
 -- 1. Mostrar cuántas imágenes PNG existen antes de eliminar
 SELECT 
     COUNT(*) as cantidad_png,
-    SUM(tamaño) as tamaño_total_bytes,
-    SUM(tamaño) / 1024 / 1024 as tamaño_total_mb
+    SUM(tamano) as tamano_total_bytes,
+    SUM(tamano) / 1024 / 1024 as tamano_total_mb
 FROM pedidos_procesos_imagenes 
 WHERE tipo_mime = 'image/png' 
    OR ruta LIKE '%.png'
@@ -19,7 +19,7 @@ SELECT
     ruta,
     nombre_original,
     tipo_mime,
-    tamaño,
+    tamano,
     created_at
 FROM pedidos_procesos_imagenes 
 WHERE tipo_mime = 'image/png' 
@@ -36,8 +36,8 @@ ORDER BY created_at DESC;
 -- 4. Verificar que las imágenes nuevas (WebP) están bien guardadas
 SELECT 
     COUNT(*) as cantidad_webp,
-    SUM(tamaño) as tamaño_total_bytes,
-    SUM(tamaño) / 1024 / 1024 as tamaño_total_mb
+    SUM(tamano) as tamano_total_bytes,
+    SUM(tamano) / 1024 / 1024 as tamano_total_mb
 FROM pedidos_procesos_imagenes 
 WHERE tipo_mime = 'image/webp' 
    AND ruta LIKE '%.webp';

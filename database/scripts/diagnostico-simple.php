@@ -107,7 +107,7 @@ if (is_dir($pedidosDir)) {
             
             echo "   📌 Pedido $pedidoId:\n";
             echo "      • Archivos: $count\n";
-            echo "      • Tamaño: " . number_format($totalSize / 1024, 2) . " KB\n";
+            echo "      • tamano: " . number_format($totalSize / 1024, 2) . " KB\n";
             
             if (!empty($tipos)) {
                 echo "      • Tipos: ";
@@ -144,7 +144,7 @@ foreach ($archivos as $rel => $desc) {
         $size = filesize($full);
         $lines = count(file($full));
         echo " $desc\n";
-        echo "   • Líneas: $lines, Tamaño: " . number_format($size / 1024, 2) . " KB\n";
+        echo "   • Líneas: $lines, tamano: " . number_format($size / 1024, 2) . " KB\n";
     } else {
         echo " $desc - NO EXISTE ($rel)\n";
     }

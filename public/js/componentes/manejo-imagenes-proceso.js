@@ -29,7 +29,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             return;
         }
         
-        // Validar tamaño (máximo 5MB)
+        // Validar tamano (máximo 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
             mostrarModalError('El archivo es demasiado grande (máximo 5MB)');
@@ -155,7 +155,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         procesoIndex = previewIndex;
     }
     
-    console.log('[eliminarImagenProceso] 🗑️ INICIANDO - previewIndex:', previewIndex, 'procesoIndex:', procesoIndex);
+    console.log('[eliminarImagenProceso]  INICIANDO - previewIndex:', previewIndex, 'procesoIndex:', procesoIndex);
     
     // 🔴 Mostrar modal de confirmación en lugar de eliminar directamente
     window._imagenAEliminarIndice = previewIndex;

@@ -33,11 +33,6 @@ function initializeRealtimeNotifications() {
     
     // Configurar listeners del UI
     setupUIListeners();
-    
-    // Actualizar contador cada 60 segundos (backup por si falla websocket)
-    setInterval(() => {
-        updateUnreadCount();
-    }, 60000);
 }
 
 // Configurar escucha de eventos en tiempo real usando WebSocket abstraction

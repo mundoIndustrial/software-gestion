@@ -62,7 +62,7 @@ class MigrarImagenesLogo extends Command
                             'orden' => $orden,
                             'ancho' => null,
                             'alto' => null,
-                            'tamaño' => null,
+                            'tamano' => null,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

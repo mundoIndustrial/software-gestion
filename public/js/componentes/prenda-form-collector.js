@@ -71,7 +71,7 @@ class PrendaFormCollector {
                     previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
                     url: img?.url?.substring ? img.url.substring(0, 80) : img?.url,
                     nombre: img?.nombre,
-                    tamaño: img?.tamaño,
+                    tamano: img?.tamano,
                     id: img?.id,
                     prenda_foto_id: img?.prenda_foto_id,
                     ruta_original: img?.ruta_original?.substring ? img.ruta_original.substring(0, 80) : img?.ruta_original,
@@ -96,7 +96,7 @@ class PrendaFormCollector {
                         file: img.file,                    // ← El File object real
                         previewUrl: img.previewUrl,        // ← El blob URL para preview
                         nombre: img.nombre,
-                        tamaño: img.tamaño,
+                        tamano: img.tamano,
                         fileType: img.file.type,
                         fileSize: img.file.size
                     };

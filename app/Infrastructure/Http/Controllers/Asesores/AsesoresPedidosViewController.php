@@ -9,6 +9,7 @@ use App\Application\Bodega\Services\BodegaPedidoService;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Application\Pedidos\Presenters\PedidoTableRowPresenter;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
@@ -51,6 +52,11 @@ final class AsesoresPedidosViewController extends Controller
             );
 
             $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
+            $pedidos->setCollection(
+                $pedidos->getCollection()->map(
+                    static fn($pedido) => PedidoTableRowPresenter::present($pedido)
+                )
+            );
             $estados = $request->query('tipo') !== 'logo' ? $this->listarProduccionPedidosUseCase->obtenerEstados() : [];
 
             return view('asesores.pedidos.index', compact('pedidos', 'estados'));
@@ -268,4 +274,3 @@ final class AsesoresPedidosViewController extends Controller
         }
     }
 }
-

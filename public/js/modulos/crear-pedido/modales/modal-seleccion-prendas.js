@@ -556,7 +556,7 @@ function renderizarItemsCotizacionEnDOM() {
                         style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
                         onmouseover="this.style.backgroundColor='#dc2626'"
                         onmouseout="this.style.backgroundColor='#ef4444'">
-                    🗑️ Eliminar
+                     Eliminar
                 </button>
             </div>
         `;

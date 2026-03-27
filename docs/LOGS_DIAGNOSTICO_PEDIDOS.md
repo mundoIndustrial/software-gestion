@@ -216,7 +216,7 @@ Si tiempo_total_ms > 5000ms:
 ```
 Buscar: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA
 Si tiempo_total_ms > 10000ms:
-  → Si paso_7_imagenes_ms > 3000ms → Reducir tamaño de imágenes
+  → Si paso_7_imagenes_ms > 3000ms → Reducir tamano de imágenes
   → Si paso_7b_epps_ms > 1500ms → Revisar procesamiento de EPPs
   → Si paso_5_pedido_base_ms > 500ms → Problema en triggers DB
 ```
@@ -257,7 +257,7 @@ Si guardado_webp_ms > 300ms (promedio):
 ##  Cómo Optimizar Basándose en Logs
 
 ### Si PASO 7 (Imágenes) es lento:
-1. Verificar tamaño de archivos subidos
+1. Verificar tamano de archivos subidos
 2. Revisar `ImageUploadService.php` línea ~95 (conversión WebP)
 3. Considerar hacer procesamiento en background con Queue
 

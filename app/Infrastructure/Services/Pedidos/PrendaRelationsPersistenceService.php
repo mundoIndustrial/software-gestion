@@ -10,7 +10,6 @@ class PrendaRelationsPersistenceService
 {
     public function __construct(
         private PrendaImagenService $prendaImagenService,
-        private PrendaLogoPersistenceService $prendaLogoPersistenceService,
         private TelaImagenService $telaImagenService,
         private PrendaProcesoService $prendaProcesoService,
     ) {
@@ -29,10 +28,6 @@ class PrendaRelationsPersistenceService
                 $prenda->pedido_produccion_id,
                 $fotosPrenda
             );
-        }
-
-        if (!empty($prendaData['logos'])) {
-            $this->prendaLogoPersistenceService->guardarLogos($prenda->id, $prendaData['logos']);
         }
 
         Log::info(' [PedidoPrendaService::guardarPrenda] Verificando si hay telas para guardar', [

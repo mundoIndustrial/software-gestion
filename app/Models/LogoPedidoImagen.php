@@ -16,12 +16,12 @@ class LogoPedidoImagen extends Model
         'ruta_original',
         'ruta_webp',
         'tipo_archivo',
-        'tamaño_archivo',
+        'tamano_archivo',
         'orden',
     ];
 
     protected $casts = [
-        'tamaño_archivo' => 'integer',
+        'tamano_archivo' => 'integer',
         'orden' => 'integer',
     ];
 

@@ -29,7 +29,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('ðŸ”„ [CambiarEstadoPedidoHandler] Cambiando estado de pedido', [
+            Log::info('„ [CambiarEstadoPedidoHandler] Cambiando estado de pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'nuevo_estado' => $command->getNuevoEstado(),
                 'razon' => $command->getRazon(),

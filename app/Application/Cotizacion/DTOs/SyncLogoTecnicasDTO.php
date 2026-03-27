@@ -20,8 +20,6 @@ final readonly class SyncLogoTecnicasDTO
         public bool $tecnicasAgregadasPresent,
         public array $logoArchivos,
         public array $imagenesPaso3Archivos,
-        public array $logoFotosGuardadas,
-        public array $logoFotosExistentes,
     ) {
     }
 }

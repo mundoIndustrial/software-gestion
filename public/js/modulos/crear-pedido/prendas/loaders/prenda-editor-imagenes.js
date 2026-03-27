@@ -41,7 +41,7 @@ class PrendaEditorImagenes {
                         file: img.file,
                         previewUrl: nuevoBlob,
                         nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
-                        tamaño: img.tamaño || img.file.size,
+                        tamano: img.tamano || img.file.size,
                     };
                 }
                 
@@ -56,7 +56,7 @@ class PrendaEditorImagenes {
                         previewUrl: url,
                         url: url,
                         nombre: img.nombre || `imagen-${idx + 1}`,
-                        tamaño: img.tamaño || 0
+                        tamano: img.tamano || 0
                     };
                 }
                 
@@ -341,7 +341,7 @@ class PrendaEditorImagenes {
                         const imgs = window.imagenesPrendaStorage.obtenerImagenes();
                         imgs.splice(idx, 1);
                         window.imagenesPrendaStorage.establecerImagenes(imgs);
-                        console.log('[prenda-editor-imagenes] 🗑️ Imagen eliminada del storage local (no de BD)', {
+                        console.log('[prenda-editor-imagenes]  Imagen eliminada del storage local (no de BD)', {
                             imagenId: imagenId,
                             imagenesRestantes: imgs.length
                         });

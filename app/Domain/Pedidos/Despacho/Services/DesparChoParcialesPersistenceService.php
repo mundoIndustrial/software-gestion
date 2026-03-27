@@ -68,6 +68,7 @@ class DesparChoParcialesPersistenceService
                 tipoItem: $despacho['tipo_item'],
                 itemId: $despacho['item_id'],
                 tallaId: $despacho['talla_id'] ?? null,
+                genero: $despacho['genero'] ?? null,
                 observaciones: $despacho['observaciones'] ?? null,
                 usuarioId: $usuarioId,
             );

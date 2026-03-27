@@ -63,7 +63,7 @@ window.EventManager = (function() {
         try {
             elemento.removeEventListener(evento, callback);
             listenersConfigurados.delete(clave);
-            console.log(`[EventManager] 🗑️ Event listener removido: ${clave}`);
+            console.log(`[EventManager]  Event listener removido: ${clave}`);
             return true;
         } catch (error) {
             console.error(`[EventManager]  Error removiendo listener ${clave}:`, error);

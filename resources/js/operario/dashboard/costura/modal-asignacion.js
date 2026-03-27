@@ -96,7 +96,7 @@ export function volverAOpciones() {
     const btnCompleto = document.getElementById('btnModuloCompleto');
     const btnDistribuir = document.getElementById('btnDistribuirModulos');
     
-    // Restaurar tamaño original
+    // Restaurar tamano original
     modalContent.style.maxWidth = '900px';
     
     // Mostrar opciones y ocultar volver

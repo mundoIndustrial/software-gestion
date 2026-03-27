@@ -53,7 +53,7 @@ export class GalleryManager {
         // Cerrar galería existente si hay una
         const galeriaExistente = document.getElementById('galeria-modal-costura');
         if (galeriaExistente) {
-            console.log('[GalleryManager] 🗑️ Eliminando galería existente');
+            console.log('[GalleryManager]  Eliminando galería existente');
             galeriaExistente.remove();
         }
         

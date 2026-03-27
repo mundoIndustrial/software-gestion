@@ -85,8 +85,8 @@ class VerificarImagenesTelas extends Command
                     // Verificar en disco
                     $rutaCompleta = "public/{$foto->ruta_webp}";
                     if (Storage::exists($rutaCompleta)) {
-                        $tamaño = Storage::size($rutaCompleta);
-                        $this->line("│  │  │   En disco ({$tamaño} bytes)");
+                        $tamano = Storage::size($rutaCompleta);
+                        $this->line("│  │  │   En disco ({$tamano} bytes)");
                         $imagenesEnDisco++;
                     } else {
                         $this->error("│  │  │   NO en disco");

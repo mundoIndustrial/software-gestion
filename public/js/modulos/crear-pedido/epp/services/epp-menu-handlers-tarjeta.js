@@ -47,7 +47,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
             if (e.target.classList.contains('btn-eliminar-epp-nuevo')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[EppMenuHandlerTarjeta] 🗑️ Click en botón eliminar EPP detectado');
+                console.log('[EppMenuHandlerTarjeta]  Click en botón eliminar EPP detectado');
                 this.eliminarEPP(e.target);
             }
         });

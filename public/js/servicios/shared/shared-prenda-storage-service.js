@@ -104,7 +104,7 @@ class SharedPrendaStorageService {
                 formData.append('orden', i);
 
                 // Subir
-                Logger.debug(`Subiendo: ${archivo.name} (${this.formatoTamaño(archivo.size)})`, 'SharedPrendaStorage');
+                Logger.debug(`Subiendo: ${archivo.name} (${this.formatotamano(archivo.size)})`, 'SharedPrendaStorage');
 
                 const response = await fetch(this.endpointBase, {
                     method: 'POST',
@@ -197,11 +197,11 @@ class SharedPrendaStorageService {
             };
         }
 
-        // Verificar tamaño
+        // Verificar tamano
         if (archivo.size > this.maxFileSize) {
             return {
                 valido: false,
-                mensaje: `Archivo muy grande (máx: ${this.formatoTamaño(this.maxFileSize)})`
+                mensaje: `Archivo muy grande (máx: ${this.formatotamano(this.maxFileSize)})`
             };
         }
 
@@ -219,17 +219,17 @@ class SharedPrendaStorageService {
     /**
      * Convertir bytes a formato legible
      */
-    formatoTamaño(bytes) {
+    formatotamano(bytes) {
         const unidades = ['B', 'KB', 'MB', 'GB'];
-        let tamaño = bytes;
+        let tamano = bytes;
         let unidad = 0;
 
-        while (tamaño >= 1024 && unidad < unidades.length - 1) {
-            tamaño /= 1024;
+        while (tamano >= 1024 && unidad < unidades.length - 1) {
+            tamano /= 1024;
             unidad++;
         }
 
-        return `${tamaño.toFixed(2)} ${unidades[unidad]}`;
+        return `${tamano.toFixed(2)} ${unidades[unidad]}`;
     }
 
     /**
@@ -248,7 +248,7 @@ class SharedPrendaStorageService {
                 resolve({
                     preview: e.target.result,
                     nombre: archivo.name,
-                    tamaño: archivo.size,
+                    tamano: archivo.size,
                     tipo: archivo.type
                 });
             };
@@ -270,11 +270,11 @@ class SharedPrendaStorageService {
     }
 
     /**
-     * Establecer tamaño máximo
+     * Establecer tamano máximo
      */
     setMaxFileSize(bytes) {
         this.maxFileSize = bytes;
-        Logger.debug(`Tamaño máximo establecido: ${this.formatoTamaño(bytes)}`, 'SharedPrendaStorage');
+        Logger.debug(`tamano máximo establecido: ${this.formatotamano(bytes)}`, 'SharedPrendaStorage');
     }
 }
 

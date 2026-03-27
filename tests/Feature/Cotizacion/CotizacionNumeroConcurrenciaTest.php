@@ -24,15 +24,10 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
 {
     use DatabaseTransactions;
 
-    protected $seeder = 'DatabaseSeeder';
-
     public function setUp(): void
     {
         parent::setUp();
-        
-        // Ejecutar seeders
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
-        
+
         // Inicializar secuencias si no existen
         $this->inicializarSecuencias();
     }
@@ -66,7 +61,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     public function test_numeros_incrementan_secuencialmente()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $numero1 = $this->generarNumero('cotizaciones_prenda');
         $numero2 = $this->generarNumero('cotizaciones_prenda');
@@ -92,7 +87,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     public function test_lock_pessimista_previene_duplicados()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $numeros = [];
 
@@ -133,8 +128,8 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     public function test_diferentes_tipos_secuencia_no_interfieren()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
-        NumeroSecuencia::where('tipo', 'cotizaciones_bordado')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_bordado')->update(['siguiente' => 1]);
 
         $numeroPrenda = $this->generarNumero('cotizaciones_prenda');
         $numeroBordado = $this->generarNumero('cotizaciones_bordado');
@@ -156,16 +151,16 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
      */
     public function test_estado_secuencia_despues_generaciones()
     {
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $this->generarNumero('cotizaciones_prenda'); // genera 001, incrementa a 2
         $this->generarNumero('cotizaciones_prenda'); // genera 002, incrementa a 3
         $this->generarNumero('cotizaciones_prenda'); // genera 003, incrementa a 4
 
         $secuencia = NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->first();
-        $this->assertEquals(4, $secuencia->proximo_numero);
+        $this->assertEquals(4, $secuencia->siguiente);
 
-        Log::info(' TEST 5: Contador correcto', ['proximo' => $secuencia->proximo_numero]);
+        Log::info(' TEST 5: Contador correcto', ['proximo' => $secuencia->siguiente]);
     }
 
     /**
@@ -196,8 +191,8 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
                 throw new \Exception("Secuencia '{$tipo}' no encontrada");
             }
 
-            $proximoNumero = $secuencia->proximo_numero;
-            $secuencia->proximo_numero = $proximoNumero + 1;
+            $proximoNumero = $secuencia->siguiente;
+            $secuencia->siguiente = $proximoNumero + 1;
             $secuencia->save();
 
             return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
@@ -214,11 +209,9 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         foreach ($tipos as $tipo) {
             NumeroSecuencia::updateOrCreate(
                 ['tipo' => $tipo],
-                ['proximo_numero' => 1]
+                ['siguiente' => 1]
             );
         }
     }
 }
-
-
 

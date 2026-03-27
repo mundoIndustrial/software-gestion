@@ -434,7 +434,7 @@
                 const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
                     <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
                 const fecha = item.updated_at || item.created_at || '';
                 const rol = item.usuario_rol ? ` <span style="color:#64748b;font-weight:600;">(${item.usuario_rol})</span>` : '';

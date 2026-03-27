@@ -5,21 +5,21 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Application\Services\Asesores\VariantesPrendaAuditoriaService;
 use App\Application\Pedidos\UseCases\ActualizarVariantePrendaUseCase;
 use App\Application\Pedidos\DTOs\ActualizarVariantePrendaDTO;
 use App\Domain\Pedidos\Repositories\PrendaRepositoryInterface;
 use App\Domain\Pedidos\ValueObjects\CatalogoTallas;
-use App\Models\PedidoAnexoHistorial;
 
 /**
  * VariantesPrendaController
  *
  * Responsabilidad: Consultar y actualizar variantes, tallas y colores de prendas.
- * - Obtener catálogo de tallas disponibles
- * - Obtener tallas, variantes y colores/telas de una prenda específica
+ * - Obtener catalogo de tallas disponibles
+ * - Obtener tallas, variantes y colores/telas de una prenda especifica
  * - Actualizar variante de prenda (manga, broche, bolsillos)
  *
- * Patrón: CQRS + Dependency Injection
+ * Patron: CQRS + Dependency Injection
  * SRP: Solo operaciones de variantes, tallas y colores/telas
  */
 class VariantesPrendaController
@@ -27,14 +27,15 @@ class VariantesPrendaController
     public function __construct(
         private ActualizarVariantePrendaUseCase $actualizarVariantePrendaUseCase,
         private PrendaRepositoryInterface $prendaRepository,
+        private VariantesPrendaAuditoriaService $variantesPrendaAuditoriaService,
     ) {}
 
     /**
      * GET /api/tallas-disponibles
-     * Obtener catálogo de tallas disponibles por género.
-     * - Sin ?prendaId → retorna catálogo general
+     * Obtener catalogo de tallas disponibles por genero.
+     * - Sin ?prendaId → retorna catalogo general
      * - Con ?prendaId   → delega a obtenerTallasPrenda (con cantidades)
-     * - Con ?genero     → filtra por género
+     * - Con ?genero     → filtra por genero
      */
     public function obtenerTallasDisponibles(Request $request): JsonResponse
     {
@@ -66,7 +67,7 @@ class VariantesPrendaController
             return response()->json([
                 'success' => true,
                 'data' => $resultado,
-                'mensaje' => 'Catálogo de tallas cargado exitosamente'
+                'mensaje' => 'catalogo de tallas cargado exitosamente'
             ], 200);
 
         } catch (\Exception $e) {
@@ -77,14 +78,14 @@ class VariantesPrendaController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el catálogo de tallas: ' . $e->getMessage()
+                'message' => 'Error al obtener el catalogo de tallas: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
      * GET /api/prenda-pedido/{prendaId}/tallas
-     * Obtener tallas específicas de una prenda (con cantidades).
+     * Obtener tallas especificas de una prenda (con cantidades).
      * Retorna: { DAMA: { S: 10, M: 15 }, CABALLERO: { 32: 20 } }
      */
     public function obtenerTallasPrenda(int $prendaId): JsonResponse
@@ -199,7 +200,7 @@ class VariantesPrendaController
     /**
      * PUT /asesores/pedidos/{pedidoId}/prendas/{prendaId}/variante
      * Actualizar SOLO la variante de una prenda (manga, broche, bolsillos).
-     * Realiza MERGE de datos — solo actualiza los campos enviados, preserva el resto.
+     * Realiza MERGE de datos â€” solo actualiza los campos enviados, preserva el resto.
      */
     public function actualizarVariantePrend(Request $request, int $pedidoId, int $prendaId): JsonResponse
     {
@@ -224,41 +225,19 @@ class VariantesPrendaController
                 'prenda_id' => $prendaId,
             ]);
             $dto = ActualizarVariantePrendaDTO::fromRequest($data);
-
-            // Capturar estado actual ANTES del cambio
-            $varianteActual = \DB::table('prenda_pedido_variantes')->where('prenda_pedido_id', $prendaId)->first();
-            $nombrePrenda   = \DB::table('prenda_pedido')->where('id', $prendaId)->value('nombre_prenda') ?? 'PRENDA';
+            $contextoActual = $this->variantesPrendaAuditoriaService->obtenerContextoActual($prendaId);
+            $varianteActual = $contextoActual['variante_actual'];
+            $nombrePrenda = $contextoActual['nombre_prenda'];
 
             $resultado = $this->actualizarVariantePrendaUseCase->ejecutar($dto);
 
-            // Construir diff
-            $cambiosDetalle = [];
-            $mapaLabels = [
-                'tipo_manga_id'        => 'manga',
-                'tipo_broche_boton_id' => 'broche',
-                'tiene_bolsillos'      => 'bolsillos',
-                'manga_obs'            => 'obs manga',
-                'broche_boton_obs'     => 'obs broche',
-                'bolsillos_obs'        => 'obs bolsillos',
-            ];
-            foreach ($mapaLabels as $campo => $label) {
-                if (array_key_exists($campo, $validated)) {
-                    $vAntes   = (string)($varianteActual->$campo ?? '');
-                    $vDespues = (string)($validated[$campo] ?? '');
-                    if ($vAntes !== $vDespues) {
-                        $cambiosDetalle[] = $label . ': "' . $vAntes . '" → "' . $vDespues . '"';
-                    }
-                }
-            }
-
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->variantesPrendaAuditoriaService->registrarCambios(
                 $pedidoId,
                 $prendaId,
-                (string)$nombrePrenda,
-                'manga/broche/bolsillos',
-                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
+                (string) $nombrePrenda,
+                $validated,
+                $varianteActual
             );
-
             Log::info('[VariantesPrendaController] Variante actualizada exitosamente', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
@@ -272,7 +251,7 @@ class VariantesPrendaController
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[VariantesPrendaController] Validación HTTP fallida', [
+            Log::warning('[VariantesPrendaController] validacion HTTP fallida', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'errors' => $e->errors(),
@@ -280,12 +259,12 @@ class VariantesPrendaController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Validación de datos fallida',
+                'message' => 'validacion de datos fallida',
                 'errors' => $e->errors(),
             ], 422);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[VariantesPrendaController] Validación de negocio fallida', [
+            Log::warning('[VariantesPrendaController] validacion de negocio fallida', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'error' => $e->getMessage(),
@@ -311,3 +290,5 @@ class VariantesPrendaController
         }
     }
 }
+
+

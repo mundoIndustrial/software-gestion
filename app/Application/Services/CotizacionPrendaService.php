@@ -623,9 +623,6 @@ class CotizacionPrendaService
                         'ruta_webp' => $telaFoto['ruta_webp'] ?? $telaFoto['ruta_original'] ?? '',
                         'ruta_miniatura' => $telaFoto['ruta_miniatura'] ?? null,
                         'orden' => $telaFoto['orden'] ?? 1,
-                        'ancho' => $telaFoto['ancho'] ?? null,
-                        'alto' => $telaFoto['alto'] ?? null,
-                        'tamaño' => $telaFoto['tamaño'] ?? null,
                     ]);
                     
                     Log::info(" Foto de tela guardada", [

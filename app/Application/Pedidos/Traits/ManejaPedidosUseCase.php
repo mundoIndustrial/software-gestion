@@ -28,8 +28,8 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
  *       use ManejaPedidosUseCase;
  *       
  *       public function ejecutar(int $pedidoId) {
- *           $pedido = $this->validarPedidoExiste($pedidoId);  // â† Todo validado
- *           $this->validarEstadoPermitido($pedido, 'EN_PRODUCCION');  // â† Valida estado
+ *           $pedido = $this->validarPedidoExiste($pedidoId);  // â† Todo validado
+ *           $this->validarEstadoPermitido($pedido, 'EN_PRODUCCION');  // â† Valida estado
  *       }
  *   }
  */

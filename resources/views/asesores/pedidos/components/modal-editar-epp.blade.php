@@ -608,11 +608,11 @@
         try {
             // Procesar eliminaciones de imágenes primero
             if (cambios.imagenesAEliminar && cambios.imagenesAEliminar.length > 0) {
-                console.log('🗑️ [Modal Novedad] Procesando eliminación de imágenes:', cambios.imagenesAEliminar);
+                console.log(' [Modal Novedad] Procesando eliminación de imágenes:', cambios.imagenesAEliminar);
                 
                 for (const imagen of cambios.imagenesAEliminar) {
                     try {
-                        console.log(`🗑️ Eliminando imagen: ${imagen.id} - ${imagen.nombre || imagen.ruta_original}`);
+                        console.log(` Eliminando imagen: ${imagen.id} - ${imagen.nombre || imagen.ruta_original}`);
                         
                         const response = await fetch(`/api/pedido-epp/imagenes/${imagen.id}`, {
                             method: 'DELETE',
@@ -1117,7 +1117,7 @@
         const nombreEpp = epp.nombre || epp.epp?.nombre || epp.nombre_completo || epp.epp_nombre || 'EPP Sin nombre';
         const cantidad = epp.cantidad || 1;
         
-        console.log('[EPP] 🗑️ Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+        console.log('[EPP]  Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
 
         if (!pedidoId || !eppId) {
             console.error('[EPP] Faltan pedidoId o eppId para eliminar');
@@ -1137,7 +1137,7 @@
             inputPlaceholder: 'Ej: EPP no requerido, cambio en especificaciones, etc.',
             inputAttributes: { 'aria-label': 'Motivo de eliminación' },
             showCancelButton: true,
-            confirmButtonText: '🗑️ Sí, eliminar',
+            confirmButtonText: ' Sí, eliminar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#6b7280',

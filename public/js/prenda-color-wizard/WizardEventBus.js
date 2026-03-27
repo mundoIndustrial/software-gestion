@@ -170,7 +170,7 @@ class WizardEventBus {
             data: JSON.parse(JSON.stringify(data))  // Deep copy para evitar mutaciones
         });
 
-        // Limitar tamaño del historial
+        // Limitar tamano del historial
         if (this.eventHistory.length > this.maxHistorySize) {
             this.eventHistory.shift();
         }

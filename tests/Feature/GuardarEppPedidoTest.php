@@ -157,10 +157,10 @@ class GuardarEppPedidoTest extends TestCase
 
         echo "\n imagenes guardadas correctamente\n";
         echo "   - Total imagenes: " . count($imagenes) . "\n";
-        echo "   - Imagen principal: {$imagenPrincipal->archivo}\n";
+        echo "   - Imagen principal: {$imagenPrincipal->ruta_web}\n";
         foreach ($imagenes as $img) {
             $tipo = $img->principal ? '(PRINCIPAL)' : '';
-            echo "   - Orden {$img->orden}: {$img->archivo} {$tipo}\n";
+            echo "   - Orden {$img->orden}: {$img->ruta_web} {$tipo}\n";
         }
     }
 
@@ -451,7 +451,7 @@ class GuardarEppPedidoTest extends TestCase
         //  Verificar imagen principal
         $this->assertDatabaseHas('pedido_epp_imagenes', [
             'pedido_epp_id' => $pedidoEpp->id,
-            'archivo' => '/storage/pedidos/' . $this->pedido->id . '/epp/frente-test.jpg',
+            'ruta_web' => '/storage/pedidos/' . $this->pedido->id . '/epp/frente-test.jpg',
             'principal' => true,
             'orden' => 0
         ]);
@@ -459,7 +459,7 @@ class GuardarEppPedidoTest extends TestCase
         //  Verificar segunda imagen
         $this->assertDatabaseHas('pedido_epp_imagenes', [
             'pedido_epp_id' => $pedidoEpp->id,
-            'archivo' => '/storage/pedidos/' . $this->pedido->id . '/epp/lateral-test.jpg',
+            'ruta_web' => '/storage/pedidos/' . $this->pedido->id . '/epp/lateral-test.jpg',
             'principal' => false,
             'orden' => 1
         ]);
@@ -487,4 +487,3 @@ class GuardarEppPedidoTest extends TestCase
         echo $message;
     }
 }
-

@@ -436,7 +436,7 @@ class PayloadSanitizer {
         console.dir(antes, { depth: 3 });
         console.log('\n DESPUÉS (limpio para Laravel):');
         console.dir(despues, { depth: 3 });
-        console.log('\n Tamaño:');
+        console.log('\n tamano:');
         console.log(`  Antes: ${JSON.stringify(antes).length} bytes`);
         console.log(`  Después: ${JSON.stringify(despues).length} bytes`);
         console.groupEnd();

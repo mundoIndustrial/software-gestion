@@ -76,8 +76,8 @@ if (window.realtimeCotizacionesLoaded) {
             if (connection?.state) {
             }
             if (typeof connection?.bind === 'function') {
-                connection.bind('connected', () => );
-                connection.bind('disconnected', () => );
+                connection.bind('connected', () => {});
+                connection.bind('disconnected', () => {});
                 connection.bind('error', (err) => console.error('[REALTIME-COT] WS error', err));
             }
         } catch (e) {

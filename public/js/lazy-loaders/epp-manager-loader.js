@@ -10,7 +10,7 @@
  * - Manejadores de menús y formularios
  * - Modales de agregar EPP
  * 
- * Tamaño: ~90KB sin minify, ~25KB minificado
+ * tamano: ~90KB sin minify, ~25KB minificado
  * Tiempo de carga: ~150-300ms en conexión lenta
  */
 
@@ -182,7 +182,7 @@ window.EPPManagerLoader = (function() {
                 isLoading = false;
                 
                 console.log('[EPPManagerLoader]  TODOS LOS MÓDULOS CARGADOS EXITOSAMENTE');
-                console.log('[EPPManagerLoader]  Tamaño cargado: ~25KB (minificado)');
+                console.log('[EPPManagerLoader]  tamano cargado: ~25KB (minificado)');
                 
                 // Disparar evento personalizado
                 const event = new CustomEvent('eppManagerLoaded', {

@@ -183,6 +183,18 @@ class ColorGeneroMangaBrocheService
     }
 
     /**
+     * Obtener todas las telas
+     */
+    public function obtenerTelas(): array
+    {
+        return TelaPrenda::where('activo', true)
+            ->select('id', 'nombre', 'referencia')
+            ->orderBy('nombre')
+            ->get()
+            ->toArray();
+    }
+
+    /**
      * Obtener todos los géneros
      */
     public function obtenerGeneros(): array

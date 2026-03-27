@@ -457,7 +457,7 @@ function applyFilters() {
  */
 function resetFilters() {
     selectedFilters = {};
-    localStorage.removeItem('pedidosTableFilters');  // 🗑️ Limpiar localStorage
+    localStorage.removeItem('pedidosTableFilters');  //  Limpiar localStorage
     document.querySelectorAll('.filter-options input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });

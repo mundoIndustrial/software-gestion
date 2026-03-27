@@ -37,7 +37,7 @@ class GenerarPDFRecibosService
 
             Log::info(' [PDF] PDF generado correctamente', [
                 'pedido_id' => $pedidoId,
-                'tamaño' => strlen($pdf->output())
+                'tamano' => strlen($pdf->output())
             ]);
 
             return $pdf->download('recibo_' . $pedidoId . '.pdf');
@@ -104,7 +104,7 @@ class GenerarPDFRecibosService
 
             Log::info(' [PDF-GUARDAR] PDF guardado correctamente', [
                 'ruta' => $nombreArchivo,
-                'tamaño' => strlen($pdf->output())
+                'tamano' => strlen($pdf->output())
             ]);
 
             return $nombreArchivo;
@@ -155,7 +155,7 @@ class GenerarPDFRecibosService
                 'fecha_generacion' => now()->format('d/m/Y H:i'),
             ])->render();
 
-            Log::info(' [VISTA-PREVIA] HTML generado', ['tamaño' => strlen($html)]);
+            Log::info(' [VISTA-PREVIA] HTML generado', ['tamano' => strlen($html)]);
 
             return $html;
 

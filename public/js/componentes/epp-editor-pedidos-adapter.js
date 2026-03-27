@@ -8,7 +8,7 @@ window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
     const nombreEpp = epp.nombre || epp.epp?.nombre || 'EPP Sin nombre';
     const cantidad = epp.cantidad || 1;
     
-    console.log('[EPPAdapter] 🗑️ Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+    console.log('[EPPAdapter]  Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
 
     if (!pedidoId || !eppId) {
         console.error('[EPPAdapter] Faltan pedidoId o eppId para eliminar');
@@ -59,7 +59,7 @@ window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
         inputPlaceholder: 'Ej: EPP no requerido, cambio en especificaciones, etc.',
         inputAttributes: { 'aria-label': 'Motivo de eliminación' },
         showCancelButton: true,
-        confirmButtonText: '🗑️ Sí, eliminar',
+        confirmButtonText: ' Sí, eliminar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',

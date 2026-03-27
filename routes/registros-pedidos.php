@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
-use App\Http\Controllers\RegistroBodegaController;
+use App\Infrastructure\Http\Controllers\Legacy\RegistroBodegaController;
 use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
-use App\Http\Controllers\InvoiceController;
+use App\Infrastructure\Http\Controllers\Legacy\InvoiceController;
 
 // ========================================
 // RUTAS PARA REGISTROS Y PEDIDOS
@@ -19,7 +19,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros', [RegistroOrdenQueryController::class, 'index'])->name('registros.index');
     
     // ========================================
-    // GET ROUTES (Sin parámetros primero)
+    // GET ROUTES (Sin parametro primero)
     // ========================================
     Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
     Route::get('/registros/filter-options', [RegistroOrdenController::class, 'getFilterOptions'])->name('registros.filter-options');
@@ -69,7 +69,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::delete('/api/procesos/{id}/eliminar', [ProcesosPedidoController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     
     // ========================================
-    // GET ROUTES (Con parámetros)
+    // GET ROUTES (Con parametro)
     // ========================================
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
@@ -90,7 +90,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // ========================================
     // POST ROUTES (CRUD Operations)
     // ========================================
-    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos/*
+    // NOTA: La creacion de pedidos se centraliza en /asesores/pedidos/*
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
     Route::post('/registros/update-descripcion-prendas', [RegistroOrdenController::class, 'updateDescripcionPrendas'])->name('registros.updateDescripcionPrendas');
@@ -114,3 +114,4 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // ========================================
     Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
 });
+

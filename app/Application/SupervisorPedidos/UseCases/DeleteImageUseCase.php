@@ -26,7 +26,7 @@ class DeleteImageUseCase
             // Obtener la imagen
             $foto = $modelClass::findOrFail($request->getId());
 
-            \Log::info("🗑️ Iniciando eliminación de imagen {$request->getType()}", [
+            \Log::info(" Iniciando eliminación de imagen {$request->getType()}", [
                 'id' => $request->getId(),
                 'ruta_original' => $foto->ruta_original ?? 'N/A',
                 'ruta_webp' => $foto->ruta_webp ?? 'N/A'

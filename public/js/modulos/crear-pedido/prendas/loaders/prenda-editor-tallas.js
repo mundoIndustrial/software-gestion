@@ -199,7 +199,7 @@ class PrendaEditorTallas {
             btnEliminar.style.background = 'transparent';
         };
         btnEliminar.onclick = () => {
-            console.log(`[PrendaEditorTallas] 🗑️ Eliminando tallas de ${genero}`);
+            console.log(`[PrendaEditorTallas]  Eliminando tallas de ${genero}`);
             // Limpiar tallas del género
             window.tallasRelacionales[genero] = {};
             

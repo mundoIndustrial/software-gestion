@@ -208,7 +208,7 @@
         
         // Limpiar imágenes marcadas para eliminación
         if (window.imagenesAEliminar) {
-            console.log('[PedidosAdapter] 🗑️ Limpiando imágenes marcadas para eliminación:', window.imagenesAEliminar.length);
+            console.log('[PedidosAdapter]  Limpiando imágenes marcadas para eliminación:', window.imagenesAEliminar.length);
             window.imagenesAEliminar = [];
         }
         
@@ -509,7 +509,7 @@
                         
                         // 🟢 NUEVO: Registrar imágenes ELIMINADAS de la BD (NUEVO NOMBRE: imagenes_a_eliminar)
                         if (d.imagenes_a_eliminar && Array.isArray(d.imagenes_a_eliminar)) {
-                            console.log(`[PedidosAdapter] 🗑️ Imágenes a eliminar para ${tipo}:`, d.imagenes_a_eliminar.length);
+                            console.log(`[PedidosAdapter]  Imágenes a eliminar para ${tipo}:`, d.imagenes_a_eliminar.length);
                             d.imagenes_a_eliminar.forEach(img => {
                                 // El nuevo formato envía objetos completos {id, url, ruta_original, ruta_webp}
                                 if (img) {
@@ -520,7 +520,7 @@
                         
                         // FALLBACK: Registrar imágenes ELIMINADAS de la BD (nombre antiguo)
                         if (d.imagenes_eliminadas && Array.isArray(d.imagenes_eliminadas)) {
-                            console.log(`[PedidosAdapter] 🗑️ Imágenes a eliminar para ${tipo}:`, d.imagenes_eliminadas.length);
+                            console.log(`[PedidosAdapter]  Imágenes a eliminar para ${tipo}:`, d.imagenes_eliminadas.length);
                             d.imagenes_eliminadas.forEach(imgUrl => {
                                 if (imgUrl && typeof imgUrl === 'string') {
                                     imagenesAEliminar.push({
@@ -579,7 +579,7 @@
                         // Incluir imágenes a eliminar si hay
                         if (imagenesAEliminar.length > 0) {
                             procesoEnvio.imagenes_a_eliminar = imagenesAEliminar;
-                            console.log(`[PedidosAdapter] 🗑️ Proceso ${tipo}: ${imagenesAEliminar.length} imagen(es) marcada(s) para eliminar:`, imagenesAEliminar);
+                            console.log(`[PedidosAdapter]  Proceso ${tipo}: ${imagenesAEliminar.length} imagen(es) marcada(s) para eliminar:`, imagenesAEliminar);
                         }
                         
                         return procesoEnvio;
@@ -611,7 +611,7 @@
                     if (proceso.imagenes_a_eliminar && Array.isArray(proceso.imagenes_a_eliminar)) {
                         proceso.imagenes_a_eliminar.forEach(img => {
                             todasLasImagenesAEliminar.push(img);
-                            console.log(`[PedidosAdapter] 🗑️ Imagen a eliminar de proceso ${idx}:`, img);
+                            console.log(`[PedidosAdapter]  Imagen a eliminar de proceso ${idx}:`, img);
                         });
                         // NO ELIMINAR del JSON, mantenerlo para registro
                     }
@@ -673,14 +673,14 @@
             // 🔴 NUEVO: Agregar imágenes marcadas para eliminación
             if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
                 formData.append('imagenes_a_eliminar', JSON.stringify(window.imagenesAEliminar));
-                console.log('[PedidosAdapter] 🗑️ Imágenes marcadas para eliminación:', window.imagenesAEliminar);
+                console.log('[PedidosAdapter]  Imágenes marcadas para eliminación:', window.imagenesAEliminar);
             }
             
             // 🔴 NUEVO: Agregar procesos marcados para eliminación
             if (window.procesosParaEliminarIds && window.procesosParaEliminarIds.size > 0) {
                 const procesosAEliminar = Array.from(window.procesosParaEliminarIds);
                 formData.append('procesos_a_eliminar', JSON.stringify(procesosAEliminar));
-                console.log('[PedidosAdapter] 🗑️ Procesos marcados para eliminación:', procesosAEliminar);
+                console.log('[PedidosAdapter]  Procesos marcados para eliminación:', procesosAEliminar);
             }
 
             const urlPrefix = _getUrlPrefix();
@@ -1201,7 +1201,7 @@
                         ruta_original: normalizedUrl,
                         ruta_webp: normalizedUrl,
                         nombre: img.nombre || `imagen-${img.id}`,
-                        tamaño: img.tamaño || 0
+                        tamano: img.tamano || 0
                     };
                 }
                 
@@ -1223,7 +1223,7 @@
                         ruta_original: normalizedUrl,
                         ruta_webp: normalizedUrl,
                         nombre: 'imagen-sin-id',
-                        tamaño: 0
+                        tamano: 0
                     };
                 }
                 
@@ -1289,7 +1289,7 @@
     // ====================================================
     window.abrirModalEliminarPrenda = function(prenda, prendaIndex, pedidoId) {
         const prendaId = prenda.id || prenda.prenda_pedido_id;
-        console.log('[PedidosAdapter] 🗑️ Eliminando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
+        console.log('[PedidosAdapter]  Eliminando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
 
         if (!pedidoId || !prendaId) {
             console.error('[PedidosAdapter] Faltan pedidoId o prendaId para eliminar');
@@ -1339,7 +1339,7 @@
             inputPlaceholder: 'Ej: Prenda no requerida, cambio en especificaciones, etc.',
             inputAttributes: { 'aria-label': 'Motivo de eliminación' },
             showCancelButton: true,
-            confirmButtonText: '🗑️ Sí, eliminar',
+            confirmButtonText: ' Sí, eliminar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#6b7280',

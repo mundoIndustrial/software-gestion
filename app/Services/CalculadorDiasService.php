@@ -38,7 +38,6 @@ class CalculadorDiasService
             Carbon::create($anio, 12, 25)->toDateString(), // Navidad
         ];
 
-        // TODO: Agregar festivos movibles (Viernes Santo, Ascensión, Corpus Christi, Sagrado Corazón)
         // Por ahora se asumen los fijos
 
         Cache::put($cacheKey, $festivos, now()->addYear());
@@ -48,7 +47,6 @@ class CalculadorDiasService
 
     /**
      * Calcular días hábiles entre dos fechas (excluyendo sábados, domingos y festivos)
-     * 
      * @param mixed $fechaInicio - Fecha de inicio (string o Carbon)
      * @param mixed $fechaFin - Fecha de fin (string o Carbon)
      * @return int|null - Número de días hábiles o null si falta información
@@ -62,13 +60,8 @@ class CalculadorDiasService
         $inicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
         $fin = $fechaFin instanceof Carbon ? $fechaFin : Carbon::parse($fechaFin);
 
-        // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
-        if ($inicio->format('Y-m-d') === $fin->format('Y-m-d')) {
-            return 0;
-        }
-
-        // Si fin es antes de inicio, retornar 0
-        if ($fin < $inicio) {
+        // Si las fechas son iguales o fin es antes de inicio, retornar 0
+        if ($inicio->format('Y-m-d') === $fin->format('Y-m-d') || $fin < $inicio) {
             return 0;
         }
 
@@ -83,12 +76,9 @@ class CalculadorDiasService
         $actual = $inicio->copy();
         
         while ($actual <= $fin) {
-            // Verificar si no es sábado (6) ni domingo (0)
-            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
-                // Verificar si no es festivo
-                if (!in_array($actual->toDateString(), $festivos)) {
-                    $diasHabiles++;
-                }
+            // Verificar si no es fin de semana (sábado 6 o domingo 0) y no es festivo
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6 && !in_array($actual->toDateString(), $festivos)) {
+                $diasHabiles++;
             }
             
             $actual->addDay();
@@ -156,8 +146,8 @@ class CalculadorDiasService
         do {
             $carbon->addDay();
         } while (
-            $carbon->dayOfWeek === 0 || 
-            $carbon->dayOfWeek === 6 || 
+            $carbon->dayOfWeek === 0 ||
+            $carbon->dayOfWeek === 6 ||
             in_array($carbon->toDateString(), $festivos)
         );
 
@@ -167,7 +157,6 @@ class CalculadorDiasService
     /**
      * Calcular días hábiles totales desde creación hasta hoy (sin restar 1)
      * Usa para cálculos absolutos, no para diferencias.
-     * 
      * @param Carbon|string $fechaInicio
      * @return int Número de días hábiles desde la fecha
      */
@@ -196,12 +185,9 @@ class CalculadorDiasService
         $actual = $inicio->copy();
 
         while ($actual <= $ahora) {
-            // Verificar si no es sábado (6) ni domingo (0)
-            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
-                // Verificar si no es festivo
-                if (!in_array($actual->toDateString(), $festivos)) {
-                    $diasHabiles++;
-                }
+            // Verificar si no es fin de semana (sábado 6 o domingo 0) y no es festivo
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6 && !in_array($actual->toDateString(), $festivos)) {
+                $diasHabiles++;
             }
             $actual->addDay();
         }
@@ -212,7 +198,6 @@ class CalculadorDiasService
 
     /**
      * Validar si un pedido está en retraso
-     * 
      * @param string $areaActual Área/proceso actual del pedido
      * @param Carbon|string|null $fechaEstimada Fecha estimada de entrega
      * @return bool true si está en retraso
@@ -229,7 +214,7 @@ class CalculadorDiasService
             return false;
         }
 
-        $fechaEst = $fechaEstimada instanceof Carbon 
+        $fechaEst = $fechaEstimada instanceof Carbon
             ? $fechaEstimada->toDateString()
             : Carbon::parse($fechaEstimada)->toDateString();
 
@@ -238,7 +223,6 @@ class CalculadorDiasService
 
     /**
      * Calcular días de retraso
-     * 
      * @param Carbon|string|null $fechaEstimada
      * @return int Número de días de retraso (0 si no está retrasado)
      */

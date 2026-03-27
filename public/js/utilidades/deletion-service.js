@@ -286,7 +286,7 @@ class DeletionService {
 
         // Confirmación
         const resultado = await UI.confirmar({
-            titulo: `🗑️ Eliminar ${tipoRecurso}`,
+            titulo: ` Eliminar ${tipoRecurso}`,
             mensaje: `¿Estás seguro de que deseas eliminar ${recursos.length} ${tipoRecurso.toLowerCase()}? Esta acción no se puede deshacer.`,
             icono: 'warning',
             confirmText: 'Sí, eliminar todos',

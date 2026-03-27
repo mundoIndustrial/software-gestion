@@ -188,7 +188,7 @@ class ItemFormCollector {
                         // 🔴 CRÍTICO: Filtrar procesos marcados para eliminar
                         // Si el proceso tiene ID y está en window.procesosParaEliminarIds (Set), NO incluirlo
                         if (datosProceso.id && window.procesosParaEliminarIds && window.procesosParaEliminarIds.has(datosProceso.id)) {
-                            console.log('[ItemFormCollector] 🗑️ Proceso excluido (marcado para eliminar):', {
+                            console.log('[ItemFormCollector]  Proceso excluido (marcado para eliminar):', {
                                 procesoId: datosProceso.id,
                                 tipo: key,
                                 procesosParaEliminar: Array.from(window.procesosParaEliminarIds)

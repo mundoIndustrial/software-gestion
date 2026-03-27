@@ -431,7 +431,7 @@
 @media (max-width: 767px) {
     .balanceo-table button,
     .balanceo-btn {
-        min-height: 44px; /* Tamaño mínimo táctil recomendado */
+        min-height: 44px; /* tamano mínimo táctil recomendado */
         min-width: 44px;
     }
 }
@@ -489,7 +489,7 @@
     }
 }
 
-/* Ajustar tamaño de iconos en mobile */
+/* Ajustar tamano de iconos en mobile */
 @media (max-width: 640px) {
     .balanceo-table th .material-symbols-rounded {
         font-size: 12px !important;

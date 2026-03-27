@@ -330,7 +330,7 @@ class ProcesoDragDropHandler {
                 clase: menu.className,
                 visible: rect.width > 0 && rect.height > 0,
                 posición: `(${Math.round(rect.x)}, ${Math.round(rect.y)})`,
-                tamaño: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
+                tamano: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
                 zIndex: window.getComputedStyle(menu).zIndex
             });
         });

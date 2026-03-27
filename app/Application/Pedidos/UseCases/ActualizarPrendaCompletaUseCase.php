@@ -638,7 +638,7 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        // 🗑️ RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
+        //  RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
         $telaIdsEnPayload = [];
         
         //  MERGE PATTERN: UPDATE o CREATE según id
@@ -705,7 +705,7 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
         
-        // 🗑️ ELIMINAR TELAS QUE NO ESTÁN EN EL PAYLOAD (FUERON ELIMINADAS POR EL USUARIO)
+        //  ELIMINAR TELAS QUE NO ESTÁN EN EL PAYLOAD (FUERON ELIMINADAS POR EL USUARIO)
         $prenda->coloresTelas()
             ->whereNotIn('id', $telaIdsEnPayload)
             ->delete();

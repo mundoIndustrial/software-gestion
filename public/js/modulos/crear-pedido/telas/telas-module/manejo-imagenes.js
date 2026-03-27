@@ -15,7 +15,7 @@
  * @param {HTMLInputElement} input - Input de tipo file
  */
 window.manejarImagenTela = function(input) {
-    console.log('[manejarImagenTela] � INICIADO - input:', input);
+    console.log('[manejarImagenTela]  INICIADO - input:', input);
     
     // 🔑 CRÍTICO: Inicializar el array si no existe (para Ctrl+V y drag-drop)
     if (!window.imagenesTelaModalNueva) {
@@ -51,7 +51,7 @@ window.manejarImagenTela = function(input) {
         return;
     }
     
-    // Validar tamaño
+    // Validar tamano
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
         console.warn('[manejarImagenTela]  Archivo muy grande');
@@ -69,7 +69,7 @@ window.manejarImagenTela = function(input) {
     try {
         // 🔴 NUEVO: Usar el storage universal de telas
         if (window.imagenesTelaStorage) {
-            console.log('[manejarImagenTela] � Usando storage universal de telas');
+            console.log('[manejarImagenTela]  Usando storage universal de telas');
             
             window.imagenesTelaStorage.agregarImagen(file)
                 .then(() => {
@@ -299,7 +299,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex, indiceInicial 
     infoImagen.innerHTML = `
         <div>Imagen ${indiceInicial + 1} de ${imagenes.length}</div>
         <div>${imagenActual.name || 'Sin nombre'}</div>
-        <div>Tamaño: ${(imagenActual.size || 0)} bytes</div>
+        <div>tamano: ${(imagenActual.size || 0)} bytes</div>
     `;
     
     const closeButton = document.createElement('button');
@@ -341,7 +341,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex, indiceInicial 
  * @param {number} index - Índice de la imagen a eliminar
  */
 window.eliminarImagenTemporal = function(index) {
-    console.log('[eliminarImagenTemporal] 🗑️ Eliminando imagen temporal:', index);
+    console.log('[eliminarImagenTemporal]  Eliminando imagen temporal:', index);
     
     // 🔴 NUEVO: Usar storage universal de telas
     if (window.imagenesTelaStorage) {
@@ -479,7 +479,7 @@ window.actualizarPreviewTelaTemporal = function() {
         btnEliminar.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log(`[actualizarPreviewTelaTemporal] 🗑️ Eliminando imagen ${index}`);
+            console.log(`[actualizarPreviewTelaTemporal]  Eliminando imagen ${index}`);
             
             // 🔴 NUEVO: Usar la función actualizada que maneja ambos sistemas
             window.eliminarImagenTemporal(index);
@@ -513,7 +513,7 @@ window.validarImagenTela = function(file) {
         resultado.errores.push('El archivo debe ser una imagen');
     }
     
-    // Validar tamaño (máximo 5MB)
+    // Validar tamano (máximo 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
         resultado.valido = false;

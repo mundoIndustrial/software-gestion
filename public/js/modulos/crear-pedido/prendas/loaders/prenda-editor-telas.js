@@ -208,7 +208,7 @@ class PrendaEditorTelas {
 
 // 🔴 NUEVO: Función global para eliminar tela en modal de edición
 window.eliminarTela = function(index, event) {
-    console.log('[eliminarTela] 🗑️ Iniciando eliminación de tela:', index);
+    console.log('[eliminarTela]  Iniciando eliminación de tela:', index);
     
     if (event) {
         event.preventDefault();
@@ -234,7 +234,7 @@ window.eliminarTela = function(index, event) {
                 if (window.tallasRelacionales.hasOwnProperty(genero)) {
                     // Eliminar todas las tallas de este género
                     const generoData = window.tallasRelacionales[genero];
-                    console.log('[eliminarTela] 🗑️ Eliminando tallas del género:', genero, 'tallas:', Object.keys(generoData));
+                    console.log('[eliminarTela]  Eliminando tallas del género:', genero, 'tallas:', Object.keys(generoData));
                     
                     // Limpiar todas las tallas de este género
                     window.tallasRelacionales[genero] = {};

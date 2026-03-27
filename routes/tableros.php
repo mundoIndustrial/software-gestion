@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TablerosController;
-use App\Http\Controllers\TablerosOrdenesController;
-use App\Http\Controllers\BalanceoController;
-use App\Http\Controllers\VistasController;
-use App\Http\Controllers\ConfiguracionController;
+use App\Infrastructure\Http\Controllers\Legacy\TablerosController;
+use App\Infrastructure\Http\Controllers\Legacy\TablerosOrdenesController;
+use App\Infrastructure\Http\Controllers\Legacy\BalanceoController;
+use App\Infrastructure\Http\Controllers\Legacy\VistasController;
+use App\Infrastructure\Http\Controllers\Legacy\ConfiguracionController;
 
 // ========================================
 // Rutas para tableros_ordenes
@@ -23,10 +23,10 @@ Route::delete('/tableros_ordenes/api/recibos/fijado', [TablerosOrdenesController
 Route::get('/tableros_ordenes/api/recibos/por-id', [TablerosOrdenesController::class, 'obtenerReciboPorId'])->name('tableros-ordenes.api.recibos.por-id');
 
 // ========================================
-// TABLEROS Y VISTAS - Configuración, visualización y gestión de tableros
+// TABLEROS Y VISTAS - Configuracion, visualizacion y gestion de tableros
 // ========================================
 Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
-    // Gestión de Tableros
+    // Gestion de Tableros
     Route::get('/tableros', [TablerosController::class, 'index'])->name('tableros.index');
     Route::get('/tableros/fullscreen', [TablerosController::class, 'fullscreen'])->name('tableros.fullscreen');
     Route::get('/tableros/corte-fullscreen', [TablerosController::class, 'corteFullscreen'])->name('tableros.corte-fullscreen');
@@ -39,15 +39,15 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/piso-corte', [TablerosController::class, 'storeCorte'])->name('piso-corte.store');
     Route::get('/get-tiempo-ciclo', [TablerosController::class, 'getTiempoCiclo'])->name('get-tiempo-ciclo');
     
-    // Gestión de Telas
+    // Gestion de Telas
     Route::post('/store-tela', [TablerosController::class, 'storeTela'])->name('store-tela');
     Route::get('/search-telas', [TablerosController::class, 'searchTelas'])->name('search-telas');
     
-    // Gestión de Máquinas
+    // Gestion de Maquinas
     Route::post('/store-maquina', [TablerosController::class, 'storeMaquina'])->name('store-maquina');
     Route::get('/search-maquinas', [TablerosController::class, 'searchMaquinas'])->name('search-maquinas');
     
-    // Gestión de Operarios
+    // Gestion de Operarios
     Route::get('/search-operarios', [TablerosController::class, 'searchOperarios'])->name('search-operarios');
     Route::post('/store-operario', [TablerosController::class, 'storeOperario'])->name('store-operario');
     Route::post('/find-or-create-operario', [TablerosController::class, 'findOrCreateOperario'])->name('find-or-create-operario');
@@ -87,7 +87,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/balanceo/{id}/data', [BalanceoController::class, 'getBalanceoData'])->name('balanceo.data');
     Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
     
-    // Configuración
+    // Configuracion
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
     Route::post('/configuracion/create-database', [ConfiguracionController::class, 'createDatabase'])->name('configuracion.createDatabase');
     Route::post('/configuracion/select-database', [ConfiguracionController::class, 'selectDatabase'])->name('configuracion.selectDatabase');
@@ -96,3 +96,4 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/configuracion/download-backup', [ConfiguracionController::class, 'downloadBackup'])->name('configuracion.downloadBackup');
     Route::post('/configuracion/upload-google-drive', [ConfiguracionController::class, 'uploadToGoogleDrive'])->name('configuracion.uploadGoogleDrive');
 });
+

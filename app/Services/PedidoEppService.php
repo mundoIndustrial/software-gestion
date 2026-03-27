@@ -39,6 +39,7 @@ class PedidoEppService
                     $eppAgrupados[$eppId] = [
                         'epp_id' => $eppId,
                         'cantidad' => 0,
+                        'tallas_medidas' => is_array($eppData['tallas_medidas'] ?? null) ? $eppData['tallas_medidas'] : [],
                         'observaciones' => $eppData['observaciones'] ?? null,
                         'imagenes' => [],
                     ];
@@ -64,6 +65,7 @@ class PedidoEppService
                     'cantidad' => $eppData['cantidad'],
                     'observaciones' => $eppData['observaciones'],
                 ]);
+                $pedidoEpp->setTransientTallasMedidas($eppData['tallas_medidas'] ?? []);
 
                 // Guardar imágenes si existen
                 if (!empty($eppData['imagenes'])) {
@@ -184,11 +186,12 @@ class PedidoEppService
                     'epp_codigo' => $pedidoEpp->epp->codigo ?? '',
                     'epp_categoria' => $pedidoEpp->epp->categoria?->nombre ?? '',
                     'cantidad' => $pedidoEpp->cantidad,
-                    'tallas_medidas' => $pedidoEpp->tallas_medidas,
+                    'tallas_medidas' => $pedidoEpp->tallas_medidas ?? [],
                     'observaciones' => $pedidoEpp->observaciones,
                     'imagenes' => $pedidoEpp->imagenes->map(fn($img) => [
                         'id' => $img->id,
-                        'archivo' => $img->archivo,
+                        'ruta_web' => $img->ruta_web,
+                        'ruta_original' => $img->ruta_original,
                         'principal' => $img->principal,
                         'orden' => $img->orden,
                     ])->toArray(),
@@ -207,9 +210,12 @@ class PedidoEppService
     {
         $pedidoEpp->update([
             'cantidad' => $datos['cantidad'] ?? $pedidoEpp->cantidad,
-            'tallas_medidas' => $datos['tallas_medidas'] ?? $pedidoEpp->tallas_medidas,
             'observaciones' => $datos['observaciones'] ?? $pedidoEpp->observaciones,
         ]);
+
+        if (isset($datos['tallas_medidas']) && is_array($datos['tallas_medidas'])) {
+            $pedidoEpp->setTransientTallasMedidas($datos['tallas_medidas']);
+        }
     }
 
     /**

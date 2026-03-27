@@ -826,7 +826,7 @@ class SessionStorageCacheRepository extends CacheRepository {
         const encoded = this._encodeValue(value, ttl);
         
         try {
-            // Verificar tamaño aproximado
+            // Verificar tamano aproximado
             if (this._getStorageSize() + encoded.length > this.maxSize) {
                 console.warn('[CacheRepository] Cuota superada, limpiando...');
                 this._runGarbageCollection();
@@ -939,7 +939,7 @@ class SessionStorageCacheRepository extends CacheRepository {
     }
 
     /**
-     * Calcula el tamaño aproximado del storage
+     * Calcula el tamano aproximado del storage
      */
     _getStorageSize() {
         let size = 0;

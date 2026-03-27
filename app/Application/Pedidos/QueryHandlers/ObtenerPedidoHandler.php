@@ -43,10 +43,10 @@ class ObtenerPedidoHandler implements QueryHandler
                 'pedido_id' => $query->getPedidoId(),
             ]);
 
-            // ðŸ”„ NO USAR CACHE - Las relaciones (fotos, variantes, etc) pueden cambiar frecuentemente
+            // „ NO USAR CACHE - Las relaciones (fotos, variantes, etc) pueden cambiar frecuentemente
             // Si necesitas cache, considera invalidarlo cuando se actualiza un pedido o prenda
 
-            // ðŸ”„ NO USAR CACHE - Las relaciones (fotos, variantes, etc) pueden cambiar frecuentemente
+            // „ NO USAR CACHE - Las relaciones (fotos, variantes, etc) pueden cambiar frecuentemente
             // Si necesitas cache, considera invalidarlo cuando se actualiza un pedido o prenda
             $pedido = $this->pedidoModel
                 ->where('id', $query->getPedidoId())

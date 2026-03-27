@@ -1,7 +1,9 @@
 // ========================================
 // NOTIFICATIONS SYSTEM
 // ========================================
-let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas como leídas
+
+let lastMarkAllReadTime = 0;
+let asesoresRealtimeNotificationsBound = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
@@ -15,24 +17,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeNotifications() {
     loadNotifications();
-    
-    // Actualizar notificaciones cada 30 segundos
-    // PERO: Si hace poco marcamos todas como leídas, esperar más tiempo
-    setInterval(() => {
-        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
-        // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
-        if (timeSinceMarkAllRead < 120000) {
+    setupRealtimeNotifications();
 
-            return;
-        }
-        loadNotifications();
-    }, 30000);
-    
     // Marcar todas como leídas
     const markAllReadBtn = document.querySelector('.mark-all-read');
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllAsRead);
     }
+}
+
+
+function setupRealtimeNotifications() {
+    if (asesoresRealtimeNotificationsBound) {
+        return;
+    }
+
+    if (!window.shared?.isReady || typeof window.waitForEcho !== 'function') {
+        setTimeout(setupRealtimeNotifications, 300);
+        return;
+    }
+
+    const currentUserId = Number(document.querySelector('meta[name="user-id"]')?.content || 0);
+    const refreshNotifications = () => {
+        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
+        if (timeSinceMarkAllRead < 1500) {
+            return;
+        }
+        loadNotifications();
+    };
+
+    window.waitForEcho(() => {
+        try {
+            const ws = window.shared?.websocket;
+            if (!ws) {
+                setTimeout(setupRealtimeNotifications, 500);
+                return;
+            }
+
+            ws.subscribe('notifications', '.new-notification', (data) => {
+                if (data.exclude_user_id && currentUserId && Number(data.exclude_user_id) === currentUserId) {
+                    return;
+                }
+                refreshNotifications();
+            });
+
+            ws.subscribe('notifications', '.notifications-marked-read', (data) => {
+                if (!data.user_id || Number(data.user_id) === currentUserId) {
+                    refreshNotifications();
+                }
+            });
+
+            ws.subscribe('cotizaciones', '.cotizacion.creada', refreshNotifications);
+            ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', refreshNotifications);
+
+            if (currentUserId) {
+                ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.creada', refreshNotifications);
+                ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.estado.cambiado', refreshNotifications);
+            }
+
+            asesoresRealtimeNotificationsBound = true;
+        } catch (_) {
+            setTimeout(setupRealtimeNotifications, 500);
+        }
+    });
 }
 
 async function loadNotifications() {
@@ -149,6 +196,14 @@ function renderNotifications(data) {
 }
 
 function createNotificationElement(notif) {
+    function sanitizeColor(color) {
+        return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(color || '')) ? color : '#6b7280';
+    }
+
+    function sanitizeIcon(iconClass) {
+        return /^fa-[a-z0-9-]+$/i.test(String(iconClass || '')) ? iconClass : 'fa-bell';
+    }
+
     const div = document.createElement('a');
     div.href = notif.link;
     div.className = 'notification-item';
@@ -164,39 +219,60 @@ function createNotificationElement(notif) {
         transition: background 0.2s ease;
         ${notif.isNew ? 'background: rgba(59, 130, 246, 0.05);' : ''}
     `;
-    
-    div.innerHTML = `
-        <div style="
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: ${notif.color}20;
-            color: ${notif.color};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        ">
-            <i class="fas ${notif.icon}"></i>
-        </div>
-        <div style="flex: 1; min-width: 0;">
-            <div style="
-                font-weight: 600;
-                font-size: 0.875rem;
-                margin-bottom: 0.25rem;
-                color: var(--text-primary);
-            ">${notif.title}</div>
-            <div style="
-                font-size: 0.875rem;
-                color: var(--text-secondary);
-                margin-bottom: 0.25rem;
-            ">${notif.message}</div>
-            <div style="
-                font-size: 0.75rem;
-                color: var(--text-tertiary);
-            ">${notif.time}</div>
-        </div>
+
+    const safeColor = sanitizeColor(notif.color);
+    const safeIcon = sanitizeIcon(notif.icon);
+
+    const iconWrapper = document.createElement('div');
+    iconWrapper.style.cssText = `
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: ${safeColor}20;
+        color: ${safeColor};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     `;
+
+    const icon = document.createElement('i');
+    icon.className = `fas ${safeIcon}`;
+    iconWrapper.appendChild(icon);
+
+    const contentWrapper = document.createElement('div');
+    contentWrapper.style.cssText = 'flex: 1; min-width: 0;';
+
+    const title = document.createElement('div');
+    title.style.cssText = `
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+    `;
+    title.textContent = notif.title || '';
+
+    const message = document.createElement('div');
+    message.style.cssText = `
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+    `;
+    message.textContent = notif.message || '';
+
+    const time = document.createElement('div');
+    time.style.cssText = `
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+    `;
+    time.textContent = notif.time || '';
+
+    contentWrapper.appendChild(title);
+    contentWrapper.appendChild(message);
+    contentWrapper.appendChild(time);
+
+    div.appendChild(iconWrapper);
+    div.appendChild(contentWrapper);
     
     // Si es notificación de fecha estimada, marcar como leída al hacer click
     if (notif.tipo === 'fecha_estimada' && notif.id) {
@@ -269,4 +345,3 @@ async function markNotificationAsRead(notificationId) {
 
     }
 }
-

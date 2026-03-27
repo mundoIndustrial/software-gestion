@@ -40,7 +40,7 @@ const UIComponents = {
                         <button type="button" class="btn btn-danger" 
                                 data-action="delete-prenda" data-prenda-id="${prenda._id}"
                                 title="Eliminar prenda">
-                            🗑️ Eliminar
+                             Eliminar
                         </button>
                     </div>
                 </div>
@@ -176,7 +176,7 @@ const UIComponents = {
                             data-action="delete-variante" 
                             data-prenda-id="${prendaId}" 
                             data-variante-id="${variante._id}">
-                        🗑️
+                        
                     </button>
                 </td>
             </tr>
@@ -234,7 +234,7 @@ const UIComponents = {
                                     data-action="delete-proceso" 
                                     data-prenda-id="${prendaId}" 
                                     data-proceso-id="${proceso._id}">
-                                🗑️
+                                
                             </button>
                         </div>
                     </div>
@@ -389,7 +389,7 @@ const UIComponents = {
     },
 
     /**
-     * Formatear tamaño de archivo
+     * Formatear tamano de archivo
      */
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';

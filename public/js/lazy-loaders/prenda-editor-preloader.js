@@ -296,7 +296,7 @@ window.PrendaEditorPreloader = (function() {
     function clearCache() {
         config.scriptCache.clear();
         config.moduleCache.clear();
-        console.log('[PrendaEditorPreloader] 🗑️ Cache limpiado');
+        console.log('[PrendaEditorPreloader]  Cache limpiado');
     }
 
     /**

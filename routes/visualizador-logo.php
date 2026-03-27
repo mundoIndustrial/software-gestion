@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\VisualizadorLogoController;
-use App\Http\Controllers\PDFLogoController;
+use App\Infrastructure\Http\Controllers\Legacy\VisualizadorLogoController;
+use App\Infrastructure\Http\Controllers\Legacy\PDFLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController;
 
@@ -28,7 +28,7 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     Route::get('/disenos-logo', [VisualizadorLogoController::class, 'disenosLogo'])->name('disenos-logo');
     Route::get('/disenos-logo/data', [VisualizadorLogoController::class, 'disenosLogoData'])->name('disenos-logo.data');
 
-    // Diseños adjuntos del recibo (solo diseñador-logos/admin)
+    // Disenos adjuntos del recibo (solo diseñador-logos/admin)
     Route::post('/pedidos-logo/disenos', [DisenosLogoPedidoController::class, 'store'])
         ->middleware('role:admin,diseñador-logos,visualizador_cotizaciones_logo')
         ->name('pedidos-logo.disenos.store');
@@ -41,7 +41,7 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
         ->middleware('role:admin,diseñador-logos,visualizador_cotizaciones_logo')
         ->name('pedidos-logo.disenos.destroy');
     
-    // Estadísticas
+    // Estadisticas
     Route::get('/estadisticas', [VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');
     
     // PDF de Logo - Solo puede ver PDFs de logo
@@ -58,3 +58,4 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
 Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,supervisor_produccion,contador,aprobador_cotizaciones,asesor'])->group(function () {
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('visualizador.cotizacion.pdf.logo');
 });
+

@@ -385,7 +385,7 @@ class ModalNovedadEdicion {
                                     url: img.url || img.previewUrl,  // Fallback
                                     file: img.file instanceof File ? img.file : null,
                                     nombre: img.nombre || 'imagen_nueva',
-                                    tamaño: img.tamaño,
+                                    tamano: img.tamano,
                                     urlDesdeDB: false,  // Marca correctamente que es NUEVA
                                     ruta_original: img.ruta_original,
                                     ruta_webp: img.ruta_webp
@@ -819,7 +819,7 @@ class ModalNovedadEdicion {
                             formData.append(`fotosProcesoNuevo_${idx}`, img);
                             console.log(`[modal-novedad-edicion] 📸 Imagen de proceso nuevo ${idx} agregada:`, {
                                 nombre: img.name,
-                                tamaño: img.size,
+                                tamano: img.size,
                                 tipo: img.type
                             });
                         }
@@ -918,7 +918,7 @@ class ModalNovedadEdicion {
                                     ruta_webp: imgOriginal.ruta_webp,
                                     url: imgOriginal.url || imgOriginal.ruta_webp || imgOriginal.ruta_original
                                 });
-                                console.log('[modal-novedad-edicion] 🗑️ Imagen eliminada detectada:', {
+                                console.log('[modal-novedad-edicion]  Imagen eliminada detectada:', {
                                     id: imgOriginal.id,
                                     ruta_original: imgOriginal.ruta_original,
                                     ruta_webp: imgOriginal.ruta_webp
@@ -952,7 +952,7 @@ class ModalNovedadEdicion {
             
             if (imagenesActuales && imagenesActuales.length > 0) {
                 imagenesActuales.forEach((img, idx) => {
-                    //  CRITICAL FIX: ImageStorageService guarda { file, previewUrl, nombre, tamaño }
+                    //  CRITICAL FIX: ImageStorageService guarda { file, previewUrl, nombre, tamano }
                     // El File REAL está en img.file, no en img directamente
                     let archivoReal = null;
                     
@@ -1054,10 +1054,10 @@ class ModalNovedadEdicion {
                     console.log('[modal-novedad-edicion]  Usuario eliminó todas las imágenes');
                 }
                 
-                // 🗑️ IMPORTANTE: Enviar IDs de imágenes a eliminar
+                //  IMPORTANTE: Enviar IDs de imágenes a eliminar
                 if (imagenesEliminadas.length > 0) {
                     formData.append('imagenes_a_eliminar', JSON.stringify(imagenesEliminadas));
-                    console.log('[modal-novedad-edicion] 🗑️ Enviando imágenes a eliminar:', imagenesEliminadas.length, imagenesEliminadas);
+                    console.log('[modal-novedad-edicion]  Enviando imágenes a eliminar:', imagenesEliminadas.length, imagenesEliminadas);
                 }
             } else {
                 // Usuario NO tocó imágenes → NO enviar imagenes_existentes (deja como NULL en DTO)
@@ -1332,7 +1332,7 @@ class ModalNovedadEdicion {
             // Eliminar los procesos que el usuario marcó para eliminar
             if (typeof window.eliminarProcesossMarcadosDelBackend === 'function') {
                 try {
-                    console.log('[modal-novedad-edicion] 🗑️ Eliminando procesos marcados...');
+                    console.log('[modal-novedad-edicion]  Eliminando procesos marcados...');
                     await window.eliminarProcesossMarcadosDelBackend();
                     console.log('[modal-novedad-edicion]  Procesos marcados eliminados');
                 } catch (error) {

@@ -161,7 +161,7 @@ window.AsignacionService = (function() {
      * Eliminar un color de una asignación
      */
     function eliminarColor(genero, talla, color) {
-        console.log('[AsignacionService] 🗑️ Eliminando color:', { genero, talla, color });
+        console.log('[AsignacionService]  Eliminando color:', { genero, talla, color });
         
         const tipo = window.StateManager ? window.StateManager.getTipoTallaSel() : 'Letra';
         const clave = generarClave(genero, tipo, talla);
@@ -182,7 +182,7 @@ window.AsignacionService = (function() {
         // Si no quedan colores, eliminar la asignación completa
         if (asignaciones[clave].colores.length === 0) {
             delete asignaciones[clave];
-            console.log('[AsignacionService] 🗑️ Asignación eliminada (sin colores)');
+            console.log('[AsignacionService]  Asignación eliminada (sin colores)');
         }
         
         // Actualizar StateManager
@@ -198,7 +198,7 @@ window.AsignacionService = (function() {
      * Eliminar una asignación completa
      */
     function eliminarAsignacion(genero, talla) {
-        console.log('[AsignacionService] 🗑️ Eliminando asignación:', { genero, talla });
+        console.log('[AsignacionService]  Eliminando asignación:', { genero, talla });
         
         const tipo = window.StateManager ? window.StateManager.getTipoTallaSel() : 'Letra';
         const clave = generarClave(genero, tipo, talla);

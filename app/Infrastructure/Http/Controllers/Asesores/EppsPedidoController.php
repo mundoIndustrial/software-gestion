@@ -7,9 +7,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Application\Pedidos\UseCases\EliminarEppUseCase;
 use App\Application\Pedidos\UseCases\HomologarEppUseCase;
+use App\Application\Services\Asesores\PrendaPedidoEdicionAuditoriaService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
-use App\Models\PedidoAnexoHistorial;
 
 /**
  * EppsPedidoController
@@ -26,6 +26,7 @@ class EppsPedidoController
     public function __construct(
         private EliminarEppUseCase $eliminarEppUseCase,
         private HomologarEppUseCase $homologarEppUseCase,
+        private PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService,
     ) {}
 
     /**
@@ -116,7 +117,7 @@ class EppsPedidoController
                 isset($validated['epp_id']) ? (int) $validated['epp_id'] : null
             );
 
-            PedidoAnexoHistorial::registrarEppNuevo(
+            $this->prendaPedidoEdicionAuditoriaService->registrarEppNuevo(
                 (int) $id,
                 (int) $resultado['epp_id_nuevo'],
                 (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0)

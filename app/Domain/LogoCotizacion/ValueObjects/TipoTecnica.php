@@ -75,6 +75,15 @@ final class TipoTecnica
         return $this->codigo;
     }
 
+    /**
+     * Alias legacy para compatibilidad.
+     * Históricamente algunos consumidores trataban "código" como nombre largo.
+     */
+    public function obtenerCodigo(): string
+    {
+        return $this->nombre();
+    }
+
     public function color(): string
     {
         return $this->color;
@@ -90,6 +99,14 @@ final class TipoTecnica
         return $this->id === $other->id() &&
                $this->nombre === $other->nombre() &&
                $this->codigo === $other->codigo();
+    }
+
+    /**
+     * Alias legacy para compatibilidad.
+     */
+    public function esIgual(self $other): bool
+    {
+        return $this->equals($other);
     }
 
     public function __toString(): string

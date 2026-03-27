@@ -166,7 +166,7 @@
                              Editar
                         </button>
                         <button type="button" class="btn-eliminar" onclick="eliminarReporte({{ $reporte->id }})">
-                            🗑️ Eliminar
+                             Eliminar
                         </button>
                     </div>
                 </div>

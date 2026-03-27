@@ -63,7 +63,7 @@ class TecnicaImagenService
             \Log::info('✓ Imagen cargada y procesada', [
                 'ancho' => $ancho,
                 'alto' => $alto,
-                'tamaño_bytes' => filesize($file->getRealPath())
+                'tamano_bytes' => filesize($file->getRealPath())
             ]);
 
             // Redimensionar si es muy grande (máximo 2000x2000)
@@ -80,21 +80,18 @@ class TecnicaImagenService
             $contenidoWebP = $image->toWebp(85);
             Storage::disk('public')->put($rutaWebp, $contenidoWebP);
 
-            $tamañoWebP = Storage::disk('public')->size($rutaWebp);
+            $tamanoWebP = Storage::disk('public')->size($rutaWebp);
 
             \Log::info('✓ WebP guardado (imagen única)', [
                 'ruta' => $rutaWebp,
-                'tamaño_bytes' => $tamañoWebP,
+                'tamano_bytes' => $tamanoWebP,
                 'ancho' => $image->width(),
                 'alto' => $image->height()
             ]);
 
             // Retornar una única ruta
             return [
-                'ruta_webp' => $rutaWebp,
-                'ancho' => $image->width(),
-                'alto' => $image->height(),
-                'tamaño' => $tamañoWebP
+                'ruta_webp' => $rutaWebp
             ];
 
         } catch (\Exception $e) {

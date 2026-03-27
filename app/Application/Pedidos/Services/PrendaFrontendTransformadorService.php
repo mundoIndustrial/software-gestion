@@ -274,7 +274,6 @@ class PrendaFrontendTransformadorService
                 'previewUrl' => $imagen,
                 'url' => $imagen,
                 'nombre' => basename($imagen),
-                'tamaño' => 0,
                 'file' => null,
                 'urlDesdeDB' => true
             ];
@@ -289,7 +288,6 @@ class PrendaFrontendTransformadorService
                 'ruta_original' => $imagen->ruta_original ?? '',
                 'ruta_webp' => $imagen->ruta_webp ?? '',
                 'nombre' => $imagen->nombre ?? basename($imagen->url ?? ''),
-                'tamaño' => $imagen->tamaño ?? 0,
                 'file' => null,
                 'urlDesdeDB' => true
             ];

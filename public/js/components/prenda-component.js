@@ -70,7 +70,7 @@ class PrendaComponent {
                         <button type="button" 
                             class="btn-eliminar-prenda" 
                             onclick="window.PrendaComponent.eliminarPrenda(${index})">
-                            🗑️ Eliminar Prenda
+                             Eliminar Prenda
                         </button>
                     </div>
                 </div>
@@ -279,7 +279,7 @@ class PrendaComponent {
                     class="btn-eliminar-variacion"
                     onclick="window.PrendaComponent.eliminarTela(${prendaIndex}, ${telaIndex})"
                     style="margin-top: 0.5rem;">
-                    🗑️ Eliminar Tela
+                     Eliminar Tela
                 </button>
             </div>
         `;

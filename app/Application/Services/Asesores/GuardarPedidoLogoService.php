@@ -88,7 +88,7 @@ class GuardarPedidoLogoService
                 'ruta_original' => $imagen['ruta_original'],
                 'ruta_webp' => $imagen['ruta_webp'] ?? null,
                 'tipo_archivo' => $imagen['tipo_archivo'],
-                'tamaño_archivo' => $imagen['tamaño_archivo'],
+                'tamano_archivo' => $imagen['tamano_archivo'],
                 'orden' => $index,
                 'created_at' => now(),
                 'updated_at' => now()

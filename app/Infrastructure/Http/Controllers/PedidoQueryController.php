@@ -4,7 +4,6 @@ namespace App\Infrastructure\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoTransformadoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerDetalleCompletoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerDatosEdicionUseCase;
@@ -22,7 +21,6 @@ use App\Application\Pedidos\UseCases\ListarPedidosPorClienteUseCase;
 class PedidoQueryController extends Controller
 {
     public function __construct(
-        private ObtenerPedidoUseCase $obtenerPedidoUseCase,
         private ObtenerPedidoTransformadoUseCase $obtenerPedidoTransformadoUseCase,
         private ObtenerDetalleCompletoUseCase $obtenerDetalleCompletoUseCase,
         private ObtenerDatosEdicionUseCase $obtenerDatosEdicionUseCase,
@@ -33,7 +31,6 @@ class PedidoQueryController extends Controller
 
     /**
      * GET /api/pedidos/{id}
-     * 
      */
     public function show(int $id): JsonResponse
     {
@@ -102,7 +99,6 @@ class PedidoQueryController extends Controller
      */
     /**
      * GET /api/pedidos/{id}/datos-edicion
-     * 
      */
     public function obtenerDatosEdicion(int $id): JsonResponse
     {
@@ -116,7 +112,6 @@ class PedidoQueryController extends Controller
 
     /**
      * GET /pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}
-     * 
      */
     public function obtenerAnchoMetrajePrendaPublico(int $pedidoId, int $prendaId): JsonResponse
     {
@@ -126,7 +121,6 @@ class PedidoQueryController extends Controller
 
     /**
      * GET /api/areas/{area}/encargados
-     * 
      */
     public function obtenerEncargadosPorArea(string $area): JsonResponse
     {

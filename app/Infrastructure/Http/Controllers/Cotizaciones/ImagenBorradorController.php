@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\PrendaFotoCot;
 use App\Models\PrendaTelaFotoCot;
-use App\Models\LogoFotoCot;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -105,44 +104,13 @@ class ImagenBorradorController
 
     /**
      * Borrar imagen de logo
-     * DELETE /cotizaciones/imagenes/logo/{id}
+     * DEPRECATED: Las tablas de logo_fotos_cot han sido eliminadas
      */
     public function borrarLogo($id): JsonResponse
     {
-        try {
-            $foto = LogoFotoCot::findOrFail($id);
-            
-            // Obtener la ruta de archivo
-            $rutaArchivo = str_replace('/storage/', '', $foto->ruta_webp);
-            
-            Log::info('ImagenBorradorController: Borrando imagen de logo', [
-                'foto_id' => $id,
-                'ruta' => $rutaArchivo,
-            ]);
-            
-            // Borrar archivo del storage
-            if (Storage::disk('public')->exists($rutaArchivo)) {
-                Storage::disk('public')->delete($rutaArchivo);
-            }
-            
-            // Borrar registro de BD
-            $foto->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Imagen de logo eliminada',
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('ImagenBorradorController: Error borrando imagen de logo', [
-                'id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar imagen: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Esta funcionalidad ha sido deshabilitada',
+        ], 410);
     }
 }

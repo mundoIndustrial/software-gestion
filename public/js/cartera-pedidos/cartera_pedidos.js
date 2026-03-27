@@ -47,8 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Configurar listeners de contadores
   configurarContadores();
   
-  // Configurar auto-refresh cada 5 minutos
-  setInterval(cargarPedidos, 5 * 60 * 1000);
+  // Sin polling: actualizacion por eventos WebSocket/manual
   
   // Configurar WebSockets en tiempo real para nuevos pedidos
   // Esperar 1 segundo para asegurar que Echo esté listo
@@ -743,3 +742,4 @@ document.addEventListener('keydown', function(event) {
 });
 
 console.log(' Script de Cartera Pedidos cargado correctamente');
+

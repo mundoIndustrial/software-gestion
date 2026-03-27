@@ -1568,7 +1568,6 @@ async function convertirBlobAArchivos(imagenes) {
                 id: imagen.id,
                 nombre: imagen.nombre,
                 extension: imagen.extension,
-                tamaño: imagen.tamaño,
                 file: imagen.file, // Para FormData
                 previewUrl: imagen.previewUrl, // Para mostrar en UI
                 
@@ -1624,7 +1623,6 @@ function prepararDatosParaEnvio(itemsPedido) {
                         id: imagen.id,
                         nombre: imagen.nombre,
                         extension: imagen.extension,
-                        tamaño: imagen.tamaño,
                         ruta_storage: imagen.ruta_storage,
                         nombre_archivo: imagen.nombre_archivo,
                         ruta_completa: imagen.ruta_completa,
@@ -2670,7 +2668,6 @@ function manejarSubidaFotosEPP(input) {
             previewUrl: previewUrl, // URL blob para mostrar
             nombre: nombreArchivo,
             extension: extension,
-            tamaño: archivo.size,
             pedido_epp_id: null, // Se asignará al guardar
             ruta_original: null,
             ruta_webp: null,
@@ -2866,7 +2863,6 @@ function handleDropEPP(event) {
             previewUrl: previewUrl, // URL blob para mostrar
             nombre: nombreArchivo,
             extension: extension,
-            tamaño: archivo.size,
             pedido_epp_id: null,
             ruta_original: null,
             ruta_webp: null,
@@ -3016,7 +3012,6 @@ function abrirModalEditarEPPNuevo(epp) {
                 nombre: img.nombre || 'imagen.jpg',
                 file: null, // No hay archivo original en edición
                 extension: (img.nombre || '').split('.').pop().toLowerCase() || 'jpg',
-                tamaño: img.tamaño || 0,
                 pedido_epp_id: epp.pedido_epp_id || null,
                 ruta_original: img.ruta_original || null,
                 ruta_webp: img.ruta_webp || null,

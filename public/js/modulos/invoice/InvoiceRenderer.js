@@ -932,7 +932,7 @@ class InvoiceRenderer {
     }
 
     /**
-     * Abre un modal para mostrar una imagen a tamaño completo
+     * Abre un modal para mostrar una imagen a tamano completo
      */
     abrirModalImagen(imgUrl, imgTitle) {
         // Crear modal si no existe

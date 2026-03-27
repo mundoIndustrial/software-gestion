@@ -19,7 +19,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 class ProcesarImagenesCotizacionService
 {
     private const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
-    private const TAMAÑO_MAXIMO = 5 * 1024 * 1024; // 5MB
+    private const tamano_MAXIMO = 5 * 1024 * 1024; // 5MB
     private const CALIDAD_WEBP = 80;
 
     /**
@@ -96,8 +96,8 @@ class ProcesarImagenesCotizacionService
             throw new \InvalidArgumentException('Tipo de archivo no permitido. Use JPEG, PNG o WebP');
         }
 
-        if ($archivo->getSize() > self::TAMAÑO_MAXIMO) {
-            throw new \InvalidArgumentException('El archivo excede el tamaño máximo de 5MB');
+        if ($archivo->getSize() > self::tamano_MAXIMO) {
+            throw new \InvalidArgumentException('El archivo excede el tamano máximo de 5MB');
         }
     }
 

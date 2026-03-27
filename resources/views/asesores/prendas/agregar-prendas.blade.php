@@ -843,7 +843,7 @@ function actualizarTabla() {
                     ${index + 1}️⃣ ${prenda.nombre}
                 </h3>
                 <button onclick="eliminarPrenda(${prenda.id})" class="text-red-600 hover:text-red-700 font-semibold">
-                    🗑️ Eliminar
+                     Eliminar
                 </button>
             </div>
             

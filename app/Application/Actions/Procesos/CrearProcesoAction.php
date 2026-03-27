@@ -117,7 +117,7 @@ class CrearProcesoAction
                 rutaArchivo: "pedidos/{$pedidoId}/procesos/{$nombreArchivo}",
                 nombreOriginal: $nombreArchivo,
                 tipoMime: $tipoMime,
-                tamaño: strlen($imagenBinaria),
+                tamano: strlen($imagenBinaria),
                 ancho: $ancho ?? 0,
                 alto: $alto ?? 0,
                 hashMd5: $hashMd5,

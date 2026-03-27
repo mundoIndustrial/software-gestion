@@ -83,46 +83,6 @@ class CotizacionBordadoController extends Controller
     }
 
     /**
-     * Borrar imagen específica
-     */
-    public function borrarImagen(Request $request, $id)
-    {
-        try {
-            $fotoId = $request->input('foto_id');
-            
-            Log::info('🗑️ Borrando imagen específica:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
-            
-            // Buscar y borrar la imagen
-            $foto = \App\Models\LogoFotoCot::find($fotoId);
-            
-            if (!$foto) {
-                Log::warning(' Imagen no encontrada:', ['foto_id' => $fotoId]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Imagen no encontrada'
-                ], 404);
-            }
-            
-            // Borrar la imagen
-            $foto->forceDelete();
-            
-            Log::info(' Imagen borrada exitosamente:', ['foto_id' => $fotoId]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Imagen borrada exitosamente'
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error(' Error al borrar imagen:', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al borrar imagen: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Actualizar borrador de cotización de bordado
      */
     public function updateBorrador(Request $request, $id)
@@ -136,7 +96,7 @@ class CotizacionBordadoController extends Controller
             $imagenesABorrar = json_decode($imagenesABorrar, true) ?? [];
         }
         
-        Log::info('🗑️ Imágenes a borrar (explícitamente):', ['ids' => $imagenesABorrar, 'count' => count($imagenesABorrar)]);
+        Log::info(' Imágenes a borrar (explícitamente):', ['ids' => $imagenesABorrar, 'count' => count($imagenesABorrar)]);
         
         // Determinar si es envío o guardado como borrador
         $action = $request->input('action') ?? $request->input('accion');
@@ -311,15 +271,6 @@ class CotizacionBordadoController extends Controller
                 // Borrar imágenes si se especificaron
                 // NOTA: El borrado de imágenes se ejecuta DESPUÉS de la transacción
                 // para evitar que se revierte si hay algún error
-                
-                // Procesar nuevas imágenes si existen
-                // Las imágenes existentes en logo_fotos_cot se preservan automáticamente
-                // ya que solo agregamos nuevas, no eliminamos las existentes
-                // Procesar nuevas imágenes si existen, buscando en 'imagenes' y 'imagenes_bordado'
-                $imagenes = $request->file('imagenes', $request->file('imagenes_bordado', []));
-                if ($request->hasFile('imagenes') || $request->hasFile('imagenes_bordado')) {
-                    $this->procesarImagenesCotizacion($request, $id);
-                }
 
                 // Sincronizar técnicas/prendas (Paso 3) en edición: eliminar faltantes y actualizar ubicaciones/tallas/obs
                 // IMPORTANTE: solo sincronizar si el request trae explícitamente 'tecnicas'.
@@ -463,14 +414,14 @@ class CotizacionBordadoController extends Controller
         
         // DESPUÉS de la transacción, borrar imágenes
         if (!empty($imagenesABorrar)) {
-            Log::info('🗑️ Borrando imágenes DESPUÉS de transacción:', ['ids' => $imagenesABorrar]);
+            Log::info(' Borrando imágenes DESPUÉS de transacción:', ['ids' => $imagenesABorrar]);
             
             // Convertir IDs a enteros
             $idsABorrar = array_map(function($id) {
                 return (int) $id;
             }, $imagenesABorrar);
             
-            Log::info('🗑️ IDs a borrar (convertidos):', ['ids' => $idsABorrar]);
+            Log::info(' IDs a borrar (convertidos):', ['ids' => $idsABorrar]);
             
             // Verificar que existan antes de borrar
             $imagenesEnBD = DB::table('logo_fotos_cot')->whereIn('id', $idsABorrar)->get();
@@ -696,9 +647,6 @@ class CotizacionBordadoController extends Controller
                 'ruta_webp' => $rutaFinal,
                 'ruta_miniatura' => $rutaFinal,
                 'orden' => $imgIdx,
-                'ancho' => $rutas['ancho'] ?? 0,
-                'alto' => $rutas['alto'] ?? 0,
-                'tamaño' => $rutas['tamaño'] ?? 0,
             ]);
         }
     }
@@ -841,9 +789,6 @@ class CotizacionBordadoController extends Controller
                         'ruta_webp' => $rutaNormalizada,
                         'ruta_miniatura' => $rutaNormalizada,
                         'orden' => 999,
-                        'ancho' => $ancho,
-                        'alto' => $alto,
-                        'tamaño' => $tam,
                     ]);
                 }
             }
@@ -972,7 +917,7 @@ class CotizacionBordadoController extends Controller
 
                 // Procesar imágenes si existen
                 if ($request->hasFile('imagenes') || $request->hasFile('imagenes_bordado')) {
-                    $this->procesarImagenesCotizacion($request, $cotizacion->id);
+                    // Procesar imágenes: Se maneja a través del servicio de técnicas
                 }
 
                 //  PROCESAR TÉCNICAS CON PRENDAS (nueva lógica)
@@ -1091,94 +1036,6 @@ class CotizacionBordadoController extends Controller
                 ], 500);
             }
         }, attempts: 3);
-    }
-
-    /**
-     * Procesar y guardar imágenes del bordado en logo_fotos_cot
-     */
-    private function procesarImagenesCotizacion(Request $request, $cotizacionId)
-    {
-        // Obtener el ID de logo_cotizacion
-        $logoCotizacion = DB::table('logo_cotizaciones')
-            ->where('cotizacion_id', $cotizacionId)
-            ->first();
-
-        if (!$logoCotizacion) {
-            Log::warning(' No se encontró logo_cotizacion para cotización', [
-                'cotizacion_id' => $cotizacionId
-            ]);
-            return;
-        }
-
-        $logoCotizacionId = $logoCotizacion->id;
-
-        // Obtener el último orden para continuar la numeración
-        $ultimoOrden = DB::table('logo_fotos_cot')
-            ->where('logo_cotizacion_id', $logoCotizacionId)
-            ->max('orden') ?? 0;
-
-        $orden = $ultimoOrden + 1;
-
-        // Crear instancia del ImageManager
-        $manager = new ImageManager(new Driver());
-
-        // Procesar archivos del request
-        $archivos = $request->file('imagenes') ?? $request->file('imagenes_bordado') ?? [];
-        if (!empty($archivos)) {
-            foreach ($archivos as $archivo) {
-                try {
-                    // Generar un nombre de archivo único con extensión .webp
-                    $nombreArchivo = uniqid() . '.webp';
-                    $rutaDestino = 'bordado/cotizaciones/' . $cotizacionId . '/' . $nombreArchivo;
-
-                    // Convertir y guardar la imagen en formato .webp usando Intervention Image v3
-                    $image = $manager->read($archivo);
-                    $webpContent = $image->toWebp(80);
-                    Storage::disk('public')->put($rutaDestino, $webpContent);
-
-                    // Las rutas ahora apuntan al archivo .webp
-                    $rutaOriginal = $rutaDestino;
-                    $rutaWebp = $rutaDestino;
-                    $rutaMiniatura = $rutaDestino;
-
-                    // Obtener dimensiones de la imagen
-                    $imageInfo = @getimagesize(storage_path('app/public/' . $rutaOriginal));
-                    $ancho = $imageInfo[0] ?? 0;
-                    $alto = $imageInfo[1] ?? 0;
-                    $tamaño = Storage::disk('public')->size($rutaOriginal);
-
-                    // Guardar en logo_fotos_cot
-                    DB::table('logo_fotos_cot')->insert([
-                        'logo_cotizacion_id' => $logoCotizacionId,
-                        'ruta_original' => $rutaOriginal,
-                        'ruta_webp' => $rutaWebp,
-                        'ruta_miniatura' => $rutaMiniatura,
-                        'orden' => $orden,
-                        'ancho' => $ancho,
-                        'alto' => $alto,
-                        'tamaño' => $tamaño,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info(' Imagen guardada en logo_fotos_cot', [
-                        'logo_cotizacion_id' => $logoCotizacionId,
-                        'ruta' => $rutaOriginal,
-                        'orden' => $orden,
-                        'tamaño' => $tamaño,
-                        'dimensiones' => "{$ancho}x{$alto}"
-                    ]);
-
-                    $orden++;
-
-                } catch (\Exception $e) {
-                    Log::error(' Error al guardar imagen', [
-                        'error' => $e->getMessage(),
-                        'archivo' => $archivo->getClientOriginalName()
-                    ]);
-                }
-            }
-        }
     }
 
     /**
@@ -1806,7 +1663,7 @@ class CotizacionBordadoController extends Controller
 
                     Log::info('🖼️ Imagen de tela almacenada', [
                         'ruta' => $rutaImagen,
-                        'tamaño' => $archivo->getSize(),
+                        'tamano' => $archivo->getSize(),
                     ]);
                 }
 
@@ -1945,7 +1802,7 @@ class CotizacionBordadoController extends Controller
             // Eliminar imagen si existe
             if ($tela->img && Storage::disk('public')->exists($tela->img)) {
                 Storage::disk('public')->delete($tela->img);
-                Log::info('🗑️ Imagen de tela eliminada', ['ruta' => $tela->img]);
+                Log::info(' Imagen de tela eliminada', ['ruta' => $tela->img]);
             }
 
             $tela->delete();

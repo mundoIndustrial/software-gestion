@@ -1423,7 +1423,6 @@ NIT 1.093.738.433-3</textarea>
                             nombre: imagen.nombre || `Foto ${index + 1}`,
                             file: imagen.file || null,
                             extension: (imagen.nombre || '').split('.').pop().toLowerCase() || 'jpg',
-                            tamaño: imagen.tamaño || 0,
                             pedido_epp_id: imagen.pedido_epp_id || null,
                             ruta_original: imagen.ruta_original || null,
                             ruta_webp: imagen.ruta_webp || null,
@@ -1755,7 +1754,6 @@ NIT 1.093.738.433-3</textarea>
                     previewUrl: previewUrl, // URL blob para mostrar
                     nombre: nombreArchivo,
                     extension: extension,
-                    tamaño: archivo.size,
                     pedido_epp_id: null, // Se asignará al guardar
                     ruta_original: null,
                     ruta_webp: null,
@@ -1765,8 +1763,7 @@ NIT 1.093.738.433-3</textarea>
                 
                 console.log(`📸 [manejarSubidaFotosEPP] Procesando imagen:`, {
                     id: imagen.id,
-                    nombre: imagen.nombre,
-                    tamaño: imagen.tamaño
+                    nombre: imagen.nombre
                 });
                 
                 // Agregar al stateManager si existe, sino a array temporal
@@ -1826,7 +1823,7 @@ NIT 1.093.738.433-3</textarea>
 
         // Función para eliminar foto (cotización - diferente de la de la tabla EPP)
         window.eliminarFotoEPPCotizacion = function(fotoId) {
-            console.log(`🗑️ [eliminarFotoEPPCotizacion] Eliminando foto: ${fotoId}`);
+            console.log(` [eliminarFotoEPPCotizacion] Eliminando foto: ${fotoId}`);
             
             // Eliminar del DOM
             const fotoElement = document.querySelector(`[data-foto-id="${fotoId}"]`);

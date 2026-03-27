@@ -709,7 +709,7 @@ function cerrarModalConfirmarEliminar() {
     console.log('[cerrarModalConfirmarEliminar] 📦 Modal encontrado:', !!modal);
     
     if (modal) {
-        console.log('[cerrarModalConfirmarEliminar] 🗑️ Eliminando modal del DOM');
+        console.log('[cerrarModalConfirmarEliminar]  Eliminando modal del DOM');
         modal.remove();
         console.log('[cerrarModalConfirmarEliminar]  Modal eliminado');
     } else {

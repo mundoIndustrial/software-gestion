@@ -180,7 +180,7 @@ class ActualizarPedidoService
      */
     public function cambiarEstado($pedidoIdentifier, string $nuevoEstado): Pedidos
     {
-        Log::info('ðŸ”„ [CAMBIAR-ESTADO] Cambiando a estado: ' . $nuevoEstado);
+        Log::info('„ [CAMBIAR-ESTADO] Cambiando a estado: ' . $nuevoEstado);
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 

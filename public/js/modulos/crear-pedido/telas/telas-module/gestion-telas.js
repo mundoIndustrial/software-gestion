@@ -210,7 +210,7 @@ window.agregarTelaNueva = async function() {
  * Función global única para confirmar eliminación de tela
  */
 window.confirmarEliminacionTela = function(index) {
-    console.log('[confirmarEliminacionTela] 🗑️ Confirmando eliminación de tela en índice:', index);
+    console.log('[confirmarEliminacionTela]  Confirmando eliminación de tela en índice:', index);
     
     try {
         const telas = window.telasCreacion;
@@ -251,7 +251,7 @@ window.confirmarEliminacionTela = function(index) {
  * @param {Event} event - Evento del click (opcional)
  */
 window.eliminarTela = function(index, event) {
-    console.log('[eliminarTela] 🗑️ Iniciando eliminación de tela:', index);
+    console.log('[eliminarTela]  Iniciando eliminación de tela:', index);
     
     // Prevenir propagación de eventos para evitar clicks accidentales
     if (event) {

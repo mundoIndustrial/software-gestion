@@ -78,7 +78,7 @@ Desglose de 8 pasos:
 -  Tiempo de carga de imagen en memoria
 -  Tiempo de conversión a WebP
 -  Tiempo total
--  Información de archivo (tamaño, nombre original)
+-  Información de archivo (tamano, nombre original)
 
 ---
 

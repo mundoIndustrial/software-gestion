@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Validar tamaño (2MB)
+                // Validar tamano (2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     showMessage('La imagen no debe superar los 2MB', 'error');
                     avatarInput.value = ''; // Limpiar input

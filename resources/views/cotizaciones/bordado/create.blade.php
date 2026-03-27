@@ -1351,8 +1351,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                             logosCompartidosMetadata[clave] = {
                                 nombreCompartido: clave,
                                 tecnicasCompartidas: [],
-                                archivoNombre: archivo.name,
-                                tamaño: archivo.size
+                                archivoNombre: archivo.name
                             };
                         }
                     }

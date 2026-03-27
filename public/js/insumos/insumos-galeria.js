@@ -496,7 +496,7 @@ class InsumosGaleria {
     }
 
     /**
-     * Muestra una imagen en tamaño grande con navegacion
+     * Muestra una imagen en tamano grande con navegacion
      */
     mostrarImagen(indice) {
         if (this.imagenesActuales.length === 0) return;

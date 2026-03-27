@@ -38,6 +38,26 @@ class Epp extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $epp): void {
+            if ($epp->categoria_id) {
+                return;
+            }
+
+            $categoria = EppCategoria::firstOrCreate(
+                ['codigo' => 'GEN'],
+                [
+                    'nombre' => 'General',
+                    'descripcion' => 'Categoria generica para compatibilidad',
+                    'activo' => true,
+                ]
+            );
+
+            $epp->categoria_id = $categoria->id;
+        });
+    }
+
     /**
      * NOTA: Los campos 'codigo' y 'categoria_id' NO existen en la tabla
      * La tabla solo tiene: id, nombre_completo, marca, tipo, talla, color, descripcion, activo, created_at, updated_at

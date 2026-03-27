@@ -176,7 +176,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     imgModal.style.cssText = 'width: 98vw; height: 90vh; max-width: 98vw; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
     
     console.log('🖼️ [galeria-imagenes-prenda] CSS aplicado a imgModal:', imgModal.style.cssText);
-    console.log('🖼️ [galeria-imagenes-prenda] Tamaño calculado:', {
+    console.log('🖼️ [galeria-imagenes-prenda] tamano calculado:', {
         'width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
         'height': '90vh = ' + (window.innerHeight * 0.90) + 'px',
         'max-width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
@@ -323,7 +323,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     //  Función extraída para manejar la eliminación
     const procederConEliminacion = () => {
 
-        console.log('🗑️ [galeria] Procediendo con eliminación - esPrendaDeCotizacion:', esPrendaDeCotizacion);
+        console.log(' [galeria] Procediendo con eliminación - esPrendaDeCotizacion:', esPrendaDeCotizacion);
         
         // Determinar dónde está la imagen para eliminarla correctamente
         let imagenEliminada = false;

@@ -189,7 +189,7 @@ class StorageDiagnoseCommand extends Command
 
             $this->components->twoColumnDetail('Total archivos', $files->count());
             $this->components->twoColumnDetail('Total carpetas', $dirs->count());
-            $this->components->twoColumnDetail('Tamaño total', "{$totalSizeMB} MB");
+            $this->components->twoColumnDetail('tamano total', "{$totalSizeMB} MB");
 
             // Mostrar carpetas principales
             foreach ($dirs as $dir) {

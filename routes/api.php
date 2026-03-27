@@ -42,6 +42,7 @@ require base_path('routes/epp.php');
  * Gestión completa de cotizaciones en módulo separado
  */
 require base_path('routes/cotizaciones.php');
+require base_path('routes/logo-cotizacion-tecnicas.php');
 
 /**
  * API Routes for Pedidos (DDD - Gestión de Ítems)

@@ -409,7 +409,7 @@ class ProcesosPrendaDetalleController extends Controller
                 rutaArchivo: "pedidos/{$pedidoId}/procesos/{$nombreArchivo}",
                 nombreOriginal: $nombreOriginal,
                 tipoMime: $tipoMime,
-                tamaño: strlen($imagenBinaria),
+                tamano: strlen($imagenBinaria),
                 ancho: $ancho,
                 alto: $alto,
                 hashMd5: $hashMd5,

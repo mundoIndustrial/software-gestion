@@ -20,7 +20,7 @@ class ImagenTransformadorService
      * @param string $directorio Ruta completa del directorio donde guardar
      * @param int $index Índice de la imagen
      * @param string $tipo Tipo de imagen (prenda, tela, proceso, epp)
-     * @return array ['nombreArchivo' => 'img_tipo_0_20260121_abc123.webp', 'tamaño' => bytes]
+     * @return array ['nombreArchivo' => 'img_tipo_0_20260121_abc123.webp', 'tamano' => bytes]
      */
     public function transformarAWebp(
         UploadedFile $archivo,
@@ -56,7 +56,7 @@ class ImagenTransformadorService
             // Convertir a WebP con calidad 80
             $webp = $imagen->toWebp(quality: 80);
             $contenidoWebP = $webp->toString();
-            $tamaño = strlen($contenidoWebP);
+            $tamano = strlen($contenidoWebP);
             
             // Generar nombre único
             $timestamp = now()->format('YmdHis');
@@ -70,14 +70,14 @@ class ImagenTransformadorService
             Log::info(' [ImagenTransformadorService] Imagen transformada a WebP', [
                 'tipo' => $tipo,
                 'archivo_original' => $archivo->getClientOriginalName(),
-                'tamaño_original' => $archivo->getSize(),
-                'tamaño_webp' => $tamaño,
+                'tamano_original' => $archivo->getSize(),
+                'tamano_webp' => $tamano,
                 'nombre_archivo' => $nombreArchivo,
             ]);
             
             return [
                 'nombreArchivo' => $nombreArchivo,
-                'tamaño' => $tamaño,
+                'tamano' => $tamano,
             ];
         } catch (\Exception $e) {
             Log::error(' [ImagenTransformadorService] Error transformando imagen', [

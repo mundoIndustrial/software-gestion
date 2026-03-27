@@ -123,7 +123,7 @@ class EncargadoProceso {
         const bgColor = this._hashStringToColor().match(/(\d+)/g);
         const hsl = `${bgColor[0]},${bgColor[1]},${bgColor[2]}`;
 
-        // Construir URL con parámetros: nombre, tamaño, fondo, color de texto
+        // Construir URL con parámetros: nombre, tamano, fondo, color de texto
         const params = new URLSearchParams({
             name: iniciales,
             size: 40,

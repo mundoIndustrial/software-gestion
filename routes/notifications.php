@@ -8,23 +8,23 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
     // Notificaciones generales
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])
+    Route::get('/notifications', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'index'])
         ->name('notifications.index');
-    Route::get('/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])
+    Route::get('/notifications/unread-count', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'getUnreadCount'])
         ->name('notifications.unread-count');
-    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])
+    Route::post('/notifications/{id}/mark-read', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'markAsRead'])
         ->name('notifications.mark-read');
-    Route::post('/notifications/mark-multiple-read', [App\Http\Controllers\NotificationController::class, 'markMultipleAsRead'])
+    Route::post('/notifications/mark-multiple-read', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'markMultipleAsRead'])
         ->name('notifications.mark-multiple-read');
-    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
+    Route::post('/notifications/mark-all-read', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'markAllAsRead'])
         ->name('notifications.mark-all-read');
-    Route::post('/notifications/mark-read-on-open', [App\Http\Controllers\NotificationController::class, 'markAsReadOnOpen'])
+    Route::post('/notifications/mark-read-on-open', [App\Infrastructure\Http\Controllers\Legacy\NotificationController::class, 'markAsReadOnOpen'])
         ->name('notifications.mark-read-on-open');
     
     // Contador (compatibilidad)
-    Route::post('/contador/notifications/marcar-leidas', [App\Http\Controllers\ContadorController::class, 'markAllNotificationsAsRead'])
+    Route::post('/contador/notifications/marcar-leidas', [App\Infrastructure\Http\Controllers\Legacy\ContadorController::class, 'markAllNotificationsAsRead'])
         ->name('contador.notifications.mark-all-read');
-    Route::get('/contador/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])
+    Route::get('/contador/notifications', [App\Infrastructure\Http\Controllers\Legacy\ContadorController::class, 'getNotifications'])
         ->name('contador.notifications');
     
     // Supervisor Pedidos (compatibilidad)

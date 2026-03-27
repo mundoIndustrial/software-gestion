@@ -32,7 +32,7 @@ class PrendaBaseCreatorService
     ): PrendaPedido {
         $descripcionFinal = $prendaData['descripcion'] ?? '';
         
-        \Log::info("ðŸ”µ [PRENDA #{$index}] ANTES DE CREATE - Creando nueva prenda", [
+        \Log::info("µ [PRENDA #{$index}] ANTES DE CREATE - Creando nueva prenda", [
             'pedido_id' => $pedidoId,
             'nombre_producto' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'indice_prenda' => $index,

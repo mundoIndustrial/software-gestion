@@ -18,7 +18,7 @@ class ConfirmarPedidoService
      */
     public function confirmar(int $borradorId, int $numeroPedido): PedidoProduccion
     {
-        Log::info('ðŸ” [CONFIRMAR] Confirmando pedido borrador', [
+        Log::info(' [CONFIRMAR] Confirmando pedido borrador', [
             'borrador_id' => $borradorId,
             'numero_pedido' => $numeroPedido
         ]);
@@ -78,7 +78,7 @@ class ConfirmarPedidoService
      */
     public function confirmarLote(array $pedidosAConfirmar): array
     {
-        Log::info('ðŸ” [CONFIRMAR-LOTE] Confirmando ' . count($pedidosAConfirmar) . ' pedidos');
+        Log::info(' [CONFIRMAR-LOTE] Confirmando ' . count($pedidosAConfirmar) . ' pedidos');
 
         $resultados = [
             'exitosos' => [],

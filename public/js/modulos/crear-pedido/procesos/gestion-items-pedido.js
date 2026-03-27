@@ -108,7 +108,7 @@ class GestionItemsUI {
                 }
             });
             
-            console.log(`[gestionItemsUI] 🗑️ eliminarEPPPorTarjetaId - tarjetaId: ${tarjetaId}, posicionVisual: ${posicionVisual}`);
+            console.log(`[gestionItemsUI]  eliminarEPPPorTarjetaId - tarjetaId: ${tarjetaId}, posicionVisual: ${posicionVisual}`);
             
             if (posicionVisual < 0) {
                 // Tarjeta ya eliminada del DOM, intentar por índice en arrays
@@ -123,7 +123,7 @@ class GestionItemsUI {
             if (posicionVisual >= 0 && posicionVisual < this.epps.length) {
                 // Eliminar del array de epps
                 this.epps.splice(posicionVisual, 1);
-                console.log(`[gestionItemsUI] 🗑️ EPP eliminado del array. Quedan: ${this.epps.length}`);
+                console.log(`[gestionItemsUI]  EPP eliminado del array. Quedan: ${this.epps.length}`);
                 
                 // Eliminar de ordenItems - buscar el epp en la posición correcta
                 let eppCount = 0;
@@ -152,8 +152,8 @@ class GestionItemsUI {
                     }
                 });
                 
-                console.log(`[gestionItemsUI] 🗑️ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
-                console.log(`[gestionItemsUI] 🗑️ EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
+                console.log(`[gestionItemsUI]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
+                console.log(`[gestionItemsUI]  EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
                 return true;
             }
             
@@ -614,7 +614,7 @@ class GestionItemsUI {
                 this.prendas
             );
             
-            // � IMPORTANTE: Agregar imágenes marcadas para eliminación
+            //  IMPORTANTE: Agregar imágenes marcadas para eliminación
             // Solo se eliminarán cuando se guarden los cambios
             if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
                 prendaData.imagenes_a_eliminar = window.imagenesAEliminar;
@@ -624,7 +624,7 @@ class GestionItemsUI {
                 });
             }
             
-            // � LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
+            //  LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
             console.log('\n═══════════════════════════════════════════════════════════════');
             console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
             console.log('═══════════════════════════════════════════════════════════════');
@@ -828,7 +828,7 @@ class GestionItemsUI {
                         const seEliminaronTodasLasImagenes = imagenesStorage.length === 0;
                         
                         if (esModoCreate && seEliminaronTodasLasImagenes) {
-                            console.log('🗑️ [GESTION-ITEMS] Modo CREATE: Todas las imágenes eliminadas, actualizando array a []');
+                            console.log(' [GESTION-ITEMS] Modo CREATE: Todas las imágenes eliminadas, actualizando array a []');
                             
                             // Forzar que prendaData.imagenes sea array vacío
                             prendaData.imagenes = [];

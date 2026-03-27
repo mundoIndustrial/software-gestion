@@ -114,7 +114,7 @@ class ProcesoFotoService
     }
 
     /**
-     * ðŸ”´ NUEVO: Guardar imagen directamente como WebP sin guardar PNG original
+     * ´ NUEVO: Guardar imagen directamente como WebP sin guardar PNG original
      * Usado en modo edicion para ahorrar espacio
      * 
      * @param UploadedFile $archivo

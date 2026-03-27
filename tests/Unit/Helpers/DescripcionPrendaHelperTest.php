@@ -3,7 +3,7 @@
 namespace Tests\Unit\Helpers;
 
 use App\Helpers\DescripcionPrendaHelper;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class DescripcionPrendaHelperTest extends TestCase
 {
@@ -178,4 +178,3 @@ class DescripcionPrendaHelperTest extends TestCase
         echo $desc2;
     }
 }
-

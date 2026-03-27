@@ -270,7 +270,7 @@ class ResolutorImagenesService
                         $mapeoUidARuta[$formDataKey] = $rutaFinal;
                     }
 
-                    Log::debug('[RESOLVER-IMAGENES] ðŸ”‘ MAPEO CREADO', [
+                    Log::debug('[RESOLVER-IMAGENES] ‘ MAPEO CREADO', [
                         'imagen_uid' => $imagenUID,
                         'formdata_key' => $formDataKey,
                         'ruta_webp' => $rutaFinal,

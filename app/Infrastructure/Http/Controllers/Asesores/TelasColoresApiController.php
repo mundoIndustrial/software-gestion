@@ -2,6 +2,8 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
+use App\Application\Asesores\UseCases\ObtenerCatalogoColoresAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerCatalogoTelasAsesorUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
@@ -14,44 +16,33 @@ use Illuminate\Http\JsonResponse;
  */
 class TelasColoresApiController extends Controller
 {
+    public function __construct(
+        private readonly ObtenerCatalogoTelasAsesorUseCase $obtenerCatalogoTelasAsesorUseCase,
+        private readonly ObtenerCatalogoColoresAsesorUseCase $obtenerCatalogoColoresAsesorUseCase
+    ) {
+    }
+
     /**
      * Retorna todas las telas disponibles
      */
     public function getTelas(): JsonResponse
     {
         try {
-            // Datos de prueba - retornar array vacío o algunos datos de ejemplo
-            $telas = [];
-            
-            try {
-                // Intentar cargar desde la BD si está disponible
-                $telas = \App\Models\TelaPrenda::where('activo', true)
-                    ->select('id', 'nombre', 'referencia')
-                    ->orderBy('nombre')
-                    ->get()
-                    ->toArray();
-            } catch (\Exception $dbError) {
-                // Si hay error con la BD, retornar array vacío
-                \Log::warning('[TelasColoresApiController] Error loading telas from DB', [
-                    'error' => $dbError->getMessage()
-                ]);
-                $telas = [];
-            }
+            $telas = $this->obtenerCatalogoTelasAsesorUseCase->ejecutar();
 
             return response()->json([
                 'success' => true,
                 'data' => $telas,
                 'count' => count($telas),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('[TelasColoresApiController::getTelas] Error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => 'Error al obtener telas.',
             ], 500);
         }
     }
@@ -62,38 +53,21 @@ class TelasColoresApiController extends Controller
     public function getColores(): JsonResponse
     {
         try {
-            // Datos de prueba - retornar array vacío o algunos datos de ejemplo
-            $colores = [];
-            
-            try {
-                // Intentar cargar desde la BD si está disponible
-                $colores = \App\Models\ColorPrenda::where('activo', true)
-                    ->select('id', 'nombre', 'codigo')
-                    ->orderBy('nombre')
-                    ->get()
-                    ->toArray();
-            } catch (\Exception $dbError) {
-                // Si hay error con la BD, retornar array vacío
-                \Log::warning('[TelasColoresApiController] Error loading colores from DB', [
-                    'error' => $dbError->getMessage()
-                ]);
-                $colores = [];
-            }
+            $colores = $this->obtenerCatalogoColoresAsesorUseCase->ejecutar();
 
             return response()->json([
                 'success' => true,
                 'data' => $colores,
                 'count' => count($colores),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('[TelasColoresApiController::getColores] Error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => 'Error al obtener colores.',
             ], 500);
         }
     }

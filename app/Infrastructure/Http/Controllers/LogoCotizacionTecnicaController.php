@@ -16,18 +16,18 @@ use Illuminate\Support\Facades\DB;
 /**
  * LogoCotizacionTecnicaController
  * 
- * Controlador para gestionar técnicas y prendas en cotizaciones de logo
+ * Controlador para gestionar tenicas y prendas en cotizaciones de logo
  * Estructura: LogoCotizacion -> TipoLogoCotizacion -> LogoCotizacionTecnicaPrenda
  */
 class LogoCotizacionTecnicaController extends Controller
 {
     /**
-     * Obtener tipos de técnicas disponibles (para select en UI)
+     * Obtener tipos de tenicas disponibles (para select en UI)
      */
     public function tiposDisponibles()
     {
         try {
-            Log::info('🔵 tiposDisponibles() - Iniciando');
+            Log::info('µ tiposDisponibles() - Iniciando');
             
             $tipos = TipoLogoCotizacion::activos()->get();
             
@@ -55,14 +55,14 @@ class LogoCotizacionTecnicaController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener tipos de técnicas',
+                'message' => 'Error al obtener tipos de tenicas',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Agregar una técnica (TipoLogoCotizacion) con prendas a una cotización
+     * Agregar una tecnica (TipoLogoCotizacion) con prendas a una cotizacion
      * 
      * Recibe FormData con:
      * - prendas: JSON con datos de prendas (sin File objects)
@@ -73,47 +73,65 @@ class LogoCotizacionTecnicaController extends Controller
     public function agregarTecnica(Request $request)
     {
         try {
-            Log::info('🔵 agregarTecnica() - Request FormData recibido', [
+            $prendasInput = $request->input('prendas');
+            $request->merge([
+                'logo_cotizacion_id' => $request->input('logo_cotizacion_id', $request->input('logoCotizacionId')),
+                'tipo_logo_id' => $request->input('tipo_logo_id', $request->input('tipoTecnicaId')),
+                'prendas' => is_array($prendasInput) ? json_encode($prendasInput) : $prendasInput,
+            ]);
+
+            $prendasPreview = $request->input('prendas');
+            if (is_array($prendasPreview)) {
+                $prendasPreview = json_encode($prendasPreview);
+            }
+
+            Log::info('µ agregarTecnica() - Request FormData recibido', [
                 'logo_cotizacion_id' => $request->input('logo_cotizacion_id'),
                 'tipo_logo_id' => $request->input('tipo_logo_id'),
                 'es_combinada' => $request->input('es_combinada'),
                 'es_combinada_type' => gettype($request->input('es_combinada')),
                 'grupo_combinado' => $request->input('grupo_combinado'),
-                'prendas_raw' => substr($request->input('prendas') ?? '', 0, 100),
+                'prendas_raw' => substr((string) ($prendasPreview ?? ''), 0, 100),
                 'archivos_subidos' => collect($request->files->all())->map(fn($v) => is_array($v) ? count($v) : 1)->sum(),
                 'all_inputs_keys' => array_keys($request->all())
             ]);
 
-            // Validar datos básicos
-            Log::info('✓ Iniciando validación', [
+            // Validar datos basicos
+            Log::info(' Iniciando validacion', [
                 'campos_esperados' => ['logo_cotizacion_id', 'tipo_logo_id', 'prendas', 'es_combinada', 'grupo_combinado']
             ]);
             
             $validated = $request->validate([
-                'logo_cotizacion_id' => 'required|integer|exists:logo_cotizaciones,id',
+                'logo_cotizacion_id' => 'required|integer',
                 'tipo_logo_id' => 'required|integer|exists:tipo_logo_cotizaciones,id',
                 'prendas' => 'required|json',
                 'grupo_combinado' => 'nullable|integer',
                 'es_combinada' => 'nullable|in:true,false,1,0,null',  // Aceptar string o boolean
             ]);
             
-            Log::info(' Validación exitosa', [
+            Log::info(' validacion exitosa', [
                 'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
                 'tipo_logo_id' => $validated['tipo_logo_id'],
                 'es_combinada' => $validated['es_combinada'] ?? 'null'
             ]);
 
             // Decodificar JSON de prendas
-            Log::info('✓ Decodificando JSON de prendas');
+            Log::info(' Decodificando JSON de prendas');
             $prendasData = json_decode($validated['prendas'], true);
             if (!is_array($prendasData)) {
                 Log::error(' Error decodificando prendas', [
                     'error' => json_last_error_msg(),
                     'raw_prendas' => substr($validated['prendas'], 0, 200)
                 ]);
-                throw new \Exception('Datos de prendas inválidos: ' . json_last_error_msg());
+                throw new \Exception('Datos de prendas invalidados: ' . json_last_error_msg());
             }
             
+            if (count($prendasData) === 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'prendas' => ['Debe enviar al menos una prenda.'],
+                ]);
+            }
+
             Log::info(' Prendas decodificadas correctamente', [
                 'count' => count($prendasData),
                 'prendas' => array_map(fn($p) => $p['nombre_prenda'] ?? 'sin_nombre', $prendasData)
@@ -124,15 +142,15 @@ class LogoCotizacionTecnicaController extends Controller
             $grupoCombinado = $validated['grupo_combinado'] ?? null;
             
             // Convertir es_combinada a boolean
-            Log::info('✓ Convirtiendo es_combinada a boolean', ['raw_value' => $request->input('es_combinada'), 'type' => gettype($request->input('es_combinada'))]);
+            Log::info(' Convirtiendo es_combinada a boolean', ['raw_value' => $request->input('es_combinada'), 'type' => gettype($request->input('es_combinada'))]);
             $esCombinada = filter_var($request->input('es_combinada'), FILTER_VALIDATE_BOOLEAN);
-            Log::info('✓ Conversion completada', ['boolean_value' => $esCombinada, 'type' => gettype($esCombinada)]);
+            Log::info(' Conversion completada', ['boolean_value' => $esCombinada, 'type' => gettype($esCombinada)]);
 
-            // Obtener datos de la cotización y tipo de logo
+            // Obtener datos de la cotizacion y tipo de logo
             $logoCotizacion = LogoCotizacion::findOrFail($logoCotizacionId);
             $tipoLogo = TipoLogoCotizacion::findOrFail($tipoLogoId);
 
-            // Auto-generar grupo_combinado si es técnica combinada
+            // Auto-generar grupo_combinado si es tecnica combinada
             if (!$grupoCombinado && $esCombinada === true) {
                 $maxGrupo = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)
                     ->where('grupo_combinado', '!=', null)
@@ -140,15 +158,15 @@ class LogoCotizacionTecnicaController extends Controller
                 
                 $grupoCombinado = ($maxGrupo ? $maxGrupo + 1 : 1);
                 
-                Log::info('🆔 Grupo combinado auto-generado', [
+                Log::info('ðŸ†” Grupo combinado auto-generado', [
                     'nuevo_grupo' => $grupoCombinado
                 ]);
             }
 
-            // Inicializar servicio de imágenes
+            // Inicializar servicio de imagenes
             $imagenService = new TecnicaImagenService();
 
-            // Crear prendas con imágenes
+            // Crear prendas con imagenes
             $prendas = [];
             
             // PASO 1: Obtener rutas de logos compartidos ya guardados
@@ -161,7 +179,7 @@ class LogoCotizacionTecnicaController extends Controller
                 ]);
             }
             
-            // PASO 1B: Obtener metadatos de logos compartidos para saber qué técnicas comparten cada logo
+            // PASO 1B: Obtener metadatos de logos compartidos para saber que tenicas comparten cada logo
             $imagenesCompartidas = [];
             foreach ($request->all() as $key => $value) {
                 // Buscar metadatos en formato: logo_compartido_metadata_0, logo_compartido_metadata_1, etc.
@@ -173,17 +191,17 @@ class LogoCotizacionTecnicaController extends Controller
                 }
             }
 
-            Log::info(' Metadatos de imágenes compartidas encontrados:', [
+            Log::info(' Metadatos de imagenes compartidas encontrados:', [
                 'count' => count($imagenesCompartidas),
                 'claves' => array_keys($imagenesCompartidas)
             ]);
             
-            // PASO 1C: Procesar SOLO las imágenes compartidas que esta técnica debe referenciar
-            // (Las imágenes ya fueron guardadas una sola vez en CotizacionBordadoController)
+            // PASO 1C: Procesar SOLO las imagenes compartidas que esta tecnica debe referenciar
+            // (Las imagenes ya fueron guardadas una sola vez en CotizacionBordadoController)
             
-            // PASO 2: Procesar prendas e imágenes no compartidas
+            // PASO 2: Procesar prendas e imagenes no compartidas
             foreach ($prendasData as $prendasIndex => $prendaData) {
-                Log::info(' Creando prenda de catálogo', [
+                Log::info(' Creando prenda de catalogo', [
                     'nombre_producto' => $prendaData['nombre_prenda'],
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
@@ -196,7 +214,7 @@ class LogoCotizacionTecnicaController extends Controller
                 $prendaCot = null;
                 
                 if ($grupoCombinado) {
-                    // Buscar una prenda con el mismo nombre y grupo_combinado en esta cotización
+                    // Buscar una prenda con el mismo nombre y grupo_combinado en esta cotizacion
                     $prendaCot = PrendaCot::whereHas('logoCotizacionesTecnicas', function($query) use ($grupoCombinado) {
                         $query->where('grupo_combinado', $grupoCombinado);
                     })
@@ -205,7 +223,7 @@ class LogoCotizacionTecnicaController extends Controller
                     ->first();
 
                     if ($prendaCot) {
-                        Log::info('✓ Reutilizando PrendaCot existente del grupo_combinado', [
+                        Log::info(' Reutilizando PrendaCot existente del grupo_combinado', [
                             'prenda_cot_id' => $prendaCot->id,
                             'nombre_prenda' => $prendaData['nombre_prenda'],
                             'grupo_combinado' => $grupoCombinado
@@ -250,10 +268,10 @@ class LogoCotizacionTecnicaController extends Controller
                     'grupo_combinado' => $grupoCombinado
                 ]);
 
-                // Procesar imágenes para esta prenda
-                // Las imágenes vienen con clave: imagenes_prenda_X_Y (del procesador de formularios)
+                // Procesar imagenes para esta prenda
+                // Las imagenes vienen con clave: imagenes_prenda_X_Y (del procesador de formularios)
                 foreach ($request->files->all() as $fieldName => $archivo) {
-                    // Procesar solo archivos de este índice de prenda
+                    // Procesar solo archivos de este indice de prenda
                     if (preg_match("/^imagenes_prenda_(\d+)_(\d+)$/", $fieldName, $matches)) {
                         $currentPrendaIdx = (int)$matches[1];
                         $imagenIndex = (int)$matches[2];
@@ -278,9 +296,9 @@ class LogoCotizacionTecnicaController extends Controller
                                 $grupoCombinado
                             );
 
-                            // Validar que se guardó correctamente y que tiene las rutas necesarias
+                            // Validar que se guarde correctamente y que tiene las rutas necesarias
                             if (!$rutasImagen || !isset($rutasImagen['ruta_webp'])) {
-                                Log::error(' Rutas de imagen inválidas', [
+                                Log::error(' Rutas de imagen invalidas', [
                                     'prenda_id' => $prenda->id,
                                     'rutasImagen' => json_encode($rutasImagen)
                                 ]);
@@ -298,9 +316,7 @@ class LogoCotizacionTecnicaController extends Controller
                                 'ruta_webp' => $rutaFinal,      // WebP optimizado
                                 'ruta_miniatura' => $rutaFinal, // Misma para miniatura
                                 'orden' => $imagenIndex,
-                                'ancho' => $rutasImagen['ancho'] ?? 0,
-                                'alto' => $rutasImagen['alto'] ?? 0,
-                                'tamaño' => $rutasImagen['tamaño'] ?? 0,
+
                             ]);
 
                             Log::info(' Imagen de prenda guardada en BD', [
@@ -318,13 +334,13 @@ class LogoCotizacionTecnicaController extends Controller
                     }
                 }
                 
-                // Agregar imágenes compartidas a esta prenda (SOLO si esta técnica comparte la imagen)
+                // Agregar imagenes compartidas a esta prenda (SOLO si esta tecnica comparte la imagen)
                 foreach ($imagenesCompartidas as $clave => $metadatos) {
                     $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
                     
-                    // Verificar si esta técnica actual está en la lista de técnicas que comparten esta imagen
+                    // Verificar si esta tecnica actual esta en la lista de tenicas que comparten esta imagen
                     if (!in_array($tipoLogo->nombre, $tecnicasCompartidas)) {
-                        continue; // Saltar si esta técnica no comparte esta imagen
+                        continue; // Saltar si esta tecnica no comparte esta imagen
                     }
                     
                     // Obtener la ruta ya guardada
@@ -334,7 +350,7 @@ class LogoCotizacionTecnicaController extends Controller
                             'clave' => $clave,
                             'tecnica' => $tipoLogo->nombre
                         ]);
-                        continue; // Si no se encontró la ruta, saltar
+                        continue; // Si no se encontro la ruta, saltar
                     }
 
                     $rutaNormalizada = $rutaCompartida;
@@ -351,11 +367,11 @@ class LogoCotizacionTecnicaController extends Controller
                         $dimensiones = @getimagesize($imagenPath);
                         $ancho = $dimensiones[0] ?? 0;
                         $alto = $dimensiones[1] ?? 0;
-                        $tamaño = @filesize($imagenPath) ?? 0;
+                        $tamano = @filesize($imagenPath) ?? 0;
                         
-                        // Validar que rutaCompartida no sea vacío
+                        // Validar que rutaCompartida no sea vacia
                         if (empty($rutaCompartida)) {
-                            Log::warning(' Ruta compartida vacía, saltando', [
+                            Log::warning(' Ruta compartida vacia, saltando', [
                                 'clave' => $clave,
                                 'prenda_id' => $prenda->id
                             ]);
@@ -381,9 +397,6 @@ class LogoCotizacionTecnicaController extends Controller
                             'ruta_webp' => $rutaNormalizada,
                             'ruta_miniatura' => $rutaNormalizada,
                             'orden' => 999, // Orden muy alto para que aparezca al final
-                            'ancho' => $ancho,
-                            'alto' => $alto,
-                            'tamaño' => $tamaño,
                         ]);
 
                         Log::info(' Imagen compartida vinculada a prenda (SOLO REFERENCIA, NO DUPLICADA)', [
@@ -393,7 +406,7 @@ class LogoCotizacionTecnicaController extends Controller
                             'tecnica_actual' => $tipoLogo->nombre,
                             'tecnicas_que_comparten' => implode(' + ', $tecnicasCompartidas),
                             'dimensiones' => "{$ancho}x{$alto}",
-                            'tamaño_bytes' => $tamaño
+                            'tamano_bytes' => $tamano
                         ]);
                     } catch (\Exception $e) {
                         Log::error(' Error vinculando imagen compartida a prenda', [
@@ -407,7 +420,7 @@ class LogoCotizacionTecnicaController extends Controller
                 $prendas[] = $prenda;
             }
 
-            Log::info('Técnica agregada completamente', [
+            Log::info('tecnica agregada completamente', [
                 'logo_cotizacion_id' => $logoCotizacionId,
                 'tipo_logo_id' => $tipoLogoId,
                 'grupo_combinado' => $grupoCombinado,
@@ -419,8 +432,11 @@ class LogoCotizacionTecnicaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Técnica agregada exitosamente',
+                'message' => 'tecnica agregada exitosamente',
                 'data' => [
+                    'id' => $prendas[0]->id ?? null,
+                    'logoCotizacionId' => $logoCotizacionId,
+                    'tipoTecnicaId' => $tipoLogoId,
                     'prendas_count' => count($prendas),
                     'grupo_combinado' => $grupoCombinado,
                     'es_simple' => $grupoCombinado === null,
@@ -434,10 +450,18 @@ class LogoCotizacionTecnicaController extends Controller
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning('Errores de validación', ['errors' => $e->errors()]);
+            $errors = $e->errors();
+            if (isset($errors['logo_cotizacion_id'])) {
+                $errors['logoCotizacionId'] = $errors['logo_cotizacion_id'];
+            }
+            if (isset($errors['tipo_logo_id'])) {
+                $errors['tipoTecnicaId'] = $errors['tipo_logo_id'];
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $errors
             ], 422);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -452,7 +476,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error(' Error al agregar técnica', [
+            Log::error(' Error al agregar tecnica', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -460,19 +484,19 @@ class LogoCotizacionTecnicaController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al agregar técnica',
+                'message' => 'Error al agregar tecnica',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Obtener técnicas y prendas de una cotización
+     * Obtener tenicas y prendas de una cotizacion
      */
     public function obtenerTecnicas($logoCotizacionId)
     {
         try {
-            // Verificar que existe la cotización
+            // Verificar que existe la cotizacion
             LogoCotizacion::findOrFail($logoCotizacionId);
 
             // Obtener todas las prendas agrupadas por tipo de logo
@@ -480,16 +504,13 @@ class LogoCotizacionTecnicaController extends Controller
                 ->with('tipoLogo', 'prendaCot')
                 ->get()
                 ->groupBy('tipo_logo_id')
-                ->map(function($prendasPorTipo) {
+                ->map(function($prendasPorTipo) use ($logoCotizacionId) {
                     $tipoLogo = $prendasPorTipo->first()->tipoLogo;
                     
                     return [
-                        'tipo_logo' => [
-                            'id' => $tipoLogo->id,
-                            'nombre' => $tipoLogo->nombre,
-                            'codigo' => $tipoLogo->codigo,
-                            'color' => $tipoLogo->color,
-                        ],
+                        'id' => $prendasPorTipo->first()->id,
+                        'logoCotizacionId' => (int) $logoCotizacionId,
+                        'tipoTecnicaId' => $tipoLogo->id,
                         'prendas' => $prendasPorTipo->map(fn($prenda) => [
                             'id' => $prenda->id,
                             'nombre_prenda' => $prenda->prendaCot?->nombre_producto,
@@ -509,14 +530,14 @@ class LogoCotizacionTecnicaController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cotización no encontrada'
+                'message' => 'cotizacion no encontrada'
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error(' Error al obtener técnicas', ['error' => $e->getMessage()]);
+            Log::error(' Error al obtener tenicas', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener técnicas'
+                'message' => 'Error al obtener tenicas'
             ], 500);
         }
     }
@@ -533,7 +554,7 @@ class LogoCotizacionTecnicaController extends Controller
             $logoCotizacionId = $prenda->logo_cotizacion_id;
             $prendaCotId = $prenda->prenda_cot_id;
 
-            // Eliminar la prenda técnica de logo
+            // Eliminar la prenda tecnica de logo
             $prenda->delete();
 
             // Eliminar también de prendas_cot si existe
@@ -542,7 +563,7 @@ class LogoCotizacionTecnicaController extends Controller
                 Log::info(' Prenda eliminada de prendas_cot', ['prenda_cot_id' => $prendaCotId]);
             }
 
-            // Si no hay más prendas de este tipo para esta cotización
+            // Si no hay más prendas de este tipo para esta cotizacion
             $prendasRestantes = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)
                 ->where('tipo_logo_id', $tipoLogoId)
                 ->count();
@@ -579,6 +600,10 @@ class LogoCotizacionTecnicaController extends Controller
     public function actualizarObservaciones(Request $request, $prendeId)
     {
         try {
+            $request->merge([
+                'descripcion' => $request->input('descripcion', $request->input('observaciones')),
+            ]);
+
             $validated = $request->validate([
                 'descripcion' => 'nullable|string',
                 'ubicaciones' => 'nullable|array',
@@ -589,11 +614,14 @@ class LogoCotizacionTecnicaController extends Controller
             $prenda = LogoCotizacionTecnicaPrenda::findOrFail($prendeId);
             $prenda->update($validated);
 
-            // Actualizar también en prendas_cot si existe
+            // Actualizar tambien en prendas_cot si existe
             if ($prenda->prenda_cot_id) {
                 $prendaCot = PrendaCot::find($prenda->prenda_cot_id);
-                if ($prendaCot && $validated['cantidad_general']) {
+                if ($prendaCot && isset($validated['cantidad_general'])) {
                     $prendaCot->update(['cantidad' => $validated['cantidad_general']]);
+                }
+                if ($prendaCot && array_key_exists('descripcion', $validated)) {
+                    $prendaCot->update(['descripcion' => $validated['descripcion']]);
                 }
             }
 
@@ -695,5 +723,6 @@ class LogoCotizacionTecnicaController extends Controller
         }
     }
 }
+
 
 

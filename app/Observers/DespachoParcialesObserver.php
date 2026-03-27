@@ -29,7 +29,7 @@ class DespachoParcialesObserver
     public function updated(DesparChoParcialesModel $despacho): void
     {
         // Solo procesar si el campo 'entregado' fue modificado
-        if ($despacho->isDirty('entregado')) {
+        if ($despacho->wasChanged('entregado') && (bool) $despacho->entregado === true) {
             $this->verificarYActualizarEstadoPedido($despacho->pedido_id);
         }
     }
@@ -45,7 +45,13 @@ class DespachoParcialesObserver
     public function saved(DesparChoParcialesModel $despacho): void
     {
         // Verificar después de guardar (para nuevos registros o actualizaciones)
-        $this->verificarYActualizarEstadoPedido($despacho->pedido_id);
+        if ($despacho->wasRecentlyCreated) {
+            return;
+        }
+
+        if ($despacho->wasChanged('entregado') && (bool) $despacho->entregado === true) {
+            $this->verificarYActualizarEstadoPedido($despacho->pedido_id);
+        }
     }
 
     /**

@@ -1170,7 +1170,7 @@
         margin-bottom: 0.5rem;
     }
 
-    /* Ajustar tamaño de botones para mobile */
+    /* Ajustar tamano de botones para mobile */
     .orden-buttons button {
         flex: 1 !important;
         min-width: calc(50% - 0.125rem) !important;
@@ -1391,7 +1391,7 @@
         max-width: calc(50% - 0.1rem) !important;
     }
 
-    /* Reducir tamaño de texto en mobile */
+    /* Reducir tamano de texto en mobile */
     .orden-numero {
         font-size: 1.25rem;
     }

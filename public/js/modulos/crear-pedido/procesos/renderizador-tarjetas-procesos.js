@@ -1638,7 +1638,7 @@ window.eliminarTarjetaProceso = function(tipo) {
 };
 
 /**
- * 🗑️ STORAGE GLOBAL para procesos a eliminar
+ *  STORAGE GLOBAL para procesos a eliminar
  * Se mantiene separado de window.procesosSeleccionados que se recarga
  */
 window.procesosParaEliminarIds = new Set();
@@ -1648,9 +1648,9 @@ window.procesosParaEliminarIds = new Set();
  * Se eliminará del backend cuando se guarden los cambios de la prenda
  */
 function marcarProcesoParaEliminar(tipo, proceso) {
-    console.log('\n🗑️ ===== [MARCAR-ELIMINAR] INICIO =====');
-    console.log('🗑️ Tipo recibido:', tipo);
-    console.log('🗑️ Proceso recibido:', proceso);
+    console.log('\n ===== [MARCAR-ELIMINAR] INICIO =====');
+    console.log(' Tipo recibido:', tipo);
+    console.log(' Proceso recibido:', proceso);
     
     //  NUEVO: Guardar en Set separado que NO se borra al recargar procesos
     if (proceso.datos?.id) {
@@ -1730,7 +1730,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
             'data-process-type': tarjeta.getAttribute('data-process-type')
         });
         
-        console.log('\n🗑️  INICIANDO REMOCIÓN DEL DOM:');
+        console.log('\n  INICIANDO REMOCIÓN DEL DOM:');
         console.log('   Aplicando: display = none');
         tarjeta.style.display = 'none';
         
@@ -1761,7 +1761,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
         console.error('   Claves disponibles:', Object.keys(window.procesosSeleccionados || {}));
     }
     
-    console.log('🗑️ ===== [MARCAR-ELIMINAR] FIN =====\n');
+    console.log(' ===== [MARCAR-ELIMINAR] FIN =====\n');
     
     Swal.fire({
         icon: 'success',
@@ -1777,9 +1777,9 @@ function marcarProcesoParaEliminar(tipo, proceso) {
  * Se ejecuta cuando el usuario guarda los cambios de la prenda
  */
 window.eliminarProcesossMarcadosDelBackend = async function() {
-    console.log('🗑️ [ELIMINAR-BACKEND] ========== INICIANDO ELIMINACIÓN DE PROCESOS ==========');
+    console.log(' [ELIMINAR-BACKEND] ========== INICIANDO ELIMINACIÓN DE PROCESOS ==========');
     
-    console.log('🗑️ [ELIMINAR-BACKEND] Procesos marcados para eliminar (Set):', Array.from(window.procesosParaEliminarIds || new Set()));
+    console.log(' [ELIMINAR-BACKEND] Procesos marcados para eliminar (Set):', Array.from(window.procesosParaEliminarIds || new Set()));
     
     //  NUEVO: Usar el Set que se mantiene separado y no se recarga
     const idsParaEliminar = Array.from(window.procesosParaEliminarIds || new Set());
@@ -1789,8 +1789,8 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
         return true; // Sin errores
     }
     
-    console.log(`🗑️ [ELIMINAR-BACKEND] Total de procesos a eliminar: ${idsParaEliminar.length}`);
-    console.log('🗑️ [ELIMINAR-BACKEND] IDs a eliminar:', idsParaEliminar);
+    console.log(` [ELIMINAR-BACKEND] Total de procesos a eliminar: ${idsParaEliminar.length}`);
+    console.log(' [ELIMINAR-BACKEND] IDs a eliminar:', idsParaEliminar);
     
     //  Obtener el número de pedido de forma más confiable
     const numeroPedido = window.prendaEnEdicion?.pedidoId ||
@@ -1798,7 +1798,7 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
                          document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido') ||
                          document.querySelector('[data-pedido-id]')?.getAttribute('data-pedido-id');
     
-    console.log('🗑️ [ELIMINAR-BACKEND] Número/ID de pedido:', {
+    console.log(' [ELIMINAR-BACKEND] Número/ID de pedido:', {
         numeroPedido,
         prendaEnEdicion: window.prendaEnEdicion?.pedidoId,
         numeroPedidoActual: window.numeroPedidoActual
@@ -1810,7 +1810,7 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
             const nombreProceso = Object.entries(window.procesosSeleccionados || {})
                 .find(([tipo, proc]) => proc.datos?.id === id)?.[0] || `Proceso ${id}`;
             
-            console.log(`🗑️ [ELIMINAR-BACKEND] Enviando DELETE para: ${nombreProceso} (ID: ${id})`);
+            console.log(` [ELIMINAR-BACKEND] Enviando DELETE para: ${nombreProceso} (ID: ${id})`);
             
             const response = await fetch(`/api/procesos/${id}/eliminar`, {
                 method: 'DELETE',
@@ -1824,7 +1824,7 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
                 })
             });
             
-            console.log(`🗑️ [ELIMINAR-BACKEND] Response status: ${response.status}`);
+            console.log(` [ELIMINAR-BACKEND] Response status: ${response.status}`);
             
             if (!response.ok) {
                 const errorData = await response.json();
@@ -1839,7 +1839,7 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
         }
         
         // Limpiar el Set después de eliminar exitosamente
-        console.log('🗑️ [ELIMINAR-BACKEND] Limpiando Set de procesos para eliminar');
+        console.log(' [ELIMINAR-BACKEND] Limpiando Set de procesos para eliminar');
         window.procesosParaEliminarIds.clear();
         console.log(' [ELIMINAR-BACKEND] Set limpiado');
         

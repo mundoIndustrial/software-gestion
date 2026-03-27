@@ -78,7 +78,7 @@
                     class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded transition border-2 border-slate-600"
                     title="Limpiar búsqueda"
                 >
-                    🗑️ Limpiar
+                     Limpiar
                 </button>
 
                 <!-- Botón Actualizar -->
@@ -680,7 +680,7 @@
     <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
         <!-- Header -->
         <div class="bg-red-600 px-6 py-4 border-b border-red-300 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-white">🗑️ Eliminar Nota</h2>
+            <h2 class="text-lg font-semibold text-white"> Eliminar Nota</h2>
             <button onclick="cerrarModalConfirmarEliminar()" class="text-white hover:text-red-100 text-2xl leading-none">✕</button>
         </div>
         
@@ -1197,7 +1197,7 @@ function cargarNotas(numeroPedido, talla) {
                                     class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
                                     title="Eliminar nota"
                                 >
-                                    🗑️
+                                    
                                 </button>
                                 ` : ''}
                             </div>

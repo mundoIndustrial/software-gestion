@@ -97,7 +97,7 @@ class ImagenPedidoService
                 'tipo' => $tipo,
                 'subtipo' => $subtipo,
                 'ruta' => $ruta,
-                'tamaño' => $file->getSize(),
+                'tamano' => $file->getSize(),
                 'mime' => $file->getMimeType(),
             ]);
             

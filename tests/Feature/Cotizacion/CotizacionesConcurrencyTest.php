@@ -294,9 +294,6 @@ class CotizacionesConcurrencyTest extends TestCase
                     'ruta_webp' => "storage/prenda_{$p}_foto_{$f}.webp",
                     'ruta_miniatura' => "storage/prenda_{$p}_foto_{$f}_thumb.jpg",
                     'orden' => $f,
-                    'ancho' => 1920,
-                    'alto' => 1080,
-                    'tamano' => 524288,
                 ]);
 
                 $fotosCount++;
@@ -317,7 +314,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $this->assertEquals(100, $fotosCount); // 10 prendas — 10 fotos
 
         // Recargar y verificar integridad
-        $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
+        $cotRefresco = Cotizacion::with('prendas.fotos', 'prendas.tallas')->find($cot->id);
         $this->assertCount(10, $cotRefresco->prendas);
 
         echo "\n Cotización con maximas prendas/fotos creada correctamente\n";
@@ -424,6 +421,8 @@ class CotizacionesConcurrencyTest extends TestCase
             PrendaFotoCot::create([
                 'prenda_cot_id' => $prenda->id,
                 'ruta_original' => "storage/test_$i.jpg",
+                'ruta_webp' => "storage/test_$i.webp",
+                'ruta_miniatura' => "storage/test_{$i}_thumb.jpg",
                 'orden' => 1,
             ]);
 
@@ -491,6 +490,5 @@ class CotizacionesConcurrencyTest extends TestCase
         echo "\n Soft delete funcionó correctamente\n";
     }
 }
-
 
 

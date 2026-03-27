@@ -19,6 +19,7 @@ use App\Application\Bodega\Services\BodegaNotaService;
 use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -431,14 +432,18 @@ class DespachoController extends Controller
                 'talla_color_id' => 'nullable|integer',
             ]);
 
+            $tallaId = $validated['talla_id'] ?? null;
+            $tallaColorId = $validated['talla_color_id'] ?? null;
+
             $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
                 ->where('tipo_item', $validated['tipo_item'])
                 ->where('item_id', $validated['item_id'])
-                ->when($validated['talla_id'], function ($q) use ($validated) {
-                    $q->where('talla_id', $validated['talla_id']);
+                ->where('entregado', true)
+                ->when($tallaId, function ($q) use ($tallaId) {
+                    $q->where('talla_id', $tallaId);
                 })
-                ->when($validated['talla_color_id'], function ($q) use ($validated) {
-                    $q->where('talla_color_id', $validated['talla_color_id']);
+                ->when($tallaColorId, function ($q) use ($tallaColorId) {
+                    $q->where('talla_color_id', $tallaColorId);
                 })
                 ->first();
             
@@ -446,7 +451,7 @@ class DespachoController extends Controller
                 'pedido_id' => $pedido->id,
                 'tipo_item' => $validated['tipo_item'],
                 'item_id' => $validated['item_id'],
-                'talla_id' => $validated['talla_id'],
+                'talla_id' => $tallaId,
                 'despacho_encontrado' => $despacho ? 'SI' : 'NO',
                 'despacho_id' => $despacho?->id,
             ]);
@@ -457,7 +462,7 @@ class DespachoController extends Controller
                     'pedido_id' => $pedido->id,
                     'tipo_item' => $validated['tipo_item'],
                     'item_id' => $validated['item_id'],
-                    'talla_id' => $validated['talla_id'],
+                    'talla_id' => $tallaId,
                 ]);
                 
                 $despacho = DesparChoParcialesModel::create([
@@ -545,13 +550,13 @@ class DespachoController extends Controller
     /**
      * Deshacer marcado como entregado
      */
-    public function deshacerEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
+        public function deshacerEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
     {
         \Log::info('[DespachoController] deshacerEntregado llamado', [
             'pedido_id' => $pedido->id,
             'request_data' => $request->all(),
         ]);
-        
+
         try {
             $validated = $request->validate([
                 'tipo_item' => 'required|string|in:prenda,epp',
@@ -560,59 +565,49 @@ class DespachoController extends Controller
                 'talla_color_id' => 'nullable|integer',
             ]);
 
+            $tallaId = $validated['talla_id'] ?? null;
+            $tallaColorId = $validated['talla_color_id'] ?? null;
+
             $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
                 ->where('tipo_item', $validated['tipo_item'])
                 ->where('item_id', $validated['item_id'])
-                ->when($validated['talla_id'], function ($q) use ($validated) {
-                    $q->where('talla_id', $validated['talla_id']);
+                ->where('entregado', true)
+                ->when($tallaId, function ($q) use ($tallaId) {
+                    $q->where('talla_id', $tallaId);
                 })
-                ->when($validated['talla_color_id'], function ($q) use ($validated) {
-                    $q->where('talla_color_id', $validated['talla_color_id']);
+                ->when($tallaColorId, function ($q) use ($tallaColorId) {
+                    $q->where('talla_color_id', $tallaColorId);
                 })
                 ->first();
-            
-            \Log::info('[DespachoController] Búsqueda para deshacer', [
+
+            \Log::info('[DespachoController] Busqueda para deshacer', [
                 'pedido_id' => $pedido->id,
                 'tipo_item' => $validated['tipo_item'],
                 'item_id' => $validated['item_id'],
-                'talla_id' => $validated['talla_id'],
-                'talla_color_id' => $validated['talla_color_id'],
+                'talla_id' => $tallaId,
+                'talla_color_id' => $tallaColorId,
                 'despacho_encontrado' => $despacho ? 'SI' : 'NO',
                 'despacho_id' => $despacho?->id,
                 'entregado_actual' => $despacho?->entregado,
             ]);
 
             if (!$despacho) {
-                \Log::warning('[DespachoController] Ítem no encontrado para deshacer', [
-                    'pedido_id' => $pedido->id,
-                    'tipo_item' => $validated['tipo_item'],
-                    'item_id' => $validated['item_id'],
-                    'talla_id' => $validated['talla_id'],
-                    'talla_color_id' => $validated['talla_color_id'],
-                ]);
-                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ítem no encontrado',
+                    'message' => 'No se encontro registro de entrega para deshacer',
                 ], 404);
             }
 
-            // Actualizar a no entregado
             $despacho->update([
                 'entregado' => false,
                 'fecha_entrega' => null,
-            ]);
-            
-            \Log::info('[DespachoController] Despacho actualizado a no entregado', [
-                'despacho_id' => $despacho->id,
-                'entregado_nuevo' => $despacho->entregado,
-                'fecha_entrega_nueva' => $despacho->fecha_entrega,
+                'usuario_id' => auth()->id(),
             ]);
 
             $estadoAnteriorPedido = $pedido->estado;
-            if ($pedido->estado !== 'En Ejecución') {
+            if ($pedido->estado !== 'En Ejecucion') {
                 $pedido->update([
-                    'estado' => 'En Ejecución',
+                    'estado' => 'En Ejecucion',
                     'updated_at' => now(),
                 ]);
             }
@@ -624,13 +619,14 @@ class DespachoController extends Controller
                 'estado_nuevo' => $pedido->fresh()->estado,
             ]);
 
-            // Verificar si el estado del pedido debe cambiar de "Entregado" a "Pendiente"
             $this->verificarYActualizarEstadoPedido($pedido);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Marcado deshecho',
+                'message' => 'Marcado como entregado deshecho correctamente',
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error al deshacer entregado', [
                 'pedido_id' => $pedido->id,
@@ -645,7 +641,7 @@ class DespachoController extends Controller
     }
 
     /**
-     * Marcar todos los ítems de un pedido como entregados
+     * Marcar todos los items de un pedido como entregados ítems de un pedido como entregados
      */
     public function entregarTodo(Request $request, PedidoProduccion $pedido): JsonResponse
     {
@@ -2044,3 +2040,5 @@ class DespachoController extends Controller
         }
     }
 }
+
+

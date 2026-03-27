@@ -216,6 +216,12 @@
 
     // Crear menú emergente dinámico para PDF (Lee los datos JSON guardados)
     function createPDFDropdown(cotizacionId) {
+        const allowedPdfTypes = new Set(['combinada', 'prenda', 'logo', 'epp']);
+
+        function sanitizeIcon(iconClass) {
+            return /^fa-[a-z0-9-]+$/i.test(String(iconClass || '')) ? iconClass : 'fa-file-pdf';
+        }
+
         // Verificar si ya existe un dropdown
         const existingDropdown = document.querySelector(`.pdf-menu-dropdown[data-cot-id="${cotizacionId}"]`);
         if (existingDropdown) {
@@ -239,17 +245,29 @@
         const dropdown = document.createElement('div');
         dropdown.className = 'pdf-menu-dropdown';
         dropdown.dataset.cotId = cotizacionId;
-        
-        let dropdownHTML = '';
+
         pdfButtons.forEach(btn => {
-            dropdownHTML += `
-                <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, '${btn.tipo}'); return false;" class="pdf-menu-option">
-                    <i class="fas ${btn.icon}"></i> ${btn.label}
-                </a>
-            `;
+            const tipo = String(btn.tipo || '').toLowerCase();
+            if (!allowedPdfTypes.has(tipo)) {
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'pdf-menu-option';
+
+            const icon = document.createElement('i');
+            icon.className = `fas ${sanitizeIcon(btn.icon)}`;
+            link.appendChild(icon);
+            link.appendChild(document.createTextNode(` ${btn.label || 'Descargar PDF'}`));
+
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                abrirPDFEnPestana(cotizacionId, tipo);
+            });
+
+            dropdown.appendChild(link);
         });
-        
-        dropdown.innerHTML = dropdownHTML;
 
         // Buscar el botón PDF
         const pdfButton = document.querySelector(`.pdf-menu-btn[data-cot-id="${cotizacionId}"]`);
@@ -526,5 +544,4 @@
 </style>
 
 @endsection
-
 

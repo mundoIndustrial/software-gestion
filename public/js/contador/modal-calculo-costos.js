@@ -406,7 +406,7 @@ window.agregarFilaItem = function() {
                 onmouseover="this.style.background='#dc2626'"
                 onmouseout="this.style.background='#ef4444'"
                 title="Eliminar fila">
-            🗑️
+            
         </button>
     `;
     

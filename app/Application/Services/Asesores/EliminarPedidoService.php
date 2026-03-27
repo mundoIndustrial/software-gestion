@@ -67,11 +67,6 @@ class EliminarPedidoService
                 DB::table('prenda_fotos_tela_pedido')
                     ->where('prenda_pedido_id', $prenda->id)
                     ->delete();
-                
-                // 3. Eliminar fotos de logos de prendas (prenda_fotos_logo_pedido)
-                DB::table('prenda_fotos_logo_pedido')
-                    ->where('prenda_pedido_id', $prenda->id)
-                    ->delete();
             }
             
             \Log::info('ðŸ—‘ï¸ Fotos de prendas eliminadas', [

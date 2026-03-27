@@ -364,7 +364,7 @@ class CacheCalculosService
         $cacheSize = 0;
         
         try {
-            // Aproximar tamaño del caché
+            // Aproximar tamano del caché
             $sample = PedidoProduccion::first();
             if ($sample) {
                 $testKey = "test_cache_size_" . time();

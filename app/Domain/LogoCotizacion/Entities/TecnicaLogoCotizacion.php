@@ -67,9 +67,25 @@ final class TecnicaLogoCotizacion
         return $this->logoCotizacionId;
     }
 
+    /**
+     * Alias legacy para compatibilidad con tests antiguos.
+     */
+    public function obtenerLogoCotizacionId(): int
+    {
+        return $this->logoCotizacionId();
+    }
+
     public function tipo(): TipoTecnica
     {
         return $this->tipo;
+    }
+
+    /**
+     * Alias legacy para compatibilidad con tests antiguos.
+     */
+    public function obtenerTipoTecnica(): TipoTecnica
+    {
+        return $this->tipo();
     }
 
     /**
@@ -78,6 +94,16 @@ final class TecnicaLogoCotizacion
     public function prendas(): array
     {
         return $this->prendas;
+    }
+
+    /**
+     * Alias legacy para compatibilidad con tests antiguos.
+     *
+     * @return PrendaTecnica[]
+     */
+    public function obtenerPrendas(): array
+    {
+        return $this->prendas();
     }
 
     public function observacionesTecnica(): ?string

@@ -7,7 +7,7 @@
 class ImageStorageService {
     constructor(maxImages = 3) {
         this.maxImages = maxImages;
-        this.images = []; // Array de { file, previewUrl, nombre, tamaño }
+        this.images = []; // Array de { file, previewUrl, nombre, tamano }
         this.snapshotOriginal = null; // SNAPSHOT de imágenes originales (para detectar eliminaciones)
     }
 
@@ -35,7 +35,7 @@ class ImageStorageService {
                 file: file,
                 previewUrl: previewUrl,
                 nombre: file.name,
-                tamaño: file.size,
+                tamano: file.size,
             });
 
             resolve({ success: true, images: this.images });

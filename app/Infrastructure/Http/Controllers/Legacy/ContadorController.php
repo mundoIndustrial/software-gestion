@@ -1,0 +1,1262 @@
+<?php
+
+namespace App\Infrastructure\Http\Controllers\Legacy;
+
+use App\Http\Controllers\Controller;
+
+use App\Models\Cotizacion;
+use App\Models\Cliente;
+use App\Models\User;
+use App\Models\TipoCotizacion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\DescripcionPrendaHelper;
+use App\Events\CotizacionEstadoCambiado;
+use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use App\Models\PrendaCotizacionFriendly;
+use App\Models\CostoPrenda;
+use App\Services\ImagenCotizacionService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+
+class ContadorController extends Controller
+{
+    /**
+     * Mostrar el perfil del contador
+     *
+     * @return \Illuminate\View\View
+     */
+    public function profile()
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return redirect()->route('login')->with('error', 'Por favor inicia sesiÃ³n para ver tu perfil.');
+            }
+            
+            return view('contador.profile', compact('user'));
+            
+        } catch (\Exception $e) {
+            return redirect()->route('contador.index')->with('error', 'Error al cargar el perfil: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualizar el perfil del contador
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            // Validar los datos
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+                'telefono' => 'nullable|string|max:20',
+                'ciudad' => 'nullable|string|max:255',
+                'departamento' => 'nullable|string|max:255',
+                'bio' => 'nullable|string|max:500',
+                'password' => 'nullable|string|min:8|confirmed',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+            
+            // Actualizar informaciÃ³n personal
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->telefono = $validated['telefono'] ?? $user->telefono;
+            $user->ciudad = $validated['ciudad'] ?? $user->ciudad;
+            $user->departamento = $validated['departamento'] ?? $user->departamento;
+            $user->bio = $validated['bio'] ?? $user->bio;
+            
+            // Actualizar contraseÃ±a si se proporciona
+            if (!empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+            
+            // Actualizar avatar si se proporciona
+            if ($request->hasFile('avatar')) {
+                // Eliminar avatar anterior si existe
+                if ($user->avatar && Storage::disk('public')->exists('avatars/' . $user->avatar)) {
+                    Storage::disk('public')->delete('avatars/' . $user->avatar);
+                }
+                
+                // Guardar nuevo avatar
+                $file = $request->file('avatar');
+                $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('avatars', $filename, 'public');
+                $user->avatar = $filename;
+            }
+            
+            $user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Perfil actualizado correctamente',
+                'avatar_url' => $user->avatar ? route('storage.serve', ['path' => 'avatars/' . $user->avatar]) : null
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mostrar el dashboard del contador
+     * Solo muestra cotizaciones PENDIENTES (estado ENVIADA_CONTADOR)
+     * Excluye borradores
+     */
+    public function index(): View
+    {
+        // Obtener SOLO cotizaciones pendientes por aprobar (ENVIADA_CONTADOR)
+        // Excluir borradores (es_borrador = 0 o false)
+        $cotizaciones = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', 'ENVIADA_CONTADOR')
+            ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Obtener cotizaciones en correcciÃ³n (Cotizaciones por Corregir y a Revisar)
+        $cotizacionesPorCorregir = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', 'EN_CORRECCION')
+            ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Obtener cotizaciones rechazadas (mismo que por corregir para la secciÃ³n a revisar)
+        $cotizacionesRechazadas = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', 'EN_CORRECCION')
+            ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('contador.index', compact('cotizaciones', 'cotizacionesPorCorregir', 'cotizacionesRechazadas'));
+    }
+
+    /**
+     * Mostrar todas las cotizaciones EXCEPTO las pendientes (ENVIADA_CONTADOR) y borradores
+     */
+    public function todas(): View
+    {
+        // Obtener todas las cotizaciones EXCEPTO las que estÃ¡n en estado ENVIADA_CONTADOR
+        // TambiÃ©n excluir borradores (es_borrador = 0)
+        $todasLasCotizaciones = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', '!=', 'ENVIADA_CONTADOR')
+            ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('contador.todas', compact('todasLasCotizaciones'));
+    }
+
+    /**
+     * Mostrar cotizaciones a revisar (en correcciÃ³n)
+     */
+    public function porRevisar(): View
+    {
+        // Obtener cotizaciones en correcciÃ³n
+        $cotizacionesParaRevisar = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', 'EN_CORRECCION')
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('contador.por-revisar', compact('cotizacionesParaRevisar'));
+    }
+
+    /**
+     * Obtener detalle de una cotizaciÃ³n para el modal
+     * Devuelve toda la informaciÃ³n completa de la cotizaciÃ³n y sus prendas + logo si existe
+     */
+    public function getCotizacionDetail($id)
+    {
+        try {
+            // Permitir acceso solo a usuarios autenticados
+            $user = Auth::user();
+            \Log::info('getCotizacionDetail - Usuario request', [
+                'user_id' => $user ? $user->id : 'null',
+                'user_name' => $user ? $user->name : 'null',
+                'user_email' => $user ? $user->email : 'null',
+                'user_roles_ids' => $user ? $user->roles_ids : 'null',
+                'user_role_id' => $user ? $user->role_id : 'null',
+            ]);
+            
+            if (!$user) {
+                \Log::warning('getCotizacionDetail - Usuario no autenticado');
+                abort(401, 'Usuario no autenticado');
+            }
+            
+            // Permitir acceso a: contador, admin, aprobador_cotizaciones, visualizador_cotizaciones_logo
+            // Verificar usando hasRole (que soporta nombre de rol o ID)
+            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones', 'visualizador_cotizaciones_logo', 'asesor'];
+            $hasAccess = false;
+            
+            foreach ($allowedRoles as $role) {
+                $check = $user->hasRole($role);
+                \Log::info('getCotizacionDetail - Checking role', [
+                    'role' => $role,
+                    'hasRole' => $check,
+                    'user_id' => $user->id
+                ]);
+                if ($check) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            
+            \Log::info('getCotizacionDetail - Authorization check', [
+                'hasAccess' => $hasAccess,
+                'allowed_roles' => $allowedRoles,
+                'user_id' => $user->id
+            ]);
+            
+            if (!$hasAccess) {
+                \Log::warning('getCotizacionDetail - ACCESS DENIED', [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'allowed_roles' => $allowedRoles,
+                    'user_roles_ids' => $user->roles_ids,
+                    'user_role_id' => $user->role_id
+                ]);
+                abort(403, 'No tienes permiso para acceder a esta cotizaciÃ³n');
+            }
+
+            // Obtener la cotizaciÃ³n con TODAS sus relaciones anidadas
+            $cotizacionModelo = Cotizacion::with([
+                'tipoCotizacion',
+                'cliente',
+                'asesor',
+                'prendas' => function($query) {
+                    $query->with([
+                        'fotos',
+                        'telas',
+                        'telas.color',
+                        'telas.tela',
+                        'telaFotos',
+                        'tallas',
+                        'variantes' => function($q) {
+                            $q->with(['manga', 'broche']);
+                        }
+                    ]);
+                },
+                'logoCotizacion' => function($query) {
+                    $query->with(['fotos', 'tecnicasPrendas' => function($q) {
+                        $q->with(['prenda', 'tipoLogo', 'fotos']);
+                    }]);
+                }
+            ])->findOrFail($id);
+
+            // Si es asesor, solo permitir ver sus propias cotizaciones
+            if ($user->hasRole('asesor')) {
+                if ((int) $cotizacionModelo->asesor_id !== (int) $user->id) {
+                    \Log::warning('getCotizacionDetail - Asesor intentando ver cotizaciÃ³n ajena', [
+                        'user_id' => $user->id,
+                        'cotizacion_id' => $id,
+                        'cotizacion_asesor_id' => $cotizacionModelo->asesor_id,
+                    ]);
+                    abort(403, 'No tienes permiso para acceder a esta cotizaciÃ³n');
+                }
+            }
+
+            \Log::info('getCotizacionDetail - CotizaciÃ³n ID: ' . $id);
+            \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());
+
+            $logoObservacionesPorPrenda = $this->obtenerLogoObservacionesPorPrenda((int) $cotizacionModelo->id);
+
+            // Preparar datos de la cotizaciÃ³n
+            $datos = [
+                'cotizacion' => [
+                    'id' => $cotizacionModelo->id,
+                    'numero_cotizacion' => $cotizacionModelo->numero_cotizacion,
+                    'asesora_nombre' => $cotizacionModelo->asesor ? $cotizacionModelo->asesor->name : 'N/A',
+                    'empresa' => $cotizacionModelo->empresa_solicitante ?? 'N/A',
+                    'nombre_cliente' => $cotizacionModelo->cliente ? $cotizacionModelo->cliente->nombre : 'N/A',
+                    'created_at' => $cotizacionModelo->created_at,
+                    'estado' => $cotizacionModelo->estado,
+                    'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
+                    'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
+                    'tipo_codigo' => ($cotizacionModelo->tipoCotizacion?->codigo) ?? ($cotizacionModelo->obtenerTipoCotizacion() ?? null),
+                    'especificaciones' => $this->parseEspecificaciones($cotizacionModelo->especificaciones),
+                    'iva' => $cotizacionModelo->iva ?? 0,
+                    'cliente_nit' => $cotizacionModelo->cliente_nit ?? null,
+                    'cliente_direccion' => $cotizacionModelo->cliente_direccion ?? null,
+                    'cliente_telefono' => $cotizacionModelo->cliente_telefono ?? null,
+                ],
+                'logo_observaciones_prenda' => $logoObservacionesPorPrenda,
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($logoObservacionesPorPrenda) {
+                    // Generar descripciÃ³n formateada usando el mÃ©todo del modelo
+                    $descripcionFormateada = method_exists($prenda, 'generarDescripcionDetallada')
+                        ? $prenda->generarDescripcionDetallada($index + 1)
+                        : (string) ($prenda->descripcion ?? '');
+                    
+                    return [
+                        'id' => $prenda->id,
+                        'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
+                        'cantidad' => $prenda->cantidad ?? 0,
+                        'prenda_bodega' => (bool) ($prenda->prenda_bodega ?? false),
+                        'logo_observacion' => $logoObservacionesPorPrenda[$prenda->id] ?? null,
+                        'descripcion' => $prenda->descripcion ?? null,
+                        'descripcion_formateada' => $descripcionFormateada,
+                        'detalles_proceso' => $prenda->descripcion ?? null,
+                        // Fotos de la prenda - URLs completas - excluir logos
+                        'fotos' => $prenda->fotos ? $prenda->fotos
+                            ->filter(function($foto) {
+                                // Excluir fotos que contengan 'logo' o 'logos' en la ruta
+                                $ruta = $foto->ruta_webp ?? $foto->ruta_original ?? '';
+                                return !str_contains(strtolower($ruta), 'logo');
+                            })
+                            ->map(function($foto) {
+                                return $foto->url; // Usar el accessor del modelo
+                            })
+                            ->values()
+                            ->toArray() : [],
+                        // Telas asociadas - URLs de imagen
+                        'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
+                            return [
+                                'id' => $tela->id,
+                                'color' => $tela->color ?? null,
+                                'nombre_tela' => $tela->tela->nombre ?? null,
+                                'referencia' => $tela->tela->referencia ?? null,
+                                'url_imagen' => $tela->url_imagen ?? '', // Usar directamente el campo
+                            ];
+                        })->toArray() : [],
+                        // Fotos de telas - URLs completas
+                        'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
+                            return $foto->url; // Usar el accessor del modelo
+                        })->toArray() : [],
+                        // Tallas
+                        'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla,
+                                'color' => $talla->color,
+                                'genero_id' => $talla->genero_id,
+                                'cantidad' => $talla->cantidad,
+                            ];
+                        })->toArray() : [],
+                        // Texto personalizado de tallas
+                        'texto_personalizado_tallas' => $prenda->texto_personalizado_tallas ?? null,
+                        // Variantes
+                        'variantes' => $prenda->variantes ? $prenda->variantes->map(function($variante) {
+                            // Obtener nombre de tipo_manga si existe
+                            $nombreTipoManga = null;
+                            if ($variante->tipo_manga_id && $variante->relationLoaded('manga') && $variante->manga) {
+                                $nombreTipoManga = $variante->manga->nombre;
+                            }
+                            
+                            // Obtener nombre de tipo_broche si existe
+                            $nombreTipoBroche = null;
+                            if ($variante->tipo_broche_id && $variante->relationLoaded('broche') && $variante->broche) {
+                                $nombreTipoBroche = $variante->broche->nombre;
+                            }
+                            
+                            return [
+                                'id' => $variante->id,
+                                'tipo_prenda' => $variante->tipo_prenda ?? null,
+                                'es_jean_pantalon' => $variante->es_jean_pantalon ?? null,
+                                'tipo_jean_pantalon' => $variante->tipo_jean_pantalon ?? null,
+                                'genero_id' => $variante->genero_id ?? null,
+                                'color' => $variante->color ?? null,
+                                'tiene_bolsillos' => $variante->tiene_bolsillos ?? null,
+                                'obs_bolsillos' => $variante->obs_bolsillos ?? null,
+                                'aplica_manga' => $variante->aplica_manga ?? null,
+                                'tipo_manga_id' => $variante->tipo_manga_id ?? null,
+                                'tipo_manga_nombre' => $nombreTipoManga,
+                                'tipo_manga' => $variante->tipo_manga ?? null,
+                                'obs_manga' => $variante->obs_manga ?? null,
+                                'aplica_broche' => $variante->aplica_broche ?? null,
+                                'tipo_broche_id' => $variante->tipo_broche_id ?? null,
+                                'tipo_broche_nombre' => $nombreTipoBroche,
+                                'obs_broche' => $variante->obs_broche ?? null,
+                                'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
+                                'obs_reflectivo' => $variante->obs_reflectivo ?? null,
+                                'descripcion_adicional' => $variante->descripcion_adicional ?? null,
+                            ];
+                        })->toArray() : [],
+                    ];
+                })->toArray(),
+            ];
+
+            // Agregar datos del logo si existe
+            $logoCotizacion = null;
+            if ($cotizacionModelo->logoCotizacion) {
+                // Fotos desde relaciÃ³n (logo_fotos_cot)
+                $logoFotos = $cotizacionModelo->logoCotizacion->fotos ? $cotizacionModelo->logoCotizacion->fotos->map(function($foto) {
+                    return [
+                        'id' => $foto->id,
+                        'url' => $foto->url,
+                        'orden' => $foto->orden,
+                    ];
+                })->toArray() : [];
+
+                // Fallback: campo imÃ¡genes (array de rutas) para cotizaciones guardadas en ese formato
+                if (empty($logoFotos) && !empty($cotizacionModelo->logoCotizacion->imagenes)) {
+                    $logoFotos = collect($cotizacionModelo->logoCotizacion->imagenes)
+                        ->filter()
+                        ->values()
+                        ->map(function($ruta, $idx) {
+                            $url = $ruta;
+                            if (is_string($ruta) && !str_starts_with($ruta, 'http')) {
+                                $url = str_starts_with($ruta, '/storage/') ? $ruta : '/storage/' . ltrim($ruta, '/');
+                            }
+                            return [
+                                'id' => null,
+                                'url' => $url,
+                                'orden' => $idx + 1,
+                            ];
+                        })
+                        ->toArray();
+                }
+
+                // Telas, colores y referencias de prendas en cotizaciÃ³n logo
+                $telasPrendas = $cotizacionModelo->logoCotizacion->telasPrendas ? $cotizacionModelo->logoCotizacion->telasPrendas->map(function($telaPrenda) {
+                    return [
+                        'id' => $telaPrenda->id,
+                        'prenda_cot_id' => $telaPrenda->prenda_cot_id,
+                        'tela' => $telaPrenda->tela,
+                        'color' => $telaPrenda->color,
+                        'ref' => $telaPrenda->ref,
+                        'img' => $telaPrenda->img,
+                    ];
+                })->toArray() : [];
+
+                $logoCotizacion = [
+                    'id' => $cotizacionModelo->logoCotizacion->id,
+                    'descripcion' => $cotizacionModelo->logoCotizacion->descripcion ?? null,
+                    'tipo_venta' => $cotizacionModelo->logoCotizacion->tipo_venta ?? null,
+                    'tecnicas' => $cotizacionModelo->logoCotizacion->tecnicas ?? [],
+                    'secciones' => $cotizacionModelo->logoCotizacion->secciones ?? [],
+                    'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
+                    'observaciones_generales' => $cotizacionModelo->logoCotizacion->observaciones_generales ?? [],
+                    'fotos' => $logoFotos,
+                    'telas_prendas' => $telasPrendas,
+                    'tecnicas_prendas' => $cotizacionModelo->logoCotizacion->tecnicasPrendas ? $cotizacionModelo->logoCotizacion->tecnicasPrendas->map(function($tecnicaPrenda) {
+                        return [
+                            'id' => $tecnicaPrenda->id,
+                            'prenda_id' => $tecnicaPrenda->prenda_cot_id,
+                            'prenda_nombre' => $tecnicaPrenda->prenda ? $tecnicaPrenda->prenda->nombre_producto : 'Sin nombre',
+                            'tipo_logo_nombre' => $tecnicaPrenda->tipoLogo ? $tecnicaPrenda->tipoLogo->nombre : 'Logo',
+                            'variaciones_prenda' => $tecnicaPrenda->variaciones_prenda ?? null,
+                            'ubicaciones' => $tecnicaPrenda->ubicaciones ?? null,
+                            'talla_cantidad' => $tecnicaPrenda->talla_cantidad ?? null,
+                            'observaciones' => $tecnicaPrenda->observaciones ?? null,
+                            'grupo_combinado' => $tecnicaPrenda->grupo_combinado ?? null,
+                            'fotos' => $tecnicaPrenda->fotos ? $tecnicaPrenda->fotos->map(function($foto) {
+                                return [
+                                    'id' => $foto->id,
+                                    'url' => $foto->url ?? null,
+                                    'orden' => $foto->orden ?? 1,
+                                ];
+                            })->toArray() : [],
+                        ];
+                    })->toArray() : [],
+                ];
+            }
+
+            $datos['logo_cotizacion'] = $logoCotizacion;
+            $datos['tiene_logo'] = !is_null($logoCotizacion);
+            $datos['tiene_prendas'] = count($datos['prendas_cotizaciones']) > 0;
+
+            // Agregar datos EPP (si aplica)
+            $tipoCodigo = ($datos['cotizacion']['tipo_codigo'] ?? null);
+            $tipoCodigoUpper = is_string($tipoCodigo) ? strtoupper(trim($tipoCodigo)) : null;
+            if ($tipoCodigoUpper === 'EPP') {
+                $eppCot = DB::table('epp_cotizacion')->where('cotizacion_id', $cotizacionModelo->id)->first();
+                $eppItems = DB::table('epp_items_cot')->where('cotizacion_id', $cotizacionModelo->id)->orderBy('id')->get();
+
+                $eppValoresUnitarios = DB::table('epp_valor_unitario')
+                    ->whereIn('epp_item_id', $eppItems->pluck('id')->all())
+                    ->get()
+                    ->keyBy('epp_item_id');
+
+                $imagenes = DB::table('epp_img_cot')
+                    ->whereIn('epp_item_id', $eppItems->pluck('id')->all())
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('epp_item_id');
+
+                $datos['epp_cotizacion'] = $eppCot ? [
+                    'tipo_venta' => $eppCot->tipo_venta ?? null,
+                    'observaciones_generales' => $eppCot->observaciones_generales ?? null,
+                ] : null;
+
+                $datos['epp_items'] = $eppItems->map(function ($it) use ($imagenes) {
+                    $imgs = $imagenes->get($it->id, collect());
+                    $urls = $imgs->map(function ($imgRow) {
+                        $ruta = $imgRow->ruta ?? null;
+                        if (!$ruta) return null;
+                        try {
+                            return Storage::disk('public')->url($ruta);
+                        } catch (\Exception $e) {
+                            return str_starts_with($ruta, '/') ? $ruta : ('/storage/' . ltrim($ruta, '/'));
+                        }
+                    })->filter()->values()->all();
+
+                    return [
+                        'id' => $it->id,
+                        'nombre' => $it->nombre ?? 'Sin nombre',
+                        'cantidad' => (int)($it->cantidad ?? 1),
+                        'observaciones' => $it->observaciones ?? null,
+                        'imagenes' => $urls,
+                    ];
+                })->map(function ($it) use ($eppValoresUnitarios) {
+                    $vu = $eppValoresUnitarios[$it['id']] ?? null;
+                    $it['valor_unitario'] = $vu ? $vu->valor_unitario : null;
+                    return $it;
+                })->values()->all();
+
+                // =============== AGREGAR PRENDAS TAMBIÃ‰N ===============
+                $prendaItems = DB::table('prenda_items_cot')->where('cotizacion_id', $cotizacionModelo->id)->orderBy('id')->get();
+
+                $prendaValoresUnitarios = DB::table('prenda_valor_unitario')
+                    ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                    ->get()
+                    ->keyBy('prenda_item_id');
+
+                $imagenesPrendas = DB::table('prenda_img_cot')
+                    ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('prenda_item_id');
+
+                $datos['prenda_items'] = $prendaItems->map(function ($it) use ($imagenesPrendas) {
+                    $imgs = $imagenesPrendas->get($it->id, collect());
+                    $urls = $imgs->map(function ($imgRow) {
+                        $ruta = $imgRow->ruta ?? null;
+                        if (!$ruta) return null;
+                        try {
+                            return Storage::disk('public')->url($ruta);
+                        } catch (\Exception $e) {
+                            return str_starts_with($ruta, '/') ? $ruta : ('/storage/' . ltrim($ruta, '/'));
+                        }
+                    })->filter()->values()->all();
+
+                    return [
+                        'id' => $it->id,
+                        'descripcion' => $it->descripcion ?? 'Sin nombre',
+                        'cantidad' => (int)($it->cantidad ?? 1),
+                        'observaciones' => $it->observaciones ?? null,
+                        'imagenes' => $urls,
+                    ];
+                })->map(function ($it) use ($prendaValoresUnitarios) {
+                    $vu = $prendaValoresUnitarios[$it['id']] ?? null;
+                    $it['valor_unitario'] = $vu ? $vu->valor_unitario : null;
+                    return $it;
+                })->values()->all();
+            }
+
+            return response()->json($datos);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('getCotizacionDetail: CotizaciÃ³n no encontrada', [
+                'cotizacion_id' => $id,
+            ]);
+            return response()->json(['error' => 'CotizaciÃ³n no encontrada'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error en getCotizacionDetail: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la cotizaciÃ³n: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar una cotizaciÃ³n completa con todas sus relaciones e imÃ¡genes
+     */
+    public function deleteCotizacion($id)
+    {
+        try {
+            $cotizacion = Cotizacion::findOrFail($id);
+            
+            \Log::info(' Iniciando eliminaciÃ³n de cotizaciÃ³n', [
+                'cotizacion_id' => $id,
+                'cliente' => $cotizacion->cliente
+            ]);
+            
+            // 1. Eliminar prendas relacionadas (prendasCotizaciones)
+            if ($cotizacion->prendasCotizaciones()->exists()) {
+                \Log::info('Eliminando prendas relacionadas', [
+                    'cantidad' => $cotizacion->prendasCotizaciones()->count()
+                ]);
+                $cotizacion->prendasCotizaciones()->delete();
+            }
+            
+            // 2. Eliminar logo/LOGO relacionado (logoCotizacion)
+            if ($cotizacion->logoCotizacion()->exists()) {
+                \Log::info('Eliminando logoCotizacion');
+                $cotizacion->logoCotizacion()->delete();
+            }
+            
+            // 3. Eliminar pedidos de producciÃ³n relacionados (si existen)
+            if ($cotizacion->pedidosProduccion()->exists()) {
+                \Log::info('Eliminando pedidos de producciÃ³n');
+                $cotizacion->pedidosProduccion()->delete();
+            }
+            
+            // 4. Eliminar historial de cambios relacionado (si existe)
+            if ($cotizacion->historial()->exists()) {
+                \Log::info('Eliminando historial de cambios', [
+                    'cantidad' => $cotizacion->historial()->count()
+                ]);
+                $cotizacion->historial()->delete();
+            }
+            
+            // 5. Eliminar carpeta completa de imÃ¡genes de la cotizaciÃ³n
+            \Log::info('Eliminando carpeta de imÃ¡genes', [
+                'cotizacion_id' => $id,
+                'ruta' => "cotizaciones/{$id}"
+            ]);
+            
+            $imagenService = new ImagenCotizacionService();
+            $imagenService->eliminarTodasLasImagenes($id);
+            
+            // Verificar que la carpeta se eliminÃ³
+            if (Storage::disk('public')->exists("cotizaciones/{$id}")) {
+                \Log::warning('La carpeta aÃºn existe despuÃ©s de eliminarTodasLasImagenes, intentando eliminar directamente');
+                Storage::disk('public')->deleteDirectory("cotizaciones/{$id}");
+            }
+            
+            // 6. Eliminar la cotizaciÃ³n principal
+            \Log::info('Eliminando registro de cotizaciÃ³n de BD');
+            $cotizacion->delete();
+            
+            \Log::info(' CotizaciÃ³n eliminada completamente', [
+                'cotizacion_id' => $id,
+                'cliente' => $cotizacion->cliente
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'CotizaciÃ³n, imÃ¡genes y todos sus registros relacionados han sido eliminados correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error(' Error al eliminar cotizaciÃ³n', [
+                'cotizacion_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la cotizaciÃ³n: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar notas de tallas para una prenda
+     */
+    public function guardarNotasTallas($prendaId, Request $request)
+    {
+        try {
+            $prenda = PrendaCotizacionFriendly::findOrFail($prendaId);
+            
+            // Validar que se envÃ­e el texto de notas
+            $request->validate([
+                'notas' => 'required|string'
+            ]);
+            
+            // Guardar las notas
+            $prenda->notas_tallas = $request->input('notas');
+            $prenda->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notas de tallas guardadas correctamente',
+                'notas' => $prenda->notas_tallas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar las notas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar texto personalizado de tallas para una prenda (mÃ³dulo contador)
+     */
+    public function guardarTextoPersonalizadoTallas($prendaId, Request $request)
+    {
+        try {
+            $prenda = \App\Models\PrendaCot::findOrFail($prendaId);
+            
+            // Validar que se envÃ­e el texto personalizado
+            $request->validate([
+                'texto_personalizado' => 'nullable|string'
+            ]);
+            
+            // Guardar el texto personalizado
+            $prenda->texto_personalizado_tallas = $request->input('texto_personalizado');
+            $prenda->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Texto personalizado de tallas guardado correctamente',
+                'texto_personalizado' => $prenda->texto_personalizado_tallas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el texto personalizado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambiar el estado de una cotizaciÃ³n
+     */
+    public function cambiarEstado($id, Request $request)
+    {
+        try {
+            $cotizacion = Cotizacion::findOrFail($id);
+            
+            // Validar que el estado sea uno de los permitidos
+            $request->validate([
+                'estado' => 'required|in:ENVIADA_CONTADOR,APROBADA_COTIZACIONES,FINALIZADA'
+            ]);
+            
+            // Guardar estado anterior
+            $estadoAnterior = $cotizacion->estado;
+            
+            // Actualizar el estado
+            $cotizacion->estado = $request->input('estado');
+            $cotizacion->save();
+            
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionEstadoCambiado(
+                $cotizacion->id,
+                $cotizacion->estado,
+                $estadoAnterior,
+                $cotizacion->asesor_id,
+                $cotizacion->toArray()
+            ))->toOthers();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'estado' => $cotizacion->estado
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener costos de prendas de una cotizaciÃ³n
+     */
+    public function obtenerCostos($id)
+    {
+        try {
+            $cotizacion = Cotizacion::with(['prendas.fotos', 'prendas.telaFotos'])->findOrFail($id);
+            
+            // Obtener costos de la cotizaciÃ³n desde la tabla costos_prendas con la relaciÃ³n prenda
+            $costosCotizacion = CostoPrenda::with('prenda.fotos', 'prenda.telaFotos')
+                ->where('cotizacion_id', $id)
+                ->get();
+            
+            if ($costosCotizacion->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'prendas' => []
+                ]);
+            }
+            
+            // Obtener productos de la cotizaciÃ³n
+            $cotizacionProductos = [];
+            if ($cotizacion->productos) {
+                $cotizacionProductos = is_string($cotizacion->productos) 
+                    ? json_decode($cotizacion->productos, true) 
+                    : $cotizacion->productos;
+            }
+            
+            // Construir array de prendas con costos
+            $prendas = [];
+            foreach ($costosCotizacion as $costoPrenda) {
+                // Obtener items de costos (estructura: [{item: "", precio: ""}])
+                $items = [];
+                $costoTotal = $costoPrenda->total_costo ?? 0;
+                
+                if ($costoPrenda->items) {
+                    $itemsArray = is_string($costoPrenda->items) 
+                        ? json_decode($costoPrenda->items, true) 
+                        : $costoPrenda->items;
+                    
+                    if (is_array($itemsArray)) {
+                        $items = $itemsArray;
+                    }
+                }
+                
+                // Obtener la prenda usando la relaciÃ³n directa
+                $prenda = $costoPrenda->prenda;
+                
+                // Si no encuentra prenda, crear una estructura mÃ­nima
+                if (!$prenda) {
+                    // Determinar nombre: usar nombre_prenda, o extraer de descripciÃ³n, o usar genÃ©rico
+                    $nombreFinal = $costoPrenda->nombre_prenda;
+                    if (empty($nombreFinal)) {
+                        // Intentar extraer nombre de la descripciÃ³n (primera palabra o hasta el primer espacio)
+                        $descripcion = $costoPrenda->descripcion ?? '';
+                        if (!empty($descripcion)) {
+                            $palabras = explode(' ', trim($descripcion));
+                            $nombreFinal = $palabras[0];
+                        } else {
+                            $nombreFinal = 'Prenda ' . (count($prendas) + 1);
+                        }
+                    }
+                    
+                    $prendas[] = [
+                        'id' => null,
+                        'nombre_producto' => $nombreFinal,
+                        'descripcion' => $costoPrenda->descripcion ?? '',
+                        'color' => '',
+                        'tela' => '',
+                        'tela_referencia' => '',
+                        'manga_nombre' => '',
+                        'costo_total' => $costoTotal,
+                        'items' => $items,
+                        'fotos' => []
+                    ];
+                    continue;
+                }
+                
+                $productoIndex = $cotizacion->prendas->pluck('id')->search($prenda->id) ?? 0;
+                
+                // Obtener informaciÃ³n de variantes
+                $color = '';
+                $tela = '';
+                $tela_referencia = '';
+                $manga_nombre = '';
+                $descripcion = $costoPrenda->descripcion ?? '';
+                
+                if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                    $producto = $cotizacionProductos[$productoIndex];
+                    $variantes = $producto['variantes'] ?? [];
+                    
+                    $color = $variantes['color'] ?? '';
+                    $tela = $variantes['tela'] ?? '';
+                    $tela_referencia = $variantes['tela_referencia'] ?? '';
+                    $manga_nombre = $variantes['manga_nombre'] ?? '';
+                    
+                    // Construir descripciÃ³n formateada usando DescripcionPrendaHelper
+                    $datosFormato = [
+                        'numero' => 1,
+                        'tipo' => $prenda->nombre_producto ?? '',
+                        'color' => $color,
+                        'tela' => $tela,
+                        'ref' => $tela_referencia,
+                        'manga' => $manga_nombre,
+                        'obs_manga' => '',
+                        'logo' => '',
+                        'bolsillos' => [],
+                        'broche' => '',
+                        'reflectivos' => [],
+                        'otros' => [],
+                        'tallas' => []
+                    ];
+                    
+                    // Extraer datos de la descripciÃ³n de la prenda
+                    if ($prenda->descripcion) {
+                        $desc = $prenda->descripcion;
+                        
+                        // Extraer Logo
+                        if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Otros:|$)/is', $desc, $matches)) {
+                            $logoText = trim($matches[1]);
+                            $logoText = preg_replace('/^(SI|NO)\s*-\s*/i', '', $logoText);
+                            if ($logoText) {
+                                $datosFormato['logo'] = trim($logoText);
+                            }
+                        }
+                        
+                        // Extraer Bolsillos
+                        if (preg_match('/Bolsillos?:\s*(.+?)(?:Otros:|Broche:|$)/is', $desc, $matches)) {
+                            $bolsillosText = trim($matches[1]);
+                            $datosFormato['bolsillos'] = array_filter(array_map('trim', preg_split('/[â€¢\-\n]/', $bolsillosText)));
+                        }
+                        
+                        // Extraer Broche
+                        if (preg_match('/Broche:\s*(.+?)(?:Otros:|Bolsillos?:|$)/is', $desc, $matches)) {
+                            $brocheText = trim($matches[1]);
+                            $brocheText = str_replace('|', '', $brocheText);
+                            $datosFormato['broche'] = trim($brocheText);
+                        }
+                        
+                        // Extraer Otros detalles
+                        if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Broche:|$)/is', $desc, $matches)) {
+                            $otrosText = trim($matches[1]);
+                            $datosFormato['otros'] = array_filter(array_map('trim', preg_split('/[â€¢\-\n]/', $otrosText)));
+                        }
+                    }
+                    
+                    // Generar descripciÃ³n formateada
+                    $descripcion = DescripcionPrendaHelper::generarDescripcion($datosFormato);
+                }
+                
+                // Obtener fotos de la prenda (excluir fotos de logos)
+                $fotos = [];
+                if ($prenda->fotos && $prenda->fotos->count() > 0) {
+                    $fotos = $prenda->fotos
+                        ->filter(function($foto) {
+                            // Excluir fotos que contengan 'logo' o 'logos' en la ruta
+                            $ruta = $foto->ruta_webp ?? $foto->ruta_original ?? '';
+                            return !str_contains(strtolower($ruta), 'logo');
+                        })
+                        ->map(function($foto) {
+                            return $foto->url; // Usar el accessor del modelo
+                        })
+                        ->values()
+                        ->toArray();
+                }
+                
+                // Obtener fotos de las telas
+                $telaFotos = [];
+                if ($prenda->telaFotos && $prenda->telaFotos->count() > 0) {
+                    $telaFotos = $prenda->telaFotos->map(function($foto) {
+                        return $foto->url; // Usar el accessor del modelo
+                    })->toArray();
+                }
+                
+                $prendas[] = [
+                    'id' => $prenda->id,
+                    'nombre_producto' => $prenda->nombre_producto ?: $costoPrenda->nombre_prenda,
+                    'descripcion' => $descripcion,
+                    'color' => $color,
+                    'tela' => $tela,
+                    'tela_referencia' => $tela_referencia,
+                    'manga_nombre' => $manga_nombre,
+                    'costo_total' => $costoTotal,
+                    'items' => $items,
+                    'fotos' => $fotos,
+                    'tela_fotos' => $telaFotos
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'prendas' => $prendas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener costos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener notificaciones del contador
+     */
+    public function getNotifications()
+    {
+        try {
+            $user = Auth::user();
+            
+            // Obtener IDs de cotizaciones ya vistas por el usuario
+            $viewedCotizationIds = session('viewed_cotizations_' . $user->id, []);
+            
+            // Cotizaciones enviadas a revisar (estado ENVIADA_CONTADOR)
+            $cotizacionesParaRevisar = Cotizacion::with('cliente', 'tipoCotizacion')
+                ->where('estado', 'ENVIADA_CONTADOR')
+                ->whereNotIn('id', $viewedCotizationIds)
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+            
+            // Nuevas cotizaciones creadas (Ãºltimas 5 de las Ãºltimas 24 horas)
+            $nuevasCotizaciones = Cotizacion::with('cliente', 'tipoCotizacion')
+                ->where('created_at', '>=', now()->subHours(24))
+                ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
+                ->whereNotIn('id', $viewedCotizationIds)
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+            
+            // Contar total de notificaciones
+            $totalNotificaciones = $cotizacionesParaRevisar->count() + $nuevasCotizaciones->count();
+            
+            // Transformar respuesta para retornar solo nombre del cliente
+            $paraRevisarTransformada = $cotizacionesParaRevisar->map(function($cot) {
+                return [
+                    'id' => $cot->id,
+                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
+                    'created_at' => $cot->created_at
+                ];
+            });
+            
+            $nuevasTransformada = $nuevasCotizaciones->map(function($cot) {
+                return [
+                    'id' => $cot->id,
+                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
+                    'created_at' => $cot->created_at
+                ];
+            });
+            
+            return response()->json([
+                'cotizaciones_para_revisar' => $paraRevisarTransformada,
+                'nuevas_cotizaciones' => $nuevasTransformada,
+                'total_notificaciones' => $totalNotificaciones
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener notificaciones',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar todas las notificaciones como leÃ­das
+     */
+    public function markAllNotificationsAsRead()
+    {
+        try {
+            $user = Auth::user();
+            
+            // Obtener todas las cotizaciones que generan notificaciones
+            $cotizacionesParaRevisar = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+                ->pluck('id')
+                ->toArray();
+            
+            $nuevasCotizaciones = Cotizacion::where('created_at', '>=', now()->subHours(24))
+                ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
+                ->pluck('id')
+                ->toArray();
+            
+            // Combinar todos los IDs de cotizaciones a marcar como vistas
+            $allCotizationIds = array_merge($cotizacionesParaRevisar, $nuevasCotizaciones);
+            
+            // Guardar en sesiÃ³n del usuario
+            session(['viewed_cotizations_' . $user->id => $allCotizationIds]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones marcadas como leÃ­das'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al marcar notificaciones como leÃ­das',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener contador de cotizaciones pendientes (ENVIADA_CONTADOR)
+     * Endpoint: GET /contador/cotizaciones-pendientes-count
+     */
+    public function cotizacionesPendientesCount()
+    {
+        try {
+            $count = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'message' => $count > 0 ? "Hay $count cotizaciÃ³n(es) pendiente(s) por revisar" : 'No hay cotizaciones pendientes'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener contador de cotizaciones pendientes', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mostrar cotizaciones aprobadas por el aprobador (APROBADA_POR_APROBADOR)
+     */
+    public function aprobadas(): View
+    {
+        // Obtener cotizaciones aprobadas por el aprobador de cotizaciones
+        $cotizacionesAprobadas = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
+            ->where('estado', 'APROBADA_POR_APROBADOR')
+            ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('contador.aprobadas', compact('cotizacionesAprobadas'));
+    }
+
+    /**
+     * Guardar tallas costos cotizaciÃ³n
+     */
+    public function guardarTallasCostos(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'cotizacion_id' => 'required|integer|exists:cotizaciones,id',
+                'prenda_cot_id' => 'required|integer|exists:prendas_cot,id',
+                'descripcion' => 'nullable|string',
+            ]);
+
+            // Buscar si ya existe un registro
+            $tallasCostos = \App\Models\TallasCostosCot::where('cotizacion_id', $validated['cotizacion_id'])
+                ->where('prenda_cot_id', $validated['prenda_cot_id'])
+                ->first();
+
+            if ($tallasCostos) {
+                // Actualizar
+                $tallasCostos->update(['descripcion' => $validated['descripcion']]);
+            } else {
+                // Crear nuevo
+                \App\Models\TallasCostosCot::create($validated);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tallas costos guardado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en guardarTallasCostos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Parsear especificaciones de la cotizaciÃ³n
+     * Maneja diferentes formatos: string JSON, array, o null
+     */
+    private function parseEspecificaciones($especificaciones)
+    {
+        if (!$especificaciones) {
+            return [];
+        }
+
+        // Si es un string, intentar parsearlo como JSON
+        if (is_string($especificaciones)) {
+            try {
+                // Primer intento: parsear directamente
+                $parsed = json_decode($especificaciones, true);
+                
+                // Si el resultado es un string (doblemente escapado), parsear nuevamente
+                if (is_string($parsed)) {
+                    $parsed = json_decode($parsed, true);
+                }
+                
+                if (is_array($parsed)) {
+                    return $parsed;
+                }
+                
+                // Si no funcionÃ³, podrÃ­a estar doblemente escapado con backslashes
+                // Intentar desescapar primero
+                $unescaped = stripslashes($especificaciones);
+                $parsed = json_decode($unescaped, true);
+                
+                // Si el resultado es un string, parsear nuevamente
+                if (is_string($parsed)) {
+                    $parsed = json_decode($parsed, true);
+                }
+                
+                if (is_array($parsed)) {
+                    return $parsed;
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error al parsear especificaciones: ' . $e->getMessage());
+                return [];
+            }
+        }
+
+        // Si ya es un array, devolverlo tal cual
+        if (is_array($especificaciones)) {
+            return $especificaciones;
+        }
+
+        return [];
+    }
+
+    private function obtenerLogoObservacionesPorPrenda(int $cotizacionId): array
+    {
+        // Esta tabla/modelo puede no existir en despliegues nuevos tras limpieza de esquema.
+        if (!Schema::hasTable('logo_observacion_prenda_cot')) {
+            return [];
+        }
+
+        return DB::table('logo_observacion_prenda_cot')
+            ->where('cotizacion_id', $cotizacionId)
+            ->get(['prenda_cot_id', 'observacion'])
+            ->keyBy('prenda_cot_id')
+            ->map(fn ($row) => $row ? $row->observacion : null)
+            ->toArray();
+    }
+
+}
+

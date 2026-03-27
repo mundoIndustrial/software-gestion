@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\AuthenticatedSessionController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\ConfirmablePasswordController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\EmailVerificationNotificationController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\EmailVerificationPromptController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\NewPasswordController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\PasswordController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\PasswordResetLinkController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\RegisteredUserController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\VerifyEmailController;
+use App\Infrastructure\Http\Controllers\Legacy\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -70,6 +70,6 @@ Route::middleware('auth')->group(function () {
         Auth::guard('web')->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/')->with('success', 'Sesión cerrada correctamente');
+        return redirect('/')->with('success', 'Session cerrada correctamente');
     })->name('logout.get');
 });

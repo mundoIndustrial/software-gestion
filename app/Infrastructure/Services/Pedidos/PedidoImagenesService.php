@@ -183,7 +183,7 @@ class PedidoImagenesService
      */
     private function procesarImagenesTelas(Request $request, int $pedidoId, int $itemIdx, array $item, $prenda): void
     {
-        Log::info('[PedidoImagenesService] ðŸ§µ Procesando telas', [
+        Log::info('[PedidoImagenesService]  Procesando telas', [
             'prenda_id' => $prenda->id,
             'cantidad_telas' => count($item['telas']),
         ]);

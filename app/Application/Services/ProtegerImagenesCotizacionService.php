@@ -133,7 +133,7 @@ class ProtegerImagenesCotizacionService
             'orden' => $orden,
             'ancho' => $fotoOriginal->ancho,
             'alto' => $fotoOriginal->alto,
-            'tamaño' => $fotoOriginal->tamaño,
+            'tamano' => $fotoOriginal->tamano,
             'foto_cotizacion_id' => $fotoOriginal->id, // Referencia a la original
             'clonada_de_cotizacion' => true
         ]);

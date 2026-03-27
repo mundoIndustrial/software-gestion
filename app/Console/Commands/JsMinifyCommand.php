@@ -16,14 +16,14 @@ use Symfony\Component\Process\Process;
  *   php artisan js:minify              # Minifica todos los JS
  *   php artisan js:minify --clean      # Elimina todos los .min.js
  *   php artisan js:minify --force      # Re-minifica incluso si .min.js ya existe y está actualizado
- *   php artisan js:minify --report     # Solo muestra reporte de tamaños sin minificar
+ *   php artisan js:minify --report     # Solo muestra reporte de tamanos sin minificar
  */
 class JsMinifyCommand extends Command
 {
     protected $signature = 'js:minify 
                             {--clean : Eliminar todos los archivos .min.js}
                             {--force : Re-minificar incluso si el .min.js ya está actualizado}
-                            {--report : Solo mostrar reporte de tamaños}
+                            {--report : Solo mostrar reporte de tamanos}
                             {--dry-run : Simular sin escribir archivos}';
 
     protected $description = 'Minifica archivos JS en public/js/ usando Terser (~60-70% reducción)';
@@ -260,7 +260,7 @@ class JsMinifyCommand extends Command
     }
 
     /**
-     * Formatear tamaño en bytes a formato legible
+     * Formatear tamano en bytes a formato legible
      */
     private function formatSize(int $bytes): string
     {

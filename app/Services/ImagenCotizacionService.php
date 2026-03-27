@@ -562,7 +562,7 @@ class ImagenCotizacionService
     }
 
     /**
-     * Redimensionar imagen a un tamaño mínimo
+     * Redimensionar imagen a un tamano mínimo
      * Asegura que todas las imágenes tengan al menos 1024x768px
      * 
      * @param UploadedFile $archivo
@@ -595,15 +595,15 @@ class ImagenCotizacionService
             $alto = $info[1];
             $tipo = $info[2];
 
-            // Tamaño mínimo deseado
+            // tamano mínimo deseado
             $anchoMinimo = 1024;
             $altoMinimo = 768;
 
             // Si la imagen es más pequeña que el mínimo, redimensionarla
             if ($ancho < $anchoMinimo || $alto < $altoMinimo) {
                 \Log::info('Redimensionando imagen', [
-                    'tamaño_original' => "{$ancho}x{$alto}",
-                    'tamaño_minimo' => "{$anchoMinimo}x{$altoMinimo}"
+                    'tamano_original' => "{$ancho}x{$alto}",
+                    'tamano_minimo' => "{$anchoMinimo}x{$altoMinimo}"
                 ]);
 
                 // Calcular nuevas dimensiones manteniendo proporción
@@ -668,7 +668,7 @@ class ImagenCotizacionService
                     if ($imagenNueva) @imagedestroy($imagenNueva);
 
                     \Log::info('Imagen redimensionada exitosamente', [
-                        'tamaño_nuevo' => "{$nuevoAncho}x{$nuevoAlto}"
+                        'tamano_nuevo' => "{$nuevoAncho}x{$nuevoAlto}"
                     ]);
                 } catch (\Exception $e) {
                     \Log::warning('Error durante redimensionamiento GD', [

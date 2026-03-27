@@ -25,7 +25,7 @@ class ActualizarCachePedidos
     public function __invoke(PedidoProduccionCreado $event): void
     {
         try {
-            Log::info('ðŸ”„ Actualizando cache de pedidos', [
+            Log::info('„ Actualizando cache de pedidos', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
             ]);

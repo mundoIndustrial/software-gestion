@@ -4,13 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
-use App\Http\Controllers\ContadorController;
-use App\Http\Controllers\LogoObservacionPrendaCotController;
-use App\Http\Controllers\PDFCotizacionController;
-use App\Http\Controllers\PDFPrendaController;
-use App\Http\Controllers\PDFCotizacionCombiadaController;
-use App\Http\Controllers\PDFEppController;
-use App\Http\Controllers\CotizacionEstadoController;
+use App\Infrastructure\Http\Controllers\Legacy\ContadorController;
+use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionController;
+use App\Infrastructure\Http\Controllers\Legacy\PDFPrendaController;
+use App\Infrastructure\Http\Controllers\Legacy\PDFCotizacionCombiadaController;
+use App\Infrastructure\Http\Controllers\Legacy\PDFEppController;
+use App\Infrastructure\Http\Controllers\Legacy\CotizacionEstadoController;
 
 // ========================================
 // RUTAS PARA COTIZACIONES - PRENDA (DDD REFACTORIZADO)
@@ -25,7 +24,7 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     Route::post('/cotizaciones-prenda/{cotizacion}/enviar', [CotizacionPrendaController::class, 'enviar'])->name('cotizaciones-prenda.enviar');
     Route::delete('/cotizaciones-prenda/{cotizacion}', [CotizacionPrendaController::class, 'destroy'])->name('cotizaciones-prenda.destroy');
     
-    // Rutas para borrar imágenes de cotizaciones (Prenda)
+    // Rutas para borrar IMAGENES de cotizaciones (Prenda)
     Route::post('/cotizaciones/{id}/borrar-imagen-prenda', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'borrarImagenPrenda'])->name('cotizaciones.borrar-imagen-prenda');
     Route::post('/cotizaciones/{id}/borrar-imagen-tela', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'borrarImagenTela'])->name('cotizaciones.borrar-imagen-tela');
 });
@@ -45,7 +44,7 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     Route::post('/cotizaciones-bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
     Route::delete('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
     
-    // RUTAS PARA TELAS DE PRENDAS EN COTIZACIÓN DE LOGO
+    // RUTAS PARA TELAS DE PRENDAS EN COTIZACION DE LOGO
     Route::post('/cotizaciones/{cotizacion_id}/logo/telas-prenda', [CotizacionBordadoController::class, 'guardarTelaPrenda'])->name('cotizaciones-bordado.guardar-tela-prenda');
     Route::get('/cotizaciones/{cotizacion_id}/logo/telas-prenda', [CotizacionBordadoController::class, 'obtenerTelasPrenda'])->name('cotizaciones-bordado.obtener-telas-prenda');
     Route::delete('/cotizaciones/{cotizacion_id}/logo/telas-prenda/{tela_id}', [CotizacionBordadoController::class, 'eliminarTelaPrenda'])->name('cotizaciones-bordado.eliminar-tela-prenda');
@@ -65,10 +64,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cotizaciones/pendientes', function () {
         // Verificar que el usuario tenga el rol aprobador_cotizaciones
         if (!auth()->user()->hasRole('aprobador_cotizaciones')) {
-            abort(403, 'No tienes permiso para acceder a esta sección.');
+            abort(403, 'No tienes permiso para acceder a esta seccion.');
         }
         
-        // Obtener cotizaciones pendientes de aprobación (estado APROBADA_CONTADOR)
+        // Obtener cotizaciones pendientes de aprobacion (estado APROBADA_CONTADOR)
         $cotizaciones = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
             ->with(['aprobaciones.usuario'])
             ->orderBy('created_at', 'desc')
@@ -83,11 +82,11 @@ Route::middleware(['auth'])->group(function () {
         return view('cotizaciones.pendientes', compact('cotizaciones', 'totalAprobadores'));
     })->name('cotizaciones.pendientes');
 
-    // Obtener datos de cotización para modal (AJAX)
+    // Obtener datos de cotizacion para modal (AJAX)
     Route::get('/cotizaciones/{cotizacion}/datos', [CotizacionesViewController::class, 'getDatosForModal'])
         ->name('cotizaciones.obtener-datos');
 
-    // Obtener costos de cotización (AJAX)
+    // Obtener costos de cotizacion (AJAX)
     Route::get('/cotizaciones/{cotizacion}/costos', [ContadorController::class, 'obtenerCostos'])
         ->name('cotizaciones.obtener-costos');
 
@@ -95,16 +94,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pendientes-count', [CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])
         ->name('cotizaciones.pendientes-count');
 
-    // Acceso a modal de ver cotización desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
+    // Acceso a modal de ver cotizacion desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
     Route::get('/contador/cotizacion/{id}', [ContadorController::class, 'getCotizacionDetail'])
         ->middleware('auth')
         ->name('aprobador.cotizacion.detail');
 
-    Route::post('/cotizaciones/logo/observacion-prenda', [LogoObservacionPrendaCotController::class, 'upsert'])
-        ->middleware('auth')
-        ->name('cotizaciones.logo.observacion-prenda.upsert');
-
-    // Acceso a costos de cotización desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
+    // Acceso a costos de cotizacion desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
     Route::get('/contador/cotizacion/{cotizacion}/costos', [ContadorController::class, 'obtenerCostos'])
         ->name('aprobador.cotizacion.costos');
 });
@@ -117,9 +112,9 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ========================================
-// PDF - RUTAS GLOBALES (PARA OTROS MÓDULOS)
+// PDF - RUTAS GLOBALES (PARA OTROS MODULOS)
 // ========================================
-// Necesarias para que módulos como Contador puedan descargar PDFs sin depender de /asesores.
+// Necesarias para que modulos como Contador puedan descargar PDFs sin depender de /asesores.
 Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones'])->group(function () {
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate']);
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate']);
@@ -127,10 +122,10 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
 });
 
 // ========================================
-// RUTAS PARA MÓDULO BORDADO
+// RUTAS PARA MODULO BORDADO
 // ========================================
 Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bordado.')->group(function () {
-    // Listar pedidos del módulo Bordado
+    // Listar pedidos del modulo Bordado
     Route::get('/', function () {
         return view('bordado.index');
     })->name('index');
@@ -140,7 +135,7 @@ Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bord
         return redirect()->route('bordado.cotizaciones.lista');
     })->name('cotizaciones');
 
-    // Cotizaciones - Submenú
+    // Cotizaciones - SUBMENU
     Route::prefix('cotizaciones')->name('cotizaciones.')->group(function () {
         // Lista de cotizaciones
         Route::get('/lista', function () {
@@ -158,25 +153,25 @@ Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bord
 // RUTAS PARA ESTADOS DE COTIZACIONES
 // ========================================
 Route::middleware(['auth', 'verified'])->name('cotizaciones.estado.')->group(function () {
-    // Asesor: Enviar cotización a contador
+    // Asesor: Enviar cotizacion a contador
     Route::post('/cotizaciones/{cotizacion}/enviar', [CotizacionEstadoController::class, 'enviar'])->name('enviar');
     
-    // Contador: Aprobar cotización
+    // Contador: Aprobar cotizacion
     Route::post('/cotizaciones/{cotizacion}/aprobar-contador', [CotizacionEstadoController::class, 'aprobarContador'])->name('aprobar-contador');
     
-    // Contador: Aprobar cotización para pedido (APROBADA_COTIZACIONES -> APROBADO_PARA_PEDIDO)
+    // Contador: Aprobar cotizacion para pedido (APROBADA_COTIZACIONES -> APROBADO_PARA_PEDIDO)
     Route::post('/cotizaciones/{cotizacion}/aprobar-para-pedido', [CotizacionEstadoController::class, 'aprobarParaPedido'])->name('aprobar-para-pedido');
     
-    // Aprobador de Cotizaciones: Aprobar cotización
+    // Aprobador de Cotizaciones: Aprobar cotizacion
     Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [CotizacionEstadoController::class, 'aprobarAprobador'])->name('aprobar-aprobador');
     
-    // Aprobador de Cotizaciones: Rechazar y enviar a corrección
+    // Aprobador de Cotizaciones: Rechazar y enviar a correccion
     Route::post('/cotizaciones/{cotizacion}/rechazar', [CotizacionEstadoController::class, 'rechazar'])->name('rechazar');
     
     // Ver historial de cambios
     Route::get('/cotizaciones/{cotizacion}/historial', [CotizacionEstadoController::class, 'historial'])->name('historial');
     
-    // Ver seguimiento de cotización
+    // Ver seguimiento de cotizacion
     Route::get('/cotizaciones/{cotizacion}/seguimiento', [CotizacionEstadoController::class, 'seguimiento'])->name('seguimiento');
 });
 
@@ -191,24 +186,25 @@ Route::withoutMiddleware(['api'])
     // APIResource: GET, POST, PUT, DELETE, PATCH
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
     
-    // GET adicional: Obtener telas para una prenda en cotización
+    // GET adicional: Obtener telas para una prenda en cotizacion
     Route::get('cotizaciones/{cotizacion_id}/prendas/{prenda_id}/telas-cotizacion', 
         [CotizacionPrendaController::class, 'obtenerTelasCotizacion'])
         ->name('cotizaciones.prendas.telas-cotizacion');
 });
 
-// Datos específicos para prendas en cotizaciones
+// Datos especificos para prendas en cotizaciones
 Route::prefix('cotizacion')->name('cotizacion.')->middleware(['auth'])->group(function () {
     
-    // Guardar prenda nueva en cotización
+    // Guardar prenda nueva en cotizacion
     Route::post('prendas', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'guardarPrenda'])
         ->name('prendas.guardar');
     
-    // Obtener prendas de una cotización
+    // Obtener prendas de una cotizacion
     Route::get('{cotizacionId}/prendas', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'obtenerPrendas'])
         ->name('prendas.obtener');
     
-    // Eliminar una prenda de cotización
+    // Eliminar una prenda de cotizacion
     Route::delete('prendas/{prendaId}', [\App\Infrastructure\Http\Controllers\CotizacionPrendaController::class, 'eliminarPrenda'])
         ->name('prendas.eliminar');
 });
+

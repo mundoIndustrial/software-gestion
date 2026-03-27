@@ -27,11 +27,11 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
         }
 
         try {
-            Log::info('ðŸ”Ž [BuscarPedidoPorNumeroHandler] Buscando pedido', [
+            Log::info('Ž [BuscarPedidoPorNumeroHandler] Buscando pedido', [
                 'numero_pedido' => $query->getNumeroPedido(),
             ]);
 
-            // ðŸ”„ NO USAR CACHE - Las relaciones pueden cambiar frecuentemente
+            // „ NO USAR CACHE - Las relaciones pueden cambiar frecuentemente
             $pedido = $this->pedidoModel
                 ->where('numero_pedido', $query->getNumeroPedido())
                 ->with([

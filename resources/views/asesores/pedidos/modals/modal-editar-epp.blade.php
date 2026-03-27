@@ -301,7 +301,6 @@ function abrirModalEditarEPP(eppData) {
                             previewUrl: previewUrl,
                             nombre: file.name || 'pegado_' + Date.now() + '.png',
                             extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
-                            tamaño: file.size,
                             pedido_epp_id: null,
                             ruta_original: null,
                             ruta_webp: null,

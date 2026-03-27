@@ -1226,7 +1226,7 @@
                     card.style.display = 'block';
                 }
                 
-                // Restaurar tamaño del modal
+                // Restaurar tamano del modal
                 modalRecibo.style.maxWidth = '672px';
                 modalRecibo.style.width = '90%';
                 

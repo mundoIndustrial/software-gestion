@@ -3,9 +3,9 @@
 use App\Infrastructure\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\UserController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EntregaController;
-use App\Http\Controllers\EntregasCompletasController;
+use App\Infrastructure\Http\Controllers\Legacy\DashboardController;
+use App\Infrastructure\Http\Controllers\Legacy\EntregaController;
+use App\Infrastructure\Http\Controllers\Legacy\EntregasCompletasController;
 
 
 Route::get('/', function () {
@@ -15,22 +15,22 @@ Route::get('/', function () {
 // ========================================
 // RUTAS DE STORAGE - Servir imágenes con fallback de extensiones
 // ========================================
-// Lógica centralizada en StorageService para mejor organización
+// Logica centralizada en StorageService para mejor organizacion
 
-Route::get('/storage/{tipo}/{path}', [App\Http\Controllers\StorageController::class, 'serve'])
+Route::get('/storage/{tipo}/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serve'])
     ->where(['tipo' => 'cotizaciones|prendas|pedidos', 'path' => '.*'])
     ->name('storage.files');
 
 // Rutas con nombre específico para compatibilidad
-Route::get('/storage/cotizaciones/{path}', [App\Http\Controllers\StorageController::class, 'serveCotizaciones'])
+Route::get('/storage/cotizaciones/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serveCotizaciones'])
     ->where('path', '.*')
     ->name('storage.cotizaciones');
 
-Route::get('/storage/prendas/{path}', [App\Http\Controllers\StorageController::class, 'servePrendas'])
+Route::get('/storage/prendas/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'servePrendas'])
     ->where('path', '.*')
     ->name('storage.prendas');
 
-Route::get('/storage/pedidos/{path}', [App\Http\Controllers\StorageController::class, 'servePedidos'])
+Route::get('/storage/pedidos/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'servePedidos'])
     ->where('path', '.*')
     ->name('storage.pedidos');
 
@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // ========================================
-    // RUTAS DE LECTURA - Datos Públicos de Pedidos (consultas, sin lógica de negocio)
+    // RUTAS DE LECTURA - Datos Publicos de Pedidos (consultas, sin logica de negocio)
     // ========================================
     Route::get('/pedidos-public/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidoDocumentosController::class, 'obtenerDatosFactura'])
         ->where('id', '[0-9]+')
@@ -103,56 +103,55 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
 });
 
 // ========================================
-// RUTAS DE ADMINISTRACIÓN (CONTADOR, OPERARIOS, CONTROL DE CALIDAD)
+// RUTAS DE Administracion (CONTADOR, OPERARIOS, CONTROL DE CALIDAD)
 // ========================================
-// Todos los modulos están centralizados al final del archivo
+// Todos los modulos estan centralizados al final del archivo
 
 
 
 // ========================================
-// RUTA PARA SERVIR IMÁGENES DE STORAGE
+// RUTA PARA SERVIR IMAGENES DE STORAGE
 // ========================================
 
-Route::get('/storage-serve/{path}', [App\Http\Controllers\StorageController::class, 'serve'])
+Route::get('/storage-serve/{path}', [App\Infrastructure\Http\Controllers\Legacy\StorageController::class, 'serve'])
     ->where('path', '.*')
     ->name('storage.serve');
 
 // ========================================
-// RUTAS DE AUTENTICACIÓN
+// RUTAS DE AUTENTICACION
 // ========================================
 require __DIR__.'/auth.php';
 
 // ========================================
-// RUTAS DE ADMINISTRACIÓN
+// RUTAS DE ADMINISTACION
 // ========================================
-// Las rutas de asesores están definidas en el archivo asesores.php
-// Las rutas de operarios están definidas en el archivo operario.php
+// Las rutas de asesores ESTAN definidas en el archivo asesores.php
+// Las rutas de operarios ESTAN definidas en el archivo operario.php
 
 // ========================================
-// RUTAS DE ASESORES (MÓDULO INDEPENDIENTE)
+// RUTAS DE ASESORES (MODULO INDEPENDIENTE)
 // ========================================
-// Las rutas de asesores están definidas en el archivo asesores.php
+// Las rutas de asesores ESTAN definidas en el archivo asesores.php
 require __DIR__.'/asesores.php';
 
 // ========================================
-// RUTAS DE DESPACHO (MÓDULO NUEVO)
+// RUTAS DE DESPACHO (MODULO NUEVO)
 // ========================================
 require __DIR__.'/despacho.php';
 
 // ========================================
-// RUTAS DE BODEGA (MÓDULO NUEVO)
+// RUTAS DE BODEGA (MODULO NUEVO)
 // ========================================
 require __DIR__.'/bodega.php';
 
 // ========================================
-// RUTAS DE MÓDULOS INDEPENDIENTES
+// RUTAS DE MODULOS INDEPENDIENTES
 // ========================================
 // Admin: routes/admin.php
 // Operarios: routes/operario.php
 // Asesores: routes/asesores.php (routes/asesores.php)
 // Supervisor de Asesores: routes/supervisor-asesores.php
 // Visualizador Logo: routes/visualizador-logo.php
-// 
 require base_path('routes/admin.php');
 require base_path('routes/operario.php');
 require base_path('routes/supervisor-asesores.php');
@@ -183,5 +182,5 @@ require base_path('routes/epp.php');
 // BROADCASTING AUTH ROUTES (WebSocket)
 // ========================================
 
-// Las rutas de broadcasting están modularizadas en routes/broadcasting.php
-// Las rutas de seguimiento de procesos están en routes/seguimiento-proceso.php
+// Las rutas de broadcasting ESTAN modularizadas en routes/broadcasting.php
+// Las rutas de seguimiento de procesos ESTAN en routes/seguimiento-proceso.php

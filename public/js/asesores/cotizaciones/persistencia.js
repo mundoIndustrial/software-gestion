@@ -337,13 +337,17 @@ function limpiarFormularioCompleto() {
 // ============ AUTO-GUARDADO ============
 
 function configurarAutoGuardado() {
-    // Auto-guardar cada 5 segundos
-    setInterval(() => {
-        guardarDatosEnStorage();
-        guardarProductosEnStorage();
-    }, 5000);
-    
+    let autoSaveTimeout = null;
+    const triggerSave = () => {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            guardarDatosEnStorage();
+            guardarProductosEnStorage();
+        }, 800);
+    };
 
+    document.addEventListener('input', triggerSave, true);
+    document.addEventListener('change', triggerSave, true);
 }
 
 // ============ INICIALIZACIÓN ============

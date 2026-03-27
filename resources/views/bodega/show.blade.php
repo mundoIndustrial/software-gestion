@@ -1102,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
     
-    // Monitorear cambios de tamaño
+    // Monitorear cambios de tamano
     window.addEventListener('resize', () => {
         console.log(`📏 [DIAGNÓSTICO] Resize - Nuevo viewport: ${window.innerWidth}x${window.innerHeight}px`);
     });

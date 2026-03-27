@@ -195,7 +195,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         `;
         
         console.log('🖼️ [mostrarGaleriaImagenesPrenda] CSS aplicado a imgElement:', imgElement.style.cssText);
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Tamaño calculado:', {
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] tamano calculado:', {
             'min-width': '80vw = ' + (window.innerWidth * 0.80) + 'px',
             'min-height': '60vh = ' + (window.innerHeight * 0.60) + 'px',
             'width': '90vw = ' + (window.innerWidth * 0.90) + 'px',
@@ -269,7 +269,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         toolbar.appendChild(btnSiguiente);
         
         const btnEliminar = document.createElement('button');
-        btnEliminar.textContent = '🗑️ Eliminar';
+        btnEliminar.textContent = ' Eliminar';
         btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background 0.2s;';
         btnEliminar.title = 'Eliminar esta imagen';
         btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
@@ -312,7 +312,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
             btnConfirmarEliminar.onclick = () => {
                 confirmModalDiv.remove();
                 
-                console.log('🗑️ [mostrarGaleriaImagenesPrenda] Eliminando imagen en índice', indiceActual);
+                console.log(' [mostrarGaleriaImagenesPrenda] Eliminando imagen en índice', indiceActual);
                 
                 // Eliminar de imagenesValidas
                 imagenesValidas.splice(indiceActual, 1);

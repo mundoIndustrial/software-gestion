@@ -79,6 +79,9 @@ class GuardarDespachoUseCase
                 }, $despachos),
                 usuarioId: $usuarioId,
             );
+            $despachosPersistidosCount = is_countable($despachosPersistidos)
+                ? count($despachosPersistidos)
+                : 0;
 
             DB::commit();
 
@@ -86,7 +89,7 @@ class GuardarDespachoUseCase
                 'pedido_id' => $control->pedidoId,
                 'numero_pedido' => $control->numeroPedido,
                 'cantidad_items' => count($despachos),
-                'cantidad_persistidos' => $despachosPersistidos->count(),
+                'cantidad_persistidos' => $despachosPersistidosCount,
                 'fecha_hora' => $control->fechaHora,
                 'cliente_empresa' => $control->clienteEmpresa,
                 'usuario_id' => $usuarioId,
@@ -97,7 +100,7 @@ class GuardarDespachoUseCase
                 'message' => 'Control de entregas guardado correctamente',
                 'pedido_id' => $control->pedidoId,
                 'despachos_procesados' => count($despachos),
-                'despachos_persistidos' => $despachosPersistidos->count(),
+                'despachos_persistidos' => $despachosPersistidosCount,
             ];
 
         } catch (\Exception $e) {

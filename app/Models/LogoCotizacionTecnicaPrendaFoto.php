@@ -15,16 +15,10 @@ class LogoCotizacionTecnicaPrendaFoto extends Model
         'ruta_webp',
         'ruta_miniatura',
         'orden',
-        'ancho',
-        'alto',
-        'tamaño',
     ];
 
     protected $casts = [
         'orden' => 'integer',
-        'ancho' => 'integer',
-        'alto' => 'integer',
-        'tamaño' => 'integer',
     ];
 
     /**

@@ -343,7 +343,7 @@ window.manejarImagenProceso = function(input, indice) {
                 file: file,
                 previewUrl: URL.createObjectURL(file),
                 nombre: file.name,
-                tamaño: file.size,
+                tamano: file.size,
                 fileType: file.type,
                 fileSize: file.size,
                 fechaCreacion: new Date().toISOString()
@@ -401,7 +401,7 @@ window._imagenAEliminarIndice = null;
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-eliminar-imagen-proceso');
         if (btn) {
-            console.log('[EVENT-DELEGATION] 🗑️ Click detectado en botón eliminar imagen');
+            console.log('[EVENT-DELEGATION]  Click detectado en botón eliminar imagen');
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -521,7 +521,7 @@ window.confirmarEliminarImagenProceso = function() {
         // AHORA marcar como null
         window.imagenesProcesoExistentes[indice - 1] = null;
         const imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
-        console.log('[confirmarEliminarImagenProceso] 🗑️ Imagen existente marcada como eliminada:', {
+        console.log('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
             indice: indice - 1,
             imagenesRestantes: imagenesParaEnviar.length,
             storageLlenado: window.imagenesEliminadasProcesoStorage,
@@ -582,11 +582,11 @@ window.confirmarEliminarImagenProceso = function() {
 
 // Eliminar imagen del proceso (ahora muestra modal de confirmación)
 window.eliminarImagenProceso = function(indice) {
-    console.log('[eliminarImagenProceso] 🗑️ INICIANDO - Click en botón eliminar para imagen:', indice);
+    console.log('[eliminarImagenProceso]  INICIANDO - Click en botón eliminar para imagen:', indice);
     
     // Guardar el índice globalmente
     window._imagenAEliminarIndice = indice;
-    console.log('[eliminarImagenProceso] � window._imagenAEliminarIndice establecido a:', window._imagenAEliminarIndice);
+    console.log('[eliminarImagenProceso]  window._imagenAEliminarIndice establecido a:', window._imagenAEliminarIndice);
     
     // Buscar el modal directamente
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');

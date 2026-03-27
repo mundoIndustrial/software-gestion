@@ -38,7 +38,7 @@
                                      Editar
                                 </button>
                                 <button onclick="eliminarCliente({{ $cliente->id }})" class="btn" style="background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
-                                    🗑️ Eliminar
+                                     Eliminar
                                 </button>
                             </td>
                         </tr>

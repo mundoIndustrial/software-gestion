@@ -23,7 +23,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         cotizacion_id: cotizacionId,
         prenda_id: prendaId,
         tipo: tipo,
-        tamaño: (archivo.size / 1024).toFixed(2) + ' KB'
+        tamano: (archivo.size / 1024).toFixed(2) + ' KB'
     });
 
     try {
@@ -65,7 +65,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         if (data.success) {
             console.log(' Imagen subida exitosamente', {
                 ruta: data.data.ruta,
-                tamaño: (archivo.size / 1024).toFixed(2) + ' KB'
+                tamano: (archivo.size / 1024).toFixed(2) + ' KB'
             });
 
             return {

@@ -1672,7 +1672,7 @@ function renderizarTecnicasAgregadasPaso3() {
                 align-items: center;
                 gap: 0.4rem;
             " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
-                🗑️
+                
             </button>
         `;
         headerHTML += '</div>';
@@ -2872,7 +2872,7 @@ function guardarEdicionPrendaPaso3DesdeModal() {
 function eliminarTecnicaPaso3(nombrePrenda) {
     if (!window.tecnicasAgregadasPaso3) return;
     
-    console.log('🗑️ Eliminando prenda:', nombrePrenda);
+    console.log(' Eliminando prenda:', nombrePrenda);
     
     // Eliminar todas las prendas con este nombre
     window.tecnicasAgregadasPaso3 = window.tecnicasAgregadasPaso3.filter(tecnica => {

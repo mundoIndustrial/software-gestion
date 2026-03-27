@@ -408,7 +408,7 @@ body {
         display: none;
     }
 
-    /* Ajustar tamaño de botones en pantallas muy pequeñas */
+    /* Ajustar tamano de botones en pantallas muy pequeñas */
     .user-btn,
     .notificaciones-btn {
         width: 36px;

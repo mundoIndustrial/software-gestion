@@ -427,7 +427,7 @@
             display: none;
         }
 
-        /* Optimizaciones de tamaño para impresión */
+        /* Optimizaciones de tamano para impresión */
         .prenda-block {
             padding: 10px;
             margin-bottom: 8px;

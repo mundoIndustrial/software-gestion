@@ -68,7 +68,7 @@ window.universalImagenesStorage = {
         }
         
         const imagenEliminada = this._storage[tipo][indice].splice(imagenIndex, 1)[0];
-        console.log(`[UniversalStorage] 🗑️ Imagen eliminada: ${tipo}[${indice}][${imagenIndex}]`);
+        console.log(`[UniversalStorage]  Imagen eliminada: ${tipo}[${indice}][${imagenIndex}]`);
         return imagenEliminada;
     },
     

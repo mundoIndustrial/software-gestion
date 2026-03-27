@@ -196,35 +196,53 @@
     window.modalContext = 'pedidos';
     window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function safeUpper(value) {
+        return escapeHtml(String(value ?? '').toUpperCase());
+    }
+
     //  REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
     function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
+        const motivoSafe = escapeHtml(motivo || 'No especificado');
+        const usuarioSafe = escapeHtml(usuario || 'Sistema');
+        const fechaSafe = escapeHtml(fecha || 'No disponible');
+        const numeroPedidoSafe = escapeHtml(numeroPedido);
+
         const html = `
             <div style="text-align: left;">
                 <div style="margin-bottom: 1.25rem;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Motivo</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #fef2f2; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #ef4444;">
-                        ${motivo || 'No especificado'}
+                        ${motivoSafe}
                     </div>
                 </div>
                 <div style="margin-bottom: 1.25rem;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Anulado por</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-user" style="color: #6b7280;"></i>
-                        ${usuario || 'Sistema'}
+                        ${usuarioSafe}
                     </div>
                 </div>
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Fecha y Hora</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-calendar" style="color: #6b7280;"></i>
-                        ${fecha || 'No disponible'}
+                        ${fechaSafe}
                     </div>
                 </div>
             </div>
         `;
         
         UI.contenido({
-            titulo: ` Motivo de anulación - Pedido #${numeroPedido}`,
+            titulo: ` Motivo de anulación - Pedido #${numeroPedidoSafe}`,
             html: html,
             ancho: '500px'
         });
@@ -288,32 +306,32 @@
     function construirDescripcionComoPrenda(prenda, numero) {
         const lineas = [];
         if (prenda.nombre_prenda || prenda.nombre) {
-            lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${(prenda.nombre_prenda || prenda.nombre).toUpperCase()}</div>`);
+            lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${safeUpper(prenda.nombre_prenda || prenda.nombre)}</div>`);
         }
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${safeUpper(prenda.tela)}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${safeUpper(prenda.color)}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${safeUpper(prenda.ref)}`);
         if (prenda.variantes?.length > 0) {
             const manga = prenda.variantes[0].manga;
             if (manga) {
-                let mangaTexto = manga.toUpperCase();
+                let mangaTexto = safeUpper(manga);
                 if (prenda.variantes[0].manga_obs?.trim()) {
-                    mangaTexto += ` (${prenda.variantes[0].manga_obs.toUpperCase()})`;
+                    mangaTexto += ` (${safeUpper(prenda.variantes[0].manga_obs)})`;
                 }
                 partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
             }
         }
         if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
-        if (prenda.descripcion?.trim()) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${prenda.descripcion.toUpperCase()}</div>`);
+        if (prenda.descripcion?.trim()) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${safeUpper(prenda.descripcion)}</div>`);
         
         const detalles = [];
         if (prenda.variantes?.length > 0) {
             const v = prenda.variantes[0];
-            if (v.bolsillos_obs?.trim()) detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${v.bolsillos_obs.toUpperCase()}</div>`);
+            if (v.bolsillos_obs?.trim()) detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${safeUpper(v.bolsillos_obs)}</div>`);
             if (v.broche_obs?.trim()) {
-                const etiqueta = v.broche?.toUpperCase() || 'BROCHE/BOTÓN';
-                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${v.broche_obs.toUpperCase()}</div>`);
+                const etiqueta = safeUpper(v.broche || 'BROCHE/BOTÓN');
+                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${safeUpper(v.broche_obs)}</div>`);
             }
         }
         if (detalles.length > 0) lineas.push(...detalles);
@@ -328,21 +346,21 @@
     function construirDescripcionComoProceso(prenda, proceso) {
         const lineas = [];
         if (proceso.tipo_proceso || proceso.nombre_proceso) {
-            lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${(proceso.tipo_proceso || proceso.nombre_proceso).toUpperCase()}</div>`);
+            lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${safeUpper(proceso.tipo_proceso || proceso.nombre_proceso)}</div>`);
         }
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${safeUpper(prenda.tela)}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${safeUpper(prenda.color)}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${safeUpper(prenda.ref)}`);
         if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
         if (proceso.ubicaciones?.length > 0) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">UBICACIONES:</div>`);
-            proceso.ubicaciones.forEach(u => lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${u.toUpperCase()}</div>`));
+            proceso.ubicaciones.forEach(u => lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${safeUpper(u)}</div>`));
             lineas.push(`<div style="margin-bottom: 0.75rem;"></div>`);
         }
         if (proceso.observaciones?.trim()) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">OBSERVACIONES:</div>`);
-            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${proceso.observaciones.toUpperCase()}</div>`);
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${safeUpper(proceso.observaciones)}</div>`);
         }
         if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
@@ -376,11 +394,11 @@
         
         let resultado = '';
         if (Object.keys(tallasDama).length > 0) {
-            const tallasStr = Object.entries(tallasDama).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
+            const tallasStr = Object.entries(tallasDama).map(([t, c]) => `<span style="color: #dc2626;"><strong>${escapeHtml(t)}: ${escapeHtml(c)}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">DAMA: ${tallasStr}</div>`;
         }
         if (Object.keys(tallasCalballero).length > 0) {
-            const tallasStr = Object.entries(tallasCalballero).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
+            const tallasStr = Object.entries(tallasCalballero).map(([t, c]) => `<span style="color: #dc2626;"><strong>${escapeHtml(t)}: ${escapeHtml(c)}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">CABALLERO: ${tallasStr}</div>`;
         }
         return resultado;
@@ -1004,24 +1022,28 @@
             let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
             htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
             lineas.forEach((linea) => {
+                const lineaSafe = escapeHtml(linea);
                 if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
-                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${lineaSafe}</div>`;
                 } else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${lineaSafe}</div>`;
                 } else if (linea.match(/^DESCRIPCIÓN:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea.startsWith('•') || linea.startsWith('-')) {
-                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${escapeHtml(linea.substring(1).trim())}</div>`;
                 } else if (linea.match(/^Tallas:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea) {
-                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${lineaSafe}</div>`;
                 }
             });
             htmlContenido += '</div>';
         });
+
+        const tituloSafe = escapeHtml(titulo);
+        const contenidoLimpioSafe = escapeHtml(contenidoLimpio);
         
         const modalHTML = `
             <div id="celdaModal" style="
@@ -1048,7 +1070,7 @@
                     animation: slideUp 0.3s ease;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">${titulo}</h2>
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">${tituloSafe}</h2>
                         <button onclick="cerrarModalCelda()" style="
                             background: #f3f4f6;
                             border: none;
@@ -1063,7 +1085,7 @@
                         </button>
                     </div>
                     <div style="color: #374151; line-height: 1.6;">
-                        ${htmlContenido || contenidoLimpio}
+                        ${htmlContenido || contenidoLimpioSafe}
                     </div>
                 </div>
             </div>
@@ -1120,21 +1142,26 @@
                 let match = primerLinea.match(/\[(.*?)\]/);
                 let info = match ? match[1] : '';
                 let novedad = primerLinea.replace(/\[.*?\]\n?/, '') || resto;
+                const infoSafe = escapeHtml(info);
+                const novedadSafe = escapeHtml(novedad);
+                const restoSafe = escapeHtml(resto);
                 
                 htmlContenido += `
                     <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%); border-left: 5px solid #0284c7; border-radius: 8px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);">
                         <div style="font-weight: 600; color: #0c4a6e; font-size: 0.9rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="font-size: 1.1rem;">👤</span> ${info}
+                            <span style="font-size: 1.1rem;">👤</span> ${infoSafe}
                         </div>
                         <div style="color: #1e40af; line-height: 1.6; font-size: 0.95rem;">
-                            ${resto || novedad}
+                            ${restoSafe || novedadSafe}
                         </div>
                     </div>
                 `;
             } else if (bloque.trim()) {
-                htmlContenido += `<div style="margin-bottom: 0.75rem; padding: 0.75rem; color: #374151; background: #f9fafb; border-radius: 6px; border-left: 3px solid #9ca3af;">${bloque}</div>`;
+                htmlContenido += `<div style="margin-bottom: 0.75rem; padding: 0.75rem; color: #374151; background: #f9fafb; border-radius: 6px; border-left: 3px solid #9ca3af;">${escapeHtml(bloque)}</div>`;
             }
         });
+
+        const numeroPedidoSafe = escapeHtml(numeroPedido);
 
         const modalHTML = `
             <div id="novedadesModal" style="
@@ -1161,7 +1188,7 @@
                     animation: slideUp 0.3s ease;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedido}</h2>
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedidoSafe}</h2>
                         <button onclick="cerrarModalNovedades()" style="
                             background: #f3f4f6;
                             border: none;
@@ -1513,4 +1540,3 @@
 
 
 @endpush
-

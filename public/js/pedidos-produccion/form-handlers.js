@@ -1069,7 +1069,7 @@ class PedidoFormHandlers {
                         📤 Enviar pedido
                     </button>
                     <button class="btn btn-lg btn-danger" data-action="clear-pedido">
-                        🗑️ Limpiar
+                         Limpiar
                     </button>
                 </div>
             </div>

@@ -1,31 +1,30 @@
 /**
  * CosturaNotificationBellService
- * Maneja el sistema de notificaciones de campana para recibos en costura
- * 
+ * Maneja el sistema de notificaciones de campana para recibos en costura.
+ *
  * Responsabilidades:
- * - Cargar conteo de recibos en ejecución de corte
+ * - Cargar conteo de recibos en ejecucion de corte
  * - Actualizar badge y lista de notificaciones
  * - Marcar recibos como vistos
  * - Configurar event listeners para la campana
- * - Polling automático cada 30 segundos
- * 
+ * - Refrescar por eventos de Reverb/WebSocket
+ *
  * @class CosturaNotificationBellService
  * @example
  * const service = CosturaNotificationBellService.getInstance();
- * service.init(); // Inicializar con polling automático
+ * service.init(); // Inicializar con carga inicial + realtime
  * service.loadCosturaCount(); // Cargar manualmente
  */
 
 class CosturaNotificationBellService {
     constructor() {
-        this.pollInterval = null;
-        this.pollDuration = 30000; // 30 segundos
+        this.realtimeBound = false;
     }
 
     /**
      * Obtener instancia singleton del servicio
      * @static
-     * @returns {CosturaNotificationBellService} Instancia única
+     * @returns {CosturaNotificationBellService} Instancia unica
      */
     static getInstance() {
         if (!window.costuraNotificationBellServiceInstance) {
@@ -35,35 +34,28 @@ class CosturaNotificationBellService {
     }
 
     /**
-     * Inicializar el servicio con polling automático
+     * Inicializar el servicio con carga inicial y realtime
      * @public
      */
     init() {
         this._setupEventListeners();
+        this._setupRealtimeListeners();
         this.loadCosturaCount();
-        
-        // Polling automático cada 30 segundos
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-        }
-        this.pollInterval = setInterval(() => {
-            this.loadCosturaCount();
-        }, this.pollDuration);
 
-        console.log('[🔔 CosturaNotificationBellService]  Inicializado con polling cada 30s');
+        console.log('[CosturaNotificationBellService] Inicializado (realtime activo)');
     }
 
     /**
-     * Cargar conteo de recibos en ejecución de corte
+     * Cargar conteo de recibos en ejecucion de corte
      * @public
      * @returns {Promise<void>}
      */
     async loadCosturaCount() {
         try {
             const response = await fetch('/api/recibos-costura/ejecutando-corte', {
-                headers: { 
-                    'Accept': 'application/json', 
-                    'X-Requested-With': 'XMLHttpRequest' 
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
 
@@ -72,13 +64,11 @@ class CosturaNotificationBellService {
                 const total = data.total || 0;
                 const recibos = data.recibos || [];
 
-                console.log('[🔔 CAMPANA COSTURA] Total:', total);
-
                 this._updateBadge(total);
                 this._updateList(recibos);
             }
         } catch (error) {
-            console.error('[🔔 CAMPANA COSTURA] Error cargando conteo:', error);
+            console.error('[CosturaNotificationBellService] Error cargando conteo:', error);
         }
     }
 
@@ -86,17 +76,17 @@ class CosturaNotificationBellService {
      * Marcar recibo como visto
      * @public
      * @param {number} reciboId - ID del recibo
-     * @param {HTMLElement} itemElement - Elemento DOM del item de notificación
+     * @param {HTMLElement} itemElement - Elemento DOM del item de notificacion
      * @returns {Promise<void>}
      */
     async markAsViewed(reciboId, itemElement) {
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
+
             const response = await fetch(`/api/recibos-costura/${reciboId}/marcar-visto-corte`, {
                 method: 'POST',
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-Token': csrfToken || ''
                 }
@@ -105,21 +95,17 @@ class CosturaNotificationBellService {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    // Animar remover del DOM
                     itemElement.style.opacity = '0';
                     itemElement.style.transform = 'translateX(10px)';
-                    
+
                     setTimeout(() => {
                         itemElement.remove();
-                        // Recargar conteo
                         this.loadCosturaCount();
                     }, 200);
-
-                    console.log('[✓ VISTO] Recibo marcado:', reciboId);
                 }
             }
         } catch (error) {
-            console.error('[✗ ERROR VISTO] No se pudo marcar el recibo:', error);
+            console.error('[CosturaNotificationBellService] No se pudo marcar el recibo:', error);
         }
     }
 
@@ -151,12 +137,11 @@ class CosturaNotificationBellService {
 
         if (recibos.length > 0) {
             list.innerHTML = '';
-            
+
             recibos.forEach((recibo) => {
                 const item = document.createElement('div');
                 item.className = 'costura-notif-item';
 
-                // Contenido de la notificación
                 const content = document.createElement('div');
                 content.className = 'costura-notif-content';
                 content.innerHTML =
@@ -164,7 +149,6 @@ class CosturaNotificationBellService {
                     `<p class="costura-notif-cliente">${recibo.cliente}</p>` +
                     `<p class="costura-notif-fecha">${recibo.fecha}</p>`;
 
-                // Botón "Visto"
                 const viewedBtn = document.createElement('button');
                 viewedBtn.className = 'costura-notif-visto-btn';
                 viewedBtn.textContent = 'Visto';
@@ -179,7 +163,7 @@ class CosturaNotificationBellService {
                 list.appendChild(item);
             });
         } else {
-            list.innerHTML = '<div class="costura-notif-empty">Sin recibos en ejecución</div>';
+            list.innerHTML = '<div class="costura-notif-empty">Sin recibos en ejecucion</div>';
         }
     }
 
@@ -193,17 +177,15 @@ class CosturaNotificationBellService {
         const clearBtn = document.getElementById('costuraClearBtn');
 
         if (!bellBtn || !dropdown) {
-            console.warn('[🔔 CosturaNotificationBellService] Elementos del bell no encontrados');
+            console.warn('[CosturaNotificationBellService] Elementos del bell no encontrados');
             return;
         }
 
-        // Toggle dropdown al hacer click en campana
         bellBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.classList.toggle('show');
         });
 
-        // Cerrar dropdown al hacer click en botón "Limpiar"
         if (clearBtn) {
             clearBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -211,25 +193,58 @@ class CosturaNotificationBellService {
             });
         }
 
-        // Cerrar dropdown al hacer click fuera
         document.addEventListener('click', (e) => {
             if (!bellBtn.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('show');
             }
         });
 
-        console.log('[🔔 CosturaNotificationBellService]  Event listeners configurados');
+        console.log('[CosturaNotificationBellService] Event listeners configurados');
     }
 
     /**
-     * Detener polling automático
+     * PRIVADO: Configurar listeners de tiempo real para la campana
+     * @private
+     */
+    _setupRealtimeListeners() {
+        if (this.realtimeBound) {
+            return;
+        }
+
+        const onReciboAprobado = () => {
+            this.loadCosturaCount();
+        };
+
+        try {
+            const ws = window.shared?.websocket;
+            if (ws && typeof ws.subscribe === 'function') {
+                ws.subscribe('recibos-costura', '.recibo.aprobado', onReciboAprobado);
+                this.realtimeBound = true;
+                console.log('[CosturaNotificationBellService] Realtime configurado con window.shared.websocket');
+                return;
+            }
+        } catch (error) {
+            console.warn('[CosturaNotificationBellService] No se pudo usar window.shared.websocket:', error);
+        }
+
+        if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
+            window.EchoInstance
+                .channel('recibos-costura')
+                .listen('recibo.aprobado', onReciboAprobado);
+            this.realtimeBound = true;
+            console.log('[CosturaNotificationBellService] Realtime configurado con EchoInstance');
+            return;
+        }
+
+        console.warn('[CosturaNotificationBellService] Realtime no disponible; solo carga inicial');
+    }
+
+    /**
+     * Detener listeners activos
      * @public
      */
     stop() {
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
-        console.log('[🔔 CosturaNotificationBellService] ⏸️ Polling detenido');
+        this.realtimeBound = false;
+        console.log('[CosturaNotificationBellService] stop() ejecutado');
     }
 }

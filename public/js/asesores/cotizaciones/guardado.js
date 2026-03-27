@@ -7,7 +7,7 @@
 // ============ COMPRESIÓN DE IMÁGENES PARA EVITAR ERROR 413 ============
 
 /**
- * Comprimir imagen para reducir tamaño
+ * Comprimir imagen para reducir tamano
  * @param {File} file - Archivo de imagen
  * @param {number} calidad - Calidad de compresión (0-1, default 0.7)
  * @returns {Promise<File>} Archivo comprimido
@@ -334,7 +334,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
     }
     
     //  NO convertir a Base64 - enviar archivos directamente como File objects
-    // Base64 es ineficiente (aumenta tamaño 33%) y mala práctica
+    // Base64 es ineficiente (aumenta tamano 33%) y mala práctica
 
     
     // Obtener tipo de venta

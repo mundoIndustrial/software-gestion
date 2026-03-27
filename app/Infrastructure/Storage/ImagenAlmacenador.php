@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * ImagenAlmacenador - Servicio para guardar imágenes en storage
  *
  * Responsabilidades:
- * - Validar archivos (tamaño, tipo MIME)
+ * - Validar archivos (tamano, tipo MIME)
  * - Procesar imágenes (redimensionar, convertir a WebP)
  * - Guardar en storage/cotizaciones/{id}/{tipo}/
  * - Retornar rutas relativas
@@ -55,7 +55,7 @@ final class ImagenAlmacenador
             'prenda_id' => $prendaId,
             'tipo' => $tipo,
             'archivo' => $archivo->getClientOriginalName(),
-            'tamaño' => $archivo->getSize(),
+            'tamano' => $archivo->getSize(),
         ]);
 
         try {
@@ -104,7 +104,7 @@ final class ImagenAlmacenador
                 'prenda_id' => $prendaId,
                 'tipo' => $tipo,
                 'ruta_guardada' => $rutaGuardada,
-                'tamaño' => Storage::disk('public')->size($rutaRelativa),
+                'tamano' => Storage::disk('public')->size($rutaRelativa),
             ]);
 
             return $rutaGuardada;
@@ -135,7 +135,7 @@ final class ImagenAlmacenador
             throw new \DomainException("Tipo de imagen no permitido: {$tipo}");
         }
 
-            // Validar tamaño
+            // Validar tamano
             if ($archivo->getSize() > self::TAMANO_MAXIMO) {
                 throw new \DomainException(
                     "Archivo demasiado grande. Máximo: " . (self::TAMANO_MAXIMO / 1024 / 1024) . " MB"
@@ -154,7 +154,7 @@ final class ImagenAlmacenador
             'archivo' => $archivo->getClientOriginalName(),
             'tipo' => $tipo,
             'mime' => $mimeType,
-            'tamaño' => $archivo->getSize(),
+            'tamano' => $archivo->getSize(),
         ]);
     }
 

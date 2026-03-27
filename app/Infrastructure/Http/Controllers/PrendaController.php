@@ -156,7 +156,7 @@ class PrendaController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        \Log::info('🗑️ Eliminando prenda', ['prenda_id' => $id]);
+        \Log::info(' Eliminando prenda', ['prenda_id' => $id]);
 
         try {
             $this->prendaService->eliminar($id);

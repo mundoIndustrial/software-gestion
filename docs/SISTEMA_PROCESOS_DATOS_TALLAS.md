@@ -222,7 +222,7 @@ Para probar la funcionalidad:
 
 ## 🚀 Próximas Mejoras Sugeridas
 
-1. Validación de imágenes (tamaño máximo, formato)
+1. Validación de imágenes (tamano máximo, formato)
 2. Preview de datos antes de guardar
 3. Historial/undo de cambios
 4. Exportación de datos de procesos

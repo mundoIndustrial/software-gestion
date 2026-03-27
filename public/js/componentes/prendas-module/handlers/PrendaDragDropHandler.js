@@ -356,7 +356,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 (pedidoIdDesdeDom && pedidoIdDesdeDom > 0)
             );
             
-            console.log('[PrendaDragDropHandler] 🗑️ Modo detectado:', {
+            console.log('[PrendaDragDropHandler]  Modo detectado:', {
                 modalVisible,
                 esModoEdicion,
                 pedidoEditarId: window.pedidoEditarId,
@@ -366,7 +366,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             
             if (modalVisible && esModoEdicion) {
                 // Modo edición: marcar para eliminación diferida
-                console.log('[PrendaDragDropHandler] 🗑️ Modo edición detectado, marcando imagen para eliminación diferida');
+                console.log('[PrendaDragDropHandler]  Modo edición detectado, marcando imagen para eliminación diferida');
                 
                 // Inicializar array si no existe
                 if (!window.imagenesAEliminar) {
@@ -418,7 +418,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                         return;
                     } else if (imagenAEliminar && !imagenAEliminar.id) {
                         // Imagen nueva sin ID: eliminar inmediatamente del storage
-                        console.log('[PrendaDragDropHandler] 🗑️ Imagen nueva sin ID, eliminando inmediatamente');
+                        console.log('[PrendaDragDropHandler]  Imagen nueva sin ID, eliminando inmediatamente');
                         
                         // Eliminar del storage
                         if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.eliminarImagen) {

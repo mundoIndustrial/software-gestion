@@ -33,6 +33,15 @@ class FiltroEmbudo {
         });
     }
 
+    emitirCambioFiltros() {
+        window.dispatchEvent(new CustomEvent('cotizaciones:filtros-actualizados', {
+            detail: {
+                totalActivos: Object.keys(this.filtrosActivos).length,
+                filtrosActivos: this.filtrosActivos
+            }
+        }));
+    }
+
     // Cargar valores únicos desde la BD
     cargarValoresFiltro() {
 
@@ -207,6 +216,7 @@ class FiltroEmbudo {
 
         // Aplicar filtro a la tabla
         this.filtrarTabla();
+        this.emitirCambioFiltros();
 
         // Cerrar modal
         this.cerrarModal(`filter-modal-${columna}`);
@@ -234,6 +244,7 @@ class FiltroEmbudo {
 
         // Aplicar filtro
         this.filtrarTabla();
+        this.emitirCambioFiltros();
     }
 
     // Limpiar todos los filtros
@@ -256,6 +267,7 @@ class FiltroEmbudo {
 
         // Mostrar todas las filas
         this.filtrarTabla();
+        this.emitirCambioFiltros();
     }
 
     // Actualizar estado del botón de filtro
@@ -387,6 +399,7 @@ let filtroEmbudo = null;
 document.addEventListener('DOMContentLoaded', () => {
     filtroEmbudo = new FiltroEmbudo();
     filtroEmbudo.importarFiltrosURL();
+    filtroEmbudo.emitirCambioFiltros();
 });
 
 // Funciones globales para usar en HTML
@@ -433,6 +446,7 @@ function aplicarFiltroColumna(columna) {
 
         // Aplicar filtro a la tabla
         filtroEmbudo.filtrarTablaMultiple();
+        filtroEmbudo.emitirCambioFiltros();
 
         // Cerrar modal
         filtroEmbudo.cerrarModal(`filter-modal-${columna}`);

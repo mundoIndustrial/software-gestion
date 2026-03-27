@@ -24,22 +24,22 @@ use App\Application\Pedidos\DTOs\RenderItemCardDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Services\Pedidos\ProcesarImagenesPrendaService;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
+use App\Application\Services\Asesores\PrendaPedidoEdicionAuditoriaService;
 use App\Infrastructure\Http\Resources\PrendaPedidoResource;
-use App\Models\PedidoAnexoHistorial;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 /**
  * PrendasPedidoController
  *
- * Responsabilidad: Gestionar prendas asociadas a pedidos de producción.
- * - Agregar, actualizar y eliminar prendas (simple y completa con imágenes)
- * - Renderizar item-card para interfaz dinámica
- * - Obtener datos completos de prenda para edición
- * - Eliminar imágenes de prenda
+ * Responsabilidad: Gestionar prendas asociadas a pedidos de produccion.
+ * - Agregar, actualizar y eliminar prendas (simple y completa con imagenes)
+ * - Renderizar item-card para interfaz dinamica
+ * - Obtener datos completos de prenda para edicion
+ * - Eliminar imagenes de prenda
  *
- * Patrón: CQRS + Dependency Injection
- * SRP: Solo operaciones de prendas e imágenes, sin lógica de negocio
+ * Patron: CQRS + Dependency Injection
+ * SRP: Solo operaciones de prendas e imagenes, sin logica de negocio
  */
 class PrendasPedidoController
 {
@@ -56,6 +56,7 @@ class PrendasPedidoController
         private EliminarProcesosListaUseCase $eliminarProcesosListaUseCase,
         private ProcesarImagenesPrendaService $procesarImagenesService,
         private ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
+        private PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService,
     ) {}
 
     /**
@@ -85,7 +86,7 @@ class PrendasPedidoController
             ]);
 
             // Registrar en historial: prenda nueva agregada a pedido existente
-            PedidoAnexoHistorial::registrarPrendaNueva(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaNueva(
                 (int)$pedido->id,
                 null,
                 $validated['nombre_prenda'] ?? 'PRENDA'
@@ -94,12 +95,12 @@ class PrendasPedidoController
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PrendasPedidoController] Validación de prenda fallida', [
+            Log::warning('[PrendasPedidoController] Validacion de prenda fallida', [
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'error' => 'Validación de prenda fallida',
+                'error' => 'Validacion de prenda fallida',
                 'message' => $e->getMessage(),
             ], 422);
 
@@ -150,7 +151,7 @@ class PrendasPedidoController
 
     /**
      * POST /api/pedidos/render-item-card
-     * Renderizar componente item-card para agregar dinámicamente
+     * Renderizar componente item-card para agregar dinamicamente
      */
     public function renderItemCard(Request $request): JsonResponse
     {
@@ -183,7 +184,7 @@ class PrendasPedidoController
 
     /**
      * POST (sin ruta registrada actualmente)
-     * Actualizar datos básicos de una prenda específica dentro de un pedido
+     * Actualizar datos basicos de una prenda especifica dentro de un pedido
      */
     public function actualizarPrenda(Request $request): JsonResponse
     {
@@ -214,7 +215,7 @@ class PrendasPedidoController
             ], 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('[PrendasPedidoController] Validación de prenda fallida', [
+            Log::warning('[PrendasPedidoController] Validacion de prenda fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -237,7 +238,7 @@ class PrendasPedidoController
 
     /**
      * POST /asesores/pedidos/{id}/agregar-prenda
-     * Agregar prenda completa (con telas e imágenes) al pedido en edición
+     * Agregar prenda completa (con telas e imagenes) al pedido en edicion
      */
     public function agregarPrendaCompleta(Request $request, int|string $id): JsonResponse
     {
@@ -277,7 +278,7 @@ class PrendasPedidoController
             ]);
 
             // Registrar en historial: prenda nueva agregada a pedido existente
-            PedidoAnexoHistorial::registrarPrendaNueva(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaNueva(
                 (int)$id,
                 $prenda->id,
                 $validated['nombre_prenda'] ?? 'PRENDA'
@@ -290,13 +291,13 @@ class PrendasPedidoController
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[PrendasPedidoController] Validación fallida', [
+            Log::warning('[PrendasPedidoController] Validacion fallida', [
                 'errors' => $e->errors(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida',
+                'message' => 'Validacion fallida',
                 'errors' => $e->errors(),
             ], 422);
 
@@ -314,7 +315,7 @@ class PrendasPedidoController
 
     /**
      * POST /asesores/pedidos/{id}/actualizar-prenda
-     * Actualizar una prenda existente en un pedido (con telas e imágenes)
+     * Actualizar una prenda existente en un pedido (con telas e imagenes)
      */
     public function actualizarPrendaCompleta(Request $request, int|string $id): JsonResponse
     {
@@ -398,7 +399,7 @@ class PrendasPedidoController
                 if (is_null($validated['asignaciones_colores'])) {
                     $validated['asignaciones_colores'] = [];
                 }
-                \Log::info('[PrendasPedidoController] asignaciones_colores extraído del FormData', [
+                \Log::info('[PrendasPedidoController] asignaciones_colores extraido del FormData', [
                     'asignaciones_colores' => $validated['asignaciones_colores'],
                     'es_vacio' => empty($validated['asignaciones_colores'])
                 ]);
@@ -427,7 +428,7 @@ class PrendasPedidoController
             ]);
 
             // Registrar en historial: prenda editada en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 (int)$id,
                 $prenda->id,
                 $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA',
@@ -441,13 +442,13 @@ class PrendasPedidoController
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[PrendasPedidoController] Validación fallida en actualización', [
+            Log::warning('[PrendasPedidoController] Validacion fallida en actualizacion', [
                 'errors' => $e->errors(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida',
+                'message' => 'Validacion fallida',
                 'errors' => $e->errors(),
             ], 422);
 
@@ -480,14 +481,14 @@ class PrendasPedidoController
             if (!in_array($tipo, $tiposValidos, true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tipo de imagen no válido',
+                    'message' => 'Tipo de imagen no valido',
                 ], 400);
             }
 
             $resultado = $this->eliminarImagenPedidoUseCase->ejecutar($id, $tipo);
 
             // Registrar en historial: foto de prenda/tela/proceso eliminada en pedido existente
-            PedidoAnexoHistorial::registrarPrendaEditada(
+            $this->prendaPedidoEdicionAuditoriaService->registrarPrendaEditada(
                 $pedidoId,
                 $id,
                 strtoupper($tipo) . ' (foto eliminada)'
@@ -557,13 +558,13 @@ class PrendasPedidoController
             ], 404);
 
         } catch (ValidationException $e) {
-            Log::warning('[PrendasPedidoController] Validación fallida al eliminar prenda', [
+            Log::warning('[PrendasPedidoController] Validacion fallida al eliminar prenda', [
                 'errors' => $e->errors(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida',
+                'message' => 'Validacion fallida',
                 'errors' => $e->errors(),
             ], 422);
 
@@ -583,7 +584,7 @@ class PrendasPedidoController
 
     /**
      * GET /asesores/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos
-     * Obtener datos completos de una prenda con procesos para edición en modal
+     * Obtener datos completos de una prenda con procesos para edicion en modal
      */
     public function obtenerDatosPrendaEdicion(int|string $pedidoId, int|string $prendaId): JsonResponse
     {
@@ -594,7 +595,7 @@ class PrendasPedidoController
                 'timestamp' => now()
             ]);
 
-            Log::info('📡 [PRENDA-DATOS] Llamando al servicio...');
+            Log::info(' [PRENDA-DATOS] Llamando al servicio...');
             $prendaData = $this->obtenerPedidoDetalleService->obtenerPrendaConProcesos((int)$pedidoId, (int)$prendaId);
 
             Log::info(' [PRENDA-DATOS-RECIBIDOS] Datos obtenidos del servicio', [
@@ -608,7 +609,7 @@ class PrendasPedidoController
             ]);
 
             if (empty($prendaData)) {
-                Log::warning(' [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos');
+                Log::warning(' [PRENDA-DATOS-VACIA] La prenda retorno datos vacios');
             }
 
             $pedido = $this->obtenerPedidoUseCase->ejecutar(
@@ -662,7 +663,7 @@ class PrendasPedidoController
 
     /**
      * GET /asesores/pedidos-produccion/{pedidoId}/datos-edicion
-     * Obtener datos del pedido para edición general (sin prenda específica)
+     * Obtener datos del pedido para edicion general (sin prenda especifica)
      */
     public function obtenerDatosEdicion(int $pedidoId): JsonResponse
     {
@@ -675,7 +676,7 @@ class PrendasPedidoController
             $pedido = $this->obtenerPedidoUseCase->ejecutar($dto);
 
             if (!$pedido) {
-                Log::warning('[PrendasPedidoController] Pedido no encontrado para edición', [
+                Log::warning('[PrendasPedidoController] Pedido no encontrado para edicion', [
                     'pedido_id' => $pedidoId,
                 ]);
 
@@ -685,7 +686,7 @@ class PrendasPedidoController
                 ], 404);
             }
 
-            Log::info('[PrendasPedidoController] Datos de edición obtenidos', [
+            Log::info('[PrendasPedidoController] Datos de edicion obtenidos', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido['numero_pedido'] ?? null,
                 'prendas_count' => count($pedido['prendas'] ?? []),
@@ -701,15 +702,16 @@ class PrendasPedidoController
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('[PrendasPedidoController] Error obteniendo datos de edición', [
+            Log::error('[PrendasPedidoController] Error obteniendo datos de edicion', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener datos de edición: ' . $e->getMessage(),
+                'message' => 'Error al obtener datos de edicion: ' . $e->getMessage(),
             ], 500);
         }
     }
 }
+
