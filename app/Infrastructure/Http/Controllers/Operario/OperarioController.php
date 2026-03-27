@@ -1016,6 +1016,31 @@ class OperarioController extends Controller
                                 continue;
                             }
 
+                            $tallasParcialPrenda = $parcial->tallas->map(function ($talla) {
+                                $genero = strtoupper(trim((string) ($talla->genero ?? 'CABALLERO')));
+                                return [
+                                    'id' => $talla->id,
+                                    'genero' => $genero !== '' ? $genero : 'CABALLERO',
+                                    'talla' => $talla->talla,
+                                    'cantidad' => (int) $talla->cantidad,
+                                    'tipo_talla' => null,
+                                    'es_sobremedida' => false,
+                                    'tela' => null,
+                                    'colores' => $talla->color_nombre ? [$talla->color_nombre] : [],
+                                    'color_nombre' => $talla->color_nombre,
+                                ];
+                            })->toArray();
+
+                            $tallaColoresParcial = $parcial->tallas->map(function ($talla) {
+                                $genero = strtoupper(trim((string) ($talla->genero ?? 'CABALLERO')));
+                                return [
+                                    'genero' => $genero !== '' ? $genero : 'CABALLERO',
+                                    'talla' => $talla->talla,
+                                    'color_nombre' => $talla->color_nombre,
+                                    'cantidad' => (int) $talla->cantidad,
+                                ];
+                            })->toArray();
+
                             // Mantener solo 1 variante por talla, pero conservando el detalle real por color del parcial.
                             $variantesNuevas = [];
                             $tallasUsadas = [];
@@ -1073,8 +1098,17 @@ class OperarioController extends Controller
 
                             // Si por alguna razón no había variantes del pedido, igual devolver vacío
                             $prenda['variantes'] = $variantesNuevas;
+                            $prenda['tallas'] = $tallasParcialPrenda;
+                            $prenda['talla_colores'] = $tallaColoresParcial;
                         }
                         unset($prenda);
+
+                        $prendaFiltrada = collect($responseData['prendas'])->first();
+                        $descripcionPrenda = is_array($prendaFiltrada) ? ($prendaFiltrada['descripcion'] ?? null) : null;
+                        if (is_string($descripcionPrenda) && trim($descripcionPrenda) !== '') {
+                            $responseData['descripcion'] = $descripcionPrenda;
+                            $responseData['descripcion_prendas'] = $descripcionPrenda;
+                        }
                     }
                 } catch (\Exception $e) {
                     \Log::warning('[OperarioController.getPedidoData] Error aplicando filtro de parcial', [
@@ -1124,7 +1158,7 @@ class OperarioController extends Controller
             // (pedidos_parciales_tallas). Para evitar que el frontend muestre tallas de la prenda por error,
             // limpiamos las tallas a nivel prenda en esta respuesta.
             $tipoReciboFiltroUpper = strtoupper((string) request('tipo_recibo', ''));
-            $tiposCostura = ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'];
+            $tiposCostura = ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO', 'PARCIAL'];
             if ($tipoReciboFiltroUpper && !in_array($tipoReciboFiltroUpper, $tiposCostura, true)) {
                 if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                     foreach ($responseData['prendas'] as &$prenda) {
@@ -1919,6 +1953,7 @@ class OperarioController extends Controller
                         $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
                             ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
                             ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                            ->latest('created_at')
                             ->first();
                     }
 

@@ -4,6 +4,9 @@ namespace App\Infrastructure\Http\Controllers\ControlCalidad;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\ProcesoPrenda;
+use App\Models\PrendaReciboCompletado;
+use App\Models\ReciboPorPartes;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -106,11 +109,45 @@ class ControlCalidadController extends Controller
             ->values()
             ->all();
 
+        $parcialesEnControlCalidad = ReciboPorPartes::query()
+            ->with(['pedido', 'prenda', 'tallas'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->filter(function (ReciboPorPartes $parcial) {
+                $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
+                if ($numeroPedido <= 0) {
+                    return false;
+                }
+
+                return ProcesoPrenda::query()
+                    ->where('numero_pedido', $numeroPedido)
+                    ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->latest('created_at')
+                    ->exists();
+            })
+            ->values();
+
+        $idsParciales = $parcialesEnControlCalidad
+            ->pluck('id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
         $completadosPorId = !empty($idsRecibos)
-            ? DB::table('prenda_recibo_completado')
+            ? PrendaReciboCompletado::query()
                 ->where('area', 'Control de Calidad')
                 ->whereIn('id_recibo', $idsRecibos)
                 ->pluck('fecha_completado', 'id_recibo')
+            : collect();
+
+        $completadosPorParcialId = !empty($idsParciales)
+            ? PrendaReciboCompletado::query()
+                ->where('area', 'Control de Calidad')
+                ->whereIn('id_parcial', $idsParciales)
+                ->pluck('fecha_completado', 'id_parcial')
             : collect();
 
         if (!empty($idsRecibos)) {
@@ -125,6 +162,62 @@ class ControlCalidadController extends Controller
             });
         }
 
+        $parcialesConRecibos = $parcialesEnControlCalidad->map(function (ReciboPorPartes $parcial) use ($completadosPorParcialId) {
+            $pedido = $parcial->pedido;
+            $prenda = $parcial->prenda;
+            $numeroPedido = $pedido?->numero_pedido;
+            $consecutivoOriginal = (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original ?? '');
+            $consecutivoParcial = (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial ?? '');
+
+            $proceso = null;
+            if ($numeroPedido) {
+                $proceso = ProcesoPrenda::query()
+                    ->where('numero_pedido', $numeroPedido)
+                    ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->latest('created_at')
+                    ->first();
+            }
+
+            return [
+                'prenda_id' => $prenda->id ?? 0,
+                'pedido_id' => $pedido->id ?? 0,
+                'numero_pedido' => $pedido->numero_pedido ?? '',
+                'cliente' => $pedido->cliente ?? '',
+                'nombre_prenda' => $prenda->nombre_prenda ?? 'Pedido',
+                'descripcion' => $prenda->descripcion ?? ($pedido->descripcion ?? ''),
+                'proceso_actual' => $proceso->proceso ?? 'Control Calidad',
+                'de_bodega' => $prenda->de_bodega ?? null,
+                'recibos' => [[
+                    'id' => $parcial->id,
+                    'tipo_recibo' => $parcial->tipo_recibo,
+                    'consecutivo_actual' => $consecutivoParcial,
+                    'consecutivo_inicial' => $consecutivoOriginal,
+                    'notas' => 'parcial_id:' . $parcial->id,
+                    'creado_en' => $parcial->created_at,
+                    'area' => $proceso->proceso ?? 'Control Calidad',
+                    'es_parcial' => true,
+                    'parcial_id' => $parcial->id,
+                    'consecutivo_parcial' => $consecutivoParcial,
+                    'completado_area' => $completadosPorParcialId->has($parcial->id),
+                ]],
+                'total_recibos' => 1,
+                'fecha_creacion' => $proceso?->fecha_inicio ?? $parcial->created_at,
+                'estado_pedido' => $pedido->estado ?? 'Pendiente',
+                'es_parcial' => true,
+                'parcial_id' => $parcial->id,
+                'tipo_recibo' => $parcial->tipo_recibo,
+                'consecutivo_actual' => $consecutivoParcial,
+                'completado_area' => $completadosPorParcialId->has($parcial->id),
+            ];
+        });
+
+        $prendasConRecibos = $prendasConRecibos
+            ->concat($parcialesConRecibos)
+            ->sortByDesc(fn ($item) => $item['fecha_creacion'] ?? now())
+            ->values();
+
         return view('control-calidad.dashboard', [
             'usuario' => $usuario,
             'prendasConRecibos' => $prendasConRecibos,
@@ -135,6 +228,81 @@ class ControlCalidadController extends Controller
     {
         try {
             $usuario = Auth::user();
+            if ($request->boolean('es_parcial')) {
+                $parcial = ReciboPorPartes::query()
+                    ->with(['pedido', 'prenda'])
+                    ->find((int) $idRecibo);
+
+                if (!$parcial) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Parcial no encontrado'
+                    ], 404);
+                }
+
+                $procesoCC = ProcesoPrenda::query()
+                    ->where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
+                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->latest('created_at')
+                    ->first();
+
+                if (!$procesoCC) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este parcial no está en Control de Calidad'
+                    ], 403);
+                }
+
+                DB::table('prenda_recibo_completado')->updateOrInsert(
+                    ['id_parcial' => (int) $parcial->id, 'area' => 'Control de Calidad'],
+                    [
+                        'id_recibo' => null,
+                        'numero_recibo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                        'nombre_operario' => (string) $usuario->name,
+                        'fecha_completado' => now(),
+                    ]
+                );
+
+                event(new \App\Events\ReciboCompletado([
+                    'recibo_id' => (int) $parcial->id,
+                    'consecutivo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                    'pedido_produccion_id' => (int) ($parcial->pedido_produccion_id ?? 0),
+                    'prenda_id' => $parcial->prenda_pedido_id ? (int) $parcial->prenda_pedido_id : null,
+                    'tipo_recibo' => (string) ($parcial->tipo_recibo ?? ''),
+                    'area' => 'Control de Calidad',
+                    'nombre_operario' => (string) ($usuario->name ?? ''),
+                ]));
+
+                try {
+                    broadcast(new \App\Events\ControlCalidadUpdated([
+                        'id' => (int) $parcial->id,
+                        'pedido' => $parcial->pedido?->numero_pedido,
+                        'cliente' => $parcial->pedido?->cliente,
+                        'prenda_id' => $parcial->prenda_pedido_id,
+                        'nombre_prenda' => $parcial->prenda?->nombre_prenda,
+                        'tipo_recibo' => $parcial->tipo_recibo,
+                        'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                        'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                        'es_parcial' => true,
+                        'parcial_id' => $parcial->id,
+                        'completado_area' => true,
+                        'area' => 'Control Calidad',
+                        'proceso_actual' => 'Control Calidad',
+                    ], 'updated', 'parcial'));
+                } catch (\Throwable $e) {
+                    \Log::warning('[ControlCalidadController] Error al broadcast ControlCalidadUpdated parcial completado', [
+                        'parcial_id' => (int) $parcial->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Parcial marcado como completado'
+                ]);
+            }
 
             $recibo = ConsecutivoReciboPedido::where('id', $idRecibo)
                 ->where('activo', 1)
@@ -201,6 +369,33 @@ class ControlCalidadController extends Controller
     public function deshacerRecibo(Request $request, $idRecibo)
     {
         try {
+            if ($request->boolean('es_parcial')) {
+                DB::table('prenda_recibo_completado')
+                    ->where('id_parcial', (int) $idRecibo)
+                    ->where('area', 'Control de Calidad')
+                    ->delete();
+
+                try {
+                    broadcast(new \App\Events\ControlCalidadUpdated([
+                        'id' => (int) $idRecibo,
+                        'es_parcial' => true,
+                        'parcial_id' => (int) $idRecibo,
+                        'completado_area' => false,
+                        'area' => 'Control Calidad',
+                    ], 'added', 'parcial'));
+                } catch (\Throwable $e) {
+                    \Log::warning('[ControlCalidadController] Error al broadcast ControlCalidadUpdated parcial deshecho', [
+                        'parcial_id' => (int) $idRecibo,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Marca de completado del parcial eliminada'
+                ]);
+            }
+
             DB::table('prenda_recibo_completado')
                 ->where('id_recibo', (int) $idRecibo)
                 ->where('area', 'Control de Calidad')

@@ -14,6 +14,18 @@
         }
         return 'pendiente';
     }
+    function formatearConsecutivoVisible($valor) {
+        $texto = trim((string) $valor);
+        if ($texto === '') {
+            return '';
+        }
+
+        if (is_numeric($texto)) {
+            $texto = rtrim(rtrim(number_format((float) $texto, 2, '.', ''), '0'), '.');
+        }
+
+        return $texto;
+    }
 @endphp
 
 @section('content')
@@ -43,14 +55,20 @@
                         $estadoClass = getEstadoClass($prenda['estado_pedido'] ?? 'pendiente');
                         $recibo = $prenda['recibos'][0] ?? null;
                         $tipoRecibo = $recibo['tipo_recibo'] ?? '';
-                        $consecutivoActual = $recibo['consecutivo_actual'] ?? null;
+                        $consecutivoActual = formatearConsecutivoVisible($recibo['consecutivo_actual'] ?? null);
                         $reciboCompletadoArea = (bool) ($recibo['completado_area'] ?? false);
+                        $esReflectivo = strtoupper(trim((string) $tipoRecibo)) === 'REFLECTIVO';
+                        $esParcial = (bool) ($recibo['es_parcial'] ?? false);
                     @endphp
-                    <div class="orden-card-simple"
+                    <div @class(['orden-card-simple', 'borde-reflectivo' => $esReflectivo])
+                         data-card-key="{{ $esParcial ? ('parcial-' . ($recibo['parcial_id'] ?? $recibo['id'] ?? '')) : ('recibo-' . ($recibo['id'] ?? '')) }}"
                          data-numero="{{ $prenda['numero_pedido'] }}"
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
-                         data-tipo-recibo="{{ strtoupper($tipoRecibo) }}">
+                         data-tipo-recibo="{{ strtoupper($tipoRecibo) }}"
+                         data-es-parcial="{{ $esParcial ? '1' : '0' }}"
+                         data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
+                         data-numero-recibo="{{ $recibo['id'] ?? '' }}">
 
                         <div class="orden-border {{ $estadoClass }}"></div>
 
@@ -58,7 +76,7 @@
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
-                                        <h4 class="orden-numero">#{{ $consecutivoActual ?: $prenda['numero_pedido'] }}</h4>
+                                <h4 class="orden-numero">#{{ $consecutivoActual !== '' ? $consecutivoActual : $prenda['numero_pedido'] }}</h4>
                                         <span class="estado-badge {{ $estadoClass }}">{{ $tipoRecibo ?: 'RECIBO' }}</span>
                                     </div>
                                 </div>
@@ -108,6 +126,8 @@
                                 <div class="orden-right-actions">
                                     <button class="btn-completar-recibo"
                                             data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                            data-es-parcial="{{ $esParcial ? '1' : '0' }}"
+                                            data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
                                             data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
                                             onclick="toggleCompletarRecibo(this); event.stopPropagation();">
                                         <span class="material-symbols-rounded">done</span>
@@ -115,6 +135,8 @@
                                     </button>
                                     <button class="btn-deshacer-recibo"
                                             data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                            data-es-parcial="{{ $esParcial ? '1' : '0' }}"
+                                            data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
                                             style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}"
                                             onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
                                         <span class="material-symbols-rounded">undo</span>
@@ -273,6 +295,7 @@
         display: flex;
         background: white;
         border: 1px solid #eee;
+        border-left: 4px solid transparent;
         border-radius: 6px;
         overflow: hidden;
         transition: all 0.3s ease;
@@ -281,24 +304,14 @@
 
     .orden-card-simple:hover {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-color: #ddd;
+    }
+
+    .orden-card-simple.borde-reflectivo {
+        border-left-color: #10b981;
     }
 
     .orden-border {
-        width: 4px;
-        flex-shrink: 0;
-    }
-
-    .orden-border.en-proceso {
-        background: #2196F3;
-    }
-
-    .orden-border.pendiente {
-        background: #FFC107;
-    }
-
-    .orden-border.completada {
-        background: #4CAF50;
+        display: none;
     }
 
     .recibo-completado-area {
@@ -620,17 +633,33 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
         const ordenesList = document.getElementById('ordenesList');
-        const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
         const tagsContainer = document.getElementById('reciboTags');
         const countEl = document.querySelector('.ordenes-count');
+        const getOrdenCards = () => ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
 
         let activeFilter = 'ALL';
+
+        function formatearConsecutivoVisibleJS(valor) {
+            const texto = String(valor ?? '').trim();
+            if (!texto) return '';
+
+            if (/^-?\d+(\.\d+)?$/.test(texto)) {
+                const numero = Number(texto);
+                if (Number.isFinite(numero)) {
+                    return String(numero).includes('.')
+                        ? String(numero).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')
+                        : String(numero);
+                }
+            }
+
+            return texto;
+        }
 
         function aplicarFiltros() {
             const busqueda = (searchInput?.value || '').toLowerCase().trim();
             let visibles = 0;
 
-            ordenCards.forEach(card => {
+            getOrdenCards().forEach(card => {
                 const numero = (card.dataset.numero || '').toLowerCase();
                 const prenda = (card.dataset.prenda || '').toLowerCase();
                 const cliente = (card.dataset.cliente || '').toLowerCase();
@@ -676,6 +705,148 @@
         }
 
         aplicarFiltros();
+
+        function crearCardControlCalidadDesdeEvento(orden, permitirReemplazo = false) {
+            if (!ordenesList || !orden) return null;
+
+            const recibo = Array.isArray(orden.recibos) ? orden.recibos[0] : (orden.recibo || null);
+            if (!recibo) return null;
+
+            const tipoRecibo = String(recibo.tipo_recibo || orden.tipo_recibo || '').toUpperCase();
+            const esReflectivo = tipoRecibo === 'REFLECTIVO';
+            const esParcial = String(recibo.es_parcial || orden.es_parcial || '0') === '1' || Boolean(recibo.es_parcial || orden.es_parcial);
+            const completadoArea = Boolean(recibo.completado_area || orden.completado_area);
+            const consecutivoActual = formatearConsecutivoVisibleJS(recibo.consecutivo_actual ?? orden.consecutivo_actual ?? '');
+            const numeroPedido = orden.numero_pedido || orden.pedido || '';
+            const prendaId = orden.prenda_id || recibo.prenda_id || '';
+            const parcialId = orden.parcial_id || recibo.parcial_id || '';
+            const areaActual = orden.proceso_actual || recibo.area || 'Control Calidad';
+            const cardKey = esParcial ? `parcial-${parcialId}` : `recibo-${recibo.id || orden.id || ''}`;
+
+            if (!permitirReemplazo && cardKey && document.querySelector(`[data-card-key="${cardKey}"]`)) {
+                return null;
+            }
+
+            const card = document.createElement('div');
+            card.className = `orden-card-simple${esReflectivo ? ' borde-reflectivo' : ''}`;
+            card.dataset.cardKey = cardKey;
+            card.dataset.numero = String(numeroPedido).toLowerCase();
+            card.dataset.prenda = String(orden.nombre_prenda || '').toLowerCase();
+            card.dataset.cliente = String(orden.cliente || '').toLowerCase();
+            card.dataset.tipoRecibo = tipoRecibo;
+            card.dataset.esParcial = esParcial ? '1' : '0';
+            card.dataset.parcialId = String(parcialId || '');
+            card.dataset.numeroRecibo = String(recibo.id || orden.id || '');
+
+            card.innerHTML = `
+                <div class="orden-border ${esParcial ? 'en-proceso' : ''}"></div>
+                <div class="orden-body ${completadoArea ? 'recibo-completado-area' : ''}">
+                    <div class="orden-left">
+                        <div class="orden-top">
+                            <div class="orden-numero-section">
+                                <h4 class="orden-numero">#${consecutivoActual || numeroPedido || ''}</h4>
+                                <span class="estado-badge ${String(areaActual).toLowerCase().includes('progreso') ? 'en-proceso' : (completadoArea ? 'completada' : 'pendiente')}">${tipoRecibo || 'RECIBO'}</span>
+                            </div>
+                        </div>
+
+                        <div class="orden-cliente">
+                            <p class="cliente-label">CLIENTE</p>
+                            <p class="cliente-name">${orden.cliente || ''}</p>
+                        </div>
+
+                        <div class="orden-prendas">
+                            <p class="prendas-label"><strong>${orden.nombre_prenda || 'Pedido'}</strong>${orden.descripcion ? ` — ${orden.descripcion}` : ''}</p>
+                        </div>
+
+                        ${areaActual ? `
+                            <div class="orden-cliente">
+                                <p class="cliente-label">ÁREA ACTUAL</p>
+                                <p class="cliente-name">${areaActual}</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="recibos-info">
+                            <div class="recibos-lista">
+                                <span class="recibo-badge recibo-${tipoRecibo.toLowerCase().replace(/-/g, '_')}">${tipoRecibo}</span>
+                            </div>
+                        </div>
+
+                        <div class="orden-buttons">
+                            <a class="btn-ver-recibos" href="/control-calidad/pedido/${numeroPedido}?tipo_recibo=${encodeURIComponent(tipoRecibo)}&prenda_id=${prendaId}">
+                                <span class="material-symbols-rounded">receipt</span>
+                                VER
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="orden-right-actions">
+                        <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                            <span class="material-symbols-rounded">done</span>
+                            ${completadoArea ? 'COMPLETADO' : 'COMPLETAR'}
+                        </button>
+                        <button class="btn-deshacer-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                            <span class="material-symbols-rounded">undo</span>
+                            DESHACER
+                        </button>
+                    </div>
+
+                    <div class="orden-right">
+                        <div class="orden-fecha">
+                            <span class="orden-fecha-label">PEDIDO</span>
+                            <span>#${numeroPedido}</span>
+                        </div>
+                        <div class="orden-fecha">
+                            <span class="orden-fecha-label">REGISTRO</span>
+                            <span>${orden.fecha_creacion ? new Date(orden.fecha_creacion).toLocaleDateString('es-CO') : ''}</span>
+                        </div>
+                        <a href="/control-calidad/pedido/${numeroPedido}?tipo_recibo=${encodeURIComponent(tipoRecibo)}&prenda_id=${prendaId}" class="action-arrow">
+                            <span class="material-symbols-rounded">arrow_forward</span>
+                        </a>
+                        <div class="orden-pedido-footer">
+                            <small>PEDIDO #${numeroPedido}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function insertarOActualizarCardControlCalidad(orden, accion = 'added') {
+            if (!ordenesList || !orden) return;
+
+            const tempCard = crearCardControlCalidadDesdeEvento(orden, true);
+            if (!tempCard) return;
+
+            const existente = tempCard.dataset.cardKey ? document.querySelector(`[data-card-key="${tempCard.dataset.cardKey}"]`) : null;
+
+            if (accion === 'added' || accion === 'updated') {
+                if (existente) {
+                    existente.remove();
+                }
+                const card = crearCardControlCalidadDesdeEvento(orden, true);
+                if (!card) return;
+                ordenesList.prepend(card);
+            } else if (accion === 'removed') {
+                if (existente) existente.remove();
+            }
+
+            aplicarFiltros();
+        }
+
+        if (window.Echo) {
+            window.Echo.channel('control-calidad')
+                .listen('ControlCalidadUpdated', (e) => {
+                    console.log('[Control Calidad] Evento realtime:', e);
+                    if (e?.tipo !== 'parcial') {
+                        return;
+                    }
+
+                    if (e?.action === 'added' || e?.action === 'removed' || e?.action === 'updated') {
+                        insertarOActualizarCardControlCalidad(e.orden || e, e.action);
+                    }
+                });
+        }
     });
 
     function abrirReciboControlCalidad(pedidoId, prendaId) {
@@ -692,6 +863,8 @@
         }
 
         const yaCompletado = btn.dataset.completado === '1';
+        const esParcial = btn.dataset.esParcial === '1';
+        const parcialId = btn.dataset.parcialId || reciboId;
         if (yaCompletado) {
             return;
         }
@@ -702,7 +875,11 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
+                },
+                body: JSON.stringify({
+                    es_parcial: esParcial,
+                    parcial_id: esParcial ? parcialId : null,
+                })
             });
 
             const data = await response.json();
@@ -733,6 +910,8 @@
         if (!reciboId) {
             return;
         }
+        const esParcial = btn.dataset.esParcial === '1';
+        const parcialId = btn.dataset.parcialId || reciboId;
 
         try {
             const response = await fetch(`/control-calidad/api/recibos/${reciboId}/deshacer`, {
@@ -740,7 +919,11 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
+                },
+                body: JSON.stringify({
+                    es_parcial: esParcial,
+                    parcial_id: esParcial ? parcialId : null,
+                })
             });
 
             const data = await response.json();

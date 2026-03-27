@@ -17,11 +17,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Events\EncargadoCosturaAsignado;
+use App\Events\ControlCalidadUpdated;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboAsignadoCosturero;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\ReciboPorPartes;
 use App\Models\User;
 
 class ReciboCosturaController extends Controller
@@ -495,6 +497,10 @@ class ReciboCosturaController extends Controller
                 ], 403);
             }
 
+            if ($request->boolean('es_parcial')) {
+                return $this->cambiarAreaControlCalidadParcial($request, (int) $pedidoId);
+            }
+
             $request->validate([
                 'prenda_id' => 'required|integer|exists:prendas_pedido,id',
                 'tipo_recibo' => 'required|string'
@@ -545,6 +551,10 @@ class ReciboCosturaController extends Controller
                 ], 403);
             }
 
+            if ($request->boolean('es_parcial')) {
+                return $this->deshacerControlCalidadParcial($request, (int) $pedidoId, (int) $prendaId);
+            }
+
             $request->validate([
                 'tipo_recibo' => 'required|string'
             ]);
@@ -582,6 +592,234 @@ class ReciboCosturaController extends Controller
     /**
      * Pasar recibo a Costura - crea proceso con encargado y actualiza área
      */
+    private function cambiarAreaControlCalidadParcial(Request $request, int $pedidoId)
+    {
+        $request->validate([
+            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            'tipo_recibo' => 'required|string',
+            'parcial_id' => 'required|integer|exists:recibo_por_partes,id',
+        ]);
+
+        $pedido = PedidoProduccion::findOrFail($pedidoId);
+        $tipoRecibo = strtoupper(trim((string) $request->tipo_recibo));
+
+        $parcial = ReciboPorPartes::query()
+            ->where('id', (int) $request->parcial_id)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', (int) $request->prenda_id)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
+            ->first();
+
+        if (!$parcial) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parcial no encontrado',
+            ], 404);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $procesoExistente = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->latest('created_at')
+                ->first();
+
+            if ($procesoExistente) {
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El parcial ya estaba en Control de Calidad',
+                    'data' => [
+                        'proceso_id' => $procesoExistente->id,
+                        'area_nueva' => 'Control Calidad',
+                        'parcial_id' => $parcial->id,
+                        'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                    ],
+                ]);
+            }
+
+            $nuevoProceso = ProcesoPrenda::create([
+                'numero_pedido' => $pedido->numero_pedido,
+                'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                'numero_recibo' => null,
+                'numero_recibo_parcial' => $parcial->consecutivo_parcial,
+                'proceso' => 'Control de Calidad',
+                'fecha_inicio' => now(),
+                'encargado' => 'control',
+                'estado_proceso' => 'En Progreso',
+                'codigo_referencia' => 'CCP-' . $parcial->consecutivo_parcial . '-' . date('YmdHis'),
+            ]);
+
+            DB::commit();
+
+            try {
+                $prenda = \App\Models\PrendaPedido::find($parcial->prenda_pedido_id);
+                broadcast(new ControlCalidadUpdated([
+                    'id' => (int) $parcial->id,
+                    'pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'nombre_prenda' => $prenda?->nombre_prenda,
+                    'descripcion' => $prenda?->descripcion,
+                    'tipo_recibo' => $parcial->tipo_recibo,
+                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                    'es_parcial' => true,
+                    'parcial_id' => (int) $parcial->id,
+                    'completado_area' => false,
+                    'area' => 'Control Calidad',
+                    'proceso_actual' => 'Control Calidad',
+                    'fecha_creacion' => now()->toISOString(),
+                    'numero_pedido' => $pedido->numero_pedido,
+                ], 'added', 'parcial'));
+            } catch (\Throwable $e) {
+                Log::warning('[COSTURA][DISTRIBUIR] Error broadcast ControlCalidadUpdated parcial', [
+                    'parcial_id' => (int) $parcial->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Parcial enviado a Control de Calidad correctamente',
+                'data' => [
+                    'proceso_id' => $nuevoProceso->id,
+                    'area_nueva' => 'Control Calidad',
+                    'parcial_id' => $parcial->id,
+                    'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error cambiando área de parcial a Control Calidad', [
+                'pedido_id' => $pedidoId,
+                'parcial_id' => (int) $request->parcial_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el área del parcial: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function deshacerControlCalidadParcial(Request $request, int $pedidoId, int $prendaId)
+    {
+        $request->validate([
+            'tipo_recibo' => 'required|string',
+            'parcial_id' => 'required|integer|exists:recibo_por_partes,id',
+        ]);
+
+        $pedido = PedidoProduccion::findOrFail($pedidoId);
+        $tipoRecibo = strtoupper(trim((string) $request->tipo_recibo));
+
+        $parcial = ReciboPorPartes::query()
+            ->where('id', (int) $request->parcial_id)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
+            ->first();
+
+        if (!$parcial) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parcial no encontrado',
+            ], 404);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $procesoCC = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->latest('created_at')
+                ->first();
+
+            if (!$procesoCC) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró proceso de Control de Calidad para este parcial',
+                ], 404);
+            }
+
+            $procesoAnterior = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->whereRaw('LOWER(TRIM(proceso)) NOT IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->latest('created_at')
+                ->first();
+
+            $areaAnterior = $procesoAnterior?->proceso ?: 'Costura';
+
+            $procesoCC->forceDelete();
+
+            DB::commit();
+
+            try {
+                broadcast(new ControlCalidadUpdated([
+                    'id' => (int) $parcial->id,
+                    'pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'nombre_prenda' => $parcial->prenda?->nombre_prenda,
+                    'descripcion' => $parcial->prenda?->descripcion,
+                    'tipo_recibo' => $parcial->tipo_recibo,
+                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                    'es_parcial' => true,
+                    'parcial_id' => (int) $parcial->id,
+                    'completado_area' => false,
+                    'area' => 'Costura',
+                    'proceso_actual' => $areaAnterior,
+                    'fecha_creacion' => now()->toISOString(),
+                    'numero_pedido' => $pedido->numero_pedido,
+                ], 'removed', 'parcial'));
+            } catch (\Throwable $e) {
+                Log::warning('[COSTURA][DISTRIBUIR] Error broadcast ControlCalidadUpdated parcial removido', [
+                    'parcial_id' => (int) $parcial->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Control de Calidad del parcial deshecho correctamente',
+                'data' => [
+                    'area_nueva' => $areaAnterior,
+                    'parcial_id' => $parcial->id,
+                    'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error deshaciendo Control de Calidad de parcial', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'parcial_id' => (int) $request->parcial_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deshacer el Control de Calidad del parcial: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function pasarACostura(Request $request, $pedidoId, $numeroRecibo)
     {
         try {

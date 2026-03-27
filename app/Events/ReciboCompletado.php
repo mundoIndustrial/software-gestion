@@ -13,7 +13,7 @@ class ReciboCompletado implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public int $reciboId;
-    public int $consecutivo;
+    public string $consecutivo;
     public int $pedidoProduccionId;
     public ?int $prendaId;
     public string $tipoRecibo;
@@ -23,7 +23,7 @@ class ReciboCompletado implements ShouldBroadcastNow
     public function __construct(array $data)
     {
         $this->reciboId = (int) ($data['recibo_id'] ?? 0);
-        $this->consecutivo = (int) ($data['consecutivo'] ?? 0);
+        $this->consecutivo = (string) ($data['consecutivo'] ?? '');
         $this->pedidoProduccionId = (int) ($data['pedido_produccion_id'] ?? 0);
         $this->prendaId = isset($data['prenda_id']) ? (int) $data['prenda_id'] : null;
         $this->tipoRecibo = (string) ($data['tipo_recibo'] ?? '');

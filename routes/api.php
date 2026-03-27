@@ -54,12 +54,6 @@ require base_path('routes/logo-cotizacion-tecnicas.php');
 require base_path('routes/api-pedidos.php');
 
 /**
- * Operario API Routes
- * Rutas públicas para consulta de pedidos
- */
-require base_path('routes/operario.php');
-
-/**
  * Personal y Horarios Routes
  * Gestión de personal, roles y horarios
  */

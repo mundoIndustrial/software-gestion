@@ -249,8 +249,8 @@ function cargarTallasPrenda(prendaId, tipoRecibo) {
             return Promise.resolve([]);
         }
         const numeroPedido = numeroPedidoCandidatos[idx];
-        // Usar la ruta correcta: api/operario/api/pedido/{numeroPedido}
-        return httpJson(`/api/operario/api/pedido/${numeroPedido}?${params.toString()}`, {
+        // Usar la ruta correcta: /operario/api/pedido/{numeroPedido}
+        return httpJson(`/operario/api/pedido/${numeroPedido}?${params.toString()}`, {
             method: 'GET'
         })
             .then((response) => response.json())
@@ -1286,10 +1286,21 @@ export function confirmarAsignacion() {
             }),
         })
             .then((r) => r.json())
-            .then((data) => {
+            .then(async (data) => {
                 if (data?.success) {
                     cerrarModalCostura();
                     mostrarExito('Éxito', data?.message || 'La distribución del recibo fue exitosa');
+
+                    if (
+                        document.getElementById('ordenesList') &&
+                        typeof window.__actualizarDashboardSinRecargar === 'function'
+                    ) {
+                        try {
+                            await window.__actualizarDashboardSinRecargar();
+                        } catch (refreshError) {
+                            console.warn('No se pudo actualizar el dashboard tras distribuir el recibo:', refreshError);
+                        }
+                    }
                 } else {
                     mostrarError('Error', data?.message || 'No se pudo guardar la distribución');
                 }
@@ -1477,4 +1488,3 @@ export function cerrarModalCostura() {
 window.seleccionarOpcionAsignacion = seleccionarOpcionAsignacion;
 window.confirmarAsignacion = confirmarAsignacion;
 window.cerrarModalCostura = cerrarModalCostura;
-

@@ -1,14 +1,44 @@
 export function initReciboFilters() {
-    window.filtrarPrendasPorRecibo = function (filtro) {
-        console.log(' [FILTRO] Iniciando filtro:', filtro);
+    function obtenerFiltroPrincipalActivo() {
+        const btnActivo = document.querySelector('.badge-filtro[data-filtro].badge-filtro-active');
+        return btnActivo?.dataset?.filtro || 'costura';
+    }
 
-        document.querySelectorAll('.badge-filtro').forEach((btn) => {
-            btn.classList.remove('badge-filtro-active');
-        });
-        const btnFiltro = document.querySelector(`[data-filtro="${filtro}"]`);
-        if (btnFiltro) {
-            btnFiltro.classList.add('badge-filtro-active');
+    function obtenerFiltroEncargadoActivo() {
+        return window.__vistaCosturaEncargadoFiltro || 'todos';
+    }
+
+    function actualizarBadgeSinEncargado(filtroPrincipal) {
+        const badgeCount = document.getElementById('badgeSinEncargadoCount');
+        if (!badgeCount) return;
+
+        const ordenesList = document.getElementById('ordenesList');
+        if (!ordenesList) {
+            badgeCount.textContent = '0';
+            return;
         }
+
+        const cards = Array.from(ordenesList.querySelectorAll('.orden-card-simple'));
+        const atributo = filtroPrincipal === 'reflectivo' ? 'sinEncargadoReflectivo' : 'sinEncargadoCostura';
+
+        const totalSinEncargado = cards.filter((card) => {
+            const tipos = String(card.dataset.tipoRecibo || '')
+                .split(',')
+                .map((valor) => valor.trim())
+                .filter(Boolean);
+
+            if (!tipos.includes(filtroPrincipal)) {
+                return false;
+            }
+
+            return String(card.dataset[atributo] || '0') === '1';
+        }).length;
+
+        badgeCount.textContent = String(totalSinEncargado);
+    }
+
+    function aplicarFiltrosDashboard(filtroPrincipal) {
+        console.log(' [FILTRO] Iniciando filtro:', filtroPrincipal);
 
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) {
@@ -16,11 +46,12 @@ export function initReciboFilters() {
             return;
         }
 
+        const filtroEncargado = obtenerFiltroEncargadoActivo();
         const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
-        console.log(` [FILTRO] Tarjetas encontradas: ${ordenCards.length}`);
-
         let mostradas = 0;
         let ocultadas = 0;
+
+        actualizarBadgeSinEncargado(filtroPrincipal);
 
         ordenCards.forEach((card, index) => {
             const tipoRecibo = card.dataset.tipoRecibo;
@@ -31,7 +62,7 @@ export function initReciboFilters() {
                 `Tarjeta ${index + 1}: Pedido=${numeroPedido}, Prenda=${nombrePrenda}, data-tipo-recibo="${tipoRecibo}"`
             );
 
-            if (filtro === 'todos') {
+            if (filtroPrincipal === 'todos') {
                 card.style.display = '';
                 const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
                 elementosFiltrables.forEach((elemento) => {
@@ -42,9 +73,14 @@ export function initReciboFilters() {
             }
 
             const tipos = tipoRecibo ? tipoRecibo.split(',').map((t) => t.trim()) : [];
+            const coincideFiltroPrincipal = tipos.includes(filtroPrincipal);
+            const atributoSinEncargado =
+                filtroPrincipal === 'reflectivo' ? 'sinEncargadoReflectivo' : 'sinEncargadoCostura';
+            const coincideFiltroEncargado =
+                filtroEncargado !== 'sin-encargado' || String(card.dataset[atributoSinEncargado] || '0') === '1';
 
-            if (tipos.includes(filtro)) {
-                console.log(`  Mostrando (contiene "${filtro}" en [${tipos.join(', ')}])`);
+            if (coincideFiltroPrincipal && coincideFiltroEncargado) {
+                console.log(`  Mostrando (contiene "${filtroPrincipal}" en [${tipos.join(', ')}])`);
                 card.style.display = '';
                 const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
                 elementosFiltrables.forEach((elemento) => {
@@ -53,16 +89,45 @@ export function initReciboFilters() {
                         .map((valor) => valor.trim())
                         .filter(Boolean);
 
-                    elemento.style.display = filtrosElemento.includes(filtro) ? '' : 'none';
+                    elemento.style.display = filtrosElemento.includes(filtroPrincipal) ? '' : 'none';
                 });
                 mostradas++;
             } else {
-                console.log(`  Ocultando (no contiene "${filtro}" en [${tipos.join(', ')}])`);
+                console.log(`  Ocultando (no coincide con filtros activos)`);
                 card.style.display = 'none';
                 ocultadas++;
             }
         });
 
         console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
+    }
+
+    window.filtrarPrendasPorRecibo = function (filtro) {
+        document.querySelectorAll('.badge-filtro[data-filtro]').forEach((btn) => {
+            btn.classList.remove('badge-filtro-active');
+        });
+        const btnFiltro = document.querySelector(`[data-filtro="${filtro}"]`);
+        if (btnFiltro) {
+            btnFiltro.classList.add('badge-filtro-active');
+        }
+
+        aplicarFiltrosDashboard(filtro);
     };
+
+    window.filtrarVistaCosturaEncargados = function (modo = 'todos') {
+        window.__vistaCosturaEncargadoFiltro = modo;
+
+        document.querySelectorAll('.badge-filtro[data-encargado-filtro]').forEach((btn) => {
+            btn.classList.toggle('badge-filtro-active', btn.dataset.encargadoFiltro === modo);
+        });
+
+        aplicarFiltrosDashboard(obtenerFiltroPrincipalActivo());
+    };
+
+    if (document.getElementById('vistaCosturaEncargadoFilters')) {
+        window.__vistaCosturaEncargadoFiltro = window.__vistaCosturaEncargadoFiltro || 'todos';
+        window.filtrarVistaCosturaEncargados(window.__vistaCosturaEncargadoFiltro);
+    } else {
+        actualizarBadgeSinEncargado(obtenerFiltroPrincipalActivo());
+    }
 }

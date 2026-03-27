@@ -404,10 +404,15 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
         `;
     }
 
+    const rolActual = String(document.body?.dataset?.userRole || window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+    const esVistaCostura = rolActual === 'vista-costura';
+
     // Generar tarjetas para cada parcial
     const parcialCards = parciales.map((parcial, index) => {
         const estadoParcial = String(parcial.proceso_estado || 'En Progreso');
         const badgeClass = `badge-estado-${estadoParcial.toLowerCase().replace(/\s+/g, '-')}`;
+        const areaParcial = String(parcial.area || 'SIN ASIGNAR');
+        const estaEnControlCalidad = ['control calidad', 'control de calidad'].includes(areaParcial.trim().toLowerCase());
         
         // Generar el HTML de tallas (S: 23, M: 1, L: 20, etc.)
         const tallasHTML = generarTallasHTML(parcial.tallas || []);
@@ -437,7 +442,7 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
                             <span class="parcial-label">Área</span>
                             <span class="parcial-value parcial-area">
                                 <span class="material-symbols-rounded">location_on</span>
-                                ${parcial.area || 'SIN ASIGNAR'}
+                                ${areaParcial}
                             </span>
                         </div>
                     </div>
@@ -460,6 +465,20 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
                     ` : ''}
 
                     <div class="parcial-row parcial-acciones">
+                        ${esVistaCostura ? `
+                        <button class="btn-pasar-cc"
+                                onclick="pasarAControlCalidad(this)"
+                                data-pedido-id="${parcial.pedido_produccion_id}"
+                                data-prenda-id="${parcial.prenda_pedido_id}"
+                                data-tipo-recibo="${String(parcial.tipo_recibo || '').replace(/"/g, '&quot;')}"
+                                data-recibo="${parcial.consecutivo_original}"
+                                data-parcial-id="${parcial.id}"
+                                data-es-parcial="1"
+                                data-area="${String(areaParcial).replace(/"/g, '&quot;')}">
+                            <span class="material-symbols-rounded">${estaEnControlCalidad ? 'undo' : 'check_circle'}</span>
+                            ${estaEnControlCalidad ? 'DESHACER C.C' : 'PASAR A C.C'}
+                        </button>
+                        ` : ''}
                         <button class="btn-ver-recibo-parcial" 
                                 onclick="verReciboParcial(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}', ${parcial.prenda_pedido_id || 'null'})">
                             <span class="material-symbols-rounded">visibility</span>
@@ -656,5 +675,4 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
 window.deshacerParcial = deshacerParcial;
 window.verReciboParcial = verReciboParcial;
-
 

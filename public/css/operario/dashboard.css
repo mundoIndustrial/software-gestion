@@ -183,6 +183,116 @@
     font-size: 1rem;
 }
 
+.operario-dashboard.is-vista-costura {
+    background: #f8faff;
+    padding: 0 0.35rem 1rem;
+}
+
+.operario-dashboard.is-vista-costura .search-section {
+    max-width: none;
+    margin: 0;
+    padding: 0.5rem 0.1rem 0;
+}
+
+.operario-dashboard.is-vista-costura .search-box {
+    padding: 0.9rem 3rem 0.9rem 1rem;
+    border: 1px solid #dbe2f3;
+    border-radius: 999px;
+    box-shadow: none;
+    font-size: 0.95rem;
+}
+
+.operario-dashboard.is-vista-costura .search-box:focus {
+    transform: none;
+}
+
+.operario-dashboard.is-vista-costura .search-section .material-symbols-rounded {
+    left: auto;
+    right: 1rem;
+    color: #111827;
+    font-size: 1.35rem;
+}
+
+.operario-dashboard.is-vista-costura .clear-filter-btn {
+    right: 2.75rem;
+}
+
+.operario-dashboard.is-vista-costura .ordenes-section {
+    max-width: none;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-principales {
+    background: #c9c9c9;
+    border-radius: 999px;
+    padding: 0.25rem;
+    margin: 0.55rem 0 0.85rem;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-principales .badge-filtro {
+    min-width: 104px;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.42rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: lowercase;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-principales .badge-filtro:not(.badge-filtro-active) {
+    color: #6b7280;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-principales .badge-filtro.badge-filtro-active {
+    background: #2563eb;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-secundarios {
+    background: transparent;
+    padding: 0;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #6b7280;
+    padding: 0.35rem 0.15rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro.badge-filtro-active {
+    background: #2563eb;
+    color: #fff;
+    padding: 0.45rem 0.95rem;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro:hover {
+    color: #475569;
+}
+
+.operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro.badge-filtro-active:hover {
+    color: #fff;
+}
+
+.operario-dashboard.is-vista-costura .badge-filtro-contador {
+    background: #dbe7ff;
+    color: #64748b;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+}
+
+.operario-dashboard.is-vista-costura .badge-filtro-active .badge-filtro-contador {
+    background: rgba(255, 255, 255, 0.24);
+    color: #fff;
+}
+
 /* Lista de órdenes */
 .operario-dashboard .ordenes-list {
     display: flex;
@@ -811,12 +921,13 @@
 .operario-dashboard .parcial-row.parcial-acciones {
     display: flex;
     gap: 0.75rem;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-top: 1rem;
     flex-wrap: wrap;
 }
 
 .operario-dashboard .btn-ver-recibo-parcial,
+.operario-dashboard .parcial-row.parcial-acciones .btn-pasar-cc,
 .operario-dashboard .btn-deshacer-parcial {
     display: inline-flex;
     align-items: center;
@@ -828,15 +939,22 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex: 1;
-    min-width: 120px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    width: fit-content;
 }
 
 /* Botón VER RECIBO para parcial */
+.operario-dashboard .parcial-row.parcial-acciones .btn-pasar-cc {
+    min-width: 0;
+    padding-inline: 0.85rem;
+}
+
 .operario-dashboard .btn-ver-recibo-parcial {
     background: white;
     color: #000;
     border: 2px solid #000;
+    min-width: 0;
 }
 
 .operario-dashboard .btn-ver-recibo-parcial:hover {
@@ -861,6 +979,7 @@
     color: white;
     border: 2px solid #f59e0b;
     box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2), 0 2px 4px -2px rgba(245, 158, 11, 0.1);
+    min-width: 0;
 }
 
 .operario-dashboard .btn-deshacer-parcial:hover {
@@ -882,6 +1001,29 @@
 @media (max-width: 768px) {
     .operario-dashboard {
         padding: 0.75rem;
+    }
+
+    .operario-dashboard .parcial-row.parcial-acciones {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        justify-content: stretch;
+    }
+
+    .operario-dashboard .parcial-row.parcial-acciones .btn-pasar-cc,
+    .operario-dashboard .btn-ver-recibo-parcial {
+        min-width: 0;
+        width: 100%;
+        padding-inline: 0.75rem;
+        font-size: 0.84rem;
+    }
+
+    .operario-dashboard .btn-deshacer-parcial {
+        grid-column: 1 / -1;
+        min-width: 0;
+        width: 100%;
+        padding-inline: 0.75rem;
+        font-size: 0.84rem;
     }
     
     .operario-dashboard .search-section,

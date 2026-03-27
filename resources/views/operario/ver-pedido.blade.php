@@ -1123,6 +1123,10 @@
      * Extrae las fotos solo de la prenda actualmente visible
      */
     function actualizarFotosPrenda() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+        const prendaIdParam = String(urlParams.get('prenda_id') || '').trim();
+        const esReciboParcial = tipoReciboParam === 'PARCIAL';
         const prendaIdx = window.prendaCarouselIndex || 0;
         const PRENDAS_POR_PAGINA = 1;
         const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
@@ -1136,7 +1140,9 @@
         const procesosDisponibles = window.todosProcesosDisponibles || [];
         const procesoActualSeleccionado = procesosDisponibles[procesoActualIndex] || null;
         
-        if (procesoActualSeleccionado) {
+        if (esReciboParcial && prendaIdParam !== '') {
+            prendas = prendas.filter(p => String(p?.id ?? p?.prenda_pedido_id ?? '') === prendaIdParam);
+        } else if (procesoActualSeleccionado) {
             prendas = prendas.filter(p => {
                 if (p.recibos && typeof p.recibos === 'object') {
                     return p.recibos[procesoActualSeleccionado] !== null && p.recibos[procesoActualSeleccionado] !== undefined;
@@ -2496,4 +2502,3 @@
         }
     }
 </style>
-

@@ -119,14 +119,12 @@ let currentPedidoNumeroMobile = null;
 // Esta función será llamada desde ver-pedido.blade.php cuando se carguen las fotos
 function loadGaleriaMobile(container) {
     // Obtener número de pedido
-    const pedidoElement = document.getElementById('mobile-numero-pedido');
+    const pedidoElement = document.getElementById('factura-container-mobile');
     if (!pedidoElement) {
         return;
     }
     
-    const pedidoText = pedidoElement.textContent;
-    const pedidoMatch = pedidoText.match(/\d+/);
-    const pedido = pedidoMatch ? pedidoMatch[0] : null;
+    const pedido = String(pedidoElement.getAttribute('data-numero-pedido') || '').trim();
     if (!pedido) {
         return;
     }
@@ -461,6 +459,9 @@ window.llenarReciboCosturaMobile = function(data) {
 
     const tipoReciboDataset = document.getElementById('factura-container-mobile')?.getAttribute('data-tipo-recibo') || '';
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
+    const urlParams = new URLSearchParams(window.location.search);
+    const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+    const esReciboParcial = tipoReciboUpper === 'PARCIAL' && consecutivoParcialParam !== '';
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
         if (tipoReciboUpper) {
@@ -700,6 +701,45 @@ window.llenarReciboCosturaMobile = function(data) {
         console.log('[OPERARIO] Estructura final:', JSON.stringify(estructura, null, 2));
         return estructura;
     };
+
+    const transformarTallasListaParcialAEstructura = (tallasArray) => {
+        if (!Array.isArray(tallasArray) || tallasArray.length === 0) {
+            return {};
+        }
+
+        const registros = tallasArray
+            .map((registro) => ({
+                genero: (registro?.genero || 'CABALLERO').toString().trim().toUpperCase(),
+                talla: (registro?.talla || '').toString().trim().toUpperCase(),
+                color_nombre: (registro?.color_nombre || '').toString().trim().toUpperCase(),
+                cantidad: parseInt(registro?.cantidad || 0, 10) || 0,
+            }))
+            .filter((registro) => registro.talla !== '' && registro.cantidad > 0);
+
+        if (registros.length === 0) {
+            return {};
+        }
+
+        const tieneColores = registros.some((registro) => registro.color_nombre !== '');
+        if (tieneColores) {
+            return transformarTallaColoresAEstructura(registros);
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {}
+        };
+
+        registros.forEach((registro) => {
+            if (!estructura[registro.genero]) {
+                estructura[registro.genero] = {};
+            }
+            estructura[registro.genero][registro.talla] = (estructura[registro.genero][registro.talla] || 0) + registro.cantidad;
+        });
+
+        return estructura;
+    };
     
     // ===== NAVEGACIÓN DE PROCESOS =====
     // Inicializar índice de proceso si no existe
@@ -732,8 +772,8 @@ window.llenarReciboCosturaMobile = function(data) {
         
         // IMPORTANTE: Aún sin navegación, debemos guardar los procesos disponibles
         // para que el filtrado de prendas funcione correctamente con el tipo_recibo seleccionado
-        const tieneCostu = todosProcesos.includes('COSTURA');
-        const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
+        const tieneCostu = todosProcesos.some((proceso) => String(proceso).trim().toUpperCase() === 'COSTURA');
+        const tieneReflectivo = todosProcesos.some((proceso) => String(proceso).trim().toUpperCase() === 'REFLECTIVO');
         let procesosCC = [];
         if (tieneCostu) procesosCC.push('COSTURA');
         if (tieneReflectivo) procesosCC.push('REFLECTIVO');
@@ -785,8 +825,8 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log(' [FILTRO PROCESOS] Es vista operario:', esVistaOperario);
     console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
     
-    if (userRole === 'costura-reflectivo' || userRole === 'vista-costura') {
-        // Para costura-reflectivo y vista-costura, mostrar COSTURA y REFLECTIVO en ese orden
+    if (userRole === 'costura-reflectivo' || userRole === 'vista-costura' || userRole === 'lider-reflectivo') {
+        // Para costura-reflectivo, lider-reflectivo y vista-costura, mostrar COSTURA y REFLECTIVO en ese orden
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
         procesosFiltrados = [];
@@ -1924,9 +1964,18 @@ window.llenarReciboCosturaMobile = function(data) {
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
                         // 🎨 NEW: Enriquecer con talla_colores si disponibles
                         let tallasObj = proceso.tallas;
+                        if (esReciboParcial) {
+                            if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando talla_colores del parcial:', prenda.talla_colores);
+                                tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                            } else if (Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando tallas del parcial:', prenda.tallas);
+                                tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
+                            }
+                        }
                         
                         // 🎨 Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
-                        if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
+                        if ((!tallasObj || Object.keys(tallasObj).length === 0) && proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
                             console.log('📱 [OPERARIO] Transformando talla_colores a estructura enriquecida:', proceso.talla_colores);
                             tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
                         } else if ((!tallasObj || Object.keys(tallasObj).length === 0) && !proceso.es_parcial) {

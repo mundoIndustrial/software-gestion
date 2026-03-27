@@ -669,6 +669,9 @@
             if (typeof window.Echo !== 'undefined') {
                 window.Echo.channel('control-calidad')
                     .listen('ControlCalidadUpdated', (e) => {
+                        if (e.tipo === 'parcial') {
+                            return;
+                        }
                         if (e.action === 'added') {
                             // Agregar nueva orden a la tabla correspondiente
                             agregarOrden(e.orden, e.tipo);
@@ -682,4 +685,3 @@
     </script>
 </body>
 </html>
-

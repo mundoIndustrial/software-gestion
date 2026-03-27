@@ -53,6 +53,49 @@ body {
     margin: 0;
 }
 
+body[data-user-role="vista-costura"] {
+    background: #eef2ff;
+}
+
+body[data-user-role="vista-costura"] .top-nav {
+    background: linear-gradient(90deg, #2450ef 0%, #2f67ff 100%);
+    border-bottom: none;
+    box-shadow: none;
+    padding: 1rem 1rem 1.1rem;
+}
+
+body[data-user-role="vista-costura"] .page-title {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+body[data-user-role="vista-costura"] .page-title .material-symbols-rounded {
+    font-size: 1.2rem;
+}
+
+body[data-user-role="vista-costura"] .user-info {
+    display: none;
+}
+
+body[data-user-role="vista-costura"] .notificaciones-btn,
+body[data-user-role="vista-costura"] .user-btn {
+    color: #fff;
+    background: transparent;
+}
+
+body[data-user-role="vista-costura"] .notificaciones-btn:hover,
+body[data-user-role="vista-costura"] .user-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+body[data-user-role="vista-costura"] .avatar-placeholder {
+    background: rgba(148, 163, 184, 0.9);
+    color: #fff;
+    border: none;
+}
+
 .nav-right {
     flex: 1;
     display: flex;

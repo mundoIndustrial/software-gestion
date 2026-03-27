@@ -53,8 +53,8 @@ async function actualizarListaSinRecargar() {
 
         actualOrdenesList.innerHTML = nuevoOrdenesList.innerHTML;
 
-        const nuevoCount = doc.querySelector('.ordenes-count');
-        const actualCount = document.querySelector('.ordenes-count');
+        const nuevoCount = doc.getElementById('ordenesCount');
+        const actualCount = document.getElementById('ordenesCount');
         if (nuevoCount && actualCount) {
             actualCount.textContent = nuevoCount.textContent;
         }
@@ -64,7 +64,7 @@ async function actualizarListaSinRecargar() {
         }
 
         if (typeof window.filtrarPrendasPorRecibo === 'function') {
-            const badgeActivo = document.querySelector('.badge-filtro-active');
+            const badgeActivo = document.querySelector('.badge-filtro[data-filtro].badge-filtro-active');
             const filtroActivo = badgeActivo ? badgeActivo.dataset.filtro : null;
             if (filtroActivo) {
                 window.filtrarPrendasPorRecibo(filtroActivo);
@@ -77,6 +77,8 @@ async function actualizarListaSinRecargar() {
         window.location.reload();
     }
 }
+
+window.__actualizarDashboardSinRecargar = actualizarListaSinRecargar;
 
 function ocultarOriginalReflectivoDistribuido(evento) {
     const rol = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
@@ -720,8 +722,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export { actualizarListaSinRecargar };
-
-
-
 
 

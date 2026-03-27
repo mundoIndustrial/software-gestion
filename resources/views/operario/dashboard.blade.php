@@ -1,7 +1,12 @@
 ﻿@extends('operario.layout')
 
 @section('title', 'Mis Órdenes')
-@section('page-title', '')
+@section('page-title')
+    <span style="display: inline-flex; align-items: center; gap: 0.6rem;">
+        <span class="material-symbols-rounded">checkroom</span>
+        <span>RECIBOS DE COSTURA</span>
+    </span>
+@endsection
 
 @php
     // Helper para obtener clase de estado
@@ -42,15 +47,10 @@
 
     <!-- Mis Prendas Section -->
     <div class="ordenes-section">
-        <div class="section-title">
-            <span class="material-symbols-rounded">checkroom</span>
-            <h3>RECIBOS DE COSTURA</h3>
-            <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
-        </div>
 
         <!-- Filtros por tipo de recibo para costura-reflectivo, lider-reflectivo y vista-costura -->
         @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura'))
-        <div class="filtros-badges">
+        <div class="filtros-badges filtros-badges-principales">
             @if(auth()->user()->hasRole('vista-costura'))
                 <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                     <span class="material-symbols-rounded">checkroom</span>
@@ -72,10 +72,23 @@
                 </button>
             @endif
         </div>
+        @if(auth()->user()->hasRole('vista-costura'))
+        <div class="filtros-badges filtros-badges-secundarios" id="vistaCosturaEncargadoFilters">
+            <button class="badge-filtro badge-filtro-active" data-encargado-filtro="todos" onclick="filtrarVistaCosturaEncargados('todos')">
+                <span class="material-symbols-rounded">apps</span>
+                Todos
+            </button>
+            <button class="badge-filtro" data-encargado-filtro="sin-encargado" onclick="filtrarVistaCosturaEncargados('sin-encargado')">
+                <span class="material-symbols-rounded">person_off</span>
+                Sin encargado
+                <span class="badge-filtro-contador" id="badgeSinEncargadoCount">0</span>
+            </button>
+        </div>
+        @endif
         @endif
 
         @if(auth()->user()->hasRole('administrador-costura'))
-        <div class="filtros-badges">
+        <div class="filtros-badges filtros-badges-principales">
             <button type="button" class="badge-filtro {{ ($tab ?? 'costura') === 'costura' ? 'badge-filtro-active' : '' }}" data-admin-tab="costura">
                 <span class="material-symbols-rounded">checkroom</span>
                 Costura
@@ -140,6 +153,18 @@
                         // Definir variables necesarias para el card
                         $reciboPrincipalCard = $prenda['recibos'][0] ?? null;
                         $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
+                        $reciboCosturaFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
+                            return in_array(strtoupper((string) ($recibo['tipo_recibo'] ?? '')), ['COSTURA', 'COSTURA-BODEGA'], true);
+                        });
+                        $reciboReflectivoFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
+                            return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
+                        });
+                        $sinEncargadoCosturaCard = $reciboCosturaFiltroCard
+                            && empty(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')))
+                            && !((bool) ($reciboCosturaFiltroCard['tiene_parciales'] ?? false));
+                        $sinEncargadoReflectivoCard = $reciboReflectivoFiltroCard
+                            && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')))
+                            && !((bool) ($reciboReflectivoFiltroCard['tiene_parciales'] ?? false));
                     @endphp
 
                     <div class="orden-card-simple {{ ((auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
@@ -149,6 +174,8 @@
                          data-pedido-parcial-id="{{ $prenda['recibos'][0]['pedido_parcial_id'] ?? '' }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
                          data-tipo-recibo="{{ $esReflectivo }}"
+                         data-sin-encargado-costura="{{ $sinEncargadoCosturaCard ? '1' : '0' }}"
+                         data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
                          data-numero-recibo="{{ $prenda['recibos'][0]['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
                          style="display: {{ $displayInicial }}">
                         
@@ -1123,6 +1150,31 @@ if (auth()->user()->hasRole('administrador-costura')) {
 
 <!-- Estilos responsive para mobile -->
 <style>
+.filtros-badges-secundarios {
+    margin-top: -0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.badge-filtro-contador {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.badge-filtro-active .badge-filtro-contador {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
 @media (max-width: 768px) {
     #modalCostura {
         padding: 0.5rem;
