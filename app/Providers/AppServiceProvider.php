@@ -138,38 +138,38 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ReciboPedidoServiceContract::class, \App\Infrastructure\Services\Pedidos\ReciboPedidoService::class);
         $this->app->bind(DespachoEstadoServiceContract::class, \App\Infrastructure\Services\Pedidos\DespachoEstadoService::class);
         $this->app->bind(DespachoValidadorServiceContract::class, \App\Infrastructure\Services\Pedidos\DespachoValidadorService::class);
-        $this->app->bind(ActualizarPrendaCompletaUseCaseContract::class, \App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase::class);
-        $this->app->bind(ActualizarPrendaPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\ActualizarPrendaPedidoUseCase::class);
-        $this->app->bind(CrearProcesoUseCaseContract::class, \App\Application\Pedidos\UseCases\CrearProcesoUseCase::class);
-        $this->app->bind(EliminarEppUseCaseContract::class, \App\Application\Pedidos\UseCases\EliminarEppUseCase::class);
-        $this->app->bind(HomologarEppUseCaseContract::class, \App\Application\Pedidos\UseCases\HomologarEppUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarPrendaCompletaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarPrendaCompletaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\CrearProduccionPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase::class);
-        $this->app->bind(EliminarPrendaPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\EliminarPrendaPedidoUseCase::class);
-        $this->app->bind(EliminarProcesoUseCaseContract::class, \App\Application\Pedidos\UseCases\EliminarProcesoUseCase::class);
-        $this->app->bind(GuardarDespachoUseCaseContract::class, \App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase::class);
+        $this->app->bind(ActualizarPrendaCompletaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ActualizarPrendaCompletaUseCase::class);
+        $this->app->bind(ActualizarPrendaPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ActualizarPrendaPedidoUseCase::class);
+        $this->app->bind(CrearProcesoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\CrearProcesoUseCase::class);
+        $this->app->bind(EliminarEppUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EliminarEppUseCase::class);
+        $this->app->bind(HomologarEppUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\HomologarEppUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarPrendaCompletaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarPrendaCompletaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\CrearProduccionPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\CrearProduccionPedidoUseCase::class);
+        $this->app->bind(EliminarPrendaPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EliminarPrendaPedidoUseCase::class);
+        $this->app->bind(EliminarProcesoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EliminarProcesoUseCase::class);
+        $this->app->bind(GuardarDespachoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\Despacho\GuardarDespachoUseCase::class);
         $this->app->bind(ActualizarVariantePrendaHandlerContract::class, \App\Infrastructure\CommandHandlers\Pedidos\ActualizarVariantePrendaHandler::class);
         $this->app->bind(CrearPedidoCompletoHandlerContract::class, \App\Infrastructure\CommandHandlers\Pedidos\CrearPedidoCompletoHandler::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarColorTelaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarColorTelaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarEppUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarEppUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenEppUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarImagenEppUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenProcesoUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarImagenProcesoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenTelaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarImagenTelaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarProcesoPrendaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarProcesoPrendaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarTallaPrendaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarTallaPrendaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarTallaProcesoPrendaUseCaseContract::class, \App\Application\Pedidos\UseCases\AgregarTallaProcesoPrendaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCaseContract::class, \App\Application\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\CambiarEstadoPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\EditarProcesoUseCaseContract::class, \App\Application\Pedidos\UseCases\EditarProcesoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\EliminarImagenPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\EliminarImagenPedidoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\EliminarProcesosListaUseCaseContract::class, \App\Application\Pedidos\UseCases\EliminarProcesosListaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerAnchoMetrajePrendaUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerAnchoMetrajePrendaUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerCotizacionesUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerCotizacionesUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerDatosEdicionUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerDatosEdicionUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerDatosParaCrearPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerDatosParaCrearPedidoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerHistorialProcesosUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase::class);
-        $this->app->bind(\App\Domain\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCaseContract::class, \App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarColorTelaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarColorTelaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarEppUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarEppUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenEppUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarImagenEppUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenProcesoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarImagenProcesoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarImagenTelaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarImagenTelaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarProcesoPrendaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarProcesoPrendaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarTallaPrendaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarTallaPrendaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\AgregarTallaProcesoPrendaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\AgregarTallaProcesoPrendaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\CalcularFechaEntregaEstimadaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\CambiarEstadoPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\CambiarEstadoPedidoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\EditarProcesoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EditarProcesoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\EliminarImagenPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EliminarImagenPedidoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\EliminarProcesosListaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\EliminarProcesosListaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerAnchoMetrajePrendaUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerAnchoMetrajePrendaUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerCotizacionesUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerCotizacionesUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerDatosEdicionUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerDatosEdicionUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerDatosParaCrearPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerDatosParaCrearPedidoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerHistorialProcesosUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerHistorialProcesosUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\ObtenerProcesosPorPedidoUseCase::class);
+        $this->app->bind(\App\Domain\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCaseContract::class, \App\Application\Pedidos\InternalUseCases\PrepararCreacionProduccionPedidoUseCase::class);
 
         // Registrar implementaciones de Procesos (DDD)
         $this->app->bind(
@@ -349,8 +349,5 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 }
-
-
-
 
 
