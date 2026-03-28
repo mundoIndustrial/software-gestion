@@ -7,7 +7,6 @@ use App\Application\Services\Asesores\PerfilService;
 
 /**
  * ActualizarPerfilAsesorUseCase
- * 
  * Use Case para actualizar el perfil del asesor
  * Encapsula la lógica de validación y actualizacion de datos
  */

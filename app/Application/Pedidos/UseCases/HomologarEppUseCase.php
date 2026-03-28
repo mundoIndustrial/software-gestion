@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\HomologarEppUseCaseContract;
+
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\PedidoProduccion;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * Maneja: novedades, soft delete del EPP anterior, creación del EPP nuevo
  * y duplicación de imágenes al nuevo registro.
  */
-final class HomologarEppUseCase
+final class HomologarEppUseCase implements HomologarEppUseCaseContract
 {
     public function ejecutar(
         int $pedidoId,
@@ -88,3 +90,8 @@ final class HomologarEppUseCase
         ];
     }
 }
+
+
+
+
+

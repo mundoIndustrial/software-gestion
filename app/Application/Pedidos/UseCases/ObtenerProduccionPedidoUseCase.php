@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Obtener Producción Pedido
- * 
  * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
- * 
  * Antes: 22 lineas (7 lineas de lógica actual + 15 lineas duplicadas)
  * despues: 12 lineas (solo implementa personalización)
  * Reducción: 45%

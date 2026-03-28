@@ -8,7 +8,6 @@ use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Agregar Item a Pedido
- * 
  * Responsabilidad:
  * - Validar datos del item
  * - Agregar item a la sesión de construcción

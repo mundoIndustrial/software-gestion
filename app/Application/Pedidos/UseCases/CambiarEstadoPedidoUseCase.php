@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\CambiarEstadoPedidoUseCaseContract;
+
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  * - Mensajes de error consistentes
  * - Menos código repetido
  */
-final class CambiarEstadoPedidoUseCase
+final class CambiarEstadoPedidoUseCase implements CambiarEstadoPedidoUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -72,5 +74,18 @@ final class CambiarEstadoPedidoUseCase
 
         return $pedido;
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {CambiarEstadoPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerAnchoMetrajePrendaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\ObtenerAnchoMetrajePrendaResponse;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoAnchoGeneral;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Nota: Este es un catálogo público, sin autenticación requerida.
  */
-class ObtenerAnchoMetrajePrendaUseCase
+class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCaseContract
 {
     /**
      * Ejecuta el caso de uso
@@ -118,4 +120,18 @@ class ObtenerAnchoMetrajePrendaUseCase
             'tipo_modo' => $item->tipo_modo ?? 'color'
         ])->toArray();
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerAnchoMetrajePrendaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

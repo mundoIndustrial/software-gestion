@@ -6,22 +6,17 @@ use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Infrastructure\Services\Pedidos\PrendaImageService;
+use App\Domain\Pedidos\UseCases\AgregarPrendaCompletaUseCaseContract;
 use App\Infrastructure\Services\Pedidos\PedidoTallaBuilder;
 use App\Infrastructure\Services\Pedidos\PedidoTelaBuilder;
 use App\Infrastructure\Services\Pedidos\PedidoTipoPrendaService;
 use App\Infrastructure\Services\Pedidos\PedidoVarianteBuilder;
-use App\Infrastructure\Services\Pedidos\PrendaProcesoService;
+use App\Infrastructure\Services\Pedidos\PrendaImageService;
 use App\Infrastructure\Services\Pedidos\PrendaNovedadService;
+use App\Infrastructure\Services\Pedidos\PrendaProcesoService;
 use App\Models\PrendaPedido;
 
-/**
- * Use Case para agregar una prenda al pedido con fotos y tallas.
- *
- * Mantiene compatibilidad funcional con el flujo legado mientras
- * delega las responsabilidades operativas a builders especializados.
- */
-final class AgregarPrendaCompletaUseCase
+final class AgregarPrendaCompletaUseCase implements AgregarPrendaCompletaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -86,3 +81,8 @@ final class AgregarPrendaCompletaUseCase
         });
     }
 }
+
+
+
+
+

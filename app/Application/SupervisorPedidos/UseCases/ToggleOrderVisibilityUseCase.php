@@ -4,26 +4,31 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\ToggleOrderVisibilityRequest;
 use App\Application\SupervisorPedidos\DTOs\ToggleOrderVisibilityResponse;
-use App\Models\PedidoProduccion;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ToggleOrderVisibilityUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadService $readService
+    ) {}
+
     public function execute(ToggleOrderVisibilityRequest $request): ToggleOrderVisibilityResponse
     {
         try {
-            $orden = PedidoProduccion::findOrFail($request->getOrderId());
             $usuario = Auth::user();
             $isHiding = $request->isHidden();
 
-            if ($isHiding) {
-                $this->hideOrder($orden, $usuario);
-                $message = 'Pedido ocultado correctamente';
-            } else {
-                $this->showOrder($orden, $usuario);
-                $message = 'Pedido mostrado correctamente';
-            }
+            $this->readService->setOrderVisibility(
+                $request->getOrderId(),
+                $isHiding,
+                $usuario->id ?? null
+            );
+
+            $message = $isHiding
+                ? 'Pedido ocultado correctamente'
+                : 'Pedido mostrado correctamente';
 
             return new ToggleOrderVisibilityResponse(true, $message);
 
@@ -35,31 +40,5 @@ class ToggleOrderVisibilityUseCase
 
             return new ToggleOrderVisibilityResponse(false, 'Error al cambiar visibilidad del pedido: ' . $e->getMessage());
         }
-    }
-
-    private function hideOrder(PedidoProduccion $orden, $usuario): void
-    {
-        $orden->update([
-            'ocultado_en' => now(),
-            'usuario_ocultado_por' => $usuario->id ?? null,
-        ]);
-
-        Log::info("Pedido #{$orden->numero_pedido} ocultado en supervisor-pedidos por " . ($usuario->name ?? 'Sistema'), [
-            'fecha' => now(),
-            'usuario_id' => $usuario->id ?? null,
-        ]);
-    }
-
-    private function showOrder(PedidoProduccion $orden, $usuario): void
-    {
-        $orden->update([
-            'ocultado_en' => null,
-            'usuario_ocultado_por' => null,
-        ]);
-
-        Log::info("Pedido #{$orden->numero_pedido} mostrado nuevamente en supervisor-pedidos por " . ($usuario->name ?? 'Sistema'), [
-            'fecha' => now(),
-            'usuario_id' => $usuario->id ?? null,
-        ]);
     }
 }

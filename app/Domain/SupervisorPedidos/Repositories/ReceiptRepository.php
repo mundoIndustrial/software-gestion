@@ -28,4 +28,49 @@ interface ReceiptRepository
     public function findByIdWithDetails(int $receiptId): ?array;
 
     public function approve(int $receiptId): ?array;
+
+    /**
+     * @return array<int, object>
+     */
+    public function findPendingEmbroideryStampingReceipts(array $receiptTypes): array;
+
+    /**
+     * @param array<int, int|string> $prendaIds
+     * @return array<int|string, int>
+     */
+    public function sumQuantitiesByPrendaIds(array $prendaIds): array;
+
+    /**
+     * @param array<int, int|string> $partialIds
+     * @return array<int|string, int>
+     */
+    public function sumQuantitiesByPartialIds(array $partialIds): array;
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<int, object>
+     */
+    public function findPendingSewingReceipts(array $filters): array;
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<int, object>
+     */
+    public function findPendingQualityControlReceipts(array $filters): array;
+
+    /**
+     * @return array<int, object>
+     */
+    public function findGarmentsWithColorsByPrendaId(int $prendaId): array;
+
+    /**
+     * @return array<int, object>
+     */
+    public function findGarmentsWithoutColorsByPrendaId(int $prendaId): array;
+
+    public function getSewingReceiptFilterOptions(string $field): array;
+
+    public function getQualityControlReceiptFilterOptions(string $field): array;
+
+    public function generateNextConsecutiveForType(string $receiptType): string;
 }

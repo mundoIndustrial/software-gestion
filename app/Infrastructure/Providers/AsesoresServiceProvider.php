@@ -123,9 +123,7 @@ class AsesoresServiceProvider extends ServiceProvider
         
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
-            return new CrearProduccionPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return $app->build(CrearProduccionPedidoUseCase::class);
         });
 
         // Confirmar Pedido
@@ -165,7 +163,7 @@ class AsesoresServiceProvider extends ServiceProvider
 
         // Preparar Creación Pedido
         $this->app->singleton(PrepararCreacionProduccionPedidoUseCase::class, function ($app) {
-            return new PrepararCreacionProduccionPedidoUseCase();
+            return $app->build(PrepararCreacionProduccionPedidoUseCase::class);
         });
 
         // Agregar Prenda Simple
@@ -267,3 +265,5 @@ class AsesoresServiceProvider extends ServiceProvider
         // Aquí irían eventos, listeners, etc.
     }
 }
+
+

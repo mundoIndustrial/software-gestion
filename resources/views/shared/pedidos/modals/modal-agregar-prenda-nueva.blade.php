@@ -109,10 +109,10 @@
                     <!-- Datalists ocultos (necesarios para autocompletar en otros JS) -->
                     <div style="display: none;">
                         <datalist id="opciones-telas">
-                            <!-- Opciones cargadas desde /asesores/api/telas -->
+                            <!-- Opciones cargadas desde /api/asesores/telas -->
                         </datalist>
                         <datalist id="opciones-colores">
-                            <!-- Opciones cargadas desde /asesores/api/colores -->
+                            <!-- Opciones cargadas desde /api/asesores/colores -->
                         </datalist>
                     </div>
                     
@@ -312,7 +312,7 @@
                                                 <label for="manga-input" class="sr-only">Tipo de Manga</label>
                                                 <input type="text" id="manga-input" placeholder="Ej: Larga, Corta, 3/4..." disabled list="opciones-manga" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
                                                 <datalist id="opciones-manga">
-                                                    <!-- Las opciones se cargarán dinámicamente desde /asesores/api/tipos-manga -->
+                                                    <!-- Las opciones se cargarán dinámicamente desde /api/asesores/tipos-manga -->
                                                 </datalist>
                                             </div>
                                             <div>

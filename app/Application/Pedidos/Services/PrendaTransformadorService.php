@@ -2,112 +2,16 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Models\TipoManga;
-use App\Models\TipoBrocheBoton;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Domain\Pedidos\Services\PrendaTransformadorServiceContract;
 
-/**
- * PrendaTransformadorService
- * 
- * Servicio que encapsula la lógica de transformación de prendas para edición.
- * 
- * Responsabilidades:
- * - Enriquecer variantes con nombres de tipos (manga, broche)
- * - Cargar tallas con colores por prenda
- * - Preparar datos para formulario de edición
- */
 class PrendaTransformadorService
 {
-    /**
-     * Transforma variantes enriqueciendo con nombres de tipos
-     */
-    public function enriquecerVariantes(object $prenda): void
+    public function __construct(private readonly PrendaTransformadorServiceContract $service)
     {
-        if (!$prenda->variantes) {
-            return;
-        }
-
-        foreach ($prenda->variantes as $variante) {
-            // Cargar nombre de manga si existe
-            if ($variante->tipo_manga_id && $variante->manga_nombre === null) {
-                try {
-                    $manga = TipoManga::find($variante->tipo_manga_id);
-                    $variante->manga_nombre = $manga?->nombre;
-                } catch (\Exception $e) {
-                    Log::debug('[PrendaTransformadorService] Error obtener manga', [
-                        'tipo_manga_id' => $variante->tipo_manga_id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-
-            // Cargar nombre de broche si existe
-            if ($variante->tipo_broche_boton_id && $variante->broche_nombre === null) {
-                try {
-                    $broche = TipoBrocheBoton::find($variante->tipo_broche_boton_id);
-                    $variante->broche_nombre = $broche?->nombre;
-                } catch (\Exception $e) {
-                    Log::debug('[PrendaTransformadorService] Error obtener broche', [
-                        'tipo_broche_boton_id' => $variante->tipo_broche_boton_id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-        }
     }
 
-    /**
-     * Carga talla_colores para una prenda desde la BD
-     */
-    public function cargarTallaColores(object $prenda): void
+    public function __call(string $name, array $arguments): mixed
     {
-        try {
-            $tallaColores = DB::table('prenda_pedido_talla_colores as ptc')
-                ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
-                ->where('pt.prenda_pedido_id', $prenda->id)
-                ->select([
-                    'ptc.id',
-                    'ptc.prenda_pedido_talla_id',
-                    'pt.genero',
-                    'pt.talla',
-                    'ptc.tela_id',
-                    'ptc.tela_nombre',
-                    'ptc.color_id',
-                    'ptc.color_nombre',
-                    'ptc.cantidad'
-                ])
-                ->get()
-                ->toArray();
-
-            $prenda->talla_colores = $tallaColores;
-
-            Log::debug('[PrendaTransformadorService] Talla colores cargados', [
-                'prenda_id' => $prenda->id,
-                'cantidad' => count($tallaColores)
-            ]);
-
-        } catch (\Exception $e) {
-            Log::warning('[PrendaTransformadorService] Error cargando talla_colores', [
-                'prenda_id' => $prenda->id,
-                'error' => $e->getMessage()
-            ]);
-            $prenda->talla_colores = [];
-        }
-    }
-
-    /**
-     * Enriquece todas las prendas con datos de edición
-     */
-    public function enriquecerPrendas($prendas): void
-    {
-        if (!$prendas) {
-            return;
-        }
-
-        foreach ($prendas as $prenda) {
-            $this->enriquecerVariantes($prenda);
-            $this->cargarTallaColores($prenda);
-        }
+        return $this->service->call($name, $arguments);
     }
 }

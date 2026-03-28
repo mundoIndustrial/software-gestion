@@ -2,17 +2,17 @@
 
 namespace App\Infrastructure\Containers;
 
-use App\Application\UseCases\Orders\GetOrdersQueryUseCase;
-use App\Application\UseCases\Orders\GetOrderImagesQueryUseCase;
-use App\Application\UseCases\Orders\GetOrderDetailsQueryUseCase;
-use App\Application\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
-use App\Application\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
-use App\Application\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularDiasUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
-use App\Application\UseCases\RegistroOrden\GetRecibosDatosUseCase;
-use App\Application\UseCases\RegistroOrden\GetNovedadesUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetOrdersQueryUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetOrderImagesQueryUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetOrderDetailsQueryUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetRecibosDatosUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetNovedadesUseCase;
 
 /**
  * RegistroOrdenUseCasesFacade
@@ -35,3 +35,5 @@ final class RegistroOrdenUseCasesFacade
         public readonly GetNovedadesUseCase $getNovedadesUseCase,
     ) {}
 }
+
+

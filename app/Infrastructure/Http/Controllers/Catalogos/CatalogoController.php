@@ -3,8 +3,8 @@
 namespace App\Infrastructure\Http\Controllers\Catalogos;
 
 use App\Http\Controllers\Controller;
-use App\Application\UseCases\Catalogo\ObtenerTipoPrendasUseCase;
-use App\Application\UseCases\Catalogo\ReconocerPrendaUseCase;
+use App\Application\Pedidos\UseCases\Catalogo\ObtenerTipoPrendasUseCase;
+use App\Application\Pedidos\UseCases\Catalogo\ReconocerPrendaUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -78,3 +78,4 @@ class CatalogoController extends Controller
         }
     }
 }
+

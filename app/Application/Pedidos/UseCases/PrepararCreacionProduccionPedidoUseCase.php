@@ -2,9 +2,11 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCaseContract;
+
 use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
 
-class PrepararCreacionProduccionPedidoUseCase
+class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProduccionPedidoUseCaseContract
 {
     public function ejecutar(PrepararCreacionProduccionPedidoDTO $dto): array
     {
@@ -43,5 +45,18 @@ class PrepararCreacionProduccionPedidoUseCase
             'cotizacion' => $cotizacion
         ];
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {PrepararCreacionProduccionPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

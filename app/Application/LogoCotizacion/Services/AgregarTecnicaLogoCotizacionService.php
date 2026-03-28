@@ -10,7 +10,6 @@ use InvalidArgumentException;
 
 /**
  * AgregarTecnicaLogoCotizacionService
- * 
  * Servicio de aplicación que maneja la lógica de agregar una técnica a una cotización
  */
 class AgregarTecnicaLogoCotizacionService
@@ -22,13 +21,11 @@ class AgregarTecnicaLogoCotizacionService
 
     /**
      * Agregar una técnica a una cotización
-     * 
      * @param int $logoCotizacionId - ID de la cotización
      * @param int $tipoTecnicaId - ID del tipo de técnica (1=Bordado, 2=Estampado, etc)
      * @param array $prendas - Array de prendas a agregar
      * @param string|null $observaciones - Observaciones técnicas
      * @param string|null $instrucciones - Instrucciones especiales
-     * 
      * @return TecnicaLogoCotizacion
      * @throws InvalidArgumentException
      */

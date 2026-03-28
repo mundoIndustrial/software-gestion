@@ -108,16 +108,14 @@ class FilterService {
             container.style.opacity = '0.6';
             container.style.pointerEvents = 'none';
 
-            const html = await this.repository.fetchPageContent(urlString);
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const next = doc.getElementById('supervisorPedidosIndexContent');
+            const data = await this.repository.fetchOrdersData(urlString);
 
-            if (!next) {
+            if (typeof window.renderSupervisorOrdersTable !== 'function') {
                 window.location.href = urlString;
                 return false;
             }
 
-            container.innerHTML = next.innerHTML;
+            window.renderSupervisorOrdersTable(data);
 
             if (pushState) {
                 window.history.pushState({ url: urlString }, '', urlString);

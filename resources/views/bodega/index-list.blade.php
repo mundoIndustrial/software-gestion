@@ -782,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('[Bodega Realtime] Escuchando actualizaciones de pedidos...');
         
         // Escuchar actualizaciones de pedidos desde cartera
-        window.EchoInstance.channel('despacho.pedidos')
+        window.EchoInstance.channel('pedidos.general')
             .listen('.pedido.actualizado', function(e) {
                 console.log('[Bodega Realtime] Pedido actualizado:', e);
                 
@@ -820,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('[Bodega Realtime] Error en WebSocket:', error);
             });
             
-        console.log('[Bodega Realtime]  Conectado al canal despacho.pedidos');
+        console.log('[Bodega Realtime]  Conectado al canal pedidos.general');
     } else {
         console.log('[Bodega Realtime] ⚠️ Echo no disponible, usando fallback de polling');
         
@@ -833,3 +833,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+

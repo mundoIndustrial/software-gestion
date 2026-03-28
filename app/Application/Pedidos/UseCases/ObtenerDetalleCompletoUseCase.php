@@ -5,8 +5,8 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\ObtenerDetalleCompletoResponse;
 use App\Application\Pedidos\Services\PedidoAuthorizationService;
 use App\Application\Pedidos\Services\PedidoFiltroService;
+use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use App\Models\PedidoProduccion;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -31,15 +31,18 @@ class ObtenerDetalleCompletoUseCase
     private ObtenerPedidoUseCase $obtenerPedidoUseCase;
     private PedidoAuthorizationService $authService;
     private PedidoFiltroService $filtroService;
+    private PedidoDetalleReadService $readService;
 
     public function __construct(
         ObtenerPedidoUseCase $obtenerPedidoUseCase,
         PedidoAuthorizationService $authService,
-        PedidoFiltroService $filtroService
+        PedidoFiltroService $filtroService,
+        PedidoDetalleReadService $readService
     ) {
         $this->obtenerPedidoUseCase = $obtenerPedidoUseCase;
         $this->authService = $authService;
         $this->filtroService = $filtroService;
+        $this->readService = $readService;
     }
 
     /**
@@ -113,11 +116,7 @@ class ObtenerDetalleCompletoUseCase
      */
     private function obtenerPedido(int $idONumero): PedidoProduccion
     {
-        $pedido = PedidoProduccion::find($idONumero);
-
-        if (!$pedido) {
-            $pedido = PedidoProduccion::where('numero_pedido', $idONumero)->first();
-        }
+        $pedido = $this->readService->findPedidoByIdOrNumero($idONumero);
 
         if (!$pedido) {
             throw new \DomainException("Pedido {$idONumero} no encontrado");
@@ -172,9 +171,7 @@ class ObtenerDetalleCompletoUseCase
     private function cargarTallasDetalle(array &$proceso): void
     {
         try {
-            $tallas = DB::table('pedidos_procesos_prenda_tallas')
-                ->where('proceso_prenda_detalle_id', $proceso['id'])
-                ->get(['genero', 'talla', 'cantidad', 'es_sobremedida', 'ubicaciones', 'observaciones']);
+            $tallas = $this->readService->getProcesoTallasDetalle((int) $proceso['id']);
 
             if ($tallas->count() > 0) {
                 $proceso['tallas_detalle'] = $tallas->map(function ($t) {
@@ -202,11 +199,7 @@ class ObtenerDetalleCompletoUseCase
     private function cargarObservacionesPorTalla(array &$proceso): void
     {
         try {
-            $tallasObs = DB::table('pedidos_procesos_prenda_tallas')
-                ->where('proceso_prenda_detalle_id', $proceso['id'])
-                ->whereNotNull('observaciones')
-                ->where('observaciones', '!=', '')
-                ->get(['genero', 'talla', 'observaciones']);
+            $tallasObs = $this->readService->getProcesoTallasConObservaciones((int) $proceso['id']);
 
             $obsPorTalla = [
                 'dama' => [],
@@ -276,18 +269,10 @@ class ObtenerDetalleCompletoUseCase
     private function cargarAnchometrajePrenda(int $pedidoId, int $prendaId, array &$prenda): void
     {
         try {
-            $ancho = DB::table('pedido_ancho_general')
-                ->where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->latest('created_at')
-                ->first();
+            $ancho = $this->readService->getAnchoPrenda($pedidoId, $prendaId);
 
             if ($ancho) {
-                $metrajes = DB::table('pedido_metraje_color')
-                    ->where('pedido_produccion_id', $pedidoId)
-                    ->where('prenda_pedido_id', $prendaId)
-                    ->latest('created_at')
-                    ->get();
+                $metrajes = $this->readService->getMetrajesPrenda($pedidoId, $prendaId);
 
                 $prenda['ancho_metraje'] = [
                     'ancho' => $ancho->ancho,
@@ -322,27 +307,8 @@ class ObtenerDetalleCompletoUseCase
     private function obtenerConsecutivosPrenda(int $pedidoId, int $prendaId): ?array
     {
         try {
-            $consecutivos = DB::table('consecutivos_recibos_pedidos')
-                ->where('pedido_produccion_id', $pedidoId)
-                ->where(function ($query) use ($prendaId) {
-                    $query->where('prenda_id', $prendaId)
-                        ->orWhereNull('prenda_id');
-                })
-                ->select([
-                    'id', 'tipo_recibo', 'consecutivo_actual', 'consecutivo_inicial',
-                    'activo', 'created_at'
-                ])
-                ->get();
-
-            $parciales = DB::table('pedidos_parciales')
-                ->where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->whereNull('deleted_at')
-                ->select([
-                    'id', 'tipo_recibo', 'consecutivo_actual', 'consecutivo_inicial',
-                    'activo', 'estado', 'created_at'
-                ])
-                ->get();
+            $consecutivos = $this->readService->getConsecutivosPrenda($pedidoId, $prendaId);
+            $parciales = $this->readService->getParcialesPrenda($pedidoId, $prendaId);
 
             if ($consecutivos->isEmpty() && $parciales->isEmpty()) {
                 return null;
@@ -413,9 +379,7 @@ class ObtenerDetalleCompletoUseCase
     private function agregarDatosAdicionalesPedido(PedidoProduccion $pedido, array &$responseData): void
     {
         // Intentar obtener datos del recibo de costura primero (SaveDiaEntregaUseCase guarda ahí)
-        $reciboCostura = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
-            ->where('tipo_recibo', 'COSTURA')
-            ->first();
+        $reciboCostura = $this->readService->findReciboCosturaByPedidoId((int) $pedido->id);
 
         if (!isset($responseData['fecha_estimada_de_entrega'])) {
             $responseData['fecha_estimada_de_entrega'] = $reciboCostura?->fecha_estimada_de_entrega 

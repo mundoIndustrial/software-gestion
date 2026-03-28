@@ -384,15 +384,15 @@ function connectWebSocket() {
         });
 
         // Escuchar eventos de pedidos en el canal público de despacho
-        console.log('🔧 Creando canal despacho.pedidos...');
-        const despachoChannel = socket.channel('despacho.pedidos');
+        console.log('🔧 Creando canal pedidos.general...');
+        const despachoChannel = socket.channel('pedidos.general');
         
         if (!despachoChannel) {
-            console.error(' No se pudo crear el canal despacho.pedidos');
+            console.error(' No se pudo crear el canal pedidos.general');
             return;
         }
         
-        console.log(' Canal despacho.pedidos creado, configurando listener...');
+        console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
             console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
@@ -495,11 +495,11 @@ function connectWebSocket() {
         console.log(' Verificando canal público de despacho...');
         
         // Verificar si podemos suscribirnos al canal público
-        const channel = socket.channel('despacho.pedidos');
+        const channel = socket.channel('pedidos.general');
         if (channel) {
-            console.log(' Canal público despacho.pedidos creado correctamente');
+            console.log(' Canal público pedidos.general creado correctamente');
         } else {
-            console.error(' Error al crear canal público despacho.pedidos');
+            console.error(' Error al crear canal público pedidos.general');
         }
     } catch (error) {
         console.error(' Error al conectar WebSocket:', error);
@@ -559,3 +559,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection
+

@@ -482,7 +482,7 @@
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span><span>Guardando...</span>';
 
-                    const response = await fetch('{{ route("supervisor-pedidos.update-profile") }}', {
+                    const response = await fetch('/api/supervisor-pedidos/perfil/actualizar', {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': csrfToken,
@@ -538,4 +538,5 @@
 </script>
 @endpush
 @endsection
+
 

@@ -5,6 +5,7 @@ namespace App\Application\SupervisorPedidos\UseCases;
 use App\Application\SupervisorPedidos\DTOs\GetOrderDescriptionRequest;
 use App\Application\SupervisorPedidos\DTOs\GetOrderDescriptionResponse;
 use App\Application\SupervisorPedidos\Services\OrderDescriptionBuilder;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
@@ -12,8 +13,10 @@ class GetOrderDescriptionUseCase
 {
     private OrderDescriptionBuilder $descriptionBuilder;
 
-    public function __construct(OrderDescriptionBuilder $descriptionBuilder)
-    {
+    public function __construct(
+        OrderDescriptionBuilder $descriptionBuilder,
+        private readonly PedidoProduccionReadService $readService
+    ) {
         $this->descriptionBuilder = $descriptionBuilder;
     }
 
@@ -21,7 +24,7 @@ class GetOrderDescriptionUseCase
     {
         try {
             $orderId = $request->getOrderId();
-            $order = $this->findOrderWithPrendas($orderId);
+            $order = $this->readService->findOrderWithPrendas($orderId);
 
             if (!$order) {
                 return new GetOrderDescriptionResponse(false, '', 'Pedido no encontrado');
@@ -34,16 +37,10 @@ class GetOrderDescriptionUseCase
             $descripcionCompleta = $this->descriptionBuilder->build($order);
 
             return new GetOrderDescriptionResponse(true, $descripcionCompleta, null);
-
         } catch (\Exception $e) {
             $this->logError($e, $request->getOrderId());
-            return new GetOrderDescriptionResponse(false, '', 'Error al generar descripción: ' . $e->getMessage());
+            return new GetOrderDescriptionResponse(false, '', 'Error al generar descripcion: ' . $e->getMessage());
         }
-    }
-
-    private function findOrderWithPrendas(int $orderId): ?PedidoProduccion
-    {
-        return PedidoProduccion::with('prendas')->find($orderId);
     }
 
     private function hasPrendas(PedidoProduccion $order): bool
@@ -53,7 +50,7 @@ class GetOrderDescriptionUseCase
 
     private function logError(\Exception $e, int $orderId): void
     {
-        Log::error('Error al obtener descripción del pedido: ' . $e->getMessage(), [
+        Log::error('Error al obtener descripcion del pedido: ' . $e->getMessage(), [
             'order_id' => $orderId,
         ]);
     }

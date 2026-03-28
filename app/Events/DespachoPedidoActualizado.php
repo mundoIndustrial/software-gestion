@@ -27,7 +27,7 @@ class DespachoPedidoActualizado implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new Channel('despacho.pedidos');
+        return new Channel('pedidos.general');
     }
 
     /**

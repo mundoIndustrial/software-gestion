@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Application\UseCases\Pedidos\GuardarBorradorUseCase;
-use App\Application\UseCases\Pedidos\ActualizarBorradorUseCase;
-use App\Application\UseCases\Pedidos\GuardarBorradorInput;
-use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
+use App\Application\Pedidos\UseCases\GuardarBorradorUseCase;
+use App\Application\Pedidos\UseCases\ActualizarBorradorUseCase;
+use App\Application\Pedidos\UseCases\GuardarBorradorInput;
+use App\Application\Pedidos\UseCases\ActualizarBorradorInput;
 
 /**
  * CrearPedidoBorradorController
@@ -163,3 +163,4 @@ class CrearPedidoBorradorController extends Controller
         }
     }
 }
+

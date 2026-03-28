@@ -89,10 +89,7 @@ class PedidosProduccionServiceProvider extends ServiceProvider
 
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
-            return new CrearProduccionPedidoUseCase(
-                $app->make('events'),
-                $app->make(PedidoEppService::class)
-            );
+            return $app->build(CrearProduccionPedidoUseCase::class);
         });
 
         // Actualizar Pedido
@@ -112,9 +109,7 @@ class PedidosProduccionServiceProvider extends ServiceProvider
 
         // Cambiar Estado de Pedido
         $this->app->singleton(CambiarEstadoPedidoUseCase::class, function ($app) {
-            return new CambiarEstadoPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return $app->build(CambiarEstadoPedidoUseCase::class);
         });
 
         // Agregar Prenda al Pedido
@@ -147,23 +142,17 @@ class PedidosProduccionServiceProvider extends ServiceProvider
 
         // Actualizar Prenda de Pedido
         $this->app->singleton(ActualizarPrendaPedidoUseCase::class, function ($app) {
-            return new ActualizarPrendaPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return $app->build(ActualizarPrendaPedidoUseCase::class);
         });
 
         // Agregar Prenda Completa
         $this->app->singleton(AgregarPrendaCompletaUseCase::class, function ($app) {
-            return new AgregarPrendaCompletaUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return $app->build(AgregarPrendaCompletaUseCase::class);
         });
 
         // Actualizar Prenda Completa
         $this->app->singleton(ActualizarPrendaCompletaUseCase::class, function ($app) {
-            return new ActualizarPrendaCompletaUseCase(
-                $app->make(\App\Application\Services\ColorTelaService::class)
-            );
+            return $app->build(ActualizarPrendaCompletaUseCase::class);
         });
 
         // Render Item Card
@@ -178,42 +167,42 @@ class PedidosProduccionServiceProvider extends ServiceProvider
 
         // Agregar Color-Tela a Prenda
         $this->app->singleton(AgregarColorTelaUseCase::class, function ($app) {
-            return new AgregarColorTelaUseCase();
+            return $app->build(AgregarColorTelaUseCase::class);
         });
 
         // Agregar Talla a Prenda
         $this->app->singleton(AgregarTallaPrendaUseCase::class, function ($app) {
-            return new AgregarTallaPrendaUseCase();
+            return $app->build(AgregarTallaPrendaUseCase::class);
         });
 
         // Agregar Proceso a Prenda
         $this->app->singleton(AgregarProcesoPrendaUseCase::class, function ($app) {
-            return new AgregarProcesoPrendaUseCase();
+            return $app->build(AgregarProcesoPrendaUseCase::class);
         });
 
         // Agregar EPP al Pedido
         $this->app->singleton(AgregarEppUseCase::class, function ($app) {
-            return new AgregarEppUseCase();
+            return $app->build(AgregarEppUseCase::class);
         });
 
         // Agregar Talla a Proceso de Prenda
         $this->app->singleton(AgregarTallaProcesoPrendaUseCase::class, function ($app) {
-            return new AgregarTallaProcesoPrendaUseCase();
+            return $app->build(AgregarTallaProcesoPrendaUseCase::class);
         });
 
         // Agregar Imagen a Proceso
         $this->app->singleton(AgregarImagenProcesoUseCase::class, function ($app) {
-            return new AgregarImagenProcesoUseCase();
+            return $app->build(AgregarImagenProcesoUseCase::class);
         });
 
         // Agregar Imagen a EPP
         $this->app->singleton(AgregarImagenEppUseCase::class, function ($app) {
-            return new AgregarImagenEppUseCase();
+            return $app->build(AgregarImagenEppUseCase::class);
         });
 
         // Agregar Imagen a Tela
         $this->app->singleton(AgregarImagenTelaUseCase::class, function ($app) {
-            return new AgregarImagenTelaUseCase();
+            return $app->build(AgregarImagenTelaUseCase::class);
         });
     }
 
@@ -227,3 +216,4 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Aquí irían eventos, listeners, etc.
     }
 }
+

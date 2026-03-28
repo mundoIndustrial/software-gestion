@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCaseContract;
+
 use App\Models\PedidoProduccion;
 use App\Services\CalculadorDiasService;
 use Carbon\Carbon;
@@ -19,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Este UseCase centraliza la lógica de cálculo de fechas que estaba en el frontend.
  */
-class CalcularFechaEntregaEstimadaUseCase
+class CalcularFechaEntregaEstimadaUseCase implements CalcularFechaEntregaEstimadaUseCaseContract
 {
     /**
      * Ejecuta el caso de uso
@@ -110,4 +112,18 @@ class CalcularFechaEntregaEstimadaUseCase
     {
         return $fecha->format('d/m/Y');
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {CalcularFechaEntregaEstimadaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

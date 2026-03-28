@@ -4,34 +4,26 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\SelectOrderRequest;
 use App\Application\SupervisorPedidos\DTOs\SelectOrderResponse;
-use App\Models\SeleccionPedido;
-use App\Models\PedidoProduccion;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 
 class SelectOrderUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadService $readService
+    ) {}
+
     public function execute(SelectOrderRequest $request): SelectOrderResponse
     {
         try {
-            // Verificar que el pedido existe
-            $order = PedidoProduccion::findOrFail($request->getOrderId());
-
-            // Usar updateOrCreate para garantizar que el registro sea creado o actualizado
-            $selection = SeleccionPedido::updateOrCreate([
-                'pedido_id' => $request->getOrderId(),
-                'user_id' => $request->getUserId(),
-            ], [
-                'seleccionado' => true,
-            ]);
+            $selection = $this->readService->selectOrderForUser(
+                $request->getOrderId(),
+                $request->getUserId()
+            );
 
             return new SelectOrderResponse(
                 success: true,
                 message: 'Pedido seleccionado correctamente',
-                selection: [
-                    'id' => $selection->id,
-                    'pedido_id' => $selection->pedido_id,
-                    'user_id' => $selection->user_id,
-                    'seleccionado' => $selection->seleccionado
-                ]
+                selection: $selection
             );
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

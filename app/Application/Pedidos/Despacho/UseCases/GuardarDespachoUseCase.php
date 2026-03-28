@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\Despacho\UseCases;
 
+use App\Domain\Pedidos\Despacho\UseCases\GuardarDespachoUseCaseContract;
+
 use App\Models\PedidoProduccion;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
 use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Auth;
  * - Transacciones DB
  * - Auditoría/Logs
  */
-class GuardarDespachoUseCase
+class GuardarDespachoUseCase implements GuardarDespachoUseCaseContract
 {
     public function __construct(
         private DespachoValidadorService $validador,
@@ -116,3 +118,8 @@ class GuardarDespachoUseCase
         }
     }
 }
+
+
+
+
+

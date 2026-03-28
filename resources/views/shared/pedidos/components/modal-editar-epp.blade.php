@@ -725,7 +725,7 @@
             if (window.eppEnHomologacion) {
                 console.log('🔄 [Modal Novedad] Modo HOMOLOGACIÓN detectado');
                 
-                response = await fetch(`/asesores/pedidos/${pedidoId}/homologar-epp`, {
+                response = await fetch(`/api/asesores/pedidos/${pedidoId}/homologar-epp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1184,9 +1184,9 @@
                 }
             });
 
-            console.log('[EPP] 📤 Enviando DELETE a: /asesores/pedidos/' + pedidoId + '/eliminar-epp');
+            console.log('[EPP] 📤 Enviando DELETE a: /api/asesores/pedidos/' + pedidoId + '/eliminar-epp');
             
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/eliminar-epp`, {
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/eliminar-epp`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

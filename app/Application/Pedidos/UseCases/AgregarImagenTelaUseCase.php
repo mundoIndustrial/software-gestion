@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarImagenTelaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarImagenTelaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedidoColorTela;
@@ -15,7 +17,7 @@ use App\Models\PrendaPedidoColorTela;
  * 
  * Antes: 28 lineas | despues: ~20 lineas | Reducción: ~28%
  */
-final class AgregarImagenTelaUseCase
+final class AgregarImagenTelaUseCase implements AgregarImagenTelaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -38,5 +40,18 @@ final class AgregarImagenTelaUseCase
     {
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarImagenTelaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

@@ -89,3 +89,18 @@ require base_path('routes/prendas-entregas.php');
  * Gestión de usuarios por rol
  */
 require base_path('routes/usuarios.php');
+
+/**
+ * Auth API Routes (migración gradual web -> api)
+ */
+require base_path('routes/api-auth.php');
+
+/**
+ * Supervisor Pedidos API Routes (migración gradual web -> api)
+ */
+require base_path('routes/api-supervisor-pedidos.php');
+
+/**
+ * Asesores API Routes (migración gradual web -> api)
+ */
+require base_path('routes/api-asesores.php');

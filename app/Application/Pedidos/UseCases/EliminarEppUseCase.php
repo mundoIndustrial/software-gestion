@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EliminarEppUseCaseContract;
+
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\PedidoProduccion;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * Maneja: novedades, eliminación de imágenes físicas y soft delete del EPP
  */
-final class EliminarEppUseCase
+final class EliminarEppUseCase implements EliminarEppUseCaseContract
 {
     public function ejecutar(int $pedidoId, int $pedidoEppId, string $motivo): array
     {
@@ -64,3 +66,8 @@ final class EliminarEppUseCase
         ];
     }
 }
+
+
+
+
+

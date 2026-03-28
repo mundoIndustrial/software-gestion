@@ -318,7 +318,7 @@
                 per_page: 20
             });
 
-            const url = `/asesores/api/pendientes-asesor?${params}`;
+            const url = `/api/asesores/pendientes-asesor?${params}`;
             console.log('Llamando a:', url);
 
             fetch(url)

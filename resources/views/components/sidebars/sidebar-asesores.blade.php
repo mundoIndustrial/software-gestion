@@ -232,7 +232,7 @@
 <script>
     // Cargar conteo de pendientes del asesor
     function cargarConteoPendientes() {
-        fetch('/asesores/api/conteo-pendientes-asesor')
+        fetch('/api/asesores/conteo-pendientes-asesor')
             .then(response => response.json())
             .then(data => {
                 const badge = document.getElementById('pendientesAsesorCount');
@@ -251,4 +251,3 @@
     // Cargar conteo solo al cargar la página
     document.addEventListener('DOMContentLoaded', cargarConteoPendientes);
 </script>
-

@@ -141,11 +141,11 @@ class PedidosRealtimeRefresh {
                 if (this.isSupervisorPedidosPage) {
                     if (this.debug) console.log('🔌 [PedidosRealtime] Configurando supervisor-pedidos');
 
-                    ws.subscribe('despacho.pedidos', '.pedido.actualizado', (event) => {
+                    ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 Pedido actualizado (supervisor)');
                         try {
                             window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
-                                detail: { pedido: event?.pedido, source: 'despacho.pedidos' }
+                                detail: { pedido: event?.pedido, source: 'pedidos.general' }
                             }));
                         } catch (e) {
                             console.warn('[PedidosRealtime] Event dispatch error:', e.message);
@@ -182,7 +182,7 @@ class PedidosRealtimeRefresh {
                         }
                     });
 
-                    ws.subscribe('despacho.pedidos', '.pedido.actualizado', (event) => {
+                    ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 Pedido actualizado (cartera)');
                         this.moverPedidoAlInicio(event?.pedido?.id);
                         if (typeof window.cargarPedidos === 'function') {
@@ -357,7 +357,7 @@ class PedidosRealtimeRefresh {
         if (this.isCarteraPage) {
             return '/api/cartera/pedidos?estado=pendiente_cartera';
         }
-        return '/asesores/realtime/pedidos';
+        return '/api/asesores/realtime/pedidos';
     }
     
     /**
@@ -618,3 +618,4 @@ if (document.readyState === 'loading') {
     // Ejecutar solo cuando window.shared esté listo
     initializePedidosRealtimeIfReady();
 }
+

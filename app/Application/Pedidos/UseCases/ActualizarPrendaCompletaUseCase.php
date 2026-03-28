@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ActualizarPrendaCompletaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
@@ -27,7 +29,7 @@ use App\Models\TipoProceso;
  * 
  * Antes: 70 lineas | despues: ~60 lineas | Reducción: ~14%
  */
-final class ActualizarPrendaCompletaUseCase
+final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -2254,3 +2256,8 @@ final class ActualizarPrendaCompletaUseCase
         ]);
     }
 }
+
+
+
+
+

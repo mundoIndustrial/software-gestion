@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EliminarProcesoUseCaseContract;
+
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\ProcesoPrenda;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * Patrón: Use Case (Application Layer - DDD)
  * Restricción: No se puede eliminar el unico proceso de una orden
  */
-class EliminarProcesoUseCase
+class EliminarProcesoUseCase implements EliminarProcesoUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -109,3 +111,8 @@ class EliminarProcesoUseCase
         throw new \DomainException('Proceso no encontrado');
     }
 }
+
+
+
+
+

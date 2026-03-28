@@ -8,13 +8,10 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
  * Use Case: Actualizar Descripción del Pedido
- * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
- * 
  * Antes: 46 lineas (20 lineas de lógica + 26 de validación)
  * despues: 30 lineas (solo lógica de negocio)
  * Reducción: 35%
- * 
  * Permite actualizar la descripción de un pedido que no está finalizado
  */
 class ActualizarDescripcionPedidoUseCase

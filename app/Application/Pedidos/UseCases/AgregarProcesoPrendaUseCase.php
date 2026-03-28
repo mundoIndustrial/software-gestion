@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarProcesoPrendaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarProcesoPrendaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
@@ -22,7 +24,7 @@ use App\Models\PrendaPedido;
  * 
  * Antes: 69 lineas | despues: ~59 lineas | Reducción: ~14%
  */
-final class AgregarProcesoPrendaUseCase
+final class AgregarProcesoPrendaUseCase implements AgregarProcesoPrendaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -90,5 +92,18 @@ final class AgregarProcesoPrendaUseCase
 
         return $proceso;
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarProcesoPrendaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

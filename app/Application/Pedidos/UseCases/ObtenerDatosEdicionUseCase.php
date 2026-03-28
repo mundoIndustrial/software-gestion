@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerDatosEdicionUseCaseContract;
+
 use App\Application\Pedidos\DTOs\ObtenerDatosEdicionResponse;
 use App\Application\Pedidos\Services\PrendaTransformadorService;
 use App\Application\Pedidos\Services\EppTransformadorService;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Orquesta los servicios de transformación.
  */
-class ObtenerDatosEdicionUseCase
+class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
 {
     private PrendaTransformadorService $prendaTransformador;
     private EppTransformadorService $eppTransformador;
@@ -95,4 +97,18 @@ class ObtenerDatosEdicionUseCase
             'cliente:id,nombre'
         ])->findOrFail($id);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerDatosEdicionUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

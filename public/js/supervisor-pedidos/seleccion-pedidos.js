@@ -15,8 +15,8 @@ if (!window.supervisorPedidos?.isReady) {
 const _selService = window.supervisorPedidos.selectionService;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar selecciones guardadas al iniciar
-    setTimeout(() => { cargarSeleccionesGuardadas(); }, 500);
+    // Nota: La carga inicial de selecciones la dispara index.js
+    // después de hidratar la tabla por AJAX. Evitamos doble request aquí.
 
     // Checkbox "Seleccionar todos"
     const selectAllCheckbox = document.getElementById('selectAll');

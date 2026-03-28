@@ -1233,7 +1233,7 @@ class ModalNovedadEdicion {
                         // Si el usuario es supervisor_pedidos, usar ruta de supervisor-pedidos
                         // Si no, usar ruta de API general
                         const urlPatch = rolUsuario === 'supervisor_pedidos' 
-                            ? `/supervisor-pedidos/${prendaIdInt}/procesos/${procesoEditado.id}`
+                            ? `/api/supervisor-pedidos/prendas/${prendaIdInt}/procesos/${procesoEditado.id}`
                             : `/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`;
                         
                         console.log('[modal-novedad-edicion]  PATCH usando ruta según rol:', {
@@ -1342,11 +1342,11 @@ class ModalNovedadEdicion {
             }
 
             // Determinar la ruta correcta según el contexto
-            let urlActualizar = `/asesores/pedidos/${this.pedidoId}/actualizar-prenda`;
+            let urlActualizar = `/api/asesores/pedidos/${this.pedidoId}/actualizar-prenda`;
             
             // Si estamos en supervisor-pedidos, usar ruta específica para supervisores
             if (window.location.pathname.includes('supervisor-pedidos')) {
-                urlActualizar = `/supervisor-pedidos/${this.pedidoId}/actualizar-prenda`;
+                urlActualizar = `/api/supervisor-pedidos/ordenes/${this.pedidoId}/actualizar-prenda`;
             }
 
             const response = await fetch(urlActualizar, {
@@ -1756,4 +1756,3 @@ if (document.readyState === 'loading') {
 } else {
     window.modalNovedadEditacion = new ModalNovedadEdicion();
 }
-

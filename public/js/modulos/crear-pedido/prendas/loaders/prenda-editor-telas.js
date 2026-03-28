@@ -371,8 +371,8 @@ window.probarApisTelasColores = async function() {
     
     try {
         // Probar API de telas
-        console.log('[probarApisTelasColores] 📡 Probando /asesores/api/telas...');
-        const responseTelas = await fetch('/asesores/api/telas');
+        console.log('[probarApisTelasColores] Probando /api/asesores/telas...');
+        const responseTelas = await fetch('/api/asesores/telas');
         console.log('[probarApisTelasColores] 📡 Status telas:', responseTelas.status);
         
         if (responseTelas.ok) {
@@ -383,8 +383,8 @@ window.probarApisTelasColores = async function() {
         }
         
         // Probar API de colores
-        console.log('[probarApisTelasColores] 📡 Probando /asesores/api/colores...');
-        const responseColores = await fetch('/asesores/api/colores');
+        console.log('[probarApisTelasColores] Probando /api/asesores/colores...');
+        const responseColores = await fetch('/api/asesores/colores');
         console.log('[probarApisTelasColores] 📡 Status colores:', responseColores.status);
         
         if (responseColores.ok) {
@@ -404,9 +404,9 @@ window.cargarDatalistTelasColores = async function() {
     console.log('[cargarDatalistTelasColores] 🔄 Iniciando carga de datalist');
     
     try {
-        console.log('[cargarDatalistTelasColores] 📡 Haciendo fetch a /asesores/api/telas...');
+        console.log('[cargarDatalistTelasColores] Haciendo fetch a /api/asesores/telas...');
         // Cargar telas
-        const responseTelas = await fetch('/asesores/api/telas');
+        const responseTelas = await fetch('/api/asesores/telas');
         console.log('[cargarDatalistTelasColores] 📡 Respuesta telas:', responseTelas.status, responseTelas.ok);
         
         if (responseTelas.ok) {
@@ -440,8 +440,8 @@ window.cargarDatalistTelasColores = async function() {
         }
         
         // Cargar colores
-        console.log('[cargarDatalistTelasColores] 📡 Haciendo fetch a /asesores/api/colores...');
-        const responseColores = await fetch('/asesores/api/colores');
+        console.log('[cargarDatalistTelasColores] Haciendo fetch a /api/asesores/colores...');
+        const responseColores = await fetch('/api/asesores/colores');
         console.log('[cargarDatalistTelasColores] 📡 Respuesta colores:', responseColores.status, responseColores.ok);
         
         if (responseColores.ok) {

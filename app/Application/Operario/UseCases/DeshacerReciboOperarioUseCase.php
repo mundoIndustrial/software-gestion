@@ -6,18 +6,16 @@ use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Events\OperarioRecibosActualizados;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
-use App\Models\ConsecutivoReciboPedido;
-use App\Models\PrendaPedido;
+use App\Domain\Operario\Services\ReciboOperarioWorkflow;
 use App\Models\ReciboPorPartes;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class DeshacerReciboOperarioUseCase
 {
     public function __construct(
         private readonly ConsecutivoReciboPedidoRepository $recibos,
         private readonly ProcesoPrendaRepository $procesos,
+        private readonly ReciboOperarioWorkflow $workflow,
     ) {}
 
     public function execute(int $idRecibo, bool $esParcial = false): ReciboCommandResultDTO
@@ -43,16 +41,13 @@ class DeshacerReciboOperarioUseCase
             }
 
             if ($esParcial) {
-                $parcial = ReciboPorPartes::query()->find((int) $idRecibo);
+                $parcial = $this->workflow->findParcialById((int) $idRecibo, false);
 
                 if (!$parcial) {
                     return new ReciboCommandResultDTO(false, 'Parcial no encontrado', 404);
                 }
 
-                DB::table('prenda_recibo_completado')
-                    ->where('id_parcial', (int) $parcial->id)
-                    ->where('area', $areaOperario)
-                    ->delete();
+                $this->workflow->deleteCompletadoByParcialAndArea((int) $parcial->id, $areaOperario);
 
                 $estadoOriginal = $this->sincronizarCompletadoOriginalDesdeParciales($parcial, $areaOperario);
                 $this->notificarVistaCosturaDeshacerParcial($parcial, $areaOperario, $estadoOriginal);
@@ -70,13 +65,7 @@ class DeshacerReciboOperarioUseCase
                         $procesoCostura = null;
 
                         if (!empty($recibo->prenda_id)) {
-                            $numeroPedido = null;
-                            $prenda = PrendaPedido::where('id', $recibo->prenda_id)
-                                ->with(['pedidoProduccion'])
-                                ->first();
-                            if ($prenda && $prenda->pedidoProduccion) {
-                                $numeroPedido = (int) $prenda->pedidoProduccion->numero_pedido;
-                            }
+                            $numeroPedido = $this->workflow->findNumeroPedidoByPrendaId((int) $recibo->prenda_id);
 
                             $procesoCostura = !empty($numeroPedido)
                                 ? $this->procesos->findLatestByProcesoAndNumeroRecibo(
@@ -112,20 +101,17 @@ class DeshacerReciboOperarioUseCase
 
                         if ($sinEncargadoCostura) {
                             $recibo->area = 'Corte';
-                            $recibo->save();
+                            $this->recibos->save($recibo);
 
                             if (!empty($procesoCostura)) {
-                                $procesoCostura->forceDelete();
+                                $this->procesos->forceDelete($procesoCostura);
                             }
                         }
                     }
                 }
             }
 
-            DB::table('prenda_recibo_completado')
-                ->where('id_recibo', (int) $idRecibo)
-                ->where('area', $areaOperario)
-                ->delete();
+            $this->workflow->deleteCompletadoByReciboAndArea((int) $idRecibo, $areaOperario);
 
             try {
                 $recibo = $this->recibos->findActiveById((int) $idRecibo);
@@ -163,50 +149,29 @@ class DeshacerReciboOperarioUseCase
 
     private function sincronizarCompletadoOriginalDesdeParciales(ReciboPorPartes $parcial, string $areaOperario): array
     {
-        $parcialIds = ReciboPorPartes::query()
-            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
-            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-            ->where('tipo_recibo', $parcial->tipo_recibo)
-            ->where('consecutivo_original', $parcial->consecutivo_original)
-            ->pluck('id');
+        $parcialIds = $this->workflow->findParcialIdsForOriginal($parcial);
 
-        $reciboOriginal = ConsecutivoReciboPedido::query()
-            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
-            ->where('prenda_id', $parcial->prenda_pedido_id)
-            ->where('tipo_recibo', $parcial->tipo_recibo)
-            ->where('consecutivo_actual', $parcial->consecutivo_original)
-            ->where('activo', true)
-            ->first();
+        $reciboOriginal = $this->workflow->findReciboOriginalActivoDesdeParcial($parcial);
 
         if (!$reciboOriginal) {
             return ['original_completado' => false, 'recibo_original_id' => null];
         }
 
-        $totalCompletados = $parcialIds->isEmpty()
-            ? 0
-            : DB::table('prenda_recibo_completado')
-                ->where('area', $areaOperario)
-                ->whereIn('id_parcial', $parcialIds->all())
-                ->count();
+        $totalCompletados = $this->workflow->countCompletadosParcialesByArea($parcialIds, $areaOperario);
 
-        if ($totalCompletados < $parcialIds->count()) {
-            DB::table('prenda_recibo_completado')
-                ->where('id_recibo', (int) $reciboOriginal->id)
-                ->where('area', $areaOperario)
-                ->delete();
+        if ($totalCompletados < count($parcialIds)) {
+            $this->workflow->deleteCompletadoByReciboAndArea((int) $reciboOriginal->id, $areaOperario);
         }
 
         return [
-            'original_completado' => $totalCompletados >= $parcialIds->count(),
+            'original_completado' => $totalCompletados >= count($parcialIds),
             'recibo_original_id' => (int) $reciboOriginal->id,
         ];
     }
 
     private function notificarVistaCosturaDeshacerParcial(ReciboPorPartes $parcial, string $areaOperario, array $estadoOriginal): void
     {
-        $usuariosVistaCostura = User::query()
-            ->get()
-            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+        $usuariosVistaCostura = $this->workflow->findVistaCosturaUsers();
 
         foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
             broadcast(new OperarioRecibosActualizados(
@@ -244,9 +209,7 @@ class DeshacerReciboOperarioUseCase
         ?string $consecutivoParcial,
         bool $originalCompletado
     ): void {
-        $usuariosVistaCostura = User::query()
-            ->get()
-            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+        $usuariosVistaCostura = $this->workflow->findVistaCosturaUsers();
 
         foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
             broadcast(new OperarioRecibosActualizados(

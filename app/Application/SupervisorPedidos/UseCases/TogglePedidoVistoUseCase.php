@@ -4,28 +4,21 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\TogglePedidoVistoRequest;
 use App\Application\SupervisorPedidos\DTOs\TogglePedidoVistoResponse;
-use App\Models\PedidoVistoSupervisor;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 
 class TogglePedidoVistoUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadService $readService
+    ) {}
+
     public function execute(TogglePedidoVistoRequest $request): TogglePedidoVistoResponse
     {
         try {
-            $existing = PedidoVistoSupervisor::where('pedido_id', $request->getPedidoId())
-                ->where('user_id', $request->getUserId())
-                ->first();
-
-            $visto = false;
-
-            if ($existing) {
-                $existing->delete();
-            } else {
-                PedidoVistoSupervisor::create([
-                    'pedido_id' => $request->getPedidoId(),
-                    'user_id' => $request->getUserId()
-                ]);
-                $visto = true;
-            }
+            $visto = $this->readService->togglePedidoVisto(
+                $request->getPedidoId(),
+                $request->getUserId()
+            );
 
             return new TogglePedidoVistoResponse(
                 success: true,

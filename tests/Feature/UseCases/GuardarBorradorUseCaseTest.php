@@ -7,8 +7,8 @@ use App\Models\User;
 use App\Models\Cliente;
 use App\Models\Epp;
 use App\Models\EppCategoria;
-use App\Application\UseCases\Pedidos\GuardarBorradorUseCase;
-use App\Application\UseCases\Pedidos\GuardarBorradorInput;
+use App\Application\Pedidos\UseCases\GuardarBorradorUseCase;
+use App\Application\Pedidos\UseCases\GuardarBorradorInput;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
@@ -283,3 +283,4 @@ class GuardarBorradorUseCaseTest extends TestCase
         $this->assertNull($pedido->numero_pedido);
     }
 }
+

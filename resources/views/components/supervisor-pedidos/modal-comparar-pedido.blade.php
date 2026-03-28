@@ -304,7 +304,7 @@ function abrirModalComparar(ordenId) {
     const overlay = document.getElementById('modal-comparar-pedido-overlay');
     const contenido = document.getElementById('modal-comparar-contenido');
 
-    fetch(`/supervisor-pedidos/${ordenId}/comparar`)
+    fetch(`/api/supervisor-pedidos/ordenes/${ordenId}/comparar`)
         .then(response => {
             if (!response.ok) throw new Error('Error al cargar datos');
             return response.json();
@@ -490,4 +490,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-

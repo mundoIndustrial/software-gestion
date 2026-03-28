@@ -4,28 +4,21 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\ToggleNewsVistoRequest;
 use App\Application\SupervisorPedidos\DTOs\ToggleNewsVistoResponse;
-use App\Models\NewsVisto;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 
 class ToggleNewsVistoUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadService $readService
+    ) {}
+
     public function execute(ToggleNewsVistoRequest $request): ToggleNewsVistoResponse
     {
         try {
-            $existing = NewsVisto::where('news_id', $request->getNewsId())
-                ->where('user_id', $request->getUserId())
-                ->first();
-
-            $visto = false;
-
-            if ($existing) {
-                $existing->delete();
-            } else {
-                NewsVisto::create([
-                    'news_id' => $request->getNewsId(),
-                    'user_id' => $request->getUserId()
-                ]);
-                $visto = true;
-            }
+            $visto = $this->readService->toggleNewsVisto(
+                $request->getNewsId(),
+                $request->getUserId()
+            );
 
             return new ToggleNewsVistoResponse(
                 success: true,

@@ -9,7 +9,6 @@ use App\Domain\SupervisorPedidos\ValueObjects\PrendaId;
 use App\Domain\SupervisorPedidos\ValueObjects\ReceiptType;
 use App\Application\SupervisorPedidos\DTOs\ActivateReceiptRequest;
 use App\Application\SupervisorPedidos\DTOs\ActivateReceiptResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ActivateSewingReceiptUseCase
@@ -56,8 +55,7 @@ class ActivateSewingReceiptUseCase
                 );
             }
 
-            // Generar consecutivo
-            $newReceiptNumber = $this->generateReceiptNumber();
+            $newReceiptNumber = $this->receiptRepository->generateNextConsecutiveForType('COSTURA');
             
             Log::info("Recibo de COSTURA activado", [
                 'order_id' => $orderId->value(),
@@ -75,29 +73,5 @@ class ActivateSewingReceiptUseCase
             Log::error('Error in ActivateSewingReceipt: ' . $e->getMessage());
             throw $e;
         }
-    }
-
-    private function generateReceiptNumber(): string
-    {
-        $master = DB::table('consecutivos_recibos')
-            ->where('tipo_recibo', 'COSTURA')
-            ->where('activo', 1)
-            ->lockForUpdate()
-            ->first();
-
-        if (!$master) {
-            throw new \RuntimeException('No existe consecutivo maestro para COSTURA');
-        }
-
-        $newConsecutive = (int) $master->consecutivo_actual + 1;
-
-        DB::table('consecutivos_recibos')
-            ->where('id', $master->id)
-            ->update([
-                'consecutivo_actual' => $newConsecutive,
-                'updated_at' => now(),
-            ]);
-
-        return (string) $newConsecutive;
     }
 }

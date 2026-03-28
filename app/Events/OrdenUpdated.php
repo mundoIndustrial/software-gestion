@@ -35,6 +35,7 @@ class OrdenUpdated implements ShouldBroadcastNow
         $channels = [
             new Channel('supervisor-pedidos'),
             new Channel('ordenes'),
+            new Channel('pedidos.general'),
         ];
         
         \Log::info('[OrdenUpdated] Canales de broadcast', [

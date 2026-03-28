@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCaseContract;
+
 use App\Models\PedidoProduccion;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ use Carbon\Carbon;
  * 
  * Patrón: Use Case (Application Layer - DDD)
  */
-class ObtenerProcesosPorPedidoUseCase
+class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCaseContract
 {
     /**
      * Ejecutar caso de uso
@@ -125,6 +127,18 @@ class ObtenerProcesosPorPedidoUseCase
 
         return max(0, $diasCalculados - 1);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerProcesosPorPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
 
 

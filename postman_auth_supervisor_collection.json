@@ -1,0 +1,332 @@
+{
+  "info": {
+    "_postman_id": "c0f39ac3-0c3d-4e0c-a743-2d6df9c1df2f",
+    "name": "Mundo Industrial - API Auth + Supervisor Pedidos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth API v1",
+      "item": [
+        {
+          "name": "1) GET /api/v1/auth/csrf",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/csrf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "csrf"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('csrf ok', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json?.data?.csrf_token) {",
+                  "  pm.collectionVariables.set('csrf_token', json.data.csrf_token);",
+                  "}",
+                  "const xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+                  "if (xsrfCookie) {",
+                  "  pm.collectionVariables.set('xsrf_cookie_token', decodeURIComponent(xsrfCookie));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2) POST /api/v1/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{register_name}}\",\n  \"email\": \"{{register_email}}\",\n  \"password\": \"{{register_password}}\",\n  \"password_confirmation\": \"{{register_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "3) POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"remember\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "4) GET /api/v1/auth/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "5) POST /api/v1/auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "6) POST /api/v1/auth/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{reset_token}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{new_password}}\",\n  \"password_confirmation\": \"{{new_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "7) GET /api/v1/auth/csrf (refresh before logout)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/csrf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "csrf"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.csrf_token) {",
+                  "  pm.collectionVariables.set('csrf_token', json.data.csrf_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8) POST /api/v1/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Supervisor Pedidos API",
+      "item": [
+        {
+          "name": "GET /api/supervisor-pedidos/ordenes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/ordenes?page=1&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "ordenes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/ordenes-pendientes-count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/ordenes-pendientes-count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "ordenes-pendientes-count"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/ordenes/{id}/datos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/ordenes/{{order_id}}/datos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "ordenes", "{{order_id}}", "datos"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/ordenes/{id}/comparar",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/ordenes/{{order_id}}/comparar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "ordenes", "{{order_id}}", "comparar"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/recibos/pendientes-bordado-estampado",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/recibos/pendientes-bordado-estampado",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "recibos", "pendientes-bordado-estampado"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/recibos/pendientes-costura",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/recibos/pendientes-costura?numero_recibo=&cliente=&asesor=&prendas=&fecha_creacion=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "recibos", "pendientes-costura"],
+              "query": [
+                { "key": "numero_recibo", "value": "" },
+                { "key": "cliente", "value": "" },
+                { "key": "asesor", "value": "" },
+                { "key": "prendas", "value": "" },
+                { "key": "fecha_creacion", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/recibos/pendientes-control-calidad",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/recibos/pendientes-control-calidad?numero_recibo=&cliente=&asesor=&prendas=&fecha_creacion=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "recibos", "pendientes-control-calidad"],
+              "query": [
+                { "key": "numero_recibo", "value": "" },
+                { "key": "cliente", "value": "" },
+                { "key": "asesor", "value": "" },
+                { "key": "prendas", "value": "" },
+                { "key": "fecha_creacion", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/supervisor-pedidos/recibos/pendientes-control-calidad-count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/supervisor-pedidos/recibos/pendientes-control-calidad-count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "supervisor-pedidos", "recibos", "pendientes-control-calidad-count"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "email", "value": "tu_correo@dominio.com" },
+    { "key": "password", "value": "tu_password" },
+    { "key": "register_name", "value": "Usuario API" },
+    { "key": "register_email", "value": "usuario.api+1@dominio.com" },
+    { "key": "register_password", "value": "12345678" },
+    { "key": "reset_token", "value": "" },
+    { "key": "new_password", "value": "123456789" },
+    { "key": "csrf_token", "value": "" },
+    { "key": "xsrf_cookie_token", "value": "" },
+    { "key": "order_id", "value": "1" }
+  ]
+}

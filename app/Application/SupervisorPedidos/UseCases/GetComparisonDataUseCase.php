@@ -5,13 +5,14 @@ namespace App\Application\SupervisorPedidos\UseCases;
 use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\SupervisorPedidos\DTOs\GetComparisonDataRequest;
 use App\Application\SupervisorPedidos\DTOs\GetComparisonDataResponse;
-use App\Models\PedidoProduccion;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use Illuminate\Support\Facades\Log;
 
 class GetComparisonDataUseCase
 {
     public function __construct(
-        private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter
+        private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter,
+        private PedidoProduccionReadService $readService
     ) {
     }
 
@@ -19,35 +20,24 @@ class GetComparisonDataUseCase
     {
         try {
             $orderId = $request->getOrderId();
+            $orden = $this->readService->findOrderForComparison($orderId);
 
-            // Obtener orden con cotización
-            $orden = PedidoProduccion::with([
-                'prendas',
-                'asesora',
-                'cotizacion' => function($query) {
-                    $query->with([
-                        'prendas' => function($q) {
-                            $q->with('tallas');
-                        },
-                        'asesor'
-                    ]);
-                }
-            ])->findOrFail($orderId);
+            if (!$orden) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Pedido no encontrado');
+            }
 
-            // Construir datos de comparación
             $datosComparacion = $this->buildComparisonData($orden);
 
-            Log::info('Datos de comparación obtenidos', [
+            Log::info('Datos de comparacion obtenidos', [
                 'order_id' => $orderId,
-                'has_quotation' => $datosComparacion['cotizacion'] !== null
+                'has_quotation' => $datosComparacion['cotizacion'] !== null,
             ]);
 
             return new GetComparisonDataResponse($datosComparacion);
-
         } catch (\Exception $e) {
             Log::error('Error en GetComparisonData: ' . $e->getMessage(), [
                 'order_id' => $request->getOrderId(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -64,17 +54,17 @@ class GetComparisonDataUseCase
                 'fecha' => $orden->created_at,
                 'prendas' => $this->formatPrendas($orden->prendas),
             ],
-            'cotizacion' => $this->formatQuotation($orden)
+            'cotizacion' => $this->formatQuotation($orden),
         ];
     }
 
     private function formatPrendas($prendas): array
     {
-        return $prendas->map(function($prenda, $index) {
+        return $prendas->map(function ($prenda, $index) {
             return [
                 'nombre' => $prenda->nombre_prenda,
                 'descripcion' => $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1),
-                'tallas' => $prenda->cantidad_talla ?? []
+                'tallas' => $prenda->cantidad_talla ?? [],
             ];
         })->toArray();
     }
@@ -93,18 +83,18 @@ class GetComparisonDataUseCase
             'asesora' => $cotizacion->asesor?->name ?? 'N/A',
             'estado' => $cotizacion->estado,
             'fecha' => $cotizacion->created_at,
-            'prendas' => $this->formatQuotationPrendas($cotizacion->prendas)
+            'prendas' => $this->formatQuotationPrendas($cotizacion->prendas),
         ];
     }
 
     private function formatQuotationPrendas($prendas): array
     {
-        return $prendas->map(function($prenda, $index) {
+        return $prendas->map(function ($prenda, $index) {
             $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->toArray() : [];
             return [
                 'nombre' => $prenda->nombre_producto,
                 'descripcion' => $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1),
-                'tallas' => $tallas
+                'tallas' => $tallas,
             ];
         })->toArray();
     }

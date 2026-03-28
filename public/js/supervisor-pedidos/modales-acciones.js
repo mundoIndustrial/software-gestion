@@ -33,7 +33,7 @@ async function confirmarAnulacion(event) {
     const motivo = document.getElementById('motivoAnulacion').value;
 
     try {
-        const data = await _http.post(`/supervisor-pedidos/${ordenId}/anular`, { motivo_anulacion: motivo });
+        const data = await _http.post(`/api/supervisor-pedidos/ordenes/${ordenId}/anular`, { motivo_anulacion: motivo });
 
         if (data.success) {
             cerrarModalAnulacion();
@@ -75,7 +75,7 @@ async function confirmarOcultar() {
     btnConfirmar.textContent = 'Ocultando...';
 
     try {
-        const data = await _http.post(`/supervisor-pedidos/${ordenIdOcultar}/ocultar`, {});
+        const data = await _http.post(`/api/supervisor-pedidos/ordenes/${ordenIdOcultar}/ocultar`, {});
 
         if (data.success) {
             cerrarModalOcultar();
@@ -129,7 +129,7 @@ globalThis.abrirModalAprobacion = function(ordenId, numeroPedido) {
             });
 
             // Enviar solicitud de aprobación
-            _http.post(`/supervisor-pedidos/${ordenId}/aprobar`, {})
+            _http.post(`/api/supervisor-pedidos/ordenes/${ordenId}/aprobar`, {})
             .then(data => {
                 if (data.success) {
                     Swal.fire({

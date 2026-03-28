@@ -3,9 +3,8 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerPedidoTransformadoResponse;
-use App\Models\PedidoProduccion;
+use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 /**
  * ObtenerPedidoTransformadoUseCase
@@ -27,10 +26,12 @@ use Illuminate\Support\Facades\DB;
 class ObtenerPedidoTransformadoUseCase
 {
     private ObtenerPedidoUseCase $obtenerPedidoUseCase;
+    private PedidoDetalleReadService $readService;
 
-    public function __construct(ObtenerPedidoUseCase $obtenerPedidoUseCase)
+    public function __construct(ObtenerPedidoUseCase $obtenerPedidoUseCase, PedidoDetalleReadService $readService)
     {
         $this->obtenerPedidoUseCase = $obtenerPedidoUseCase;
+        $this->readService = $readService;
     }
 
     /**
@@ -106,9 +107,7 @@ class ObtenerPedidoTransformadoUseCase
                 }
 
                 // Cargar tallas del proceso
-                $tallas = DB::table('pedidos_procesos_prenda_tallas')
-                    ->where('proceso_prenda_detalle_id', $proceso['id'])
-                    ->get();
+                $tallas = $this->readService->getTallasProceso((int) $proceso['id']);
 
                 Log::debug('[ObtenerPedidoTransformadoUseCase] Tallas obtenidas para proceso', [
                     'proceso_id' => $proceso['id'],
@@ -140,9 +139,7 @@ class ObtenerPedidoTransformadoUseCase
                     ];
 
                     // Cargar colores para esta talla
-                    $colores = DB::table('pedidos_procesos_prenda_talla_colores')
-                        ->where('pedidos_procesos_prenda_talla_id', $talla->id)
-                        ->get();
+                    $colores = $this->readService->getColoresByProcesoTalla((int) $talla->id);
 
                     if ($colores->count() > 0) {
                         $talasTransformadas[$genero][$talla->talla] = $colores->map(fn($color) => [
@@ -184,7 +181,7 @@ class ObtenerPedidoTransformadoUseCase
         }
 
         try {
-            $pedido = PedidoProduccion::find($pedidoId);
+            $pedido = $this->readService->findPedidoById($pedidoId);
             if ($pedido) {
                 $fechaCreacion = $pedido->created_at ?? $pedido->created_at;
                 $datos['fecha_creacion'] = $fechaCreacion
@@ -237,11 +234,7 @@ class ObtenerPedidoTransformadoUseCase
                 'UNISEX' => []
             ];
 
-            $tallasColores = DB::table('prenda_pedido_talla_colores as pptc')
-                ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
-                ->where('ppt.prenda_pedido_id', $prenda['id'])
-                ->select(['ppt.genero', 'ppt.talla', 'pptc.color_nombre', 'pptc.cantidad'])
-                ->get();
+            $tallasColores = $this->readService->getTallasColoresPrenda((int) $prenda['id']);
 
             if ($tallasColores->count() > 0) {
                 foreach ($tallasColores as $tallaColor) {
@@ -284,7 +277,7 @@ class ObtenerPedidoTransformadoUseCase
     private function cargarEstadoEntrega(array &$prenda, int $pedidoId): void
     {
         try {
-            $entrega = \App\Models\PrendaEntrega::where('prenda_pedido_id', $prenda['id'])->first();
+            $entrega = $this->readService->findPrendaEntrega((int) $prenda['id']);
             $prenda['entrega'] = $entrega ? [
                 'entregado' => $entrega->entregado,
                 'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
@@ -305,12 +298,7 @@ class ObtenerPedidoTransformadoUseCase
     private function agregarRecibosParciales(array &$prenda, int $pedidoId): void
     {
         try {
-            $recibosParciales = DB::table('pedidos_parciales')
-                ->where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prenda['id'])
-                ->orderBy('tipo_recibo', 'asc')
-                ->orderBy('id', 'asc')
-                ->get();
+            $recibosParciales = $this->readService->getRecibosParcialesPrenda($pedidoId, (int) $prenda['id']);
 
             if ($recibosParciales->isEmpty()) {
                 return;
@@ -330,9 +318,7 @@ class ObtenerPedidoTransformadoUseCase
                 $numeroReciboAnexo = $reciboParcial->consecutivo_actual ?? $reciboParcial->numero_recibo ?? null;
 
                 // Cargar tallas para el parcial
-                $tallas = DB::table('pedidos_parciales_tallas')
-                    ->where('pedido_parcial_id', $reciboParcial->id)
-                    ->get();
+                $tallas = $this->readService->getReciboParcialTallas((int) $reciboParcial->id);
 
                 $tallasList = [];
                 $talasTransformadas = [
@@ -386,7 +372,7 @@ class ObtenerPedidoTransformadoUseCase
     private function transformarEpps(int $pedidoId): array
     {
         try {
-            $pedido = PedidoProduccion::find($pedidoId);
+            $pedido = $this->readService->findPedidoById($pedidoId);
             if (!$pedido || !$pedido->epps) {
                 return [];
             }
@@ -433,10 +419,7 @@ class ObtenerPedidoTransformadoUseCase
     private function obtenerImagenesEpp(int $pedidoEppId): array
     {
         try {
-            $imagenesData = DB::table('pedido_epp_imagenes')
-                ->where('pedido_epp_id', $pedidoEppId)
-                ->orderBy('orden', 'asc')
-                ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
+            $imagenesData = $this->readService->getPedidoEppImagenes($pedidoEppId);
 
             if ($imagenesData->isEmpty()) {
                 return [];

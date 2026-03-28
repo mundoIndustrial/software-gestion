@@ -21,9 +21,9 @@ window.openOrderTrackingModal = function(ordenId) {
     console.log('[openOrderTrackingModal] mostrarTrackingModal está disponible');
     
     // Obtener datos del pedido desde la ruta de supervisor
-    console.log('[openOrderTrackingModal] Obteniendo datos de /supervisor-pedidos/' + ordenId + '/datos');
+    console.log('[openOrderTrackingModal] Obteniendo datos de /api/supervisor-pedidos/ordenes/' + ordenId + '/datos');
     
-    fetch(`/supervisor-pedidos/${ordenId}/datos`, {
+    fetch(`/api/supervisor-pedidos/ordenes/${ordenId}/datos`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',

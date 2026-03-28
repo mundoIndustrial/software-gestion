@@ -5,16 +5,16 @@ namespace App\Application\Operario\UseCases;
 use App\Application\Operario\DTOs\OperarioDashboardDTO;
 use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Application\Operario\Services\ObtenerPrendasRecibosService;
-use App\Models\User;
+use App\Domain\Operario\Services\OperarioDashboardReadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class GetOperarioDashboardUseCase
 {
     public function __construct(
         private ObtenerPedidosOperarioService $obtenerPedidosService,
         private ObtenerPrendasRecibosService $obtenerPrendasRecibosService,
+        private OperarioDashboardReadService $dashboardReadService,
     ) {}
 
     public function execute(Request $request): OperarioDashboardDTO
@@ -33,23 +33,7 @@ class GetOperarioDashboardUseCase
         // NOTA: vista-costura ya incluye REFLECTIVO en obtenerPrendasConRecibos(), no reemplazar
 
         if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
-            $rolSobremedidaId = \App\Models\Role::where('name', 'confeccion-sobremedida')->value('id');
-            $usuariosSobremedida = collect();
-
-            if (!empty($rolSobremedidaId)) {
-                $usuariosSobremedida = \App\Models\User::query()
-                    ->where(function ($q) use ($rolSobremedidaId) {
-                        $q->whereJsonContains('roles_ids', (int) $rolSobremedidaId)
-                            ->orWhere('role_id', (int) $rolSobremedidaId);
-                    })
-                    ->pluck('name')
-                    ->map(function ($n) {
-                        return strtolower(trim((string) $n));
-                    })
-                    ->filter()
-                    ->unique()
-                    ->values();
-            }
+            $usuariosSobremedida = $this->dashboardReadService->obtenerUsuariosSobremedidaNormalizados();
 
             if ($tab === 'sobremedida') {
                 $prendasConRecibos = $prendasConRecibos
@@ -109,10 +93,7 @@ class GetOperarioDashboardUseCase
                 ->values()
                 ->all();
 
-            $completadosPorId = DB::table('prenda_recibo_completado')
-                ->where('area', $areaOperario)
-                ->whereIn('id_recibo', $idsRecibos)
-                ->pluck('fecha_completado', 'id_recibo');
+            $completadosPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, $areaOperario);
 
             $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
                 $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
@@ -133,20 +114,9 @@ class GetOperarioDashboardUseCase
                 ->values()
                 ->all();
 
-            $completadosCortePorId = DB::table('prenda_recibo_completado')
-                ->where('area', 'Corte')
-                ->whereIn('id_recibo', $idsRecibos)
-                ->pluck('fecha_completado', 'id_recibo');
-
-            $completadosCosturaPorId = DB::table('prenda_recibo_completado')
-                ->where('area', 'Costura')
-                ->whereIn('id_recibo', $idsRecibos)
-                ->pluck('fecha_completado', 'id_recibo');
-
-            $completadosControlCalidadPorId = DB::table('prenda_recibo_completado')
-                ->where('area', 'Control de Calidad')
-                ->whereIn('id_recibo', $idsRecibos)
-                ->pluck('fecha_completado', 'id_recibo');
+            $completadosCortePorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Corte');
+            $completadosCosturaPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Costura');
+            $completadosControlCalidadPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Control de Calidad');
 
             $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
                 $prenda['recibos'] = array_map(function ($recibo) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {

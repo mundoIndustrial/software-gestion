@@ -2,12 +2,14 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ActualizarPrendaPedidoUseCaseContract;
+
 use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
 
-final class ActualizarPrendaPedidoUseCase
+final class ActualizarPrendaPedidoUseCase implements ActualizarPrendaPedidoUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -204,5 +206,10 @@ final class ActualizarPrendaPedidoUseCase
         }
     }
 }
+
+
+
+
+
 
 

@@ -23,7 +23,7 @@ function connectWebSocket() {
         });
 
         // Unirse al canal público de despacho
-        socket.channel('despacho.pedidos')
+        socket.channel('pedidos.general')
             .listen('.pedido.actualizado', (event) => {
                 console.log('🔄 Pedido actualizado en tiempo real (despacho):', event);
                 
@@ -1847,3 +1847,4 @@ function imprimirTablaVacia() {
 </script>
 
 @endsection
+

@@ -13,24 +13,24 @@ use App\Services\RegistroOrdenCacheService;
 use App\Services\RegistroOrdenEntregasService;
 use App\Services\RegistroOrdenProcessesService;
 use App\Services\ReciboCosturaQueryService;
-use App\Application\UseCases\Orders\CreateOrderUseCase;
-use App\Application\UseCases\Orders\UpdateOrderUseCase;
-use App\Application\UseCases\Orders\DeleteOrderUseCase;
-use App\Application\UseCases\Orders\GetOrderUseCase;
-use App\Application\UseCases\Orders\EditFullOrderUseCase;
-use App\Application\UseCases\Orders\AddNovedadUseCase;
-use App\Application\UseCases\Orders\SaveDiaEntregaUseCase;
+use App\Application\Pedidos\UseCases\Orders\CreateOrderUseCase;
+use App\Application\Pedidos\UseCases\Orders\UpdateOrderUseCase;
+use App\Application\Pedidos\UseCases\Orders\DeleteOrderUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetOrderUseCase;
+use App\Application\Pedidos\UseCases\Orders\EditFullOrderUseCase;
+use App\Application\Pedidos\UseCases\Orders\AddNovedadUseCase;
+use App\Application\Pedidos\UseCases\Orders\SaveDiaEntregaUseCase;
 use App\Application\UseCases\Receipts\GetSewingReceiptsUseCase;
-use App\Application\UseCases\Orders\FilterOrdersUseCase;
-use App\Application\UseCases\Orders\SearchOrdersUseCase;
+use App\Application\Pedidos\UseCases\Orders\FilterOrdersUseCase;
+use App\Application\Pedidos\UseCases\Orders\SearchOrdersUseCase;
 use App\Application\UseCases\Receipts\GetReflectiveReceiptsUseCase;
-use App\Application\UseCases\Orders\UpdateNovedadesUseCase;
-use App\Application\UseCases\Orders\GetFilterOptionsUseCase;
-use App\Application\UseCases\Orders\GetColumnFilterOptionsUseCase;
-use App\Application\UseCases\Orders\UpdatePedidoNumberUseCase;
-use App\Application\UseCases\Orders\UpdateDescripcionPrendasUseCase;
-use App\Application\UseCases\Orders\UpdateDescripcionPrendasRequest as UpdateDescripcionPrendasRequestDTO;
-use App\Application\UseCases\Orders\GetAreaRecienteUseCase;
+use App\Application\Pedidos\UseCases\Orders\UpdateNovedadesUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetFilterOptionsUseCase;
+use App\Application\Pedidos\UseCases\Orders\GetColumnFilterOptionsUseCase;
+use App\Application\Pedidos\UseCases\Orders\UpdatePedidoNumberUseCase;
+use App\Application\Pedidos\UseCases\Orders\UpdateDescripcionPrendasUseCase;
+use App\Application\Pedidos\UseCases\Orders\UpdateDescripcionPrendasRequest as UpdateDescripcionPrendasRequestDTO;
+use App\Application\Pedidos\UseCases\Orders\GetAreaRecienteUseCase;
 use App\Application\UseCases\Receipts\GetReceiptJsonUseCase;
 use App\Application\UseCases\Receipts\ContarRecibosEjecutandoUseCase;
 use App\Application\UseCases\Receipts\MarcarReciboVistoUseCase;
@@ -547,3 +547,4 @@ class RegistroOrdenController extends Controller
     }
 
 }
+

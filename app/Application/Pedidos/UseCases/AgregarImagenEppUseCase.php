@@ -2,16 +2,17 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarImagenEppUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarImagenEppDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PedidoEpp;
 
 /**
  * Use Case para agregar imagen a un EPP
- * 
  * Maneja la creación de registro en pedido_epp_imagenes
  */
-final class AgregarImagenEppUseCase
+final class AgregarImagenEppUseCase implements AgregarImagenEppUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -35,5 +36,18 @@ final class AgregarImagenEppUseCase
     {
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarImagenEppUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

@@ -2,90 +2,16 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Models\TipoBrocheBoton;
-use App\Models\TipoManga;
-use Illuminate\Support\Facades\Log;
+use App\Domain\Pedidos\Services\CaracteristicasPrendaCatalogServiceContract;
 
-/**
- * Resuelve catalogos de caracteristicas de prenda para pedidos.
- */
 class CaracteristicasPrendaCatalogService
 {
-    public function obtenerOCrearManga(?string $nombreManga): ?int
+    public function __construct(private readonly CaracteristicasPrendaCatalogServiceContract $service)
     {
-        if (empty($nombreManga)) {
-            return null;
-        }
-
-        try {
-            $manga = TipoManga::where('nombre', $nombreManga)
-                ->where('activo', true)
-                ->first();
-
-            if ($manga) {
-                Log::info('[CaracteristicasPrendaCatalogService] Manga encontrada', [
-                    'nombre' => $nombreManga,
-                    'manga_id' => $manga->id,
-                ]);
-                return $manga->id;
-            }
-
-            $mangaNueva = TipoManga::create([
-                'nombre' => $nombreManga,
-                'activo' => true,
-            ]);
-
-            Log::info('[CaracteristicasPrendaCatalogService] Manga creada', [
-                'nombre' => $nombreManga,
-                'manga_id' => $mangaNueva->id,
-            ]);
-
-            return $mangaNueva->id;
-        } catch (\Exception $e) {
-            Log::error('[CaracteristicasPrendaCatalogService] Error obteniendo/creando manga', [
-                'nombre' => $nombreManga,
-                'error' => $e->getMessage(),
-            ]);
-            return null;
-        }
     }
 
-    public function obtenerOCrearBroche(?string $nombreBroche): ?int
+    public function __call(string $name, array $arguments): mixed
     {
-        if (empty($nombreBroche)) {
-            return null;
-        }
-
-        try {
-            $broche = TipoBrocheBoton::where('nombre', $nombreBroche)
-                ->where('activo', true)
-                ->first();
-
-            if ($broche) {
-                Log::info('[CaracteristicasPrendaCatalogService] Broche encontrado', [
-                    'nombre' => $nombreBroche,
-                    'broche_id' => $broche->id,
-                ]);
-                return $broche->id;
-            }
-
-            $brocheNuevo = TipoBrocheBoton::create([
-                'nombre' => $nombreBroche,
-                'activo' => true,
-            ]);
-
-            Log::info('[CaracteristicasPrendaCatalogService] Broche creado', [
-                'nombre' => $nombreBroche,
-                'broche_id' => $brocheNuevo->id,
-            ]);
-
-            return $brocheNuevo->id;
-        } catch (\Exception $e) {
-            Log::error('[CaracteristicasPrendaCatalogService] Error obteniendo/creando broche', [
-                'nombre' => $nombreBroche,
-                'error' => $e->getMessage(),
-            ]);
-            return null;
-        }
+        return $this->service->call($name, $arguments);
     }
 }

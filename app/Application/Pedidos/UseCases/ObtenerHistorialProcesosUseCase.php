@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerHistorialProcesosUseCaseContract;
+
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * 
  * Patrón: Use Case (Application Layer - DDD)
  */
-class ObtenerHistorialProcesosUseCase
+class ObtenerHistorialProcesosUseCase implements ObtenerHistorialProcesosUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -42,5 +44,18 @@ class ObtenerHistorialProcesosUseCase
             'historial' => $historial->toArray()
         ];
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerHistorialProcesosUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EliminarImagenPedidoUseCaseContract;
+
 use App\Models\PrendaFotoPedido;
 use App\Models\PrendaFotoTelaPedido;
 use App\Models\PedidosProcesoImagenes;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
  * Soporta tres tipos: 'prenda', 'tela', 'proceso'
  * Elimina archivos físicos (original + webp) y el registro de BD (forceDelete)
  */
-final class EliminarImagenPedidoUseCase
+final class EliminarImagenPedidoUseCase implements EliminarImagenPedidoUseCaseContract
 {
     public function ejecutar(int $id, string $tipo): array
     {
@@ -45,4 +47,18 @@ final class EliminarImagenPedidoUseCase
             'archivos_eliminados' => $archivosEliminados,
         ];
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {EliminarImagenPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

@@ -4,37 +4,23 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsRequest;
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsResponse;
-use Illuminate\Support\Facades\DB;
+use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
 use Illuminate\Support\Facades\Log;
 
 class GetPendingQualityControlReceiptsUseCase
 {
+    public function __construct(
+        private readonly ReceiptRepository $receiptRepository
+    ) {}
+
     public function execute(GetPendingSewingReceiptsRequest $request): GetPendingSewingReceiptsResponse
     {
         try {
-            // Obtener recibos COSTURA activos cuya area actual sea Control de Calidad.
-            $query = DB::table('consecutivos_recibos_pedidos as crp')
-                ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
-                ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
-                ->select([
-                    'p.created_at as fecha_creacion',
-                    'crp.consecutivo_actual as numero_recibo',
-                    'crp.prenda_id as prenda_id',
-                    'p.cliente',
-                    'p.id as pedido_id',
-                    'u.name as asesor',
-                    'crp.color_costura',
-                    'crp.area',
-                ])
-                ->where('crp.tipo_recibo', 'COSTURA')
-                ->where('crp.activo', 1)
-                ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                ->orderBy('p.created_at', 'desc');
-
-            // Aplicar filtros
-            $this->applyFilters($query, $request);
-
-            $recibosControlCalidad = $query->get();
+            $recibosControlCalidad = collect(
+                $this->receiptRepository->findPendingQualityControlReceipts(
+                    $this->buildFilters($request)
+                )
+            );
 
             Log::info('Recibos Control-Calidad recuperados', ['count' => $recibosControlCalidad->count()]);
 
@@ -51,47 +37,18 @@ class GetPendingQualityControlReceiptsUseCase
         }
     }
 
-    private function applyFilters($query, GetPendingSewingReceiptsRequest $request): void
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildFilters(GetPendingSewingReceiptsRequest $request): array
     {
-        if (!empty($request->getNumeroRecibo())) {
-            $numeros = array_filter(array_map('trim', explode(',', $request->getNumeroRecibo())));
-            if (count($numeros) > 0) {
-                $query->whereIn('crp.consecutivo_actual', $numeros);
-            }
-        }
-
-        if (!empty($request->getCliente())) {
-            $clientes = array_filter(array_map('trim', explode(',', $request->getCliente())));
-            if (count($clientes) > 0) {
-                $query->whereIn('p.cliente', $clientes);
-            }
-        }
-
-        if (!empty($request->getAsesor())) {
-            $asesores = array_filter(array_map('trim', explode(',', $request->getAsesor())));
-            if (count($asesores) > 0) {
-                $query->whereIn('u.name', $asesores);
-            }
-        }
-
-        if (!empty($request->getPrendas())) {
-            $prendas = array_filter(array_map('trim', explode(',', $request->getPrendas())));
-            if (count($prendas) > 0) {
-                $query->whereExists(function ($q) use ($prendas) {
-                    $q->select(DB::raw(1))
-                        ->from('prendas_pedido as pp')
-                        ->whereColumn('pp.id', 'crp.prenda_id')
-                        ->whereIn('pp.nombre_prenda', $prendas);
-                });
-            }
-        }
-
-        if (!empty($request->getFechaCreacion())) {
-            $fecha = trim($request->getFechaCreacion());
-            if ($fecha !== '') {
-                $query->whereDate('p.created_at', $fecha);
-            }
-        }
+        return [
+            'numero_recibo' => $this->parseCsvFilter($request->getNumeroRecibo()),
+            'cliente' => $this->parseCsvFilter($request->getCliente()),
+            'asesor' => $this->parseCsvFilter($request->getAsesor()),
+            'prendas' => $this->parseCsvFilter($request->getPrendas()),
+            'fecha_creacion' => ($fecha = trim((string) $request->getFechaCreacion())) !== '' ? $fecha : null,
+        ];
     }
 
     private function formatReceipt($recibo): array
@@ -111,36 +68,26 @@ class GetPendingQualityControlReceiptsUseCase
             return $proceso;
         }
 
-        // Obtener prendas con colores
-        $prendasConColores = DB::table('prendas_pedido as pp')
-            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
-            ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
-            ->select([
-                'pp.nombre_prenda',
-                'pptc.color_nombre',
-                'pptc.cantidad as cantidad_color',
-                DB::raw('null as cantidad_talla'),
-                DB::raw('null as tela')
-            ])
-            ->where('pp.id', $recibo->prenda_id)
-            ->get();
-
-        // Obtener prendas sin colores
-        $prendasSinColores = DB::table('prendas_pedido as pp')
-            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
-            ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
-            ->select([
-                'pp.nombre_prenda',
-                'ppt.tela',
-                'ppt.cantidad as cantidad_talla',
-                DB::raw('null as color_nombre'),
-                DB::raw('null as cantidad_color')
-            ])
-            ->where('pp.id', $recibo->prenda_id)
-            ->whereNull('pptc.id')
-            ->get();
+        $prendasConColores = collect(
+            $this->receiptRepository->findGarmentsWithColorsByPrendaId((int) $recibo->prenda_id)
+        );
+        $prendasSinColores = collect(
+            $this->receiptRepository->findGarmentsWithoutColorsByPrendaId((int) $recibo->prenda_id)
+        );
 
         $proceso['prendas'] = $prendasConColores->merge($prendasSinColores);
         return $proceso;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function parseCsvFilter(?string $value): array
+    {
+        if ($value === null || trim($value) === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
     }
 }

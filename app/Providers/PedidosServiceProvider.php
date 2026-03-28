@@ -11,6 +11,8 @@ use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Application\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Domain\Pedidos\Despacho\Services\DespachoEstadoServiceContract;
+use App\Domain\Pedidos\Despacho\Services\DespachoValidadorServiceContract;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
 use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
@@ -21,20 +23,22 @@ use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
+use App\Domain\Pedidos\Despacho\UseCases\GuardarDespachoUseCaseContract;
+use App\Domain\Pedidos\UseCases\ObtenerFilasDespachoUseCaseContract;
 use App\Application\Shared\Contracts\AuditRepositoryInterface;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
 use App\Infrastructure\Services\NewsAuditRepository;
 use App\Infrastructure\Services\EloquentTransactionManager;
 use App\Infrastructure\Services\BroadcastOrdenEventDispatcher;
-use App\Application\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
-use App\Application\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
-use App\Application\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularDiasUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
-use App\Application\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
-use App\Application\UseCases\RegistroOrden\GetRecibosDatosUseCase;
-use App\Application\UseCases\RegistroOrden\GetNovedadesUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetRecibosDatosUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetNovedadesUseCase;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -106,13 +110,17 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar DespachoEstadoService como singleton
-        $this->app->singleton(DespachoEstadoService::class, function () {
-            return new DespachoEstadoService();
+        $this->app->singleton(DespachoEstadoService::class, function ($app) {
+            return new DespachoEstadoService(
+                $app->make(DespachoEstadoServiceContract::class)
+            );
         });
 
         // Registrar DespachoValidadorService como singleton
-        $this->app->singleton(DespachoValidadorService::class, function () {
-            return new DespachoValidadorService();
+        $this->app->singleton(DespachoValidadorService::class, function ($app) {
+            return new DespachoValidadorService(
+                $app->make(DespachoValidadorServiceContract::class)
+            );
         });
 
         // Registrar DesparChoParcialesPersistenceService como singleton
@@ -128,17 +136,12 @@ class PedidosServiceProvider extends ServiceProvider
 
         // Registrar ObtenerFilasDespachoUseCase
         $this->app->bind(ObtenerFilasDespachoUseCase::class, function ($app) {
-            return new ObtenerFilasDespachoUseCase(
-                $app->make(DespachoGeneradorService::class)
-            );
+            return $app->build(ObtenerFilasDespachoUseCase::class);
         });
 
         // Registrar GuardarDespachoUseCase
         $this->app->bind(GuardarDespachoUseCase::class, function ($app) {
-            return new GuardarDespachoUseCase(
-                $app->make(DespachoValidadorService::class),
-                $app->make(DesparChoParcialesPersistenceService::class)
-            );
+            return $app->build(GuardarDespachoUseCase::class);
         });
 
         // ========================================
@@ -218,3 +221,5 @@ class PedidosServiceProvider extends ServiceProvider
         //
     }
 }
+
+

@@ -86,7 +86,9 @@ class CQRSServiceProvider extends ServiceProvider
 
     private function registerValidators(): void
     {
-        $this->app->singleton(PedidoValidator::class, fn () => new PedidoValidator());
+        $this->app->singleton(PedidoValidator::class, fn ($app) => new PedidoValidator(
+            $app->make(\App\Domain\Pedidos\Validators\PedidoValidatorContract::class)
+        ));
         $this->app->singleton(PrendaValidator::class, fn () => new PrendaValidator());
         $this->app->singleton(EstadoValidator::class, fn () => new EstadoValidator());
     }
@@ -131,8 +133,7 @@ class CQRSServiceProvider extends ServiceProvider
         ));
 
         $this->app->bind(CrearPedidoCompletoHandler::class, fn ($app) => new CrearPedidoCompletoHandler(
-            $app->make(CommandBus::class),
-            $app->make(PedidoProduccion::class),
+            $app->make(\App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandlerContract::class),
         ));
 
         $this->app->bind(AgregarPrendaAlPedidoHandler::class, fn ($app) => new AgregarPrendaAlPedidoHandler(
@@ -155,7 +156,9 @@ class CQRSServiceProvider extends ServiceProvider
             $app->make(PedidoProduccion::class)
         ));
 
-        $this->app->bind(ActualizarVariantePrendaHandler::class, fn () => new ActualizarVariantePrendaHandler());
+        $this->app->bind(ActualizarVariantePrendaHandler::class, fn ($app) => new ActualizarVariantePrendaHandler(
+            $app->make(\App\Domain\Pedidos\CommandHandlers\ActualizarVariantePrendaHandlerContract::class)
+        ));
     }
 
     private function registerEppCommandHandlers(): void

@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EliminarProcesosListaUseCaseContract;
+
 use App\Models\PedidosProcesosPrendaDetalle;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
  * Realiza forceDelete (eliminación permanente) de imágenes, tallas y el proceso.
  * Usado desde actualizarPrendaCompleta cuando se pasa 'procesos_a_eliminar'.
  */
-final class EliminarProcesosListaUseCase
+final class EliminarProcesosListaUseCase implements EliminarProcesosListaUseCaseContract
 {
     public function ejecutar(array $procesosIds): void
     {
@@ -52,4 +54,18 @@ final class EliminarProcesosListaUseCase
             }
         }
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {EliminarProcesosListaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

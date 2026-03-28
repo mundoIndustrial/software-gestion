@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EliminarPrendaPedidoUseCaseContract;
+
 use App\Models\PrendaPedido;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaFotoPedido;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
  * procesos e imágenes de procesos, consecutivos de recibo,
  * detalles de bodega y notas de bodega.
  */
-final class EliminarPrendaPedidoUseCase
+final class EliminarPrendaPedidoUseCase implements EliminarPrendaPedidoUseCaseContract
 {
     public function ejecutar(int $pedidoId, int $prendaId, string $motivo): array
     {
@@ -160,3 +162,8 @@ final class EliminarPrendaPedidoUseCase
         ];
     }
 }
+
+
+
+
+

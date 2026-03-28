@@ -78,24 +78,14 @@ function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
         const mensaje = `Nuevo pedido${numero ? ' #' + numero : ''}${cliente}`;
 
         try {
-            const badge = document.getElementById('notificationBadge');
-            if (badge) {
-                const count = (parseInt(badge.textContent) || 0) + 1;
-                badge.textContent = String(count);
-                badge.style.display = count > 0 ? 'block' : 'none';
-            }
             if (window.__supervisorPedidosNotifSyncT) clearTimeout(window.__supervisorPedidosNotifSyncT);
             window.__supervisorPedidosNotifSyncT = setTimeout(() => {
                 try {
-                    if (typeof window.supervisorPedidosRefreshNotificaciones === 'function') {
-                        window.supervisorPedidosRefreshNotificaciones();
-                    } else if (typeof cargarNotificacionesPendientes === 'function') {
-                        cargarNotificacionesPendientes();
-                    } else {
-                        window.dispatchEvent(new CustomEvent('supervisorPedidos:notificacionesRefresh'));
-                    }
+                    window.dispatchEvent(new CustomEvent('supervisorPedidos:notificacionesRefresh', {
+                        detail: { pedido: orden || {} }
+                    }));
                 } catch (e) { /* noop */ }
-            }, 1200);
+            }, 250);
         } catch (e) { /* noop */ }
 
         _rtNotify.success(mensaje);
@@ -292,10 +282,10 @@ function _setupCustomEventHandlers() {
  * Suscribe a todos los canales WebSocket necesarios
  */
 function _subscribeToChannels(ws) {
-    // Canal: despacho.pedidos - Actualizaciones de pedidos
+    // Canal: pedidos.general - Actualizaciones globales de pedidos
     try {
-        ws.subscribe('despacho.pedidos', '.pedido.actualizado', (data) => {
-            _refreshTablaConDelay(data, 'despacho.pedidos:.pedido.actualizado');
+        ws.subscribe('pedidos.general', '.pedido.actualizado', (data) => {
+            _refreshTablaConDelay(data, 'pedidos.general:.pedido.actualizado');
         });
     } catch (error) {
     }
@@ -324,7 +314,7 @@ function _subscribeToChannels(ws) {
  */
 function _refreshTablaConDelay(payload, eventName) {
     // Detectar si es actualización de estado para notificar
-    if (String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
+    if (String(eventName).includes('pedidos.general:.pedido.actualizado')) {
         supervisorPedidosMaybeNotifyFromActualizado(payload);
     }
 
@@ -358,3 +348,4 @@ if (document.readyState === 'loading') {
     // Si el script se carga después de DOMContentLoaded, iniciar inmediatamente
     initializeRealtimeListener();
 }
+

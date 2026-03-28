@@ -354,12 +354,12 @@ window.openAsesorasTrackingModal = async function(pedido) {
         let order = null;
         let response = null;
         
-        // Intentar primero con /supervisor-pedidos/{id}/datos
+        // Intentar primero con /api/supervisor-pedidos/ordenes/{id}/datos
         try {
-            response = await fetch(`/supervisor-pedidos/${pedido}/datos`);
+            response = await fetch(`/api/supervisor-pedidos/ordenes/${pedido}/datos`);
             if (response.ok) {
                 order = await response.json();
-                console.log('[openAsesorasTrackingModal] Datos obtenidos de /supervisor-pedidos/{id}/datos');
+                console.log('[openAsesorasTrackingModal] Datos obtenidos de /api/supervisor-pedidos/ordenes/{id}/datos');
             }
         } catch (e) {
             console.warn('[openAsesorasTrackingModal] Error con ruta supervisor-pedidos:', e);
@@ -644,4 +644,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-

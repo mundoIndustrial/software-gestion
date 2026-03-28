@@ -263,7 +263,7 @@
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? '/despacho/observaciones/resumen'
-                : '/asesores/pedidos/observaciones-despacho/resumen';
+                : '/api/asesores/pedidos/observaciones-despacho/resumen';
                 
             console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
             console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
@@ -324,7 +324,7 @@
             // Detectar si estamos en despacho o asesores
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
-                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
                 
             console.log(`[DEBUG-BADGE] Marcando notificaciones como vistas en: ${url}`);
             
@@ -366,7 +366,7 @@
         const isDespachoPage = window.location.pathname.includes('/despacho');
         const url = isDespachoPage 
             ? `/despacho/${pedidoId}/observaciones`
-            : `/asesores/pedidos/${pedidoId}/observaciones-despacho`;
+            : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho`;
             
         console.log(`[DEBUG] Obteniendo observaciones desde: ${url}`);
         
@@ -1002,7 +1002,7 @@
             });
 
         // Escuchar actualizaciones de pedido (incluye novedades) para actualizar badge en tiempo real
-        window.EchoInstance.channel('despacho.pedidos')
+        window.EchoInstance.channel('pedidos.general')
             .listen('.pedido.actualizado', (e) => {
                 const pedidoId = e?.pedido_id || e?.pedido?.id;
                 if (!pedidoId) return;
@@ -1112,3 +1112,4 @@
         });
     });
 })();
+

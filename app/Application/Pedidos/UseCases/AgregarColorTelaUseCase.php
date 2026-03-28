@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarColorTelaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarColorTelaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
@@ -11,7 +13,7 @@ use App\Models\PrendaPedido;
  * 
  * Maneja la creación de registro en prenda_pedido_colores_telas
  */
-final class AgregarColorTelaUseCase
+final class AgregarColorTelaUseCase implements AgregarColorTelaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -28,5 +30,18 @@ final class AgregarColorTelaUseCase
             'tela_id' => $dto->telaId,
         ]);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarColorTelaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

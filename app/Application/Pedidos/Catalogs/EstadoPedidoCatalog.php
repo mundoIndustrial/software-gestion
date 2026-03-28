@@ -6,21 +6,17 @@ use App\Enums\EstadoPedido;
 
 /**
  * EstadoPedidoCatalog
- * 
  * Centraliza todas las constantes y definiciones de estados de pedidos.
  * Unica fuente de verdad para estados validos, transiciones, mensajes de error, etc.
- * 
  * BENEFICIOS:
  * - 1 lugar para actualizar si cambian los estados
  * - Reutilizable en todas las capas (Application, Domain, Infrastructure)
  * - Consistencia garantizada
  * - facil testing
- * 
  * ELIMINA:
  * - Duplicación de constantes en multiples clases
  * - Validaciones de estados esparcidas en el código
  * - Mensajes de error inconsistentes
- * 
  * Uso:
  *   if (!EstadoPedidoCatalog::esValido($estado)) {
  *       throw new InvalidArgumentException(...);

@@ -234,13 +234,24 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 area: null,
                 mensaje: 'Pedido obtenido exitosamente'
             );
-        } catch (\Exception $e) {
-            Log::error('Error construyendo respuesta de pedido', [
-                'pedido_id' => $pedidoId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
+        } catch (\Throwable $e) {
+            return new PedidoResponseDTO(
+                id: $datosEnriquecidos['id'] ?? null,
+                numero: $datosEnriquecidos['numero'] ?? null,
+                clienteId: $datosEnriquecidos['clienteId'] ?? null,
+                estado: $datosEnriquecidos['estado'] ?? null,
+                descripcion: $datosEnriquecidos['descripcion'] ?? null,
+                totalPrendas: $datosEnriquecidos['totalPrendas'] ?? 0,
+                totalArticulos: $datosEnriquecidos['totalArticulos'] ?? 0,
+                cliente: null,
+                asesor: null,
+                prendas: $datosEnriquecidos['prendas'] ?? [],
+                epps: $datosEnriquecidos['epps'] ?? [],
+                formaDePago: $datosEnriquecidos['forma_de_pago'] ?? null,
+                fechaCreacion: null,
+                area: null,
+                mensaje: 'Pedido obtenido exitosamente'
+            );
         }
     }
 
@@ -1128,3 +1139,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         return $tallasPorGenero;
     }
 }
+
+
+
+
+

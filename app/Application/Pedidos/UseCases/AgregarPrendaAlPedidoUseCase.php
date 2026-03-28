@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Agregar Prenda al Pedido
- * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
- * 
  * Antes: 45 lineas (7 lineas de lógica + 38 de validación)
  * despues: 32 lineas (solo lógica de negocio)
  * Reducción: 29%

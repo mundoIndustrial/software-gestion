@@ -56,7 +56,7 @@ class WebSocketChannelConfigurator {
         if (this.debug) console.log('[WebSocketChannelConfigurator] Configurando supervisor-pedidos');
 
         try {
-            this.ws.subscribe('despacho.pedidos', '.pedido.actualizado', (event) => {
+            this.ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                 if (this.debug) console.log('[WebSocketChannelConfigurator] 🔄 Pedido actualizado:', event?.pedido?.id);
                 this.onUpdate('pedido.actualizado', event?.pedido);
             });
@@ -87,7 +87,7 @@ class WebSocketChannelConfigurator {
             });
 
             // Actualizaciones
-            this.ws.subscribe('despacho.pedidos', '.pedido.actualizado', (event) => {
+            this.ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                 if (this.debug) console.log('[WebSocketChannelConfigurator] 🔄 Actualizado (cartera):', event?.pedido?.id);
                 this.onUpdate('pedido.actualizado', event?.pedido);
             });
@@ -152,7 +152,7 @@ class WebSocketChannelConfigurator {
         if (this.isCarteraPage) {
             return '/api/cartera/pedidos?estado=pendiente_cartera';
         }
-        return '/asesores/realtime/pedidos';
+        return '/api/asesores/realtime/pedidos';
     }
 }
 
@@ -160,3 +160,4 @@ class WebSocketChannelConfigurator {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = WebSocketChannelConfigurator;
 }
+

@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Application\UseCases\Pedidos\ValidarPedidoUseCase;
-use App\Application\UseCases\Pedidos\ValidarPedidoInput;
+use App\Application\Pedidos\UseCases\ValidarPedidoUseCase;
+use App\Application\Pedidos\UseCases\ValidarPedidoInput;
 
 /**
  * ValidarPedidoController
@@ -102,3 +102,4 @@ class ValidarPedidoController extends Controller
         }
     }
 }
+

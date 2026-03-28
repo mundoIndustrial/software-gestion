@@ -4,28 +4,27 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\SelectOrderRequest;
 use App\Application\SupervisorPedidos\DTOs\SelectOrderResponse;
-use App\Models\SeleccionPedido;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 
 class DeselectOrderUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadService $readService
+    ) {}
+
     public function execute(SelectOrderRequest $request): SelectOrderResponse
     {
         try {
-            // Buscar y eliminar la selección
-            $selection = SeleccionPedido::where('pedido_id', $request->getOrderId())
-                ->where('user_id', $request->getUserId())
-                ->first();
-
-            if ($selection) {
-                $selection->delete();
-            }
+            $this->readService->deselectOrderForUser(
+                $request->getOrderId(),
+                $request->getUserId()
+            );
 
             return new SelectOrderResponse(
                 success: true,
                 message: 'Pedido deseleccionado correctamente',
                 selection: []
             );
-
         } catch (\Throwable $e) {
             throw new \DomainException('Error al deseleccionar el pedido: ' . $e->getMessage());
         }

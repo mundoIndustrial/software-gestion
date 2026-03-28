@@ -266,6 +266,7 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script>
 function verDetalles(procesoId, tipoRecibo) {
     // Mostrar modal con loading
@@ -288,7 +289,7 @@ function verDetalles(procesoId, tipoRecibo) {
     modal.show();
     
     // Cargar detalles del proceso
-    fetch(`/supervisor-pedidos/procesos/${procesoId}/detalles`)
+    fetch(`/api/supervisor-pedidos/procesos/${procesoId}/detalles`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -396,7 +397,7 @@ function aprobarProceso(procesoId) {
         return;
     }
     
-    fetch(`/supervisor-pedidos/procesos/${procesoId}/aprobar`, {
+    fetch(`/api/supervisor-pedidos/procesos/${procesoId}/aprobar`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -439,6 +440,8 @@ function mostrarCargandoTablaPendientes() {
     `;
 }
 
+const receiptsRenderers = window.SupervisorReceiptsRenderers;
+
 async function recargarTablaPendientes() {
     const cont = document.getElementById('pendientesRows');
     if (!cont) return;
@@ -446,21 +449,23 @@ async function recargarTablaPendientes() {
     mostrarCargandoTablaPendientes();
 
     try {
-        const resp = await fetch(window.location.href, {
+        const resp = await fetch('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado', {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             }
         });
 
-        const html = await resp.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const nuevo = doc.getElementById('pendientesRows');
-        if (!nuevo) {
-            throw new Error('No se encontró el contenedor de filas en la respuesta');
+        const payload = await resp.json();
+        const procesos = payload?.data?.procesosConCantidad;
+        if (!resp.ok || !Array.isArray(procesos)) {
+            throw new Error('No se pudo recuperar la data de pendientes');
         }
-
-        cont.innerHTML = nuevo.innerHTML;
+        if (procesos.length === 0) {
+            cont.innerHTML = receiptsRenderers.emptyStateHtml();
+        } else {
+            cont.innerHTML = procesos.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml)).join('');
+        }
 
         inicializarPendientesUI();
         aplicarFiltrosEnVista();
@@ -781,7 +786,7 @@ async function guardarFechaLlegada(input) {
     const reciboId = input.getAttribute('data-recibo-id');
     const fechaLlegada = input.value;
 
-    const resp = await fetch(`/supervisor-pedidos/recibos/${reciboId}/fecha-llegada`, {
+    const resp = await fetch(`/api/supervisor-pedidos/recibos/${reciboId}/fecha-llegada`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -826,3 +831,8 @@ styleSpin.textContent = `@keyframes spinPendientes { from { transform: rotate(0d
 document.head.appendChild(styleSpin);
 </script>
 @endpush
+
+
+
+
+

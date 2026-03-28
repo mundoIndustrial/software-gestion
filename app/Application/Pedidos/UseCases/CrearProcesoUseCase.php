@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\CrearProcesoUseCaseContract;
+
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * Patrón: Use Case (Application Layer - DDD)
  * Lógica: Si el proceso ya existe, guardar el anterior en historial y actualizar
  */
-class CrearProcesoUseCase
+class CrearProcesoUseCase implements CrearProcesoUseCaseContract
 {
     /**
      * Ejecutar caso de uso
@@ -109,4 +111,9 @@ class CrearProcesoUseCase
         ];
     }
 }
+
+
+
+
+
 

@@ -119,7 +119,7 @@
                 return;
             }
 
-            const r = await fetch('/asesores/pedidos/observaciones-despacho/resumen', {
+            const r = await fetch('/api/asesores/pedidos/observaciones-despacho/resumen', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -145,7 +145,7 @@
     window.__asesoresObsDespachoCtx = window.__asesoresObsDespachoCtx || { pedidoId: null, pedidoNumero: null };
 
     async function __fetchObservaciones(pedidoId) {
-        const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
+        const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -177,7 +177,7 @@
 
         // Marcar notas de bodega como vistas al abrir el modal
         try {
-            await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+            await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,7 +209,7 @@
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
-                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
             
             const r = await fetch(url, {
                 method: 'POST',
@@ -306,7 +306,7 @@
         if (btn) btn.disabled = true;
 
         try {
-            const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/guardar`, {
+            const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -419,8 +419,8 @@
             btnCancelar.disabled = true;
 
             try {
-                const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/actualizar`, {
-                    method: 'POST',
+                const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': __csrfToken(),
@@ -583,8 +583,8 @@
             '¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.',
             async () => {
                 try {
-                    const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/eliminar`, {
-                        method: 'POST',
+                    const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}`, {
+                        method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': __csrfToken(),
@@ -636,7 +636,7 @@
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     cargarObservacionesDespachoAsesores();
                     // Marcar como leídas automáticamente
-                    fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
+                    fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -665,7 +665,7 @@
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     await cargarObservacionesDespachoAsesores();
                     try {
-                        await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+                        await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

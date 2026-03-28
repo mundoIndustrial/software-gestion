@@ -94,7 +94,7 @@ class MiddlewareGuardadoPrenda {
                 
                 // Si tenemos información de que estamos en contexto de supervisor, usar ruta alternativa
                 if (window.usuarioAutenticado && window.usuarioAutenticado.rol === 'supervisor_pedidos') {
-                    urlPatch = `/supervisor-pedidos/${prendaId}/procesos/${procesoEditado.id}`;
+                    urlPatch = `/api/supervisor-pedidos/prendas/${prendaId}/procesos/${procesoEditado.id}`;
                     console.log(' [MIDDLEWARE-GUARDADO] Usando ruta de supervisor-pedidos:', urlPatch);
                 }
 

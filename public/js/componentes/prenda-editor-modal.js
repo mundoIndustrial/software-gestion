@@ -1688,7 +1688,7 @@ async function cargarPrendasDatalist() {
         const busqueda = inputNombre.value.trim();
         
         // Realizar búsqueda en el backend
-        const url = new URL('/asesores/api/prendas/autocomplete', window.location.origin);
+        const url = new URL('/api/asesores/prendas/autocomplete', window.location.origin);
         if (busqueda) {
             url.searchParams.append('q', busqueda);
         }

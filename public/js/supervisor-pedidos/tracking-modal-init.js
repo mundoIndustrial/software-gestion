@@ -23,7 +23,7 @@ window.openOrderTrackingModal = async function(ordenId) {
     }
 
     try {
-        const pedidoData = await _trackingHttp.get(`/supervisor-pedidos/${ordenId}/datos`);
+        const pedidoData = await _trackingHttp.get(`/api/supervisor-pedidos/ordenes/${ordenId}/datos`);
         console.log('[openOrderTrackingModal] Datos del pedido recibidos');
 
         try {

@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerCotizacionesUseCaseContract;
+
 use App\Models\Cotizacion;
 use App\Domain\Pedidos\PedidoConstants;
 use Illuminate\Support\Collection;
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Log;
  *  Testeable
  *  Cacheable (si necesario)
  */
-class ObtenerCotizacionesUseCase
+class ObtenerCotizacionesUseCase implements ObtenerCotizacionesUseCaseContract
 {
     /**
      * Ejecutar use case
@@ -77,4 +79,18 @@ class ObtenerCotizacionesUseCase
             throw $e;
         }
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerCotizacionesUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

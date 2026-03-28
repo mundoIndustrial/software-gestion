@@ -9,8 +9,8 @@ use App\Models\PedidoEpp;
 use App\Models\Epp;
 use App\Models\EppCategoria;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
-use App\Application\UseCases\Pedidos\ActualizarBorradorUseCase;
-use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
+use App\Application\Pedidos\UseCases\ActualizarBorradorUseCase;
+use App\Application\Pedidos\UseCases\ActualizarBorradorInput;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
@@ -326,3 +326,4 @@ class ActualizarBorradorUseCaseTest extends TestCase
         $this->assertEquals('', $pedidoActualizado->forma_de_pago);
     }
 }
+

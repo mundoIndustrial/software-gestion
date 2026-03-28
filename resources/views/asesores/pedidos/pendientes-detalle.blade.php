@@ -495,7 +495,7 @@
             historial.innerHTML = '<div class="text-center text-slate-500"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>Cargando notas...</div>';
             
             // Cargar notas del pedido
-            fetch(`/asesores/pendientes/${pedidoId}/notas`)
+            fetch(`/api/asesores/pendientes/${pedidoId}/notas`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.data) {

@@ -98,6 +98,15 @@ class PedidoRepository {
     async fetchPageContent(url) {
         throw new Error('fetchPageContent() debe ser implementado por subclases');
     }
+
+    /**
+     * Obtiene datos JSON del listado de pedidos para renderizado cliente
+     * @param {string} url
+     * @returns {Promise<object>}
+     */
+    async fetchOrdersData(url) {
+        throw new Error('fetchOrdersData() debe ser implementado por subclases');
+    }
 }
 
 // Errores de dominio

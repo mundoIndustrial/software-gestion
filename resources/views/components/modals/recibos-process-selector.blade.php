@@ -397,7 +397,7 @@
             const colorBoton = '#10b981';
 
             mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
-                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/activar-recibo`, {
+                const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/activar-recibo`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1270,7 +1270,7 @@
                 // Para recibos base (costura), usar el endpoint específico
                 console.log('[ejecutarAnularRecibo] Anulando recibo base (costura)');
                 
-                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/anular-recibo`, {
+                const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/anular-recibo`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1756,4 +1756,3 @@
 
 <!-- Incluir modal de recibos parciales por talla -->
 @include('components.modals.recibos-parcial-por-talla')
-

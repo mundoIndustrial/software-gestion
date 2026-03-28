@@ -18,21 +18,32 @@ class PedidoApiRepository extends PedidoRepository {
     // ===== FILTROS =====
 
     async getFilterOptions(campo) {
-        return await this.http.get(`/supervisor-pedidos/filtro-opciones/${encodeURIComponent(campo)}`);
+        const response = await this.http.get(`/api/supervisor-pedidos/filtro-opciones/${encodeURIComponent(campo)}`);
+        return response?.data ?? response;
     }
 
     // ===== SELECCIÓN =====
 
     async selectOrder(pedidoId) {
-        return await this.http.post(`/supervisor-pedidos/seleccionar/${encodeURIComponent(pedidoId)}`, {});
+        const response = await this.http.post(`/api/supervisor-pedidos/seleccionar/${encodeURIComponent(pedidoId)}`, {});
+        return response?.data ?? response;
     }
 
     async deselectOrder(pedidoId) {
-        return await this.http.delete(`/supervisor-pedidos/seleccionar/${encodeURIComponent(pedidoId)}`);
+        const response = await this.http.delete(`/api/supervisor-pedidos/seleccionar/${encodeURIComponent(pedidoId)}`);
+        return response?.data ?? response;
     }
 
     async getSelections() {
-        return await this.http.get('/supervisor-pedidos/selecciones');
+        const response = await this.http.get('/api/supervisor-pedidos/selecciones');
+        const payload = response?.data ?? response;
+
+        // Compatibilidad con SelectionService (espera "selecciones")
+        if (payload && Array.isArray(payload.selections) && !Array.isArray(payload.selecciones)) {
+            payload.selecciones = payload.selections;
+        }
+
+        return payload;
     }
 
     // ===== EDICIÓN DE PEDIDO =====
@@ -42,11 +53,11 @@ class PedidoApiRepository extends PedidoRepository {
     }
 
     async updateOrder(ordenId, formData) {
-        return await this.http.postFormData(`/supervisor-pedidos/${encodeURIComponent(ordenId)}/actualizar`, formData);
+        return await this.http.postFormData(`/api/supervisor-pedidos/ordenes/${encodeURIComponent(ordenId)}/actualizar`, formData);
     }
 
     async deleteImage(tipo, imageId) {
-        return await this.http.delete(`/supervisor-pedidos/imagen/${encodeURIComponent(tipo)}/${encodeURIComponent(imageId)}`);
+        return await this.http.delete(`/api/supervisor-pedidos/imagenes/${encodeURIComponent(tipo)}/${encodeURIComponent(imageId)}`);
     }
 
     async calculateEstimatedDate(ordenId, diasEntrega) {
@@ -58,17 +69,27 @@ class PedidoApiRepository extends PedidoRepository {
     // ===== NAVEGACIÓN AJAX =====
 
     async fetchPageContent(url) {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            cache: 'no-store'
-        });
+        const sourceUrl = new URL(url, window.location.origin);
+        const apiPath = `/api/supervisor-pedidos/ordenes-fragment${sourceUrl.search || ''}`;
+        const response = await this.http.get(apiPath);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error: ${response.status}`);
+        if (!response?.success || !response?.data?.html) {
+            throw new Error('Respuesta inválida al cargar fragmento de órdenes');
         }
 
-        return await response.text();
+        return response.data.html;
+    }
+
+    async fetchOrdersData(url) {
+        const sourceUrl = new URL(url, window.location.origin);
+        const apiPath = `/api/supervisor-pedidos/ordenes${sourceUrl.search || ''}`;
+        const response = await this.http.get(apiPath);
+
+        if (!response?.success || !response?.data) {
+            throw new Error('Respuesta inválida al cargar órdenes');
+        }
+
+        return response.data;
     }
 }
 

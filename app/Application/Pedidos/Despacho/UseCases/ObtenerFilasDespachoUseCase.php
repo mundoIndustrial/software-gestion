@@ -5,20 +5,20 @@ namespace App\Application\Pedidos\Despacho\UseCases;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Application\Pedidos\Despacho\DTOs\FilaDespachoDTO;
+use App\Domain\Pedidos\UseCases\ObtenerFilasDespachoUseCaseContract;
+use App\Domain\Pedidos\Exceptions\PedidoNoEncontrado;
 use Illuminate\Support\Collection;
 
 /**
  * ObtenerFilasDespachoUseCase
- * 
  * Use Case (Application Service) para obtener las filas de despacho
  * de un pedido
- * 
  * Coordina entre:
  * - Domain Service (DespachoGeneradorService)
  * - Modelos (PedidoProduccion)
  * - DTOs (FilaDespachoDTO)
  */
-class ObtenerFilasDespachoUseCase
+class ObtenerFilasDespachoUseCase implements ObtenerFilasDespachoUseCaseContract
 {
     public function __construct(
         private DespachoGeneradorService $despachoGenerador,
@@ -26,7 +26,6 @@ class ObtenerFilasDespachoUseCase
 
     /**
      * Ejecutar: Obtener todas las filas (prendas + EPP)
-     * 
      * @param int|string $pedidoId
      * @return Collection<FilaDespachoDTO>
      * @throws \Exception
@@ -39,7 +38,6 @@ class ObtenerFilasDespachoUseCase
 
     /**
      * Ejecutar: Obtener solo prendas
-     * 
      * @param int|string $pedidoId
      * @return Collection<FilaDespachoDTO>
      * @throws \Exception
@@ -52,7 +50,6 @@ class ObtenerFilasDespachoUseCase
 
     /**
      * Ejecutar: Obtener solo EPP
-     * 
      * @param int|string $pedidoId
      * @return Collection<FilaDespachoDTO>
      * @throws \Exception
@@ -75,9 +72,25 @@ class ObtenerFilasDespachoUseCase
         ])->find($pedidoId);
 
         if (!$pedido) {
-            throw new \Exception("Pedido con ID {$pedidoId} no encontrado");
+            throw is_int($pedidoId)
+                ? PedidoNoEncontrado::conId($pedidoId)
+                : new PedidoNoEncontrado("Pedido con ID {$pedidoId} no encontrado");
         }
 
         return $pedido;
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerFilasDespachoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

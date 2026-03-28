@@ -6,13 +6,10 @@ use App\Application\Operario\DTOs\PasarACosturaCommandDTO;
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Events\EncargadoCosturaAsignado;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboAsignadoCosturero;
-use App\Models\PedidoProduccion;
-use App\Models\Prenda;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PasarACosturaUseCase
@@ -20,16 +17,17 @@ class PasarACosturaUseCase
     public function __construct(
         private readonly ConsecutivoReciboPedidoRepository $recibos,
         private readonly ProcesoPrendaRepository $procesos,
+        private readonly ControlCalidadWorkflow $workflowService,
     ) {}
 
     public function execute(PasarACosturaCommandDTO $cmd): ReciboCommandResultDTO
     {
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
-                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta acción', 403);
+                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta accion', 403);
             }
 
-            $pedido = PedidoProduccion::findOrFail($cmd->pedidoId);
+            $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
 
             Log::info('[COSTURA] Buscando recibo para pasar a Costura', [
                 'pedido_id' => $pedido->id,
@@ -58,54 +56,50 @@ class PasarACosturaUseCase
                 return new ReciboCommandResultDTO(false, 'Recibo no encontrado', 404);
             }
 
-            $prenda = Prenda::find($cmd->prendaId);
+            $prenda = $this->workflowService->findPrendaById($cmd->prendaId);
 
-            DB::beginTransaction();
+            [$nuevoProceso, $areaAnterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
+                $areaAnterior = $recibo->area;
 
-            $areaAnterior = $recibo->area;
+                $procesoExistente = $this->procesos->findLatestByProceso(
+                    numeroPedido: (int) $pedido->numero_pedido,
+                    prendaId: (int) $cmd->prendaId,
+                    proceso: 'Costura',
+                );
 
-            $procesoExistente = $this->procesos->findLatestByProceso(
-                numeroPedido: (int) $pedido->numero_pedido,
-                prendaId: (int) $cmd->prendaId,
-                proceso: 'Costura',
-            );
+                if ($procesoExistente) {
+                    $datosActualizacion = [
+                        'encargado' => $cmd->encargado,
+                        'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
+                    ];
 
-            if ($procesoExistente) {
-                // Registrar fecha de asignación si el encargado cambia o si no tenía fecha
-                $datosActualizacion = [
-                    'encargado' => $cmd->encargado,
-                    'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
-                ];
-                
-                // Solo registrar fecha_de_asignacion_encargado si el encargado cambia o si no tenía fecha previa
-                if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
-                    $datosActualizacion['fecha_de_asignacion_encargado'] = now();
+                    if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
+                        $datosActualizacion['fecha_de_asignacion_encargado'] = now();
+                    }
+
+                    $this->procesos->update($procesoExistente, $datosActualizacion);
+                    $nuevoProceso = $procesoExistente;
+                } else {
+                    $nuevoProceso = $this->procesos->create([
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_pedido_id' => $cmd->prendaId,
+                        'numero_recibo' => $recibo->consecutivo_actual,
+                        'proceso' => 'Costura',
+                        'fecha_inicio' => now(),
+                        'encargado' => $cmd->encargado,
+                        'fecha_de_asignacion_encargado' => now(),
+                        'estado_proceso' => 'En Progreso',
+                        'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+                    ]);
+
+                    $recibo->area = 'Costura';
+                    $this->recibos->save($recibo);
                 }
-                
-                $this->procesos->update($procesoExistente, $datosActualizacion);
-                $nuevoProceso = $procesoExistente;
-            } else {
-                $nuevoProceso = $this->procesos->create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $cmd->prendaId,
-                    'numero_recibo' => $recibo->consecutivo_actual,
-                    'proceso' => 'Costura',
-                    'fecha_inicio' => now(),
-                    'encargado' => $cmd->encargado,
-                    'fecha_de_asignacion_encargado' => now(),
-                    'estado_proceso' => 'En Progreso',
-                    'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
-                ]);
 
-                $recibo->area = 'Costura';
-                $this->recibos->save($recibo);
-            }
+                return [$nuevoProceso, $areaAnterior];
+            });
 
-            DB::commit();
-
-            $encargadoUsuario = User::query()
-                ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim((string) $cmd->encargado))])
-                ->first();
+            $encargadoUsuario = $this->workflowService->findUserByNormalizedName((string) $cmd->encargado);
             $encargadoRol = null;
             try {
                 $encargadoRol = $encargadoUsuario?->roles?->first()?->name;
@@ -138,9 +132,7 @@ class PasarACosturaUseCase
 
             $encargadoNormalizado = strtolower(trim((string) $cmd->encargado));
             if ($encargadoNormalizado !== '') {
-                $operarioAsignado = User::query()
-                    ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
-                    ->first();
+                $operarioAsignado = $this->workflowService->findUserByNormalizedName($encargadoNormalizado);
 
                 if ($operarioAsignado && ($operarioAsignado->hasRole('costura-reflectivo') || $operarioAsignado->hasRole('lider-reflectivo'))) {
                     broadcast(new OperarioRecibosActualizados(
@@ -154,7 +146,7 @@ class PasarACosturaUseCase
                             'tipo_recibo' => (string) $recibo->tipo_recibo,
                             'numero_recibo' => (int) $recibo->consecutivo_actual,
                             'encargado' => (string) $cmd->encargado,
-                            'mensaje' => "Se te asignó el recibo #{$recibo->consecutivo_actual} de {$recibo->tipo_recibo}",
+                            'mensaje' => "Se te asigno el recibo #{$recibo->consecutivo_actual} de {$recibo->tipo_recibo}",
                         ]
                     ));
 
@@ -175,9 +167,7 @@ class PasarACosturaUseCase
             ]);
 
             if ($tipoReciboUpper === 'REFLECTIVO') {
-                $usuariosReflectivos = User::all()->filter(function ($user) {
-                    return $user->hasRole('costura-reflectivo') || $user->hasRole('lider-reflectivo');
-                });
+                $usuariosReflectivos = $this->workflowService->findUsersWithAnyRole(['costura-reflectivo', 'lider-reflectivo']);
 
                 Log::info('[COSTURA] Broadcast REFLECTIVO a todos los costura-reflectivo/lider-reflectivo', [
                     'total_usuarios' => $usuariosReflectivos->count(),
@@ -213,9 +203,7 @@ class PasarACosturaUseCase
                 $notificarLideres = $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo');
 
                 if ($notificarLideres) {
-                    $usuariosLiderReflectivo = User::all()->filter(function ($user) {
-                        return $user->hasRole('lider-reflectivo');
-                    });
+                    $usuariosLiderReflectivo = $this->workflowService->findUsersWithAnyRole(['lider-reflectivo']);
 
                     Log::info('[COSTURA] Broadcast COSTURA a lider-reflectivo (encargado es costura-reflectivo)', [
                         'total_usuarios' => $usuariosLiderReflectivo->count(),
@@ -273,8 +261,6 @@ class PasarACosturaUseCase
                 'area_anterior' => $areaAnterior,
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-
             Log::error('Error al pasar recibo a Costura', [
                 'pedido_id' => $cmd->pedidoId,
                 'error' => $e->getMessage(),

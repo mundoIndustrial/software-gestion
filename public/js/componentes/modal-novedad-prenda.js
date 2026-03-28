@@ -248,7 +248,7 @@ class ModalNovedadPrenda {
                 });
             }
             
-            const response = await fetch(`/asesores/pedidos/${this.pedidoId}/agregar-prenda`, {
+            const response = await fetch(`/api/asesores/pedidos/${this.pedidoId}/agregar-prenda`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''

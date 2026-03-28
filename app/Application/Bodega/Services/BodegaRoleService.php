@@ -57,7 +57,7 @@ class BodegaRoleService
      */
     public function esReadOnly(array $rolesDelUsuario): bool
     {
-        return in_array('Costura-Bodega', $rolesDelUsuario) 
+        return in_array('Costura-Bodega', $rolesDelUsuario)
             || in_array('EPP-Bodega', $rolesDelUsuario);
         // despacho se removió - ahora puede guardar notas
     }
@@ -67,16 +67,14 @@ class BodegaRoleService
      */
     public function determinarRolActual(array $roleNames): string
     {
-        if (in_array('admin', $roleNames)) {
-            return 'admin';
-        } elseif (in_array('despacho', $roleNames)) {
-            return 'despacho';
-        } elseif (in_array('Costura-Bodega', $roleNames)) {
-            return 'Costura-Bodega';
-        } elseif (in_array('EPP-Bodega', $roleNames)) {
-            return 'EPP-Bodega';
+        $rolePriority = ['admin', 'despacho', 'Costura-Bodega', 'EPP-Bodega'];
+
+        foreach ($rolePriority as $role) {
+            if (in_array($role, $roleNames)) {
+                return $role;
+            }
         }
-        
+
         return 'Bodeguero';
     }
 

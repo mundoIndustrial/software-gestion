@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\ObtenerDatosParaCrearPedidoUseCaseContract;
+
 use App\Application\DTOs\ObtenerDatosParaCrearPedidoOutputDTO;
 use App\Models\Cliente;
 use App\Models\PedidoProduccion;
@@ -19,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  * Nota: Otros datos (tallas, técnicas, formas de pago) se cargarán
  * dinámicamente desde endpoints específicos en el frontend
  */
-class ObtenerDatosParaCrearPedidoUseCase
+class ObtenerDatosParaCrearPedidoUseCase implements ObtenerDatosParaCrearPedidoUseCaseContract
 {
     /**
      * Ejecutar use case
@@ -68,4 +70,18 @@ class ObtenerDatosParaCrearPedidoUseCase
             throw $e;
         }
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {ObtenerDatosParaCrearPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
+

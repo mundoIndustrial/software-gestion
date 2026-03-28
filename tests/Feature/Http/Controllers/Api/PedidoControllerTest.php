@@ -82,8 +82,7 @@ class PedidoControllerTest extends TestCase
 
         $response = $this->postJson('/__test_api_pedidos', $payload);
         $this->assertEquals(422, $response->getStatusCode());
-        $json = $response->getData(true);
-        $this->assertFalse($json['success']);
+        $response->assertJsonValidationErrors(['cliente']);
     }
 
     /**

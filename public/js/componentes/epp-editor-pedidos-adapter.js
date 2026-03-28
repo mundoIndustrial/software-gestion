@@ -111,9 +111,9 @@ async function _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, motivo) {
             });
         }
 
-        console.log('[EPPAdapter] 📤 Enviando DELETE a: /asesores/pedidos/' + pedidoId + '/eliminar-epp');
+        console.log('[EPPAdapter] Enviando DELETE a: /api/asesores/pedidos/' + pedidoId + '/eliminar-epp');
         
-        const response = await fetch(`/asesores/pedidos/${pedidoId}/eliminar-epp`, {
+        const response = await fetch(`/api/asesores/pedidos/${pedidoId}/eliminar-epp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

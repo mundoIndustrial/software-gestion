@@ -3,14 +3,14 @@
 namespace App\Infrastructure\Http\Controllers\Cartera;
 
 use App\Http\Controllers\Controller;
-use App\Application\UseCases\CarteraPedidos\ObtenerPedidosPendientesUseCase;
-use App\Application\UseCases\CarteraPedidos\ObtenerPedidosAprobadosUseCase;
-use App\Application\UseCases\CarteraPedidos\ObtenerPedidosRechazadosUseCase;
-use App\Application\UseCases\CarteraPedidos\ObtenerPedidosAnuladosUseCase;
-use App\Application\UseCases\CarteraPedidos\ObtenerOpcionesFiltroUseCase;
-use App\Application\UseCases\CarteraPedidos\AprobarPedidoUseCase;
-use App\Application\UseCases\CarteraPedidos\RechazarPedidoUseCase;
-use App\Application\UseCases\CarteraPedidos\ObtenerDatosFacturaUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosPendientesUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosAprobadosUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosRechazadosUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosAnuladosUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerOpcionesFiltroUseCase;
+use App\Application\Pedidos\UseCases\Cartera\AprobarPedidoUseCase;
+use App\Application\Pedidos\UseCases\Cartera\RechazarPedidoUseCase;
+use App\Application\Pedidos\UseCases\Cartera\ObtenerDatosFacturaUseCase;
 use Illuminate\Http\Request;
 
 class CarteraPedidosController extends Controller
@@ -325,3 +325,4 @@ class CarteraPedidosController extends Controller
         return response()->json($resultado['data']);
     }
 }
+

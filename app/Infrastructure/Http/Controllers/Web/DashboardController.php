@@ -41,23 +41,23 @@ class DashboardController extends Controller
         if ($userRoles && $userRoles->count() > 0) {
             $roleName = $userRoles->first()->name;
             
-            \Log::info('ðŸŽ­ Rol primario del usuario', [
+            \Log::info(' Rol primario del usuario', [
                 'role' => $roleName,
                 'all_roles' => $userRoles->pluck('name')->toArray()
             ]);
 
             if ($roleName === 'asesor') {
-                \Log::info('â†’ Redirigiendo a asesores.dashboard');
+                \Log::info(' Redirigiendo a asesores.dashboard');
                 return redirect()->route('asesores.dashboard');
             }
 
             if ($roleName === 'bodeguero') {
-                \Log::info('â†’ Redirigiendo a gestion-bodega.pedidos');
+                \Log::info(' Redirigiendo a gestion-bodega.pedidos');
                 return redirect()->route('gestion-bodega.pedidos');
             }
 
             if ($roleName === 'insumos') {
-                \Log::info('â†’ ðŸŽ¯ PREPARANDO redirect a insumos.materiales.index');
+                \Log::info(' ðŸŽ¯ PREPARANDO redirect a insumos.materiales.index');
                 try {
                     $redirectUrl = route('insumos.materiales.index');
                     \Log::info(' URL generada correctamente', ['url' => $redirectUrl]);
@@ -72,68 +72,68 @@ class DashboardController extends Controller
             }
 
             if ($roleName === 'supervisor_pedidos') {
-                \Log::info('â†’ Redirigiendo a supervisor-pedidos.index');
+                \Log::info(' Redirigiendo a supervisor-pedidos.index');
                 return redirect()->route('supervisor-pedidos.index');
             }
 
             if ($roleName === 'contador') {
-                \Log::info('â†’ Redirigiendo a contador.index');
+                \Log::info(' Redirigiendo a contador.index');
                 return redirect()->route('contador.index');
             }
 
             if ($roleName === 'supervisor' || $roleName === 'supervisor_planta') {
-                \Log::info('â†’ Redirigiendo a registros.index');
+                \Log::info(' Redirigiendo a registros.index');
                 return redirect()->route('registros.index');
             }
 
             if ($roleName === 'aprobador_cotizaciones') {
-                \Log::info('â†’ Redirigiendo a cotizaciones.pendientes');
+                \Log::info(' Redirigiendo a cotizaciones.pendientes');
                 return redirect()->route('cotizaciones.pendientes');
             }
 
             if ($roleName === 'cortador' || $roleName === 'costurero' || $roleName === 'vista-costura') {
-                \Log::info('â†’ Redirigiendo a operario.dashboard');
+                \Log::info(' Redirigiendo a operario.dashboard');
                 return redirect()->route('operario.dashboard');
             }
 
             if ($roleName === 'lider-control-calidad' || $roleName === 'control de calidad') {
-                \Log::info('â†’ Redirigiendo a control-calidad.dashboard');
+                \Log::info(' Redirigiendo a control-calidad.dashboard');
                 return redirect()->route('control-calidad.dashboard');
             }
 
             if ($roleName === 'visualizador_cotizaciones_logo') {
-                \Log::info('â†’ Redirigiendo a visualizador-logo.dashboard');
+                \Log::info(' Redirigiendo a visualizador-logo.dashboard');
                 return redirect()->route('visualizador-logo.dashboard');
             }
 
             if ($roleName === 'supervisor_gerencia') {
-                \Log::info('â†’ Redirigiendo a registros.recibos-costura');
+                \Log::info(' Redirigiendo a registros.recibos-costura');
                 return redirect()->route('registros.recibos-costura');
             }
 
             if ($roleName === 'administrador-costura') {
-                \Log::info('â†’ Redirigiendo a operario.dashboard');
+                \Log::info(' Redirigiendo a operario.dashboard');
                 return redirect()->route('operario.dashboard', ['todas' => 1, 'tab' => 'costura']);
             }
 
             if ($roleName === 'cartera') {
-                \Log::info('â†’ Redirigiendo a cartera.pedidos');
+                \Log::info(' Redirigiendo a cartera.pedidos');
                 return redirect()->route('cartera.pedidos');
             }
 
             if ($roleName === 'Despacho' || $roleName === 'despacho') {
-                \Log::info('â†’ Redirigiendo a despacho.index');
+                \Log::info(' Redirigiendo a despacho.index');
                 return redirect()->route('despacho.index');
             }
 
             if ($roleName === 'visualizador_plooter') {
-                \Log::info('â†’ Redirigiendo a insumos.plooter.index');
+                \Log::info(' Redirigiendo a insumos.plooter.index');
                 return redirect()->route('insumos.plooter.index');
             }
 
-            \Log::warning('âš ï¸ Rol no mapeado a ninguna ruta', ['role' => $roleName]);
+            \Log::warning(' Rol no mapeado a ninguna ruta', ['role' => $roleName]);
         } else {
-            \Log::warning('âš ï¸ Usuario sin roles asignados');
+            \Log::warning(' Usuario sin roles asignados');
         }
 
         \Log::info(' Mostrando vista de dashboard generica');

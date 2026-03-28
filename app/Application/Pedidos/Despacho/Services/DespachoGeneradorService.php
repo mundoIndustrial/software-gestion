@@ -10,10 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * DespachoGeneradorService
- * 
  * Domain Service que encapsula la lógica de negocio para generar
  * la estructura de despacho a partir de un pedido.
- * 
  * Responsabilidades:
  * - Obtener prendas con tallas
  * - Obtener EPP
@@ -27,7 +25,6 @@ class DespachoGeneradorService
     ) {}
     /**
      * Generar todas las filas de despacho (prendas + EPP)
-     * 
      * @param PedidoProduccion $pedido
      * @return Collection<FilaDespachoDTO>
      */
@@ -46,7 +43,6 @@ class DespachoGeneradorService
 
     /**
      * Generar filas solo de prendas
-     * 
      * @param PedidoProduccion $pedido
      * @return Collection<FilaDespachoDTO>
      */
@@ -59,7 +55,6 @@ class DespachoGeneradorService
 
     /**
      * Generar filas solo de EPP
-     * 
      * @param PedidoProduccion $pedido
      * @return Collection<FilaDespachoDTO>
      */

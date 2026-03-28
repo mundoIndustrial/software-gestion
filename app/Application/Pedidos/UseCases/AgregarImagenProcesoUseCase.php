@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarImagenProcesoUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarImagenProcesoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\ProcesosPrendaDetalle;
@@ -11,7 +13,7 @@ use App\Models\ProcesosPrendaDetalle;
  * 
  * Maneja la creación de registro en pedidos_procesos_imagenes
  */
-final class AgregarImagenProcesoUseCase
+final class AgregarImagenProcesoUseCase implements AgregarImagenProcesoUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -35,5 +37,18 @@ final class AgregarImagenProcesoUseCase
     {
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarImagenProcesoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

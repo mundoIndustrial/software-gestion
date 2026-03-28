@@ -35,9 +35,9 @@
     function _getUrlPrefix() {
         const path = window.location.pathname;
         if (path.startsWith('/supervisor-pedidos')) {
-            return { fetch: '/supervisor-pedidos', save: '/supervisor-pedidos', context: 'supervisor' };
+            return { fetch: '/api/supervisor-pedidos/ordenes', save: '/api/supervisor-pedidos/ordenes', context: 'supervisor' };
         }
-        return { fetch: '/asesores/pedidos-produccion', save: '/asesores/pedidos', context: 'asesor' };
+        return { fetch: '/api/asesores/pedidos-produccion', save: '/api/asesores/pedidos', context: 'asesor' };
     }
 
     /**

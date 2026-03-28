@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function cargarTelasDisponibles() {
     try {
-        const response = await fetch('/asesores/api/telas');
+        const response = await fetch('/api/asesores/telas');
         const result = await response.json();
         
         if (result.success && result.data) {
@@ -276,7 +276,7 @@ async function cargarTelasDisponibles() {
  */
 async function cargarColoresDisponibles() {
     try {
-        const response = await fetch('/asesores/api/colores');
+        const response = await fetch('/api/asesores/colores');
         const result = await response.json();
         
         if (result.success && result.data) {

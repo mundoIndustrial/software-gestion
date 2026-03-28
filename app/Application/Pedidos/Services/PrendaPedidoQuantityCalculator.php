@@ -2,21 +2,16 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Models\PrendaPedido;
-use App\Models\PrendaPedidoTalla;
+use App\Domain\Pedidos\Services\PrendaPedidoQuantityCalculatorContract;
 
 class PrendaPedidoQuantityCalculator
 {
-    public function calculate(PrendaPedido $prenda): int
+    public function __construct(private readonly PrendaPedidoQuantityCalculatorContract $service)
     {
-        if ($prenda->relationLoaded('tallas') && $prenda->tallas) {
-            $total = 0;
-            foreach ($prenda->tallas as $tallaRecord) {
-                $total += $tallaRecord->cantidad;
-            }
-            return $total;
-        }
+    }
 
-        return PrendaPedidoTalla::where('prenda_pedido_id', $prenda->id)->sum('cantidad');
+    public function __call(string $name, array $arguments): mixed
+    {
+        return $this->service->call($name, $arguments);
     }
 }

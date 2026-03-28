@@ -3,22 +3,21 @@
 namespace App\Application\Operario\UseCases;
 
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
+use App\Application\Operario\DTOs\NotificacionReciboCompletadoDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Domain\Operario\Services\ReciboOperarioWorkflow;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboCompletado;
-use App\Models\ConsecutivoReciboPedido;
-use App\Models\PrendaPedido;
 use App\Models\ReciboPorPartes;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class CompletarReciboOperarioUseCase
 {
     public function __construct(
         private readonly ConsecutivoReciboPedidoRepository $recibos,
         private readonly ProcesoPrendaRepository $procesos,
+        private readonly ReciboOperarioWorkflow $workflow,
     ) {}
 
     public function execute(int $idRecibo, bool $esParcial = false): ReciboCommandResultDTO
@@ -44,7 +43,7 @@ class CompletarReciboOperarioUseCase
             }
 
             if ($esParcial) {
-                $parcial = ReciboPorPartes::query()->with(['pedido', 'prenda'])->find((int) $idRecibo);
+                $parcial = $this->workflow->findParcialById((int) $idRecibo, true);
 
                 if (!$parcial || !$parcial->pedido || !$parcial->prenda) {
                     return new ReciboCommandResultDTO(false, 'Parcial no encontrado', 404);
@@ -62,14 +61,12 @@ class CompletarReciboOperarioUseCase
                     $nombreOperario = (string) $encargadoActual;
                 }
 
-                DB::table('prenda_recibo_completado')->updateOrInsert(
-                    ['id_parcial' => (int) $parcial->id, 'area' => $areaOperario],
-                    [
-                        'id_recibo' => null,
-                        'numero_recibo' => $parcial->consecutivo_parcial,
-                        'nombre_operario' => $nombreOperario,
-                        'fecha_completado' => now(),
-                    ]
+                $this->workflow->upsertCompletado(
+                    idRecibo: null,
+                    idParcial: (int) $parcial->id,
+                    area: $areaOperario,
+                    numeroRecibo: (string) $parcial->consecutivo_parcial,
+                    nombreOperario: $nombreOperario
                 );
 
                 $estadoOriginal = $this->sincronizarCompletadoOriginalDesdeParciales($parcial, $areaOperario, $nombreOperario);
@@ -107,18 +104,12 @@ class CompletarReciboOperarioUseCase
             }
 
             if ($esCortador) {
-                DB::transaction(function () use ($recibo) {
+                $this->workflow->runInTransaction(function () use ($recibo) {
                     $recibo->area = 'Costura';
-                    $recibo->save();
+                    $this->recibos->save($recibo);
 
                     if (!empty($recibo->prenda_id)) {
-                        $prenda = PrendaPedido::where('id', $recibo->prenda_id)
-                            ->with(['pedidoProduccion'])
-                            ->first();
-
-                        $numeroPedido = $prenda && $prenda->pedidoProduccion
-                            ? (int) $prenda->pedidoProduccion->numero_pedido
-                            : null;
+                        $numeroPedido = $this->workflow->findNumeroPedidoByPrendaId((int) $recibo->prenda_id);
 
                         if (!empty($numeroPedido)) {
                             $procesoCostura = $this->procesos->findLatestByProceso(
@@ -128,7 +119,7 @@ class CompletarReciboOperarioUseCase
                             );
 
                             if (!$procesoCostura) {
-                                $procesoCostura = $this->procesos->create([
+                                $this->procesos->create([
                                     'numero_pedido' => $numeroPedido,
                                     'prenda_pedido_id' => $recibo->prenda_id,
                                     'numero_recibo' => $recibo->consecutivo_actual,
@@ -148,14 +139,12 @@ class CompletarReciboOperarioUseCase
                 });
             }
 
-            DB::table('prenda_recibo_completado')->updateOrInsert(
-                ['id_recibo' => (int) $recibo->id, 'area' => $areaOperario],
-                [
-                    'id_parcial' => null,
-                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
-                    'nombre_operario' => $nombreOperario,
-                    'fecha_completado' => now(),
-                ]
+            $this->workflow->upsertCompletado(
+                idRecibo: (int) $recibo->id,
+                idParcial: null,
+                area: $areaOperario,
+                numeroRecibo: (string) ($recibo->consecutivo_actual ?? 0),
+                nombreOperario: $nombreOperario
             );
 
             try {
@@ -170,17 +159,19 @@ class CompletarReciboOperarioUseCase
                 ]));
 
                 $this->notificarVistaCosturaCompletadoRecibo(
-                    reciboId: (int) $recibo->id,
-                    consecutivo: (string) ($recibo->consecutivo_actual ?? '0'),
-                    pedidoId: (int) ($recibo->pedido_produccion_id ?? 0),
-                    prendaId: $recibo->prenda_id ? (int) $recibo->prenda_id : null,
-                    tipoRecibo: (string) ($recibo->tipo_recibo ?? ''),
-                    nombreOperario: (string) $nombreOperario,
-                    mensaje: "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
-                    esParcial: false,
-                    pedidoParcialId: null,
-                    consecutivoParcial: null,
-                    originalCompletado: true
+                    new NotificacionReciboCompletadoDTO(
+                        reciboId: (int) $recibo->id,
+                        consecutivo: (string) ($recibo->consecutivo_actual ?? '0'),
+                        pedidoId: (int) ($recibo->pedido_produccion_id ?? 0),
+                        prendaId: $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                        tipoRecibo: (string) ($recibo->tipo_recibo ?? ''),
+                        nombreOperario: (string) $nombreOperario,
+                        mensaje: "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
+                        esParcial: false,
+                        pedidoParcialId: null,
+                        consecutivoParcial: null,
+                        originalCompletado: true
+                    )
                 );
             } catch (\Exception $e) {
                 \Log::warning('[OperarioController] Error al broadcast ReciboCompletado', [
@@ -207,65 +198,42 @@ class CompletarReciboOperarioUseCase
             return null;
         }
 
-        return \App\Models\ProcesoPrenda::query()
-            ->where('numero_pedido', $numeroPedido)
-            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-            ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
-            ->whereNull('deleted_at')
-            ->latest('created_at')
-            ->first();
+        return $this->workflow->findProcesoCosturaParcial($parcial);
     }
 
     private function sincronizarCompletadoOriginalDesdeParciales(ReciboPorPartes $parcial, string $areaOperario, string $nombreOperario): array
     {
-        $parcialIds = ReciboPorPartes::query()
-            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
-            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-            ->where('tipo_recibo', $parcial->tipo_recibo)
-            ->where('consecutivo_original', $parcial->consecutivo_original)
-            ->pluck('id');
+        $parcialIds = $this->workflow->findParcialIdsForOriginal($parcial);
 
-        if ($parcialIds->isEmpty()) {
+        if (empty($parcialIds)) {
             return ['original_completado' => false, 'recibo_original_id' => null];
         }
 
-        $totalCompletados = DB::table('prenda_recibo_completado')
-            ->where('area', $areaOperario)
-            ->whereIn('id_parcial', $parcialIds->all())
-            ->count();
-
-        $reciboOriginal = ConsecutivoReciboPedido::query()
-            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
-            ->where('prenda_id', $parcial->prenda_pedido_id)
-            ->where('tipo_recibo', $parcial->tipo_recibo)
-            ->where('consecutivo_actual', $parcial->consecutivo_original)
-            ->where('activo', true)
-            ->first();
+        $reciboOriginal = $this->workflow->findReciboOriginalActivoDesdeParcial($parcial);
 
         if (!$reciboOriginal) {
             return ['original_completado' => false, 'recibo_original_id' => null];
         }
 
-        if ($totalCompletados >= $parcialIds->count()) {
-            DB::table('prenda_recibo_completado')->updateOrInsert(
-                ['id_recibo' => (int) $reciboOriginal->id, 'area' => $areaOperario],
-                [
-                    'id_parcial' => null,
-                    'numero_recibo' => $reciboOriginal->consecutivo_actual,
-                    'nombre_operario' => $nombreOperario,
-                    'fecha_completado' => now(),
-                ]
+        $totalCompletados = $this->workflow->countCompletadosParcialesByArea($parcialIds, $areaOperario);
+        $estaCompleto = $totalCompletados >= count($parcialIds);
+
+        if ($estaCompleto) {
+            $this->workflow->upsertCompletado(
+                idRecibo: (int) $reciboOriginal->id,
+                idParcial: null,
+                area: $areaOperario,
+                numeroRecibo: (string) $reciboOriginal->consecutivo_actual,
+                nombreOperario: $nombreOperario
             );
-            return ['original_completado' => true, 'recibo_original_id' => (int) $reciboOriginal->id];
+        } else {
+            $this->workflow->deleteCompletadoByReciboAndArea((int) $reciboOriginal->id, $areaOperario);
         }
 
-        DB::table('prenda_recibo_completado')
-            ->where('id_recibo', (int) $reciboOriginal->id)
-            ->where('area', $areaOperario)
-            ->delete();
-
-        return ['original_completado' => false, 'recibo_original_id' => (int) $reciboOriginal->id];
+        return [
+            'original_completado' => $estaCompleto,
+            'recibo_original_id' => (int) $reciboOriginal->id
+        ];
     }
 
     private function notificarVistaCosturaCompletadoParcial(
@@ -274,9 +242,7 @@ class CompletarReciboOperarioUseCase
         string $nombreOperario,
         array $estadoOriginal
     ): void {
-        $usuariosVistaCostura = User::query()
-            ->get()
-            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+        $usuariosVistaCostura = $this->workflow->findVistaCosturaUsers();
 
         foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
             broadcast(new OperarioRecibosActualizados(
@@ -303,22 +269,9 @@ class CompletarReciboOperarioUseCase
         }
     }
 
-    private function notificarVistaCosturaCompletadoRecibo(
-        int $reciboId,
-        string $consecutivo,
-        int $pedidoId,
-        ?int $prendaId,
-        string $tipoRecibo,
-        string $nombreOperario,
-        string $mensaje,
-        bool $esParcial,
-        ?int $pedidoParcialId,
-        ?string $consecutivoParcial,
-        bool $originalCompletado
-    ): void {
-        $usuariosVistaCostura = User::query()
-            ->get()
-            ->filter(fn ($user) => $user->hasRole('vista-costura'));
+    private function notificarVistaCosturaCompletadoRecibo(NotificacionReciboCompletadoDTO $notificacion): void
+    {
+        $usuariosVistaCostura = $this->workflow->findVistaCosturaUsers();
 
         foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
             broadcast(new OperarioRecibosActualizados(
@@ -326,17 +279,17 @@ class CompletarReciboOperarioUseCase
                 payload: [
                     'area' => 'Costura',
                     'accion' => 'recibo_completado',
-                    'es_parcial' => $esParcial,
-                    'recibo_id' => $reciboId,
-                    'pedido_parcial_id' => $pedidoParcialId,
-                    'consecutivo' => $consecutivo,
-                    'consecutivo_parcial' => $consecutivoParcial,
-                    'pedido_produccion_id' => $pedidoId,
-                    'prenda_id' => $prendaId,
-                    'tipo_recibo' => $tipoRecibo,
-                    'nombre_operario' => $nombreOperario,
-                    'original_completado' => $originalCompletado,
-                    'mensaje' => $mensaje,
+                    'es_parcial' => $notificacion->esParcial,
+                    'recibo_id' => $notificacion->reciboId,
+                    'pedido_parcial_id' => $notificacion->pedidoParcialId,
+                    'consecutivo' => $notificacion->consecutivo,
+                    'consecutivo_parcial' => $notificacion->consecutivoParcial,
+                    'pedido_produccion_id' => $notificacion->pedidoId,
+                    'prenda_id' => $notificacion->prendaId,
+                    'tipo_recibo' => $notificacion->tipoRecibo,
+                    'nombre_operario' => $notificacion->nombreOperario,
+                    'original_completado' => $notificacion->originalCompletado,
+                    'mensaje' => $notificacion->mensaje,
                 ]
             ));
         }
@@ -345,19 +298,20 @@ class CompletarReciboOperarioUseCase
     private function formatearConsecutivoParcial($valor): string
     {
         $texto = trim((string) $valor);
+
         if ($texto === '') {
             return '0';
         }
 
-        if (is_numeric($texto)) {
-            $numero = (float) $texto;
-            if (abs($numero - (int) $numero) < 0.00001) {
-                return (string) (int) $numero;
-            }
-
-            return rtrim(rtrim(number_format($numero, 2, '.', ''), '0'), '.');
+        if (!is_numeric($texto)) {
+            return $texto;
         }
 
-        return $texto;
+        $numero = (float) $texto;
+        if (abs($numero - (int) $numero) < 0.00001) {
+            return (string) (int) $numero;
+        }
+
+        return rtrim(rtrim(number_format($numero, 2, '.', ''), '0'), '.');
     }
 }

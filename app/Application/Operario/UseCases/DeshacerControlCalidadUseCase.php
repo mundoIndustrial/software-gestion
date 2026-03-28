@@ -6,8 +6,7 @@ use App\Application\Operario\DTOs\DeshacerControlCalidadCommandDTO;
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
-use App\Models\PedidoProduccion;
-use Illuminate\Support\Facades\DB;
+use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerControlCalidadUseCase
@@ -15,16 +14,17 @@ class DeshacerControlCalidadUseCase
     public function __construct(
         private readonly ConsecutivoReciboPedidoRepository $recibos,
         private readonly ProcesoPrendaRepository $procesos,
+        private readonly ControlCalidadWorkflow $workflowService,
     ) {}
 
     public function execute(DeshacerControlCalidadCommandDTO $cmd): ReciboCommandResultDTO
     {
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
-                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta acción', 403);
+                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta accion', 403);
             }
 
-            $pedido = PedidoProduccion::findOrFail($cmd->pedidoId);
+            $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
 
             $recibo = $this->recibos->findActiveByPedidoPrendaTipoAndArea(
                 pedidoProduccionId: (int) $pedido->id,
@@ -34,39 +34,42 @@ class DeshacerControlCalidadUseCase
             );
 
             if (!$recibo) {
-                return new ReciboCommandResultDTO(false, 'Recibo no encontrado o no está en Control Calidad', 404);
+                return new ReciboCommandResultDTO(false, 'Recibo no encontrado o no esta en Control Calidad', 404);
             }
 
-            DB::beginTransaction();
+            [$procesoCC, $procesoPosterior, $areaAnterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
+                $procesoCC = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                    numeroPedido: (int) $pedido->numero_pedido,
+                    prendaId: (int) $cmd->prendaId,
+                    proceso: 'Control de Calidad',
+                    numeroRecibo: (int) $recibo->consecutivo_actual,
+                );
 
-            $procesoCC = $this->procesos->findLatestByProcesoAndNumeroRecibo(
-                numeroPedido: (int) $pedido->numero_pedido,
-                prendaId: (int) $cmd->prendaId,
-                proceso: 'Control de Calidad',
-                numeroRecibo: (int) $recibo->consecutivo_actual,
-            );
+                if (!$procesoCC) {
+                    return [null, null, null];
+                }
+
+                $procesoPosterior = $this->procesos->findLatestNotProcesoByNumeroRecibo(
+                    numeroPedido: (int) $pedido->numero_pedido,
+                    prendaId: (int) $cmd->prendaId,
+                    procesoExcluido: 'Control de Calidad',
+                    numeroRecibo: (int) $recibo->consecutivo_actual,
+                );
+
+                $areaAnterior = $procesoPosterior ? $procesoPosterior->proceso : 'Costura';
+
+                $recibo->update([
+                    'area' => $areaAnterior,
+                ]);
+
+                $this->procesos->forceDelete($procesoCC);
+
+                return [$procesoCC, $procesoPosterior, $areaAnterior];
+            });
 
             if (!$procesoCC) {
-                DB::rollBack();
-                return new ReciboCommandResultDTO(false, 'No se encontró proceso de Control de Calidad para eliminar', 404);
+                return new ReciboCommandResultDTO(false, 'No se encontro proceso de Control de Calidad para eliminar', 404);
             }
-
-            $procesoPosterior = $this->procesos->findLatestNotProcesoByNumeroRecibo(
-                numeroPedido: (int) $pedido->numero_pedido,
-                prendaId: (int) $cmd->prendaId,
-                procesoExcluido: 'Control de Calidad',
-                numeroRecibo: (int) $recibo->consecutivo_actual,
-            );
-
-            $areaAnterior = $procesoPosterior ? $procesoPosterior->proceso : 'Costura';
-
-            $recibo->update([
-                'area' => $areaAnterior,
-            ]);
-
-            $this->procesos->forceDelete($procesoCC);
-
-            DB::commit();
 
             Log::info('Proceso de Control de Calidad deshecho', [
                 'pedido_id' => $cmd->pedidoId,
@@ -81,8 +84,6 @@ class DeshacerControlCalidadUseCase
                 'proceso_anterior' => $procesoPosterior ? $procesoPosterior->proceso : null,
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-
             Log::error('Error deshaciendo Control de Calidad', [
                 'pedido_id' => $cmd->pedidoId,
                 'prenda_id' => $cmd->prendaId,

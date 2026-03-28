@@ -6,9 +6,7 @@ use App\Application\Operario\DTOs\DeshacerCosturaCommandDTO;
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
-use App\Models\PedidoProduccion;
-use App\Models\Prenda;
-use Illuminate\Support\Facades\DB;
+use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerCosturaUseCase
@@ -16,18 +14,18 @@ class DeshacerCosturaUseCase
     public function __construct(
         private readonly ConsecutivoReciboPedidoRepository $recibos,
         private readonly ProcesoPrendaRepository $procesos,
+        private readonly ControlCalidadWorkflow $workflowService,
     ) {}
 
     public function execute(DeshacerCosturaCommandDTO $cmd): ReciboCommandResultDTO
     {
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
-                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta acción', 403);
+                return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta accion', 403);
             }
 
-            $pedido = PedidoProduccion::findOrFail($cmd->pedidoId);
-
-            $prenda = Prenda::find($cmd->prendaId);
+            $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
+            $prenda = $this->workflowService->findPrendaById($cmd->prendaId);
 
             Log::info('[DESHACER-COSTURA] Buscando recibo', [
                 'pedido_id' => $pedido->id,
@@ -43,7 +41,7 @@ class DeshacerCosturaUseCase
                 tipoRecibo: (string) $cmd->tipoRecibo,
             );
 
-            Log::info('[DESHACER-COSTURA] Resultado búsqueda recibo', [
+            Log::info('[DESHACER-COSTURA] Resultado busqueda recibo', [
                 'recibo_encontrado' => $recibo ? true : false,
                 'recibo_id' => $recibo?->id,
                 'recibo_numero' => $recibo?->consecutivo_actual,
@@ -51,30 +49,33 @@ class DeshacerCosturaUseCase
             ]);
 
             if (!$recibo) {
-                return new ReciboCommandResultDTO(false, 'Recibo no encontrado o no está en Costura', 404);
+                return new ReciboCommandResultDTO(false, 'Recibo no encontrado o no esta en Costura', 404);
             }
 
-            DB::beginTransaction();
+            $procesoCostura = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
+                $procesoCostura = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                    numeroPedido: (int) $pedido->numero_pedido,
+                    prendaId: (int) $cmd->prendaId,
+                    proceso: 'Costura',
+                    numeroRecibo: (int) $recibo->consecutivo_actual,
+                );
 
-            $procesoCostura = $this->procesos->findLatestByProcesoAndNumeroRecibo(
-                numeroPedido: (int) $pedido->numero_pedido,
-                prendaId: (int) $cmd->prendaId,
-                proceso: 'Costura',
-                numeroRecibo: (int) $recibo->consecutivo_actual,
-            );
+                if (!$procesoCostura) {
+                    return null;
+                }
+
+                $this->procesos->update($procesoCostura, [
+                    'encargado' => null,
+                    'fecha_de_asignacion_encargado' => null,
+                    'estado_proceso' => 'Pendiente',
+                ]);
+
+                return $procesoCostura;
+            });
 
             if (!$procesoCostura) {
-                DB::rollBack();
-                return new ReciboCommandResultDTO(false, 'No se encontró proceso de Costura para limpiar encargado', 404);
+                return new ReciboCommandResultDTO(false, 'No se encontro proceso de Costura para limpiar encargado', 404);
             }
-
-            $this->procesos->update($procesoCostura, [
-                'encargado' => null,
-                'fecha_de_asignacion_encargado' => null,
-                'estado_proceso' => 'Pendiente',
-            ]);
-
-            DB::commit();
 
             Log::info('Encargado de Costura limpiado', [
                 'pedido_id' => $cmd->pedidoId,
@@ -91,8 +92,6 @@ class DeshacerCosturaUseCase
                 'proceso_anterior' => 'Costura',
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-
             Log::error('Error deshaciendo Costura', [
                 'pedido_id' => $cmd->pedidoId,
                 'prenda_id' => $cmd->prendaId,

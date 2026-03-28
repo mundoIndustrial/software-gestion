@@ -2,6 +2,8 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarTallaPrendaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarTallaPrendaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
@@ -15,7 +17,7 @@ use App\Models\PrendaPedido;
  * 
  * Antes: 26 lineas | despues: ~17 lineas | Reducción: ~35%
  */
-final class AgregarTallaPrendaUseCase
+final class AgregarTallaPrendaUseCase implements AgregarTallaPrendaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
@@ -33,5 +35,18 @@ final class AgregarTallaPrendaUseCase
             'cantidad' => $dto->cantidad,
         ]);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarTallaPrendaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 
