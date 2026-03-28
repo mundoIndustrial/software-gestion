@@ -2,9 +2,9 @@
 
 @section('title', 'Mis Órdenes')
 @section('page-title')
-    <span style="display: inline-flex; align-items: center; gap: 0.6rem;">
-        <span class="material-symbols-rounded">checkroom</span>
-        <span>RECIBOS DE COSTURA</span>
+    <span id="dashboardPageTitle" style="display: inline-flex; align-items: center; gap: 0.6rem;">
+        <span class="material-symbols-rounded" id="dashboardPageTitleIcon">checkroom</span>
+        <span id="dashboardPageTitleText">RECIBOS DE COSTURA</span>
     </span>
 @endsection
 
@@ -32,7 +32,7 @@
 @endphp
 
 @section('content')
-<div class="operario-dashboard {{ auth()->user()->hasRole('vista-costura') ? 'is-vista-costura' : '' }}"
+<div class="operario-dashboard is-modern-dashboard {{ auth()->user()->hasRole('vista-costura') ? 'is-vista-costura' : '' }}"
      data-user-id="{{ Auth::id() }}"
      data-user-role="{{ $rolDashboardActual }}"
      data-user-name="{{ Auth::user()->name ?? '' }}">
@@ -159,6 +159,12 @@
                         $reciboReflectivoFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                             return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
                         });
+                        $reciboParaBusqueda = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
+                            return !empty($recibo['consecutivo_parcial']);
+                        }) ?? $reciboPrincipalCard;
+                        $numeroReciboBusqueda = $reciboParaBusqueda['consecutivo_parcial']
+                            ?? $reciboParaBusqueda['consecutivo_actual']
+                            ?? $prenda['numero_pedido'];
                         $sinEncargadoCosturaCard = $reciboCosturaFiltroCard
                             && empty(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')))
                             && !((bool) ($reciboCosturaFiltroCard['tiene_parciales'] ?? false));
@@ -176,7 +182,7 @@
                          data-tipo-recibo="{{ $esReflectivo }}"
                          data-sin-encargado-costura="{{ $sinEncargadoCosturaCard ? '1' : '0' }}"
                          data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
-                         data-numero-recibo="{{ $prenda['recibos'][0]['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                         data-numero-recibo="{{ $numeroReciboBusqueda }}"
                          style="display: {{ $displayInicial }}">
                         
                         <!-- Borde izquierdo eliminado -->
@@ -202,6 +208,9 @@
                             $labelEstadoVista = $completadoVistaSegunArea
                                 ? ('COMPLETADO ' . strtoupper($labelAreaVista))
                                 : ('PENDIENTE ' . strtoupper($labelAreaVista));
+                            $labelEstadoVistaCostura = $reciboCompletadoCostura
+                                ? 'COMPLETADO COSTURA'
+                                : 'PENDIENTE COSTURA';
                         @endphp
                         <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
                             @php
@@ -220,34 +229,65 @@
                                 $textoEncargadoVista = $tieneParcialesEnRecibos
                                     ? 'DISTRIBUIDO EN MODULOS'
                                     : ($encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO');
-                                
+
                                 // Obtener encargado de corte para mostrar en el card (excepto cortadores)
                                 $encargadoCorte = $reciboPrincipal['encargado_corte'] ?? null;
                                 $encargadoCorte = is_string($encargadoCorte) ? trim($encargadoCorte) : $encargadoCorte;
+                                $encargadoCosturaCard = is_string($reciboCosturaFiltroCard['encargado_costura'] ?? null) ? trim((string) $reciboCosturaFiltroCard['encargado_costura']) : ($reciboCosturaFiltroCard['encargado_costura'] ?? null);
+                                $encargadoReflectivoCard = is_string($reciboReflectivoFiltroCard['encargado_costura'] ?? null) ? trim((string) $reciboReflectivoFiltroCard['encargado_costura']) : ($reciboReflectivoFiltroCard['encargado_costura'] ?? null);
+                                $textoEncargadoCosturaCard = $reciboCosturaFiltroCard
+                                    ? (($reciboCosturaFiltroCard['tiene_parciales'] ?? false)
+                                        ? 'DISTRIBUIDO EN MODULOS'
+                                        : ($encargadoCosturaCard ? strtoupper($encargadoCosturaCard) : 'SIN ENCARGADO'))
+                                    : 'SIN ENCARGADO';
+                                $textoEncargadoReflectivoCard = $reciboReflectivoFiltroCard
+                                    ? (($reciboReflectivoFiltroCard['tiene_parciales'] ?? false)
+                                        ? 'DISTRIBUIDO EN MODULOS'
+                                        : ($encargadoReflectivoCard ? strtoupper($encargadoReflectivoCard) : 'SIN ENCARGADO'))
+                                    : 'SIN ENCARGADO';
                             @endphp
                             @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
-                                    <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
-                                </div>
-                            @endif
-                            {{-- Mostrar encargado de corte para todos excepto cortadores --}}
-                            @if(!auth()->user()->hasRole('cortador'))
-                                <div class="orden-encargado-corte" onclick="event.stopPropagation();" style="background: #fef3c7; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; width: fit-content;">
-                                    <strong style="color: #92400e; font-size: 12px;">Encargado Corte:</strong>
-                                    <span style="color: #78350f; font-size: 12px; font-weight: 600;">{{ $encargadoCorte ? strtoupper($encargadoCorte) : 'SIN ASIGNAR' }}</span>
+                                    @if(auth()->user()->hasRole('lider-reflectivo'))
+                                        <span data-visible-filtro="costura">{{ $textoEncargadoCosturaCard }}</span>
+                                        <span data-visible-filtro="reflectivo" style="display: none;">{{ $textoEncargadoReflectivoCard }}</span>
+                                    @else
+                                        <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
+                                    @endif
                                 </div>
                             @endif
                             @if(auth()->user()->hasRole('vista-costura'))
-                                <div class="orden-top-badges" onclick="event.stopPropagation();">
-                                    <span class="badge-area">{{ strtoupper($labelAreaVista) }}</span>
-                                    <span class="badge-completado-corte {{ $completadoVistaSegunArea ? 'is-on' : '' }}">
-                                        {{ $labelEstadoVista }}
-                                    </span>
-                                    <strong class="label-encargado">Encargado:</strong>
-                                    <span class="badge-encargado">
-                                        {{ $textoEncargadoVista }}
-                                    </span>
+                                <div class="vista-resumen-card" onclick="event.stopPropagation();">
+                                    <div class="vista-encargados-row">
+                                        @if(!auth()->user()->hasRole('cortador'))
+                                            <div class="vista-encargado-pill vista-encargado-pill-corte">
+                                                <span class="vista-encargado-pill-label">Corte</span>
+                                                <span class="vista-encargado-pill-name">{{ $encargadoCorte ? strtoupper($encargadoCorte) : 'SIN ASIGNAR' }}</span>
+                                            </div>
+                                        @endif
+
+                                        <div class="vista-encargado-pill vista-encargado-pill-costura">
+                                            <span class="vista-encargado-pill-label">Costura</span>
+                                            <span class="vista-encargado-pill-name">{{ $textoEncargadoVista }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="vista-estado-linea">
+                                        <span class="vista-estado-etiqueta">Estado:</span>
+                                        <span class="badge-completado-corte {{ $reciboCompletadoCostura ? 'is-on' : '' }}">
+                                            {{ $labelEstadoVistaCostura }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @elseif(
+                                !auth()->user()->hasRole('cortador')
+                                && !auth()->user()->hasRole('lider-reflectivo')
+                                && !auth()->user()->hasRole('administrador-costura')
+                            )
+                                <div class="orden-encargado-corte" onclick="event.stopPropagation();">
+                                    <strong>Encargado Corte:</strong>
+                                    <span>{{ $encargadoCorte ? strtoupper($encargadoCorte) : 'SIN ASIGNAR' }}</span>
                                 </div>
                             @endif
                             <div class="orden-left">
@@ -300,6 +340,14 @@
                                     <p class="cliente-label">CLIENTE</p>
                                     <p class="cliente-name">{{ $prenda['cliente'] }}</p>
                                 </div>
+
+                                @if(auth()->user()->hasRole('lider-reflectivo'))
+                                    <div class="lider-encargado-mobile" onclick="event.stopPropagation();">
+                                        <span class="lider-encargado-mobile-label">Encargado</span>
+                                        <span class="lider-encargado-mobile-value" data-visible-filtro="costura">{{ $textoEncargadoCosturaCard }}</span>
+                                        <span class="lider-encargado-mobile-value" data-visible-filtro="reflectivo" style="display: none;">{{ $textoEncargadoReflectivoCard }}</span>
+                                    </div>
+                                @endif
 
                                 <!-- Botón Ver Recibo (debajo del estado para mobile) -->
                                 <div class="mobile-ver-recibo-section">

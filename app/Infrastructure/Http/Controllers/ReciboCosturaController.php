@@ -629,7 +629,10 @@ class ReciboCosturaController extends Controller
                 ->first();
 
             if ($procesoExistente) {
+                $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
                 DB::commit();
+
+                $this->notificarVistaCosturaCambioControlCalidadParcial($pedido, $parcial, $estadoParcialesCc, true);
 
                 return response()->json([
                     'success' => true,
@@ -639,6 +642,9 @@ class ReciboCosturaController extends Controller
                         'area_nueva' => 'Control Calidad',
                         'parcial_id' => $parcial->id,
                         'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                        'total_parciales' => $estadoParcialesCc['total_parciales'],
+                        'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
+                        'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
                     ],
                 ]);
             }
@@ -654,6 +660,8 @@ class ReciboCosturaController extends Controller
                 'estado_proceso' => 'En Progreso',
                 'codigo_referencia' => 'CCP-' . $parcial->consecutivo_parcial . '-' . date('YmdHis'),
             ]);
+
+            $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
 
             DB::commit();
 
@@ -684,6 +692,8 @@ class ReciboCosturaController extends Controller
                 ]);
             }
 
+            $this->notificarVistaCosturaCambioControlCalidadParcial($pedido, $parcial, $estadoParcialesCc, true);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Parcial enviado a Control de Calidad correctamente',
@@ -692,6 +702,9 @@ class ReciboCosturaController extends Controller
                     'area_nueva' => 'Control Calidad',
                     'parcial_id' => $parcial->id,
                     'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                    'total_parciales' => $estadoParcialesCc['total_parciales'],
+                    'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
+                    'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
                 ],
             ]);
         } catch (\Exception $e) {
@@ -766,6 +779,8 @@ class ReciboCosturaController extends Controller
 
             $procesoCC->forceDelete();
 
+            $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
+
             DB::commit();
 
             try {
@@ -794,6 +809,8 @@ class ReciboCosturaController extends Controller
                 ]);
             }
 
+            $this->notificarVistaCosturaCambioControlCalidadParcial($pedido, $parcial, $estadoParcialesCc, false);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Control de Calidad del parcial deshecho correctamente',
@@ -801,6 +818,9 @@ class ReciboCosturaController extends Controller
                     'area_nueva' => $areaAnterior,
                     'parcial_id' => $parcial->id,
                     'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                    'total_parciales' => $estadoParcialesCc['total_parciales'],
+                    'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
+                    'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
                 ],
             ]);
         } catch (\Exception $e) {
@@ -817,6 +837,132 @@ class ReciboCosturaController extends Controller
                 'success' => false,
                 'message' => 'Error al deshacer el Control de Calidad del parcial: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function sincronizarProcesoControlCalidadOriginal(PedidoProduccion $pedido, ReciboPorPartes $parcial): array
+    {
+        $parcialesRelacionados = ReciboPorPartes::query()
+            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+            ->where('consecutivo_original', $parcial->consecutivo_original)
+            ->get(['id', 'consecutivo_parcial']);
+
+        $totalParciales = $parcialesRelacionados->count();
+        $consecutivosParciales = $parcialesRelacionados
+            ->pluck('consecutivo_parcial')
+            ->filter(fn ($valor) => $valor !== null && $valor !== '')
+            ->values();
+
+        $parcialesEnCc = $consecutivosParciales->isEmpty()
+            ? 0
+            : ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->whereIn('numero_recibo_parcial', $consecutivosParciales->all())
+                ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->whereNull('deleted_at')
+                ->distinct('numero_recibo_parcial')
+                ->count('numero_recibo_parcial');
+
+        $todosParcialesEnCc = $totalParciales > 0 && $parcialesEnCc >= $totalParciales;
+        $algunParcialEnCc = $parcialesEnCc > 0;
+
+        $procesoOriginalCc = ProcesoPrenda::query()
+            ->where('numero_pedido', $pedido->numero_pedido)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->where('numero_recibo', $parcial->consecutivo_original)
+            ->where(function ($query) {
+                $query->whereNull('numero_recibo_parcial')
+                    ->orWhere('numero_recibo_parcial', 0);
+            })
+            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->whereNull('deleted_at')
+            ->latest('created_at')
+            ->first();
+
+        if ($algunParcialEnCc) {
+            if ($procesoOriginalCc) {
+                $procesoOriginalCc->fill([
+                    'encargado' => null,
+                    'estado_proceso' => 'En Progreso',
+                ])->save();
+            } else {
+                $procesoOriginalCc = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                    'numero_recibo' => $parcial->consecutivo_original,
+                    'numero_recibo_parcial' => null,
+                    'proceso' => 'Control de Calidad',
+                    'fecha_inicio' => now(),
+                    'encargado' => null,
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'CCO-' . $parcial->consecutivo_original . '-' . date('YmdHis'),
+                ]);
+            }
+        } elseif ($procesoOriginalCc) {
+            $procesoOriginalCc->forceDelete();
+            $procesoOriginalCc = null;
+        }
+
+        Log::info('[COSTURA][PARCIAL][CONTROL_CALIDAD] Sincronización proceso original', [
+            'pedido_id' => (int) $pedido->id,
+            'numero_pedido' => (int) $pedido->numero_pedido,
+            'prenda_id' => (int) $parcial->prenda_pedido_id,
+            'tipo_recibo' => (string) $parcial->tipo_recibo,
+            'consecutivo_original' => (string) $parcial->consecutivo_original,
+            'total_parciales' => $totalParciales,
+            'parciales_en_cc' => $parcialesEnCc,
+            'todos_parciales_en_cc' => $todosParcialesEnCc,
+            'proceso_original_cc_id' => $procesoOriginalCc?->id,
+        ]);
+
+        return [
+            'total_parciales' => $totalParciales,
+            'parciales_en_cc' => $parcialesEnCc,
+            'todos_parciales_en_cc' => $todosParcialesEnCc,
+            'algun_parcial_en_cc' => $algunParcialEnCc,
+            'proceso_original_cc_id' => $procesoOriginalCc?->id,
+        ];
+    }
+
+    private function notificarVistaCosturaCambioControlCalidadParcial(
+        PedidoProduccion $pedido,
+        ReciboPorPartes $parcial,
+        array $estadoParcialesCc,
+        bool $parcialEnviadoAcc
+    ): void {
+        $usuariosVistaCostura = User::all()->filter(function ($user) {
+            return $user->hasRole('vista-costura');
+        });
+
+        $accion = $parcialEnviadoAcc ? 'control_calidad_parcial_actualizado' : 'control_calidad_parcial_deshecho';
+        $mensaje = $parcialEnviadoAcc
+            ? "El parcial #{$parcial->consecutivo_parcial} fue enviado a Control de Calidad"
+            : "Se deshizo Control de Calidad del parcial #{$parcial->consecutivo_parcial}";
+
+        foreach ($usuariosVistaCostura as $usuarioVista) {
+            broadcast(new OperarioRecibosActualizados(
+                userId: (int) $usuarioVista->id,
+                payload: [
+                    'accion' => $accion,
+                    'mensaje' => $mensaje,
+                    'area' => $parcialEnviadoAcc ? 'Control Calidad' : 'Costura',
+                    'pedido_id' => (int) $pedido->id,
+                    'numero_pedido' => (int) $pedido->numero_pedido,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'tipo_recibo' => (string) $parcial->tipo_recibo,
+                    'numero_recibo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                    'pedido_parcial_id' => (int) $parcial->id,
+                    'es_parcial' => true,
+                    'total_parciales' => (int) ($estadoParcialesCc['total_parciales'] ?? 0),
+                    'parciales_en_cc' => (int) ($estadoParcialesCc['parciales_en_cc'] ?? 0),
+                    'todos_parciales_en_cc' => (bool) ($estadoParcialesCc['todos_parciales_en_cc'] ?? false),
+                    'proceso_original_cc_id' => $estadoParcialesCc['proceso_original_cc_id'] ?? null,
+                ]
+            ));
         }
     }
 

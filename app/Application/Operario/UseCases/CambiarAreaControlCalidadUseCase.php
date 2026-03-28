@@ -7,6 +7,9 @@ use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CambiarAreaControlCalidadUseCase
@@ -61,39 +64,69 @@ class CambiarAreaControlCalidadUseCase
             [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
                 $areaPosterior = $recibo->area;
 
-                $nuevoProceso = $this->procesos->create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $cmd->prendaId,
-                    'numero_recibo' => $recibo->consecutivo_actual,
-                    'proceso' => 'Control de Calidad',
-                    'fecha_inicio' => now(),
-                    'encargado' => 'control',
-                    'estado_proceso' => 'En Progreso',
-                    'codigo_referencia' => 'CC-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
-                ]);
+            $nuevoProceso = $this->procesos->create([
+                'numero_pedido' => $pedido->numero_pedido,
+                'prenda_pedido_id' => $cmd->prendaId,
+                'numero_recibo' => $recibo->consecutivo_actual,
+                'proceso' => 'Control de Calidad',
+                'fecha_inicio' => now(),
+                'encargado' => 'control',
+                'estado_proceso' => 'En Progreso',
+                'codigo_referencia' => 'CC-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+            ]);
+
+            $prenda = PrendaPedido::find($cmd->prendaId);
 
                 $recibo->area = 'Control Calidad';
                 $this->recibos->save($recibo);
 
-                try {
-                    broadcast(new \App\Events\ReciboPasadoControlCalidad(
-                        $pedido->id,
-                        $cmd->prendaId,
-                        $recibo->consecutivo_actual,
-                        $this->workflowService->resolvePrendaNombre($cmd->prendaId),
-                        $cmd->tipoRecibo
-                    ));
+            try {
+                broadcast(new \App\Events\ReciboPasadoControlCalidad(
+                    $pedido->id,
+                    $cmd->prendaId,
+                    $recibo->consecutivo_actual,
+                    $prenda?->nombre_prenda ?? 'Prenda desconocida',
+                    $cmd->tipoRecibo
+                ));
 
-                    Log::info('Broadcast enviado a costureros - recibo pasado a Control Calidad', [
-                        'pedido_id' => $pedido->id,
-                        'prenda_id' => $cmd->prendaId,
-                        'numero_recibo' => $recibo->consecutivo_actual,
-                    ]);
-                } catch (\Exception $e) {
-                    Log::warning('Error al enviar broadcast a costureros', [
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                Log::info('Broadcast enviado a costureros - recibo pasado a Control Calidad', [
+                    'pedido_id' => $pedido->id,
+                    'prenda_id' => $cmd->prendaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Error al enviar broadcast a costureros', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            try {
+                broadcast(new \App\Events\ControlCalidadUpdated([
+                    'id' => (int) $recibo->id,
+                    'pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'prenda_id' => (int) $cmd->prendaId,
+                    'nombre_prenda' => $prenda?->nombre_prenda,
+                    'descripcion' => $prenda?->descripcion,
+                    'tipo_recibo' => (string) $cmd->tipoRecibo,
+                    'consecutivo_actual' => (string) ($recibo->consecutivo_actual ?? ''),
+                    'consecutivo_original' => (string) ($recibo->consecutivo_inicial ?? $recibo->consecutivo_actual ?? ''),
+                    'es_parcial' => false,
+                    'parcial_id' => null,
+                    'completado_area' => false,
+                    'area' => 'Control Calidad',
+                    'proceso_actual' => 'Control Calidad',
+                    'fecha_creacion' => now()->toISOString(),
+                    'numero_pedido' => $pedido->numero_pedido,
+                ], 'added', 'pedido'));
+            } catch (\Throwable $e) {
+                Log::warning('[CC] Error al emitir ControlCalidadUpdated para recibo original', [
+                    'pedido_id' => $pedido->id,
+                    'prenda_id' => $cmd->prendaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
                 return [$nuevoProceso, $areaPosterior];
             });

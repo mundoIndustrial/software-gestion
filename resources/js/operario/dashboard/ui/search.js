@@ -29,14 +29,77 @@ export function initDashboardSearch() {
             searchInput.removeEventListener('input', window.__dashboardSearchHandler);
         }
 
+        const obtenerFiltroPrincipalActivo = () => {
+            return window.__dashboardFiltroPrincipalActivo
+                || document.querySelector('.badge-filtro[data-filtro].badge-filtro-active')?.dataset?.filtro
+                || 'costura';
+        };
+
+        const obtenerFiltroEncargadoActivo = () => {
+            return window.__vistaCosturaEncargadoFiltro || 'todos';
+        };
+
+        const coincideConFiltroPrincipal = (card, filtroPrincipal) => {
+            if (filtroPrincipal === 'todos') {
+                return true;
+            }
+
+            const tipos = String(card.dataset.tipoRecibo || '')
+                .split(',')
+                .map((valor) => valor.trim())
+                .filter(Boolean);
+
+            return tipos.includes(filtroPrincipal);
+        };
+
+        const coincideConFiltroEncargado = (card, filtroPrincipal) => {
+            if (filtroPrincipal !== 'costura' && filtroPrincipal !== 'reflectivo') {
+                return true;
+            }
+
+            const filtroEncargado = obtenerFiltroEncargadoActivo();
+            if (filtroEncargado !== 'sin-encargado') {
+                return true;
+            }
+
+            const atributoSinEncargado =
+                filtroPrincipal === 'reflectivo' ? 'sinEncargadoReflectivo' : 'sinEncargadoCostura';
+
+            return String(card.dataset[atributoSinEncargado] || '0') === '1';
+        };
+
+        window.__applyDashboardSearchFilter = function () {
+            const busqueda = String(searchInput.value || '').toLowerCase().trim();
+            const filtroPrincipal = obtenerFiltroPrincipalActivo();
+            const ordenesListActual = document.getElementById('ordenesList');
+            const cardsActuales = ordenesListActual ? ordenesListActual.querySelectorAll('.orden-card-simple') : [];
+
+            cardsActuales.forEach((card) => {
+                const coincideTipo = coincideConFiltroPrincipal(card, filtroPrincipal);
+                const coincideEncargado = coincideConFiltroEncargado(card, filtroPrincipal);
+                const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
+                const cliente = String(card.dataset.cliente || '').toLowerCase();
+                const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
+                const numeroPedido = '';
+
+                const coincideTexto =
+                    busqueda === '' ||
+                    numeroRecibo.includes(busqueda) ||
+                    numeroPedido.includes(busqueda) ||
+                    cliente.includes(busqueda) ||
+                    nombrePrenda.includes(busqueda);
+
+                const mostrar = coincideTipo && coincideEncargado && coincideTexto;
+                card.style.display = mostrar ? '' : 'none';
+            });
+        };
+
         window.__dashboardClearHandler = function () {
             searchInput.value = '';
             if (clearBtn) {
                 clearBtn.style.display = 'none';
             }
-
-            const event = new Event('input', { bubbles: true });
-            searchInput.dispatchEvent(event);
+            window.__applyDashboardSearchFilter?.();
         };
 
         if (clearBtn) {
@@ -45,30 +108,16 @@ export function initDashboardSearch() {
 
         window.__dashboardSearchHandler = function (e) {
             const busqueda = e.target.value.toLowerCase().trim();
+            window.__dashboardSearchQuery = busqueda;
 
             if (clearBtn) {
                 clearBtn.style.display = busqueda ? 'flex' : 'none';
             }
-
-            const ordenesListActual = document.getElementById('ordenesList');
-            const cardsActuales = ordenesListActual ? ordenesListActual.querySelectorAll('.orden-card-simple') : [];
-
-            cardsActuales.forEach((card) => {
-                const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
-                const cliente = String(card.dataset.cliente || '').toLowerCase();
-                const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
-
-                const coincide =
-                    numeroRecibo.includes(busqueda) ||
-                    cliente.includes(busqueda) ||
-                    nombrePrenda.includes(busqueda) ||
-                    busqueda === '';
-
-                card.style.display = coincide ? '' : 'none';
-            });
+            window.__applyDashboardSearchFilter?.();
         };
 
         searchInput.addEventListener('input', window.__dashboardSearchHandler);
+        window.__applyDashboardSearchFilter?.();
     };
 
     if (typeof window.__initDashboardSearch === 'function') {

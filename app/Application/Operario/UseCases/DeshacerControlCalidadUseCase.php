@@ -6,7 +6,9 @@ use App\Application\Operario\DTOs\DeshacerControlCalidadCommandDTO;
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
-use App\Domain\Operario\Services\ControlCalidadWorkflow;
+use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerControlCalidadUseCase
@@ -62,7 +64,37 @@ class DeshacerControlCalidadUseCase
                     'area' => $areaAnterior,
                 ]);
 
-                $this->procesos->forceDelete($procesoCC);
+            $this->procesos->forceDelete($procesoCC);
+
+            $prenda = PrendaPedido::find($cmd->prendaId);
+
+            try {
+                broadcast(new \App\Events\ControlCalidadUpdated([
+                    'id' => (int) $recibo->id,
+                    'pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'prenda_id' => (int) $cmd->prendaId,
+                    'nombre_prenda' => $prenda?->nombre_prenda,
+                    'descripcion' => $prenda?->descripcion,
+                    'tipo_recibo' => (string) $cmd->tipoRecibo,
+                    'consecutivo_actual' => (string) ($recibo->consecutivo_actual ?? ''),
+                    'consecutivo_original' => (string) ($recibo->consecutivo_inicial ?? $recibo->consecutivo_actual ?? ''),
+                    'es_parcial' => false,
+                    'parcial_id' => null,
+                    'completado_area' => false,
+                    'area' => $areaAnterior,
+                    'proceso_actual' => $areaAnterior,
+                    'fecha_creacion' => now()->toISOString(),
+                    'numero_pedido' => $pedido->numero_pedido,
+                ], 'removed', 'pedido'));
+            } catch (\Throwable $e) {
+                Log::warning('[CC] Error al emitir ControlCalidadUpdated removido para recibo original', [
+                    'pedido_id' => $pedido->id,
+                    'prenda_id' => $cmd->prendaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
                 return [$procesoCC, $procesoPosterior, $areaAnterior];
             });

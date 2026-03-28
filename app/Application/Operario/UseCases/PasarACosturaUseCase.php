@@ -61,40 +61,59 @@ class PasarACosturaUseCase
             [$nuevoProceso, $areaAnterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
                 $areaAnterior = $recibo->area;
 
-                $procesoExistente = $this->procesos->findLatestByProceso(
-                    numeroPedido: (int) $pedido->numero_pedido,
-                    prendaId: (int) $cmd->prendaId,
-                    proceso: 'Costura',
-                );
+            $procesoExistente = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                numeroPedido: (int) $pedido->numero_pedido,
+                prendaId: (int) $cmd->prendaId,
+                proceso: 'Costura',
+                numeroRecibo: (int) $recibo->consecutivo_actual,
+            );
 
-                if ($procesoExistente) {
-                    $datosActualizacion = [
-                        'encargado' => $cmd->encargado,
-                        'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
-                    ];
-
-                    if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
-                        $datosActualizacion['fecha_de_asignacion_encargado'] = now();
-                    }
-
-                    $this->procesos->update($procesoExistente, $datosActualizacion);
-                    $nuevoProceso = $procesoExistente;
-                } else {
-                    $nuevoProceso = $this->procesos->create([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'prenda_pedido_id' => $cmd->prendaId,
-                        'numero_recibo' => $recibo->consecutivo_actual,
-                        'proceso' => 'Costura',
-                        'fecha_inicio' => now(),
-                        'encargado' => $cmd->encargado,
-                        'fecha_de_asignacion_encargado' => now(),
-                        'estado_proceso' => 'En Progreso',
-                        'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
-                    ]);
-
-                    $recibo->area = 'Costura';
-                    $this->recibos->save($recibo);
+            if ($procesoExistente) {
+                // Registrar fecha de asignación si el encargado cambia o si no tenía fecha
+                $datosActualizacion = [
+                    'encargado' => $cmd->encargado,
+                    'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
+                ];
+                
+                // Solo registrar fecha_de_asignacion_encargado si el encargado cambia o si no tenía fecha previa
+                if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
+                    $datosActualizacion['fecha_de_asignacion_encargado'] = now();
                 }
+                
+                $this->procesos->update($procesoExistente, $datosActualizacion);
+                $procesoExistente->refresh();
+
+                Log::info('[COSTURA] Proceso exacto de costura actualizado', [
+                    'proceso_id' => (int) $procesoExistente->id,
+                    'numero_recibo' => (int) ($procesoExistente->numero_recibo ?? 0),
+                    'encargado_guardado' => $procesoExistente->encargado,
+                    'fecha_asignacion' => optional($procesoExistente->fecha_de_asignacion_encargado)->toDateTimeString(),
+                ]);
+
+                $nuevoProceso = $procesoExistente;
+            } else {
+                $nuevoProceso = $this->procesos->create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $cmd->prendaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => $cmd->encargado,
+                    'fecha_de_asignacion_encargado' => now(),
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+                ]);
+
+                $recibo->area = 'Costura';
+                $this->recibos->save($recibo);
+
+                Log::info('[COSTURA] Proceso exacto de costura creado', [
+                    'proceso_id' => (int) $nuevoProceso->id,
+                    'numero_recibo' => (int) ($nuevoProceso->numero_recibo ?? 0),
+                    'encargado_guardado' => $nuevoProceso->encargado,
+                    'fecha_asignacion' => optional($nuevoProceso->fecha_de_asignacion_encargado)->toDateTimeString(),
+                ]);
+            }
 
                 return [$nuevoProceso, $areaAnterior];
             });

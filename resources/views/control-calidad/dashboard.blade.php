@@ -1,7 +1,12 @@
 @extends('control-calidad.layout')
 
 @section('title', 'Mis Órdenes')
-@section('page-title', '')
+@section('page-title')
+    <span id="dashboardPageTitle" style="display: inline-flex; align-items: center; gap: 0.6rem;">
+        <span class="material-symbols-rounded" id="dashboardPageTitleIcon">fact_check</span>
+        <span id="dashboardPageTitleText">CONTROL DE CALIDAD</span>
+    </span>
+@endsection
 
 @php
     function getEstadoClass($estado) {
@@ -29,23 +34,19 @@
 @endphp
 
 @section('content')
-<div class="operario-dashboard">
+<div class="operario-dashboard is-modern-dashboard control-calidad-dashboard">
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Pedido, Prenda o Cliente...">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por recibo, prenda o cliente...">
+        <button id="clearFilterBtn" class="clear-filter-btn" title="Limpiar filtro" style="display: none;">
+            <span class="material-symbols-rounded">close</span>
+        </button>
     </div>
 
     <div class="ordenes-section">
-        <div class="section-title">
-            <span class="material-symbols-rounded">fact_check</span>
-            <h3>CONTROL DE CALIDAD</h3>
-            <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
-        </div>
-
-        <div class="recibo-tags" id="reciboTags">
-            <button type="button" class="recibo-tag active" data-filter="ALL">TODOS</button>
-            <button type="button" class="recibo-tag" data-filter="COSTURA">RECIBO COSTURA</button>
-            <button type="button" class="recibo-tag" data-filter="REFLECTIVO">RECIBO REFLECTIVO</button>
+        <div class="filtros-badges filtros-badges-principales recibo-tags" id="reciboTags">
+            <button type="button" class="badge-filtro recibo-tag badge-filtro-active active" data-filter="COSTURA">Costura</button>
+            <button type="button" class="badge-filtro recibo-tag" data-filter="REFLECTIVO">Reflectivo</button>
         </div>
 
         <div class="ordenes-list" id="ordenesList">
@@ -59,6 +60,14 @@
                         $reciboCompletadoArea = (bool) ($recibo['completado_area'] ?? false);
                         $esReflectivo = strtoupper(trim((string) $tipoRecibo)) === 'REFLECTIVO';
                         $esParcial = (bool) ($recibo['es_parcial'] ?? false);
+                        $urlVerRecibo = route('control-calidad.ver-pedido', $prenda['numero_pedido'])
+                            . '?tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo)
+                            . '&prenda_id=' . $prenda['prenda_id'];
+
+                        if ($esParcial) {
+                            $urlVerRecibo .= '&parcial_id=' . urlencode((string) ($recibo['parcial_id'] ?? ''))
+                                . '&consecutivo_parcial=' . urlencode((string) ($recibo['consecutivo_parcial'] ?? $recibo['consecutivo_actual'] ?? ''));
+                        }
                     @endphp
                     <div @class(['orden-card-simple', 'borde-reflectivo' => $esReflectivo])
                          data-card-key="{{ $esParcial ? ('parcial-' . ($recibo['parcial_id'] ?? $recibo['id'] ?? '')) : ('recibo-' . ($recibo['id'] ?? '')) }}"
@@ -95,55 +104,35 @@
                                     </p>
                                 </div>
 
-                                @if(!empty($prenda['proceso_actual']))
-                                    <div class="orden-cliente">
-                                        <p class="cliente-label">ÁREA ACTUAL</p>
-                                        <p class="cliente-name">{{ $prenda['proceso_actual'] }}</p>
-                                    </div>
-                                @endif
-
-                                <div class="recibos-info">
-                                    <div class="recibos-lista">
-                                        @if($tipoRecibo)
-                                            <span class="recibo-badge recibo-{{ strtolower(str_replace('-', '_', $tipoRecibo)) }}">
-                                                {{ $tipoRecibo }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
                                 <div class="orden-buttons">
                                     <a
                                         class="btn-ver-recibos"
-                                        href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}&prenda_id={{ $prenda['prenda_id'] }}">
+                                        href="{{ $urlVerRecibo }}">
                                         <span class="material-symbols-rounded">receipt</span>
                                         VER
                                     </a>
+                                    @if($recibo)
+                                        <button class="btn-completar-recibo"
+                                                data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                                data-es-parcial="{{ $esParcial ? '1' : '0' }}"
+                                                data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
+                                                data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
+                                                onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                                            <span class="material-symbols-rounded">done</span>
+                                            {{ $reciboCompletadoArea ? 'COMPLETADO' : 'COMPLETAR' }}
+                                        </button>
+                                        <button class="btn-deshacer-recibo"
+                                                data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                                data-es-parcial="{{ $esParcial ? '1' : '0' }}"
+                                                data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
+                                                style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}"
+                                                onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                                            <span class="material-symbols-rounded">undo</span>
+                                            DESHACER
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
-
-                            @if($recibo)
-                                <div class="orden-right-actions">
-                                    <button class="btn-completar-recibo"
-                                            data-recibo-id="{{ $recibo['id'] ?? '' }}"
-                                            data-es-parcial="{{ $esParcial ? '1' : '0' }}"
-                                            data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
-                                            data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
-                                            onclick="toggleCompletarRecibo(this); event.stopPropagation();">
-                                        <span class="material-symbols-rounded">done</span>
-                                        {{ $reciboCompletadoArea ? 'COMPLETADO' : 'COMPLETAR' }}
-                                    </button>
-                                    <button class="btn-deshacer-recibo"
-                                            data-recibo-id="{{ $recibo['id'] ?? '' }}"
-                                            data-es-parcial="{{ $esParcial ? '1' : '0' }}"
-                                            data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
-                                            style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}"
-                                            onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
-                                        <span class="material-symbols-rounded">undo</span>
-                                        DESHACER
-                                    </button>
-                                </div>
-                            @endif
 
                             <div class="orden-right">
                                 <div class="orden-fecha">
@@ -154,7 +143,7 @@
                                     <span class="orden-fecha-label">REGISTRO</span>
                                     <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
                                 </div>
-                                <a href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}&prenda_id={{ $prenda['prenda_id'] }}" class="action-arrow">
+                                <a href="{{ $urlVerRecibo }}" class="action-arrow">
                                     <span class="material-symbols-rounded">arrow_forward</span>
                                 </a>
                                 <div class="orden-pedido-footer">
@@ -318,23 +307,8 @@
         background: #E3F2FD;
     }
 
-    .orden-body {
-        position: relative;
-        padding-bottom: 56px;
-    }
-
-    .orden-right {
-        padding-bottom: 44px;
-    }
-
     .orden-right-actions {
-        position: absolute;
-        right: 12px;
-        bottom: 10px;
-        display: flex;
-        gap: 0.45rem;
-        justify-content: flex-end;
-        flex-wrap: nowrap;
+        display: none;
     }
 
     .btn-completar-recibo {
@@ -603,9 +577,275 @@
         margin: 0;
     }
 
+    .control-calidad-dashboard {
+        background: #f8faff;
+        padding: 0 0.35rem 1rem;
+    }
+
+    .control-calidad-dashboard .search-section {
+        max-width: none;
+        margin: 0;
+        padding: 0.5rem 0.1rem 0;
+    }
+
+    .control-calidad-dashboard .search-box {
+        width: 100%;
+        padding: 0.9rem 3rem 0.9rem 1rem;
+        border: 1px solid #dbe2f3;
+        border-radius: 999px;
+        box-shadow: none;
+        font-size: 0.95rem;
+        background: #fff;
+    }
+
+    .control-calidad-dashboard .search-box:focus {
+        transform: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .control-calidad-dashboard .search-section .material-symbols-rounded {
+        left: auto;
+        right: 1rem;
+        color: #111827;
+        font-size: 1.35rem;
+    }
+
+    .control-calidad-dashboard .clear-filter-btn {
+        position: absolute;
+        right: 2.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0.2rem;
+        border-radius: 999px;
+    }
+
+    .control-calidad-dashboard .clear-filter-btn:hover {
+        background: #eef2ff;
+        color: #2563eb;
+    }
+
+    .control-calidad-dashboard .ordenes-section {
+        background: transparent;
+        max-width: none;
+    }
+
+    .control-calidad-dashboard .recibo-tags {
+        background: #c9c9c9;
+        border-radius: 999px;
+        padding: 0.25rem;
+        margin: 0.55rem 0 0.95rem;
+        width: max-content;
+        display: inline-flex;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+        align-items: center;
+        max-width: 100%;
+    }
+
+    .control-calidad-dashboard .recibo-tag {
+        min-width: 0;
+        justify-content: center;
+        border: none;
+        border-radius: 999px;
+        padding: 0.42rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: lowercase;
+        letter-spacing: 0;
+        background: transparent;
+        color: #6b7280;
+        box-shadow: none;
+        width: auto;
+        flex: 0 0 auto;
+        transition: background-color 0.28s ease, color 0.28s ease, box-shadow 0.28s ease, transform 0.28s ease;
+    }
+
+    .control-calidad-dashboard .recibo-tag.active,
+    .control-calidad-dashboard .recibo-tag.badge-filtro-active {
+        background: #2563eb;
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .recibo-tag.active,
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .recibo-tag.badge-filtro-active {
+        background: #119669;
+        box-shadow: 0 8px 18px rgba(17, 150, 105, 0.28);
+    }
+
+    .control-calidad-dashboard .ordenes-list {
+        gap: 1rem;
+    }
+
+    .control-calidad-dashboard .orden-card-simple {
+        border: 1px solid #dfe7f6;
+        border-left: 4px solid #2563eb;
+        border-radius: 24px;
+        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
+    }
+
+    .control-calidad-dashboard .orden-card-simple.borde-reflectivo {
+        border-left-color: #10b981;
+    }
+
+    .control-calidad-dashboard .orden-card-simple:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+    }
+
+    .control-calidad-dashboard .orden-body {
+        padding: 1.15rem 1.15rem 3.75rem;
+        border-radius: 24px;
+    }
+
+    .control-calidad-dashboard .orden-numero {
+        font-size: 1.55rem;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .control-calidad-dashboard .estado-badge {
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.68rem;
+    }
+
+    .control-calidad-dashboard .cliente-label {
+        color: #2563eb;
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .cliente-label {
+        color: #119669;
+    }
+
+    .control-calidad-dashboard .cliente-name {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .control-calidad-dashboard .prendas-label {
+        color: #64748b;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .control-calidad-dashboard .orden-cliente + .orden-cliente,
+    .control-calidad-dashboard .orden-prendas,
+    .control-calidad-dashboard .recibos-info {
+        margin-top: 0.8rem;
+    }
+
+    .control-calidad-dashboard .orden-left > .orden-prendas + .orden-cliente,
+    .control-calidad-dashboard .recibos-info {
+        display: none;
+    }
+
+    .control-calidad-dashboard .recibo-badge {
+        border-radius: 999px;
+        font-size: 0.66rem;
+        padding: 0.34rem 0.72rem;
+        background: #eef2ff;
+        color: #2563eb;
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .recibo-badge {
+        background: #ecfdf5;
+        color: #119669;
+    }
+
+    .control-calidad-dashboard .btn-ver-recibos {
+        border-radius: 14px;
+        padding: 0.62rem 0.95rem;
+        font-size: 0.74rem;
+        background: #fff;
+        color: #2563eb;
+        border: 1px solid #c9d8f8;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+    }
+
+    .control-calidad-dashboard .btn-ver-recibos:hover {
+        background: #eff6ff;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-recibos {
+        color: #119669;
+        border-color: #b7e5d2;
+        box-shadow: 0 6px 14px rgba(17, 150, 105, 0.12);
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-recibos:hover {
+        background: #ecfdf5;
+        box-shadow: 0 10px 18px rgba(17, 150, 105, 0.18);
+    }
+
+    .control-calidad-dashboard .orden-right-actions {
+        right: 16px;
+        bottom: 14px;
+        gap: 0.55rem;
+    }
+
+    .control-calidad-dashboard .btn-completar-recibo,
+    .control-calidad-dashboard .btn-deshacer-recibo {
+        border-radius: 14px;
+        padding: 0.56rem 0.88rem;
+        font-size: 0.68rem;
+    }
+
+    .control-calidad-dashboard .orden-right {
+        gap: 1.1rem;
+    }
+
+    .control-calidad-dashboard .action-arrow {
+        width: 34px;
+        height: 34px;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .action-arrow {
+        background: #ecfdf5;
+        color: #119669;
+    }
+
+    .control-calidad-dashboard .action-arrow:hover {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .action-arrow:hover {
+        background: #119669;
+    }
+
     @media (max-width: 768px) {
         .operario-dashboard {
             padding: 1rem;
+        }
+
+        .control-calidad-dashboard {
+            padding: 0 0.15rem 1rem;
+        }
+
+        .control-calidad-dashboard .recibo-tags {
+            gap: 0.35rem;
+            width: auto;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+
+        .control-calidad-dashboard .recibo-tag {
+            min-width: max-content;
+            font-size: 0.82rem;
+            padding: 0.38rem 0.85rem;
         }
 
         .orden-body {
@@ -623,6 +863,18 @@
         .orden-fecha {
             text-align: left;
         }
+
+        .control-calidad-dashboard .orden-card-simple {
+            border-radius: 22px;
+        }
+
+        .control-calidad-dashboard .orden-body {
+            padding: 1rem 1rem 4rem;
+        }
+
+        .control-calidad-dashboard .orden-numero {
+            font-size: 1.35rem;
+        }
     }
 </style>
 
@@ -632,12 +884,31 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearFilterBtn');
         const ordenesList = document.getElementById('ordenesList');
         const tagsContainer = document.getElementById('reciboTags');
-        const countEl = document.querySelector('.ordenes-count');
         const getOrdenCards = () => ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
 
-        let activeFilter = 'ALL';
+        let activeFilter = 'COSTURA';
+
+        function aplicarTemaDashboard(filter) {
+            const body = document.body;
+            const titleText = document.getElementById('dashboardPageTitleText');
+            const titleIcon = document.getElementById('dashboardPageTitleIcon');
+            const theme = filter === 'REFLECTIVO' ? 'reflectivo' : 'costura';
+
+            if (body) {
+                body.setAttribute('data-dashboard-theme', theme);
+            }
+
+            if (titleText) {
+                titleText.textContent = filter === 'REFLECTIVO' ? 'CONTROL DE CALIDAD REFLECTIVO' : 'CONTROL DE CALIDAD';
+            }
+
+            if (titleIcon) {
+                titleIcon.textContent = filter === 'REFLECTIVO' ? 'auto_awesome' : 'fact_check';
+            }
+        }
 
         function formatearConsecutivoVisibleJS(valor) {
             const texto = String(valor ?? '').trim();
@@ -655,18 +926,67 @@
             return texto;
         }
 
+        function construirUrlVerRecibo(orden, recibo, tipoRecibo, numeroPedido, prendaId) {
+            const esParcial = String(recibo?.es_parcial || orden?.es_parcial || '0') === '1' || Boolean(recibo?.es_parcial || orden?.es_parcial);
+            const params = new URLSearchParams();
+            params.set('tipo_recibo', tipoRecibo);
+            params.set('prenda_id', prendaId);
+
+            if (esParcial) {
+                const parcialId = orden?.parcial_id || recibo?.parcial_id || '';
+                const consecutivoParcial = recibo?.consecutivo_parcial || recibo?.consecutivo_actual || orden?.consecutivo_actual || '';
+                params.set('tipo_recibo', 'PARCIAL');
+                if (parcialId) params.set('parcial_id', parcialId);
+                if (consecutivoParcial) params.set('consecutivo_parcial', consecutivoParcial);
+            }
+
+            return `/control-calidad/pedido/${numeroPedido}?${params.toString()}`;
+        }
+
+        function mostrarNotificacionControlCalidad(orden, action = 'added') {
+            if (!window.NotificacionesPush || typeof window.NotificacionesPush.add !== 'function' || !orden) return;
+
+            const tipoRecibo = String(orden?.tipo_recibo || orden?.recibos?.[0]?.tipo_recibo || '').toUpperCase();
+            const esParcial = Boolean(orden?.es_parcial || orden?.parcial_id || orden?.recibos?.[0]?.es_parcial);
+            const consecutivo = formatearConsecutivoVisibleJS(orden?.consecutivo_actual || orden?.recibos?.[0]?.consecutivo_actual || '');
+            const nombrePrenda = String(orden?.nombre_prenda || '').trim();
+
+            let title = esParcial ? 'Parcial en Control de Calidad' : 'Recibo en Control de Calidad';
+            if (action === 'updated') {
+                title = esParcial ? 'Parcial actualizado en C.C.' : 'Recibo actualizado en C.C.';
+            } else if (action === 'removed') {
+                title = esParcial ? 'Parcial salió de C.C.' : 'Recibo salió de C.C.';
+            }
+
+            const detalle = `${nombrePrenda ? nombrePrenda + ' · ' : ''}#${consecutivo || 'sin consecutivo'}`;
+
+            window.NotificacionesPush.add({
+                id: ['control-calidad', action, esParcial ? 'parcial' : 'original', String(orden?.parcial_id || orden?.id || ''), String(consecutivo || '')].join('|'),
+                title,
+                message: action === 'removed'
+                    ? `${detalle} ya no está en Control de Calidad`
+                    : `${detalle} llegó a Control de Calidad`,
+                icon: tipoRecibo === 'REFLECTIVO' ? 'auto_awesome' : 'fact_check',
+                tipo_recibo: tipoRecibo,
+            });
+        }
+
         function aplicarFiltros() {
             const busqueda = (searchInput?.value || '').toLowerCase().trim();
             let visibles = 0;
 
+            if (clearBtn) {
+                clearBtn.style.display = busqueda ? 'flex' : 'none';
+            }
+
             getOrdenCards().forEach(card => {
-                const numero = (card.dataset.numero || '').toLowerCase();
+                const numero = (card.dataset.numeroRecibo || '').toLowerCase();
                 const prenda = (card.dataset.prenda || '').toLowerCase();
                 const cliente = (card.dataset.cliente || '').toLowerCase();
                 const tipoRecibo = (card.dataset.tipoRecibo || '').toUpperCase();
 
                 const matchBusqueda = (numero.includes(busqueda) || prenda.includes(busqueda) || cliente.includes(busqueda) || busqueda === '');
-                const matchTipo = (activeFilter === 'ALL') || (tipoRecibo === activeFilter);
+                const matchTipo = tipoRecibo === activeFilter;
 
                 if (matchBusqueda && matchTipo) {
                     card.style.display = '';
@@ -676,13 +996,21 @@
                 }
             });
 
-            if (countEl) {
-                countEl.textContent = String(visibles);
+            const titleText = document.getElementById('dashboardPageTitleText');
+            if (titleText) {
+                titleText.textContent = visibles > 0 ? `CONTROL DE CALIDAD` : 'CONTROL DE CALIDAD';
             }
         }
 
         if (searchInput) {
             searchInput.addEventListener('input', function(e) {
+                aplicarFiltros();
+            });
+        }
+
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
                 aplicarFiltros();
             });
         }
@@ -694,22 +1022,42 @@
                     return;
                 }
 
-                const filter = (btn.dataset.filter || 'ALL').toUpperCase();
+                const filter = (btn.dataset.filter || 'COSTURA').toUpperCase();
                 activeFilter = filter;
 
-                tagsContainer.querySelectorAll('.recibo-tag').forEach(b => b.classList.remove('active'));
+                tagsContainer.querySelectorAll('.recibo-tag').forEach(b => {
+                    b.classList.remove('active', 'badge-filtro-active');
+                });
                 btn.classList.add('active');
+                btn.classList.add('badge-filtro-active');
 
+                aplicarTemaDashboard(filter);
                 aplicarFiltros();
             });
         }
 
+        aplicarTemaDashboard(activeFilter);
         aplicarFiltros();
 
         function crearCardControlCalidadDesdeEvento(orden, permitirReemplazo = false) {
             if (!ordenesList || !orden) return null;
 
-            const recibo = Array.isArray(orden.recibos) ? orden.recibos[0] : (orden.recibo || null);
+            const recibo = Array.isArray(orden.recibos)
+                ? (orden.recibos[0] || null)
+                : (orden.recibo || {
+                    id: orden.id || null,
+                    tipo_recibo: orden.tipo_recibo || '',
+                    consecutivo_actual: orden.consecutivo_actual || '',
+                    consecutivo_original: orden.consecutivo_original || '',
+                    consecutivo_parcial: orden.consecutivo_actual || '',
+                    creado_en: orden.fecha_creacion || '',
+                    area: orden.area || orden.proceso_actual || 'Control Calidad',
+                    es_parcial: orden.es_parcial || false,
+                    parcial_id: orden.parcial_id || null,
+                    completado_area: orden.completado_area || false,
+                    prenda_id: orden.prenda_id || null,
+                });
+
             if (!recibo) return null;
 
             const tipoRecibo = String(recibo.tipo_recibo || orden.tipo_recibo || '').toUpperCase();
@@ -722,6 +1070,7 @@
             const parcialId = orden.parcial_id || recibo.parcial_id || '';
             const areaActual = orden.proceso_actual || recibo.area || 'Control Calidad';
             const cardKey = esParcial ? `parcial-${parcialId}` : `recibo-${recibo.id || orden.id || ''}`;
+            const urlVerRecibo = construirUrlVerRecibo(orden, recibo, tipoRecibo, numeroPedido, prendaId);
 
             if (!permitirReemplazo && cardKey && document.querySelector(`[data-card-key="${cardKey}"]`)) {
                 return null;
@@ -736,7 +1085,7 @@
             card.dataset.tipoRecibo = tipoRecibo;
             card.dataset.esParcial = esParcial ? '1' : '0';
             card.dataset.parcialId = String(parcialId || '');
-            card.dataset.numeroRecibo = String(recibo.id || orden.id || '');
+            card.dataset.numeroRecibo = String(consecutivoActual || recibo.id || orden.id || '');
 
             card.innerHTML = `
                 <div class="orden-border ${esParcial ? 'en-proceso' : ''}"></div>
@@ -772,22 +1121,19 @@
                         </div>
 
                         <div class="orden-buttons">
-                            <a class="btn-ver-recibos" href="/control-calidad/pedido/${numeroPedido}?tipo_recibo=${encodeURIComponent(tipoRecibo)}&prenda_id=${prendaId}">
+                            <a class="btn-ver-recibos" href="${urlVerRecibo}">
                                 <span class="material-symbols-rounded">receipt</span>
                                 VER
                             </a>
+                            <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                                <span class="material-symbols-rounded">done</span>
+                                ${completadoArea ? 'COMPLETADO' : 'COMPLETAR'}
+                            </button>
+                            <button class="btn-deshacer-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                                <span class="material-symbols-rounded">undo</span>
+                                DESHACER
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="orden-right-actions">
-                        <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
-                            <span class="material-symbols-rounded">done</span>
-                            ${completadoArea ? 'COMPLETADO' : 'COMPLETAR'}
-                        </button>
-                        <button class="btn-deshacer-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
-                            <span class="material-symbols-rounded">undo</span>
-                            DESHACER
-                        </button>
                     </div>
 
                     <div class="orden-right">
@@ -799,7 +1145,7 @@
                             <span class="orden-fecha-label">REGISTRO</span>
                             <span>${orden.fecha_creacion ? new Date(orden.fecha_creacion).toLocaleDateString('es-CO') : ''}</span>
                         </div>
-                        <a href="/control-calidad/pedido/${numeroPedido}?tipo_recibo=${encodeURIComponent(tipoRecibo)}&prenda_id=${prendaId}" class="action-arrow">
+                        <a href="${urlVerRecibo}" class="action-arrow">
                             <span class="material-symbols-rounded">arrow_forward</span>
                         </a>
                         <div class="orden-pedido-footer">
@@ -834,18 +1180,32 @@
             aplicarFiltros();
         }
 
-        if (window.Echo) {
-            window.Echo.channel('control-calidad')
+        function registrarRealtimeControlCalidad() {
+            const echo = window.EchoInstance || window.Echo;
+            if (!echo) {
+                return;
+            }
+
+            echo.channel('control-calidad')
                 .listen('ControlCalidadUpdated', (e) => {
                     console.log('[Control Calidad] Evento realtime:', e);
-                    if (e?.tipo !== 'parcial') {
+
+                    if (!e?.orden || !['added', 'removed', 'updated'].includes(String(e?.action || ''))) {
                         return;
                     }
 
-                    if (e?.action === 'added' || e?.action === 'removed' || e?.action === 'updated') {
-                        insertarOActualizarCardControlCalidad(e.orden || e, e.action);
+                    insertarOActualizarCardControlCalidad(e.orden, e.action);
+
+                    if (e.action === 'added') {
+                        mostrarNotificacionControlCalidad(e.orden, e.action);
                     }
                 });
+        }
+
+        if (typeof window.waitForEcho === 'function') {
+            window.waitForEcho(() => registrarRealtimeControlCalidad());
+        } else {
+            setTimeout(() => registrarRealtimeControlCalidad(), 400);
         }
     });
 

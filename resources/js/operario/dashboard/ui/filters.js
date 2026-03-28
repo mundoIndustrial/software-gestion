@@ -1,4 +1,23 @@
 export function initReciboFilters() {
+    function aplicarTemaDashboard(filtroPrincipal) {
+        const body = document.body;
+        const titleText = document.getElementById('dashboardPageTitleText');
+        const titleIcon = document.getElementById('dashboardPageTitleIcon');
+        const theme = filtroPrincipal === 'reflectivo' ? 'reflectivo' : 'costura';
+
+        if (body) {
+            body.setAttribute('data-dashboard-theme', theme);
+        }
+
+        if (titleText) {
+            titleText.textContent = theme === 'reflectivo' ? 'RECIBOS DE REFLECTIVO' : 'RECIBOS DE COSTURA';
+        }
+
+        if (titleIcon) {
+            titleIcon.textContent = theme === 'reflectivo' ? 'auto_awesome' : 'checkroom';
+        }
+    }
+
     function obtenerFiltroPrincipalActivo() {
         const btnActivo = document.querySelector('.badge-filtro[data-filtro].badge-filtro-active');
         return btnActivo?.dataset?.filtro || 'costura';
@@ -103,6 +122,7 @@ export function initReciboFilters() {
     }
 
     window.filtrarPrendasPorRecibo = function (filtro) {
+        window.__dashboardFiltroPrincipalActivo = filtro;
         document.querySelectorAll('.badge-filtro[data-filtro]').forEach((btn) => {
             btn.classList.remove('badge-filtro-active');
         });
@@ -111,7 +131,9 @@ export function initReciboFilters() {
             btnFiltro.classList.add('badge-filtro-active');
         }
 
+        aplicarTemaDashboard(filtro);
         aplicarFiltrosDashboard(filtro);
+        window.__applyDashboardSearchFilter?.();
     };
 
     window.filtrarVistaCosturaEncargados = function (modo = 'todos') {
@@ -122,6 +144,7 @@ export function initReciboFilters() {
         });
 
         aplicarFiltrosDashboard(obtenerFiltroPrincipalActivo());
+        window.__applyDashboardSearchFilter?.();
     };
 
     if (document.getElementById('vistaCosturaEncargadoFilters')) {
@@ -130,4 +153,7 @@ export function initReciboFilters() {
     } else {
         actualizarBadgeSinEncargado(obtenerFiltroPrincipalActivo());
     }
+
+    window.__dashboardFiltroPrincipalActivo = obtenerFiltroPrincipalActivo();
+    aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
 }

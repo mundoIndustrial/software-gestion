@@ -435,7 +435,24 @@ class ControlCalidadController extends Controller
                 ->with('error', 'Pedido no encontrado');
         }
 
-        // Seguridad adicional: solo permitir ver pedidos que tengan al menos un recibo en Control de Calidad
+        $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+        $tipoRecibo = $tipoRecibo === '' ? null : $tipoRecibo;
+        $prendaIdParam = $request->query('prenda_id', null);
+        $parcialIdParam = (int) $request->query('parcial_id', 0);
+        $consecutivoParcialParam = trim((string) $request->query('consecutivo_parcial', ''));
+
+        $parcialSeleccionado = null;
+        if ($tipoRecibo === 'PARCIAL') {
+            $parcialSeleccionado = ReciboPorPartes::query()
+                ->with(['pedido', 'prenda'])
+                ->where('pedido_produccion_id', $pedidoDB->id)
+                ->when($prendaIdParam, fn ($query) => $query->where('prenda_pedido_id', $prendaIdParam))
+                ->when($parcialIdParam > 0, fn ($query) => $query->where('id', $parcialIdParam))
+                ->when($consecutivoParcialParam !== '', fn ($query) => $query->where('consecutivo_parcial', $consecutivoParcialParam))
+                ->first();
+        }
+
+        // Seguridad adicional: solo permitir ver pedidos que tengan al menos un recibo/parcial en Control de Calidad
         // EXCEPCIÓN: el rol lider-control-calidad puede ver cualquier recibo COSTURA/REFLECTIVO
         if (!$esLiderControlCalidad) {
             $tieneReciboEnControlCalidad = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
@@ -444,7 +461,18 @@ class ControlCalidadController extends Controller
                 ->where('activo', 1)
                 ->exists();
 
-            if (!$tieneReciboEnControlCalidad) {
+            $tieneParcialEnControlCalidad = false;
+            if ($tipoRecibo === 'PARCIAL' && $parcialSeleccionado) {
+                $tieneParcialEnControlCalidad = ProcesoPrenda::query()
+                    ->where('numero_pedido', (int) ($parcialSeleccionado->pedido?->numero_pedido ?? 0))
+                    ->where('prenda_pedido_id', (int) $parcialSeleccionado->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcialSeleccionado->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->whereNull('deleted_at')
+                    ->exists();
+            }
+
+            if (!$tieneReciboEnControlCalidad && !$tieneParcialEnControlCalidad) {
                 return redirect()->route('control-calidad.dashboard')
                     ->with('error', 'Este pedido no tiene recibos en Control de Calidad');
             }
@@ -452,14 +480,13 @@ class ControlCalidadController extends Controller
 
         $fotos = $this->obtenerFotosPedido($numeroPedido);
 
-        $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
-        $tipoRecibo = $tipoRecibo === '' ? null : $tipoRecibo;
-        $prendaIdParam = $request->query('prenda_id', null);
-
         // Para reutilizar operario.ver-pedido sin cambios, inyectamos el consecutivo
         // del recibo seleccionado en el mismo campo que el blade espera.
         $numeroReciboSeleccionado = null;
-        if ($tipoRecibo) {
+        if ($tipoRecibo === 'PARCIAL' && $parcialSeleccionado) {
+            $numeroReciboSeleccionado = $parcialSeleccionado->getRawOriginal('consecutivo_parcial')
+                ?? $parcialSeleccionado->consecutivo_parcial;
+        } elseif ($tipoRecibo) {
             $queryRecibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->where('tipo_recibo', $tipoRecibo)
                 ->where('activo', 1);

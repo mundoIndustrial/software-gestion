@@ -42,9 +42,164 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .notification-dropdown {
+            position: relative;
+            margin-right: 0.2rem;
+            flex-shrink: 0;
+        }
+
+        .top-nav-content {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .notification-btn {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+        }
+
+        .notification-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .notification-btn .material-symbols-rounded {
+            font-size: 22px;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .notification-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: min(360px, calc(100vw - 24px));
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-8px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 50;
+        }
+
+        .notification-menu.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.95rem 1rem;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .notification-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .notification-clear {
+            border: none;
+            background: transparent;
+            color: #2563eb;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .notification-list {
+            max-height: 360px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .notification-item {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item-title {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-bottom: 0.3rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .notification-item-title .material-symbols-rounded {
+            font-size: 18px;
+            color: #2563eb;
+        }
+
+        .notification-item-title.reflectivo .material-symbols-rounded {
+            color: #119669;
+        }
+
+        .notification-item-body {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.45;
+        }
+
+        .notification-item-time {
+            margin-top: 0.4rem;
+            font-size: 0.72rem;
+            color: #94a3b8;
+        }
+
+        .notification-empty {
+            padding: 1.4rem 1rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.82rem;
+        }
     </style>
 </head>
-<body>
+<body data-user-role="control-calidad">
     <div id="loading-overlay">
         <div style="position: relative; width: 80px; height: 80px;">
             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation: spin 2s linear infinite;">
@@ -91,6 +246,22 @@
             </div>
 
             <div class="top-nav-content">
+                <div class="notification-dropdown">
+                    <button class="notification-btn" id="notificationBtn" type="button" aria-label="Notificaciones">
+                        <span class="material-symbols-rounded">notifications</span>
+                        <span class="notification-badge" id="notificationBadge">0</span>
+                    </button>
+                    <div class="notification-menu" id="notificationMenu">
+                        <div class="notification-header">
+                            <h3>Notificaciones</h3>
+                            <button type="button" class="notification-clear" id="notificationClearBtn">Limpiar</button>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">Sin notificaciones por ahora</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
@@ -148,6 +319,123 @@
 
     @vite(['resources/js/app.js'])
     <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
+    <script>
+        window.CONTROL_CALIDAD_USUARIO = {
+            id: {{ (int) Auth::id() }},
+            nombre: @json(Auth::user()->name),
+            rol: @json(Auth::user()->roles()->first()?->name ?? 'control-calidad'),
+        };
+
+        (function initControlCalidadNotifications() {
+            const storageKey = 'control-calidad-push-items';
+            const btn = document.getElementById('notificationBtn');
+            const menu = document.getElementById('notificationMenu');
+            const badge = document.getElementById('notificationBadge');
+            const list = document.getElementById('notificationList');
+            const clearBtn = document.getElementById('notificationClearBtn');
+
+            if (!btn || !menu || !badge || !list || !clearBtn) {
+                return;
+            }
+
+            const loadItems = () => {
+                try {
+                    const raw = localStorage.getItem(storageKey);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (error) {
+                    return [];
+                }
+            };
+
+            const saveItems = (items) => {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(items));
+                } catch (error) {
+                    console.warn('[Control Calidad] No se pudieron guardar notificaciones', error);
+                }
+            };
+
+            const setBadgeCount = (count) => {
+                const value = Math.max(0, Number(count || 0));
+                badge.textContent = value > 99 ? '99+' : String(value);
+                badge.style.display = value > 0 ? 'inline-flex' : 'none';
+            };
+
+            const renderItems = (items) => {
+                if (!items.length) {
+                    list.innerHTML = '<div class="notification-empty">Sin notificaciones por ahora</div>';
+                    return;
+                }
+
+                list.innerHTML = items.map((item) => {
+                    const reflectivo = String(item?.tipo_recibo || '').toUpperCase() === 'REFLECTIVO';
+                    return `
+                        <div class="notification-item">
+                            <div class="notification-item-title ${reflectivo ? 'reflectivo' : ''}">
+                                <span class="material-symbols-rounded">${item?.icon || 'notifications'}</span>
+                                <span>${item?.titulo || 'Notificación'}</span>
+                            </div>
+                            <div class="notification-item-body">${item?.detalle || ''}</div>
+                            <div class="notification-item-time">${item?.fecha || ''}</div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                menu.classList.toggle('active');
+                if (menu.classList.contains('active')) {
+                    renderItems(loadItems());
+                }
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                    menu.classList.remove('active');
+                }
+            });
+
+            clearBtn.addEventListener('click', () => {
+                saveItems([]);
+                setBadgeCount(0);
+                renderItems([]);
+            });
+
+            const currentItems = loadItems();
+            setBadgeCount(currentItems.length);
+            renderItems(currentItems);
+
+            window.NotificacionesPush = {
+                add(payload) {
+                    const current = loadItems();
+                    const id = String(payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2)));
+                    if (current.some((item) => String(item?.id) === id)) {
+                        return;
+                    }
+
+                    const next = [
+                        {
+                            id,
+                            titulo: payload?.title || payload?.titulo || 'Notificación',
+                            detalle: payload?.message || payload?.detalle || '',
+                            fecha: payload?.fecha || new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+                            icon: payload?.icon || 'notifications',
+                            tipo_recibo: payload?.tipo_recibo || '',
+                        },
+                        ...current,
+                    ].slice(0, 50);
+
+                    saveItems(next);
+                    setBadgeCount(next.length);
+                    if (menu.classList.contains('active')) {
+                        renderItems(next);
+                    }
+                }
+            };
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>
