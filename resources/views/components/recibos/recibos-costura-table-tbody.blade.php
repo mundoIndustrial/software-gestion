@@ -18,6 +18,7 @@
                         data-menu-id="menu-recibo-{{ $recibo['id'] }}"
                         data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
                         data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
+                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                         data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'COSTURA' }}"
                         data-es-parcial="{{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}"
                         data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}">
@@ -50,6 +51,7 @@
                     @php
                         // Usar el área del proceso más reciente (pedido_info.area) en lugar del área del recibo
                         $areaRecibo = $recibo['pedido_info']['area'] ?? $recibo['area'] ?? 'Insumos';
+                        $puedeAgregarProceso = stripos((string) $areaRecibo, 'Corte') !== false;
                         $areaBadge = 'bg-secondary';
                         if (strpos($areaRecibo, 'Corte') !== false) {
                             $areaBadge = 'bg-success'; // Verde - bueno para corte
@@ -64,9 +66,11 @@
                         }
                     @endphp
                     <span class="badge {{ $areaBadge }} area-badge-clickable" 
-                          style="cursor: pointer; transition: all 0.2s ease;"
-                          title="Click para agregar proceso"
+                          style="cursor: {{ $puedeAgregarProceso ? 'pointer' : 'default' }}; transition: all 0.2s ease;"
+                          title="{{ $puedeAgregarProceso ? 'Click para agregar proceso' : 'Área actual sin acción disponible' }}"
+                          @if($puedeAgregarProceso)
                           onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }})"
+                          @endif
                           onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';"
                           onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                         {{ $areaRecibo }}

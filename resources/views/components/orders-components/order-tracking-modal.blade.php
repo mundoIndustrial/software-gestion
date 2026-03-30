@@ -182,13 +182,6 @@
                 </div>
             </div>
 
-            <!-- Botón para abrir modal de agregar proceso -->
-            <div class="tracking-add-proceso-trigger">
-                <button type="button" id="btnOpenAddProcesoModal" class="tracking-btn-primary">
-                    Agregar Área
-                </button>
-            </div>
-
             <!-- Lista de Prendas -->
             <div class="tracking-prendas-section" style="display: none; margin: 0; padding: 0;">
                 <div id="trackingPrendasContainer" class="tracking-prendas-container">
@@ -241,15 +234,6 @@
                         <select id="procesoArea" class="add-proceso-select">
                             <option value="">Seleccionar área...</option>
                             <option value="Corte">Corte</option>
-                            <option value="Bordado">Bordado</option>
-                            <option value="Estampado">Estampado</option>
-                            <option value="Costura">Costura</option>
-                            <option value="Taller">Taller</option>
-                            <option value="Lavandería">Lavandería</option>
-                            <option value="Control de Calidad">Control de Calidad</option>
-                            <option value="Despacho">Despacho</option>
-                            <option value="Entrega">Entrega</option>
-                            <option value="Insumos">Insumos</option>
                         </select>
                     </div>
                     <div class="add-proceso-form-group">
@@ -278,6 +262,70 @@
                     Cargando...
                 </span>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de asignación de Corte -->
+<div id="asignarCorteModal" class="add-proceso-modal" style="display: none !important;">
+    <div class="add-proceso-overlay" onclick="cerrarModalAsignacionCorte()"></div>
+    <div class="add-proceso-content" style="max-width: 1100px; width: 94%;">
+        <div class="add-proceso-header">
+            <div class="add-proceso-header-left">
+                <div class="add-proceso-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="10" cy="7" r="4"></circle>
+                        <path d="M20 8v6"></path>
+                        <path d="M23 11h-6"></path>
+                    </svg>
+                </div>
+                <div class="add-proceso-header-content">
+                    <h2 class="add-proceso-title">Asignar Corte</h2>
+                    <p id="asignarCorteModalSubtitle" style="margin: 0.35rem 0 0; color: #64748b; font-size: 0.92rem;">Seleccione cómo desea asignar este recibo.</p>
+                </div>
+            </div>
+            <div class="add-proceso-header-actions">
+                <button class="add-proceso-close" type="button" onclick="cerrarModalAsignacionCorte()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="add-proceso-body" style="display: grid; gap: 1rem;">
+            <div id="asignarCorteOpciones" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+                <button type="button" id="btnAsignarCortadorCompleto" onclick="seleccionarOpcionAsignacionCorte('completo')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; text-align: left;">
+                    <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                        <span class="material-symbols-rounded" style="font-size: 1.6rem; color: #2563eb;">person</span>
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a;">Asignar a cortador</div>
+                            <div style="color: #64748b; font-size: 0.9rem;">Todo el recibo queda con un solo encargado de corte.</div>
+                        </div>
+                    </div>
+                </button>
+                <button type="button" id="btnDistribuirCortadores" onclick="seleccionarOpcionAsignacionCorte('distribuir')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; text-align: left;">
+                    <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                        <span class="material-symbols-rounded" style="font-size: 1.6rem; color: #059669;">group_add</span>
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a;">Distribuir entre cortadores</div>
+                            <div style="color: #64748b; font-size: 0.9rem;">Crea parciales por talla y los asigna a varios cortadores.</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <button type="button" id="btnVolverAsignacionCorte" onclick="volverAOpcionesAsignacionCorte()" style="display:none; align-self:flex-start; padding: 0.65rem 0.9rem; border-radius: 999px; border: 1px solid #cbd5e1; background: #fff; color: #334155;">
+                Volver
+            </button>
+
+            <div id="contenidoAsignacionCorte"></div>
+        </div>
+
+        <div class="add-proceso-footer">
+            <button type="button" class="add-proceso-btn-secondary" onclick="cerrarModalAsignacionCorte()">Cancelar</button>
+            <button type="button" id="btnConfirmarAsignacionCorte" class="add-proceso-btn-primary" onclick="confirmarAsignacionCorte()" disabled>Confirmar</button>
         </div>
     </div>
 </div>
