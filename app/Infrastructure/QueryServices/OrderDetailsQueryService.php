@@ -3,6 +3,7 @@
 namespace App\Infrastructure\QueryServices;
 
 use App\Models\Cliente;
+use App\Models\LogoCotizacion;
 use App\Models\LogoPedido;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -20,6 +21,16 @@ class OrderDetailsQueryService
     public function findLogoPedidoByNumeroPedido(string $pedido): ?LogoPedido
     {
         return LogoPedido::where('numero_pedido', $pedido)->first();
+    }
+
+    public function findPedidoProduccionByIdWithRelations(int $pedidoId): ?PedidoProduccion
+    {
+        return PedidoProduccion::with('asesora', 'prendas')->find($pedidoId);
+    }
+
+    public function findLogoCotizacionByIdWithCotizacion(int $logoCotizacionId): ?LogoCotizacion
+    {
+        return LogoCotizacion::with('cotizacion')->find($logoCotizacionId);
     }
 
     /**
@@ -69,4 +80,3 @@ class OrderDetailsQueryService
         }
     }
 }
-

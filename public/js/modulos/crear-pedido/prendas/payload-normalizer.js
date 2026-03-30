@@ -150,7 +150,7 @@
                 observaciones: observaciones,
                 tallas: normalizarTallas(datosReales.tallas || datoProceso.tallas || {}),
                 imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || []),
-                modo_tallas: datosReales.modoTallas || datosReales.modo_tallas || datoProceso.modoTallas || datoProceso.modo_tallas || 'generico',  // ← NUEVO: Normalizar a snake_case para backend
+                modo_tallas: datosReales.modo_tallas || 'generico',
                 datos_extendidos: datosReales.datosExtendidos || datosReales.datos_extendidos || null  // ← PRESERVAR datos por talla (normalizando key también)
             };
             
@@ -277,7 +277,7 @@
                             } else if (procesoData && typeof procesoData === 'object') {
                                 // CASO 2: Objeto con propiedades imagenes e imagenes_por_talla
                                 
-                                // Procesar imagenes array (modo para_todas)
+                                // Procesar imagenes array (modo generico/general)
                                 if (Array.isArray(procesoData.imagenes)) {
                                     procesoData.imagenes.forEach(function(imgObj, imgIdx) {
                                         const file = imgObj.file || imgObj;
@@ -290,7 +290,7 @@
                                     });
                                 }
                                 
-                                // Procesar imagenes_por_talla (modo por_tallas)
+                                // Procesar imagenes_por_talla (modo especifico)
                                 if (procesoData.imagenes_por_talla && typeof procesoData.imagenes_por_talla === 'object') {
                                     Object.entries(procesoData.imagenes_por_talla).forEach(function([tallaKey, imagesArray]) {
                                         if (Array.isArray(imagesArray)) {

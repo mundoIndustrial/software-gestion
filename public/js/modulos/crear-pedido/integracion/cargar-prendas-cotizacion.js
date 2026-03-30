@@ -11,7 +11,7 @@ class CargadorPrendasCotizacion {
 
             // Cargar datos COMPLETOS de la prenda desde el backend
             const response = await fetch(
-                `/asesores/pedidos-produccion/obtener-prenda-completa/${cotizacionId}/${prendaId}`,
+                `/api/asesores/pedidos-produccion/obtener-prenda-completa/${cotizacionId}/${prendaId}`,
                 {
                     method: 'GET',
                     headers: {

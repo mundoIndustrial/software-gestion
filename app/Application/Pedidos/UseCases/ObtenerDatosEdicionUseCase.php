@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Domain\Pedidos\UseCases\ObtenerDatosEdicionUseCaseContract;
 
 use App\Application\Pedidos\DTOs\ObtenerDatosEdicionResponse;
+use App\Application\Pedidos\Exceptions\ObtenerDatosEdicionException;
 use App\Application\Pedidos\Services\PrendaTransformadorService;
 use App\Application\Pedidos\Services\EppTransformadorService;
 use App\Models\PedidoProduccion;
@@ -12,16 +13,13 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerDatosEdicionUseCase
- * 
- * Caso de uso para obtener datos completos de un pedido para edición.
- * 
+ * Caso de uso para obtener datos completos de un pedido para edificacion.
  * Responsabilidades:
  * - Obtener el pedido con todas sus relaciones
  * - Enriquecer prendas y sus variantes
- * - Transformar EPPs con imágenes
- * - Preparar datos para formulario de edición
- * 
- * Orquesta los servicios de transformación.
+ * - Transformar EPPs con imagenes
+ * - Preparar datos para formulario de edificacion
+ * Orquesta los servicios de trasformacion.
  */
 class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
 {
@@ -38,7 +36,6 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
 
     /**
      * Ejecuta el caso de uso
-     * 
      * @param int $id ID del pedido
      * @return ObtenerDatosEdicionResponse
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException Si no existe
@@ -59,7 +56,7 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
             $datosRespuesta = $pedido->toArray();
             $datosRespuesta['epps_transformados'] = $eppsList;
 
-            Log::info('[ObtenerDatosEdicionUseCase] Datos de edición obtenidos', [
+            Log::info('[ObtenerDatosEdicionUseCase] Datos de edicficacion obtenidos', [
                 'pedido_id' => $pedido->id,
                 'prendas_count' => count($pedido->prendas ?? []),
                 'epps_count' => count($eppsList)
@@ -77,12 +74,12 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw new \RuntimeException('Error al obtener datos de edición: ' . $e->getMessage(), 0, $e);
+            throw ObtenerDatosEdicionException::fromThrowable($e);
         }
     }
 
     /**
-     * Obtiene el pedido con todas las relaciones necesarias para edición
+     * Obtiene el pedido con todas las relaciones necesarias para edificacion
      */
     private function obtenerPedido(int $id): PedidoProduccion
     {

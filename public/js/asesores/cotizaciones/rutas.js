@@ -5,7 +5,7 @@
 
 window.routes = {
     guardarCotizacion: null,
-    subirImagenes: function(id) { return `/asesores/cotizaciones/${id}/imagenes`; },
+    subirImagenes: function(id) { return `/api/asesores/cotizaciones/${id}/imagenes`; },
     cotizacionesIndex: null
 };
 

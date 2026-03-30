@@ -18,7 +18,7 @@ async function borrarImagenPrenda(fotoId, element) {
     if (!result.isConfirmed) return;
     
     try {
-        const response = await fetch(`/asesores/cotizaciones/imagenes/prenda/${fotoId}`, {
+        const response = await fetch(`/api/asesores/cotizaciones/imagenes/prenda/${fotoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -80,7 +80,7 @@ async function borrarImagenTela(fotoId, element) {
     if (!result.isConfirmed) return;
     
     try {
-        const response = await fetch(`/asesores/cotizaciones/imagenes/tela/${fotoId}`, {
+        const response = await fetch(`/api/asesores/cotizaciones/imagenes/tela/${fotoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -142,7 +142,7 @@ async function borrarImagenLogo(fotoId, element) {
     if (!result.isConfirmed) return;
     
     try {
-        const response = await fetch(`/asesores/cotizaciones/imagenes/logo/${fotoId}`, {
+        const response = await fetch(`/api/asesores/cotizaciones/imagenes/logo/${fotoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

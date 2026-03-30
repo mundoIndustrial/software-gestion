@@ -97,9 +97,12 @@ window.seleccionarModoProcesoTodas = function() {
     if (modal) modal.style.display = 'none';
     procesoEnSelector = null;
     
-    // Guardar el modo seleccionado en el proceso
+    // Guardar el modo seleccionado en la fuente única canónica
     if (window.procesosSeleccionados[tipoProceso]) {
-        window.procesosSeleccionados[tipoProceso].modoTallas = 'generico';
+        if (!window.procesosSeleccionados[tipoProceso].datos || typeof window.procesosSeleccionados[tipoProceso].datos !== 'object') {
+            window.procesosSeleccionados[tipoProceso].datos = { tipo: tipoProceso };
+        }
+        window.procesosSeleccionados[tipoProceso].datos.modo_tallas = 'generico';
     }
     
     // Abrir modal genérico (que tiene ubicaciones, observaciones y fotos)
@@ -121,6 +124,7 @@ window.seleccionarModoProcesoTodas = function() {
 
 /**
  * Modo "Por Tallas": Abre el modal dedicado de proceso por tallas.
+ * Contrato de dominio persistente: modo_tallas = "especifico".
  */
 window.seleccionarModoProcesoTallas = function() {
     if (!procesoEnSelector) return;
@@ -132,9 +136,12 @@ window.seleccionarModoProcesoTallas = function() {
     if (modal) modal.style.display = 'none';
     procesoEnSelector = null;
     
-    // Guardar el modo seleccionado en el proceso
+    // Guardar el modo seleccionado en la fuente única canónica
     if (window.procesosSeleccionados[tipoProceso]) {
-        window.procesosSeleccionados[tipoProceso].modoTallas = 'por_tallas';
+        if (!window.procesosSeleccionados[tipoProceso].datos || typeof window.procesosSeleccionados[tipoProceso].datos !== 'object') {
+            window.procesosSeleccionados[tipoProceso].datos = { tipo: tipoProceso };
+        }
+        window.procesosSeleccionados[tipoProceso].datos.modo_tallas = 'especifico';
     }
     
     // Abrir modal dedicado de proceso por tallas

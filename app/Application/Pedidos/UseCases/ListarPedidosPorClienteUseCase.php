@@ -7,7 +7,6 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
  * Use Case: Listar Pedidos por Cliente
- * 
  * Query Side - CQRS basico
  * Obtiene todos los pedidos de un cliente
  */

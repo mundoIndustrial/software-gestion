@@ -10,7 +10,6 @@ use App\Models\PedidoProduccion;
 
 /**
  * Use Case para agregar EPP a un pedido
- * 
  * Maneja la creación de registro en pedido_epp
  */
 final class AgregarEppUseCase implements AgregarEppUseCaseContract
@@ -19,11 +18,8 @@ final class AgregarEppUseCase implements AgregarEppUseCaseContract
 
     public function execute(AgregarEppDTO $dto)
     {
-        $pedido = $this->validarObjetoExiste(
-            PedidoProduccion::find($dto->pedidoId),
-            'Pedido',
-            $dto->pedidoId
-        );
+        $pedido = PedidoProduccion::find($dto->pedidoId);
+        $this->validarObjetoExiste($pedido, 'Pedido', $dto->pedidoId);
 
         return $pedido->epps()->create([
             'epp_id' => $dto->eppId,
@@ -41,7 +37,6 @@ final class AgregarEppUseCase implements AgregarEppUseCaseContract
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

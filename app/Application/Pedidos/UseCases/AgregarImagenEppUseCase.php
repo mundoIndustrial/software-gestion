@@ -18,11 +18,8 @@ final class AgregarImagenEppUseCase implements AgregarImagenEppUseCaseContract
 
     public function execute(AgregarImagenEppDTO $dto)
     {
-        $epp = $this->validarObjetoExiste(
-            PedidoEpp::find($dto->eppId),
-            'EPP',
-            $dto->eppId
-        );
+        $epp = PedidoEpp::find($dto->eppId);
+        $this->validarObjetoExiste($epp, 'EPP', $dto->eppId);
 
         return $epp->imagenes()->create([
             'ruta_original' => $dto->rutaOriginal,
@@ -46,7 +43,6 @@ final class AgregarImagenEppUseCase implements AgregarImagenEppUseCaseContract
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

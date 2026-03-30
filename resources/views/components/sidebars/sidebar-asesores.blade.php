@@ -138,6 +138,14 @@
                             </a>
                         </li>
                         <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.revisar-prenda') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.revisar-prenda') ? 'active' : '' }}"
+                               aria-label="Revisar prendas devueltas a asesor">
+                                <span class="material-symbols-rounded">fact_check</span>
+                                <span class="menu-label">Revisar Prenda</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
                             <a href="{{ route('asesores.pedidos.borradores') }}"
                                class="menu-link {{ request()->routeIs('asesores.pedidos.borradores') ? 'active' : '' }}"
                                aria-label="Ver borradores de pedidos">

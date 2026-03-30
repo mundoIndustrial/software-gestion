@@ -2,17 +2,19 @@
 
 namespace App\Application\Pedidos\UseCases\Orders;
 
-use App\Models\PedidoProduccion;
-use App\Services\RegistroOrdenValidationService;
-use App\Services\RegistroOrdenPrendaService;
+use App\Application\Shared\Contracts\AuditRepositoryInterface;
+use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
+use App\Application\Shared\Contracts\TransactionManagerInterface;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Services\RegistroOrdenCacheService;
-use App\Models\News;
+use App\Services\RegistroOrdenPrendaService;
+use App\Services\RegistroOrdenValidationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * UseCase: Actualizar orden completa con sus prendas
- * 
+ *
  * Responsabilidades:
  * - Validar datos completos
  * - Reemplazar prendas
@@ -25,6 +27,10 @@ class EditFullOrderUseCase
         private RegistroOrdenValidationService $validationService,
         private RegistroOrdenPrendaService $prendaService,
         private RegistroOrdenCacheService $cacheService,
+        private PedidoProduccionReadRepository $pedidoRepository,
+        private AuditRepositoryInterface $auditRepository,
+        private TransactionManagerInterface $transactionManager,
+        private OrdenEventDispatcherInterface $eventDispatcher,
     ) {}
 
     /**
@@ -32,58 +38,54 @@ class EditFullOrderUseCase
      */
     public function execute(Request $request, int $pedido): array
     {
-        // Validar datos
         $validatedData = $this->validationService->validateEditFullOrderRequest($request);
 
-        // Obtener la orden
-        $orden = PedidoProduccion::where('numero_pedido', $pedido)
-            ->firstOrFail();
+        $orden = $this->pedidoRepository->findByNumeroPedido((string) $pedido);
+        if (!$orden) {
+            throw new ModelNotFoundException("Pedido {$pedido} no encontrado");
+        }
 
-        DB::beginTransaction();
-
-        try {
-            // Actualizar campos básicos
-            $orden->update([
+        $this->transactionManager->run(function () use ($orden, $pedido, $validatedData) {
+            $this->pedidoRepository->actualizarDatosBasicos($orden->pedidoId, [
                 'estado' => $validatedData['estado'] ?? 'No iniciado',
                 'cliente' => $validatedData['cliente'],
                 'created_at' => $validatedData['fecha_creacion'],
                 'forma_de_pago' => $validatedData['forma_pago'] ?? null,
             ]);
 
-            // Reemplazar prendas
             $this->prendaService->replacePrendas($pedido, $validatedData['prendas']);
-
-            // Invalidar cache
             $this->cacheService->invalidateDaysCache($pedido);
 
-            // Registrar evento
-            News::create([
-                'event_type' => 'order_updated',
-                'description' => "Orden editada: Pedido {$pedido} para cliente {$validatedData['cliente']}",
-                'user_id' => auth()->id(),
-                'pedido' => $pedido,
-                'metadata' => ['cliente' => $validatedData['cliente'], 'total_prendas' => count($validatedData['prendas'])]
-            ]);
+            $this->auditRepository->registrar(
+                eventType: 'order_updated',
+                description: "Orden editada: Pedido {$pedido} para cliente {$validatedData['cliente']}",
+                userId: (int) auth()->id(),
+                pedido: (string) $pedido,
+                metadata: [
+                    'cliente' => $validatedData['cliente'],
+                    'total_prendas' => count($validatedData['prendas']),
+                ],
+            );
+        });
 
-            DB::commit();
+        $ordenActualizada = $this->pedidoRepository->obtenerPedidoPorId($orden->pedidoId) ?? [
+            'id' => $orden->pedidoId,
+            'numero_pedido' => $orden->numeroPedido,
+            'cliente' => $validatedData['cliente'],
+            'asesor_id' => $orden->asesorId,
+            'estado' => $validatedData['estado'] ?? $orden->estado,
+            'forma_de_pago' => $validatedData['forma_pago'] ?? null,
+        ];
 
-            // Recargar relaciones
-            $orden->load('prendas');
+        $ordenActualizada['prendas'] = $this->prendaService->getPrendasArray($pedido);
 
-            // Broadcast evento
-            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
+        $this->eventDispatcher->ordenActualizada($ordenActualizada, 'updated');
 
-            return [
-                'success' => true,
-                'message' => 'Orden actualizada correctamente',
-                'pedido' => $pedido,
-                'orden' => $orden
-            ];
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        return [
+            'success' => true,
+            'message' => 'Orden actualizada correctamente',
+            'pedido' => $pedido,
+            'orden' => $ordenActualizada,
+        ];
     }
 }
-

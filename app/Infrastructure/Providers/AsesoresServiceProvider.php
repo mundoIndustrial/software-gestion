@@ -50,19 +50,17 @@ use App\Application\Services\ColorTelaService;
 
 /**
  * AsesoresServiceProvider
- * 
- * Registra todos los servicios y dependencias para el módulo de Asesores
- * 
+ * Registra todos los servicios y dependencias para el modulo de Asesores
  * Responsabilidades:
  * - Inyectar repositorios en Use Cases
  * - Registrar servicios legacy (gradualmente siendo reemplazados)
- * - Centralizar configuración de dependencias
+ * - Centralizar configuracion de dependencias
  * 
  * Beneficios:
- * - Constructor limpio (12 parámetros vs 23 anteriores)
- * - Fácil testing (inyección clara)
- * - Fácil mantenimiento (cambios centralizados)
- * - Explícito (se ve qué depende de qué)
+ * - Constructor limpio (12 parametrs vs 23 anteriores)
+ * - Facil testing (inyeccion clara)
+ * - Facil mantenimiento (cambios centralizados)
+ * - Explicito (se ve aqui depende de aqui)
  */
 class AsesoresServiceProvider extends ServiceProvider
 {
@@ -161,7 +159,7 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // Preparar Creación Pedido
+        // Preparar Creacion Pedido
         $this->app->singleton(PrepararCreacionProduccionPedidoUseCase::class, function ($app) {
             return $app->build(PrepararCreacionProduccionPedidoUseCase::class);
         });
@@ -173,11 +171,9 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // Obtener Próximo Número Pedido
+        // Obtener Proximo Numero Pedido
         $this->app->singleton(ObtenerProximoNumeroPedidoUseCase::class, function ($app) {
-            return new ObtenerProximoNumeroPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return new ObtenerProximoNumeroPedidoUseCase();
         });
 
         // Obtener Factura
@@ -194,16 +190,16 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // ===== USE CASES PRESENTACIÓN (DDD - NUEVA ARQUITECTURA) =====
+        // ===== USE CASES PRESENTACION (DDD - NUEVA ARQUITECTURA) =====
 
-        // Obtener Estadísticas Dashboard
+        // Obtener estadisticas Dashboard
         $this->app->singleton(ObtenerEstadisticasDashboardUseCase::class, function ($app) {
             return new ObtenerEstadisticasDashboardUseCase(
                 $app->make(DashboardService::class)
             );
         });
 
-        // Obtener Datos Gráficas Dashboard
+        // Obtener Datos graficas Dashboard
         $this->app->singleton(ObtenerDatosGraficasDashboardUseCase::class, function ($app) {
             return new ObtenerDatosGraficasDashboardUseCase(
                 $app->make(DashboardService::class)
@@ -217,7 +213,7 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // Marcar Notificación Leída
+        // Marcar Notificacion Leida
         $this->app->singleton(MarcarNotificacionLeidaUseCase::class, function ($app) {
             return new MarcarNotificacionLeidaUseCase(
                 $app->make(NotificacionesService::class)
@@ -245,7 +241,7 @@ class AsesoresServiceProvider extends ServiceProvider
             return new ProcesarFotosTelasService();
         });
 
-        // Guardar Pedido (con transacción)
+        // Guardar Pedido (con transaccion)
         $this->app->singleton(GuardarPedidoUseCase::class, function ($app) {
             return new GuardarPedidoUseCase(
                 $app->make(CrearProduccionPedidoUseCase::class),
@@ -262,8 +258,9 @@ class AsesoresServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Aquí irían eventos, listeners, etc.
+        // aqui iran eventos, listeners, etc.
     }
 }
+
 
 

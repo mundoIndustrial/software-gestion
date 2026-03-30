@@ -2,11 +2,11 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Exceptions\CrearPedidoInputException;
 use Illuminate\Http\Request;
 
 /**
  * DTO de entrada para CrearPedidoCompleteUseCase
- * 
  * Encapsula los datos necesarios para crear un pedido completo
  * Decodifica el JSON y normaliza los datos
  */
@@ -25,22 +25,21 @@ class CrearPedidoInput
 
     /**
      * Factory method para crear desde Request
-     * 
      * @param Request $request
      * @param int $usuarioId
      * @return self
-     * @throws \Exception
+     * @throws CrearPedidoInputException
      */
     public static function fromRequest(Request $request, int $usuarioId): self
     {
         $pedidoJSON = $request->input('pedido');
         if (!$pedidoJSON) {
-            throw new \Exception('Campo "pedido" JSON requerido');
+            throw CrearPedidoInputException::campoPedidoRequerido();
         }
 
         $datosFrontend = json_decode($pedidoJSON, true);
         if (!$datosFrontend) {
-            throw new \Exception('JSON inválido en campo "pedido"');
+            throw CrearPedidoInputException::jsonInvalido();
         }
 
         return new self($datosFrontend, $request, $usuarioId);
@@ -103,4 +102,3 @@ class CrearPedidoInput
         return ($id && $id > 0) ? (int) $id : null;
     }
 }
-

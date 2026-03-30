@@ -106,6 +106,15 @@ window.PrendaCardService = {
         return normalizados;
     },
 
+    _resolverAsignacionesColoresPorTalla(prenda) {
+        const fuenteDirecta = prenda?.asignacionesColoresPorTalla;
+        if (fuenteDirecta && typeof fuenteDirecta === 'object' && Object.keys(fuenteDirecta).length > 0) {
+            return fuenteDirecta;
+        }
+
+        return {};
+    },
+
     generar(prenda, indice) {
 
         
@@ -171,24 +180,33 @@ window.PrendaCardService = {
 
 
 
+        const asignacionesColoresPorTalla = this._resolverAsignacionesColoresPorTalla(prenda);
+        const tipoFlujoTallas = String(prenda?.tipo_flujo_tallas || '').toLowerCase();
+        const esFlujoTallaColor = tipoFlujoTallas === 'talla_color';
+        const prendaParaRender = {
+            ...prenda,
+            asignacionesColoresPorTalla,
+            tipo_flujo_tallas: tipoFlujoTallas,
+        };
+
         // Construir secciones
-        const variacionesHTML = this._construirVariaciones(prenda, indice);
-        const procesosHTML = this._construirProcesos(prenda, indice);
+        const variacionesHTML = this._construirVariaciones(prendaParaRender, indice);
+        const procesosHTML = this._construirProcesos(prendaParaRender, indice);
         
         // Detectar si hay asignaciones de colores → combinar tela + tallas en una sola sección
-        const tieneAsignaciones = prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0;
+        const usarSeccionCombinada = esFlujoTallaColor;
         
         let tablaTelasHTML = '';
         let tallasYCantidadesHTML = '';
         
-        if (tieneAsignaciones) {
+        if (usarSeccionCombinada) {
             // Sección combinada: Tela, Tallas y Colores en un solo expandible
             tablaTelasHTML = ''; // No mostrar tabla telas por separado
-            tallasYCantidadesHTML = this._construirSeccionCombinada(prenda, indice);
+            tallasYCantidadesHTML = this._construirSeccionCombinada(prendaParaRender, indice);
         } else {
             // Flujo normal: tabla telas + tallas separadas
-            tablaTelasHTML = this._construirTablaTelas(prenda, indice);
-            tallasYCantidadesHTML = this._construirTallasYCantidades(prenda, indice);
+            tablaTelasHTML = this._construirTablaTelas(prendaParaRender, indice);
+            tallasYCantidadesHTML = this._construirTallasYCantidades(prendaParaRender, indice);
         }
 
         // Calcular número de item global (considerando prendas y EPPs)
@@ -488,7 +506,7 @@ window.PrendaCardService = {
                 if (tallasList.length === 0) return;
                 
                 // Obtener asignaciones de colores
-                const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
+                const asignacionesColores = this._resolverAsignacionesColoresPorTalla(prenda);
                 
                 const tallasConCantidad = tallasList.map(talla => {
                     const cantidad = cantidadesGen[talla] || 0;
@@ -586,6 +604,31 @@ window.PrendaCardService = {
         return null;
     },
 
+    _obtenerFotoTelaConFallback(prenda, telaItem, telaIndex) {
+        if (!Array.isArray(prenda?.colores_telas) || prenda.colores_telas.length === 0 || !window.ImageConverterService) {
+            return null;
+        }
+
+        const nombreTela = String(telaItem?.tela || telaItem?.nombre_tela || '').trim().toUpperCase();
+        const colorTela = String(telaItem?.color || '').trim().toUpperCase();
+        const idTela = telaItem?.id ?? telaItem?._original_id ?? null;
+
+        const match = prenda.colores_telas.find((ct) => {
+            if (!ct) return false;
+            if (idTela && (ct.id === idTela || ct.prenda_pedido_colores_telas_id === idTela)) return true;
+            const nombreCt = String(ct.tela_nombre || ct.tela || '').trim().toUpperCase();
+            const colorCt = String(ct.color_nombre || ct.color || '').trim().toUpperCase();
+            return nombreTela && nombreTela === nombreCt && (!colorTela || !colorCt || colorTela === colorCt);
+        });
+
+        if (!match) return null;
+
+        const fotosTela = Array.isArray(match.fotos_tela) ? match.fotos_tela : [];
+        if (fotosTela.length === 0) return null;
+
+        return window.ImageConverterService.obtenerPrimeraImagen(fotosTela);
+    },
+
     /**
      * Sección combinada: Tela + Tallas + Colores en un solo expandible
      * Se usa cuando hay asignaciones de colores (flujo wizard)
@@ -659,16 +702,16 @@ window.PrendaCardService = {
 
         if (totalTallas === 0 && telas.length === 0) return '';
 
-        const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
+        const asignacionesColores = this._resolverAsignacionesColoresPorTalla(prenda);
 
         // ── Construir HTML de telas (mini-badges en vez de tabla) ──
         let telasInfoHTML = '';
         if (telas.length > 0) {
-            const telasBadges = telas.map(t => {
+            const telasBadges = telas.map((t, idx) => {
                 const nombre = t.tela || t.nombre_tela || 'N/A';
                 const col = t.color || '';
                 const ref = t.referencia || t.ref || '';
-                const telaFoto = window.ImageConverterService ? window.ImageConverterService.obtenerImagenTela(t) : null;
+                const telaFoto = this._obtenerFotoTelaConFallback(prenda, t, idx);
 
                 const obs = t.observaciones || '';
                 let detalles = '';
@@ -833,7 +876,7 @@ window.PrendaCardService = {
             const nombreProceso = datos.nombre || tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
             const modoTallasResuelto = datos.modoTallas || proceso.modoTallas || 'generico';
             const esGeneralMode = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
-            const esPorTallas = !esGeneralMode && (!!(datos.datosExtendidos) || proceso.modoTallas === 'por_tallas');
+            const esPorTallas = !esGeneralMode && !!(datos.datosExtendidos);
 
             // ─── Modo POR TALLAS: renderizar sub-tarjetas por talla ───
             if (esPorTallas && datos.datosExtendidos) {
@@ -896,6 +939,36 @@ window.PrendaCardService = {
                                 </div>
                             </div>
                         `;
+                    }
+                }
+
+                if (!esGeneral && !fotosGeneralesHTML) {
+                    const imagenesProceso = Array.isArray(datos.imagenes) ? datos.imagenes : [];
+                    if (imagenesProceso.length > 0) {
+                        const fotosThumb = imagenesProceso.map((src) => {
+                            let imgSrc = src;
+                            if (src instanceof File) {
+                                imgSrc = URL.createObjectURL(src);
+                            } else if (src && typeof src === 'object') {
+                                imgSrc = src.url || src.ruta_webp || src.ruta_original || src.path || src.previewUrl || src.blobUrl || '';
+                            }
+                            return imgSrc
+                                ? `<img src="${imgSrc}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;">`
+                                : '';
+                        }).filter(Boolean).join('');
+
+                        if (fotosThumb) {
+                            fotosGeneralesHTML = `
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                                        <i class="fas fa-images"></i>IMAGENES DEL PROCESO (${imagenesProceso.length})
+                                    </strong>
+                                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                                        ${fotosThumb}
+                                    </div>
+                                </div>
+                            `;
+                        }
                     }
                 }
 

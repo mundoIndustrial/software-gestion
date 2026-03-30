@@ -13,7 +13,8 @@ use App\Infrastructure\Http\Controllers\Asesores\TelasColoresApiController;
  * Controller: App\Infrastructure\Http\Controllers\PrendaController
  */
 Route::middleware('api')->group(function () {
-    Route::apiResource('prendas', PrendaController::class, ['only' => ['show', 'index']]);
+    Route::apiResource('prendas', PrendaController::class, ['only' => ['show', 'index']])
+        ->whereNumber('prenda');
     Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
     
     Route::prefix('pedidos')->name('pedidos.')->group(function () {

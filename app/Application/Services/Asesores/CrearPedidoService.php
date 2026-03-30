@@ -4,7 +4,6 @@ namespace App\Application\Services\Asesores;
 
 use App\Models\PedidoProduccion;
 use App\Models\LogoPedido;
-use App\Enums\EstadoPedido;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +83,6 @@ class CrearPedidoService
 
     /**
      * Crear pedido de prendas (Pedidos)
-     * 
      * Optimizado para concurrencia:
      * - ID generado por AUTO_INCREMENT (seguro)
      * - numero_pedido se genera después (por Cartera)

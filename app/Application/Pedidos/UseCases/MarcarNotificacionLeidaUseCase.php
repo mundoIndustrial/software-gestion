@@ -8,7 +8,6 @@ use App\Application\Services\Asesores\NotificacionesService;
 
 /**
  * MarcarNotificacionLeidaUseCase
- * 
  * Use Case para marcar notificaciones como leidas
  * Encapsula la lógica de marcar una o todas las notificaciones
  */

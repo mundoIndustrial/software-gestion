@@ -9,7 +9,6 @@ use Carbon\Carbon;
 
 /**
  * UseCase: Agregar una novedad a una orden
- * 
  * Responsabilidades:
  * - Validar entrada
  * - Formatear novedad con usuario y fecha
@@ -37,7 +36,7 @@ class AddNovedadUseCase
         $novedadesActuales = $orden->novedades ?? '';
         
         // Concatenar con salto de línea
-        $novedadesNuevas = !empty($novedadesActuales) 
+        $novedadesNuevas = !empty($novedadesActuales)
             ? $novedadesActuales . "\n\n" . $novedadFormato
             : $novedadFormato;
         

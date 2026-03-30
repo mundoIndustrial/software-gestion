@@ -31,7 +31,6 @@ final class ActualizarVariantePrendaUseCase
 
     /**
      * Ejecutar actualización de variante de prenda
-     * 
      * @param ActualizarVariantePrendaDTO $dto
      * @return array Datos de la variante actualizada
      * @throws \Exception Si hay error de validación o DB
@@ -61,7 +60,7 @@ final class ActualizarVariantePrendaUseCase
             );
 
             // Ejecutar comando a través del bus
-            $variante = $this->commandBus->dispatch($command);
+            $variante = $this->commandBus->execute($command);
 
             // Transformar resultado
             $resultado = $this->transformarVariante($variante);

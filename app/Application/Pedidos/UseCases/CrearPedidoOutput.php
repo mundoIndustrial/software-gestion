@@ -4,7 +4,6 @@ namespace App\Application\Pedidos\UseCases;
 
 /**
  * DTO de salida para CrearPedidoCompleteUseCase
- * 
  * Encapsula el resultado de crear un pedido completo
  */
 class CrearPedidoOutput

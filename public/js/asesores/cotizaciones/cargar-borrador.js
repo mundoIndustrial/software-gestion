@@ -1960,7 +1960,7 @@ async function eliminarFotoCotizacion(element, cotizacionId) {
     
     try {
         // Llamar al servidor para eliminar la imagen
-        const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
+        const response = await fetch(`/api/asesores/cotizaciones/${cotizacionId}/imagenes`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -2019,7 +2019,7 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
             });
             
             // Enviar solicitud al backend para eliminar inmediatamente
-            fetch(window.location.origin + '/asesores/fotos/eliminar', {
+            fetch(window.location.origin + '/api/asesores/fotos/eliminar', {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',

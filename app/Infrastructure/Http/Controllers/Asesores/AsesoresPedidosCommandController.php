@@ -151,9 +151,21 @@ final class AsesoresPedidosCommandController extends Controller
             $user = Auth::user();
             $this->eliminarBorradorAsesorUseCase->ejecutar((int) $id, (int) $user->id);
 
+            if ($request->expectsJson() || $request->ajax()) {
+                return $this->json([
+                    'success' => true,
+                    'message' => 'Borrador eliminado exitosamente',
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Borrador eliminado exitosamente');
         } catch (\Throwable $e) {
             \Log::error('[destroyBorrador] Error', ['error' => $e->getMessage()]);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return $this->failure('Error al eliminar el borrador.', 500);
+            }
+
             return redirect()->back()->with('error', 'Error al eliminar el borrador.');
         }
     }

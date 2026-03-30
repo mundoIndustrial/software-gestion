@@ -2,7 +2,6 @@
 
 /**
  * Rutas para Asesores
- * 
  * Organizacion:
  * - Dashboard: Estadisticas y datos
  * - Perfil: Gestion de perfil
@@ -15,13 +14,9 @@ use App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasControll
 use App\Infrastructure\Http\Controllers\Asesores\AsesoresDashboardController;
 use App\Infrastructure\Http\Controllers\Asesores\AsesoresPerfilController;
 use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosViewController;
-use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosCommandController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
-use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
 use App\Infrastructure\Http\Controllers\CotizacionController;
-use App\Infrastructure\Http\Controllers\CotizacionEppController;
-use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Infrastructure\Http\Controllers\Pdf\CotizacionPdfController;
 use App\Infrastructure\Http\Controllers\Pdf\PrendaPdfController;
@@ -54,9 +49,6 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/cotizaciones/create', [AsesoresPedidosViewController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/{id}', [AsesoresPedidosViewController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
     Route::get('/pedidos/{id}/edit', [AsesoresPedidosViewController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
-    Route::put('/pedidos/{id}', [AsesoresPedidosCommandController::class, 'update'])->where('id', '[0-9]+')->name('pedidos.update');
-    Route::delete('/pedidos/borradores/{id}', [AsesoresPedidosCommandController::class, 'destroyBorrador'])->where('id', '[0-9]+')->name('pedidos.borradores.destroy');
-    Route::delete('/pedidos/{id}', [AsesoresPedidosCommandController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
 
     // ========================================
     // PEDIDOS - APIs DDD (DEPRECATED)
@@ -84,17 +76,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // COTIZACIONES - DDD Refactorizado
     // ========================================
     Route::get('/cotizaciones', [CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
-    Route::get('/cotizaciones/filtros/valores', [CotizacionesFiltrosController::class, 'valores'])->name('cotizaciones.filtros.valores');
-    Route::post('/cotizaciones', [CotizacionController::class, 'store'])->name('cotizaciones.store');
-    Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->name('cotizaciones.update');
 
     // Editar cotizacion ya creada (NO borrador) - reusa el mismo formulario y carga
     Route::get('/cotizaciones/{id}/editar-cotizacion', [CotizacionController::class, 'editCotizacion'])->name('cotizaciones.edit-creada');
-
-    // ========================================
-    // COTIZACIONES - EPP (nuevo)
-    // ========================================
-    Route::post('/cotizaciones-epp', [CotizacionEppController::class, 'store'])->name('cotizaciones-epp.store');
     
     // ========================================
     // PDF GENERATION - NEW REFACTORED STRUCTURE
@@ -106,22 +90,10 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/cotizacion/{id}/pdf/epp', [EppPdfController::class, 'show'])->name('cotizacion.pdf.epp');
     Route::get('/cotizacion/{id}/pdf', [CotizacionPdfController::class, 'show'])->name('cotizacion.pdf'); // Ruta compartida migrada a Infrastructure (seam)
     
-    Route::delete('/cotizaciones/imagenes/prenda/{id}', [ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');
-    Route::delete('/cotizaciones/imagenes/tela/{id}', [ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
-    Route::delete('/cotizaciones/imagenes/logo/{id}', [ImagenBorradorController::class, 'borrarLogo'])->name('cotizaciones.imagen.borrar-logo');
-    Route::get('/cotizaciones/{id}/editar', [CotizacionController::class, 'getForEdit'])->name('cotizaciones.get-for-edit');
-    Route::get('/cotizaciones/{id}', [CotizacionController::class, 'show'])->name('cotizaciones.api');
-    Route::post('/cotizaciones/{id}/imagenes', [CotizacionController::class, 'subirImagen'])->name('cotizaciones.subir-imagen');
-
     // ========================================
     // INVENTARIO Y RECURSOS
     // ========================================
     Route::get('/inventario-telas', [AsesoresInventarioTelasController::class, 'index'])->name('inventario.telas');
-    
-    // ========================================
-    // FOTOS
-    // ========================================
-    Route::post('/fotos/eliminar', [CotizacionController::class, 'eliminarFotoInmediatamente'])->name('fotos.eliminar-inmediatamente');
 
     // ========================================
     // API REALTIME - PEDIDOS
@@ -136,20 +108,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
             ->name('crear-desde-cotizacion');
         Route::get('crear-nuevo', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\ObtenerPedidoFormDataController::class, 'crearNuevo'])
             ->name('crear-nuevo');
-        
-        // Creacion de pedido (POST - API)
-        Route::post('crear', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoController::class, 'crearPedido'])
-            ->name('crear');
-        
-        // Validar pedido antes de crear (POST - API)
-        Route::post('validar', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\ValidarPedidoController::class, 'validarPedido'])
-            ->name('validar');
-        
-        // Guardar/actualizar borradores
-        Route::post('borrador', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController::class, 'guardarBorrador'])
-            ->name('guardarBorrador');
-        Route::put('{pedidoId}/borrador', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController::class, 'actualizarBorrador'])
-            ->name('actualizar')
-            ->where('pedidoId', '[0-9]+');
+        Route::get('revisar-prenda', [AsesoresPedidosViewController::class, 'revisarPrendas'])
+            ->name('revisar-prenda');
     });
 });

@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Domain\Pedidos\ValueObjects\NumeroPedido;
 use Illuminate\Support\Facades\Log;
 
 final class BuscarPedidoPorNumeroUseCase
@@ -23,7 +24,9 @@ final class BuscarPedidoPorNumeroUseCase
 
         $this->validarNoVacio($dto->numero, 'numero de pedido');
 
-        $pedido = $this->pedidoRepository->obtenerPorNumero($dto->numero);
+        $pedido = $this->pedidoRepository->porNumero(
+            NumeroPedido::desde($dto->numero)
+        );
 
         Log::info('[BuscarPedidoPorNumeroUseCase] busqueda completada', [
             'numero' => $dto->numero,
@@ -33,5 +36,4 @@ final class BuscarPedidoPorNumeroUseCase
         return $pedido;
     }
 }
-
 

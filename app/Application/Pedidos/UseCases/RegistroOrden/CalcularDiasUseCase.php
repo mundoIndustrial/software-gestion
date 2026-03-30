@@ -9,7 +9,6 @@ use App\Exceptions\CalcularDiasException;
 
 /**
  * CalcularDiasUseCase
- * 
  * UseCase: Calcular días de una orden específica
  * Capa: Application
  * Responsabilidad: Orquestar la lógica de cálculo de días hábiles para un pedido
@@ -18,7 +17,6 @@ class CalcularDiasUseCase
 {
     /**
      * Ejecutar cálculo de días para una orden
-     * 
      * @param string $numeroPedido
      * @return array ['success' => bool, 'data' => mixed, 'message' => string]
      * @throws CalcularDiasException

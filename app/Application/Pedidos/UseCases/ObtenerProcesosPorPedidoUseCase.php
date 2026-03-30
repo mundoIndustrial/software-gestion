@@ -2,28 +2,29 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\Repositories\ProcesoPedidoReadRepository;
 use App\Domain\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCaseContract;
-
-use App\Models\PedidoProduccion;
 use App\Models\Festivo;
-use Illuminate\Support\Facades\DB;
+use App\Models\PedidoProduccion;
 use Carbon\Carbon;
 
 /**
  * ObtenerProcesosPorPedidoUseCase
- * 
  * Caso de uso para obtener todos los procesos de un pedido con calculo de dias habiles
- * Responsabilidad: Orquestar la obtención de procesos e información relacionada
- * 
- * Patrón: Use Case (Application Layer - DDD)
+ * Responsabilidad: Orquestar la obtencion de procesos e informacion relacionada
+ * Patron: Use Case (Application Layer - DDD)
  */
 class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCaseContract
 {
+    public function __construct(
+        private readonly ProcesoPedidoReadRepository $procesoPedidoReadRepository
+    ) {
+    }
+
     /**
      * Ejecutar caso de uso
-     * 
-     * @param int|string $id - número de pedido o ID
-     * @param int|null $prendaId - ID de la prenda específica (opcional)
+     * @param int|string $id - numero de pedido o ID
+     * @param int|null $prendaId - ID de la prenda especifica (opcional)
      * @return array - Datos del pedido con procesos
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
@@ -37,30 +38,21 @@ class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCase
         // Obtener festivos
         $festivos = Festivo::pluck('fecha')->toArray();
 
-        // Obtener procesos ordenados por fecha_inicio (solo procesos_prenda sin soft-delete)
-        $query = DB::table('procesos_prenda')
-            ->where('numero_pedido', $orden->numero_pedido)
-            ->whereNull('deleted_at')
-            ->orderBy('fecha_inicio', 'asc')
-            ->select('id', 'numero_pedido', 'prenda_pedido_id', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso');
-
-        // Filtrar por prenda_pedido_id si se proporciona
-        if ($prendaId !== null) {
-            $query->where('prenda_pedido_id', $prendaId);
-        }
-
-        $procesos = $query->get()
+        $procesos = collect(
+            $this->procesoPedidoReadRepository
+                ->obtenerProcesosPorNumeroPedidoYPrenda($orden->numero_pedido, $prendaId)
+        )
             ->groupBy('proceso')
-            ->map(function($grupo) {
-                // Mantener el registro más reciente de cada proceso
-                // (al venir ordenado ASC, el último es el más nuevo)
+            ->map(function ($grupo) {
+                // Mantener el registro mas reciente de cada proceso
+                // (al venir ordenado ASC, el ultimo es el mas nuevo)
                 return $grupo->last();
             })
             ->values();
 
         // Calcular dias habiles totales
         $totalDiasHabiles = $this->calcularDiasHabilesBatch(
-            $procesos->count() > 0 
+            $procesos->count() > 0
                 ? Carbon::parse($procesos->first()->fecha_inicio)
                 : Carbon::now(),
             $this->obtenerFechaFinal($procesos),
@@ -74,7 +66,7 @@ class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCase
             'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega,
             'procesos' => $procesos->toArray(),
             'total_dias_habiles' => $totalDiasHabiles,
-            'festivos' => $festivos
+            'festivos' => $festivos,
         ];
     }
 
@@ -87,7 +79,7 @@ class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCase
             return Carbon::now();
         }
 
-        $procesoDespachos = $procesos->firstWhere('proceso', 'Despachos') 
+        $procesoDespachos = $procesos->firstWhere('proceso', 'Despachos')
             ?? $procesos->firstWhere('proceso', 'Entrega')
             ?? $procesos->firstWhere('proceso', 'Despacho');
 
@@ -137,8 +129,3 @@ class ObtenerProcesosPorPedidoUseCase implements ObtenerProcesosPorPedidoUseCase
         return $this->{$method}(...$arguments);
     }
 }
-
-
-
-
-

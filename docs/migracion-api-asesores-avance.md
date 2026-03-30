@@ -1,6 +1,6 @@
 # Migracion API Asesores - Estado Actual
 
-Fecha de actualizacion: 2026-03-28
+Fecha de actualizacion: 2026-03-30
 Proyecto: `mundoindustrial`
 
 ## Resumen ejecutivo
@@ -33,6 +33,30 @@ Ya activos en `routes/api-asesores.php`:
   - `GET /api/asesores/pedidos/next-pedido`
   - `GET /api/asesores/pedidos/listar`
   - `GET /api/asesores/pedidos-api-listar` (compatibilidad)
+  - `POST /api/asesores/pedidos/crear`
+  - `POST /api/asesores/pedidos/validar`
+  - `POST /api/asesores/pedidos/borrador`
+  - `PUT|POST /api/asesores/pedidos/{pedidoId}/borrador`
+  - `PUT|POST /api/asesores/pedidos/{pedidoId}/actualizar` (legacy compat)
+  - `PUT /api/asesores/pedidos/{id}`
+  - `DELETE /api/asesores/pedidos/borradores/{id}`
+  - `POST /api/asesores/pedidos/{id}/confirmar-correccion`
+
+- Cotizaciones:
+  - `GET /api/asesores/cotizaciones/filtros/valores`
+  - `POST /api/asesores/cotizaciones`
+  - `GET /api/asesores/cotizaciones/{id}`
+  - `PUT /api/asesores/cotizaciones/{id}`
+  - `DELETE /api/asesores/cotizaciones/{id}`
+  - `DELETE /api/asesores/cotizaciones/{id}/borrador`
+  - `POST /api/asesores/cotizaciones/{id}/anular`
+  - `POST /api/asesores/cotizaciones/{id}/imagenes`
+  - `DELETE /api/asesores/cotizaciones/{id}/imagenes`
+  - `DELETE /api/asesores/cotizaciones/imagenes/prenda/{id}`
+  - `DELETE /api/asesores/cotizaciones/imagenes/tela/{id}`
+  - `DELETE /api/asesores/cotizaciones/imagenes/logo/{id}`
+  - `POST /api/asesores/fotos/eliminar` (compatibilidad)
+  - `POST /api/asesores/cotizaciones-epp`
 
 - Notificaciones:
   - `GET /api/asesores/notificaciones`
@@ -54,10 +78,17 @@ Ya activos en `routes/api-asesores.php`:
   - `GET /api/asesores/prendas/autocomplete`
 
 - Edicion de pedidos/prendas/epp:
+  - `GET /api/asesores/pedidos-produccion`
+  - `GET /api/asesores/pedidos-produccion/obtener-datos-cotizacion/{cotizacionId}`
+  - `GET /api/asesores/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}`
+  - `GET /api/asesores/pedidos-produccion/{id}`
+  - `PUT /api/asesores/pedidos-produccion/{pedidoId}/prendas/{prendaId}` (endpoint puente legacy del modal simple)
   - `GET /api/asesores/pedidos/{id}/editar-datos`
+  - `GET /api/asesores/pedidos/{id}/factura-datos`
   - `GET /api/asesores/pedidos/{id}/recibos-datos`
   - `GET /api/asesores/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos`
   - `GET /api/asesores/pedidos-produccion/{pedidoId}/datos-edicion`
+  - `DELETE /api/asesores/pedidos-produccion/{id}`
   - `DELETE /api/asesores/pedidos/{id}`
   - `POST /api/asesores/pedidos/{pedidoId}/agregar-prenda-simple`
   - `POST /api/asesores/pedidos/{id}/agregar-prenda`
@@ -81,6 +112,7 @@ Se retiraron rutas JSON duplicadas de `routes/asesores.php` que ahora viven en A
 - bloque de `observaciones-despacho`
 - `realtime/pedidos`
 - varios endpoints de edicion/prendas/epp/recibos
+- comandos de `pedidos` (crear/validar/guardar borrador/actualizar/anular) en `routes/asesores.php` ahora se consumen por `/api/asesores/*`
 
 Nota:
 - `routes/asesores.php` sigue siendo valido para vistas Blade y navegacion web (esto es esperado en estrategia de migracion gradual con Blade + Vite).
@@ -102,11 +134,19 @@ Con lo ya migrado:
 - Observaciones despacho (CRUD + badges + marcas) se consume por API.
 - Catalogos de telas/colores/autocomplete se consumen por API.
 - Gran parte de la edicion de prendas/EPP en pedidos apunta a API.
+- Consulta de factura de pedido (`factura-datos`) para vistas de asesores apunta a API.
+- Flujos de cotizaciones (filtros, anular, borrar borrador, subir/eliminar imagenes) apuntan a API.
 
 ## Pendientes recomendados (siguiente fase)
 
 1. Cerrar bloque `pedidos-produccion/*` residual en otros modulos JS
 - Hay consumidores legacy todavia en archivos antiguos que apuntan a `/asesores/pedidos-produccion/...` fuera del flujo ya tocado.
+2. Migrar endpoints web legacy de pedido/logo que aun no tienen equivalente API en `api-asesores`
+- `/asesores/pedidos/guardar-logo-pedido`
+- `/asesores/pedidos-logo/areas/disponibles`
+- `/asesores/pedidos-logo/{logoPedidoId}/cambiar-area`
+- `/asesores/pedidos-logo/{logoPedidoId}/historial`
+- `/asesores/pedidos/cotizaciones/{cotId}/epp-items`
 
 2. Estandarizar nombres y metodos HTTP
 - Mantener consistencia REST (por ejemplo, revisar where aplica `POST` vs `PATCH/PUT/DELETE`).
@@ -143,4 +183,3 @@ Se considerara completo cuando:
 - `resources/views/asesores/pedidos/pendientes.blade.php`
 - `resources/views/asesores/pedidos/pendientes-detalle.blade.php`
 - `tests/Feature/Http/Controllers/Api/AsesoresApiControllerTest.php`
-

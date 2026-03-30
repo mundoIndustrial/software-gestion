@@ -7,7 +7,6 @@ use App\Application\Asesores\UseCases\ObtenerNotasPedidoUseCase;
 use App\Application\Asesores\UseCases\ObtenerPendientesAsesorUseCase;
 use App\Application\Asesores\UseCases\ResolverPedidoIdAsesorUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
-use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
@@ -112,8 +111,7 @@ final class AsesoresPedidosQueryController extends Controller
     public function getNextPedido(): JsonResponse
     {
         try {
-            $dto = ObtenerProximoNumeroPedidoDTO::crear();
-            $siguientePedido = $this->obtenerProximoNumeroPedidoUseCase->ejecutar($dto);
+            $siguientePedido = $this->obtenerProximoNumeroPedidoUseCase->ejecutar();
 
             return $this->json([
                 'success' => true,
@@ -144,17 +142,17 @@ final class AsesoresPedidosQueryController extends Controller
             );
 
             $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
-            $pedidosArray = $pedidos->getCollection()->map(function ($pedido) {
+            $pedidosArray = collect($pedidos->items())->map(function ($pedido) {
                 return [
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'cliente' => $pedido->cliente,
-                    'estado' => $pedido->estado,
-                    'area' => $pedido->area,
-                    'novedades' => $pedido->novedades,
-                    'forma_pago' => $pedido->forma_pago,
-                    'fecha_creacion' => $pedido->fecha_creacion,
-                    'fecha_estimada' => $pedido->fecha_estimada,
+                    'id' => data_get($pedido, 'id'),
+                    'numero_pedido' => data_get($pedido, 'numero_pedido'),
+                    'cliente' => data_get($pedido, 'cliente'),
+                    'estado' => data_get($pedido, 'estado'),
+                    'area' => data_get($pedido, 'area'),
+                    'novedades' => data_get($pedido, 'novedades'),
+                    'forma_pago' => data_get($pedido, 'forma_pago'),
+                    'fecha_creacion' => data_get($pedido, 'fecha_creacion'),
+                    'fecha_estimada' => data_get($pedido, 'fecha_estimada'),
                 ];
             })->toArray();
 

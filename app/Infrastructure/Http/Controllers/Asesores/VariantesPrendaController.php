@@ -49,12 +49,12 @@ class VariantesPrendaController
     }
 
     /**
-     * GET /api/tallas-disponibles
+     * GET /api/asesores/tallas-disponibles
      */
     public function obtenerTallasDisponibles(Request $request): JsonResponse
     {
         try {
-            Log::info('[VariantesPrendaController] GET /api/tallas-disponibles', [
+            Log::info('[VariantesPrendaController] GET /api/asesores/tallas-disponibles', [
                 'params' => $request->all(),
             ]);
 

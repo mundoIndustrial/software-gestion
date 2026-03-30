@@ -2,7 +2,6 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
@@ -26,19 +25,21 @@ final class FiltrarPedidosPorEstadoUseCase
         $this->validarEstadoValido($dto->estado);
         $this->validarPositivo($dto->page, 'pagina');
 
-        $pedidos = $this->pedidoRepository->obtenerPorEstado(
-            $dto->estado,
-            $dto->page,
-            $dto->perPage
-        );
+        $pedidos = $this->pedidoRepository->porEstado($dto->estado);
+
+        if (is_object($pedidos) && method_exists($pedidos, 'total')) {
+            $total = $pedidos->total();
+        } elseif (is_countable($pedidos)) {
+            $total = count($pedidos);
+        } else {
+            $total = 0;
+        }
 
         Log::info('[FiltrarPedidosPorEstadoUseCase] Filtrado completado', [
             'estado' => $dto->estado,
-            'total' => $pedidos->total() ?? count($pedidos),
+            'total' => $total,
         ]);
 
         return $pedidos;
     }
 }
-
-

@@ -14,6 +14,7 @@ use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -271,6 +272,93 @@ final class AsesoresPedidosViewController extends Controller
         } catch (\Throwable $e) {
             \Log::error('[borradores] Error', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Error al listar borradores.');
+        }
+    }
+
+    public function revisarPrendas(Request $request)
+    {
+        try {
+            $asesorId = (int) Auth::id();
+            $search = trim((string) $request->query('search', ''));
+
+            $query = ConsecutivoReciboPedido::query()
+                ->with([
+                    'pedido:id,numero_pedido,asesor_id',
+                    'prenda:id,pedido_produccion_id,nombre_prenda',
+                    'prenda.fotos:id,prenda_pedido_id,ruta_original,ruta_webp',
+                ])
+                ->where('activo', 1)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                ->whereRaw(
+                    "UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)",
+                    ['DEVUELTO_ASESOR', 'DEVUELTO_A_ASESOR']
+                )
+                ->whereHas('pedido', static function ($pedidoQuery) use ($asesorId) {
+                    $pedidoQuery->where('asesor_id', $asesorId);
+                })
+                ->orderByDesc('updated_at');
+
+            if ($search !== '') {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->whereHas('pedido', static function ($pedidoQuery) use ($search) {
+                            $pedidoQuery->where('numero_pedido', 'like', '%' . $search . '%');
+                        })
+                        ->orWhereHas('prenda', static function ($prendaQuery) use ($search) {
+                            $prendaQuery->where('nombre_prenda', 'like', '%' . $search . '%');
+                        })
+                        ->orWhere('consecutivo_actual', 'like', '%' . $search . '%');
+                });
+            }
+
+            $recibos = $query->paginate(20)->withQueryString();
+            $recibos->getCollection()->transform(function (ConsecutivoReciboPedido $recibo) {
+                $imagenesPrenda = $recibo->prenda?->fotos
+                    ?->map(function ($foto) {
+                        $ruta = (string) ($foto->ruta_webp ?: $foto->ruta_original ?: '');
+                        if ($ruta === '') {
+                            return null;
+                        }
+
+                        if (str_starts_with($ruta, '/storage/') || str_starts_with($ruta, 'http')) {
+                            return $ruta;
+                        }
+
+                        if (str_starts_with($ruta, '/')) {
+                            return '/storage' . $ruta;
+                        }
+
+                        return '/storage/' . $ruta;
+                    })
+                    ->filter()
+                    ->values()
+                    ->all() ?? [];
+
+                return [
+                    'id' => $recibo->id,
+                    'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
+                    'prenda_id' => (int) $recibo->prenda_id,
+                    'numero_pedido' => (string) ($recibo->pedido?->numero_pedido ?? ''),
+                    'nombre_prenda' => (string) ($recibo->prenda?->nombre_prenda ?? 'PRENDA'),
+                    'tipo_recibo' => (string) $recibo->tipo_recibo,
+                    'consecutivo_actual' => (int) ($recibo->consecutivo_actual ?? 0),
+                    'estado' => (string) ($recibo->estado ?? ''),
+                    'area' => (string) ($recibo->area ?? ''),
+                    'notas' => (string) ($recibo->notas ?? ''),
+                    'fecha_envio' => optional($recibo->fecha_envio)->format('Y-m-d H:i'),
+                    'fecha_llegada' => optional($recibo->fecha_llegada)->format('Y-m-d H:i'),
+                    'updated_at' => optional($recibo->updated_at)->format('Y-m-d H:i'),
+                    'imagenes_prenda' => $imagenesPrenda,
+                ];
+            });
+
+            return view('asesores.pedidos.revisar-prenda', [
+                'recibos' => $recibos,
+                'search' => $search,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[revisarPrendas] Error', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al cargar prendas para revisión.');
         }
     }
 }

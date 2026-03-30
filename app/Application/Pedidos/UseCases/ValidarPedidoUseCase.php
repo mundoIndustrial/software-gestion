@@ -2,25 +2,22 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use Illuminate\Support\Facades\Log;
 use App\Domain\Clientes\Services\ClienteService;
 use App\Domain\Pedidos\Events\PedidoValidatedEvent;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 
 /**
  * UseCase: Validar Pedido
- * 
  * FASE 2 - Valida pedido antes de crear
  * Responsabilidades:
  * - Validar estructura JSON recibida
  * - Validar cliente (obligatorio)
- * - Validar que hay al menos prendas, épps o items
+ * - Validar que hay al menos prendas, epps o items
  * - Obtener o crear cliente
- * - Retornar estado de validación
- * 
+ * - Retornar estado de validacion
  * Nota: Este UseCase se ejecuta ANTES de CrearPedidoCompleteUseCase
  * Permite al frontend validar datos antes de commit
- * 
  * @package App\Application\UseCases\Pedidos
  */
 class ValidarPedidoUseCase
@@ -30,22 +27,25 @@ class ValidarPedidoUseCase
     ) {}
 
     /**
-     * Ejecutar validación del pedido
-     * 
+     * Ejecutar validacion del pedido
      * FLUJO:
      * 1. Validar estructura JSON
      * 2. Validar cliente (requerido)
-     * 3. Validar que hay items (prendas, épps o items legacy)
+     * 3. Validar que hay items (prendas, epps o items legacy)
      * 4. Obtener/crear cliente
      * 5. Retornar resultado con cliente_id
-     * 
      * @param ValidarPedidoInput $input
      * @return ValidarPedidoOutput
      */
     public function ejecutar(ValidarPedidoInput $input): ValidarPedidoOutput
     {
+        $output = ValidarPedidoOutput::failure(
+            ['Error inesperado en validacion'],
+            'Validacion no completada'
+        );
+
         try {
-            Log::info('[ValidarPedidoUseCase] Iniciando validación', [
+            Log::info('[ValidarPedidoUseCase] Iniciando validacion', [
                 'user_id' => $input->userId,
                 'cliente_raw' => $input->getClienteNombre(),
                 'tiene_prendas' => $input->hasPrendas(),
@@ -56,72 +56,71 @@ class ValidarPedidoUseCase
             // ====== PASO 1: Validar cliente ======
             $validarClienteResult = $this->validarCliente($input);
             if (!$validarClienteResult['success']) {
-                Log::warning('[ValidarPedidoUseCase] Validación de cliente fallida', [
+                Log::warning('[ValidarPedidoUseCase] Validacion de cliente fallida', [
                     'errores' => $validarClienteResult['errores'],
                 ]);
 
-                return ValidarPedidoOutput::failure(
+                $output = ValidarPedidoOutput::failure(
                     $validarClienteResult['errores'],
-                    'Validación de cliente fallida'
+                    'Validacion de cliente fallida'
                 );
+            } else {
+                // ====== PASO 2: Validar items ======
+                $validarItemsResult = $this->validarItems($input);
+                if (!$validarItemsResult['success']) {
+                    Log::warning('[ValidarPedidoUseCase] Validacion de items fallida', [
+                        'errores' => $validarItemsResult['errores'],
+                    ]);
+
+                    $output = ValidarPedidoOutput::failure(
+                        $validarItemsResult['errores'],
+                        'Validacion de items fallida'
+                    );
+                } else {
+                    // ====== PASO 3: Obtener/crear cliente ======
+                    $clienteNombre = $input->getClienteNombre();
+                    $cliente = $this->clienteService->obtenerOCrearCliente($clienteNombre);
+
+                    Log::info('[ValidarPedidoUseCase] Validacion exitosa', [
+                        'cliente_id' => $cliente->id,
+                        'cliente_nombre' => $cliente->nombre,
+                        'items_counts' => $input->getItemCounts(),
+                    ]);
+
+                    // ====== Domain Event: Pedido Validado ======
+                    Event::dispatch(new PedidoValidatedEvent(
+                        pedidoId: 0,
+                        usuarioId: $input->userId,
+                        validacionesPasadas: ['cliente', 'items'],
+                        metadata: [
+                            'cliente_id' => $cliente->id,
+                            'cliente_nombre' => $cliente->nombre,
+                            'items_counts' => $input->getItemCounts(),
+                        ]
+                    ));
+
+                    $output = ValidarPedidoOutput::success(
+                        $cliente->id,
+                        'Pedido valido'
+                    );
+                }
             }
-
-            // ====== PASO 2: Validar items ======
-            $validarItemsResult = $this->validarItems($input);
-            if (!$validarItemsResult['success']) {
-                Log::warning('[ValidarPedidoUseCase] Validación de items fallida', [
-                    'errores' => $validarItemsResult['errores'],
-                ]);
-
-                return ValidarPedidoOutput::failure(
-                    $validarItemsResult['errores'],
-                    'Validación de items fallida'
-                );
-            }
-
-            // ====== PASO 3: Obtener/crear cliente ======
-            $clienteNombre = $input->getClienteNombre();
-            $cliente = $this->clienteService->obtenerOCrearCliente($clienteNombre);
-
-            Log::info('[ValidarPedidoUseCase] Validación exitosa', [
-                'cliente_id' => $cliente->id,
-                'cliente_nombre' => $cliente->nombre,
-                'items_counts' => $input->getItemCounts(),
-            ]);
-
-            // ====== Domain Event: Pedido Validado ======
-            Event::dispatch(new PedidoValidatedEvent(
-                pedidoId: 0,
-                usuarioId: $input->userId,
-                validacionesPasadas: ['cliente', 'items'],
-                metadata: [
-                    'cliente_id' => $cliente->id,
-                    'cliente_nombre' => $cliente->nombre,
-                    'items_counts' => $input->getItemCounts(),
-                ]
-            ));
-
-            return ValidarPedidoOutput::success(
-                $cliente->id,
-                'Pedido válido'
-            );
-
         } catch (\Exception $e) {
             Log::error('[ValidarPedidoUseCase] Error general', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return ValidarPedidoOutput::fromException($e, 'Error en validación');
+            $output = ValidarPedidoOutput::fromException($e, 'Error en validacion');
         }
+
+        return $output;
     }
 
     /**
      * Validar cliente
-     * 
      * Reglas:
-     * - Cliente es obligatorio (no puede estar vacío)
-     * 
+     * - Cliente es obligatorio (no puede estar vacio)
      * @param ValidarPedidoInput $input
      * @return array [success => bool, errores => string[]]
      */
@@ -143,14 +142,12 @@ class ValidarPedidoUseCase
     }
 
     /**
-     * Validar items (prendas, épps, o items legacy)
-     * 
+     * Validar items (prendas, epps, o items legacy)
      * Reglas:
      * - Debe tener al menos UNO de:
-     *   - Prendas (array no vacío)
-     *   - EPPs (array no vacío)
-     *   - Items legacy (array no vacío)
-     * 
+     *   - Prendas (array no vacio)
+     *   - EPPs (array no vacio)
+     *   - Items legacy (array no vacio)
      * @param ValidarPedidoInput $input
      * @return array [success => bool, errores => string[]]
      */
@@ -159,7 +156,7 @@ class ValidarPedidoUseCase
         if (!$input->hasSomeItems()) {
             return [
                 'success' => false,
-                'errores' => ['Debe tener al menos prendas, EPPs o ítems'],
+                'errores' => ['Debe tener al menos prendas, EPPs o items'],
             ];
         }
 
@@ -169,4 +166,3 @@ class ValidarPedidoUseCase
         ];
     }
 }
-

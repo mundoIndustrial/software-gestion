@@ -41,7 +41,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
     }
     
     // Cargar datos de la cotización desde el backend
-    fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacion.id}`)
+    fetch(`/api/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacion.id}`)
         .then(response => response.json())
         .then(data => {
 

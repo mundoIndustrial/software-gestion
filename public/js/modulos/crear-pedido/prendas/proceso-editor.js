@@ -25,7 +25,7 @@ class ProcesosEditor {
             imagenes: null,         // Array reemplazado (no merge)
             observaciones: null,    // String
             tallas: null,           // Object
-            modo_tallas: null       // String: 'general', 'especifico', 'por_tallas'
+            modo_tallas: null       // String: 'generico', 'general', 'especifico'
         };
         
         // Flag para saber si hay cambios pendientes
@@ -169,7 +169,7 @@ class ProcesosEditor {
 
     /**
      * Registrar cambio de modo de tallas
-     * @param {string} nuevoModo - 'general', 'especifico', 'por_tallas'
+     * @param {string} nuevoModo - 'generico', 'general', 'especifico'
      */
     registrarCambioModoTallas(nuevoModo) {
         if (!this.procesoEnEdicion) {

@@ -33,4 +33,19 @@ interface PedidoProduccionReadRepository
     public function obtenerPrendaDelPedido(int $pedidoId, int $prendaId): ?PedidoPrendaRef;
 
     public function obtenerPedidoPorId(int $pedidoId): ?array;
+
+    /**
+     * Obtiene el detalle base de un pedido por número, incluyendo
+     * relaciones necesarias para visualización.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function obtenerPedidoDetallePorNumero(int $numeroPedido): ?array;
+
+    /**
+     * Obtiene los totales de cantidad y entregado para un pedido por número.
+     *
+     * @return array{total_cantidad:int,total_entregado:int}
+     */
+    public function obtenerTotalesPorNumeroPedido(int $numeroPedido): array;
 }

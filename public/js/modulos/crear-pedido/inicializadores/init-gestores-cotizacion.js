@@ -49,7 +49,7 @@
                 selectedDiv.style.display = 'block';
 
                 // Cargar prendas usando el cargador
-                const cargador = new CargadorCotizacion('/asesores/pedidos-produccion/obtener-datos-cotizacion');
+                const cargador = new CargadorCotizacion('/api/asesores/pedidos-produccion/obtener-datos-cotizacion');
                 cargador.cargar(id)
                     .then(data => {
                         

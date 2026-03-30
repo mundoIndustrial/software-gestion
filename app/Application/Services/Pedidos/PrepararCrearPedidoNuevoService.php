@@ -90,6 +90,7 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
     {
         return PedidoProduccion::with([
             'prendas.tallas',
+            'prendas.tallas.coloresAsignados',
             'prendas.fotos',
             'prendas.coloresTelas.tela',
             'prendas.coloresTelas.color',
@@ -97,6 +98,7 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
             'prendas.procesos.tipoProceso',
             'prendas.procesos.imagenes',
             'prendas.procesos.tallas',
+            'prendas.procesos.tallas.coloresAsignados',
             'epps.epp',
             'epps.imagenes',
         ])->find($pedidoId);

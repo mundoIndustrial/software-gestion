@@ -222,11 +222,8 @@ class GestorDatosPedidoJSON {
                 Object.entries(prenda.procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && proceso.datos) {
                         const prefix = `prendas[${prendaIdx}][procesos][${tipoProceso}]`;
-                        // Normalizar modoTallas: "todas" → "para_todas"
-                        let modoTallas = proceso.modoTallas || (proceso.datos.datosExtendidos ? 'por_tallas' : 'para_todas');
-                        if (modoTallas === 'todas') {
-                            modoTallas = 'para_todas';  // ← Conversión de seguridad
-                        }
+                        // Fuente única canónica de modo
+                        const modoTallas = proceso?.datos?.modo_tallas || 'generico';
 
                         formData.append(`${prefix}[tipo]`, proceso.datos.tipo || tipoProceso);
                         formData.append(`${prefix}[ubicaciones]`, JSON.stringify(proceso.datos.ubicaciones || []));
@@ -235,7 +232,7 @@ class GestorDatosPedidoJSON {
                         formData.append(`${prefix}[modo_tallas]`, modoTallas);
                         contadores.procesos++;
 
-                        if (modoTallas === 'por_tallas' && proceso.datos.datosExtendidos) {
+                        if (modoTallas === 'especifico' && proceso.datos.datosExtendidos) {
                             // Enviar datosExtendidos como JSON (ubicaciones + observaciones por talla)
                             formData.append(`${prefix}[datos_extendidos]`, JSON.stringify(proceso.datos.datosExtendidos));
 
@@ -257,7 +254,7 @@ class GestorDatosPedidoJSON {
                                 }
                             });
                         } else {
-                            // Modo para_todas: enviar imágenes al nivel del proceso
+                            // Modos generico/general: enviar imágenes al nivel del proceso
                             if (proceso.datos.imagenes && proceso.datos.imagenes.length > 0) {
                                 proceso.datos.imagenes.forEach((img, imgIdx) => {
                                     if (img instanceof File) {
@@ -359,5 +356,3 @@ class GestorDatosPedidoJSON {
 
 // Crear instancia global
 window.gestorDatosPedidoJSON = new GestorDatosPedidoJSON();
-
-

@@ -898,31 +898,22 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         }
     }
 
-    // ─── Restaurar modo actual (general o especifico) ───
-    // CRÍTICO: Buscar en múltiples ubicaciones por compatibilidad
-    const modoGuardado = datosGenerales?.modoTallas || datosGenerales?.modo_tallas || 
-                         window.procesosSeleccionados?.[tipoProceso]?.modoTallas || 'general';
+    // ─── Restaurar modo actual (fuente única canónica: datos.modo_tallas) ───
+    const modoGuardado = datosGenerales?.modo_tallas || 'general';
     
     console.log('[por-tallas] 📊 Modo guardado detectado:', {
         tipoProceso: tipoProceso,
         modo: modoGuardado,
-        datosGenerales_modoTallas: datosGenerales?.modoTallas,
         datosGenerales_modo_tallas: datosGenerales?.modo_tallas,
-        proceso_modoTallas: window.procesosSeleccionados?.[tipoProceso]?.modoTallas,
         datosGenerales_tipo: datosGenerales?.tipo,
         datosGenerales_id: datosGenerales?.id,
         datosGenerales_exists: !!datosGenerales,
         procesosSeleccionados_keys: Object.keys(window.procesosSeleccionados || {}),
         datosGenerales_allKeys: datosGenerales ? Object.keys(datosGenerales).slice(0, 10) : 'N/A'
     });
-    
-    // 🔴 CRÍTICO: Si modo_tallas no se encontró en datos, intentar desde la relación tipoProceso
-    let modoFinal = modoGuardado;
-    if (!datosGenerales?.modoTallas && !datosGenerales?.modo_tallas && datosGenerales?.tipoProceso?.modo_tallas) {
-        modoFinal = datosGenerales.tipoProceso.modo_tallas;
-        console.warn('[por-tallas] ⚠️ modo_tallas rescatado de tipoProceso.modo_tallas:', modoFinal);
-    }
-    
+
+    const modoFinal = modoGuardado;
+
     // Cambiar al modo correcto (activa los botones correspondientes)
     if (modoFinal === 'especifico') {
         cambiarModoModalPorTallas('especifico');
@@ -1505,9 +1496,6 @@ window.guardarProcesoPorTallas = function() {
         };
     }
 
-    //  CRÍTICO: Guardar modoTallas en AMBOS niveles (raíz y datos) con el valor CORRECTO
-    // Esto asegura que se copie correctamente sin importar dónde lo busque el código
-    window.procesosSeleccionados[procesoPorTallasActual].modoTallas = modoModalPorTallasActual;  // 'general' o 'especifico'
     window.procesosSeleccionados[procesoPorTallasActual].datos = {
         tipo: procesoPorTallasActual,
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
@@ -1521,7 +1509,7 @@ window.guardarProcesoPorTallas = function() {
         imagenes_a_eliminar: fotosGeneralesEliminadas, // URLs de BD que fueron eliminadas - NOMBRE CORRECTO para que adapter lo encuentre
         imagenesEliminadas: [],
         datosExtendidos: datosExtendidos,
-        modoTallas: modoModalPorTallasActual,  // Guardar el modo: 'general' o 'especifico'
+        modo_tallas: modoModalPorTallasActual, // Fuente única canónica
         ubicacionGeneral: modoModalPorTallasActual === 'general' ? ubicacionGeneralTemp : '',
         // CRÍTICO: Solo guardar URLs válidas del storage en fotosGenerales
         // NO incluir blobs temporales - solo las existentes que ya están en el servidor

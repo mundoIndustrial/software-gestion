@@ -6,7 +6,6 @@ use App\Infrastructure\Services\Pedidos\GuardarPedidoDesdeJSONService;
 
 /**
  * Use Case: Guardar Pedido desde JSON
- * 
  * Responsabilidad:
  * - Recibir datos del pedido en JSON
  * - Validar estructura

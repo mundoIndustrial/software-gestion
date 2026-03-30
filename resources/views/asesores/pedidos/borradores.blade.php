@@ -222,35 +222,33 @@
 @else
     <div class="borradores-list">
         @foreach($borradores as $borrador)
+            @php
+                $fechaCreacion = $borrador->fecha_creacion
+                    ? \Illuminate\Support\Carbon::parse($borrador->fecha_creacion)->format('d/m/Y H:i')
+                    : 'Sin fecha';
+                $clienteNombre = $borrador->cliente ?? 'Sin cliente';
+            @endphp
             <div class="borrador-item">
                 <div class="borrador-info">
                     <div class="borrador-cliente">
-                        {{ $borrador->cliente ?? 'Sin cliente' }}
+                        {{ $clienteNombre }}
                     </div>
                     <div class="borrador-fecha">
                         <span class="material-symbols-rounded" style="font-size: 1rem;">schedule</span>
-                        Creado el {{ $borrador->created_at->format('d/m/Y H:i') }}
+                        Creado el {{ $fechaCreacion }}
                     </div>
                     <div class="borrador-meta">
-                        @php
-                            $cantidadPrendas = $borrador->prendas()->count();
-                            $cantidadEpps = $borrador->epps()->count();
-                        @endphp
-                        @if($cantidadPrendas > 0)
-                            <div class="borrador-meta-item">
-                                <span class="material-symbols-rounded" style="font-size: 0.95rem;">checkroom</span>
-                                <span class="borrador-meta-badge">{{ $cantidadPrendas }} {{ $cantidadPrendas === 1 ? 'Prenda' : 'Prendas' }}</span>
-                            </div>
-                        @endif
-                        @if($cantidadEpps > 0)
-                            <div class="borrador-meta-item">
-                                <span class="material-symbols-rounded" style="font-size: 0.95rem;">shield</span>
-                                <span class="borrador-meta-badge">{{ $cantidadEpps }} {{ $cantidadEpps === 1 ? 'EPP' : 'EPPs' }}</span>
-                            </div>
-                        @endif
+                        <div class="borrador-meta-item">
+                            <span class="material-symbols-rounded" style="font-size: 0.95rem;">info</span>
+                            <span class="borrador-meta-badge">{{ $borrador->estado ?? 'Borrador' }}</span>
+                        </div>
+                        <div class="borrador-meta-item">
+                            <span class="material-symbols-rounded" style="font-size: 0.95rem;">payments</span>
+                            <span class="borrador-meta-badge">{{ $borrador->forma_pago ?? 'Sin forma de pago' }}</span>
+                        </div>
                         <div class="borrador-meta-item">
                             <span class="material-symbols-rounded" style="font-size: 0.95rem;">person</span>
-                            <span class="borrador-meta-badge">{{ $borrador->asesor->name ?? 'Sin asesora' }}</span>
+                            <span class="borrador-meta-badge">{{ $asesor->name ?? 'Sin asesora' }}</span>
                         </div>
                     </div>
                 </div>
@@ -259,7 +257,7 @@
                         <span class="material-symbols-rounded">edit</span>
                         Continuar
                     </button>
-                    <button class="btn-action btn-eliminar" onclick="eliminarBorrador({{ $borrador->id }}, '{{ $borrador->cliente }}')">
+                    <button class="btn-action btn-eliminar" onclick="eliminarBorrador({{ $borrador->id }}, '{{ addslashes($clienteNombre) }}')">
                         <span class="material-symbols-rounded">delete</span>
                         Eliminar
                     </button>
@@ -304,7 +302,7 @@
                 // Crear un formulario temporal para enviar la solicitud DELETE
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `{{ route('asesores.pedidos.borradores.destroy', ['id' => 'PEDIDO_ID']) }}`.replace('PEDIDO_ID', pedidoId);
+                form.action = `{{ url('/api/asesores/pedidos/borradores/PEDIDO_ID') }}`.replace('PEDIDO_ID', pedidoId);
 
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';

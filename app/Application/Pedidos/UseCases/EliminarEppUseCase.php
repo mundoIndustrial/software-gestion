@@ -41,15 +41,16 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
             if ($imagen->ruta_web && $imagen->ruta_web !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_web)) {
                 Storage::disk('public')->delete($imagen->ruta_web);
             }
-            $imagen->delete();
         }
+
+        PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)->delete();
 
         Log::info('[EliminarEppUseCase] Imágenes eliminadas', [
             'cantidad' => $imagenes->count(),
             'pedido_epp_id' => $pedidoEppId,
         ]);
 
-        $pedidoEpp->delete();
+        PedidoEpp::where('id', $pedidoEppId)->delete();
 
         Log::info('[EliminarEppUseCase] EPP eliminado', [
             'pedido_epp_id' => $pedidoEppId,
@@ -66,7 +67,6 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
         ];
     }
 }
-
 
 
 

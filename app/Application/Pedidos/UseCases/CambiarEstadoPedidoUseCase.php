@@ -5,20 +5,16 @@ namespace App\Application\Pedidos\UseCases;
 use App\Domain\Pedidos\UseCases\CambiarEstadoPedidoUseCaseContract;
 
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
-use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Cambiar Estado del Pedido
- * 
+
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
- * 
  * Antes: 58 lineas (15 lineas de lógica + 43 de validación y transiciones hardcodeadas)
  * despues: 28 lineas (solo lógica de negocio)
  * Reducción: 52%
- * 
  * Beneficios:
  * - Validaciones centralizadas
  * - Transiciones en unico lugar (EstadoPedidoCatalog)
@@ -28,10 +24,6 @@ use Illuminate\Support\Facades\Log;
 final class CambiarEstadoPedidoUseCase implements CambiarEstadoPedidoUseCaseContract
 {
     use ManejaPedidosUseCase;
-
-    public function __construct(
-        private PedidoRepository $pedidoRepository,
-    ) {}
 
     public function ejecutar(CambiarEstadoPedidoDTO $dto)
     {
@@ -84,7 +76,6 @@ final class CambiarEstadoPedidoUseCase implements CambiarEstadoPedidoUseCaseCont
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

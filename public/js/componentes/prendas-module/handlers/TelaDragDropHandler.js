@@ -203,7 +203,9 @@ class TelaDragDropHandler extends BaseDragDropHandler {
         // UIHelperService.log('TelaDragDropHandler', 'Click en drop zone de tela');
         
         // Abrir file picker al clickear en la zona
-        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input')
+            || document.getElementById('nueva-prenda-tela-img-input')
+            || document.getElementById('simple-tela-img-input');
         if (fileInput) {
             fileInput.click();
         }

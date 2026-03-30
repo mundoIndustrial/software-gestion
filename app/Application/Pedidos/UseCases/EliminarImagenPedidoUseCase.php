@@ -6,7 +6,7 @@ use App\Domain\Pedidos\UseCases\EliminarImagenPedidoUseCaseContract;
 
 use App\Models\PrendaFotoPedido;
 use App\Models\PrendaFotoTelaPedido;
-use App\Models\PedidosProcesoImagenes;
+use App\Models\PedidosProcessImagenes;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -22,7 +22,7 @@ final class EliminarImagenPedidoUseCase implements EliminarImagenPedidoUseCaseCo
         $modelClass = match($tipo) {
             'prenda'  => PrendaFotoPedido::class,
             'tela'    => PrendaFotoTelaPedido::class,
-            'proceso' => PedidosProcesoImagenes::class,
+            'proceso' => PedidosProcessImagenes::class,
         };
 
         $imagen = $modelClass::findOrFail($id);
@@ -57,7 +57,6 @@ final class EliminarImagenPedidoUseCase implements EliminarImagenPedidoUseCaseCo
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

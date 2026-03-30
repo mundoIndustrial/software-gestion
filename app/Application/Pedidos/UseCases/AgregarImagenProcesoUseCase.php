@@ -6,11 +6,10 @@ use App\Domain\Pedidos\UseCases\AgregarImagenProcesoUseCaseContract;
 
 use App\Application\Pedidos\DTOs\AgregarImagenProcesoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Models\ProcesosPrendaDetalle;
+use App\Models\ProcesoPrendaDetalle;
 
 /**
  * Use Case para agregar imagen de referencia a un proceso de prenda
- * 
  * Maneja la creación de registro en pedidos_procesos_imagenes
  */
 final class AgregarImagenProcesoUseCase implements AgregarImagenProcesoUseCaseContract
@@ -19,11 +18,8 @@ final class AgregarImagenProcesoUseCase implements AgregarImagenProcesoUseCaseCo
 
     public function execute(AgregarImagenProcesoDTO $dto)
     {
-        $proceso = $this->validarObjetoExiste(
-            ProcesosPrendaDetalle::find($dto->procesoId),
-            'Proceso',
-            $dto->procesoId
-        );
+        $proceso = ProcesoPrendaDetalle::find($dto->procesoId);
+        $this->validarObjetoExiste($proceso, 'Proceso', $dto->procesoId);
 
         return $proceso->imagenes()->create([
             'ruta_original' => $dto->rutaOriginal,
@@ -47,7 +43,6 @@ final class AgregarImagenProcesoUseCase implements AgregarImagenProcesoUseCaseCo
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

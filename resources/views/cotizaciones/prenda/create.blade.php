@@ -1182,7 +1182,7 @@ document.addEventListener('click', function(e) {
 <!-- Configuración de rutas -->
 <script>
     window.routes = window.routes || {};
-    window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.store") }}';
+    window.routes.guardarCotizacion = '{{ url("/api/asesores/cotizaciones") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
     window.tipoCotizacionGlobal = 'P'; // Prenda
     

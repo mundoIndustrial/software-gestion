@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Exceptions\ObtenerDetalleCompletoException;
 use App\Application\Pedidos\Services\PedidoAuthorizationService;
 use App\Application\Pedidos\Services\PedidoFiltroService;
 use App\Application\Pedidos\UseCases\ObtenerDetalleCompletoUseCase;
@@ -38,10 +39,9 @@ class ObtenerDetalleCompletoUseCaseTest extends TestCase
             $readService
         );
 
-        $this->expectException(\DomainException::class);
+        $this->expectException(ObtenerDetalleCompletoException::class);
         $this->expectExceptionMessage('Pedido 99999 no encontrado');
 
         $useCase->ejecutar(99999);
     }
 }
-

@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 
 /**
  * UseCase: Actualizar una orden existente
- * 
  * Responsabilidades:
  * - Validar datos actualizados
  * - Delegar actualización al servicio
@@ -43,7 +42,7 @@ class UpdateOrderUseCase
         $changedFields = array_keys($validatedData);
 
         // Si se actualizó día de entrega, agregar fecha estimada
-        if (in_array('dia_de_entrega', $changedFields) && 
+        if (in_array('dia_de_entrega', $changedFields) &&
             !in_array('fecha_estimada_de_entrega', $changedFields)) {
             $changedFields[] = 'fecha_estimada_de_entrega';
         }

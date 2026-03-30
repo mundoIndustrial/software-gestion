@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Application\Services\Asesores\PrendasPedidoApplicationFacadeService;
 use App\Infrastructure\Http\Requests\Asesores\ActualizarPrendaRequest;
@@ -29,6 +30,9 @@ use Illuminate\Validation\ValidationException;
  */
 class PrendasPedidoController
 {
+    private const ERROR_ACTUALIZAR_PRENDA_PREFIX = 'Error al actualizar prenda: ';
+    private const VALIDACION_FALLIDA = 'Validacion fallida';
+
     public function __construct(
         private PrendasPedidoApplicationFacadeService $prendasPedidoApplicationFacadeService,
     ) {}
@@ -180,7 +184,7 @@ class PrendasPedidoController
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->jsonFailure('Error al actualizar prenda: ' . $e->getMessage(), 500);
+            return $this->jsonFailure(self::ERROR_ACTUALIZAR_PRENDA_PREFIX . $e->getMessage(), 500);
         }
     }
 
@@ -211,12 +215,12 @@ class PrendasPedidoController
                 'prenda' => $prenda->toArray(),
             ], 201);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Log::warning('[PrendasPedidoController] Validacion fallida', [
                 'errors' => $e->errors(),
             ]);
 
-            return $this->jsonFailure('Validacion fallida', 422, [
+            return $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
             ]);
 
@@ -263,12 +267,12 @@ class PrendasPedidoController
                 'prenda'  => PrendaPedidoResource::make($prenda)->resolve(),
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Log::warning('[PrendasPedidoController] Validacion fallida en actualizacion', [
                 'errors' => $e->errors(),
             ]);
 
-            return $this->jsonFailure('Validacion fallida', 422, [
+            return $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
             ]);
 
@@ -277,8 +281,86 @@ class PrendasPedidoController
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->jsonFailure('Error al actualizar prenda: ' . $e->getMessage(), 500);
+            return $this->jsonFailure(self::ERROR_ACTUALIZAR_PRENDA_PREFIX . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * PUT /api/asesores/pedidos-produccion/{pedidoId}/prendas/{prendaId}
+     * Endpoint puente para mantener compatibilidad del modal simple legacy.
+     */
+    public function actualizarPrendaDesdeProduccion(Request $request, int|string $pedidoId, int|string $prendaId): JsonResponse
+    {
+        $response = null;
+
+        try {
+            $nombrePrenda = $request->input('nombre_prenda')
+                ?? $request->input('nombre')
+                ?? $request->input('nombre_producto');
+
+            if (empty($nombrePrenda)) {
+                $datosPrenda = $this->prendasPedidoApplicationFacadeService->obtenerDatosPrendaEdicion((int) $pedidoId, (int) $prendaId);
+                $nombrePrenda = $datosPrenda['nombre_prenda']
+                    ?? $datosPrenda['nombre']
+                    ?? $datosPrenda['nombre_producto']
+                    ?? 'PRENDA';
+            }
+
+            $payload = [
+                'prenda_id' => (int) $prendaId,
+                'nombre_prenda' => $nombrePrenda,
+                'novedad' => $request->input('novedad', 'Actualizacion desde modal simple'),
+            ];
+
+            $optionalKeys = [
+                'descripcion',
+                'origen',
+                'de_bodega',
+                'tallas',
+                'variantes',
+                'colores_telas',
+                'fotos_telas',
+                'fotosTelas',
+                'procesos',
+                'fotos_procesos',
+                'asignaciones_colores',
+                'imagenes_existentes',
+                'imagenes_a_eliminar',
+                'procesos_a_eliminar',
+            ];
+
+            foreach ($optionalKeys as $key) {
+                if ($request->has($key)) {
+                    $payload[$key] = $request->input($key);
+                }
+            }
+
+            $prenda = $this->prendasPedidoApplicationFacadeService->actualizarPrendaCompleta(
+                $request,
+                (int) $pedidoId,
+                $payload
+            );
+
+            $response = $this->json([
+                'success' => true,
+                'message' => 'Prenda actualizada correctamente',
+                'prenda' => (new PrendaPedidoResource($prenda))->resolve(),
+            ]);
+        } catch (ModelNotFoundException $e) {
+            $response = $this->jsonFailure('Prenda no encontrada para actualizar', 404);
+        } catch (ValidationException $e) {
+            $response = $this->jsonFailure(self::VALIDACION_FALLIDA, 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            Log::error('[PrendasPedidoController] Error en endpoint puente actualizarPrendaDesdeProduccion', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            $response = $this->jsonFailure(self::ERROR_ACTUALIZAR_PRENDA_PREFIX . $e->getMessage(), 500);
+        }
+
+        return $response;
     }
 
     /**
@@ -287,6 +369,8 @@ class PrendasPedidoController
      */
     public function eliminarImagen(int $pedidoId, string $tipo, int $id): JsonResponse
     {
+        $response = null;
+
         try {
             Log::info('[PrendasPedidoController] DELETE imagen', [
                 'pedido_id' => $pedidoId,
@@ -296,10 +380,10 @@ class PrendasPedidoController
 
             $resultado = $this->prendasPedidoApplicationFacadeService->eliminarImagen($pedidoId, $tipo, $id);
 
-            return $this->json($resultado);
+            $response = $this->json($resultado);
 
         } catch (\InvalidArgumentException $e) {
-            return $this->jsonFailure($e->getMessage(), 400);
+            $response = $this->jsonFailure($e->getMessage(), 400);
 
         } catch (ModelNotFoundException $e) {
             Log::warning('[PrendasPedidoController] Imagen no encontrada', [
@@ -307,7 +391,7 @@ class PrendasPedidoController
                 'id'   => $id,
             ]);
 
-            return $this->jsonFailure('Imagen no encontrada', 404);
+            $response = $this->jsonFailure('Imagen no encontrada', 404);
 
         } catch (\Exception $e) {
             Log::error('[PrendasPedidoController] Error eliminando imagen', [
@@ -317,8 +401,10 @@ class PrendasPedidoController
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->jsonFailure('Error al eliminar imagen: ' . $e->getMessage(), 500);
+            $response = $this->jsonFailure('Error al eliminar imagen: ' . $e->getMessage(), 500);
         }
+
+        return $response;
     }
 
     /**
@@ -327,6 +413,8 @@ class PrendasPedidoController
      */
     public function eliminarPrenda(EliminarPrendaRequest $request, int|string $id): JsonResponse
     {
+        $response = null;
+
         try {
             Log::info('[PrendasPedidoController] POST /asesores/pedidos/{id}/eliminar-prenda', [
                 'pedido_id' => $id,
@@ -339,7 +427,7 @@ class PrendasPedidoController
                 $validated['motivo']
             );
 
-            return $this->json($resultado);
+            $response = $this->json($resultado);
 
         } catch (ModelNotFoundException $e) {
             Log::warning('[PrendasPedidoController] Prenda o pedido no encontrado', [
@@ -347,14 +435,14 @@ class PrendasPedidoController
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->jsonFailure('Prenda o pedido no encontrado', 404);
+            $response = $this->jsonFailure('Prenda o pedido no encontrado', 404);
 
         } catch (ValidationException $e) {
             Log::warning('[PrendasPedidoController] Validacion fallida al eliminar prenda', [
                 'errors' => $e->errors(),
             ]);
 
-            return $this->jsonFailure('Validacion fallida', 422, [
+            $response = $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
             ]);
 
@@ -365,8 +453,10 @@ class PrendasPedidoController
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->jsonFailure('Error al eliminar prenda: ' . $e->getMessage(), 500);
+            $response = $this->jsonFailure('Error al eliminar prenda: ' . $e->getMessage(), 500);
         }
+
+        return $response;
     }
 
     /**
@@ -393,7 +483,7 @@ class PrendasPedidoController
                 'pedido' => $resultado['pedido'],
             ]);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             Log::warning(' [PRENDA-DATOS] Prenda no encontrada', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId

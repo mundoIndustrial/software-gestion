@@ -26,7 +26,9 @@ window.manejarImagenTela = function(input) {
     // Si no se pasa input, buscar por ID (intentar primero el ID único del modal)
     if (!input) {
         console.log('[manejarImagenTela] ⚠️ Input null, buscando por ID...');
-        input = document.getElementById('modal-agregar-prenda-nueva-file-input') || document.getElementById('nueva-prenda-tela-img-input');
+        input = document.getElementById('modal-agregar-prenda-nueva-file-input')
+            || document.getElementById('nueva-prenda-tela-img-input')
+            || document.getElementById('simple-tela-img-input');
         if (!input) {
             console.error('[manejarImagenTela]  No se encontró elemento de input');
             return;

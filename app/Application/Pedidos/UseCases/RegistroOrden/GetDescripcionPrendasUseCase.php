@@ -7,10 +7,8 @@ use App\Exceptions\GetDescripcionPrendasException;
 
 /**
  * GetDescripcionPrendasUseCase
- * 
  * Obtener descripción de prendas de un pedido
  * Cumple DDD: Application Layer - UseCase
- * 
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
@@ -26,7 +24,6 @@ class GetDescripcionPrendasUseCase
     /**
      * Ejecutar use case
      * GET /registros/{pedido}/descripcion-prendas
-     * 
      * @param string $pedido ID o número de pedido
      * @return array ['descripcion_prendas' => string, 'numero_pedido' => string, 'orden_id' => int]
      * @throws GetDescripcionPrendasException

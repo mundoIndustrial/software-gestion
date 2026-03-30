@@ -92,7 +92,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         // 6. ENVIAR
         const response = await window.FormDataBuilder.send(
             formData,
-            '/asesores/pedidos/crear'
+            '/api/asesores/pedidos/crear'
         );
         
         console.log('[Builder] Response recibida:', {

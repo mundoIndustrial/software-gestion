@@ -166,6 +166,51 @@ class PedidoAggregate extends AggregateRoot
         $this->cancelar();
     }
 
+    public function estaPendiente(): bool
+    {
+        return $this->estado->valor() === Estado::PENDIENTE;
+    }
+
+    public function getEstado(): string
+    {
+        return $this->estado->valor();
+    }
+
+    public function cambiarCliente(string|int $clienteId): void
+    {
+        if (!is_numeric($clienteId) || (int) $clienteId <= 0) {
+            throw new \InvalidArgumentException('Cliente ID invalido');
+        }
+
+        $this->clienteId = (int) $clienteId;
+        $this->fechaActualizacion = new \DateTime();
+    }
+
+    public function reemplazarPrendas(array $prendasData): void
+    {
+        $prendas = [];
+
+        foreach ($prendasData as $prendaData) {
+            $prendas[] = new PrendaPedido(
+                id: $prendaData['id'] ?? null,
+                pedidoId: $this->id ?? 0,
+                prendaId: (int) $prendaData['prenda_id'],
+                descripcion: (string) $prendaData['descripcion'],
+                cantidad: (int) $prendaData['cantidad'],
+                tallas: (array) $prendaData['tallas'],
+                observaciones: $prendaData['observaciones'] ?? null
+            );
+        }
+
+        $this->prendas = $prendas;
+        $this->fechaActualizacion = new \DateTime();
+    }
+
+    public function eventos(): array
+    {
+        return $this->obtenerEventos();
+    }
+
     public function actualizarDescripcion(string $nuevaDescripcion): void
     {
         if ($this->estado->esFinal()) {

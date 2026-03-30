@@ -4,10 +4,10 @@
     async function enviarBorrador(formData, opciones = {}) {
         const modoEdicion = opciones.modoEdicion || false;
         const pedidoId = opciones.pedidoId || null;
-        let endpoint = opciones.endpointCrear || '/asesores/pedidos/borrador';
+        let endpoint = opciones.endpointCrear || '/api/asesores/pedidos/borrador';
 
         if (modoEdicion && pedidoId) {
-            endpoint = `/asesores/pedidos/${pedidoId}/actualizar`;
+            endpoint = `/api/asesores/pedidos/${pedidoId}/borrador`;
             formData.append('pedido_id', pedidoId);
             console.debug('[DraftPedidoSaveService] MODO EDICION - Actualizando pedido:', pedidoId);
         } else {

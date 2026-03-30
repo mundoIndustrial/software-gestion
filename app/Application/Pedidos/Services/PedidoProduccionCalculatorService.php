@@ -7,7 +7,6 @@ use Carbon\Carbon;
 
 /**
  * Servicio para cálculos y lógica de procesos de pedidos
- * 
  * Este servicio maneja:
  * - Cálculo de fecha estimada (con festivos)
  * - Determinación del proceso actual con prioridades
@@ -17,7 +16,6 @@ class PedidoProduccionCalculatorService
 {
     /**
      * Calcular fecha estimada de entrega basada en días hábiles
-     * 
      * @param Carbon $fechaCreacion
      * @param int $diasEntrega
      * @return Carbon|null
@@ -63,10 +61,8 @@ class PedidoProduccionCalculatorService
 
     /**
      * Determinar el proceso actual con prioridades
-     * 
      * Asume que $procesos es una Collection ya cargada en memoria
      * (típicamente desde eager loading)
-     * 
      * @param \Illuminate\Support\Collection $procesos
      * @return string
      */

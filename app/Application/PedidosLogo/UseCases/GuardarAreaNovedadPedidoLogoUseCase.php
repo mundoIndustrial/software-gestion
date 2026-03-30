@@ -2,10 +2,10 @@
 
 namespace App\Application\PedidosLogo\UseCases;
 
+use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Domain\PedidosLogo\Policies\AreasPermitidasPolicy;
 use App\Domain\PedidosLogo\Repositories\ProcesoPrendaDetalleReadRepositoryInterface;
 use App\Domain\PedidosLogo\Repositories\SeguimientoAreaRepositoryInterface;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 final class GuardarAreaNovedadPedidoLogoUseCase
@@ -13,7 +13,8 @@ final class GuardarAreaNovedadPedidoLogoUseCase
     public function __construct(
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository,
         private SeguimientoAreaRepositoryInterface $seguimientoAreaRepository,
-        private AreasPermitidasPolicy $areasPermitidasPolicy
+        private AreasPermitidasPolicy $areasPermitidasPolicy,
+        private TransactionManagerInterface $transactionManager
     ) {}
 
     public function execute(array $payload): array
@@ -24,92 +25,108 @@ final class GuardarAreaNovedadPedidoLogoUseCase
             'novedades' => ['nullable', 'string'],
         ]);
 
+        $response = null;
+
         if ($validator->fails()) {
-            return [
+            $response = [
                 'ok' => false,
                 'status' => 422,
                 'errors' => $validator->errors(),
             ];
+        } else {
+            $procesoId = (int) $payload['proceso_prenda_detalle_id'];
+            $area = (string) $payload['area'];
+            $novedades = isset($payload['novedades']) ? (string) $payload['novedades'] : null;
+
+            $validacion = $this->validarContextoProceso($procesoId, $area);
+            if ($validacion['error'] !== null) {
+                $response = $validacion['error'];
+            } else {
+                $prendaPedidoId = (int) $validacion['prenda_pedido_id'];
+                $timestamp = now()->toDateTimeString();
+
+                $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $timestamp): void {
+                    $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
+                    $fechasAreas = $this->extraerFechasAreas($existente);
+                    $fechasAreas[$area] = $timestamp;
+
+                    $this->seguimientoAreaRepository->upsertSeguimiento(
+                        $procesoId,
+                        $prendaPedidoId,
+                        $area,
+                        $novedades,
+                        $fechasAreas,
+                        $timestamp
+                    );
+                });
+
+                $row = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
+                $fechasAreas = $this->extraerFechasAreas($row);
+
+                $response = [
+                    'ok' => true,
+                    'status' => 200,
+                    'data' => [
+                        'success' => true,
+                        'fechas_areas' => !empty($fechasAreas) ? $fechasAreas : null,
+                        'fecha_entrega' => $fechasAreas['ENTREGADO'] ?? null,
+                    ],
+                ];
+            }
         }
 
-        $procesoId = (int) $payload['proceso_prenda_detalle_id'];
-        $area = (string) $payload['area'];
-        $novedades = isset($payload['novedades']) ? (string) $payload['novedades'] : null;
+        return $response;
+    }
+
+    /**
+     * @return array{error:?array, prenda_pedido_id:?int}
+     */
+    private function validarContextoProceso(int $procesoId, string $area): array
+    {
+        $error = null;
+        $prendaPedidoId = null;
 
         $tipoProcesoId = $this->procesoReadRepository->obtenerTipoProcesoIdPorProceso($procesoId);
         if (!$tipoProcesoId) {
-            return [
+            $error = [
                 'ok' => false,
                 'status' => 422,
                 'message' => 'Proceso no encontrado.',
             ];
-        }
-
-        $filtro = in_array($tipoProcesoId, [3, 4, 5], true) ? 'estampado' : 'bordado';
-
-        if (!$this->areasPermitidasPolicy->esAreaPermitida($area, $filtro)) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'Área no permitida para esta sección.',
-            ];
-        }
-
-        $prendaPedidoId = $this->procesoReadRepository->obtenerPrendaPedidoIdPorProceso($procesoId);
-        if (!$prendaPedidoId) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'Proceso inválido.',
-            ];
-        }
-
-        $now = now();
-        $timestamp = $now->toDateTimeString();
-
-        DB::transaction(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $timestamp) {
-            $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
-
-            $fechasAreas = [];
-            if ($existente && !empty($existente['fechas_areas'])) {
-                $decoded = json_decode((string) $existente['fechas_areas'], true);
-                if (is_array($decoded)) {
-                    $fechasAreas = $decoded;
+        } else {
+            $filtro = in_array($tipoProcesoId, [3, 4, 5], true) ? 'estampado' : 'bordado';
+            if (!$this->areasPermitidasPolicy->esAreaPermitida($area, $filtro)) {
+                $error = [
+                    'ok' => false,
+                    'status' => 422,
+                    'message' => 'Area no permitida para esta seccion.',
+                ];
+            } else {
+                $prendaPedidoId = $this->procesoReadRepository->obtenerPrendaPedidoIdPorProceso($procesoId);
+                if (!$prendaPedidoId) {
+                    $error = [
+                        'ok' => false,
+                        'status' => 422,
+                        'message' => 'Proceso invalido.',
+                    ];
                 }
-            }
-
-            $fechasAreas[$area] = $timestamp;
-
-            $this->seguimientoAreaRepository->upsertSeguimiento(
-                $procesoId,
-                $prendaPedidoId,
-                $area,
-                $novedades,
-                $fechasAreas,
-                $timestamp
-            );
-        });
-
-        $row = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
-
-        $fechasAreas = null;
-        $fechaEntrega = null;
-        if ($row && !empty($row['fechas_areas'])) {
-            $decoded = json_decode((string) $row['fechas_areas'], true);
-            if (is_array($decoded)) {
-                $fechasAreas = $decoded;
-                $fechaEntrega = $decoded['ENTREGADO'] ?? null;
             }
         }
 
         return [
-            'ok' => true,
-            'status' => 200,
-            'data' => [
-                'success' => true,
-                'fechas_areas' => $fechasAreas,
-                'fecha_entrega' => $fechaEntrega,
-            ],
+            'error' => $error,
+            'prenda_pedido_id' => $prendaPedidoId !== null ? (int) $prendaPedidoId : null,
         ];
+    }
+
+    private function extraerFechasAreas(?array $row): array
+    {
+        if (!$row || empty($row['fechas_areas'])) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $row['fechas_areas'], true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }

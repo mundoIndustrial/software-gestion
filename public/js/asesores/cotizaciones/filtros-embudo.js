@@ -45,7 +45,7 @@ class FiltroEmbudo {
     // Cargar valores únicos desde la BD
     cargarValoresFiltro() {
 
-        const url = window.FILTER_VALUES_URL || '/asesores/cotizaciones/filtros/valores';
+        const url = window.FILTER_VALUES_URL || '/api/asesores/cotizaciones/filtros/valores';
 
         fetch(url)
             .then(response => {

@@ -163,7 +163,7 @@ class DeletionService {
      */
     static async eliminarPedido(pedidoId, numeroPedido, options = {}) {
         return this.eliminar({
-            endpoint: `/asesores/pedidos-produccion/${pedidoId}`,
+            endpoint: `/api/asesores/pedidos-produccion/${pedidoId}`,
             resourceName: 'Pedido',
             identifier: numeroPedido,
             reloadPage: true,
@@ -179,7 +179,7 @@ class DeletionService {
      */
     static async eliminarCotizacion(cotizacionId, numeroCotizacion, options = {}) {
         return this.eliminar({
-            endpoint: `/asesores/cotizaciones/${cotizacionId}`,
+            endpoint: `/api/asesores/cotizaciones/${cotizacionId}`,
             resourceName: 'Cotización',
             identifier: numeroCotizacion,
             reloadPage: true,

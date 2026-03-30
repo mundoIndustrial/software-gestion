@@ -10,7 +10,6 @@ use App\Models\PrendaPedido;
 
 /**
  * Use Case para agregar combinación color-tela a una prenda
- * 
  * Maneja la creación de registro en prenda_pedido_colores_telas
  */
 final class AgregarColorTelaUseCase implements AgregarColorTelaUseCaseContract
@@ -19,11 +18,8 @@ final class AgregarColorTelaUseCase implements AgregarColorTelaUseCaseContract
 
     public function execute(AgregarColorTelaDTO $dto)
     {
-        $prenda = $this->validarObjetoExiste(
-            PrendaPedido::find($dto->prendaId),
-            'Prenda',
-            $dto->prendaId
-        );
+        $prenda = PrendaPedido::find($dto->prendaId);
+        $this->validarObjetoExiste($prenda, 'Prenda', $dto->prendaId);
 
         return $prenda->coloresTelas()->create([
             'color_id' => $dto->colorId,
@@ -40,7 +36,6 @@ final class AgregarColorTelaUseCase implements AgregarColorTelaUseCaseContract
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

@@ -4,6 +4,25 @@
  */
 
 window.ImageConverterService = {
+    _normalizarColeccion(value) {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'object') return Object.values(value);
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (!trimmed) return [];
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) return parsed;
+                    if (parsed && typeof parsed === 'object') return Object.values(parsed);
+                } catch (_) {
+                    return [];
+                }
+            }
+        }
+        return [];
+    },
     /**
      * Convertir una imagen a URL utilizable
      * Soporta: File objects, blob URLs, strings, propiedades anidadas
@@ -40,6 +59,14 @@ window.ImageConverterService = {
                 return img.url;
             }
             return `/storage/${img.url}`;
+        }
+
+        // Si tiene propiedad ruta (común en varios flujos de telas)
+        if (img && img.ruta) {
+            if (img.ruta.startsWith('/') || img.ruta.startsWith('http') || img.ruta.startsWith('blob:') || img.ruta.startsWith('data:')) {
+                return img.ruta;
+            }
+            return `/storage/${img.ruta}`;
         }
 
         // Si tiene propiedades de BD
@@ -79,10 +106,11 @@ window.ImageConverterService = {
      * Obtener la primera imagen de un array
      */
     obtenerPrimeraImagen(imagenes) {
-        if (!imagenes || !Array.isArray(imagenes) || imagenes.length === 0) {
+        const lista = this._normalizarColeccion(imagenes);
+        if (!lista || lista.length === 0) {
             return null;
         }
-        return this.convertirAUrl(imagenes[0]);
+        return this.convertirAUrl(lista[0]);
     },
 
     /**
@@ -91,26 +119,26 @@ window.ImageConverterService = {
     obtenerImagenTela(telaItem) {
         if (!telaItem) return null;
 
-        // Fuente 1: imagenes (desde formulario modal)
-        if (telaItem.imagenes && Array.isArray(telaItem.imagenes) && telaItem.imagenes.length > 0) {
-            return this.obtenerPrimeraImagen(telaItem.imagenes);
-        }
+        // Intentar en múltiples llaves/fuentes, tolerando arrays, objetos y JSON string
+        const posiblesFuentes = [
+            telaItem.imagenes,
+            telaItem.fotos,
+            telaItem.telaFotos,
+            telaItem.imagenes_tela,
+            telaItem.fotos_tela,
+            telaItem.archivos,
+            telaItem.imagen,
+            telaItem.foto
+        ];
 
-        // Fuente 1b: fotos (algunos flujos legacy)
-        if (telaItem.fotos && Array.isArray(telaItem.fotos) && telaItem.fotos.length > 0) {
-            return this.obtenerPrimeraImagen(telaItem.fotos);
-        }
-
-        // Fuente 2: telaFotos (desde BD)
-        if (telaItem.telaFotos && Array.isArray(telaItem.telaFotos) && telaItem.telaFotos.length > 0) {
-            return this.obtenerPrimeraImagen(telaItem.telaFotos);
-        }
-
-        if (telaItem.imagenes_tela && Array.isArray(telaItem.imagenes_tela) && telaItem.imagenes_tela.length > 0) {
-            return this.obtenerPrimeraImagen(telaItem.imagenes_tela);
+        for (const fuente of posiblesFuentes) {
+            const lista = this._normalizarColeccion(fuente);
+            if (lista.length > 0) {
+                const url = this.obtenerPrimeraImagen(lista);
+                if (url) return url;
+            }
         }
 
         return null;
     }
 };
-

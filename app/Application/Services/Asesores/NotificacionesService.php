@@ -17,9 +17,9 @@ class NotificacionesService
     /**
      * Obtener todas las notificaciones del asesor
      */
-    public function obtenerNotificaciones(): array
+    public function obtenerNotificaciones(?int $asesorId = null): array
     {
-        $userId = Auth::id();
+        $userId = $asesorId ?? Auth::id();
 
         // ============================================
         // NOTIFICACIONES: Fecha Estimada de Entrega
@@ -158,4 +158,3 @@ class NotificacionesService
             ->update(['read_at' => now()]);
     }
 }
-

@@ -14,5 +14,6 @@ use App\Infrastructure\Http\Controllers\PrendaController;
 Route::withoutMiddleware(['api'])
     ->middleware(['web', 'auth'])
     ->group(function () {
-        Route::apiResource('prendas', PrendaController::class, ['only' => ['store', 'update', 'destroy']]);
+        Route::apiResource('prendas', PrendaController::class, ['only' => ['store', 'update', 'destroy']])
+            ->whereNumber('prenda');
     });

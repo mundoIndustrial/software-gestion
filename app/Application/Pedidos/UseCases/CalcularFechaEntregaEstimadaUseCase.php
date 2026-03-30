@@ -11,21 +11,17 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * CalcularFechaEntregaEstimadaUseCase
- * 
  * Caso de uso para calcular la fecha estimada de entrega basada en días hábiles.
- * 
  * Responsabilidades:
  * - Calcular fecha estimada considerando días hábiles
  * - Considerar festivos colombianos
  * - Guardar la fecha estimada en el pedido
- * 
  * Este UseCase centraliza la lógica de cálculo de fechas que estaba en el frontend.
  */
 class CalcularFechaEntregaEstimadaUseCase implements CalcularFechaEntregaEstimadaUseCaseContract
 {
     /**
      * Ejecuta el caso de uso
-     * 
      * @param int $pedidoId
      * @param int $diasEstimados Número de días hábiles para la entrega
      * @return array Respuesta con fecha estimada
@@ -81,7 +77,6 @@ class CalcularFechaEntregaEstimadaUseCase implements CalcularFechaEntregaEstimad
 
     /**
      * Calcula la fecha estimada de entrega agregando días hábiles
-     * 
      * @param Carbon $fechaBase Fecha desde la cual contar
      * @param int $diasEstimados Número de días hábiles a agregar
      * @return Carbon Fecha estimada
@@ -96,7 +91,7 @@ class CalcularFechaEntregaEstimadaUseCase implements CalcularFechaEntregaEstimad
             $actual->addDay();
 
             // Verificar si es día hábil (no fin de semana y no festivo)
-            if (!CalculadorDiasService::esFinDeSemana($actual) && 
+            if (!CalculadorDiasService::esFinDeSemana($actual) &&
                 !CalculadorDiasService::esFestivo($actual)) {
                 $diasContados++;
             }

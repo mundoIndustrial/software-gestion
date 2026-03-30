@@ -14,26 +14,20 @@ class ActualizarPrendaCompletaBridge
     public function ejecutarDesdePayload(
         int $prendaId,
         array $prendaPayload,
-        array $imagenesGuardadas,
-        array $imagenesExistentes,
-        array $fotosTelasProcesadas,
-        array $fotosProcesoNuevo,
-        array $fotosColorProcesadas,
-        array $fotosProcesoTallasNuevo
+        array $imagenesProcesadas
     ): void {
         $dto = ActualizarPrendaCompletaDTO::fromRequest(
             $prendaId,
             $prendaPayload,
-            $imagenesGuardadas,
-            $imagenesExistentes,
-            $fotosTelasProcesadas,
-            $fotosProcesoNuevo,
-            $fotosColorProcesadas,
-            $fotosProcesoTallasNuevo,
+            $imagenesProcesadas['imagenes_guardadas'] ?? [],
+            $imagenesProcesadas['imagenes_existentes'] ?? [],
+            $imagenesProcesadas['fotos_telas_procesadas'] ?? [],
+            $imagenesProcesadas['fotos_proceso_nuevo'] ?? [],
+            $imagenesProcesadas['fotos_color_procesadas'] ?? [],
+            $imagenesProcesadas['fotos_proceso_tallas_nuevo'] ?? [],
         );
 
         $this->legacyUseCase->ejecutar($dto);
     }
 }
-
 

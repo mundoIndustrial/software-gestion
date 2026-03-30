@@ -22,6 +22,54 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
         return PedidoProduccion::find($pedidoId);
     }
 
+    public function findPedidoByIdConRelaciones(int $pedidoId, bool $filtrarPrendasBodega): ?PedidoProduccion
+    {
+        return PedidoProduccion::with([
+            'prendas' => function ($q) use ($filtrarPrendasBodega) {
+                if ($filtrarPrendasBodega) {
+                    $q->where('de_bodega', false);
+                }
+
+                $q->with([
+                    'tallas',
+                    'variantes.tipoManga',
+                    'variantes.tipoBroche',
+                    'anchoMetraje',
+                    'fotos' => function ($q2) {
+                        $q2->orderBy('orden', 'asc');
+                    },
+                    'coloresTelas' => function ($q2) {
+                        $q2->with([
+                            'color',
+                            'tela',
+                            'fotos' => function ($q3) {
+                                $q3->orderBy('orden', 'asc');
+                            },
+                        ]);
+                    },
+                    'procesos' => function ($q3) {
+                        $q3->with([
+                            'tipoProceso',
+                            'tallas',
+                            'imagenes' => function ($q4) {
+                                $q4->orderBy('orden', 'asc');
+                            },
+                        ])->orderBy('created_at', 'desc');
+                    },
+                ]);
+            },
+            'epps' => function ($q) {
+                $q->withTrashed()
+                    ->with([
+                        'epp',
+                        'imagenes' => function ($q2) {
+                            $q2->orderBy('orden', 'asc');
+                        },
+                    ]);
+            },
+        ])->find($pedidoId);
+    }
+
     public function getProcesoTallasDetalle(int $procesoDetalleId): Collection
     {
         return DB::table('pedidos_procesos_prenda_tallas')
@@ -109,6 +157,49 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
             ->get();
     }
 
+    public function getColoresPorTallaPrenda(int $prendaId): Collection
+    {
+        return DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prendaId)
+            ->select(
+                'pptc.id as talla_color_id',
+                'ppt.id as talla_id',
+                'ppt.talla',
+                'ppt.genero',
+                'pptc.color_nombre',
+                'pptc.cantidad'
+            )
+            ->get();
+    }
+
+    public function getImagenRutasTallaColorPrenda(int $prendaId): Collection
+    {
+        return DB::table('prenda_pedido_talla_colores as ptc')
+            ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+            ->where('pt.prenda_pedido_id', $prendaId)
+            ->whereNotNull('ptc.imagen_ruta')
+            ->pluck('ptc.imagen_ruta');
+    }
+
+    public function getTallaColoresDetallePrenda(int $prendaId): Collection
+    {
+        return DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prendaId)
+            ->select([
+                'ppt.genero',
+                'ppt.talla',
+                'pptc.tela_nombre',
+                'pptc.color_nombre',
+                'pptc.cantidad',
+                'pptc.referencia',
+                'pptc.observaciones',
+                'pptc.imagen_ruta',
+            ])
+            ->get();
+    }
+
     public function findPrendaEntrega(int $prendaId): ?object
     {
         return PrendaEntrega::query()->where('prenda_pedido_id', $prendaId)->first();
@@ -139,4 +230,3 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
             ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
     }
 }
-

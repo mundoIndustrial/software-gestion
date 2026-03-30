@@ -3,40 +3,44 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerPedidoTransformadoResponse;
+use App\Application\Pedidos\Exceptions\ObtenerPedidoTransformadoException;
+use App\Application\Pedidos\Services\ProcesoPedidoEnricherService;
 use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerPedidoTransformadoUseCase
- * 
  * Caso de uso que orquestra:
  * 1. Obtención del pedido base
  * 2. Enriquecimiento de procesos con tallas y observaciones
  * 3. Carga de tallas con colores y estado de entrega
  * 4. Agregación de recibos parciales (ANEXOS)
  * 5. Transformación de EPPs con imágenes
- * 
  * Responsabilidades:
  * - Centralizar la lógica de transformación del pedido
  * - Mantener el controller delgado (solo delegación)
  * - Facilitar testing y reutilización
- * 
  * Sigue el patrón DDD con separación de responsabilidades.
  */
 class ObtenerPedidoTransformadoUseCase
 {
     private ObtenerPedidoUseCase $obtenerPedidoUseCase;
+    private ProcesoPedidoEnricherService $procesoPedidoEnricherService;
     private PedidoDetalleReadService $readService;
 
-    public function __construct(ObtenerPedidoUseCase $obtenerPedidoUseCase, PedidoDetalleReadService $readService)
+    public function __construct(
+        ObtenerPedidoUseCase $obtenerPedidoUseCase,
+        ProcesoPedidoEnricherService $procesoPedidoEnricherService,
+        PedidoDetalleReadService $readService
+    )
     {
         $this->obtenerPedidoUseCase = $obtenerPedidoUseCase;
+        $this->procesoPedidoEnricherService = $procesoPedidoEnricherService;
         $this->readService = $readService;
     }
 
     /**
      * Ejecuta el caso de uso de obtención y transformación del pedido
-     * 
      * @param int $pedidoId ID del pedido a obtener y transformar
      * @return ObtenerPedidoTransformadoResponse Respuesta con el pedido transformado
      * @throws \DomainException Si el pedido no existe
@@ -49,7 +53,7 @@ class ObtenerPedidoTransformadoUseCase
             $datos = $response->toArray();
 
             // 2. Enriquecer procesos con tallas y observaciones
-            $this->enriquecerProcesos($datos, $pedidoId);
+            $this->enriquecerProcesos($datos);
 
             // 3. Cargar fecha de creación si no existe
             $this->agregarFechaCreacion($datos, $pedidoId);
@@ -75,100 +79,16 @@ class ObtenerPedidoTransformadoUseCase
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw new \RuntimeException('Error al obtener y transformar pedido: ' . $e->getMessage(), 0, $e);
+            throw ObtenerPedidoTransformadoException::inesperado($e);
         }
     }
 
     /**
      * Enriquece los procesos con información de tallas y observaciones
      */
-    private function enriquecerProcesos(array &$datos, int $pedidoId): void
+    private function enriquecerProcesos(array &$datos): void
     {
-        if (!isset($datos['prendas']) || !is_array($datos['prendas'])) {
-            return;
-        }
-
-        foreach ($datos['prendas'] as &$prenda) {
-            if (!isset($prenda['procesos']) || !is_array($prenda['procesos'])) {
-                continue;
-            }
-
-            foreach ($prenda['procesos'] as &$proceso) {
-                if (!isset($proceso['id'])) {
-                    continue;
-                }
-
-                // Decodificar ubicaciones si es JSON
-                if (isset($proceso['ubicaciones']) && is_string($proceso['ubicaciones'])) {
-                    $decodedUb = json_decode($proceso['ubicaciones'], true);
-                    if (is_array($decodedUb)) {
-                        $proceso['ubicaciones_array'] = $decodedUb;
-                    }
-                }
-
-                // Cargar tallas del proceso
-                $tallas = $this->readService->getTallasProceso((int) $proceso['id']);
-
-                Log::debug('[ObtenerPedidoTransformadoUseCase] Tallas obtenidas para proceso', [
-                    'proceso_id' => $proceso['id'],
-                    'tallas_count' => $tallas->count(),
-                ]);
-
-                // Transformar tallas y cargar colores
-                $talasTransformadas = [
-                    'dama' => [],
-                    'caballero' => [],
-                    'unisex' => []
-                ];
-                $tallasDetalle = [];
-                $obsPorTalla = [
-                    'dama' => [],
-                    'caballero' => [],
-                    'unisex' => [],
-                ];
-
-                foreach ($tallas as $talla) {
-                    $genero = $this->normalizarGenero($talla->genero ?? 'caballero');
-
-                    // Agregar a tallas_detalle
-                    $tallasDetalle[] = [
-                        'genero' => strtoupper((string)($talla->genero ?? '')),
-                        'talla' => $talla->talla,
-                        'cantidad' => (int)($talla->cantidad ?? 0),
-                        'es_sobremedida' => (int)($talla->es_sobremedida ?? 0),
-                    ];
-
-                    // Cargar colores para esta talla
-                    $colores = $this->readService->getColoresByProcesoTalla((int) $talla->id);
-
-                    if ($colores->count() > 0) {
-                        $talasTransformadas[$genero][$talla->talla] = $colores->map(fn($color) => [
-                            'color' => $color->color_nombre,
-                            'cantidad' => $color->cantidad
-                        ])->toArray();
-                    } else {
-                        $talasTransformadas[$genero][$talla->talla] = $talla->cantidad;
-                    }
-
-                    // Agregar observaciones por talla
-                    $obs = trim((string)($talla->observaciones ?? ''));
-                    if ($obs !== '') {
-                        $tallaKey = $talla->talla !== null ? (string)$talla->talla : 'SOBREMEDIDA';
-                        $obsPorTalla[$genero][$tallaKey] = $obs;
-                    }
-                }
-
-                $proceso['tallas'] = $talasTransformadas;
-                $proceso['tallas_detalle'] = $tallasDetalle;
-
-                // Agregar observaciones_por_talla solo si modo_tallas es 'general'
-                if (($proceso['modo_tallas'] ?? null) === 'general') {
-                    $proceso['observaciones_por_talla'] = $obsPorTalla;
-                }
-            }
-            unset($proceso);
-        }
-        unset($prenda);
+        $this->procesoPedidoEnricherService->enriquecer($datos);
     }
 
     /**
@@ -183,10 +103,16 @@ class ObtenerPedidoTransformadoUseCase
         try {
             $pedido = $this->readService->findPedidoById($pedidoId);
             if ($pedido) {
-                $fechaCreacion = $pedido->created_at ?? $pedido->created_at;
-                $datos['fecha_creacion'] = $fechaCreacion
-                    ? (is_string($fechaCreacion) ? $fechaCreacion : $fechaCreacion->format('d/m/Y'))
-                    : date('d/m/Y');
+                $fechaCreacion = $pedido->created_at;
+                $fechaFormateada = date('d/m/Y');
+
+                if ($fechaCreacion) {
+                    $fechaFormateada = is_string($fechaCreacion)
+                        ? $fechaCreacion
+                        : $fechaCreacion->format('d/m/Y');
+                }
+
+                $datos['fecha_creacion'] = $fechaFormateada;
             }
         } catch (\Exception $e) {
             Log::warning('[ObtenerPedidoTransformadoUseCase] Error cargando fecha creación', [
@@ -236,32 +162,25 @@ class ObtenerPedidoTransformadoUseCase
 
             $tallasColores = $this->readService->getTallasColoresPrenda((int) $prenda['id']);
 
-            if ($tallasColores->count() > 0) {
-                foreach ($tallasColores as $tallaColor) {
-                    $genero = strtoupper((string)($tallaColor->genero ?? ''));
-                    if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
-                        $genero = 'CABALLERO';
-                    }
-                    $talla = (string)($tallaColor->talla ?? '');
-                    $color = (string)($tallaColor->color_nombre ?? '');
-                    $cantidad = (int)($tallaColor->cantidad ?? 0);
+            if ($tallasColores->isEmpty()) {
+                return;
+            }
 
-                    if ($talla === '' || $cantidad <= 0) {
-                        continue;
-                    }
+            foreach ($tallasColores as $tallaColor) {
+                $genero = $this->normalizarGeneroTallaColor($tallaColor->genero ?? null);
+                [$talla, $color, $cantidad] = $this->extraerDatosTallaColor($tallaColor);
 
-                    if (!isset($tallasPorGenero[$genero][$talla])) {
-                        $tallasPorGenero[$genero][$talla] = [];
-                    }
-
-                    $tallasPorGenero[$genero][$talla][] = [
-                        'cantidad' => $cantidad,
-                        'color' => $color !== '' ? $color : null,
-                    ];
+                if (!$this->esTallaColorValida($talla, $cantidad)) {
+                    continue;
                 }
 
-                $prenda['tallas'] = $tallasPorGenero;
+                $tallasPorGenero[$genero][$talla][] = [
+                    'cantidad' => $cantidad,
+                    'color' => $color !== '' ? $color : null,
+                ];
             }
+
+            $prenda['tallas'] = $tallasPorGenero;
         } catch (\Exception $e) {
             Log::warning('[ObtenerPedidoTransformadoUseCase] Error cargando tallas con color', [
                 'pedido_id' => $pedidoId,
@@ -269,6 +188,36 @@ class ObtenerPedidoTransformadoUseCase
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Normaliza el genero de tallas con color para indexacion de respuesta.
+     */
+    private function normalizarGeneroTallaColor(?string $genero): string
+    {
+        $generoNormalizado = strtoupper((string) $genero);
+        if (!in_array($generoNormalizado, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+            return 'CABALLERO';
+        }
+
+        return $generoNormalizado;
+    }
+
+    /**
+     * @return array{0:string,1:string,2:int}
+     */
+    private function extraerDatosTallaColor(object $tallaColor): array
+    {
+        return [
+            (string) ($tallaColor->talla ?? ''),
+            (string) ($tallaColor->color_nombre ?? ''),
+            (int) ($tallaColor->cantidad ?? 0),
+        ];
+    }
+
+    private function esTallaColorValida(string $talla, int $cantidad): bool
+    {
+        return $talla !== '' && $cantidad > 0;
     }
 
     /**
@@ -463,8 +412,12 @@ class ObtenerPedidoTransformadoUseCase
     private function normalizarGenero(?string $genero): string
     {
         $genero = strtolower($genero ?? 'caballero');
-        if ($genero === 'dama') return 'dama';
-        if ($genero === 'caballero') return 'caballero';
+        if ($genero === 'dama') {
+            return 'dama';
+        }
+        if ($genero === 'caballero') {
+            return 'caballero';
+        }
         return 'unisex';
     }
 }

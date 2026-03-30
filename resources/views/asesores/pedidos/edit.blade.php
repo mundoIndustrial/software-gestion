@@ -290,6 +290,10 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
@@ -510,4 +514,3 @@
 <script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 @endpush
-

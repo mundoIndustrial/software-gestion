@@ -8,6 +8,8 @@ use App\Models\PedidoProduccion;
 use App\Models\PedidoEpp;
 use App\Models\Epp;
 use App\Models\EppCategoria;
+use App\Models\PrendaPedido;
+use App\Models\PrendaFotoPedido;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\Pedidos\UseCases\ActualizarBorradorUseCase;
 use App\Application\Pedidos\UseCases\ActualizarBorradorInput;
@@ -325,5 +327,56 @@ class ActualizarBorradorUseCaseTest extends TestCase
         $this->assertEquals('', $pedidoActualizado->cliente);
         $this->assertEquals('', $pedidoActualizado->forma_de_pago);
     }
-}
 
+    /**
+     * TEST 7: Eliminar prenda existente dentro de actualización de borrador
+     *
+     * Verifica que prendas_eliminadas dispare el borrado de la prenda y sus fotos.
+     */
+    public function test_actualizar_borrador_elimina_prenda_marcada()
+    {
+        $prenda = PrendaPedido::factory()->create([
+            'pedido_produccion_id' => $this->pedido->id,
+            'nombre_prenda' => 'PRENDA ELIMINABLE',
+        ]);
+
+        $foto = PrendaFotoPedido::create([
+            'prenda_pedido_id' => $prenda->id,
+            'ruta_original' => 'pedidos/test/prenda.jpg',
+            'ruta_webp' => 'pedidos/test/prenda.webp',
+        ]);
+
+        $datosFrontend = [
+            'cliente' => $this->pedido->cliente,
+            'forma_de_pago' => $this->pedido->forma_de_pago,
+            'observaciones' => $this->pedido->observaciones,
+            'epps' => [],
+            'prendas' => [],
+            'prendas_existentes' => [],
+            'prendas_eliminadas' => [
+                [
+                    'prenda_id' => $prenda->id,
+                    'motivo' => 'Eliminada desde test',
+                ],
+            ],
+        ];
+
+        $request = Request::create('/', 'POST', [
+            'pedido' => json_encode($datosFrontend),
+        ]);
+
+        $input = new ActualizarBorradorInput(
+            pedidoId: $this->pedido->id,
+            asesorId: $this->asesor->id,
+            request: $request,
+            pedidoJSON: json_encode($datosFrontend),
+            datosFrontend: $datosFrontend,
+        );
+
+        $output = $this->useCase->ejecutar($input);
+
+        $this->assertTrue($output->success);
+        $this->assertSoftDeleted('prendas_pedido', ['id' => $prenda->id]);
+        $this->assertSoftDeleted('prenda_fotos_pedido', ['id' => $foto->id]);
+    }
+}

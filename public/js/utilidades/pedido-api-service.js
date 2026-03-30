@@ -15,7 +15,7 @@ window.PedidoAPI = {
      * @returns {Promise}
      */
     crear: async function(data) {
-        return this._enviar('POST', '/asesores/pedidos', data);
+        return this._enviar('POST', '/api/asesores/pedidos/crear', data);
     },
 
     /**
@@ -25,7 +25,7 @@ window.PedidoAPI = {
      * @returns {Promise}
      */
     actualizar: async function(pedidoId, data) {
-        return this._enviar('PUT', `/asesores/pedidos/${pedidoId}`, data);
+        return this._enviar('PUT', `/api/asesores/pedidos/${pedidoId}`, data);
     },
 
     /**
@@ -34,7 +34,7 @@ window.PedidoAPI = {
      * @returns {Promise}
      */
     guardarBorrador: async function(data) {
-        return this._enviar('POST', '/asesores/borradores/guardar', data);
+        return this._enviar('POST', '/api/asesores/pedidos/borrador', data);
     },
 
     /**

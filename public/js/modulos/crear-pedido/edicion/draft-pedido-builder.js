@@ -112,6 +112,15 @@
         const formData = new FormData();
         const eppsProcesados = construirEppsProcesados(datos, formData);
         const { prendasExistentesJson, nuevasPrendasJson } = construirNuevasPrendasYExistentes(formData);
+        const prendasEliminadas = Array.isArray(window.gestionItemsUI?.prendasEliminadas)
+            ? window.gestionItemsUI.prendasEliminadas
+                .map((p) => ({
+                    prenda_id: Number(p?.prenda_id || 0),
+                    nombre_prenda: p?.nombre_prenda || '',
+                    motivo: p?.motivo || 'Eliminada desde edicion de borrador'
+                }))
+                .filter((p) => p.prenda_id > 0)
+            : [];
 
         const pedidoLimpio = {
             cliente: datos.cliente || '',
@@ -127,6 +136,7 @@
             prendas: [],
             prendas_existentes: prendasExistentesJson,
             nuevas_prendas: nuevasPrendasJson,
+            prendas_eliminadas: prendasEliminadas,
             epps: eppsProcesados
         };
 

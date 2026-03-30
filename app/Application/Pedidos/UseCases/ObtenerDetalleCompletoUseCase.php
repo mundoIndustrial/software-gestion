@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerDetalleCompletoResponse;
+use App\Application\Pedidos\Exceptions\ObtenerDetalleCompletoException;
 use App\Application\Pedidos\Services\PedidoAuthorizationService;
 use App\Application\Pedidos\Services\PedidoFiltroService;
 use App\Domain\Pedidos\Services\PedidoDetalleReadService;
@@ -11,19 +12,16 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerDetalleCompletoUseCase
- * 
  * Caso de uso para obtener datos completos de un pedido para recibos.
  * Con filtrado especial por rol:
  * - Bodeguero: solo procesos COSTURA-BODEGA
  * - Insumos: solo prendas con de_bodega=false
- * 
  * Responsabilidades:
  * - Obtener el pedido (búsqueda por ID o número)
  * - Validaciones de autorización
  * - Enriquecimiento de procesos y prendas
  * - Aplicar filtros de rol
  * - Cargar ancho/metraje y consecutivos
- * 
  * Orquesta los servicios de autorización y filtrado.
  */
 class ObtenerDetalleCompletoUseCase
@@ -47,11 +45,10 @@ class ObtenerDetalleCompletoUseCase
 
     /**
      * Ejecuta el caso de uso
-     * 
      * @param int $idONumero ID del pedido o número de pedido
      * @param bool $filtrarProcesosPendientes Si true, oculta procesos PENDIENTES
      * @return ObtenerDetalleCompletoResponse
-     * @throws \DomainException Si el pedido no existe o el usuario no tiene permisos
+     * @throws ObtenerDetalleCompletoException Si el pedido no existe o el usuario no tiene permisos
      */
     public function ejecutar(int $idONumero, bool $filtrarProcesosPendientes = false): ObtenerDetalleCompletoResponse
     {
@@ -60,10 +57,7 @@ class ObtenerDetalleCompletoUseCase
             $pedido = $this->obtenerPedido($idONumero);
 
             // 2. Validar autorización
-            $errorAutorizacion = $this->authService->validarAccesoBodeguero($pedido);
-            if ($errorAutorizacion) {
-                throw new \DomainException($errorAutorizacion);
-            }
+            $this->validarAutorizacion($pedido);
 
             // 3. Obtener datos base del pedido
             $response = $this->obtenerPedidoUseCase->ejecutar($pedido->id, $filtrarProcesosPendientes);
@@ -73,20 +67,7 @@ class ObtenerDetalleCompletoUseCase
             $this->enriquecerProcesos($responseData);
 
             // 5. Aplicar filtro bodeguero si corresponde
-            if ($this->authService->esBodeguero()) {
-                $errorFiltro = $this->filtroService->filtrarParaBodeguero($pedido->id, $responseData);
-                if ($errorFiltro) {
-                    throw new \DomainException($errorFiltro);
-                }
-            }
-
-            // 6. Aplicar filtro insumos si corresponde
-            if ($this->authService->debeAplicarFiltroInsumos()) {
-                $errorFiltro = $this->filtroService->filtrarParaInsumos($pedido->id, $responseData);
-                if ($errorFiltro) {
-                    throw new \DomainException($errorFiltro);
-                }
-            }
+            $this->aplicarFiltrosPorRol($pedido, $responseData);
 
             // 7. Agregar ancho/metraje y consecutivos por prenda
             $this->agregarAnchosMetrajesYConsecutivos($pedido, $responseData);
@@ -99,7 +80,7 @@ class ObtenerDetalleCompletoUseCase
 
             return new ObtenerDetalleCompletoResponse($responseData);
 
-        } catch (\DomainException $e) {
+        } catch (ObtenerDetalleCompletoException $e) {
             throw $e;
         } catch (\Exception $e) {
             Log::error('[ObtenerDetalleCompletoUseCase] Error inesperado', [
@@ -107,19 +88,46 @@ class ObtenerDetalleCompletoUseCase
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw new \RuntimeException('Error al obtener detalle completo del pedido: ' . $e->getMessage(), 0, $e);
+            throw ObtenerDetalleCompletoException::inesperado($e);
         }
     }
 
     /**
      * Obtiene el pedido por ID o número de pedido
      */
+    private function validarAutorizacion(PedidoProduccion $pedido): void
+    {
+        $this->lanzarSiHayError($this->authService->validarAccesoBodeguero($pedido));
+    }
+
+    private function aplicarFiltrosPorRol(PedidoProduccion $pedido, array &$responseData): void
+    {
+        if ($this->authService->esBodeguero()) {
+            $this->lanzarSiHayError(
+                $this->filtroService->filtrarParaBodeguero($pedido->id, $responseData)
+            );
+        }
+
+        if ($this->authService->debeAplicarFiltroInsumos()) {
+            $this->lanzarSiHayError(
+                $this->filtroService->filtrarParaInsumos($pedido->id, $responseData)
+            );
+        }
+    }
+
+    private function lanzarSiHayError(?string $error): void
+    {
+        if ($error) {
+            throw ObtenerDetalleCompletoException::validacion($error);
+        }
+    }
+
     private function obtenerPedido(int $idONumero): PedidoProduccion
     {
         $pedido = $this->readService->findPedidoByIdOrNumero($idONumero);
 
         if (!$pedido) {
-            throw new \DomainException("Pedido {$idONumero} no encontrado");
+            throw ObtenerDetalleCompletoException::pedidoNoEncontrado($idONumero);
         }
 
         return $pedido;
@@ -130,39 +138,65 @@ class ObtenerDetalleCompletoUseCase
      */
     private function enriquecerProcesos(array &$responseData): void
     {
-        if (!isset($responseData['prendas']) || !is_array($responseData['prendas'])) {
+        if (!$this->tienePrendas($responseData)) {
             return;
         }
 
         foreach ($responseData['prendas'] as &$prendaProc) {
-            if (!isset($prendaProc['procesos']) || !is_array($prendaProc['procesos'])) {
-                continue;
-            }
-
-            foreach ($prendaProc['procesos'] as &$procesoProc) {
-                if (!isset($procesoProc['id'])) {
-                    continue;
-                }
-
-                // Decodificar ubicaciones
-                if (isset($procesoProc['ubicaciones']) && is_string($procesoProc['ubicaciones'])) {
-                    $decodedUb = json_decode($procesoProc['ubicaciones'], true);
-                    if (is_array($decodedUb)) {
-                        $procesoProc['ubicaciones_array'] = $decodedUb;
-                    }
-                }
-
-                // Cargar tallas con detalle
-                $this->cargarTallasDetalle($procesoProc);
-
-                // Cargar observaciones por talla si modo='general'
-                if (($procesoProc['modo_tallas'] ?? null) === 'general') {
-                    $this->cargarObservacionesPorTalla($procesoProc);
-                }
-            }
-            unset($procesoProc);
+            $this->enriquecerProcesosDePrenda($prendaProc);
         }
         unset($prendaProc);
+    }
+
+    private function tienePrendas(array $responseData): bool
+    {
+        return isset($responseData['prendas']) && is_array($responseData['prendas']);
+    }
+
+    private function enriquecerProcesosDePrenda(array &$prendaProc): void
+    {
+        if (!isset($prendaProc['procesos']) || !is_array($prendaProc['procesos'])) {
+            return;
+        }
+
+        foreach ($prendaProc['procesos'] as &$procesoProc) {
+            $this->enriquecerProceso($procesoProc);
+        }
+        unset($procesoProc);
+    }
+
+    private function enriquecerProceso(array &$procesoProc): void
+    {
+        if (!isset($procesoProc['id'])) {
+            return;
+        }
+
+        $this->decodificarUbicaciones($procesoProc);
+        $this->cargarTallasDetalle($procesoProc);
+
+        if ($this->usaModoTallasGeneral($procesoProc)) {
+            $this->cargarObservacionesPorTalla($procesoProc);
+        }
+    }
+
+    private function decodificarUbicaciones(array &$procesoProc): void
+    {
+        $ubicaciones = $procesoProc['ubicaciones'] ?? null;
+
+        if (!is_string($ubicaciones)) {
+            return;
+        }
+
+        $decodedUb = json_decode($ubicaciones, true);
+
+        if (is_array($decodedUb)) {
+            $procesoProc['ubicaciones_array'] = $decodedUb;
+        }
+    }
+
+    private function usaModoTallasGeneral(array $procesoProc): bool
+    {
+        return ($procesoProc['modo_tallas'] ?? null) === 'general';
     }
 
     /**
@@ -371,7 +405,6 @@ class ObtenerDetalleCompletoUseCase
 
     /**
      * Agrega datos adicionales del pedido (fecha estimada, área, día entrega)
-     * 
      * Prioridad:
      * 1. Datos del recibo de costura (ConsecutivoReciboPedido) - si existen
      * 2. Datos de la tabla pedidos_produccion - fallback
@@ -382,7 +415,7 @@ class ObtenerDetalleCompletoUseCase
         $reciboCostura = $this->readService->findReciboCosturaByPedidoId((int) $pedido->id);
 
         if (!isset($responseData['fecha_estimada_de_entrega'])) {
-            $responseData['fecha_estimada_de_entrega'] = $reciboCostura?->fecha_estimada_de_entrega 
+            $responseData['fecha_estimada_de_entrega'] = $reciboCostura?->fecha_estimada_de_entrega
                 ?? $pedido->fecha_estimada_de_entrega;
         }
 
@@ -391,7 +424,7 @@ class ObtenerDetalleCompletoUseCase
         }
 
         if (!isset($responseData['dia_de_entrega'])) {
-            $responseData['dia_de_entrega'] = $reciboCostura?->dia_de_entrega 
+            $responseData['dia_de_entrega'] = $reciboCostura?->dia_de_entrega
                 ?? $pedido->dia_de_entrega;
         }
 

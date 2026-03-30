@@ -121,13 +121,16 @@ class PedidoNormalizadorDTO
     {
         $resultado = [];
         foreach ($procesos as $key => $proceso) {
-            $modoTallas = $proceso['modoTallas'] ?? $proceso['modo_tallas'] ?? 'para_todas';
+            $modoTallas = $proceso['modo_tallas'] ?? 'generico';
+            if (!in_array($modoTallas, ['generico', 'general', 'especifico'], true)) {
+                $modoTallas = 'generico';
+            }
             $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
             $nombreProceso = strtolower(trim($proceso['tipo'] ?? $proceso['nombre'] ?? ''));
             $claveReal = is_numeric($key) ? ($nombreProceso ?: (string) $key) : $key;
 
             $imagenesPorTalla = [];
-            if ($modoTallas === 'por_tallas' && $datosExtendidos && is_array($datosExtendidos)) {
+            if ($modoTallas === 'especifico' && $datosExtendidos && is_array($datosExtendidos)) {
                 foreach ($datosExtendidos as $genero => $tallasDatos) {
                     if (!is_array($tallasDatos)) {
                         continue;

@@ -2,26 +2,15 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Models\PedidoProduccion;
 
 class ObtenerProximoNumeroPedidoUseCase
 {
-    public function __construct(
-        private PedidoRepository $pedidoRepository
-    ) {}
-
-    public function ejecutar(ObtenerProximoNumeroPedidoDTO $dto): int
+    public function ejecutar(): int
     {
-        // Obtener el último numero de pedido
-        $ultimoPedido = $this->pedidoRepository->obtenerUltimoPedido();
+        $ultimoNumero = PedidoProduccion::whereNotNull('numero_pedido')
+            ->max('numero_pedido');
 
-        if (!$ultimoPedido) {
-            return 1;
-        }
-
-        return (int)$ultimoPedido->numero_pedido + 1;
+        return ((int) ($ultimoNumero ?? 0)) + 1;
     }
 }
-
-

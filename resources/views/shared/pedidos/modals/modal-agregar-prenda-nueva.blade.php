@@ -1125,6 +1125,13 @@ document.addEventListener('paste', function(event) {
                     if (pvImg) pvImg.src = img;
                     if (dz) dz.style.display = 'none';
                     if (pv) pv.style.display = 'block';
+                } else if (img && typeof img === 'object') {
+                    const src = img.ruta || img.ruta_original || img.ruta_webp || img.url || img.previewUrl || '';
+                    if (src) {
+                        if (pvImg) pvImg.src = src;
+                        if (dz) dz.style.display = 'none';
+                        if (pv) pv.style.display = 'block';
+                    }
                 }
             }
         }
@@ -1293,7 +1300,12 @@ document.addEventListener('paste', function(event) {
             window.telasCreacion[editIdx].color_nombre = color;
             window.telasCreacion[editIdx].referencia = referencia;
             window.telasCreacion[editIdx].observaciones = observaciones;
-            window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple ? [window._imagenTelaSimple] : [];
+            const imagenesExistentes = Array.isArray(window.telasCreacion[editIdx].imagenes)
+                ? window.telasCreacion[editIdx].imagenes
+                : [];
+            window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple
+                ? [window._imagenTelaSimple]
+                : imagenesExistentes;
             console.log('[agregarTelaSimple] Tela editada idx:', editIdx, window.telasCreacion[editIdx]);
         } else {
             // --- Modo Agregar: crear nuevo registro ---

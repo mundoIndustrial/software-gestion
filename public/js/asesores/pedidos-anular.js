@@ -355,7 +355,7 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
     // Obtener CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     
-    fetch(`/asesores/pedidos/${pedidoId}/confirmar-correccion`, {
+    fetch(`/api/asesores/pedidos/${pedidoId}/confirmar-correccion`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

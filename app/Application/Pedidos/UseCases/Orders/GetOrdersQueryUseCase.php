@@ -30,23 +30,64 @@ class GetOrdersQueryUseCase
      */
     public function execute(Request $request): array
     {
-        // Handle request for unique values for filters
+        $response = null;
+        $uniqueValuesResponse = $this->handleUniqueValuesRequest($request);
+
+        if ($uniqueValuesResponse !== null) {
+            $response = $uniqueValuesResponse;
+        } else {
+            $query = $this->extendedQueryService->buildBaseQuery();
+            $query = $this->extendedQueryService->applyRoleFilters($query, auth()->user(), $request);
+            $query = $this->extendedSearchService->applySearchFilter($query, $request->input('search'));
+
+            $filterData = $this->extendedFilterService->extractFiltersFromRequest($request);
+            $query = $this->extendedFilterService->applyFiltersToQuery($query, $filterData['filters']);
+            $festivos = $this->buildFestivos();
+
+            ['ordenes' => $ordenes, 'totalDiasCalculados' => $totalDiasCalculados] = $this->resolveOrdersAndTotals(
+                $query,
+                $filterData['totalDiasFilter'],
+                $request,
+                $festivos
+            );
+
+            $numeroPedidosPagina = array_map(fn ($orden) => $orden->numero_pedido, $ordenes->items());
+            $areasMap = $this->processService->getLastProcessByOrderNumbers($numeroPedidosPagina);
+            $encargadosCreacionOrdenMap = $this->processService->getCreacionOrdenEncargados($numeroPedidosPagina);
+            $areaOptions = AreaOptions::getArray();
+            $totalDiasCalculados = $this->ensureTotalDiasCalculados($ordenes, $totalDiasCalculados, $festivos);
+
+            $response = $request->wantsJson()
+                ? $this->buildJsonResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions)
+                : $this->buildViewResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions);
+        }
+
+        return $response;
+    }
+
+    /**
+     * @return array{type:'json',status:int,data:array}|null
+     */
+    private function handleUniqueValuesRequest(Request $request): ?array
+    {
+        $response = null;
+
         if ($request->has('get_unique_values') && $request->has('column')) {
             try {
                 $values = $this->extendedQueryService->getUniqueValues($request->input('column'));
-                return [
+                $response = [
                     'type' => 'json',
                     'status' => 200,
                     'data' => ['unique_values' => $values],
                 ];
             } catch (\InvalidArgumentException $e) {
-                return [
+                $response = [
                     'type' => 'json',
                     'status' => 400,
                     'data' => ['error' => 'Invalid column'],
                 ];
             } catch (\Exception $e) {
-                return [
+                $response = [
                     'type' => 'json',
                     'status' => 500,
                     'data' => ['error' => 'Error fetching values: ' . $e->getMessage()],
@@ -54,124 +95,146 @@ class GetOrdersQueryUseCase
             }
         }
 
-        $query = $this->extendedQueryService->buildBaseQuery();
-        $query = $this->extendedQueryService->applyRoleFilters($query, auth()->user(), $request);
-        $query = $this->extendedSearchService->applySearchFilter($query, $request->input('search'));
+        return $response;
+    }
 
-        // Extraer y aplicar filtros dinámicos
-        $filterData = $this->extendedFilterService->extractFiltersFromRequest($request);
-        $query = $this->extendedFilterService->applyFiltersToQuery($query, $filterData['filters']);
-        $filterTotalDias = $filterData['totalDiasFilter'];
-
+    /**
+     * @return array<int, string>
+     */
+    private function buildFestivos(): array
+    {
         $currentYear = now()->year;
         $nextYear = now()->addYear()->year;
-        $festivos = array_merge(
+
+        return array_merge(
             FestivosColombiaService::obtenerFestivos($currentYear),
             FestivosColombiaService::obtenerFestivos($nextYear)
         );
+    }
 
-        // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
+    /**
+     * @param mixed $query
+     * @param array<int, int>|null $filterTotalDias
+     * @return array{ordenes:LengthAwarePaginator,totalDiasCalculados:array}
+     */
+    private function resolveOrdersAndTotals($query, ?array $filterTotalDias, Request $request, array $festivos): array
+    {
         if ($filterTotalDias !== null) {
-            $todasOrdenes = $query->get();
-
-            // Convertir a array para el cálculo
-            $ordenesArray = $todasOrdenes->map(function ($orden) {
-                return (object) $orden->getAttributes();
-            })->toArray();
-
-            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
-
-            // Filtrar por total_de_dias_
-            $ordenesFiltradas = $todasOrdenes->filter(function ($orden) use ($totalDiasCalculados, $filterTotalDias) {
-                $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
-                $match = in_array((int) $totalDias, $filterTotalDias, true);
-                return $match;
-            });
-
-            // Paginar manualmente los resultados filtrados
-            $currentPage = (int) $request->get('page', 1);
-            $perPage = 25;
-            $ordenes = new LengthAwarePaginator(
-                $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
-                $ordenesFiltradas->count(),
-                $perPage,
-                $currentPage,
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-
-            // Recalcular solo para las órdenes de la página actual (con caché inteligente)
-            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
-        } else {
-            // OPTIMIZACIÓN: Paginación a 25 items
-            $ordenes = $query->paginate(25);
-
-            // OPTIMIZACIÓN CRÍTICA: SOLO calcular para la página actual (25 items) con caché
-            // No calcular para TODAS las 2257 órdenes - usa CacheCalculosService con TTL de 1 hora
-            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
+            return $this->resolveOrdersAndTotalsWithDiasFilter($query, $filterTotalDias, $request, $festivos);
         }
 
-        // Obtener areasMap solo para los items de esta página (OPTIMIZACIÓN)
-        $numeroPedidosPagina = array_map(function ($orden) {
-            return $orden->numero_pedido;
-        }, $ordenes->items());
-        $areasMap = $this->processService->getLastProcessByOrderNumbers($numeroPedidosPagina);
+        $ordenes = $query->paginate(25);
+        $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
 
-        // Obtener encargados de "Creación Orden" para cada pedido
-        $encargadosCreacionOrdenMap = $this->processService->getCreacionOrdenEncargados($numeroPedidosPagina);
+        return [
+            'ordenes' => $ordenes,
+            'totalDiasCalculados' => $totalDiasCalculados,
+        ];
+    }
 
-        // Opciones de áreas disponibles (áreas de procesos)
-        $areaOptions = AreaOptions::getArray();
+    /**
+     * @param mixed $query
+     * @param array<int, int> $filterTotalDias
+     * @return array{ordenes:LengthAwarePaginator,totalDiasCalculados:array}
+     */
+    private function resolveOrdersAndTotalsWithDiasFilter($query, array $filterTotalDias, Request $request, array $festivos): array
+    {
+        $todasOrdenes = $query->get();
+        $ordenesArray = $todasOrdenes->map(fn ($orden) => (object) (array) $orden)->toArray();
+        $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
 
-        // FALLBACK: Si totalDiasCalculados está vacío o falta alguna orden, recalcular
+        $ordenesFiltradas = $todasOrdenes->filter(function ($orden) use ($totalDiasCalculados, $filterTotalDias) {
+            $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
+            return in_array((int) $totalDias, $filterTotalDias, true);
+        });
+
+        $currentPage = (int) $request->get('page', 1);
+        $perPage = 25;
+        $ordenes = new LengthAwarePaginator(
+            $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
+            $ordenesFiltradas->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return [
+            'ordenes' => $ordenes,
+            'totalDiasCalculados' => CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos),
+        ];
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function ensureTotalDiasCalculados(LengthAwarePaginator $ordenes, array $totalDiasCalculados, array $festivos): array
+    {
         if (empty($totalDiasCalculados)) {
-            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
-        } else {
-            // Verificar que todas las órdenes tengan un valor
-            foreach ($ordenes->items() as $orden) {
-                if (!isset($totalDiasCalculados[$orden->numero_pedido])) {
-                    $totalDiasCalculados[$orden->numero_pedido] =
-                        CacheCalculosService::getTotalDias($orden->numero_pedido, $orden->estado);
-                }
+            return CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
+        }
+
+        foreach ($ordenes->items() as $orden) {
+            if (!isset($totalDiasCalculados[$orden->numero_pedido])) {
+                $totalDiasCalculados[$orden->numero_pedido] =
+                    CacheCalculosService::getTotalDias($orden->numero_pedido, $orden->estado);
             }
         }
 
-        if ($request->wantsJson()) {
-            // Filtrar campos sensibles según el rol del usuario
-            $ordenesFiltered = array_map(function ($orden) use ($areasMap, $encargadosCreacionOrdenMap) {
-                return $this->transformService->transformarOrden($orden, $areasMap, $encargadosCreacionOrdenMap);
-            }, $ordenes->items());
+        return $totalDiasCalculados;
+    }
 
-            // Retornar string vacío para que paginationManager.js genere el HTML con los estilos correctos
-            $paginationHtml = '';
-
-            // Determinar contexto y rol para renderizado de botones
-            $context = 'registros';
-            $userRole = auth()->user() && auth()->user()->role ? auth()->user()->role->name : null;
-
-            return [
-                'type' => 'json',
-                'status' => 200,
-                'data' => [
-                    'orders' => $ordenesFiltered,
-                    'totalDiasCalculados' => $totalDiasCalculados,
-                    'areaOptions' => $areaOptions,
-                    'context' => $context,
-                    'userRole' => $userRole,
-                    'pagination' => [
-                        'current_page' => $ordenes->currentPage(),
-                        'last_page' => $ordenes->lastPage(),
-                        'per_page' => $ordenes->perPage(),
-                        'total' => $ordenes->total(),
-                        'from' => $ordenes->firstItem(),
-                        'to' => $ordenes->lastItem(),
-                    ],
-                    'pagination_html' => $paginationHtml,
-                ],
-            ];
-        }
+    /**
+     * @return array{type:'json',status:int,data:array}
+     */
+    private function buildJsonResponse(
+        LengthAwarePaginator $ordenes,
+        array $areasMap,
+        array $encargadosCreacionOrdenMap,
+        array $totalDiasCalculados,
+        array $areaOptions
+    ): array {
+        $ordenesFiltered = array_map(
+            fn ($orden) => $this->transformService->transformarOrden($orden, $areasMap, $encargadosCreacionOrdenMap),
+            $ordenes->items()
+        );
 
         $context = 'registros';
-        $title = 'Registro de Órdenes';
+        $userRole = auth()->user() && auth()->user()->role ? auth()->user()->role->name : null;
+
+        return [
+            'type' => 'json',
+            'status' => 200,
+            'data' => [
+                'orders' => $ordenesFiltered,
+                'totalDiasCalculados' => $totalDiasCalculados,
+                'areaOptions' => $areaOptions,
+                'context' => $context,
+                'userRole' => $userRole,
+                'pagination' => [
+                    'current_page' => $ordenes->currentPage(),
+                    'last_page' => $ordenes->lastPage(),
+                    'per_page' => $ordenes->perPage(),
+                    'total' => $ordenes->total(),
+                    'from' => $ordenes->firstItem(),
+                    'to' => $ordenes->lastItem(),
+                ],
+                'pagination_html' => '',
+            ],
+        ];
+    }
+
+    /**
+     * @return array{type:'view',view:string,viewData:array}
+     */
+    private function buildViewResponse(
+        LengthAwarePaginator $ordenes,
+        array $areasMap,
+        array $encargadosCreacionOrdenMap,
+        array $totalDiasCalculados,
+        array $areaOptions
+    ): array {
+        $context = 'registros';
+        $title = 'Registro de �rdenes';
         $icon = 'fa-clipboard-list';
         $fetchUrl = '/registros';
         $updateUrl = '/registros';
@@ -196,4 +259,3 @@ class GetOrdersQueryUseCase
         ];
     }
 }
-

@@ -62,7 +62,7 @@ class PrendaProcesoService
                 $tipoProcesoId,
                 $ubicaciones,
                 $observaciones,
-                $proceso['modoTallas'] ?? 'generico',
+                $proceso['modo_tallas'] ?? 'generico',
                 $proceso,
                 $proceso['estado'] ?? 'PENDIENTE'
             );

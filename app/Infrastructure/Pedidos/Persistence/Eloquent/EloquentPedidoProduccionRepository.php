@@ -13,6 +13,7 @@ use App\Domain\Pedidos\ReadModels\PedidoPrendaRef;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\Concerns\GestionaTallasRelacional;
 use App\Models\PedidoProduccion;
+use Illuminate\Support\Facades\DB;
 
 class EloquentPedidoProduccionRepository implements PedidoProduccionReadRepository
 {
@@ -50,8 +51,7 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
                 'pedidos_produccion.*',
                 'pedidos_produccion.area',
             ])
-            ->with(['cotizacion', 'prendas'])
-            ->where('estado', '!=', 'Borrador');
+            ->with(['cotizacion', 'prendas']);
 
         if (!empty($filtros['asesor_id'])) {
             $query->where('asesor_id', $filtros['asesor_id']);
@@ -59,10 +59,17 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
 
         if (!empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
+        } else {
+            // Comportamiento por defecto para listados generales:
+            // excluir borradores salvo que se pidan explícitamente por filtro.
+            $query->where('estado', '!=', 'Borrador');
         }
 
         if (!empty($filtros['sin_numero'])) {
-            $query->whereNull('numero_pedido');
+            $query->where(function ($q) {
+                $q->whereNull('numero_pedido')
+                    ->orWhere('numero_pedido', '');
+            });
         }
 
         if (!empty($filtros['fecha_desde'])) {
@@ -213,6 +220,62 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             'forma_de_pago' => $pedido->forma_de_pago,
             'novedades' => $pedido->novedades,
             'created_at' => $pedido->created_at,
+        ];
+    }
+
+    public function obtenerPedidoDetallePorNumero(int $numeroPedido): ?array
+    {
+        $pedido = PedidoProduccion::with('asesora', 'prendas')
+            ->where('numero_pedido', $numeroPedido)
+            ->first();
+
+        if ($pedido === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido !== null ? (int) $pedido->numero_pedido : null,
+            'cliente' => $pedido->cliente,
+            'created_at' => $pedido->created_at,
+            'estado' => $pedido->estado,
+            'forma_de_pago' => $pedido->forma_de_pago,
+            'area' => $pedido->area,
+            'novedades' => $pedido->novedades,
+            'asesora' => $pedido->asesora?->name ?? '',
+            'pedido_model' => $pedido,
+        ];
+    }
+
+    public function obtenerTotalesPorNumeroPedido(int $numeroPedido): array
+    {
+        try {
+            $totalCantidad = (int) DB::table('prendas')
+                ->where('numero_pedido', $numeroPedido)
+                ->sum('cantidad');
+        } catch (\Throwable $e) {
+            \Log::warning('Error calculando cantidad total de pedido', [
+                'numero_pedido' => $numeroPedido,
+                'error' => $e->getMessage(),
+            ]);
+            $totalCantidad = 0;
+        }
+
+        try {
+            $totalEntregado = (int) DB::table('entregas')
+                ->where('numero_pedido', $numeroPedido)
+                ->sum('cantidad_entregada');
+        } catch (\Throwable $e) {
+            \Log::warning('Error calculando total entregado de pedido', [
+                'numero_pedido' => $numeroPedido,
+                'error' => $e->getMessage(),
+            ]);
+            $totalEntregado = 0;
+        }
+
+        return [
+            'total_cantidad' => $totalCantidad,
+            'total_entregado' => $totalEntregado,
         ];
     }
 }

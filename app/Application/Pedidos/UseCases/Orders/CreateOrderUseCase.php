@@ -4,12 +4,10 @@ namespace App\Application\Pedidos\UseCases\Orders;
 
 use App\Services\RegistroOrdenValidationService;
 use App\Services\RegistroOrdenCreationService;
-use App\Exceptions\RegistroOrdenPedidoNumberException;
 use Illuminate\Http\Request;
 
 /**
  * UseCase: Crear una nueva orden
- * 
  * Responsabilidades:
  * - Validar datos de entrada
  * - Verificar número consecutivo

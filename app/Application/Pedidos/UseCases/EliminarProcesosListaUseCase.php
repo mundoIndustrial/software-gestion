@@ -20,39 +20,67 @@ final class EliminarProcesosListaUseCase implements EliminarProcesosListaUseCase
     {
         foreach ($procesosIds as $procesoId) {
             try {
-                $proceso = PedidosProcesosPrendaDetalle::findOrFail((int) $procesoId);
-
-                if ($proceso->imagenes) {
-                    foreach ($proceso->imagenes as $imagen) {
-                        if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
-                            Storage::disk('public')->delete($imagen->ruta_original);
-                        }
-                        if ($imagen->ruta_webp && $imagen->ruta_webp !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_webp)) {
-                            Storage::disk('public')->delete($imagen->ruta_webp);
-                        }
-                        $imagen->forceDelete();
-                    }
-                }
-
-                if ($proceso->tallas) {
-                    foreach ($proceso->tallas as $talla) {
-                        $talla->forceDelete();
-                    }
-                }
-
+                $proceso = $this->buscarProceso((int) $procesoId);
+                $this->eliminarImagenesProceso($proceso);
+                $this->eliminarTallasProceso($proceso);
                 $proceso->forceDelete();
 
-                Log::info('[EliminarProcesosListaUseCase] Proceso eliminado', [
-                    'id'         => $procesoId,
-                    'tipo'       => $proceso->tipo_recibo ?? null,
-                ]);
+                $this->registrarProcesoEliminado((int) $procesoId, $proceso->tipo_recibo ?? null);
             } catch (\Exception $e) {
-                Log::warning('[EliminarProcesosListaUseCase] Error eliminando proceso', [
-                    'id'    => $procesoId,
-                    'error' => $e->getMessage(),
-                ]);
+                $this->registrarErrorEliminacion((int) $procesoId, $e);
             }
         }
+    }
+
+    private function buscarProceso(int $procesoId): PedidosProcesosPrendaDetalle
+    {
+        return PedidosProcesosPrendaDetalle::findOrFail($procesoId);
+    }
+
+    private function eliminarImagenesProceso(PedidosProcesosPrendaDetalle $proceso): void
+    {
+        foreach ($proceso->imagenes ?? [] as $imagen) {
+            $this->eliminarArchivoSiExiste($imagen->ruta_original);
+            $this->eliminarWebpSiCorresponde($imagen->ruta_webp, $imagen->ruta_original);
+            $imagen->forceDelete();
+        }
+    }
+
+    private function eliminarTallasProceso(PedidosProcesosPrendaDetalle $proceso): void
+    {
+        foreach ($proceso->tallas ?? [] as $talla) {
+            $talla->forceDelete();
+        }
+    }
+
+    private function eliminarArchivoSiExiste(?string $ruta): void
+    {
+        if ($ruta && Storage::disk('public')->exists($ruta)) {
+            Storage::disk('public')->delete($ruta);
+        }
+    }
+
+    private function eliminarWebpSiCorresponde(?string $rutaWebp, ?string $rutaOriginal): void
+    {
+        if ($rutaWebp && $rutaWebp !== $rutaOriginal) {
+            $this->eliminarArchivoSiExiste($rutaWebp);
+        }
+    }
+
+    private function registrarProcesoEliminado(int $procesoId, ?string $tipoRecibo): void
+    {
+        Log::info('[EliminarProcesosListaUseCase] Proceso eliminado', [
+            'id' => $procesoId,
+            'tipo' => $tipoRecibo,
+        ]);
+    }
+
+    private function registrarErrorEliminacion(int $procesoId, \Exception $exception): void
+    {
+        Log::warning('[EliminarProcesosListaUseCase] Error eliminando proceso', [
+            'id' => $procesoId,
+            'error' => $exception->getMessage(),
+        ]);
     }
 
     public function call(string $method, array $arguments = []): mixed
@@ -64,7 +92,6 @@ final class EliminarProcesosListaUseCase implements EliminarProcesosListaUseCase
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

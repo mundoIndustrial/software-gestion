@@ -53,12 +53,14 @@ class PrendaPedido extends Model
         'de_bodega',
         'prenda_id',
         'observaciones',
+        'tipo_flujo_tallas',
     ];
 
     protected $casts = [
         'de_bodega' => 'boolean',
         'tiene_bolsillos' => 'boolean',
         'tiene_reflectivo' => 'boolean',
+        'tipo_flujo_tallas' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

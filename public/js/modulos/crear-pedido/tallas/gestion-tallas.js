@@ -193,7 +193,7 @@ window.cargarCatálogoTallas = async function() {
         // Obtener CSRF token del meta tag o del DOM
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         
-        const response = await fetch('/api/tallas-disponibles', {
+        const response = await fetch('/api/asesores/tallas-disponibles', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -1248,4 +1248,3 @@ window.obtenerTallasYCantidades = function() {
     
     return resultado;
 };
-

@@ -81,116 +81,6 @@ function agregarProducto() {
 }
 
 // ========================================
-// AGREGAR EVENT LISTENERS A PRODUCTOS EXISTENTES
-// ========================================
-function agregarEventListenersProductos() {
-    const productos = document.querySelectorAll('.producto-item');
-    
-    productos.forEach(producto => {
-        // Bot+n eliminar
-        const btnRemove = producto.querySelector('.btn-remove-product');
-        if (btnRemove) {
-            btnRemove.addEventListener('click', function() {
-                this.closest('.producto-item').remove();
-                actualizarResumen();
-                renumerarProductos();
-            });
-        }
-        
-        // Cantidad y precio
-        const cantidad = producto.querySelector('.producto-cantidad');
-        const precio = producto.querySelector('.producto-precio');
-        
-        if (cantidad) {
-            cantidad.addEventListener('input', function() {
-                calcularSubtotal(this.closest('.producto-item'));
-                actualizarResumen();
-            });
-        }
-        
-        if (precio) {
-            precio.addEventListener('input', function() {
-                calcularSubtotal(this.closest('.producto-item'));
-                actualizarResumen();
-            });
-        }
-        
-        // Calcular subtotal inicial
-        calcularSubtotal(producto);
-    });
-}
-
-// ========================================
-// CALCULAR SUBTOTAL DE UN PRODUCTO
-// ========================================
-function calcularSubtotal(productoItem) {
-    const cantidad = productoItem.querySelector('.producto-cantidad');
-    const precio = productoItem.querySelector('.producto-precio');
-    const subtotal = productoItem.querySelector('.producto-subtotal');
-    
-    if (cantidad && precio && subtotal) {
-        const cantidadVal = parseFloat(cantidad.value) || 0;
-        const precioVal = parseFloat(precio.value) || 0;
-        const subtotalVal = cantidadVal * precioVal;
-        
-        subtotal.value = subtotalVal > 0 ? `$${subtotalVal.toFixed(2)}` : '$0.00';
-    }
-}
-
-// ========================================
-// ACTUALIZAR RESUMEN
-// ========================================
-function actualizarResumen() {
-    const productos = document.querySelectorAll('.producto-item');
-    const totalProductos = document.getElementById('totalProductos');
-    const cantidadTotal = document.getElementById('cantidadTotal');
-    
-    let totalCantidad = 0;
-    
-    productos.forEach(producto => {
-        const cantidad = producto.querySelector('.producto-cantidad');
-        if (cantidad) {
-            totalCantidad += Number.parseInt(cantidad.value) || 0;
-        }
-    });
-    
-    if (totalProductos) {
-        totalProductos.textContent = productos.length;
-    }
-    
-    if (cantidadTotal) {
-        cantidadTotal.textContent = totalCantidad;
-    }
-}
-
-// ========================================
-// RENUMERAR PRODUCTOS
-// ========================================
-function renumerarProductos() {
-    const productos = document.querySelectorAll('.producto-item');
-    productoCounter = 0;
-    
-    productos.forEach((producto, index) => {
-        productoCounter++;
-        const numeroSpan = producto.querySelector('.producto-numero');
-        if (numeroSpan) {
-            numeroSpan.textContent = index + 1;
-        }
-        
-        // Actualizar nombres de inputs
-        const inputs = producto.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            const name = input.getAttribute('name');
-            if (name && name.includes('[')) {
-                const baseName = name.substring(0, name.indexOf('['));
-                const fieldName = name.substring(name.lastIndexOf('['));
-                input.setAttribute('name', `${baseName}[${index}]${fieldName}`);
-            }
-        });
-    });
-}
-
-// ========================================
 // GUARDAR PEDIDO (REFACTORIZADO)
 // ========================================
 async function guardarPedido(form, crear = false) {
@@ -223,7 +113,6 @@ async function guardarPedido(form, crear = false) {
         UI.cargando('Guardando pedido...', 'Por favor espera');
         
         //  Usar PedidoAPIService centralizado
-        const ruta = crear ? '/asesores/pedidos' : '/asesores/borradores/guardar';
         const result = await PedidoAPI[crear ? 'crear' : 'guardarBorrador'](data);
         
         Swal.close();
@@ -334,5 +223,3 @@ window.cerrarImagenGrande = function() {
 window.cambiarImagen = function(direccion) {
     Galeria.cambiarImagen(direccion);
 };
-
-

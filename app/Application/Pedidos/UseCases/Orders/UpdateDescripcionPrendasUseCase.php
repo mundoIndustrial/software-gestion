@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases\Orders;
 
+use App\Application\Pedidos\Exceptions\UpdateDescripcionPrendasException;
 use App\Application\Shared\Contracts\AuditRepositoryInterface;
 use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
@@ -37,7 +38,7 @@ class UpdateDescripcionPrendasUseCase
 
         $orden = $this->pedidoRepository->findByNumeroPedido($pedido);
         if (!$orden) {
-            throw new \RuntimeException("Pedido {$pedido} no encontrado");
+            throw UpdateDescripcionPrendasException::pedidoNoEncontrado($pedido);
         }
 
         $prendas = null;
@@ -81,5 +82,4 @@ class UpdateDescripcionPrendasUseCase
         ];
     }
 }
-
 

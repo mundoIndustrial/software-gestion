@@ -8,11 +8,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * GetNovedadesUseCase
- * 
  * UseCase: Obtener novedades de un pedido
  * Capa: Application
  * Responsabilidad: Recuperar novedades/notas de un pedido específico
- * 
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
@@ -20,7 +18,6 @@ class GetNovedadesUseCase
 {
     /**
      * Ejecutar obtención de novedades
-     * 
      * @param string $numeroPedido
      * @return array ['numero_pedido' => string, 'novedades' => string, 'tiene_novedades' => bool]
      * @throws GetNovedadesException

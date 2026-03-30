@@ -10,18 +10,13 @@ use App\Models\PrendaPedido;
 
 /**
  * Use Case para agregar proceso a una prenda
- * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
- * 
  * Crea un registro en pedidos_procesos_prenda_detalles
  * Si se proporcionan tallas, las agrupa por genero y puebla:
  * - tallas_dama: JSON con ['S', 'M', 'L'] para genero DAMA
  * - tallas_caballero: JSON con ['XL', 'XXL'] para genero CABALLERO
- * 
  * también crea registros en pedidos_procesos_prenda_tallas (uno por cada talla)
- * 
  * Tabla: pedidos_procesos_prenda_detalles
- * 
  * Antes: 69 lineas | despues: ~59 lineas | Reducción: ~14%
  */
 final class AgregarProcesoPrendaUseCase implements AgregarProcesoPrendaUseCaseContract
@@ -30,44 +25,71 @@ final class AgregarProcesoPrendaUseCase implements AgregarProcesoPrendaUseCaseCo
 
     public function execute(AgregarProcesoPrendaDTO $dto)
     {
-        // CENTRALIZADO: Validar prenda existe (trait)
-        $prenda = $this->validarObjetoExiste(
-            PrendaPedido::find($dto->prendaId),
-            "Prenda con ID {$dto->prendaId}"
-        );
+        $prenda = PrendaPedido::find($dto->prendaId);
+        $this->validarObjetoExiste($prenda, 'Prenda', $dto->prendaId);
 
-        // Agrupar tallas por genero
+        [$tallasDama, $tallasCaballero] = $this->agruparTallasPorGenero($dto->tallas);
+        $ubicaciones = $this->normalizarUbicaciones($dto->ubicaciones);
+
+        $proceso = $prenda->procesos()->create($this->buildProcesoPayload(
+            $dto,
+            $ubicaciones,
+            $tallasDama,
+            $tallasCaballero
+        ));
+
+        $this->crearRegistrosDeTallas($proceso, $dto->tallas);
+
+        return $proceso;
+    }
+
+    private function agruparTallasPorGenero(array $tallas): array
+    {
         $tallasDama = [];
         $tallasCaballero = [];
-        
-        if (!empty($dto->tallas)) {
-            foreach ($dto->tallas as $talla) {
-                $genero = $talla['genero'] ?? null;
-                $nombreTalla = $talla['talla'] ?? null;
-                
-                if ($genero === 'DAMA' && $nombreTalla) {
-                    $tallasDama[] = $nombreTalla;
-                } elseif ($genero === 'CABALLERO' && $nombreTalla) {
-                    $tallasCaballero[] = $nombreTalla;
-                }
+
+        foreach ($tallas as $talla) {
+            $genero = $talla['genero'] ?? null;
+            $nombreTalla = $talla['talla'] ?? null;
+
+            if (!$nombreTalla) {
+                continue;
+            }
+
+            if ($genero === 'DAMA') {
+                $tallasDama[] = $nombreTalla;
+                continue;
+            }
+
+            if ($genero === 'CABALLERO') {
+                $tallasCaballero[] = $nombreTalla;
             }
         }
 
-        // Crear proceso con tallas agrupadas en JSON
-        // Decodificar ubicaciones si vienen como JSON string
-        $ubicaciones = $dto->ubicaciones ?? null;
-        if (is_string($ubicaciones)) {
-            try {
-                $ubicacionesDecodificadas = json_decode($ubicaciones, true);
-                if (is_array($ubicacionesDecodificadas)) {
-                    $ubicaciones = $ubicacionesDecodificadas;
-                }
-            } catch (\Exception $e) {
-                $ubicaciones = null;
-            }
+        return [$tallasDama, $tallasCaballero];
+    }
+
+    private function normalizarUbicaciones(mixed $ubicaciones): ?array
+    {
+        if (is_array($ubicaciones)) {
+            return $ubicaciones;
         }
 
-        $proceso = $prenda->procesos()->create([
+        if (!is_string($ubicaciones)) {
+            return null;
+        }
+
+        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+        return is_array($ubicacionesDecodificadas) ? $ubicacionesDecodificadas : null;
+    }
+
+    private function buildProcesoPayload(
+        AgregarProcesoPrendaDTO $dto,
+        ?array $ubicaciones,
+        array $tallasDama,
+        array $tallasCaballero
+    ): array {
+        return [
             'tipo_proceso_id' => $dto->tipo_proceso_id,
             'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
             'observaciones' => $dto->observaciones,
@@ -77,20 +99,18 @@ final class AgregarProcesoPrendaUseCase implements AgregarProcesoPrendaUseCaseCo
             'notas_rechazo' => $dto->notas_rechazo,
             'aprobado_por' => $dto->aprobado_por,
             'datos_adicionales' => !empty($dto->datos_adicionales) ? json_encode($dto->datos_adicionales) : null,
-        ]);
+        ];
+    }
 
-        // Crear registros en tabla de tallas (uno por cada talla)
-        if (!empty($dto->tallas)) {
-            foreach ($dto->tallas as $talla) {
-                $proceso->tallas()->create([
-                    'genero' => $talla['genero'],
-                    'talla' => $talla['talla'],
-                    'cantidad' => $talla['cantidad'] ?? 0,
-                ]);
-            }
+    private function crearRegistrosDeTallas(mixed $proceso, array $tallas): void
+    {
+        foreach ($tallas as $talla) {
+            $proceso->tallas()->create([
+                'genero' => $talla['genero'],
+                'talla' => $talla['talla'],
+                'cantidad' => $talla['cantidad'] ?? 0,
+            ]);
         }
-
-        return $proceso;
     }
 
     public function call(string $method, array $arguments = []): mixed
@@ -102,7 +122,6 @@ final class AgregarProcesoPrendaUseCase implements AgregarProcesoPrendaUseCaseCo
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

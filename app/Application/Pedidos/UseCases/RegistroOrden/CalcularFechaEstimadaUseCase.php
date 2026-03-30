@@ -7,11 +7,9 @@ use App\Exceptions\CalcularFechaEstimadaException;
 
 /**
  * CalcularFechaEstimadaUseCase
- * 
  * UseCase: Calcular fecha estimada de entrega de una orden
  * Capa: Application
  * Responsabilidad: Orquestar el cálculo de fecha estimada basado en días de entrega
- * 
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
@@ -19,7 +17,6 @@ class CalcularFechaEstimadaUseCase
 {
     /**
      * Ejecutar cálculo de fecha estimada
-     * 
      * @param int $orderId
      * @param int $diaDeEntrega
      * @return array ['fecha_estimada' => string, 'fecha_estimada_iso' => string, 'dias' => int, ...]
@@ -45,14 +42,8 @@ class CalcularFechaEstimadaUseCase
             }
 
             // Calcular fecha estimada
-            $fechaEstimada = $this->_calcularFecha($orden, $diaDeEntrega);
+            $fechaEstimada = $this->calcularFecha($orden, $diaDeEntrega);
 
-            \Log::info('[CalcularFechaEstimadaUseCase] Fecha estimada calculada', [
-                'orden_id' => $orderId,
-                'numero_pedido' => $orden->numero_pedido,
-                'dias' => $diaDeEntrega,
-                'fecha_estimada' => $fechaEstimada->format('d/m/Y')
-            ]);
 
             return [
                 'fecha_estimada' => $fechaEstimada->format('d/m/Y'),
@@ -79,13 +70,12 @@ class CalcularFechaEstimadaUseCase
 
     /**
      * Calcular fecha estimada basada en días
-     * 
      * @param PedidoProduccion $orden
      * @param int $diaDeEntrega
      * @return \Carbon\Carbon
      * @throws CalcularFechaEstimadaException
      */
-    private function _calcularFecha(PedidoProduccion $orden, int $diaDeEntrega): \Carbon\Carbon
+    private function calcularFecha(PedidoProduccion $orden, int $diaDeEntrega): \Carbon\Carbon
     {
         // Asignar temporalmente el día de entrega para usar el método del modelo
         $orden->dia_de_entrega = $diaDeEntrega;
@@ -99,4 +89,3 @@ class CalcularFechaEstimadaUseCase
         return $fechaEstimada;
     }
 }
-

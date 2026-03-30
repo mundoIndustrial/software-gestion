@@ -10,11 +10,8 @@ use App\Models\PrendaPedidoColorTela;
 
 /**
  * Use Case para agregar imagen de tela a una combinación color-tela
- * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
- * 
  * Maneja la creación de registro en prenda_fotos_tela_pedido
- * 
  * Antes: 28 lineas | despues: ~20 lineas | Reducción: ~28%
  */
 final class AgregarImagenTelaUseCase implements AgregarImagenTelaUseCaseContract
@@ -24,10 +21,8 @@ final class AgregarImagenTelaUseCase implements AgregarImagenTelaUseCaseContract
     public function execute(AgregarImagenTelaDTO $dto)
     {
         // CENTRALIZADO: Validar color-tela existe (trait)
-        $colorTela = $this->validarObjetoExiste(
-            PrendaPedidoColorTela::find($dto->colorTelaId),
-            "Color-Tela con ID {$dto->colorTelaId}"
-        );
+        $colorTela = PrendaPedidoColorTela::find($dto->colorTelaId);
+        $this->validarObjetoExiste($colorTela, 'Color-Tela', $dto->colorTelaId);
 
         return $colorTela->fotos()->create([
             'ruta_original' => $dto->rutaOriginal,
@@ -50,7 +45,6 @@ final class AgregarImagenTelaUseCase implements AgregarImagenTelaUseCaseContract
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

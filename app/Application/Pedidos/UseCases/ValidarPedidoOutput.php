@@ -4,13 +4,11 @@ namespace App\Application\Pedidos\UseCases;
 
 /**
  * DTO: Output para Validar Pedido
- * 
  * FASE 2 - Encapsula resultado de validación
  * Responsabilidades:
  * - Mantener estado de validación (éxito/error)
  * - Almacenar errores de validación
  * - Serializar para respuesta HTTP
- * 
  * @package App\Application\UseCases\Pedidos
  */
 class ValidarPedidoOutput
@@ -24,7 +22,6 @@ class ValidarPedidoOutput
 
     /**
      * Factory: Crear output exitoso
-     * 
      * @param int $clienteId
      * @param string $message
      * @return self
@@ -41,7 +38,6 @@ class ValidarPedidoOutput
 
     /**
      * Factory: Crear output con errores
-     * 
      * @param array $errors Lista de errores de validación
      * @param string $message
      * @return self
@@ -58,7 +54,6 @@ class ValidarPedidoOutput
 
     /**
      * Factory: Crear output con excepción
-     * 
      * @param \Exception $exception
      * @param string $message
      * @return self
@@ -75,7 +70,6 @@ class ValidarPedidoOutput
 
     /**
      * Serializar a array para respuesta JSON
-     * 
      * @return array
      */
     public function toArray(): array
@@ -90,7 +84,6 @@ class ValidarPedidoOutput
 
     /**
      * Obtener solo errores (para debugging)
-     * 
      * @return array
      */
     public function getErrors(): array
@@ -100,7 +93,6 @@ class ValidarPedidoOutput
 
     /**
      * Verificar si tiene errores
-     * 
      * @return bool
      */
     public function hasErrors(): bool

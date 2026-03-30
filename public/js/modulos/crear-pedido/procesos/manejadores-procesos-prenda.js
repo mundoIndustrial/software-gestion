@@ -45,8 +45,10 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         if (!procesosSeleccionados[tipoProceso]) {
             procesosSeleccionados[tipoProceso] = {
                 tipo: tipoProceso,
-                modoTallas: 'generico',  // ← Valor por defecto
-                datos: null
+                datos: {
+                    tipo: tipoProceso,
+                    modo_tallas: 'generico' // Fuente única canónica
+                }
             };
             //  CRÍTICO: Sincronizar con window inmediatamente
             window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
@@ -137,4 +139,3 @@ window.limpiarProcesosSeleccionados = function() {
     
 
 };
-

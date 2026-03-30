@@ -95,6 +95,25 @@ class OrderImageQueryService
         return $row?->numero_pedido ?: null;
     }
 
+    /**
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    public function getLogoImagenesByPrenda(int $prendaPedidoId)
+    {
+        return DB::table('disenos_logo_pedido as dlp')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'dlp.proceso_prenda_detalle_id')
+            ->where('ppd.prenda_pedido_id', $prendaPedidoId)
+            ->orderBy('dlp.id', 'asc')
+            ->get([
+                DB::raw('NULL as ruta_webp'),
+                'dlp.url as ruta_original',
+                DB::raw('NULL as ruta_miniatura'),
+                'dlp.id as orden',
+                DB::raw('NULL as ancho'),
+                DB::raw('NULL as alto'),
+                'ppd.ubicaciones as ubicacion',
+            ]);
+    }
+
 
 }
-

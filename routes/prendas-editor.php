@@ -32,6 +32,18 @@ Route::prefix('prendas')->name('prendas.')->middleware(['auth'])->group(function
     // Tipos de manga disponibles
     Route::get('tipos-manga', [PrendaEditorController::class, 'tiposManga'])
         ->name('tipos-manga');
+
+    // Crear nuevo tipo de manga
+    Route::post('tipos-manga', [PrendaEditorController::class, 'crearTipoManga'])
+        ->name('tipos-manga.store');
+
+    // Tipos de broche/botón disponibles
+    Route::get('tipos-broche-boton', [PrendaEditorController::class, 'tiposBrocheBoton'])
+        ->name('tipos-broche-boton');
+
+    // Crear nuevo tipo de broche/botón
+    Route::post('tipos-broche-boton', [PrendaEditorController::class, 'crearTipoBrocheBoton'])
+        ->name('tipos-broche-boton.store');
     
     // Procesamiento de tallas con DDD
     Route::post('{id}/procesar-tallas', [PrendaEditorController::class, 'procesarTallas'])

@@ -423,7 +423,7 @@ class GestorPedidoSinCotizacion {
 
 
 
-            fetch('/asesores/pedidos/crear', {
+            fetch('/api/asesores/pedidos/crear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

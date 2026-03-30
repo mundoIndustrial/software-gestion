@@ -2027,7 +2027,7 @@ window.agregarProcesoAlPedido = function() {
 
         const datos = {
             tipo: procesoActual,
-            modoTallas: window.procesosSeleccionados?.[procesoActual]?.modoTallas || 'generico',
+            modo_tallas: window.procesosSeleccionados?.[procesoActual]?.datos?.modo_tallas || 'generico',
             ubicaciones: ubicacionesClonadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
@@ -2242,4 +2242,3 @@ window.obtenerModoActual = function() {
 };
 
 // Confirmar que el módulo se cargó correctamente
-

@@ -54,7 +54,12 @@ class PrendaEditorProcesos {
                         .replace(/\s+/g, '-');
                     
                     // 🔴 Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
-                    const datosNormalizados = { ...proceso, tipo: tipo };
+                    const datosNormalizados = {
+                        ...proceso,
+                        tipo: tipo,
+                        modo_tallas: proceso?.modo_tallas || 'generico'
+                    };
+                    delete datosNormalizados.modoTallas;
                     if (datosNormalizados.imagenes && Array.isArray(datosNormalizados.imagenes)) {
                         console.log(`[PROCESOS-LOADER] 🖼️ Imágenes recibidas para ${tipo}:`, {
                             cantidad: datosNormalizados.imagenes.length,
@@ -88,8 +93,6 @@ class PrendaEditorProcesos {
                         procesoId: datosNormalizados.id,
                         modo_tallas_desde_servidor: datosNormalizados.modo_tallas,
                         modo_tallas_en_window: window.procesosSeleccionados[tipo].datos.modo_tallas,
-                        modoTallas_desde_servidor: datosNormalizados.modoTallas,
-                        modoTallas_en_window: window.procesosSeleccionados[tipo].datos.modoTallas,
                         tipoProcesoNested: datosNormalizados.tipoProceso?.nombre,
                         datosKeys: Object.keys(datosNormalizados).slice(0, 15),  // Primeros 15 campos
                         estructuraCompleta: {
@@ -127,9 +130,11 @@ class PrendaEditorProcesos {
                             datos: {
                                 ...datosProceso,
                                 tipo: tipoNormalizado,
+                                modo_tallas: datosProceso.modo_tallas || 'generico',
                                 nombre: datosProceso.nombre || datosProceso.tipo_proceso || datosProceso.nombre_proceso || datosProceso.tipoProceso?.nombre || tipoNormalizado
                             }
                         };
+                        delete window.procesosSeleccionados[tipoNormalizado].datos.modoTallas;
                     } else if (proceso === true || proceso === 1) {
                         // Si es solo un boolean/flag, crear objeto mínimo
                         const tipoNormalizado = String(key).toLowerCase().trim().replace(/\s+/g, '-');
@@ -137,6 +142,7 @@ class PrendaEditorProcesos {
                             tipo: tipoNormalizado,
                             datos: {
                                 tipo: tipoNormalizado,
+                                modo_tallas: 'generico',
                                 ubicaciones: [],
                                 tallas: { dama: {}, caballero: {}, sobremedida: {} },
                                 observaciones: '',

@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * DashboardService
- * 
  * Servicio para obtener datos del dashboard del asesor.
  * Encapsula la lógica de estadisticas y graficas.
  */
@@ -17,9 +16,9 @@ class DashboardService
     /**
      * Obtener estadisticas generales del dashboard
      */
-    public function obtenerEstadisticas(): array
+    public function obtenerEstadisticas(?int $asesorId = null): array
     {
-        $userId = Auth::id();
+        $userId = $asesorId ?? Auth::id();
 
         return [
             'pedidos_dia' => PedidoProduccion::where('asesor_id', $userId)
@@ -82,8 +81,8 @@ class DashboardService
             ->whereBetween('created_at', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
             ->count();
 
-        $tendencia = $semanaAnterior > 0 
-            ? (($semanaActual - $semanaAnterior) / $semanaAnterior) * 100 
+        $tendencia = $semanaAnterior > 0
+            ? (($semanaActual - $semanaAnterior) / $semanaAnterior) * 100
             : 0;
 
         return [
@@ -96,4 +95,3 @@ class DashboardService
         ];
     }
 }
-

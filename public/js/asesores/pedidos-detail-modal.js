@@ -364,7 +364,7 @@ window.eliminarPedidoConfirmado = async function(pedidoId) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
     
     try {
-        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
+        const response = await fetch(`/api/asesores/pedidos-produccion/${pedidoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
@@ -453,7 +453,7 @@ function showSuccessMessage(message) {
  */
 window.eliminarPedidoDirecto = async function(pedidoId) {
     try {
-        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
+        const response = await fetch(`/api/asesores/pedidos-produccion/${pedidoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',

@@ -23,8 +23,11 @@ use Intervention\Image\ImageManager;
 // ======================================== DDD PEDIDOS
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Domain\Pedidos\Repositories\ProcesoPedidoWriteRepository;
+use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\PedidoRepositoryImpl;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\ProcesoPedidoWriteRepositoryImpl;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
@@ -153,6 +156,16 @@ class DomainServiceProvider extends ServiceProvider
             EloquentPedidoProduccionRepository::class
         );
 
+        $this->app->bind(
+            \App\Domain\Pedidos\Repositories\ProcesoPedidoReadRepository::class,
+            \App\Infrastructure\Pedidos\Persistence\Eloquent\ProcesoPedidoReadRepositoryImpl::class
+        );
+
+        $this->app->bind(
+            ProcesoPedidoWriteRepository::class,
+            ProcesoPedidoWriteRepositoryImpl::class
+        );
+
         // Registrar Use Cases como singletons
         $this->app->singleton(CrearPedidoUseCase::class, function ($app) {
             return new CrearPedidoUseCase($app->make(PedidoRepository::class));
@@ -163,7 +176,10 @@ class DomainServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ObtenerPedidoUseCase::class, function ($app) {
-            return new ObtenerPedidoUseCase($app->make(PedidoRepository::class));
+            return new ObtenerPedidoUseCase(
+                $app->make(PedidoRepository::class),
+                $app->make(PedidoDetalleReadService::class)
+            );
         });
 
         $this->app->singleton(ListarPedidosPorClienteUseCase::class, function ($app) {

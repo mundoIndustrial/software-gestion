@@ -7,10 +7,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * PedidoAuthorizationService
- * 
  * Servicio que maneja las validaciones de autorización y permisos
  * para acceso a pedidos según el rol del usuario.
- * 
  * Responsabilidades:
  * - Validar si el usuario puede ver un pedido
  * - Validar filtros específicos por rol
@@ -20,7 +18,6 @@ class PedidoAuthorizationService
 {
     /**
      * Valida si un bodeguero puede acceder a este pedido
-     * 
      * Los bodegueros NO pueden ver pedidos en estado:
      * - pendiente_cartera
      * - rechazado_cartera

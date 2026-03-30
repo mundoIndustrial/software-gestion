@@ -1004,7 +1004,7 @@ NIT 1.093.738.433-3</textarea>
                 }
             }
 
-            const url = `{{ url('/asesores/cotizaciones-epp') }}`;
+            const url = `{{ url('/api/asesores/cotizaciones-epp') }}`;
             try {
                 if (btnEnviar) btnEnviar.disabled = true;
                 if (btnBorrador) btnBorrador.disabled = true;

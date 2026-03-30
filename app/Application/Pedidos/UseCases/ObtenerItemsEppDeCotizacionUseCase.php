@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerItemsEppDeCotizacionUseCase
- * 
  *  RESPONSABILIDAD ÚNICA: Obtener items EPP asociados a una cotización
  */
 class ObtenerItemsEppDeCotizacionUseCase
@@ -18,7 +17,6 @@ class ObtenerItemsEppDeCotizacionUseCase
 
     /**
      * Ejecutar obtención
-     * 
      * @param int $cotizacionId
      * @return object (con propiedad: items)
      */
@@ -30,14 +28,14 @@ class ObtenerItemsEppDeCotizacionUseCase
 
         try {
             // Obtener items EPP de la cotización
-            $items = $this->eppRepository->obtenerPorCotizacion($cotizacionId);
+            $items = $this->eppRepository->obtenerItemsCotizacion($cotizacionId);
 
             // Formatear para respuesta
             $itemsFormateados = $items->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'nombre' => $item->nombre,
-                    'descripcion' => $item->descripcion,
+                    'descripcion' => $item->descripcion ?? $item->observaciones ?? '',
                     'cantidad' => $item->cantidad ?? 1,
                     'precio' => $item->precio ?? 0,
                 ];

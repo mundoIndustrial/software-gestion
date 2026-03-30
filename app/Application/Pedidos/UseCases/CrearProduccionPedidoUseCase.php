@@ -3,13 +3,14 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\Exceptions\CrearProduccionPedidoException;
 use App\Domain\Pedidos\Aggregates\PedidoProduccionAggregate;
 use App\Domain\Pedidos\UseCases\CrearProduccionPedidoUseCaseContract;
 use App\Models\PedidoProduccion;
 use App\Services\PedidoEppService;
-use Exception;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContract
 {
@@ -58,12 +59,12 @@ class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContra
             }
 
             return $agregado;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Log::error(' [CrearProduccionPedidoUseCase] Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception("Error al crear pedido de produccion: " . $e->getMessage());
+            throw CrearProduccionPedidoException::fromThrowable($e);
         }
     }
 
@@ -92,7 +93,7 @@ class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContra
                     'cantidad_epps' => count($eppsFormateadas),
                 ]);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Log::warning('[CrearProduccionPedidoUseCase] Error procesando EPPs', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
@@ -100,7 +101,6 @@ class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContra
         }
     }
 }
-
 
 
 

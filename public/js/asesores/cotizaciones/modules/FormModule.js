@@ -403,11 +403,11 @@ class FormModule {
      */
     async submitForm(formData) {
         // Determinar la ruta según el tipo de cotización
-        let url = '/asesores/cotizaciones/guardar'; // Por defecto para Prenda/Logo
+        let url = '/api/asesores/cotizaciones'; // Por defecto para Prenda/Logo
         
         // Si es cotización de Prenda pura, usar ruta específica
         if (window.tipoCotizacionGlobal === 'P') {
-            url = '/asesores/cotizaciones/prenda';
+            url = '/api/asesores/cotizaciones';
         }
         
 
@@ -477,4 +477,3 @@ class FormModule {
 
 // Exportar para uso global
 const formModule = new FormModule();
-

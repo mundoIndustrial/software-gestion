@@ -191,7 +191,7 @@ function eliminarBorrador(id) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/asesores/cotizaciones/${id}/borrador`, {
+            fetch(`/api/asesores/cotizaciones/${id}/borrador`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -414,7 +414,7 @@ function eliminarCotizacion(id, numeroCotizacion) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/asesores/cotizaciones/${id}`, {
+            fetch(`/api/asesores/cotizaciones/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content

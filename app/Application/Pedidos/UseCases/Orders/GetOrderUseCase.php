@@ -2,12 +2,12 @@
 
 namespace App\Application\Pedidos\UseCases\Orders;
 
-use App\Models\PedidoProduccion;
 use App\Application\Pedidos\Services\PedidoDescriptionService;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * UseCase: Obtener detalles de una orden
- * 
  * Responsabilidades:
  * - Recuperar datos completos de la orden
  * - Calcular totales
@@ -15,63 +15,50 @@ use App\Application\Pedidos\Services\PedidoDescriptionService;
  */
 class GetOrderUseCase
 {
+    public function __construct(
+        private readonly PedidoProduccionReadRepository $pedidoRepository,
+        private readonly PedidoDescriptionService $descriptionService,
+    ) {}
+
     /**
      * Ejecutar el caso de uso
      */
     public function execute(int $numeroPedido): array
     {
-        $order = PedidoProduccion::with('asesora', 'prendas')
-            ->where('numero_pedido', $numeroPedido)
-            ->firstOrFail();
+        $orderData = $this->pedidoRepository->obtenerPedidoDetallePorNumero($numeroPedido);
+        if ($orderData === null) {
+            throw new ModelNotFoundException("Pedido {$numeroPedido} no encontrado");
+        }
 
-        return $this->formatOrderData($order);
+        $totales = $this->pedidoRepository->obtenerTotalesPorNumeroPedido($numeroPedido);
+
+        return $this->formatOrderData($orderData, $totales);
     }
 
     /**
      * Formatear datos de la orden para respuesta
      */
-    private function formatOrderData(PedidoProduccion $order): array
+    private function formatOrderData(array $orderData, array $totales): array
     {
-        $descriptionService = app(PedidoDescriptionService::class);
-        
-        $orderData = [
-            'id' => $order->id,
-            'numero_pedido' => $order->numero_pedido,
-            'cliente' => $order->cliente,
-            'created_at' => $order->created_at,
-            'descripcion_prendas' => $descriptionService->generatePrendasDescription($order),
-            'estado' => $order->estado,
-            'forma_de_pago' => $order->forma_de_pago ?? '-',
-            'area' => $order->area,
-            'novedades' => $order->novedades,
-            'total_cantidad' => 0,
-            'total_entregado' => 0,
-            'cantidad' => 0,
+        $pedidoModel = $orderData['pedido_model'] ?? null;
+
+        return [
+            'id' => $orderData['id'],
+            'numero_pedido' => $orderData['numero_pedido'],
+            'cliente' => $orderData['cliente'],
+            'created_at' => $orderData['created_at'],
+            'descripcion_prendas' => $pedidoModel
+                ? $this->descriptionService->generatePrendasDescription($pedidoModel)
+                : '',
+            'estado' => $orderData['estado'],
+            'forma_de_pago' => $orderData['forma_de_pago'] ?? '-',
+            'area' => $orderData['area'],
+            'novedades' => $orderData['novedades'],
+            'total_cantidad' => (int) ($totales['total_cantidad'] ?? 0),
+            'total_entregado' => (int) ($totales['total_entregado'] ?? 0),
+            'cantidad' => (int) ($totales['total_cantidad'] ?? 0),
             'encargado_orden' => '',
-            'asesora' => $order->asesora?->name ?? '',
+            'asesora' => $orderData['asesora'] ?? '',
         ];
-
-        // Calcular totales
-        try {
-            $totalCantidad = \DB::table('prendas')
-                ->where('numero_pedido', $order->numero_pedido)
-                ->sum('cantidad');
-            $orderData['total_cantidad'] = $totalCantidad ?? 0;
-            $orderData['cantidad'] = $totalCantidad ?? 0;
-        } catch (\Exception $e) {
-            \Log::warning('Error calculando cantidad: ' . $e->getMessage());
-        }
-
-        try {
-            $totalEntregado = \DB::table('entregas')
-                ->where('numero_pedido', $order->numero_pedido)
-                ->sum('cantidad_entregada');
-            $orderData['total_entregado'] = $totalEntregado ?? 0;
-        } catch (\Exception $e) {
-            \Log::warning('Error calculando entregas: ' . $e->getMessage());
-        }
-
-        return $orderData;
     }
 }
-

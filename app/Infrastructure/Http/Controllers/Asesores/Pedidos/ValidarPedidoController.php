@@ -12,22 +12,17 @@ use App\Application\Pedidos\UseCases\ValidarPedidoInput;
 
 /**
  * ValidarPedidoController
- * 
  *  RESPONSABILIDAD ÚNICA: Manejar HTTP para validación de pedidos
- * 
  * HTTP Methods:
  * - POST /asesores/pedidos/validar  → validarPedido()
- * 
  * Dependencias:
  * - ValidarPedidoUseCase: Lógica de validación de pedidos
- * 
  * Características:
  *  Solo 1 dependencia
  *  Solo adaptador HTTP (no contiene lógica)
  *  Fácil de testear
  *  Fácil de mantener
  *  Clear responsibility
- * 
  * Flujo:
  * Frontend → ValidarPedidoController → ValidarPedidoUseCase → Response
  */
@@ -39,9 +34,7 @@ class ValidarPedidoController extends Controller
 
     /**
      * POST /asesores/pedidos/validar
-     * 
      * Validar estructura y datos de pedido antes de crear
-     * 
      * @param Request $request
      * @return JsonResponse
      */

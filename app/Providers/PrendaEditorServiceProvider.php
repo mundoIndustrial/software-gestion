@@ -15,7 +15,6 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider para el módulo de edición de prendas
- * 
  * Registra todos los servicios y repositorios relacionados con la edición
  * de prendas siguiendo la arquitectura DDD.
  */
@@ -31,15 +30,15 @@ class PrendaEditorServiceProvider extends ServiceProvider
         $this->app->bind(CotizacionRepositoryInterface::class, EloquentCotizacionRepository::class);
 
         // ===== SEGUNDO: Domain Services =====
-        $this->app->singleton(TallaProcessorService::class, function ($app) {
+        $this->app->singleton(TallaProcessorService::class, function () {
             return new TallaProcessorService();
         });
         
-        $this->app->singleton(VariacionProcessorService::class, function ($app) {
+        $this->app->singleton(VariacionProcessorService::class, function () {
             return new VariacionProcessorService();
         });
         
-        $this->app->singleton(ProcesoProcessorService::class, function ($app) {
+        $this->app->singleton(ProcesoProcessorService::class, function () {
             return new ProcesoProcessorService();
         });
         

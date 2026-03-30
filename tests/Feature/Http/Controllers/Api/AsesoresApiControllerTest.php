@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers\Api;
 
 use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
 use App\Application\Services\Asesores\ObservacionesDespachoApplicationService;
 use App\Models\Role;
@@ -113,6 +114,29 @@ class AsesoresApiControllerTest extends TestCase
             ->postJson('/api/asesores/pedidos/55/observaciones-despacho/marcar-bodega-vistas')
             ->assertOk()
             ->assertJsonPath('success', true);
+    }
+
+    public function test_asesor_can_access_factura_datos_endpoint(): void
+    {
+        $asesor = $this->createUserWithRole('asesor');
+
+        $facturaMock = Mockery::mock(ObtenerFacturaUseCase::class);
+        $facturaMock->shouldReceive('ejecutar')
+            ->once()
+            ->andReturn([
+                'id' => 55,
+                'numero_pedido' => 'PED-55',
+                'cliente' => 'Cliente Test',
+                'prendas' => [],
+            ]);
+        $this->app->instance(ObtenerFacturaUseCase::class, $facturaMock);
+
+        $this->actingAs($asesor, 'web')
+            ->getJson('/api/asesores/pedidos/55/factura-datos')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', 55)
+            ->assertJsonPath('data.numero_pedido', 'PED-55');
     }
 
     private function createUserWithRole(string $roleName): User

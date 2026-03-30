@@ -16,6 +16,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class PedidoCreationCoordinator
 {
@@ -160,6 +161,17 @@ class PedidoCreationCoordinator
             ]);
 
             $this->pedidoTallaBuilder->crear($prenda, $itemData['cantidad_talla'], $asignacionesColores, $flujoTallas);
+
+            if (Schema::hasColumn('prendas_pedido', 'tipo_flujo_tallas')) {
+                $tieneAsignaciones = is_array($asignacionesColores) && !empty($asignacionesColores);
+                $tieneTallas = !empty($itemData['cantidad_talla']);
+                $tipoFlujo = $tieneAsignaciones ? 'talla_color' : ($tieneTallas ? 'normal' : 'sin_tallas');
+
+                if (($prenda->tipo_flujo_tallas ?? null) !== $tipoFlujo) {
+                    $prenda->tipo_flujo_tallas = $tipoFlujo;
+                    $prenda->save();
+                }
+            }
         }
 
         if (isset($itemData['variaciones']) && is_array($itemData['variaciones'])) {
@@ -266,7 +278,7 @@ class PedidoCreationCoordinator
         string $modoTallas,
         string $flujo
     ): void {
-        if ($modoTallas === 'por_tallas' && !empty($datosExtendidos)) {
+        if ($modoTallas === 'especifico' && !empty($datosExtendidos)) {
             $this->pedidoProcesoTallaBuilder->crearDesdeDatosExtendidosPorTallas(
                 $procesoPrenda,
                 $datosExtendidos,

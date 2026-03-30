@@ -3,14 +3,13 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
+use App\Application\Pedidos\Exceptions\ConfirmarProduccionPedidoException;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Agregado\PedidosAggregate;
+use App\Domain\Pedidos\Agregado\PedidoAggregate;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use Exception;
 
 /**
  * ConfirmarProduccionPedidoUseCase
- * 
  * Use Case para confirmar un pedido de producción
  * Transición: pendiente  confirmado
  */
@@ -23,7 +22,7 @@ class ConfirmarProduccionPedidoUseCase
     ) {
     }
 
-    public function ejecutar(ConfirmarProduccionPedidoDTO $dto): PedidosAggregate
+    public function ejecutar(ConfirmarProduccionPedidoDTO $dto): PedidoAggregate
     {
         try {
             $pedido = $this->validarPedidoExiste($dto->id, $this->pedidoRepository);
@@ -35,10 +34,11 @@ class ConfirmarProduccionPedidoUseCase
 
             return $pedido;
 
-        } catch (Exception $e) {
-            throw new Exception("Error al confirmar pedido: " . $e->getMessage());
+        } catch (\DomainException|\InvalidArgumentException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw ConfirmarProduccionPedidoException::fromThrowable($e);
         }
     }
 }
-
 

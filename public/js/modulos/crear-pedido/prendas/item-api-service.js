@@ -243,7 +243,7 @@ class ItemAPIService {
                                 prenda_proceso_keys: Object.keys(prenda.procesos[procesoKey])
                             });
                             
-                            // CASO 1: Procesar imagenes (modo para_todas)
+                            // CASO 1: Procesar imagenes (modo generico/general)
                             if (procesoExtraido.imagenes && Array.isArray(procesoExtraido.imagenes)) {
                                 procesoExtraido.imagenes.forEach((imgEnriquecida, imgIdx) => {
                                     // Intentar inyectar en datos.imagenes PRIMERO
@@ -271,7 +271,7 @@ class ItemAPIService {
                                 });
                             }
                             
-                            // CASO 2: Procesar imagenes_por_talla (modo por_tallas)
+                            // CASO 2: Procesar imagenes_por_talla (modo especifico)
                             if (procesoExtraido.imagenes_por_talla && typeof procesoExtraido.imagenes_por_talla === 'object') {
                                 Object.entries(procesoExtraido.imagenes_por_talla).forEach(([tallaKey, imagesArray]) => {
                                     if (Array.isArray(imagesArray)) {

@@ -12,22 +12,18 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerAnchoMetrajePrendaUseCase
- * 
  * Caso de uso para obtener ancho, metraje y contenido de mano de una prenda en un pedido.
- * 
  * Responsabilidades:
  * - Obtener ancho general del pedido-prenda
  * - Obtener metrajes por color
  * - Determinar tipo de modo (general o por color)
  * - Preparar respuesta para catálogo público
- * 
  * Nota: Este es un catálogo público, sin autenticación requerida.
  */
 class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCaseContract
 {
     /**
      * Ejecuta el caso de uso
-     * 
      * @param int $pedidoId
      * @param int $prendaId
      * @return ObtenerAnchoMetrajePrendaResponse
@@ -37,7 +33,7 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
     {
         try {
             // Validar que el pedido exista
-            $pedido = PedidoProduccion::findOrFail($pedidoId);
+            PedidoProduccion::findOrFail($pedidoId);
 
             // Obtener ancho general
             $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
@@ -130,7 +126,6 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

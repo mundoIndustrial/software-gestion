@@ -209,7 +209,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     if (pedidoId && prenda.id) {
         try {
-            const url = `/asesores/pedidos/${pedidoId}/factura-datos`;
+            const url = `/api/asesores/pedidos/${pedidoId}/factura-datos`;
             console.log(' [FETCH] Llamando a URL:', url);
             console.log(' [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
 
@@ -584,7 +584,7 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
 
     
     try {
-        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prendas/${prendaId}`, {
+        const response = await fetch(`/api/asesores/pedidos-produccion/${pedidoId}/prendas/${prendaId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -644,6 +644,4 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     tarjeta.replaceWith(nuevoElemento.firstElementChild);
 
 }
-
-
 

@@ -6,10 +6,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * PedidoFiltroService
- * 
  * Servicio que encapsula la lógica de filtrado de datos dentro de un pedido
  * según el rol del usuario.
- * 
  * Responsabilidades:
  * - Filtrar procesos para bodeguero (solo costura-bodega)
  * - Filtrar prendas para insumos (de_bodega=false)
@@ -19,7 +17,6 @@ class PedidoFiltroService
 {
     /**
      * Aplica filtro de bodeguero: solo procesos COSTURA-BODEGA
-     * 
      * @return array Tupla [responseData, mensajeError]
      */
     public function filtrarParaBodeguero(int $pedidoId, array &$responseData): ?string
@@ -72,7 +69,6 @@ class PedidoFiltroService
 
     /**
      * Aplica filtro de insumos: solo prendas con de_bodega = false
-     * 
      * @return ?string Mensaje de error si no quedan prendas
      */
     public function filtrarParaInsumos(int $pedidoId, array &$responseData): ?string

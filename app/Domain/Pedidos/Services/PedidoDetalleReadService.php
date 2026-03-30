@@ -11,6 +11,8 @@ interface PedidoDetalleReadService
 
     public function findPedidoById(int $pedidoId): ?PedidoProduccion;
 
+    public function findPedidoByIdConRelaciones(int $pedidoId, bool $filtrarPrendasBodega): ?PedidoProduccion;
+
     public function getProcesoTallasDetalle(int $procesoDetalleId): Collection;
 
     public function getProcesoTallasConObservaciones(int $procesoDetalleId): Collection;
@@ -31,6 +33,12 @@ interface PedidoDetalleReadService
 
     public function getTallasColoresPrenda(int $prendaId): Collection;
 
+    public function getColoresPorTallaPrenda(int $prendaId): Collection;
+
+    public function getImagenRutasTallaColorPrenda(int $prendaId): Collection;
+
+    public function getTallaColoresDetallePrenda(int $prendaId): Collection;
+
     public function findPrendaEntrega(int $prendaId): ?object;
 
     public function getRecibosParcialesPrenda(int $pedidoId, int $prendaId): Collection;
@@ -39,4 +47,3 @@ interface PedidoDetalleReadService
 
     public function getPedidoEppImagenes(int $pedidoEppId): Collection;
 }
-

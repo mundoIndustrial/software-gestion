@@ -67,7 +67,11 @@ window.PrendaEditorLoader = (function() {
             // Módulos dependientes (manejadores de variaciones, etc.)
             '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js',
 
-            // Procesos: renderizador de tarjetas y manejadores de checkboxes
+            // Procesos: servicios desacoplados + renderizador + manejadores
+            '/js/modulos/crear-pedido/procesos/proceso-galeria-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-delete-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js',
             '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js',
             '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js',
         ];

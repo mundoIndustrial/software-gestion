@@ -5,7 +5,6 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use App\Application\Pedidos\UseCases\CrearProcesoUseCase;
 use App\Application\Pedidos\UseCases\EditarProcesoUseCase;
 use App\Application\Pedidos\UseCases\EliminarProcesoUseCase;
-use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
 use App\Infrastructure\Http\Requests\Asesores\CrearProcesoPedidoRequest;
 use App\Infrastructure\Http\Requests\Asesores\EditarProcesoPedidoRequest;
@@ -26,7 +25,6 @@ class ProcesosPedidoController
         private readonly CrearProcesoUseCase $crearProcesoUseCase,
         private readonly EditarProcesoUseCase $editarProcesoUseCase,
         private readonly EliminarProcesoUseCase $eliminarProcesoUseCase,
-        private readonly ObtenerHistorialProcesosUseCase $obtenerHistorialProcesosUseCase,
     ) {
     }
 
@@ -174,25 +172,4 @@ class ProcesosPedidoController
         }
     }
 
-    /**
-     * GET /api/pedidos/{numeroPedido}/procesos/historial
-     */
-    public function obtenerHistorial(int|string $numeroPedido): JsonResponse
-    {
-        try {
-            Log::info('[ProcesosPedidoController] GET /procesos/historial', [
-                'numero_pedido' => $numeroPedido,
-            ]);
-
-            $resultado = $this->obtenerHistorialProcesosUseCase->ejecutar((int) $numeroPedido);
-
-            return $this->json($resultado, 200);
-        } catch (\Exception $e) {
-            Log::error('[ProcesosPedidoController] Error al obtener historial', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return $this->failure('Error al obtener el historial', 500);
-        }
-    }
 }

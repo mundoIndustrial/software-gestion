@@ -2,13 +2,10 @@
 
 namespace App\Application\Pedidos\UseCases\Orders;
 
-use App\Models\PedidoProduccion;
 use App\Services\RegistroOrdenDeletionService;
-use App\Events\OrdenUpdated;
 
 /**
  * UseCase: Eliminar una orden
- * 
  * Responsabilidades:
  * - Validar que la orden existe
  * - Delegar eliminación al servicio

@@ -257,7 +257,7 @@
                 UI.cargando('Cargando información...', 'Por favor espera');
             });
             
-            const response = await fetch(`/pedidos/${pedidoId}/factura-datos`);
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`);
             const result = await response.json();
             const data = result.data || result;
             
@@ -503,7 +503,7 @@
             //  PASO 3: Fetch de datos mientras el modal ya está visible
             console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
 
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -1427,6 +1427,10 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
 <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>

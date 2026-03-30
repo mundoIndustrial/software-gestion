@@ -43,24 +43,9 @@
                 'forma_de_pago' => $pedido->forma_de_pago ?? '',
                 'observaciones' => $pedido->observaciones ?? '',
                 'estado' => $pedido->estado ?? '',
-                'prendas' => ($pedido->prendas ?? collect())->map(function($prenda) {
-                    return [
-                        'id' => $prenda['id'] ?? null,
-                        'nombre_prenda' => $prenda['nombre'] ?? $prenda['nombre_prenda'] ?? '',
-                        'descripcion' => $prenda['descripcion'] ?? '',
-                        'de_bodega' => $prenda['de_bodega'] ?? 1,
-                        'genero' => $prenda['genero'] ?? '',
-                        'generosConTallas' => $prenda['generosConTallas'] ?? [],
-                        'cantidadesPorTalla' => $prenda['cantidadesPorTalla'] ?? [],
-                        'telasAgregadas' => $prenda['telasAgregadas'] ?? [],
-                        'fotos' => collect($prenda['fotos'] ?? [])->map(fn($f) => [
-                            'id' => $f['id'] ?? null,
-                            'ruta_webp' => $f['url'] ?? $f['ruta_webp'] ?? $f['ruta'] ?? '',
-                        ])->toArray(),
-                        'procesos' => $prenda['procesos'] ?? [],
-                        'variaciones' => $prenda['variaciones'] ?? [],
-                    ];
-                })->toArray(),
+                // Contrato explícito: payload ya mapeado por MapearPedidoEdicionService.
+                // No remapear aquí para evitar pérdidas de campos del flujo talla_color.
+                'prendas' => ($pedido->prendas ?? collect())->values()->toArray(),
             ],
             'epps' => $epps ?? [],
             'estados' => $estados ?? [],
@@ -270,6 +255,10 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/procesos-imagenes-storage.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/manejo-imagenes-proceso.js') }}?v={{ $v }}"></script>
@@ -356,7 +345,7 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/item-type-handlers.js') }}?v={{ $v }}"></script>
 
 <script>
-    window.routeGuardarBorradorUrl = '{{ route("asesores.pedidos.guardarBorrador") }}';
+    window.routeGuardarBorradorUrl = '{{ url("/api/asesores/pedidos/borrador") }}';
     window.routePedidosIndexUrl = '{{ route("asesores.pedidos.index") }}';
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 

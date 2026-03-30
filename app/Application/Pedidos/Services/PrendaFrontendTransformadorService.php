@@ -13,7 +13,6 @@ use App\Domain\Pedidos\Services\ProcesoProcessorService;
 
 /**
  * Application Service: PrendaFrontendTransformadorService
- * 
  * Contiene la lógica de negocio para transformar y normalizar datos de prendas
  * Centraliza el procesamiento que antes estaba en el frontend
  */

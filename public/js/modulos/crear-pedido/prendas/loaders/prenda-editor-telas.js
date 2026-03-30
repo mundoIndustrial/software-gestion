@@ -482,7 +482,8 @@ window.cargarDatalistTelasColores = async function() {
 window.configurarDragDropTela = function() {
     console.log('[configurarDragDropTela] 🔄 Configurando drag & drop para telas');
     
-    const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
+    const dropZone = document.getElementById('nueva-prenda-tela-drop-zone')
+        || document.getElementById('simple-tela-dropzone');
     if (!dropZone) {
         console.warn('[configurarDragDropTela] ⚠️ Drop zone de tela no encontrada');
         return;
@@ -512,7 +513,9 @@ window.configurarDragDropTela = function() {
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+            const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input')
+                || document.getElementById('nueva-prenda-tela-img-input')
+                || document.getElementById('simple-tela-img-input');
             if (fileInput) {
                 fileInput.files = files;
                 // Disparar evento change
@@ -529,7 +532,9 @@ window.configurarDragDropTela = function() {
         for (let item of items) {
             if (item.kind === 'file' && item.type.startsWith('image/')) {
                 const file = item.getAsFile();
-                const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+                const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input')
+                    || document.getElementById('nueva-prenda-tela-img-input')
+                    || document.getElementById('simple-tela-img-input');
                 if (fileInput) {
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);

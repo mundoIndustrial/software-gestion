@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerCotizacionesUseCase
- * 
  *  RESPONSABILIDAD ÚNICA: Obtener cotizaciones del usuario para crear pedidos
- * 
  * Query específica con:
  * - Eager loading optimizado
  * - Filtro por asesor
@@ -31,7 +29,6 @@ class ObtenerCotizacionesUseCase implements ObtenerCotizacionesUseCaseContract
 {
     /**
      * Ejecutar use case
-     * 
      * @param int $usuarioId ID del asesor
      * @return Collection
      */

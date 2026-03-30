@@ -6,7 +6,6 @@ use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Eliminar Item de Pedido
- * 
  * Responsabilidad:
  * - Validar indice del item
  * - Eliminar item de la sesión

@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Exceptions\ActualizarBorradorException;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Application\Services\Pedidos\ProcesarImagenesPrendaService;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
@@ -18,6 +19,8 @@ class ActualizarBorradorUseCase
         private ActualizarPrendaCompletaBridge $actualizarPrendaCompletaBridge,
         private ProcesarImagenesPrendaService $procesarImagenesPrendaService,
         private EliminarProcesosListaBridge $eliminarProcesosListaBridge,
+        private EliminarPrendaPedidoUseCase $eliminarPrendaPedidoUseCase,
+        private PrendaExistenteArchivosExtractor $prendaExistenteArchivosExtractor,
     ) {}
 
     public function ejecutar(ActualizarBorradorInput $input): ActualizarBorradorOutput
@@ -25,83 +28,17 @@ class ActualizarBorradorUseCase
         $inicioTotal = microtime(true);
 
         try {
-            Log::info('[ActualizarBorradorUseCase] INICIANDO ACTUALIZACION', [
-                'pedido_id' => $input->pedidoId,
-                'asesor_id' => $input->asesorId,
-                'timestamp' => now(),
-            ]);
-
-            $pedido = $this->pedidoRepository->obtenerPorIdYAsesor(
-                $input->pedidoId,
-                $input->asesorId
-            );
-
-            if (!$pedido) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
-            }
-
-            Log::info('[ActualizarBorradorUseCase] Pedido verificado', [
-                'pedido_id' => $input->pedidoId,
-                'asesor_id' => $input->asesorId,
-            ]);
-
+            $this->registrarInicio($input);
+            $pedido = $this->obtenerPedidoOFail($input);
+            $this->registrarPedidoVerificado($input);
             $this->validarJsonSinFiles($input->datosFrontend);
             Log::info('[ActualizarBorradorUseCase] JSON validado');
-
-            $this->transactionManager->run(function () use ($pedido, $input) {
-                $this->pedidoRepository->actualizarDatosBasicos($pedido->pedidoId, [
-                    'cliente' => trim($input->datosFrontend['cliente'] ?? ''),
-                    'orden_compra' => $input->getOrdenCompra(),
-                    'forma_de_pago' => $input->datosFrontend['forma_de_pago'] ?? '',
-                    'observaciones' => $input->datosFrontend['observaciones'] ?? '',
-                ]);
-
-                Log::info('[ActualizarBorradorUseCase] Datos basicos actualizados', [
-                    'pedido_id' => $input->pedidoId,
-                    'cliente' => trim($input->datosFrontend['cliente'] ?? ''),
-                ]);
-
-                $this->pedidoDraftMutationService->actualizarEpps(
-                    $input->pedidoId,
-                    $input->datosFrontend['epps'] ?? [],
-                    $input->request
-                );
-
-                $this->actualizarPrendasExistentes($pedido->pedidoId, $input);
-
-                $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
-                $nuevasPrendasIds = $this->pedidoDraftMutationService->crearNuevasPrendas($pedido, $nuevasPrendas);
-                $this->pedidoDraftMutationService->procesarImagenesNuevasPrendas(
-                    $input->request,
-                    $nuevasPrendasIds,
-                    $nuevasPrendas
-                );
-
-                $this->pedidoDraftMutationService->procesarImagenesDeProcesos(
-                    $input->request,
-                    $input->pedidoId,
-                    $input->datosFrontend['prendas'] ?? []
-                );
-            });
+            $this->ejecutarActualizacionEnTransaccion($pedido, $input);
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
+            $this->registrarExito($input, $pedido, $tiempoTotal);
 
-            Log::info('[ActualizarBorradorUseCase] PEDIDO ACTUALIZADO EXITOSAMENTE', [
-                'pedido_id' => $input->pedidoId,
-                'numero_pedido' => $pedido->numeroPedido,
-                'estado' => $pedido->estado,
-                'tiempo_total_ms' => $tiempoTotal,
-            ]);
-
-            return new ActualizarBorradorOutput(
-                success: true,
-                message: 'Pedido actualizado exitosamente',
-                pedido_id: $input->pedidoId,
-                numero_pedido: $pedido->numeroPedido,
-                estado: $pedido->estado,
-                redirect_url: route('asesores.pedidos.show', ['id' => $input->pedidoId]),
-                tiempo_ms: $tiempoTotal,
-            );
+            return $this->crearOutputExitoso($input, $pedido, $tiempoTotal);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::error('[ActualizarBorradorUseCase] PEDIDO NO ENCONTRADO O NO AUTORIZADO', [
                 'pedido_id' => $input->pedidoId,
@@ -112,7 +49,7 @@ class ActualizarBorradorUseCase
                 success: false,
                 message: 'Pedido no encontrado o no tienes permiso para actualizarlo',
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('[ActualizarBorradorUseCase] ERROR CRITICO', [
                 'pedido_id' => $input->pedidoId,
                 'error' => $e->getMessage(),
@@ -125,6 +62,112 @@ class ActualizarBorradorUseCase
                 message: 'Error al actualizar pedido: ' . $e->getMessage(),
             );
         }
+    }
+
+    private function registrarInicio(ActualizarBorradorInput $input): void
+    {
+        Log::info('[ActualizarBorradorUseCase] INICIANDO ACTUALIZACION', [
+            'pedido_id' => $input->pedidoId,
+            'asesor_id' => $input->asesorId,
+            'timestamp' => now(),
+        ]);
+    }
+
+    private function obtenerPedidoOFail(ActualizarBorradorInput $input): mixed
+    {
+        $pedido = $this->pedidoRepository->obtenerPorIdYAsesor(
+            $input->pedidoId,
+            $input->asesorId
+        );
+
+        if (!$pedido) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        return $pedido;
+    }
+
+    private function registrarPedidoVerificado(ActualizarBorradorInput $input): void
+    {
+        Log::info('[ActualizarBorradorUseCase] Pedido verificado', [
+            'pedido_id' => $input->pedidoId,
+            'asesor_id' => $input->asesorId,
+        ]);
+    }
+
+    private function ejecutarActualizacionEnTransaccion(mixed $pedido, ActualizarBorradorInput $input): void
+    {
+        $this->transactionManager->run(function () use ($pedido, $input) {
+            $this->actualizarDatosBasicos($pedido->pedidoId, $input);
+
+            $this->pedidoDraftMutationService->actualizarEpps(
+                $input->pedidoId,
+                $input->datosFrontend['epps'] ?? [],
+                $input->request
+            );
+
+            $this->eliminarPrendasMarcadas($pedido->pedidoId, $input);
+            $this->actualizarPrendasExistentes($pedido->pedidoId, $input);
+            $this->procesarNuevasPrendas($pedido, $input);
+
+            $this->pedidoDraftMutationService->procesarImagenesDeProcesos(
+                $input->request,
+                $input->pedidoId,
+                $input->datosFrontend['prendas'] ?? []
+            );
+        });
+    }
+
+    private function actualizarDatosBasicos(int $pedidoId, ActualizarBorradorInput $input): void
+    {
+        $cliente = trim($input->datosFrontend['cliente'] ?? '');
+
+        $this->pedidoRepository->actualizarDatosBasicos($pedidoId, [
+            'cliente' => $cliente,
+            'orden_compra' => $input->getOrdenCompra(),
+            'forma_de_pago' => $input->datosFrontend['forma_de_pago'] ?? '',
+            'observaciones' => $input->datosFrontend['observaciones'] ?? '',
+        ]);
+
+        Log::info('[ActualizarBorradorUseCase] Datos basicos actualizados', [
+            'pedido_id' => $input->pedidoId,
+            'cliente' => $cliente,
+        ]);
+    }
+
+    private function procesarNuevasPrendas(mixed $pedido, ActualizarBorradorInput $input): void
+    {
+        $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
+        $nuevasPrendasIds = $this->pedidoDraftMutationService->crearNuevasPrendas($pedido, $nuevasPrendas);
+
+        $this->pedidoDraftMutationService->procesarImagenesNuevasPrendas(
+            $input->request,
+            $nuevasPrendasIds,
+            $nuevasPrendas
+        );
+    }
+
+    private function registrarExito(ActualizarBorradorInput $input, mixed $pedido, float $tiempoTotal): void
+    {
+        Log::info('[ActualizarBorradorUseCase] PEDIDO ACTUALIZADO EXITOSAMENTE', [
+            'pedido_id' => $input->pedidoId,
+            'numero_pedido' => $pedido->numeroPedido,
+            'estado' => $pedido->estado,
+            'tiempo_total_ms' => $tiempoTotal,
+        ]);
+    }
+
+    private function crearOutputExitoso(ActualizarBorradorInput $input, mixed $pedido, float $tiempoTotal): ActualizarBorradorOutput
+    {
+        return new ActualizarBorradorOutput(
+            success: true,
+            message: 'Pedido actualizado exitosamente',
+            pedido_id: $input->pedidoId,
+            numero_pedido: $pedido->numeroPedido,
+            estado: $pedido->estado,
+            redirect_url: route('asesores.pedidos.show', ['id' => $input->pedidoId]),
+            tiempo_ms: $tiempoTotal,
+        );
     }
 
     private function actualizarPrendasExistentes(int $pedidoId, ActualizarBorradorInput $input): void
@@ -143,7 +186,7 @@ class ActualizarBorradorUseCase
             $prendaRef = $this->pedidoRepository->obtenerPrendaDelPedido($pedidoId, $prendaId);
 
             if (!$prendaRef) {
-                throw new \RuntimeException("La prenda {$prendaId} no pertenece al pedido {$pedidoId}");
+                throw ActualizarBorradorException::prendaNoPerteneceAlPedido($prendaId, $pedidoId);
             }
 
             $subRequest = $this->crearSubRequestPrendaExistente($input->request, $prendaPayload, (int) $prendaIndex);
@@ -158,18 +201,51 @@ class ActualizarBorradorUseCase
             $this->actualizarPrendaCompletaBridge->ejecutarDesdePayload(
                 $prendaId,
                 $prendaPayload,
-                $imagenes['imagenes_guardadas'],
-                $imagenes['imagenes_existentes'],
-                $imagenes['fotos_telas_procesadas'],
-                $imagenes['fotos_proceso_nuevo'],
-                $imagenes['fotos_color_procesadas'],
-                $imagenes['fotos_proceso_tallas_nuevo'],
+                $imagenes,
             );
 
             Log::info('[ActualizarBorradorUseCase] Prenda existente actualizada dentro del borrador', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'prenda_index' => $prendaIndex,
+            ]);
+        }
+    }
+
+    private function eliminarPrendasMarcadas(int $pedidoId, ActualizarBorradorInput $input): void
+    {
+        $prendasEliminadas = $input->datosFrontend['prendas_eliminadas'] ?? [];
+        if (empty($prendasEliminadas) || !is_array($prendasEliminadas)) {
+            return;
+        }
+
+        $prendasProcesadas = [];
+
+        foreach ($prendasEliminadas as $prendaEliminada) {
+            $prendaId = (int) ($prendaEliminada['prenda_id'] ?? $prendaEliminada['id'] ?? 0);
+            if ($prendaId <= 0 || in_array($prendaId, $prendasProcesadas, true)) {
+                continue;
+            }
+
+            $prendaRef = $this->pedidoRepository->obtenerPrendaDelPedido($pedidoId, $prendaId);
+            if (!$prendaRef) {
+                Log::warning('[ActualizarBorradorUseCase] Prenda eliminada no pertenece al pedido o ya no existe', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                ]);
+                continue;
+            }
+
+            $motivo = trim((string) ($prendaEliminada['motivo'] ?? 'Eliminada desde guardado de borrador'));
+            $this->eliminarPrendaPedidoUseCase->ejecutar($pedidoId, $prendaId, $motivo !== '' ? $motivo : 'Eliminada desde guardado de borrador');
+            $prendasProcesadas[] = $prendaId;
+        }
+
+        if (!empty($prendasProcesadas)) {
+            Log::info('[ActualizarBorradorUseCase] Prendas eliminadas dentro del borrador', [
+                'pedido_id' => $pedidoId,
+                'prendas_eliminadas' => $prendasProcesadas,
+                'total' => count($prendasProcesadas),
             ]);
         }
     }
@@ -197,49 +273,9 @@ class ActualizarBorradorUseCase
             'procesos_a_eliminar' => isset($prendaPayload['procesos_a_eliminar']) ? json_encode($prendaPayload['procesos_a_eliminar']) : null,
         ]);
 
-        $request->files->add($this->extraerArchivosPrendaExistente($requestOriginal, $prendaIndex));
+        $request->files->add($this->prendaExistenteArchivosExtractor->extraer($requestOriginal, $prendaIndex));
 
         return $request;
-    }
-
-    private function extraerArchivosPrendaExistente(Request $requestOriginal, int $prendaIndex): array
-    {
-        $archivos = [];
-        $prefijo = 'prenda_existente_' . $prendaIndex . '_';
-
-        foreach ($requestOriginal->allFiles() as $key => $value) {
-            if (!is_string($key) || strpos($key, $prefijo) !== 0) {
-                continue;
-            }
-
-            $claveNormalizada = substr($key, strlen($prefijo));
-
-            if (preg_match('/^imagenes(?:\[\])?$/', $claveNormalizada)) {
-                $archivos['imagenes'] = is_array($value) ? $value : [$value];
-                continue;
-            }
-
-            if (preg_match('/^fotos_tela\[(\d+)\]$/', $claveNormalizada, $matches)) {
-                $archivos['fotos_tela[' . $matches[1] . ']'] = $value;
-                continue;
-            }
-
-            if (preg_match('/^fotosProcesoNuevo_(\d+)(?:\[\])?$/', $claveNormalizada, $matches)) {
-                $archivos['fotosProcesoNuevo_' . $matches[1]] = is_array($value) ? $value : [$value];
-                continue;
-            }
-
-            if (preg_match('/^fotosProcesoTallasNuevo_(\d+)_([a-zA-Z]+)_(.+?)(?:\[\])?$/', $claveNormalizada, $matches)) {
-                $archivos['fotosProcesoTallasNuevo_' . $matches[1] . '_' . $matches[2] . '_' . $matches[3]] = is_array($value) ? $value : [$value];
-                continue;
-            }
-
-            if (preg_match('/^fotos_color\[(\d+)\]$/', $claveNormalizada, $matches)) {
-                $archivos['fotos_color'][$matches[1]] = $value;
-            }
-        }
-
-        return $archivos;
     }
 
     private function decodificarJsonArray(mixed $valor): array
@@ -272,12 +308,8 @@ class ActualizarBorradorUseCase
                     'tipo' => get_class($valor),
                 ]);
 
-                throw new \Exception(
-                    "Objeto no serializable en JSON en ruta: {$rutaActual}. " .
-                    'Las imagenes deben enviarse por FormData, no por JSON.'
-                );
+                throw ActualizarBorradorException::objetoNoSerializableEnJson($rutaActual);
             }
         }
     }
 }
-

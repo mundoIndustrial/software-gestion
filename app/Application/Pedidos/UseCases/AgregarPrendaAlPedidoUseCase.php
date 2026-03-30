@@ -4,7 +4,6 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaAlPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,10 +16,6 @@ use Illuminate\Support\Facades\Log;
 final class AgregarPrendaAlPedidoUseCase
 {
     use ManejaPedidosUseCase;
-
-    public function __construct(
-        private PedidoRepository $pedidoRepository,
-    ) {}
 
     public function ejecutar(AgregarPrendaAlPedidoDTO $dto)
     {
@@ -38,7 +33,7 @@ final class AgregarPrendaAlPedidoUseCase
             'nombre_prenda' => $dto->nombrePrenda,
             'descripcion' => $dto->descripcion,
             'de_bodega' => $dto->deBodega,
-        ]);;
+        ]);
 
         Log::info('[AgregarPrendaAlPedidoUseCase] Prenda agregada exitosamente', [
             'pedido_id' => $pedido->id,
@@ -49,5 +44,4 @@ final class AgregarPrendaAlPedidoUseCase
         return $prenda;
     }
 }
-
 

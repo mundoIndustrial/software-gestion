@@ -117,7 +117,7 @@ function anularCotizacion(cotizacionId, numeroCotizacion, novedad) {
     }
     
     // Enviar petición
-    fetch(`/asesores/cotizaciones/${cotizacionId}/anular`, {
+    fetch(`/api/asesores/cotizaciones/${cotizacionId}/anular`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

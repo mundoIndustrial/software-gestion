@@ -2,11 +2,9 @@
 
 namespace App\Application\Pedidos\UseCases\Orders;
 
-use App\Application\Pedidos\Services\PedidoDescriptionService;
 use App\Application\Orders\Services\OrderDescriptionService;
+use App\Application\Pedidos\Services\PedidoDescriptionService;
 use App\Infrastructure\QueryServices\OrderDetailsQueryService;
-use App\Models\LogoCotizacion;
-use App\Models\PedidoProduccion;
 use App\Services\RegistroOrdenStatsService;
 
 class GetOrderDetailsQueryUseCase
@@ -25,165 +23,172 @@ class GetOrderDetailsQueryUseCase
      */
     public function execute(string $pedido): array
     {
-        $logoPedido = null;
+        $logoPedido = $this->tryGetLogoPedido($pedido);
+        if ($logoPedido) {
+            return ['status' => 200, 'data' => $this->buildLogoPedidoData($logoPedido, $pedido)];
+        }
 
-        // Verificar si la tabla LogoPedido existe antes de consultarla
+        return ['status' => 200, 'data' => $this->buildPedidoProduccionData($pedido)];
+    }
+
+    private function tryGetLogoPedido(string $pedido): mixed
+    {
         try {
             if (!$this->orderDetailsQueryService->logoPedidosTableExists()) {
-                $logoPedido = null;
-            } else {
-                // Primero, intentar buscar en LogoPedido
-                $logoPedido = $this->orderDetailsQueryService->findLogoPedidoByNumeroPedido($pedido);
+                return null;
             }
+
+            return $this->orderDetailsQueryService->findLogoPedidoByNumeroPedido($pedido);
         } catch (\Exception $e) {
-            $logoPedido = null;
+            return null;
+        }
+    }
+
+    private function buildLogoPedidoData(mixed $logoPedido, string $pedido): array
+    {
+        $logoPedidoArray = $logoPedido->toArray();
+
+        $this->completeLogoPedidoFromPedidoProduccion($logoPedido, $logoPedidoArray);
+        $this->completeLogoPedidoFromLogoCotizacion($logoPedido, $logoPedidoArray);
+
+        return $this->finalizeLogoPedidoData($logoPedido, $logoPedidoArray, $pedido);
+    }
+
+    private function completeLogoPedidoFromPedidoProduccion(mixed $logoPedido, array &$logoPedidoArray): void
+    {
+        if (!$logoPedido->pedido_id) {
+            return;
         }
 
-        if ($logoPedido) {
-            $logoPedidoArray = $logoPedido->toArray();
+        try {
+            $pedidoProd = $this->orderDetailsQueryService->findPedidoProduccionByIdWithRelations((int) $logoPedido->pedido_id);
 
-            // PASO 1: Intentar completar desde PedidoProduccion
-            if ($logoPedido->pedido_id) {
-                try {
-                    $pedidoProd = PedidoProduccion::with('asesora', 'prendas')->find($logoPedido->pedido_id);
-
-                    if ($pedidoProd) {
-                        \Log::info(' Encontrado PedidoProduccion, completando datos', [
-                            'pedido_id' => $logoPedido->pedido_id,
-                            'cliente' => $pedidoProd->cliente,
-                            'asesora' => $pedidoProd->asesora?->name,
-                            'fecha' => $pedidoProd->created_at,
-                        ]);
-
-                        // Completar desde el pedido de producción - SIEMPRE si viene vacío
-                        if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
-                            $logoPedidoArray['cliente'] = $pedidoProd->cliente ?? '-';
-                            \Log::info(' [PASO 1] Cliente completado desde PedidoProduccion', ['cliente' => $logoPedidoArray['cliente']]);
-                        }
-                        if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
-                            $asesoraName = $pedidoProd->asesora?->name ?? $pedidoProd->asesor?->name ?? '-';
-                            $logoPedidoArray['asesora'] = $asesoraName;
-                            \Log::info(' [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
-                        }
-                        if (empty($logoPedidoArray['created_at'])) {
-                            $logoPedidoArray['created_at'] = $pedidoProd->created_at;
-                            \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['created_at']]);
-                        }
-                        if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
-                            $logoPedidoArray['descripcion'] = $this->pedidoDescriptionService->generatePrendasDescription($pedidoProd);
-                            \Log::info(' [PASO 1] Descripción completada desde PedidoProduccion');
-                        }
-                    } else {
-                        \Log::warning(' [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error(' [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
-                }
+            if (!$pedidoProd) {
+                \Log::warning(' [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
+                return;
             }
 
-            // PASO 2: Si aún falta info, intentar desde LogoCotizacion
-            if ($logoPedido->logo_cotizacion_id && (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-')) {
-                try {
-                    $logoCot = LogoCotizacion::with('cotizacion')->find($logoPedido->logo_cotizacion_id);
-
-                    if ($logoCot && $logoCot->cotizacion) {
-                        \Log::info(' Encontrado LogoCotizacion, completando datos', [
-                            'cliente' => $logoCot->cotizacion->cliente,
-                            'fecha' => $logoCot->cotizacion->fecha_de_creacion,
-                        ]);
-
-                        if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
-                            $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
-                            \Log::info(' [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
-                        }
-                        if (empty($logoPedidoArray['created_at'])) {
-                            $logoPedidoArray['created_at'] = $logoCot->cotizacion->fecha_de_creacion;
-                            \Log::info(' [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['created_at']]);
-                        }
-                        if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
-                            $logoPedidoArray['asesora'] = $logoCot->cotizacion->asesor?->name ?? '-';
-                            \Log::info(' [PASO 2] Asesora completada desde LogoCotizacion', ['asesora' => $logoPedidoArray['asesora']]);
-                        }
-                        if (empty($logoPedidoArray['descripcion']) && $logoCot->descripcion) {
-                            $logoPedidoArray['descripcion'] = $logoCot->descripcion;
-                            \Log::info(' [PASO 2] Descripción completada desde LogoCotizacion');
-                        }
-                    } else {
-                        \Log::warning(' [PASO 2] LogoCotizacion no encontrado o sin cotización', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error(' [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
-                }
-            }
-
-            // PASO 3: Asegurar valores finales
-            $logoPedidoArray['numero_pedido'] = $logoPedido->numero_pedido ?? $pedido;
-            $logoPedidoArray['cliente'] = $logoPedidoArray['cliente'] ?: '-';
-            $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
-            $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
-
-            //  IMPORTANTE: Si no hay created_at, usar created_at
-            if (empty($logoPedidoArray['created_at'])) {
-                $logoPedidoArray['created_at'] = $logoPedido->created_at ?? now();
-                \Log::info(' [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['created_at']]);
-            }
-
-            $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
-            $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
-            $logoPedidoArray['observaciones'] = $logoPedido->observaciones ?? '';
-            $logoPedidoArray['estado'] = $logoPedido->estado ?? '-';
-            $logoPedidoArray['area'] = $logoPedido->area ?? '-';
-            $logoPedidoArray['tecnicas'] = $logoPedido->tecnicas ?? [];
-            $logoPedidoArray['ubicaciones'] = $logoPedido->ubicaciones ?? [];
-            $logoPedidoArray['prendas'] = $logoPedido->prendas ?? [];
-
-            // Campos de identificación
-            $logoPedidoArray['es_cotizacion'] = false;
-            $logoPedidoArray['es_logo_pedido'] = true;
-
-            \Log::info(' [RegistroOrdenQueryController::show] LogoPedido finalizado COMPLETAMENTE', [
-                'numero_pedido' => $logoPedidoArray['numero_pedido'],
-                'cliente' => $logoPedidoArray['cliente'],
-                'asesora' => $logoPedidoArray['asesora'],
-                'descripcion' => $logoPedidoArray['descripcion'],
-                'created_at' => $logoPedidoArray['created_at'],
-                'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
-                'encargado_orden' => $logoPedidoArray['encargado_orden'],
+            \Log::info(' Encontrado PedidoProduccion, completando datos', [
+                'pedido_id' => $logoPedido->pedido_id,
+                'cliente' => $pedidoProd->cliente,
+                'asesora' => $pedidoProd->asesora?->name,
+                'fecha' => $pedidoProd->created_at,
             ]);
 
-            return ['status' => 200, 'data' => $logoPedidoArray];
+            if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
+                $logoPedidoArray['cliente'] = $pedidoProd->cliente ?? '-';
+                \Log::info(' [PASO 1] Cliente completado desde PedidoProduccion', ['cliente' => $logoPedidoArray['cliente']]);
+            }
+            if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
+                $asesoraName = $pedidoProd->asesora?->name ?? $pedidoProd->asesor?->name ?? '-';
+                $logoPedidoArray['asesora'] = $asesoraName;
+                \Log::info(' [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
+            }
+            if (empty($logoPedidoArray['created_at'])) {
+                $logoPedidoArray['created_at'] = $pedidoProd->created_at;
+                \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['created_at']]);
+            }
+            if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
+                $logoPedidoArray['descripcion'] = $this->pedidoDescriptionService->generatePrendasDescription($pedidoProd);
+                \Log::info(' [PASO 1] Descripcion completada desde PedidoProduccion');
+            }
+        } catch (\Exception $e) {
+            \Log::error(' [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function completeLogoPedidoFromLogoCotizacion(mixed $logoPedido, array &$logoPedidoArray): void
+    {
+        $clienteVacio = empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-';
+        if (!$logoPedido->logo_cotizacion_id || !$clienteVacio) {
+            return;
         }
 
-        // Si no es LogoPedido, buscar en PedidoProduccion
+        try {
+            $logoCot = $this->orderDetailsQueryService->findLogoCotizacionByIdWithCotizacion((int) $logoPedido->logo_cotizacion_id);
+
+            if (!$logoCot || !$logoCot->cotizacion) {
+                \Log::warning(' [PASO 2] LogoCotizacion no encontrado o sin cotizacion', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
+                return;
+            }
+
+            \Log::info(' Encontrado LogoCotizacion, completando datos', [
+                'cliente' => $logoCot->cotizacion->cliente,
+                'fecha' => $logoCot->cotizacion->fecha_de_creacion,
+            ]);
+
+            if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
+                $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
+                \Log::info(' [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
+            }
+            if (empty($logoPedidoArray['created_at'])) {
+                $logoPedidoArray['created_at'] = $logoCot->cotizacion->fecha_de_creacion;
+                \Log::info(' [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['created_at']]);
+            }
+            if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
+                $logoPedidoArray['asesora'] = $logoCot->cotizacion->asesor?->name ?? '-';
+                \Log::info(' [PASO 2] Asesora completada desde LogoCotizacion', ['asesora' => $logoPedidoArray['asesora']]);
+            }
+            if (empty($logoPedidoArray['descripcion']) && $logoCot->descripcion) {
+                $logoPedidoArray['descripcion'] = $logoCot->descripcion;
+                \Log::info(' [PASO 2] Descripcion completada desde LogoCotizacion');
+            }
+        } catch (\Exception $e) {
+            \Log::error(' [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function finalizeLogoPedidoData(mixed $logoPedido, array $logoPedidoArray, string $pedido): array
+    {
+        $logoPedidoArray['numero_pedido'] = $logoPedido->numero_pedido ?? $pedido;
+        $logoPedidoArray['cliente'] = $logoPedidoArray['cliente'] ?: '-';
+        $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
+        $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
+
+        if (empty($logoPedidoArray['created_at'])) {
+            $logoPedidoArray['created_at'] = $logoPedido->created_at ?? now();
+            \Log::info(' [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['created_at']]);
+        }
+
+        $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
+        $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
+        $logoPedidoArray['observaciones'] = $logoPedido->observaciones ?? '';
+        $logoPedidoArray['estado'] = $logoPedido->estado ?? '-';
+        $logoPedidoArray['area'] = $logoPedido->area ?? '-';
+        $logoPedidoArray['tecnicas'] = $logoPedido->tecnicas ?? [];
+        $logoPedidoArray['ubicaciones'] = $logoPedido->ubicaciones ?? [];
+        $logoPedidoArray['prendas'] = $logoPedido->prendas ?? [];
+        $logoPedidoArray['es_cotizacion'] = false;
+        $logoPedidoArray['es_logo_pedido'] = true;
+
+        \Log::info(' [RegistroOrdenQueryController::show] LogoPedido finalizado COMPLETAMENTE', [
+            'numero_pedido' => $logoPedidoArray['numero_pedido'],
+            'cliente' => $logoPedidoArray['cliente'],
+            'asesora' => $logoPedidoArray['asesora'],
+            'descripcion' => $logoPedidoArray['descripcion'],
+            'created_at' => $logoPedidoArray['created_at'],
+            'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
+            'encargado_orden' => $logoPedidoArray['encargado_orden'],
+        ]);
+
+        return $logoPedidoArray;
+    }
+
+    private function buildPedidoProduccionData(string $pedido): array
+    {
         $order = $this->orderDetailsQueryService->findPedidoProduccionByNumeroPedidoOrFail($pedido);
 
-        // Obtener estadísticas mediante servicio
         $stats = $this->statsService->getOrderStats($pedido);
         $order->total_cantidad = $stats['total_cantidad'];
         $order->total_entregado = $stats['total_entregado'];
 
         $prendasConRelaciones = $this->orderDetailsQueryService->getPrendasConRelaciones((int) $order->id);
+        $this->logPrendasConRelaciones($pedido, $prendasConRelaciones);
 
-        \Log::info(' [show] Prendas cargadas con relaciones', [
-            'pedido' => $pedido,
-            'total' => $prendasConRelaciones->count(),
-            'primera_prenda' => $prendasConRelaciones->first() ? [
-                'nombre' => $prendasConRelaciones->first()->nombre_prenda,
-                'fotos_loaded' => $prendasConRelaciones->first()->relationLoaded('fotos'),
-                'tallas_loaded' => $prendasConRelaciones->first()->relationLoaded('tallas'),
-                'variantes_loaded' => $prendasConRelaciones->first()->relationLoaded('variantes'),
-                'variantes_count' => $prendasConRelaciones->first()->variantes ? $prendasConRelaciones->first()->variantes->count() : 0,
-                'procesos_loaded' => $prendasConRelaciones->first()->relationLoaded('procesos'),
-            ] : 'N/A',
-        ]);
-
-        // Reemplazar prendas en la orden con las que tienen relaciones
         $order->setRelation('prendas', $prendasConRelaciones);
 
-        //  CONSTRUIR DESCRIPCIÓN MIENTRAS AÚN TENEMOS ACCESO A RELACIONES ELOQUENT
         $descripcionPrendas = $this->orderDescriptionService->buildDescripcionConTallas($order);
-
-        \Log::info(' [show] Descripción construida', [
+        \Log::info(' [show] Descripcion construida', [
             'longitud' => strlen($descripcionPrendas),
             'primeras_200_caracteres' => substr($descripcionPrendas, 0, 200),
             'contiene_font_size_15' => strpos($descripcionPrendas, 'font-size: 15px') !== false,
@@ -191,20 +196,45 @@ class GetOrderDetailsQueryUseCase
             'HTML_completo' => $descripcionPrendas,
         ]);
 
-        // Filtrar datos sensibles
+        $orderArray = $this->mapOrderData($order, $descripcionPrendas);
+        $orderArray['prendas'] = $this->formatPrendasForModal($order, $pedido, (bool) $orderArray['es_cotizacion']);
+        $this->hideSensitiveFields($orderArray);
+
+        return $orderArray;
+    }
+
+    private function logPrendasConRelaciones(string $pedido, mixed $prendasConRelaciones): void
+    {
+        $primeraPrenda = $prendasConRelaciones->first();
+        $variantesCount = 0;
+        if ($primeraPrenda && $primeraPrenda->variantes) {
+            $variantesCount = $primeraPrenda->variantes->count();
+        }
+
+        $primeraPrendaLog = 'N/A';
+        if ($primeraPrenda) {
+            $primeraPrendaLog = [
+                'nombre' => $primeraPrenda->nombre_prenda,
+                'fotos_loaded' => $primeraPrenda->relationLoaded('fotos'),
+                'tallas_loaded' => $primeraPrenda->relationLoaded('tallas'),
+                'variantes_loaded' => $primeraPrenda->relationLoaded('variantes'),
+                'variantes_count' => $variantesCount,
+                'procesos_loaded' => $primeraPrenda->relationLoaded('procesos'),
+            ];
+        }
+
+        \Log::info(' [show] Prendas cargadas con relaciones', [
+            'pedido' => $pedido,
+            'total' => $prendasConRelaciones->count(),
+            'primera_prenda' => $primeraPrendaLog,
+        ]);
+    }
+
+    private function mapOrderData(mixed $order, string $descripcionPrendas): array
+    {
         $orderArray = $order->toArray();
+        $orderArray['es_cotizacion'] = !empty($order->cotizacion_id);
 
-        // Verificar si es una cotización
-        $esCotizacion = !empty($order->cotizacion_id);
-        $orderArray['es_cotizacion'] = $esCotizacion;
-
-        // Campos que se ocultan para todos
-        $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
-
-        // Campos que se ocultan para no-asesores
-        $camposOcultosNoAsesor = ['cotizacion_id', 'numero_cotizacion'];
-
-        // Agregar nombres en lugar de IDs
         if ($order->asesora) {
             $orderArray['asesor'] = $order->asesora->name ?? '';
             $orderArray['asesora'] = $order->asesora->name ?? '';
@@ -213,7 +243,6 @@ class GetOrderDetailsQueryUseCase
             $orderArray['asesora'] = '';
         }
 
-        // Para cliente, usar el campo 'cliente' directo (que es el nombre del cliente en la tabla)
         if (!empty($orderArray['cliente_id'])) {
             $orderArray['cliente_nombre'] = $this->orderDetailsQueryService->findClienteNombreById(
                 (int) $orderArray['cliente_id'],
@@ -223,56 +252,24 @@ class GetOrderDetailsQueryUseCase
             $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
         }
 
-        // Agregar la descripción ya construida
         $orderArray['descripcion_prendas'] = $descripcionPrendas;
 
-        // Obtener prendas formateadas para el modal
+        return $orderArray;
+    }
+
+    private function formatPrendasForModal(mixed $order, string $pedido, bool $esCotizacion): array
+    {
         \Log::info(' [getOrderDetails] Obteniendo prendas para pedido', [
             'pedido' => $pedido,
             'es_cotizacion' => $esCotizacion,
         ]);
 
         try {
-            $prendas = $order->prendas;
-
             $normalize = $this->normalizer();
-
             $prendasFormato = [];
-            foreach ($prendas as $index => $prenda) {
-                //  NUEVO: Normalizar fotos de prenda (WebP)
-                $fotosNormalizadas = [];
-                if ($prenda->fotos) {
-                    foreach ($prenda->fotos as $foto) {
-                        $ruta = $foto->ruta_webp ?? $foto->ruta_original;
-                        $fotosNormalizadas[] = $normalize($ruta);
-                    }
-                }
 
-                //  NUEVO: Normalizar fotos de tela (WebP)
-                $telaFotosNormalizadas = [];
-                try {
-                    $fotosTelaDB = $this->orderDetailsQueryService->getFotosTelaByPrendaId((int) $prenda->id);
-                    foreach ($fotosTelaDB as $fotoTela) {
-                        $ruta = $fotoTela->ruta_webp ?? $fotoTela->ruta_original;
-                        $telaFotosNormalizadas[] = $normalize($ruta);
-                    }
-                } catch (\Exception $e) {
-                    \Log::warning('Error cargando fotos de tela para prenda ' . $prenda->id . ': ' . $e->getMessage());
-                }
-
-                $prendasFormato[] = [
-                    'id' => $prenda->id,
-                    'prenda_pedido_id' => $prenda->id,
-                    'numero' => $index + 1,
-                    'nombre' => $prenda->nombre_prenda ?? '-',
-                    'nombre_prenda' => $prenda->nombre_prenda ?? '-',
-                    'descripcion' => $prenda->descripcion ?? '-',
-                    'tallas' => $prenda->tallas ? $prenda->tallas->map(function ($t) {
-                        return "{$t->talla}:{$t->cantidad}";
-                    })->implode(', ') : '-',
-                    'fotos' => $fotosNormalizadas,
-                    'tela_fotos' => $telaFotosNormalizadas,
-                ];
+            foreach ($order->prendas as $index => $prenda) {
+                $prendasFormato[] = $this->formatSinglePrenda($prenda, (int) $index, $normalize);
             }
 
             \Log::info(' [getOrderDetails] Prendas formateadas', [
@@ -281,39 +278,78 @@ class GetOrderDetailsQueryUseCase
                 'primera_prenda' => $prendasFormato[0] ?? null,
             ]);
 
-            $orderArray['prendas'] = $prendasFormato;
+            return $prendasFormato;
         } catch (\Exception $e) {
             \Log::warning('Error obteniendo prendas: ' . $e->getMessage());
-            $orderArray['prendas'] = [];
+            return [];
+        }
+    }
+
+    private function formatSinglePrenda(mixed $prenda, int $index, \Closure $normalize): array
+    {
+        $fotosNormalizadas = [];
+        if ($prenda->fotos) {
+            foreach ($prenda->fotos as $foto) {
+                $ruta = $foto->ruta_webp ?? $foto->ruta_original;
+                $fotosNormalizadas[] = $normalize($ruta);
+            }
         }
 
+        $telaFotosNormalizadas = [];
+        try {
+            $fotosTelaDB = $this->orderDetailsQueryService->getFotosTelaByPrendaId((int) $prenda->id);
+            foreach ($fotosTelaDB as $fotoTela) {
+                $ruta = $fotoTela->ruta_webp ?? $fotoTela->ruta_original;
+                $telaFotosNormalizadas[] = $normalize($ruta);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error cargando fotos de tela para prenda ' . $prenda->id . ': ' . $e->getMessage());
+        }
+
+        return [
+            'id' => $prenda->id,
+            'prenda_pedido_id' => $prenda->id,
+            'numero' => $index + 1,
+            'nombre' => $prenda->nombre_prenda ?? '-',
+            'nombre_prenda' => $prenda->nombre_prenda ?? '-',
+            'descripcion' => $prenda->descripcion ?? '-',
+            'tallas' => $prenda->tallas ? $prenda->tallas->map(function ($t) {
+                return "{$t->talla}:{$t->cantidad}";
+            })->implode(', ') : '-',
+            'fotos' => $fotosNormalizadas,
+            'tela_fotos' => $telaFotosNormalizadas,
+        ];
+    }
+
+    private function hideSensitiveFields(array &$orderArray): void
+    {
+        $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
         foreach ($camposOcultosGlobal as $campo) {
             unset($orderArray[$campo]);
         }
 
         if (!auth()->user() || !auth()->user()->role || auth()->user()->role->name !== 'asesor') {
+            $camposOcultosNoAsesor = ['cotizacion_id', 'numero_cotizacion'];
             foreach ($camposOcultosNoAsesor as $campo) {
                 unset($orderArray[$campo]);
             }
         }
-
-        return ['status' => 200, 'data' => $orderArray];
     }
 
     private function normalizer(): \Closure
     {
         return function ($ruta) {
-            if (empty($ruta)) {
-                return null;
+            $rutaNormalizada = null;
+
+            if (!empty($ruta)) {
+                if (str_starts_with($ruta, 'http') || str_starts_with($ruta, '/storage/')) {
+                    $rutaNormalizada = $ruta;
+                } else {
+                    $rutaNormalizada = '/storage/' . ltrim($ruta, '/');
+                }
             }
-            if (str_starts_with($ruta, 'http')) {
-                return $ruta;
-            }
-            if (str_starts_with($ruta, '/storage/')) {
-                return $ruta;
-            }
-            return '/storage/' . ltrim($ruta, '/');
+
+            return $rutaNormalizada;
         };
     }
 }
-

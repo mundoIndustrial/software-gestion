@@ -4,9 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 /**
  * ActualizarBorradorOutput
- * 
  * DTO para encapsular los datos de salida después de actualizar un borrador
- * 
  * @package App\Application\UseCases\Pedidos
  */
 class ActualizarBorradorOutput
@@ -23,7 +21,7 @@ class ActualizarBorradorOutput
 
     /**
      * Convertir a array para respuesta JSON
-     * 
+
      * @return array
      */
     public function toArray(): array

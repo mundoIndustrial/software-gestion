@@ -160,7 +160,7 @@ class ProcesosPrendaDetalleController extends Controller
                 'ubicaciones' => 'nullable|array|min:1',
                 'ubicaciones.*' => 'string|min:1|max:100',
                 'observaciones' => 'nullable|string|max:1000',
-                'modo_tallas' => 'nullable|string|in:general,especifico,por_tallas,generico',
+                'modo_tallas' => 'nullable|string|in:general,especifico,generico',
                 'tallas' => 'nullable|json', // Estructura relacional: {DAMA: {S: 10}, CABALLERO: {32: 5}}
                 'datos_adicionales' => 'nullable|array',
             ]);

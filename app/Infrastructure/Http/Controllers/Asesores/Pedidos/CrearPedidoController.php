@@ -12,15 +12,11 @@ use App\Application\Pedidos\UseCases\CrearPedidoInput;
 
 /**
  * CrearPedidoController
- * 
  *  RESPONSABILIDAD ÚNICA: Manejar HTTP para creación de pedidos
- * 
  * HTTP Methods:
  * - POST /asesores/pedidos                 → crearPedido()
- * 
  * Dependencias:
  * - CrearPedidoCompleteUseCase: Lógica de negocio para crear
- * 
  * Características:
  *  Solo 1 dependencia (antes 21)
  *  Solo adaptador HTTP (no contiene lógica)
@@ -36,9 +32,7 @@ class CrearPedidoController extends Controller
 
     /**
      * POST /asesores/pedidos
-     * 
      * Crear pedido transaccional
-     * 
      * @return JsonResponse
      */
     public function crearPedido(Request $request): JsonResponse

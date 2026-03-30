@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerPrendasAutocompleteUseCase
- * 
  *  RESPONSABILIDAD ÚNICA: Buscar prendas por término y retornar para autocomplete
  */
 class ObtenerPrendasAutocompleteUseCase
@@ -19,7 +18,6 @@ class ObtenerPrendasAutocompleteUseCase
 
     /**
      * Ejecutar búsqueda
-     * 
      * @param ObtenerPrendasInput $input
      * @return object (con propiedad: prendas)
      */

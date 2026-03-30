@@ -180,6 +180,61 @@ function cargarPrendas(prendas) {
             if (typeof genero === 'string' && (genero === '' || genero === '[]')) {
                 genero = [];
             }
+
+            // Contrato estricto de edición: no usar alias legacy ni inferencias.
+            let asignacionesColoresPorTalla = prenda.asignacionesColoresPorTalla || {};
+            if (typeof asignacionesColoresPorTalla === 'string') {
+                try {
+                    asignacionesColoresPorTalla = JSON.parse(asignacionesColoresPorTalla);
+                } catch (e) {
+                    asignacionesColoresPorTalla = {};
+                }
+            }
+            if (!asignacionesColoresPorTalla || typeof asignacionesColoresPorTalla !== 'object' || Array.isArray(asignacionesColoresPorTalla)) {
+                asignacionesColoresPorTalla = {};
+            }
+
+            let tallaColores = prenda.talla_colores || [];
+            if (typeof tallaColores === 'string') {
+                try {
+                    tallaColores = JSON.parse(tallaColores);
+                } catch (e) {
+                    tallaColores = [];
+                }
+            }
+            if (!Array.isArray(tallaColores)) {
+                tallaColores = [];
+            }
+
+            const coloresTelas = Array.isArray(prenda.colores_telas) ? prenda.colores_telas : [];
+            const telasAgregadasDesdeFuenteOficial = coloresTelas.map((ct) => {
+                const fotosTela = Array.isArray(ct.fotos_tela) ? ct.fotos_tela : [];
+                const imagenes = fotosTela.map((f) => ({
+                    ruta: f?.url || f?.ruta_original || f?.ruta_webp || '',
+                    ruta_original: f?.ruta_original || f?.url || '',
+                    ruta_webp: f?.ruta_webp || f?.url || '',
+                    prenda_pedido_colores_telas_id: ct?.id || null,
+                })).filter((img) => img.ruta || img.ruta_original || img.ruta_webp);
+
+                return {
+                    id: ct?.id || null,
+                    tela_id: ct?.tela_id || null,
+                    color_id: ct?.color_id || null,
+                    tela: ct?.tela_nombre || ct?.tela || '',
+                    nombre_tela: ct?.tela_nombre || ct?.tela || '',
+                    color: ct?.color_nombre || ct?.color || '',
+                    referencia: ct?.tela_referencia || ct?.referencia || '',
+                    imagenes,
+                };
+            });
+
+            const tipoFlujoTallas = String(prenda.tipo_flujo_tallas || '').toLowerCase();
+            if (!['normal', 'talla_color', 'sin_tallas'].includes(tipoFlujoTallas)) {
+                console.error('[cargar-datos-edicion] Contrato inválido: tipo_flujo_tallas ausente o inválido', {
+                    prendaId: prenda.id || null,
+                    tipo_flujo_tallas: prenda.tipo_flujo_tallas,
+                });
+            }
             //  Extraer tallas de generosConTallas
             const tallas = [];
             if (generosConTallas && typeof generosConTallas === 'object') {
@@ -210,14 +265,18 @@ function cargarPrendas(prendas) {
                 generosConTallas: {},
                 tallas: tallas,
                 cantidadesPorTalla: {},
-                telas: prenda.telas || [],
-                telasAgregadas: prenda.telasAgregadas || [],
+                telas: telasAgregadasDesdeFuenteOficial.length > 0 ? telasAgregadasDesdeFuenteOficial : (prenda.telas || []),
+                telasAgregadas: telasAgregadasDesdeFuenteOficial.length > 0 ? telasAgregadasDesdeFuenteOficial : (prenda.telasAgregadas || []),
+                colores_telas: coloresTelas,
                 fotos: prenda.fotos || [],
                 telaFotos: prenda.telaFotos || [],
                 imagenes: prenda.imagenes || prenda.fotos || [],
                 origen: prenda.origen || 'bodega',
                 de_bodega: prenda.de_bodega || 1,
                 procesos: procesos,
+                talla_colores: Array.isArray(tallaColores) ? tallaColores : [],
+                asignacionesColoresPorTalla: (asignacionesColoresPorTalla && typeof asignacionesColoresPorTalla === 'object') ? asignacionesColoresPorTalla : {},
+                tipo_flujo_tallas: tipoFlujoTallas,
                 variantes: variaciones,
                 variaciones: variaciones,
                 tipo_manga: prenda.tipo_manga,
@@ -639,5 +698,3 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
-
-

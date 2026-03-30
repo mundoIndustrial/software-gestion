@@ -81,7 +81,14 @@ class CQRSServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // No-op.
+        /*
+         * Intentionally left empty.
+         *
+         * CQRS bindings (buses, handlers, aliases, validators) are registered in register(),
+         * which is the correct lifecycle phase for container wiring in Laravel.
+         * This provider does not need runtime bootstrapping (routes/events/macros), so
+         * boot() remains explicit to document that there is no missing implementation.
+         */
     }
 
     private function registerValidators(): void

@@ -9,10 +9,8 @@ use App\Exceptions\GetConsecutivoCosturaException;
 
 /**
  * GetConsecutivoCosturaUseCase
- * 
  * Obtener consecutivo de costura para un pedido y prenda
  * Cumple DDD: Application Layer - UseCase
- * 
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
@@ -32,7 +30,6 @@ class GetConsecutivoCosturaUseCase
     /**
      * Ejecutar use case
      * GET /registros/{pedido}/consecutivo-costura
-     * 
      * @param string $pedido ID o número de pedido
      * @param string|null $prendaId ID de la prenda (opcional)
      * @return array Datos del consecutivo de costura
@@ -62,20 +59,20 @@ class GetConsecutivoCosturaUseCase
             ]);
 
             // Obtener consecutivo y área
-            $consecutivoData = $this->_obtenerConsecutivoYArea($pedidoId, $prendaId);
+            $consecutivoData = $this->obtenerConsecutivoYArea($pedidoId, $prendaId);
             
             if (!$consecutivoData['consecutivo'] && !$pedidoModel->created_at) {
                 throw GetConsecutivoCosturaException::sinDatos($pedido);
             }
 
             // Obtener encargado y fechas del proceso
-            $procesoPrenda = $this->_obtenerProcesoYEncargado(
+            $procesoPrenda = $this->obtenerProcesoYEncargado(
                 $numeroPedido,
                 $prendaId,
                 $consecutivoData['consecutivo']
             );
 
-            return $this->_construirRespuesta($consecutivoData, $procesoPrenda, $pedidoModel->created_at);
+            return $this->construirRespuesta($consecutivoData, $procesoPrenda, $pedidoModel->created_at);
 
         } catch (GetConsecutivoCosturaException $e) {
             throw $e;
@@ -91,12 +88,11 @@ class GetConsecutivoCosturaUseCase
 
     /**
      * Obtener consecutivo y área del registro
-     * 
      * @param int $pedidoId
      * @param string|null $prendaId
      * @return array ['consecutivo' => ?string, 'area' => ?string]
      */
-    private function _obtenerConsecutivoYArea(int $pedidoId, ?string $prendaId): array
+    private function obtenerConsecutivoYArea(int $pedidoId, ?string $prendaId): array
     {
         $registro = $prendaId
             ? $this->consecutivosRepository->obtenerCosinturaPorPrenda($pedidoId, (int) $prendaId)
@@ -110,13 +106,12 @@ class GetConsecutivoCosturaUseCase
 
     /**
      * Obtener proceso, encargado y fechas asociadas
-     * 
      * @param string $numeroPedido
      * @param string|null $prendaId
      * @param string|null $consecutivo
      * @return array ['id' => ?int, 'encargado' => ?string, 'fecha_inicio' => ?, 'fecha_fin' => ?]
      */
-    private function _obtenerProcesoYEncargado(string $numeroPedido, ?string $prendaId, ?string $consecutivo): array
+    private function obtenerProcesoYEncargado(string $numeroPedido, ?string $prendaId, ?string $consecutivo): array
     {
         $data = [
             'id' => null,
@@ -154,13 +149,12 @@ class GetConsecutivoCosturaUseCase
 
     /**
      * Construir respuesta final
-     * 
      * @param array $consecutivoData
      * @param array $procesoData
      * @param mixed $fechaCreacion
      * @return array Respuesta completa
      */
-    private function _construirRespuesta(array $consecutivoData, array $procesoData, $fechaCreacion): array
+    private function construirRespuesta(array $consecutivoData, array $procesoData, $fechaCreacion): array
     {
         \Log::info('[GetConsecutivoCosturaUseCase] Datos encontrados', [
             'consecutivo' => $consecutivoData['consecutivo'],
@@ -179,4 +173,3 @@ class GetConsecutivoCosturaUseCase
         ];
     }
 }
-

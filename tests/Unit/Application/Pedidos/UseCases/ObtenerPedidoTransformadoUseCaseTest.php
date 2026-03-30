@@ -3,6 +3,7 @@
 namespace Tests\Unit\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
+use App\Application\Pedidos\Services\ProcesoPedidoEnricherService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoTransformadoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Services\PedidoDetalleReadService;
@@ -43,10 +44,14 @@ class ObtenerPedidoTransformadoUseCaseTest extends TestCase
             ->with(123)
             ->andReturn(null);
 
-        $useCase = new ObtenerPedidoTransformadoUseCase($obtenerPedidoUseCase, $readService);
+        $procesoPedidoEnricherService = new ProcesoPedidoEnricherService($readService);
+        $useCase = new ObtenerPedidoTransformadoUseCase(
+            $obtenerPedidoUseCase,
+            $procesoPedidoEnricherService,
+            $readService
+        );
         $response = $useCase->ejecutar(123);
 
         $this->assertSame([], $response->getEppsTransformados());
     }
 }
-

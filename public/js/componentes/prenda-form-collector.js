@@ -255,8 +255,11 @@ class PrendaFormCollector {
                         // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes, datosExtendidos)
                         let datosCopiados = null;
                         if (proceso.datos && typeof proceso.datos === 'object') {
+                            const modoProcesoNormalizado = proceso.datos.modo_tallas || 'generico';
+
                             datosCopiados = {
                                 ...proceso.datos,
+                                modo_tallas: modoProcesoNormalizado,
                                 ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
                                 tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
                                 imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
@@ -292,7 +295,7 @@ class PrendaFormCollector {
                         copia[tipoProceso] = {
                             tipo: proceso.tipo || tipoProceso,
                             datos: datosCopiados,
-                            modoTallas: datosCopiados?.modoTallas || proceso.modoTallas || 'generico'
+                            modo_tallas: datosCopiados?.modo_tallas || 'generico'
                         };
                     }
                 });
@@ -529,6 +532,9 @@ class PrendaFormCollector {
                     }).filter(img => img !== null && img !== undefined);
                     
                     return {
+                        id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
+                        _original_id: tela._original_id || tela.id || null,
+                        prenda_pedido_colores_telas_id: tela.prenda_pedido_colores_telas_id || tela.id || tela._original_id || null,
                         tela: tela.nombre_tela || tela.tela || '',
                         color: tela.color || tela.color_nombre || '',
                         referencia: tela.referencia || '',
@@ -747,7 +753,9 @@ class PrendaFormCollector {
                 }
             }
             
-            prendaData.asignacionesColoresPorTalla = asignacionesColores;
+            const asignacionesColoresCopia = JSON.parse(JSON.stringify(asignacionesColores || {}));
+            prendaData.asignacionesColoresPorTalla = asignacionesColoresCopia;
+            prendaData.asignacionesColores = asignacionesColoresCopia;
             console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
 
             // ============================================
@@ -756,13 +764,13 @@ class PrendaFormCollector {
             // Si hay asignaciones del wizard (colores por talla), recalcular cantidad_talla
             // con las cantidades reales en vez de los "1" que ColoresPorTalla.js pone en tallasRelacionales
             // para display. También marcar que las telas ya están en las asignaciones (no duplicar).
-            const tieneAsignacionesWizard = Object.keys(asignacionesColores || {}).length > 0;
+            const tieneAsignacionesWizard = Object.keys(asignacionesColoresCopia || {}).length > 0;
             
             if (tieneAsignacionesWizard) {
                 console.log('[prenda-form-collector] 🔄 FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
                 
                 const tallasRecalculadas = {};
-                Object.values(asignacionesColores).forEach(asignacion => {
+                Object.values(asignacionesColoresCopia).forEach(asignacion => {
                     const genero = (asignacion.genero || 'UNISEX').toUpperCase();
                     if (!tallasRecalculadas[genero]) {
                         tallasRecalculadas[genero] = {};
@@ -781,8 +789,15 @@ class PrendaFormCollector {
                 
                 // Marcar flujo wizard para que el backend NO cree prenda_pedido_colores_telas (duplicado)
                 prendaData.flujo = 'wizard';
+                prendaData.tipoFlujoTallas = 'talla_color';
+                prendaData.tipo_flujo_tallas = 'talla_color';
             } else {
                 prendaData.flujo = 'simple';
+                const tieneTallas = Object.values(prendaData.cantidad_talla || {}).some(
+                    (tallasGenero) => tallasGenero && Object.keys(tallasGenero).length > 0
+                );
+                prendaData.tipoFlujoTallas = tieneTallas ? 'normal' : 'sin_tallas';
+                prendaData.tipo_flujo_tallas = prendaData.tipoFlujoTallas;
             }
             
             console.log('[prenda-form-collector]  Flujo detectado:', prendaData.flujo);

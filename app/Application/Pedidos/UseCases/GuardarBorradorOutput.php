@@ -4,9 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 /**
  * GuardarBorradorOutput
- * 
  * DTO para la respuesta del UseCase GuardarBorradorUseCase
- * 
  * Encapsula:
  * - success: Booleano indicando éxito
  * - message: Mensaje para el usuario
@@ -15,7 +13,6 @@ namespace App\Application\Pedidos\UseCases;
  * - estado: Estado del pedido
  * - redirect_url: URL a donde redirigir después
  * - tiempo_ms: Tiempo de ejecución en milisegundos
- * 
  * @package App\Application\UseCases\Pedidos
  */
 class GuardarBorradorOutput
@@ -32,7 +29,6 @@ class GuardarBorradorOutput
 
     /**
      * Convertir a array para respuesta JSON
-     * 
      * @return array
      */
     public function toArray(): array

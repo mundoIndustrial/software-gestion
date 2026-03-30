@@ -9,7 +9,6 @@ use App\Domain\Pedidos\Agregado\PedidoAggregate;
 
 /**
  * Use Case: Crear Pedido
- * 
  * Orquesta:
  * 1. Validar entrada (DTO)
  * 2. Crear agregado

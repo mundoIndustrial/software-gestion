@@ -58,7 +58,7 @@ class LoggerApp {
             TelaProcessor:          '🧵',
             PrendaDataBuilder:      '🏗️',
             ValidadorPrenda:        '✔️',
-            Modal:                  '🪟',
+            Modal:                  '',
             ModalCleanup:           '🧹',
             Gestor:                 '⚙️',
             StorageGuard:           '🛡️'

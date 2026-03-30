@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Domain\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCaseContract;
 
 use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Application\Pedidos\Exceptions\PrepararCreacionProduccionPedidoException;
 
 class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProduccionPedidoUseCaseContract
 {
@@ -13,7 +14,7 @@ class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProducc
         $esEdicion = false;
         $cotizacion = null;
 
-        // Si está editando, obtener la cotización
+        // Si esta editando, obtener la cotizacion
         if ($dto->editarId) {
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
@@ -26,16 +27,16 @@ class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProducc
                 'logoCotizacion.prendas.fotos',
                 'logoCotizacion.prendas.prendaCot.fotos',
             ])->findOrFail($dto->editarId);
-            
+
             // Validar permisos
             if ($cotizacion->asesor_id !== $dto->usuarioId) {
-                throw new \Exception('No tienes permiso para editar esta cotización');
+                throw PrepararCreacionProduccionPedidoException::sinPermisoEditarCotizacion();
             }
 
             if (!$dto->allowEditarCotizacionCreada && !$cotizacion->es_borrador) {
-                throw new \Exception('No tienes permiso para editar este borrador');
+                throw PrepararCreacionProduccionPedidoException::sinPermisoEditarBorrador();
             }
-            
+
             $esEdicion = true;
         }
 
@@ -55,8 +56,3 @@ class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProducc
         return $this->{$method}(...$arguments);
     }
 }
-
-
-
-
-

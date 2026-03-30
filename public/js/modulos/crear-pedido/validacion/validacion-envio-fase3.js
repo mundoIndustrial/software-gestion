@@ -500,7 +500,7 @@
      * @param {string} endpoint - URL para enviar datos
      * @returns {Promise}
      */
-    window.procesarSubmitFormulario = function(endpoint = '/asesores/pedidos/crear') {
+    window.procesarSubmitFormulario = function(endpoint = '/api/asesores/pedidos/crear') {
         // 1. VALIDAR
         const validacion = window.validarFormularioConGestores();
 
@@ -519,7 +519,7 @@
             .then(response => {
                 // Redirigir a lista de pedidos después de 2 segundos
                 setTimeout(() => {
-                    window.location.href = '/asesores/pedidos';
+                    window.location.href = '/api/asesores/pedidos';
                 }, 2000);
                 return response;
             });

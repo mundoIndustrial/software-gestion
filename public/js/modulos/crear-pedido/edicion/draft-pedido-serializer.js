@@ -102,7 +102,7 @@
         const fotosTelaJSON = [];
 
         const telasJSON = telas.map((t, idx) => {
-            const colorTelaId = t.id || t._original_id || null;
+            const colorTelaId = t.id || t._original_id || t.prenda_pedido_colores_telas_id || null;
 
             if (Array.isArray(t.imagenes)) {
                 t.imagenes.forEach((img) => {
@@ -112,7 +112,9 @@
                         return;
                     }
                     // Imagen existente guardada en DB — incluir en fotos_telas JSON
-                    const ruta = img?.ruta_original || img?.ruta_webp || img?.url || img?.ruta || null;
+                    const ruta = (typeof img === 'string')
+                        ? img
+                        : (img?.ruta_original || img?.ruta_webp || img?.url || img?.ruta || null);
                     if (colorTelaId && (ruta || img?.id)) {
                         fotosTelaJSON.push({
                             prenda_pedido_colores_telas_id: colorTelaId,
@@ -122,6 +124,27 @@
                         });
                     }
                 });
+            }
+
+            // Fuente de verdad oficial en edición: colores_telas[].fotos_tela[]
+            if (colorTelaId && Array.isArray(prenda.colores_telas)) {
+                const colorTelaOficial = prenda.colores_telas.find((ct) =>
+                    ct && (ct.id === colorTelaId || ct.prenda_pedido_colores_telas_id === colorTelaId)
+                );
+                if (colorTelaOficial && Array.isArray(colorTelaOficial.fotos_tela)) {
+                    colorTelaOficial.fotos_tela.forEach((foto) => {
+                        const rutaOriginal = foto?.ruta_original || foto?.url || '';
+                        const rutaWebp = foto?.ruta_webp || '';
+                        if (rutaOriginal || rutaWebp || foto?.id) {
+                            fotosTelaJSON.push({
+                                prenda_pedido_colores_telas_id: colorTelaId,
+                                id: foto?.id || undefined,
+                                ruta_original: rutaOriginal,
+                                ruta_webp: rutaWebp
+                            });
+                        }
+                    });
+                }
             }
 
             // Imágenes de tela pre-subidas al servidor desde el modal (ya tienen rutas, no son Files)
@@ -142,8 +165,18 @@
                 referencia: t.referencia || '',
                 tela_id: t.tela_id || 0,
                 color_id: t.color_id || 0,
-                id: t.id || t._original_id || undefined
+                id: t.id || t._original_id || t.prenda_pedido_colores_telas_id || undefined
             };
+        });
+
+        const fotosTelaUnicas = [];
+        const fotosTelaKeys = new Set();
+        fotosTelaJSON.forEach((f) => {
+            const key = `${f?.prenda_pedido_colores_telas_id || ''}|${f?.id || ''}|${f?.ruta_original || ''}|${f?.ruta_webp || ''}`;
+            if (!fotosTelaKeys.has(key)) {
+                fotosTelaKeys.add(key);
+                fotosTelaUnicas.push(f);
+            }
         });
 
         const imagenesExistentes = [];
@@ -170,30 +203,65 @@
                 const d = proc?.datos || proc || {};
                 const imagenesExistentesProceso = [];
                 const imagenesAEliminarProceso = [];
+                const archivosProcesoAgregados = new Set();
 
+                // 1) Siempre preservar explícitas las existentes si vienen (fuente canónica)
                 if (Array.isArray(d.imagenes_existentes)) {
-                    d.imagenes_existentes.forEach(img => {
-                        const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
-                        const id = img.id || null;
-                        if (url || id) {
-                            imagenesExistentesProceso.push({ id, url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
-                        }
-                    });
-                } else if (Array.isArray(d.imagenes)) {
-                    d.imagenes.forEach(img => {
-                        const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
-                        if (file) {
-                            agregarArchivo(`fotosProcesoNuevo_${procesoIdx}[]`, file);
-                            return;
-                        }
-
+                    d.imagenes_existentes.forEach((img) => {
                         const url = img?.url || img?.ruta_original || img?.ruta_webp || img?.ruta || img?.previewUrl || '';
                         const id = img?.id || null;
                         if (url || id) {
-                            imagenesExistentesProceso.push({ id, url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
+                            imagenesExistentesProceso.push({
+                                id,
+                                url,
+                                ruta_original: img?.ruta_original || url,
+                                ruta_webp: img?.ruta_webp || ''
+                            });
                         }
                     });
                 }
+
+                // 2) Siempre extraer Files nuevos de TODAS las fuentes temporales de proceso
+                const fuentesImagenesProceso = [
+                    ...(Array.isArray(d.imagenesFiles) ? d.imagenesFiles : []),
+                    ...(Array.isArray(d.fotosGeneralesFiles) ? d.fotosGeneralesFiles : []),
+                    ...(Array.isArray(d.imagenes) ? d.imagenes : []),
+                ];
+
+                fuentesImagenesProceso.forEach((img) => {
+                    const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
+                    if (file) {
+                        if (archivosProcesoAgregados.has(file)) {
+                            return;
+                        }
+                        archivosProcesoAgregados.add(file);
+                        agregarArchivo(`fotosProcesoNuevo_${procesoIdx}[]`, file);
+                        return;
+                    }
+
+                    // 3) Si vienen URLs en imágenes mixtas, preservarlas también
+                    const url = img?.url || img?.ruta_original || img?.ruta_webp || img?.ruta || img?.previewUrl || '';
+                    const id = img?.id || null;
+                    if (url || id) {
+                        imagenesExistentesProceso.push({
+                            id,
+                            url,
+                            ruta_original: img?.ruta_original || url,
+                            ruta_webp: img?.ruta_webp || ''
+                        });
+                    }
+                });
+
+                // 4) Deduplicar existentes por id+url
+                const existentesUnicos = [];
+                const clavesExistentes = new Set();
+                imagenesExistentesProceso.forEach((img) => {
+                    const key = `${img.id || ''}|${img.url || img.ruta_original || ''}`;
+                    if (!clavesExistentes.has(key)) {
+                        clavesExistentes.add(key);
+                        existentesUnicos.push(img);
+                    }
+                });
 
                 const eliminadas = d.imagenes_a_eliminar || d.imagenes_eliminadas || d.imagenesEliminadas || [];
                 if (Array.isArray(eliminadas)) {
@@ -233,11 +301,11 @@
                     nombre: d.nombre || tipo,
                     ubicaciones: d.ubicaciones || [],
                     observaciones: d.observaciones || '',
-                    modoTallas: d.modoTallas || d.modo_tallas || proc?.modoTallas || 'generico',
+                    modo_tallas: d.modo_tallas || 'generico',
                     tallas: d.tallas || {},
                     datosExtendidos: d.datosExtendidos || {},
                     estado: d.estado || 'PENDIENTE',
-                    imagenes_existentes: imagenesExistentesProceso
+                    imagenes_existentes: existentesUnicos
                 };
 
                 if (imagenesAEliminarProceso.length > 0) {
@@ -264,7 +332,7 @@
             variantes,
             asignaciones_colores: asignacionesColores,
             colores_telas: telasJSON,
-            fotos_telas: fotosTelaJSON.length > 0 ? fotosTelaJSON : undefined,
+            fotos_telas: fotosTelaUnicas.length > 0 ? fotosTelaUnicas : undefined,
             procesos: procesosArray,
             imagenes_existentes: imagenesExistentes,
             imagenes_a_eliminar: imagenesAEliminar,

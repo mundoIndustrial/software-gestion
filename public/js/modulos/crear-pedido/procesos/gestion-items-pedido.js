@@ -16,6 +16,7 @@ class GestionItemsUI {
         this.prendas = [];      // Array separado para prendas
         this.epps = [];         // Array separado para EPPs
         this.ordenItems = [];   // Orden de inserción: [{tipo: 'prenda', index: 0}, {tipo: 'epp', index: 0}, ...]
+        this.prendasEliminadas = []; // [{ prenda_id, nombre_prenda, motivo }]
         
         // Inicializar servicios con validación de disponibilidad
         try {
@@ -317,6 +318,23 @@ class GestionItemsUI {
                     item: itemEnPosicion
                 });
                 
+                // Si es prenda existente en BD, marcar para eliminación en guardado de borrador
+                if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
+                    const prendaAEliminar = this.prendas[indiceBuscado] || {};
+                    const prendaIdExistente = prendaAEliminar.prenda_pedido_id || prendaAEliminar.id || null;
+                    if (prendaIdExistente) {
+                        this.prendasEliminadas.push({
+                            prenda_id: Number(prendaIdExistente),
+                            nombre_prenda: prendaAEliminar.nombre_prenda || prendaAEliminar.nombre_producto || 'PRENDA',
+                            motivo: 'Eliminada desde edicion de borrador'
+                        });
+                        console.log('[eliminarItem] 🗑️ Prenda existente marcada para eliminar en backend:', {
+                            prenda_id: prendaIdExistente,
+                            total_prendas_eliminadas: this.prendasEliminadas.length
+                        });
+                    }
+                }
+
                 // Eliminar de los arrays correspondientes
                 if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
                     this.prendas.splice(indiceBuscado, 1);
@@ -695,7 +713,7 @@ class GestionItemsUI {
                 console.log('[gestion-items-pedido]  Creando tipo de manga:', prendaData.variantes.tipo_manga);
                 
                 try {
-                    const response = await fetch('/api/public/tipos-manga', {
+                    const response = await fetch('/api/asesores/tipos-manga', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -703,13 +721,13 @@ class GestionItemsUI {
                         },
                         body: JSON.stringify({ nombre: prendaData.variantes.tipo_manga })
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.success && result.data) {
                         // Guardar el ID recién creado
                         prendaData.variantes.tipo_manga_id = result.data.id;
-                        
+
                         // Agregar al datalist para futuras búsquedas
                         const datalist = document.getElementById('opciones-manga');
                         if (datalist) {
@@ -718,12 +736,12 @@ class GestionItemsUI {
                             newOption.dataset.id = result.data.id;
                             datalist.appendChild(newOption);
                         }
-                        
+
                         console.log('[gestion-items-pedido] Tipo de manga creado:', {
                             id: result.data.id,
                             nombre: result.data.nombre
                         });
-                        
+
                         // Limpiar flag de creación
                         delete prendaData.variantes.tipo_manga_crear;
                     } else {
@@ -1339,7 +1357,7 @@ window.editarProcesoEdicion = function(tipo) {
     
     // Si no existe, detectar modo y abrir el modal correcto
     const procesoData = window.procesosSeleccionados?.[tipo];
-    if (procesoData?.datos?.datosExtendidos || procesoData?.modoTallas === 'por_tallas') {
+    if (procesoData?.datos?.datosExtendidos || procesoData?.datos?.modo_tallas === 'especifico') {
         if (window.abrirModalProcesoPorTallas) {
             window.abrirModalProcesoPorTallas(tipo);
         }

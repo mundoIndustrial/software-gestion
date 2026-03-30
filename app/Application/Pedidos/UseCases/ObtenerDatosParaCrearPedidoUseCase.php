@@ -11,13 +11,10 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ObtenerDatosParaCrearPedidoUseCase
- * 
  *  RESPONSABILIDAD ÚNICA: Obtener datos básicos para crear un nuevo pedido
- * 
  * Datos que obtiene:
  * - Pedidos recientes del usuario
  * - Clientes disponibles
- * 
  * Nota: Otros datos (tallas, técnicas, formas de pago) se cargarán
  * dinámicamente desde endpoints específicos en el frontend
  */

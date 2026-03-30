@@ -9,7 +9,6 @@ use Carbon\Carbon;
 
 /**
  * UseCase: Guardar día de entrega y calcular fecha estimada en recibo
- * 
  * Responsabilidades:
  * - Validar día de entrega
  * - Calcular fecha estimada con días hábiles
@@ -24,7 +23,6 @@ class SaveDiaEntregaUseCase
 
     /**
      * Ejecutar el caso de uso
-     * 
      * @param int $numeroPedido Número de pedido o ID del pedido
      * @param int|null $diaDeEntrega Días de entrega (1-35)
      * @param bool $calcularFechaEstimada Si calcular la fecha estimada
@@ -65,7 +63,7 @@ class SaveDiaEntregaUseCase
 
         // Calcular fecha estimada
         if ($calcularFechaEstimada && $diaDeEntrega && $diaDeEntrega > 0) {
-            $fechaInicio = $pedido->created_at ?? $pedido->created_at;
+            $fechaInicio = $pedido->created_at;
             
             if ($fechaInicio) {
                 $fechaEstimada = $this->calculationService->calcularFechaEstimada(
@@ -74,16 +72,14 @@ class SaveDiaEntregaUseCase
                 );
                 $updateData['fecha_estimada_de_entrega'] = $fechaEstimada;
             }
-        } else if (!$diaDeEntrega || $diaDeEntrega == 0) {
+        } elseif (!$diaDeEntrega || $diaDeEntrega === 0) {
             $updateData['fecha_estimada_de_entrega'] = null;
         }
 
-        // Actualizar todos los recibos
-        $actualizados = 0;
-        foreach ($recibos as $recibo) {
-            $recibo->update($updateData);
-            $actualizados++;
-        }
+        // Actualizar todos los recibos en un solo query
+        $actualizados = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+            ->where('tipo_recibo', 'COSTURA')
+            ->update($updateData);
 
         // Log
         \Log::info('[SaveDiaEntregaUseCase] Día de entrega actualizado en recibos', [
@@ -96,7 +92,9 @@ class SaveDiaEntregaUseCase
         ]);
 
         // Recargar para obtener datos actualizados
-        $recibos->each->refresh();
+        $recibos = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+            ->where('tipo_recibo', 'COSTURA')
+            ->get();
 
         return [
             'success' => true,
@@ -118,5 +116,4 @@ class SaveDiaEntregaUseCase
         ];
     }
 }
-
 

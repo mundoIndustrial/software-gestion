@@ -48,7 +48,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         formData.append('tipo', tipo);
 
         // Enviar
-        const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
+        const response = await fetch(`/api/asesores/cotizaciones/${cotizacionId}/imagenes`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''

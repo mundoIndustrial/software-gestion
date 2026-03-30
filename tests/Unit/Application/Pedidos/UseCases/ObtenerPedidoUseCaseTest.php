@@ -6,17 +6,20 @@ use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use App\Domain\Pedidos\Agregado\PedidoAggregate;
 
 class ObtenerPedidoUseCaseTest extends TestCase
 {
     private ObtenerPedidoUseCase $useCase;
     private PedidoRepository $repositoryMock;
+    private PedidoDetalleReadService $pedidoDetalleReadServiceMock;
 
     protected function setUp(): void
     {
         $this->repositoryMock = m::mock(PedidoRepository::class);
-        $this->useCase = new ObtenerPedidoUseCase($this->repositoryMock);
+        $this->pedidoDetalleReadServiceMock = m::mock(PedidoDetalleReadService::class);
+        $this->useCase = new ObtenerPedidoUseCase($this->repositoryMock, $this->pedidoDetalleReadServiceMock);
     }
 
     protected function tearDown(): void

@@ -9,11 +9,9 @@ use App\Exceptions\CalcularDiasBatchException;
 
 /**
  * CalcularDiasBatchUseCase
- * 
  * UseCase: Calcular días de múltiples órdenes
  * Capa: Application
  * Responsabilidad: Orquestar el cálculo de días hábiles para un lote de pedidos
- * 
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
@@ -21,7 +19,6 @@ class CalcularDiasBatchUseCase
 {
     /**
      * Ejecutar cálculo batch de días
-     * 
      * @param array $numeroPedidos
      * @return array ['dias' => array, 'total' => int, 'timestamp' => string]
      * @throws CalcularDiasBatchException

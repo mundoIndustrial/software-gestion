@@ -41,7 +41,7 @@ class RechazarPedidoUseCase
             $novedadRechazo = "[{$usuario} - {$fechaHora}] RECHAZADO POR CARTERA: {$motivo}";
 
             $novedadesActuales = $pedido->novedades ?? '';
-            $novedadesNuevas = !empty($novedadesActuales) 
+            $novedadesNuevas = !empty($novedadesActuales)
                 ? $novedadesActuales . "\n\n" . $novedadRechazo
                 : $novedadRechazo;
 
