@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO-COSTURA] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO-COSTURA] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO-COSTURA] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO-COSTURA] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,

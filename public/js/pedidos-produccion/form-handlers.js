@@ -1066,7 +1066,7 @@ class PedidoFormHandlers {
                         ✓ Validar pedido
                     </button>
                     <button class="btn btn-lg btn-info" data-action="submit-pedido">
-                        📤 Enviar pedido
+                         Enviar pedido
                     </button>
                     <button class="btn btn-lg btn-danger" data-action="clear-pedido">
                          Limpiar

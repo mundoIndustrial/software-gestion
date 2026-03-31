@@ -527,7 +527,7 @@
                                                                 onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}', '{{ $baseItem['prenda_id'] ?? '' }}')"
                                                                 class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                             >
-                                                                💾 Guardar
+                                                                 Guardar
                                                             </button>
                                                             @elseif(auth()->user()->hasRole('supervisor_gerencia'))
                                                             <button
@@ -536,7 +536,7 @@
                                                                 class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
                                                                 title="Solo usuarios autorizados pueden guardar cambios"
                                                             >
-                                                                💾 Guardar
+                                                                 Guardar
                                                             </button>
                                                             @else
                                                             <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -890,7 +890,7 @@
                                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '', '{{ $item['prenda_id'] ?? '' }}')"
                                                             class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                         >
-                                                            💾 Guardar
+                                                             Guardar
                                                         </button>
                                                         @elseif(auth()->user()->hasRole('supervisor_gerencia'))
                                                         <button
@@ -899,7 +899,7 @@
                                                             class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
                                                             title="Solo usuarios autorizados pueden guardar cambios"
                                                         >
-                                                            💾 Guardar
+                                                             Guardar
                                                         </button>
                                                         @else
                                                         <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -1033,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -1091,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,

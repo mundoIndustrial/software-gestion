@@ -449,7 +449,7 @@
                      Guardar Cotización
                 </button>
                 <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors">
-                    📤 Enviar Cotización
+                     Enviar Cotización
                 </button>
             </div>
         </div>

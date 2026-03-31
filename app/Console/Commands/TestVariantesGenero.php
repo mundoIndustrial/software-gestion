@@ -14,7 +14,7 @@ class TestVariantesGenero extends Command
     public function handle()
     {
         $this->info("\n========================================");
-        $this->info("🧪 TEST: Variantes con Género-Talla");
+        $this->info(" TEST: Variantes con Género-Talla");
         $this->info("========================================\n");
 
         try {

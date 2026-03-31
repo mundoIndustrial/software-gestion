@@ -34,7 +34,7 @@
                 console.log('[items-dropdown-init] Select de tipo mostrado ✓');
             }, 500);
         } else {
-            console.warn('⚠️ Loading spinner o select no encontrados');
+            console.warn(' Loading spinner o select no encontrados');
         }
 
         // ========== MOSTRAR SECCIÓN DE ÍTEMS ==========
@@ -43,7 +43,7 @@
             seccionItems.style.display = 'block';
             console.log('[items-dropdown-init] Sección de ítems mostrada ✓');
         } else {
-            console.warn('⚠️ Sección de ítems no encontrada');
+            console.warn(' Sección de ítems no encontrada');
         }
     };
 

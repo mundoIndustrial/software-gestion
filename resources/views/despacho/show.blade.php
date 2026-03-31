@@ -25,11 +25,11 @@ function connectWebSocket() {
         // Unirse al canal público de despacho
         socket.channel('pedidos.general')
             .listen('.pedido.actualizado', (event) => {
-                console.log('🔄 Pedido actualizado en tiempo real (despacho):', event);
+                console.log(' Pedido actualizado en tiempo real (despacho):', event);
                 
                 // Si el pedido cambió a "Entregado" y es el pedido actual, mostrar notificación
                 if (event.nuevo_estado === 'Entregado' && event.pedido_id == window.pedidoId) {
-                    console.log('📦 Pedido actual marcado como entregado');
+                    console.log(' Pedido actual marcado como entregado');
                     
                     // Mostrar notificación local
                     mostrarNotificacionPedidoEntregadoLocal(event.numero_pedido);
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket...');
+        console.log(' Echo está listo, conectando WebSocket...');
         connectWebSocket();
     });
 });
@@ -712,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="p-6">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
-                    <span class="text-orange-500 text-xl">⚠️</span>
+                    <span class="text-orange-500 text-xl"></span>
                 </div>
                 <div>
                     <h3 class="text-lg font-medium text-slate-900 mb-1">¿Deshacer marcado como entregado?</h3>
@@ -1501,7 +1501,7 @@ function generarHTMLFactura(datos) {
                                             <img src="${imgUrl}" 
                                                  alt="Imagen EPP" 
                                                  style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='⚠️';">
+                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='';">
                                         </div>
                                     ` : '';
                                 }).join('')}

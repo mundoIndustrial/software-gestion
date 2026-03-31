@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ================================================
  * TELAS MODULE - GESTIÓN DE TELAS
  * ================================================
@@ -23,7 +23,7 @@ window.agregarTelaNueva = async function() {
         console.log('[agregarTelaNueva]  ENTRADA: Iniciando agregación de nueva tela');
         
         // DIAGNÓSTICO 1: Estado INICIAL de telasCreacion
-        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 1 - Estado INICIAL:');
+        console.log('[agregarTelaNueva]DIAGNÓSTICO 1 - Estado INICIAL:');
         console.log('  window.telasCreacion:', window.telasCreacion);
         console.log('  Cantidad de telas:', window.telasCreacion?.length || 0);
         if (window.telasCreacion && window.telasCreacion.length > 0) {
@@ -78,7 +78,7 @@ window.agregarTelaNueva = async function() {
         );
         
         if (telaExistente) {
-            console.warn('[agregarTelaNueva] ⚠️  Tela ya existe:', { color, tela });
+            console.warn('[agregarTelaNueva]   Tela ya existe:', { color, tela });
             window.mostrarErrorTela('nueva-prenda-tela', 'Esta tela ya está agregada');
             return false;
         }
@@ -99,7 +99,7 @@ window.agregarTelaNueva = async function() {
                 imagenesActuales = window.imagenesTelaModalNueva || [];
             }
         } else {
-            console.log('[agregarTelaNueva] ⚠️ Storage universal no disponible, usando array antiguo');
+            console.log('[agregarTelaNueva]  Storage universal no disponible, usando array antiguo');
             imagenesActuales = window.imagenesTelaModalNueva || [];
         }
         
@@ -122,7 +122,7 @@ window.agregarTelaNueva = async function() {
         console.log('[agregarTelaNueva] 📸 Imágenes a incluir:', imagenesActuales.length);
         
         // DIAGNÓSTICO 3: ANTES de hacer push
-        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 3 - ANTES de push:');
+        console.log('[agregarTelaNueva]DIAGNÓSTICO 3 - ANTES de push:');
         console.log('  window.telasCreacion.length:', window.telasCreacion.length);
         console.log('  Contenido actual:', window.telasCreacion.map(t => `${t.color}/${t.tela}`));
         
@@ -131,7 +131,7 @@ window.agregarTelaNueva = async function() {
         window.telasCreacion.push(nuevaTela);
         
         // DIAGNÓSTICO 4: DESPUÉS de hacer push
-        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 4 - DESPUÉS de push:');
+        console.log('[agregarTelaNueva]DIAGNÓSTICO 4 - DESPUÉS de push:');
         console.log('  window.telasCreacion.length:', window.telasCreacion.length);
         console.log('  Contenido actualizado:', window.telasCreacion.map(t => `${t.color}/${t.tela}`));
         window.telasCreacion.forEach((t, idx) => {
@@ -154,7 +154,7 @@ window.agregarTelaNueva = async function() {
                 console.log('[agregarTelaNueva] ✓ Preview de imágenes limpiado');
             }
         } catch (e) {
-            console.warn('[agregarTelaNueva] ⚠️  Error al limpiar preview:', e);
+            console.warn('[agregarTelaNueva]   Error al limpiar preview:', e);
         }
         
         // Limpiar errores
@@ -181,17 +181,17 @@ window.agregarTelaNueva = async function() {
         console.log('[agregarTelaNueva]  Imágenes temporales limpiadas completamente');
         
         // DIAGNÓSTICO 5: ANTES de actualizar tabla
-        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 5 - ANTES de actualizarTablaTelas():');
+        console.log('[agregarTelaNueva]DIAGNÓSTICO 5 - ANTES de actualizarTablaTelas():');
         console.log('  window.telasCreacion:', window.telasCreacion);
         console.log('  Cantidad total:', window.telasCreacion.length);
         
         // Actualizar tabla
-        console.log('[agregarTelaNueva] 🔄 Llamando a window.actualizarTablaTelas()...');
+        console.log('[agregarTelaNueva]  Llamando a window.actualizarTablaTelas()...');
         window.actualizarTablaTelas();
         console.log('[agregarTelaNueva] ✓ Tabla actualizada');
         
         // DIAGNÓSTICO 6: DESPUÉS de actualizar tabla
-        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 6 - DESPUÉS de actualizarTablaTelas():');
+        console.log('[agregarTelaNueva]DIAGNÓSTICO 6 - DESPUÉS de actualizarTablaTelas():');
         console.log('  window.telasCreacion:', window.telasCreacion);
         console.log('  Cantidad total:', window.telasCreacion.length);
         

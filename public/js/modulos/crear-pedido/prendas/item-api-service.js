@@ -11,7 +11,7 @@
 
 class ItemAPIService {
     constructor(options = {}) {
-        this.baseUrl = options.baseUrl || '/asesores/pedidos';
+        this.baseUrl = options.baseUrl || '/api/asesores/pedidos';
         this.csrfToken = options.csrfToken || this.obtenerCSRFToken();
         
         //  Registro global de archivos File por UID
@@ -136,7 +136,7 @@ class ItemAPIService {
             this.registrarArchivosEnGlobal(pedidoData);
             
             // PASO 1: Preparar datos para envío (JSON limpio + FormData para imágenes)
-            console.debug('[validarPedido] 📦 Preparando datos para envío...');
+            console.debug('[validarPedido]  Preparando datos para envío...');
             let datosParaEnvio;
             
             // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
@@ -149,7 +149,7 @@ class ItemAPIService {
                     jsonData: [pedidoData],
                     formData: new FormData()
                 };
-                console.debug('[validarPedido] 📦 Fallback para prendas sin imágenes');
+                console.debug('[validarPedido]  Fallback para prendas sin imágenes');
             }
             
             // PASO 2: Serializar JSON limpio
@@ -161,8 +161,8 @@ class ItemAPIService {
             const formData = datosParaEnvio.formData;
             formData.append('pedido', jsonString);
             
-            console.debug('[validarPedido] 📤 Enviando a /validar con FormData...');
-            console.debug('[validarPedido] 📤 Archivos en FormData:', formData.getAll('files').length);
+            console.debug('[validarPedido]  Enviando a /validar con FormData...');
+            console.debug('[validarPedido]  Archivos en FormData:', formData.getAll('files').length);
             
             const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
@@ -994,7 +994,7 @@ class ItemAPIService {
                                             
                                             console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
                                         } else {
-                                            console.debug(`[extraerFiles] ⚠️ imgFile NO es File, es:`, typeof imgFile, imgFile);
+                                            console.debug(`[extraerFiles]  imgFile NO es File, es:`, typeof imgFile, imgFile);
                                         }
                                     });
                                 });

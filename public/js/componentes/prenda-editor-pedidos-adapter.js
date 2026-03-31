@@ -199,7 +199,7 @@
         // Resetear botón a estado original
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.textContent = '💾 Agregar Prenda';
+            btnGuardar.textContent = ' Agregar Prenda';
             btnGuardar.className = 'btn btn-primary';
         }
 
@@ -557,7 +557,7 @@
                                     imagenesAEliminar.push(imagenAEliminar);
                                     console.log(`[PedidosAdapter]  Objeto AGREGADO a imagenesAEliminar:`, imagenAEliminar);
                                 } else {
-                                    console.log(`[PedidosAdapter] ⚠️ IMAGEN RECHAZADA - sin ID ni ruta:`, img);
+                                    console.log(`[PedidosAdapter]  IMAGEN RECHAZADA - sin ID ni ruta:`, img);
                                 }
                             });
                         }
@@ -620,7 +620,7 @@
                 // Agregar imágenes a eliminar al FormData (nivel superior)
                 if (todasLasImagenesAEliminar.length > 0) {
                     formData.append('imagenes_a_eliminar', JSON.stringify(todasLasImagenesAEliminar));
-                    console.log('[PedidosAdapter] 📤 Total imágenes a eliminar:', todasLasImagenesAEliminar.length);
+                    console.log('[PedidosAdapter]  Total imágenes a eliminar:', todasLasImagenesAEliminar.length);
                 }
                 
                 formData.append('procesos', JSON.stringify(procesosArray));
@@ -661,7 +661,7 @@
                 }
             });
             
-            console.log('[PedidosAdapter] 📊 RESULTADO IMÁGENES:', {
+            console.log('[PedidosAdapter]RESULTADO IMÁGENES:', {
                 'imagenesNuevas': imagenesNuevas.length,
                 'imagenesExistentes': imagenesExistentes.length,
                 'imagenesExistentes_content': imagenesExistentes
@@ -685,7 +685,7 @@
 
             const urlPrefix = _getUrlPrefix();
             const saveUrl = `${urlPrefix.save}/${pedidoId}/actualizar-prenda`;
-            console.log('[PedidosAdapter] 📤 Enviando a POST', saveUrl, '(contexto:', urlPrefix.context + ')');
+            console.log('[PedidosAdapter]  Enviando a POST', saveUrl, '(contexto:', urlPrefix.context + ')');
 
             const response = await fetch(saveUrl, {
                 method: 'POST',
@@ -753,7 +753,7 @@
                 // Recargar página si estamos en supervisor-pedidos para mostrar cambios
                 const urlPrefix = _getUrlPrefix();
                 if (urlPrefix.context === 'supervisor') {
-                    console.log('[PedidosAdapter] 🔄 Recargando página de supervisor-pedidos para mostrar cambios');
+                    console.log('[PedidosAdapter]  Recargando página de supervisor-pedidos para mostrar cambios');
                     setTimeout(() => {
                         window.location.reload();
                     }, 200);
@@ -811,7 +811,7 @@
                 inputPlaceholder: 'Describe brevemente el motivo...',
                 inputAttributes: { 'aria-label': 'Novedad del cambio' },
                 showCancelButton: true,
-                confirmButtonText: '💾 Guardar',
+                confirmButtonText: ' Guardar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#10b981',
                 customClass: { container: 'swal-galeria-container' },
@@ -863,7 +863,7 @@
             if (pedidoId && prendaId) {
                 const urlPrefix = _getUrlPrefix();
                 const fetchUrl = `${urlPrefix.fetch}/${pedidoId}/prenda/${prendaId}/datos`;
-                console.log('[PedidosAdapter] 📡 Fetching datos de BD:', fetchUrl, '(contexto:', urlPrefix.context + ')');
+                console.log('[PedidosAdapter]  Fetching datos de BD:', fetchUrl, '(contexto:', urlPrefix.context + ')');
                 const response = await fetch(fetchUrl, {
                     method: 'GET',
                     credentials: 'include',
@@ -895,10 +895,10 @@
                             imagenes: prendaCompleta.imagenes?.length || 0
                         });
                     } else {
-                        console.warn('[PedidosAdapter] ⚠️ Respuesta sin datos de prenda, usando datos locales');
+                        console.warn('[PedidosAdapter]  Respuesta sin datos de prenda, usando datos locales');
                     }
                 } else {
-                    console.warn('[PedidosAdapter] ⚠️ Error HTTP', response.status, '- usando datos locales');
+                    console.warn('[PedidosAdapter]  Error HTTP', response.status, '- usando datos locales');
                 }
             }
 
@@ -926,7 +926,7 @@
                 
                 // 🔴 NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
                 if (typeof window.cargarPrendaEnFormularioModal === 'function') {
-                    console.log('[PedidosAdapter] 📦 Llamando cargarPrendaEnFormularioModal para detectar UNISEX...');
+                    console.log('[PedidosAdapter]  Llamando cargarPrendaEnFormularioModal para detectar UNISEX...');
                     window.cargarPrendaEnFormularioModal(prendaCompleta);
                 }
             } else {
@@ -937,7 +937,7 @@
             // ===== PASO 4: Cambiar botón y título a modo edición =====
             const btnGuardar = document.getElementById('btn-guardar-prenda');
             if (btnGuardar) {
-                btnGuardar.textContent = '💾 Guardar Cambios';
+                btnGuardar.textContent = ' Guardar Cambios';
                 btnGuardar.className = 'btn btn-success';
             }
             const tituloModal = document.getElementById('modal-prenda-titulo');
@@ -1091,7 +1091,7 @@
             console.log('[PedidosAdapter] 🎨 Asignaciones construidas:', prenda.asignaciones.length, 'filas');
             console.log('[PedidosAdapter] 🎨 ColoresPorTalla:', Object.keys(coloresPorTalla).length, 'grupos');
         } else {
-            console.log('[PedidosAdapter] ⚠️ talla_colores está vacío o no es array');
+            console.log('[PedidosAdapter]  talla_colores está vacío o no es array');
         }
         
         // DEBUG: Verificar estado FINAL de talla_colores
@@ -1275,7 +1275,7 @@
         // Cambiar botón a modo edición
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.textContent = '💾 Guardar Cambios';
+            btnGuardar.textContent = ' Guardar Cambios';
             btnGuardar.className = 'btn btn-success';
         }
 
@@ -1404,7 +1404,7 @@
             const urlPrefix = _getUrlPrefix();
             const deleteUrl = `${urlPrefix.save}/${pedidoId}/eliminar-prenda`;
             
-            console.log('[PedidosAdapter] 📤 Enviando DELETE a:', deleteUrl);
+            console.log('[PedidosAdapter]  Enviando DELETE a:', deleteUrl);
 
             const response = await fetch(deleteUrl, {
                 method: 'POST',
@@ -1458,7 +1458,7 @@
             // Actualizar datos locales
             if (window.datosEdicionPedido?.prendas && prendaIndex !== null && prendaIndex !== undefined) {
                 window.datosEdicionPedido.prendas.splice(prendaIndex, 1);
-                console.log('[PedidosAdapter] 🔄 Lista de prendas actualizada (removida prenda en índice', prendaIndex + ')');
+                console.log('[PedidosAdapter]  Lista de prendas actualizada (removida prenda en índice', prendaIndex + ')');
             }
 
             // Mostrar éxito

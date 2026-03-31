@@ -62,7 +62,7 @@ class GestorEditacionProcesos {
         const tipo = this.procesoEnEdicionActual.tipo;
         const esNuevo = this.procesoEnEdicionActual.esNuevo;
 
-        console.log('💾 [GESTOR-EDICION] Guardando cambios del proceso:', {
+        console.log(' [GESTOR-EDICION] Guardando cambios del proceso:', {
             tipo,
             esNuevo,
             hayEditor: !!window.procesosEditor

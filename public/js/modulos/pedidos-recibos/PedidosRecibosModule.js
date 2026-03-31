@@ -1056,7 +1056,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                             tallasProceso = procesoActual.tallas_detalle;
                             console.log('[printReceiptModal]  Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
                         } else if (procesoActual && procesoActual.tallas_detalle) {
-                            console.log('[printReceiptModal] ⚠️ procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
+                            console.log('[printReceiptModal]  procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
                         }
                         
                         // Si no hay tallas_detalle, intentar con tallas del proceso
@@ -1072,7 +1072,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     tallasProceso || reciboActual?.tallas || prendaData?.tallas || null,
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
-                console.log('[printReceiptModal] 📊 Resultado buildTallasResumen:', str);
+                console.log('[printReceiptModal]Resultado buildTallasResumen:', str);
                 if (str) return str;
                 
                 // Fallback para COSTURA: intentar desde variantes

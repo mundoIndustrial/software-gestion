@@ -41,7 +41,7 @@ Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflecti
 3. **`editor-tallas-extendido.js`** (opcional, para referencia)
    - Contiene funciones auxiliares para manejo de datos
 
-## 🔄 Flujo de Trabajo
+##  Flujo de Trabajo
 
 ### 1. **Seleccionar Proceso**
 ```
@@ -80,7 +80,7 @@ Se guardan simultáneamente:
 Se cierra el editor y se actualiza el resumen
 ```
 
-## 📊 Estructura de Datos
+##Estructura de Datos
 
 ### `window.datosExtendidosTallasProceso`
 ```javascript
@@ -192,7 +192,7 @@ Los datos se guardan automáticamente en:
 1. **En memoria**: `window.procesosSeleccionados` (mientras está en el navegador)
 2. **En el objeto del proceso**: Se guarden en `datosExtendidos` cuando se hace click en "Guardar Tallas"
 
-## ⚠️ Consideraciones Importantes
+##  Consideraciones Importantes
 
 1. Las imágenes se guardan como **Data URLs** (base64), pueden ocupar espacio en memoria
 2. Cada talla puede tener **múltiples ubicaciones** agregadas manualmente
@@ -200,7 +200,7 @@ Los datos se guardan automáticamente en:
 4. Las imágenes se pueden **agregar, eliminar y reemplazar** en cualquier momento
 5. Los datos se **pierden si no se hace click en "Guardar Tallas"**
 
-## 🧪 Testing
+##  Testing
 
 Para probar la funcionalidad:
 
@@ -220,7 +220,7 @@ Para probar la funcionalidad:
 - Los datos se almacenan como objetos JavaScript (no como JSON directamente)
 - La sincronización entre la UI y los datos es automática via `data` attributes
 
-## 🚀 Próximas Mejoras Sugeridas
+##  Próximas Mejoras Sugeridas
 
 1. Validación de imágenes (tamano máximo, formato)
 2. Preview de datos antes de guardar

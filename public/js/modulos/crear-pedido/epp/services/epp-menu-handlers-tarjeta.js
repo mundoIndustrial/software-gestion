@@ -4,7 +4,7 @@
  * Usado en: create-nuevo, edit mode
  */
 
-console.log('[EppMenuHandlerTarjeta] 📦 Script cargado - Versión con herencia');
+console.log('[EppMenuHandlerTarjeta]  Script cargado - Versión con herencia');
 
 class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
     constructor() {
@@ -23,7 +23,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
     }
 
     attachEventListeners() {
-        console.log('[EppMenuHandlerTarjeta] 🎧 Configurando event listeners para TARJETA...');
+        console.log('[EppMenuHandlerTarjeta]  Configurando event listeners para TARJETA...');
         
         // Event delegation para menús dinámicos
         document.addEventListener('click', (e) => {
@@ -39,7 +39,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
             if (e.target.classList.contains('btn-editar-epp-nuevo')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[EppMenuHandlerTarjeta] ✏️ Click en botón editar EPP detectado');
+                console.log('[EppMenuHandlerTarjeta]  Click en botón editar EPP detectado');
                 this.editarEPP(e.target);
             }
 
@@ -87,6 +87,6 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
     }
 }
 
-console.log('[EppMenuHandlerTarjeta] 🚀 Creando instancia global...');
+console.log('[EppMenuHandlerTarjeta]  Creando instancia global...');
 window.eppMenuHandlerTarjeta = new EppMenuHandlerTarjeta();
 console.log('[EppMenuHandlerTarjeta]  Instancia global creada');

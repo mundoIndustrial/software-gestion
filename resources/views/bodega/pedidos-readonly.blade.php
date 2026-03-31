@@ -440,7 +440,7 @@
                                                 class="w-full px-2 py-2 bg-green-500 hover:bg-green-600 text-white text-[12px] font-bold uppercase tracking-wide rounded-lg transition"
                                                 style="font-family: 'Poppins', sans-serif;"
                                             >
-                                                💾 Guardar
+                                                 Guardar
                                             </button>
                                         </div>
                                     </td>
@@ -643,7 +643,7 @@
     <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-white">✏️ Editar Nota</h2>
+            <h2 class="text-lg font-semibold text-white"> Editar Nota</h2>
             <button onclick="cerrarModalEditarNota()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         

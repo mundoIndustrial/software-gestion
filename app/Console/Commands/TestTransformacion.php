@@ -15,7 +15,7 @@ class TestTransformacion extends Command
 
     public function handle()
     {
-        $this->info('🧪 Probando transformación de datos...');
+        $this->info(' Probando transformación de datos...');
         
         // Buscar el pedido para saber su asesor
         $pedido = PedidoProduccion::find(2596);

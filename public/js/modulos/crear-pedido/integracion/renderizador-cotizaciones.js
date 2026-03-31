@@ -233,7 +233,7 @@
      * Funciones globales para interactuar con las prendas
      */
     window.editarPrendaCotizacion = function(index) {
-        console.log('[renderizador-cotizaciones] ✏️ Editando prenda:', index);
+        console.log('[renderizador-cotizaciones]  Editando prenda:', index);
         // Aquí se puede agregar la lógica para editar la prenda
     };
 

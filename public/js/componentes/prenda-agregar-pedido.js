@@ -50,7 +50,7 @@
             // Si DragDropManager existe y ya fue inicializado, solo reconfigurar los handlers
             // (los elementos DOM se recrearon al limpiar el modal)
             if (window.DragDropManager && window.DragDropManager.inicializado) {
-                console.log('[PrendaAgregarPedido] 🔄 DragDropManager ya inicializado, reconfigurando handlers...');
+                console.log('[PrendaAgregarPedido]  DragDropManager ya inicializado, reconfigurando handlers...');
                 window.DragDropManager.reconfigurarPrendas();
                 window.DragDropManager.reconfigurarTelas();
                 window.DragDropManager.reconfigurarProcesos();
@@ -67,7 +67,7 @@
                 window.DragDropManager.inicializar();
                 console.log('[PrendaAgregarPedido]  DragDropManager inicializado para modal agregar');
             } else {
-                console.warn('[PrendaAgregarPedido] ⚠️ DragDropManager no disponible');
+                console.warn('[PrendaAgregarPedido]  DragDropManager no disponible');
             }
         } catch (e) {
             console.error('[PrendaAgregarPedido] Error inicializando DragDropManager:', e);
@@ -117,7 +117,7 @@
                 inputPlaceholder: 'Describe brevemente el motivo...',
                 inputAttributes: { 'aria-label': 'Novedad del cambio' },
                 showCancelButton: true,
-                confirmButtonText: '💾 Agregar',
+                confirmButtonText: ' Agregar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#10b981',
                 customClass: { container: 'swal-galeria-container' },
@@ -545,7 +545,7 @@
             // Enviar
             const urlPrefix = _getUrlPrefix();
             const saveUrl = `${urlPrefix.save}/${pedidoId}/agregar-prenda`;
-            console.log('[PrendaAgregarPedido] 📤 POST', saveUrl);
+            console.log('[PrendaAgregarPedido]  POST', saveUrl);
 
             const response = await fetch(saveUrl, {
                 method: 'POST',

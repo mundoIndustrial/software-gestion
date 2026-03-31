@@ -23,7 +23,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
     {
         echo "\n";
         echo "═══════════════════════════════════════════════════════\n";
-        echo "🧪 TEST: CREAR PEDIDO COMPLETO CON TODAS LAS RELACIONES\n";
+        echo " TEST: CREAR PEDIDO COMPLETO CON TODAS LAS RELACIONES\n";
         echo "═══════════════════════════════════════════════════════\n\n";
 
         DB::beginTransaction();

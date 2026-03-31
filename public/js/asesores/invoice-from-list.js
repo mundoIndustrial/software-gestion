@@ -194,5 +194,5 @@ window.precargarTodosModulosInvoiceFromList = function() {
     }
 };
 
-console.log('[InvoiceFromList] 📦 Sistema con lazy loading inicializado');
+console.log('[InvoiceFromList]  Sistema con lazy loading inicializado');
 }

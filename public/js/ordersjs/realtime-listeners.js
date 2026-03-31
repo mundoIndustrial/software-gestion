@@ -204,7 +204,7 @@ function initializeOrdenesRealtimeListeners() {
                     if (typeof RealtimeOrderHandler !== 'undefined' && RealtimeOrderHandler.updateOrderRow) {
                         RealtimeOrderHandler.updateOrderRow(e.orden, e.changedFields);
                     } else {
-                        console.warn('[Realtime Orders] ⚠️ RealtimeOrderHandler no disponible');
+                        console.warn('[Realtime Orders]  RealtimeOrderHandler no disponible');
                     }
                 });
             } catch (error) {

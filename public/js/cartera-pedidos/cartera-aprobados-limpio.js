@@ -320,7 +320,7 @@ function formatearMoneda(monto) {
 // ===== INICIALIZACIÓN =====
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Cartera Aprobados - Inicializado');
+  console.log(' Cartera Aprobados - Inicializado');
   
   // Validar que los elementos críticos existan
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');

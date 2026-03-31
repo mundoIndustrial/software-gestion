@@ -52,7 +52,7 @@ class ResolutorImagenesService
         $archivosTotal = count($todosLosArchivos);
         $tiempoExtraccion = round((microtime(true) - $inicioExtraccion) * 1000, 2);
         
-        Log::info('[RESOLVER-IMAGENES] ðŸ“¸ INICIANDO EXTRACCION DE IMAGENES', [
+        Log::info('[RESOLVER-IMAGENES] ¸ INICIANDO EXTRACCION DE IMAGENES', [
             'pedido_id' => $pedidoId,
             'prendas_count' => count($datosPrendas),
             'archivos_en_request' => $archivosTotal,

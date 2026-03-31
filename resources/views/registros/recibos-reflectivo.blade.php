@@ -1002,7 +1002,7 @@ function clearAllToasts() {
 
 async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada) {
     try {
-        // ⚠️ VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
+        //  VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
         if (!prendaId || prendaId === 'null' || prendaId === null) {
             throw new Error('CRÍTICO: No se proporcionó una prenda específica. No se puede asignar encargado sin prenda definida.');
         }

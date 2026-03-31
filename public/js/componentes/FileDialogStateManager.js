@@ -166,7 +166,7 @@ window._fileDialogManagers = window._fileDialogManagers || {};
  * Se llama cuando el documento está listo
  */
 function inicializarFileDialogStateManagers() {
-    console.log('[inicializarFileDialogStateManagers] 🚀 Inicializando...');
+    console.log('[inicializarFileDialogStateManagers]  Inicializando...');
     
     for (let i = 1; i <= 3; i++) {
         const inputId = `proceso-foto-input-${i}`;

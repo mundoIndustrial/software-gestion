@@ -1236,7 +1236,7 @@ function actualizarPaginacion(pagination) {
 
 @push('scripts')
 <script>
-console.log('🚀 SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
+console.log(' SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
 
 // WebSocket para actualizaciones en tiempo real
 let socket = null;
@@ -1269,7 +1269,7 @@ function connectWebSocket() {
         console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            console.log(' Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
             console.log(' Debug evento recibido:', {
@@ -1287,7 +1287,7 @@ function connectWebSocket() {
             
             // Si hay cambios relevantes, recargar la lista
             if (event.changedFields && Object.keys(event.changedFields).length > 0) {
-                console.log('🔄 Hay cambios en el pedido, recargando lista...');
+                console.log(' Hay cambios en el pedido, recargando lista...');
                 cargarPedidos(); // Recargar la lista en lugar de la página completa
             }
         })
@@ -1312,7 +1312,7 @@ function initializeWebSocket() {
         console.log(' waitForEcho disponible, iniciando...');
         // Usar el sistema waitForEcho para asegurar que Echo esté disponible
         window.waitForEcho(function() {
-            console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+            console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
             connectWebSocket();
         });
     } else {
@@ -1323,7 +1323,7 @@ function initializeWebSocket() {
 
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
+    console.log(' DOM cargado - Iniciando WebSocket de despacho...');
     console.log(' URL actual:', window.location.href);
     console.log(' Pathname:', window.location.pathname);
     
@@ -1331,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.pathname.includes('/despacho/pendientes')) {
         console.log(' Estamos en la página de despacho pendientes');
     } else {
-        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+        console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
     // Intentar inicializar WebSocket (con reintentos si waitForEcho no está listo)

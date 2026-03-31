@@ -20,7 +20,7 @@ window.imagenesPrendaStorage = {
      */
     establecerImagenes: function(imagenes) {
         if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
@@ -41,7 +41,7 @@ window.imagenesPrendaStorage = {
      */
     obtenerImagenes: function() {
         if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return [];
         }
         
@@ -58,7 +58,7 @@ window.imagenesPrendaStorage = {
     agregarImagen: function(imagen) {
         return new Promise((resolve, reject) => {
             if (!window.universalImagenesStorage) {
-                console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+                console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
                 reject(new Error('Universal storage no disponible'));
                 return;
             }
@@ -76,7 +76,7 @@ window.imagenesPrendaStorage = {
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[PrendaStorageAdapter] 📦 File object convertido a objeto completo:', {
+                    console.log('[PrendaStorageAdapter]  File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
                         tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
@@ -106,7 +106,7 @@ window.imagenesPrendaStorage = {
      */
     eliminarImagen: function(index) {
         if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return false;
         }
         
@@ -118,7 +118,7 @@ window.imagenesPrendaStorage = {
      */
     limpiar: function() {
         if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
@@ -153,7 +153,7 @@ window.imagenesTelaStorage = {
      */
     establecerImagenes: function(imagenes) {
         if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
@@ -174,7 +174,7 @@ window.imagenesTelaStorage = {
      */
     obtenerImagenes: function() {
         if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return [];
         }
         
@@ -191,7 +191,7 @@ window.imagenesTelaStorage = {
     agregarImagen: function(imagen) {
         return new Promise((resolve, reject) => {
             if (!window.universalImagenesStorage) {
-                console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+                console.warn('[TelaStorageAdapter]  Universal storage no disponible');
                 reject(new Error('Universal storage no disponible'));
                 return;
             }
@@ -209,7 +209,7 @@ window.imagenesTelaStorage = {
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[TelaStorageAdapter] 📦 File object convertido a objeto completo:', {
+                    console.log('[TelaStorageAdapter]  File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
                         tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
@@ -239,7 +239,7 @@ window.imagenesTelaStorage = {
      */
     eliminarImagen: function(index) {
         if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return false;
         }
         
@@ -251,7 +251,7 @@ window.imagenesTelaStorage = {
      */
     limpiarImagenes: function() {
         if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return;
         }
         

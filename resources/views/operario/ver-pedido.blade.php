@@ -1183,7 +1183,7 @@
                             }
                         });
                     } else {
-                        console.log('      ⚠️ Sin fotos_tela en esta tela');
+                        console.log('       Sin fotos_tela en esta tela');
                     }
                 });
             }
@@ -1202,7 +1202,7 @@
                             }
                         });
                     } else {
-                        console.log('      ⚠️ Sin imagenes en este proceso');
+                        console.log('       Sin imagenes en este proceso');
                     }
                 });
             }
@@ -1692,7 +1692,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('⚠️ Error resolviendo fecha de anexo:', e);
+                    console.warn(' Error resolviendo fecha de anexo:', e);
                 }
 
                 // Construir objeto para llenarReciboCosturaMobile con la misma estructura
@@ -1730,7 +1730,7 @@
                             window.prendaCarouselIndex = indice;
                             console.log(' [PRENDA ID] Prenda encontrada en índice:', indice);
                         } else {
-                            console.log('⚠️ [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
+                            console.log(' [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
                         }
                     }
                 }

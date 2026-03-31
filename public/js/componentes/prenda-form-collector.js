@@ -145,7 +145,7 @@ class PrendaFormCollector {
                         };
                     }
                     // Respaldo controlado: si solo tiene blob URL y datos de BD, preservar ID para merge
-                    console.log(`[prenda-form-classifier]   ⚠️ DECISIÓN: Preservando con blob URL de respaldo`);
+                    console.log(`[prenda-form-classifier]    DECISIÓN: Preservando con blob URL de respaldo`);
                     return {
                         id: img.id,
                         prenda_foto_id: img.prenda_foto_id,
@@ -161,7 +161,7 @@ class PrendaFormCollector {
                 // 4️⃣ RESGUARDO DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
                 // preservarlo de todas formas porque algo debe tener
                 if (img && typeof img === 'object') {
-                    console.log(`[prenda-form-collector]   ⚠️ Objeto sin previewUrl - preservando como está`);
+                    console.log(`[prenda-form-collector]    Objeto sin previewUrl - preservando como está`);
                     // Si tiene ID o alguna referencia a BD, marcalo como tal
                     if (img.id || img.prenda_foto_id) {
                         console.log(`[prenda-form-collector]    DECISIÓN: Preservando con urlDesdeDB=true`);
@@ -631,7 +631,7 @@ class PrendaFormCollector {
             prendaData.asignacionesColoresPorTalla = asignacionesColoresCopia;
             prendaData.asignacionesColores = asignacionesColoresCopia;
             console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
-            console.log('[prenda-form-collector] 🧪 Imagenes preservadas en asignaciones:', Object.values(asignacionesColoresCopia).reduce((acc, asig) => {
+            console.log('[prenda-form-collector]  Imagenes preservadas en asignaciones:', Object.values(asignacionesColoresCopia).reduce((acc, asig) => {
                 const colores = Array.isArray(asig?.colores) ? asig.colores : [];
                 acc.totalColores += colores.length;
                 acc.conImagenId += colores.filter(c => !!c?.imagen_id).length;
@@ -649,7 +649,7 @@ class PrendaFormCollector {
             const tieneAsignacionesWizard = Object.keys(asignacionesColoresCopia || {}).length > 0;
             
             if (tieneAsignacionesWizard) {
-                console.log('[prenda-form-collector] 🔄 FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
+                console.log('[prenda-form-collector]  FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
                 
                 const tallasRecalculadas = {};
                 Object.values(asignacionesColoresCopia).forEach(asignacion => {
@@ -665,8 +665,8 @@ class PrendaFormCollector {
                     }
                 });
                 
-                console.log('[prenda-form-collector] 🔄 cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
-                console.log('[prenda-form-collector] 🔄 cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);
+                console.log('[prenda-form-collector]  cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
+                console.log('[prenda-form-collector]  cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);
                 prendaData.cantidad_talla = tallasRecalculadas;
                 
                 // Marcar flujo wizard para que el backend NO cree prenda_pedido_colores_telas (duplicado)

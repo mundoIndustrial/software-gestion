@@ -45,7 +45,7 @@ class MiddlewareGuardadoPrenda {
             }
 
             // Ahora guardar la prenda normal
-            console.log('💾 [MIDDLEWARE-GUARDADO] Guardando prenda...');
+            console.log(' [MIDDLEWARE-GUARDADO] Guardando prenda...');
             const resultado = await guardarPrendaOriginal();
             
             // Limpiar registro de procesos editados

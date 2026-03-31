@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 🔄 Catálogos se cargan bajo demanda cuando se abre el modal
+    //  Catálogos se cargan bajo demanda cuando se abre el modal
 });
 
 /**

@@ -716,7 +716,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
         }
         
         
-        console.log('📤 FORMDATA A ENVIAR:', {
+        console.log(' FORMDATA A ENVIAR:', {
             tipo: 'enviada',
             cliente: datos.cliente,
             tipo_venta: tipoVentaValue,

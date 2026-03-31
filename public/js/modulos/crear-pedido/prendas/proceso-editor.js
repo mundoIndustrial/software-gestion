@@ -226,7 +226,7 @@ class ProcesosEditor {
             cambiosFinales.modo_tallas = this.cambios.modo_tallas;
         }
 
-        console.log('📤 [PROCESO-EDITOR] Cambios a enviar:', {
+        console.log(' [PROCESO-EDITOR] Cambios a enviar:', {
             tipo: this.procesoEnEdicion?.tipo,
             cambios: Object.keys(cambiosFinales),
             cambiosFinales
@@ -327,7 +327,7 @@ class ProcesosEditor {
 
         // Actualizar el proceso en window.procesosSeleccionados
         if (window.procesosSeleccionados && window.procesosSeleccionados[tipo]) {
-            console.log('💾 [PROCESO-EDITOR] Guardando cambios en window.procesosSeleccionados:', tipo);
+            console.log(' [PROCESO-EDITOR] Guardando cambios en window.procesosSeleccionados:', tipo);
             
             // Actualizar datos del proceso
             window.procesosSeleccionados[tipo].datos = {

@@ -519,7 +519,7 @@ async function applyFilters() {
  */
 async function applyFiltersToBackend(page = 1) {
     try {
-        console.log('📤 Enviando al backend:', {
+        console.log(' Enviando al backend:', {
             filters: activeFilters,
             page: page,
             filtrosActivos: Object.keys(activeFilters).length > 0

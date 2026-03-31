@@ -49,7 +49,7 @@ class ImagenService
             // Crear directorio si no existe
             $dirStartTime = microtime(true);
             if (!file_exists($rutaCompleta)) {
-                \Log::info('[ImagenService] ðŸ“ Creando directorio', ['ruta' => $rutaCompleta]);
+                \Log::info('[ImagenService]  Creando directorio', ['ruta' => $rutaCompleta]);
                 mkdir($rutaCompleta, 0755, true);
             }
             $dirTime = (microtime(true) - $dirStartTime) * 1000;

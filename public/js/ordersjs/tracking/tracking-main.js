@@ -101,7 +101,7 @@ class TrackingMain {
     if (allLoaded) {
       console.log('[TrackingMain]  Todos los módulos cargados correctamente');
     } else {
-      console.warn('[TrackingMain] ⚠️ Algunos módulos no están cargados:', modules);
+      console.warn('[TrackingMain]  Algunos módulos no están cargados:', modules);
     }
     
     return allLoaded;

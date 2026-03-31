@@ -27,7 +27,7 @@ class PrendaEditorTallas {
             return;
         }
         
-        // 🔄 LIMPIAR TARJETAS ANTERIORES (importante en edición)
+        //  LIMPIAR TARJETAS ANTERIORES (importante en edición)
         container.innerHTML = '';
         console.log('[Tallas] 🧹 Tarjetas limpias');
         
@@ -68,7 +68,7 @@ class PrendaEditorTallas {
                     // 🔥 AGREGAR EVENTO PARA ACTUALIZAR window.tallasRelacionales AL CAMBIAR
                     input.addEventListener('change', () => {
                         const nuevaCantidad = parseInt(input.value) || 0;
-                        console.log(`[Tallas] 🔄 Actualizando ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
+                        console.log(`[Tallas]  Actualizando ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
                         
                         // Actualizar window.tallasRelacionales
                         if (!window.tallasRelacionales) {
@@ -84,7 +84,7 @@ class PrendaEditorTallas {
                             delete window.tallasRelacionales[genero][talla];
                         }
                         
-                        console.log(`[Tallas] 📊 window.tallasRelacionales actualizado:`, window.tallasRelacionales);
+                        console.log(`[Tallas]window.tallasRelacionales actualizado:`, window.tallasRelacionales);
                         
                         // Actualizar total
                         this._actualizarTotal();

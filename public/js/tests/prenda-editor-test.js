@@ -88,7 +88,7 @@ class PrendaEditorTest {
         
         try {
             // Obtener datos del servidor
-            console.log(`📡 Obteniendo datos del pedido ${pedidoId}...`);
+            console.log(` Obteniendo datos del pedido ${pedidoId}...`);
             const response = await fetch(`/pedidos-public/${pedidoId}/factura-datos`);
             
             if (!response.ok) {
@@ -272,7 +272,7 @@ class PrendaEditorTest {
      */
     async ejecutarTodos() {
         console.clear();
-        console.log('🚀 INICIANDO TEST SUITE: EDICIÓN DE PRENDAS');
+        console.log(' INICIANDO TEST SUITE: EDICIÓN DE PRENDAS');
         console.log('=' .repeat(60));
         console.log('Página actual: ' + window.location.pathname);
 

@@ -4,7 +4,7 @@
 
 Sistema modular desacoplado para el manejo de telas, colores, referencias e imágenes de prendas. Organizado en componentes específicos para mejor mantenibilidad y escalabilidad.
 
-## 🏗️ Estructura del Módulo
+##  Estructura del Módulo
 
 ```
 📁 public/js/modulos/crear-pedido/telas/telas-module/

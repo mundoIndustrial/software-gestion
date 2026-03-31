@@ -51,7 +51,7 @@ class RecibosCostruaModule {
      */
     async init() {
         try {
-            console.log('🚀 Inicializando módulo de recibos de costura...');
+            console.log(' Inicializando módulo de recibos de costura...');
 
             // 1. Validar dependencias
             this._validarDependencias();

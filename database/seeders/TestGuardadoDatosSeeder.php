@@ -16,7 +16,7 @@ class TestGuardadoDatosSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🧪 TEST: Crear Pedido con Variantes, Colores, Telas e Imágenes\n";
+        echo " TEST: Crear Pedido con Variantes, Colores, Telas e Imágenes\n";
         echo "========================================\n\n";
 
         try {

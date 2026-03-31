@@ -30,7 +30,7 @@ window.manejarImagenesPrenda = function(input) {
                 const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
                 const modalEdicion = document.querySelector('[id*="modal-editar"]') || document.querySelector('[class*="editar"]');
                 
-                console.log('[manejarImagenesPrenda] 🔄 Actualizando preview:', {
+                console.log('[manejarImagenesPrenda]  Actualizando preview:', {
                     enCreacion: !!modalCreacion?.style?.display !== 'none',
                     enEdicion: !!modalEdicion
                 });
@@ -95,7 +95,7 @@ window.actualizarPreviewPrenda = function() {
         
         // Si no hay imágenes, mostrar placeholder con drag & drop
         if (imagenes.length === 0) {
-            console.log('[actualizarPreviewPrenda] 📭 Sin imágenes, mostrando placeholder con drag & drop');
+            console.log('[actualizarPreviewPrenda]  Sin imágenes, mostrando placeholder con drag & drop');
             preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
             preview.style.cursor = 'pointer';
             if (contador) contador.textContent = '';
@@ -155,13 +155,13 @@ window.actualizarPreviewPrenda = function() {
             btn.style.display = imagenes.length < 3 ? 'block' : 'none';
         }
         
-        // 🔄 IMPORTANTE: Notificar al DragDropManager que las imágenes han cambiado
+        //  IMPORTANTE: Notificar al DragDropManager que las imágenes han cambiado
         // Esto hará que el handler se reconfigure si es necesario
         if (window.dragDropManager && typeof window.dragDropManager.actualizarImagenesPrenda === 'function') {
             window.dragDropManager.actualizarImagenesPrenda(imagenes);
             console.log('[actualizarPreviewPrenda]  DragDropManager notificado de cambios en imágenes');
         } else {
-            console.log('[actualizarPreviewPrenda] ⚠️ DragDropManager no disponible para notificación');
+            console.log('[actualizarPreviewPrenda]  DragDropManager no disponible para notificación');
         }
         
     } catch (e) {

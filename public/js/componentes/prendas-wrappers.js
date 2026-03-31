@@ -94,7 +94,7 @@ window.agregarPrendaNueva = function() {
 // Escuchar cuando el módulo completo cargue para reemplazar con funciones avanzadas
 document.addEventListener('prendasModuleLoaded', (event) => {
     const exported = event.detail;
-    console.log('[prendas-wrappers] 📦 Módulo prendas cargado, actualizando funciones globales...');
+    console.log('[prendas-wrappers]  Módulo prendas cargado, actualizando funciones globales...');
     
     // Reemplazar funciones básicas con las avanzadas del módulo
     if (typeof exported.cerrarModalPrendaNueva === 'function') {

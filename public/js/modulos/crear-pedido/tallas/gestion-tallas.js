@@ -43,7 +43,7 @@ window.sincronizarTallasConModalProceso = function() {
             return;
         }
         
-        console.log('[sincronizarTallasConModalProceso] 🔄 Iniciando sincronización...');
+        console.log('[sincronizarTallasConModalProceso]  Iniciando sincronización...');
         
         // DETECTAR MODO: ¿Hay datos existentes en tallasCantidadesProceso?
         const hayDatosExistentes = (
@@ -158,7 +158,7 @@ window.sincronizarTallasConModalProceso = function() {
             window.actualizarResumenTallasProceso();
             console.log('[sincronizarTallasConModalProceso]  Resumen de tallas del proceso actualizado');
         } else {
-            console.warn('[sincronizarTallasConModalProceso] ⚠️ Función actualizarResumenTallasProceso no disponible');
+            console.warn('[sincronizarTallasConModalProceso]  Función actualizarResumenTallasProceso no disponible');
         }
         
     } catch (error) {
@@ -784,7 +784,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
         // Actualizar total
         actualizarTotalPrendas();
         
-        // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
+        //  SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
         window.sincronizarTallasConModalProceso();
     };
     btnGroupAcciones.appendChild(btnEliminar);
@@ -815,12 +815,12 @@ window.crearTarjetaGenero = function(genero, tallas) {
             console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
-            // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
+            //  SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
             window.sincronizarTallasConModalProceso();
         };
         input.onkeyup = () => {
             actualizarTotalPrendas();
-            // 🔄 SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
+            //  SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
             window.sincronizarTallasConModalProceso();
         };
         

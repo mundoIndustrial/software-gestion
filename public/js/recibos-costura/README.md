@@ -1,4 +1,4 @@
-# 📦 Módulo Recibos de Costura - Arquitectura DDD + Clean Code
+#  Módulo Recibos de Costura - Arquitectura DDD + Clean Code
 
 **Estado:**  PHASE 1 Completado  
 **Stack:** Vanilla JavaScript ES6+ | Bootstrap 5 | Vite  
@@ -98,7 +98,7 @@ recibos-costura/
 
 ---
 
-## 🏗️ Arquitectura
+##  Arquitectura
 
 ```
 PRESENTACIÓN          INFRAESTRUCTURA         DOMINIO
@@ -292,7 +292,7 @@ const opciones = await api.getFilterOptions();
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Unit Testing (Value Objects)
 ```javascript
@@ -338,7 +338,7 @@ await window.recibosCostruaModule.tableController.aplicarFiltros({
 
 ---
 
-## 🚀 Comparativa: ANTES vs DESPUÉS
+##  Comparativa: ANTES vs DESPUÉS
 
 | Aspecto | ANTES | DESPUÉS |
 |---------|-------|---------|
@@ -369,7 +369,7 @@ await window.recibosCostruaModule.tableController.aplicarFiltros({
 
 ---
 
-## 🔄 Próximas Fases (PHASE 2+)
+##  Próximas Fases (PHASE 2+)
 
 - [ ] RecibosFilterManager (modal de filtros avanzados)
 - [ ] RecibosDetailsModal (detalles del recibo)

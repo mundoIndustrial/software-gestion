@@ -13,7 +13,7 @@ Sistema de gestión de pedidos para bodegueros con interfaz corporativa, industr
 - **No sombras exageradas** - Bordes visuales claros
 - **Sensación de control administrativo**
 
-### 🏗️ Estructura Jerárquica (3 Niveles)
+###  Estructura Jerárquica (3 Niveles)
 
 ```
 ENCABEZADO (THEAD)
@@ -213,7 +213,7 @@ POST /bodega/pedidos/fecha
 Body: { id: 1, fecha_entrega: "2026-02-15" }
 ```
 
-## 🧪 Testing
+##  Testing
 
 Ejecutar tests:
 ```bash

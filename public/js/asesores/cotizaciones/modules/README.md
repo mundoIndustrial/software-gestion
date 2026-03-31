@@ -315,7 +315,7 @@ const state = app.getState();
 
 ---
 
-## 🧪 Patrones de Testing
+##  Patrones de Testing
 
 ### Test del Módulo de Validación
 ```javascript

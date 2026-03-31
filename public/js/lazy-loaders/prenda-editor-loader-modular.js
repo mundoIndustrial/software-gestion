@@ -40,7 +40,7 @@ window.PrendaEditorLoader = (function() {
 
         isLoading = true;
 
-        // 📦 Módulos a cargar (en orden)
+        //  Módulos a cargar (en orden)
         const modulesToLoad = [
             // Servicios especializados (sin dependencias)
             '/js/modulos/crear-pedido/prendas/services/prenda-editor-loader-service.js',
@@ -159,7 +159,7 @@ window.PrendaEditorLoader = (function() {
 })();
 
 /**
- * 🚀 AUTO-LOAD EN DOCUMENTO LISTO
+ *  AUTO-LOAD EN DOCUMENTO LISTO
  */
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.PrendaEditorRefactoredLoader !== 'undefined') {

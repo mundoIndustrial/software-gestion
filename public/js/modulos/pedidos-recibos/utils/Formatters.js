@@ -246,7 +246,7 @@ export class Formatters {
 
             // Primero verificar si hay talla_colores (flujo 2 - tallas con colores)
             if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
-                console.log('[Formatters]  📊 Usando talla_colores (flujo 2 - tallas con colores)');
+                console.log('[Formatters] Usando talla_colores (flujo 2 - tallas con colores)');
                 tallasParaRenderizar = this._transformarTallaColoresAEstructura(prenda.talla_colores);
                 console.log('[Formatters]  Estructura de tallas transformada:', tallasParaRenderizar);
             } else if (prenda.tallas) {
@@ -262,7 +262,7 @@ export class Formatters {
                 }
 
                 if (tienesTallas) {
-                    console.log('[Formatters]  📊 Usando tallas (flujo 1 - tallas simples)');
+                    console.log('[Formatters] Usando tallas (flujo 1 - tallas simples)');
                     tallasParaRenderizar = prenda.tallas;
                 }
             }
@@ -818,7 +818,7 @@ export class Formatters {
         const norm1 = this._normalizarTallasParaComparacion(tallas1);
         const norm2 = this._normalizarTallasParaComparacion(tallas2);
         
-        console.log('[Formatters._sonTallasIguales] 📊 Tallas normalizadas para comparación:', {
+        console.log('[Formatters._sonTallasIguales]Tallas normalizadas para comparación:', {
             norm1,
             norm2
         });
@@ -897,7 +897,7 @@ export class Formatters {
         const norm1 = extraerTallasSimple(tallas1);
         const norm2 = extraerTallasSimple(tallas2);
         
-        console.log('[Formatters._comparacionSimpleTallas] 📊 Normalizado:', { norm1, norm2 });
+        console.log('[Formatters._comparacionSimpleTallas]Normalizado:', { norm1, norm2 });
         
         // Comparar DAMA
         const damaKeys1 = Object.keys(norm1.dama).sort();
@@ -1329,7 +1329,7 @@ export class Formatters {
         console.log('[Formatters._transformarTallaColoresAEstructura] 🎨 INPUT:', tallasColoresArray);
         
         if (!Array.isArray(tallasColoresArray) || tallasColoresArray.length === 0) {
-            console.warn('[Formatters._transformarTallaColoresAEstructura] ⚠️ Array vacío o inválido');
+            console.warn('[Formatters._transformarTallaColoresAEstructura]  Array vacío o inválido');
             return {};
         }
 
@@ -1352,13 +1352,13 @@ export class Formatters {
 
             // Validar datos mínimos
             if (!genero || !talla || cantidad <= 0) {
-                console.warn(`[Formatters._transformarTallaColoresAEstructura]   ⚠️ Saltando registro inválido`);
+                console.warn(`[Formatters._transformarTallaColoresAEstructura]    Saltando registro inválido`);
                 return;
             }
 
             // Verificar que el género sea válido
             if (!estructura.hasOwnProperty(genero)) {
-                console.warn(`[Formatters._transformarTallaColoresAEstructura]   ⚠️ Género inválido: ${genero}`);
+                console.warn(`[Formatters._transformarTallaColoresAEstructura]    Género inválido: ${genero}`);
                 return;
             }
 
@@ -1389,7 +1389,7 @@ export class Formatters {
             }
         });
 
-        console.log('[Formatters._transformarTallaColoresAEstructura] 📊 Estructura final:', estructura);
+        console.log('[Formatters._transformarTallaColoresAEstructura]Estructura final:', estructura);
         return estructura;
     }
 

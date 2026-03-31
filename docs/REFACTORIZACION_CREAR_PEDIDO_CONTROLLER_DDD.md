@@ -1,8 +1,8 @@
-# 🏗️ REFACTORIZACIÓN CrearPedidoEditableController - DDD & Clean Architecture
+#  REFACTORIZACIÓN CrearPedidoEditableController - DDD & Clean Architecture
 
-## 📊 ANÁLISIS EJECUTIVO
+##ANÁLISIS EJECUTIVO
 
-**Estado Actual:** 1 monolítíco controller con 21 dependencias, 7 métodos heterogéneos ⚠️  
+**Estado Actual:** 1 monolítíco controller con 21 dependencias, 7 métodos heterogéneos   
 **Estado Deseado:** 5 controllers especializados, cada uno con responsabilidad única 
 
 ---
@@ -187,7 +187,7 @@ public function crearDesdeCotizacion(Request $request): View {
 
 ##  NUEVA ARQUITECTURA PROPUESTA
 
-### 🏗️ Estructura de Controladores
+###  Estructura de Controladores
 
 ```
 app/Infrastructure/Http/Controllers/Asesores/Pedidos/
@@ -202,7 +202,7 @@ app/Infrastructure/Http/Controllers/Asesores/Pedidos/
     └── PedidoFormDataPresenter.php              ← Datos compartidos para formulario
 ```
 
-### 📦 Servicios Intermedios (Nuevos)
+###  Servicios Intermedios (Nuevos)
 
 ```
 app/Application/Services/Pedidos/
@@ -216,7 +216,7 @@ app/Infrastructure/Http/Presenters/
 └── PrendasAutocompletePresenter.php              ← Presenta prendas para búsqueda
 ```
 
-### 🔄 Flujo por Método
+###  Flujo por Método
 
 #### GET /pedidos/crear-desde-cotizacion
 
@@ -260,7 +260,7 @@ JSON Response
 
 ---
 
-## 🚀 IMPLEMENTACIÓN
+##  IMPLEMENTACIÓN
 
 ### Paso 1: Crear UseCase para Obtener Datos Compartidos
 
@@ -716,7 +716,7 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
 
 ---
 
-## 🧪 TESTING
+##  TESTING
 
 ### Unit Test - CrearPedidoController
 
@@ -842,7 +842,7 @@ app/
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Crear PedidosServiceProvider** para registrar todos los UseCases
 2. **Crear UseCases nuevos** listados arriba

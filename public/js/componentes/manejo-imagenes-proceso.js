@@ -170,8 +170,8 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         modal.setAttribute('style', 'z-index: 2147483648 !important; display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0, 0, 0, 0.7) !important; backdrop-filter: blur(4px) !important; align-items: center !important; justify-content: center !important;');
         
         console.log('[eliminarImagenProceso]  Modal de confirmación mostrado');
-        console.log('[eliminarImagenProceso] 📊 Z-index forzado:', modal.style.zIndex);
-        console.log('[eliminarImagenProceso] 📊 Display:', modal.style.display);
+        console.log('[eliminarImagenProceso]Z-index forzado:', modal.style.zIndex);
+        console.log('[eliminarImagenProceso]Display:', modal.style.display);
     } else {
         console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
         console.log('[eliminarImagenProceso]  Modales en DOM:');

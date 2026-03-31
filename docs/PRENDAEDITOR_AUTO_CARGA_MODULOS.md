@@ -1,4 +1,4 @@
-## 🚀 Sistema de Auto-Carga de Módulos - PrendaEditor
+##  Sistema de Auto-Carga de Módulos - PrendaEditor
 
 ### El Problema
 El archivo `prenda-editor.js` depende de varios módulos especializados:
@@ -137,7 +137,7 @@ PrendaEditor._modulosEnCarga
 // Busca líneas como:
 // "[PrendaEditor]  Módulos ya disponibles"
 // "[PrendaEditor]  Usando PrendaEditorLoader"
-// "[PrendaEditor] 📦 Cargando N módulos..."
+// "[PrendaEditor]  Cargando N módulos..."
 ```
 
 ### Recomendaciones de Integración

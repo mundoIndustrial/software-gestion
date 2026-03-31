@@ -111,7 +111,7 @@ class RealtimeReciboListener {
             <div style="font-size: 13px; opacity: 0.9;">
                 <div> Recibo #${data.consecutivo}</div>
                 <div>👤 Cliente: ${data.cliente || 'N/A'}</div>
-                <div>📦 Área: ${data.area || 'N/A'}</div>
+                <div> Área: ${data.area || 'N/A'}</div>
             </div>
         `;
 
@@ -161,10 +161,10 @@ class RealtimeReciboListener {
                         // Reinicializar event listeners en las nuevas filas
                         this._reinitializeTableListeners();
                     } else {
-                        console.warn('[⚠️ RealtimeReciboListener] Element tablaRecibosBody no encontrado');
+                        console.warn('[ RealtimeReciboListener] Element tablaRecibosBody no encontrado');
                     }
                 } else {
-                    console.warn('[⚠️ RealtimeReciboListener] Respuesta sin HTML de recibos');
+                    console.warn('[ RealtimeReciboListener] Respuesta sin HTML de recibos');
                 }
             })
             .catch(error => {
@@ -172,7 +172,7 @@ class RealtimeReciboListener {
                 
                 // Como fallback, recargar toda la página después de 3 segundos
                 setTimeout(() => {
-                    console.log('[🔄 RealtimeReciboListener] Recargando página como fallback...');
+                    console.log('[ RealtimeReciboListener] Recargando página como fallback...');
                     window.location.reload();
                 }, 3000);
             });
@@ -190,7 +190,7 @@ class RealtimeReciboListener {
         if (typeof reinitializeTableListeners === 'function') {
             reinitializeTableListeners();
         } else {
-            console.warn('[⚠️ RealtimeReciboListener] reinitializeTableListeners no disponible');
+            console.warn('[ RealtimeReciboListener] reinitializeTableListeners no disponible');
         }
     }
 

@@ -50,7 +50,7 @@ window.guardarTallasSeleccionadas = function() {
             };
         });
         
-        console.log(`💾 [guardarTallasSeleccionadas EXTENDIDO] Datos extendidos guardados para "${procesoActual}":`, {
+        console.log(` [guardarTallasSeleccionadas EXTENDIDO] Datos extendidos guardados para "${procesoActual}":`, {
             datosExtendidos: window.procesosSeleccionados[procesoActual].datos.datosExtendidos,
             ubicaciones: Object.values(datosExtendidos.dama || {}).map(d => d.ubicaciones).flat(),
             observaciones: Object.values(datosExtendidos.dama || {}).map(d => d.observaciones).filter(o => o),
@@ -88,5 +88,5 @@ window.restaurarDatosExtendidosTallasProceso = function(proceso) {
         sobremedida: { ...datosGuardados.sobremedida || {} }
     };
     
-    console.log(`🔄 [restaurarDatosExtendidosTallasProceso] Datos restaurados para "${proceso}":`, window.datosExtendidosTallasProceso);
+    console.log(` [restaurarDatosExtendidosTallasProceso] Datos restaurados para "${proceso}":`, window.datosExtendidosTallasProceso);
 };

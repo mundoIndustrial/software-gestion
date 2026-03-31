@@ -653,7 +653,7 @@ window.addEventListener('prendaActualizada', (event) => {
         
         // Preservar los EPPs actuales ANTES de actualizar
         const eppsPersistentes = window.eppsPedido ? JSON.parse(JSON.stringify(window.eppsPedido)) : [];
-        console.log('[cargar-datos-edicion-nuevo] 💾 EPPs a preservar:', eppsPersistentes.length);
+        console.log('[cargar-datos-edicion-nuevo]  EPPs a preservar:', eppsPersistentes.length);
         
         // Recargar los datos del pedido para obtener la prenda actualizada
         if (pedidoId && window.datosEdicionPedido) {

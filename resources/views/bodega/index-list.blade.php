@@ -822,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         console.log('[Bodega Realtime]  Conectado al canal pedidos.general');
     } else {
-        console.log('[Bodega Realtime] ⚠️ Echo no disponible, usando fallback de polling');
+        console.log('[Bodega Realtime]  Echo no disponible, usando fallback de polling');
         
         // Fallback: verificar actualizaciones cada 30 segundos
         setInterval(function() {

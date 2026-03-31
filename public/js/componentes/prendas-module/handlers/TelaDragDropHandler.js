@@ -314,7 +314,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log('TelaDragDropHandler', '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log('TelaDragDropHandler', ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -330,7 +330,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
                                 UIHelperService.log('TelaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log('TelaDragDropHandler', `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log('TelaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `tela-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type

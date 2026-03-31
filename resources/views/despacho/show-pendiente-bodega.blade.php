@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Analizar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
-    console.log('📦 [DIAGNÓSTICO-TABLA] Contenedor principal:', {
+    console.log(' [DIAGNÓSTICO-TABLA] Contenedor principal:', {
         tagName: mainContainer?.tagName,
         classes: mainContainer?.className,
         computedWidth: mainContainer ? window.getComputedStyle(mainContainer).width : 'N/A',
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const overflowDiv = document.querySelector('.overflow-x-auto');
     if (overflowDiv) {
         const overflowStyle = window.getComputedStyle(overflowDiv);
-        console.log('🔄 [DIAGNÓSTICO-TABLA] Contenedor overflow:', {
+        console.log(' [DIAGNÓSTICO-TABLA] Contenedor overflow:', {
             classes: overflowDiv.className,
             computedWidth: overflowStyle.width,
             computedOverflowX: overflowStyle.overflowX,

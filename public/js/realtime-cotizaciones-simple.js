@@ -7,7 +7,7 @@ console.log('[REALTIME-COT-SIMPLE] === ARCHIVO CARGADO (Phase 5) ===');
 
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
-    console.warn('[REALTIME-COT-SIMPLE] ⚠️  El archivo ya fue cargado');
+    console.warn('[REALTIME-COT-SIMPLE]   El archivo ya fue cargado');
 } else {
     window.realtimeCotizacionesLoaded = true;
     

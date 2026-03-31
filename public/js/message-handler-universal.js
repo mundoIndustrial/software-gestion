@@ -1,5 +1,5 @@
 /**
- * 📡 HANDLER UNIVERSAL DE MENSAJES v2.0
+ *  HANDLER UNIVERSAL DE MENSAJES v2.0
  * 
  * Handler universal para mensajes y listeners asíncronos que funciona en cualquier navegador.
  *  Elimina errores "message channel closed" y "Uncaught in promise".

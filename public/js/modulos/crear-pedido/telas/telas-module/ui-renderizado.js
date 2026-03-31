@@ -16,7 +16,7 @@
  */
 window.actualizarTablaTelas = function() {
     console.log('═════════════════════════════════════════════════════════════════');
-    console.log('[actualizarTablaTelas] 🔄 FUNCIÓN LLAMADA - Rendering tabla');
+    console.log('[actualizarTablaTelas]  FUNCIÓN LLAMADA - Rendering tabla');
     console.log('═════════════════════════════════════════════════════════════════');
     
     const tbody = document.getElementById('tbody-telas');
@@ -30,7 +30,7 @@ window.actualizarTablaTelas = function() {
     const telas = window.telasCreacion;
     
     // DIAGNÓSTICO: Ver qué hay en telasCreacion
-    console.log('[actualizarTablaTelas] 📊 DIAGNÓSTICO - Datos a renderizar:');
+    console.log('[actualizarTablaTelas]DIAGNÓSTICO - Datos a renderizar:');
     console.log('  window.telasCreacion:', telas);
     console.log('  Cantidad de telas:', telas?.length || 0);
     if (telas && telas.length > 0) {
@@ -43,7 +43,7 @@ window.actualizarTablaTelas = function() {
     // Identificar la fila de INPUTS usando el botón "Agregar" (selector robusto)
     console.log('[actualizarTablaTelas]  Buscando fila de INPUTS en tabla...');
     const todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
-    console.log('[actualizarTablaTelas] 📊 Total de filas en tabla:', todasLasFilas.length);
+    console.log('[actualizarTablaTelas]Total de filas en tabla:', todasLasFilas.length);
     
     const filaInputs = todasLasFilas.find(tr => 
         tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
@@ -52,7 +52,7 @@ window.actualizarTablaTelas = function() {
     if (filaInputs) {
         console.log('[actualizarTablaTelas] ✓ Fila de INPUTS identificada');
     } else {
-        console.warn('[actualizarTablaTelas] ⚠️  No se encontró fila de INPUTS');
+        console.warn('[actualizarTablaTelas]   No se encontró fila de INPUTS');
     }
     
     // Eliminar SOLO las filas de telas (las que tienen onclick="eliminarTela()")
@@ -72,7 +72,7 @@ window.actualizarTablaTelas = function() {
     const fragment = document.createDocumentFragment();
     
     if (telas.length === 0) {
-        console.log('[actualizarTablaTelas] 📭 Sin telas - mostrando mensaje vacío');
+        console.log('[actualizarTablaTelas]  Sin telas - mostrando mensaje vacío');
         // Mensaje cuando no hay telas
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -101,7 +101,7 @@ window.actualizarTablaTelas = function() {
         filaInputs.parentNode.insertBefore(fragment, filaInputs.nextSibling);
     } else {
         // Fallback: insertar al final
-        console.log('[actualizarTablaTelas] ⚠️  No hay fila de inputs, insertando al final');
+        console.log('[actualizarTablaTelas]   No hay fila de inputs, insertando al final');
         tbody.appendChild(fragment);
     }
     

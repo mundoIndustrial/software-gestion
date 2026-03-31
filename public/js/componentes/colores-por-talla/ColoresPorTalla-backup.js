@@ -766,7 +766,7 @@ window.ColoresPorTalla = (function() {
         console.log('[wizardGuardarAsignacion]  Asignaciones agrupadas:', asignacionesPorTalla);
         
         // Guardar asignaciones
-        console.log('[wizardGuardarAsignacion] 💾 Llamando a AsignacionManager...');
+        console.log('[wizardGuardarAsignacion]  Llamando a AsignacionManager...');
         const resultado = AsignacionManager.guardarAsignacionesMultiples(genero, tallas, tipo, tela, asignacionesPorTalla);
         
         console.log('[wizardGuardarAsignacion] Resultado:', resultado);

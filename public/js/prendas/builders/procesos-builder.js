@@ -15,7 +15,7 @@ class ProcesosBuilder {
     };
 
     static construir(prenda, indice) {
-        console.log('[ProcesosBuilder] 🏗️ Construyendo procesos para prenda:', {
+        console.log('[ProcesosBuilder]  Construyendo procesos para prenda:', {
             nombre: prenda.nombre_prenda,
             indice: indice,
             tieneProcesos: !!prenda.procesos,

@@ -94,7 +94,7 @@ if ($Operacion -eq "carga-inicial" -or $Operacion -eq "todas") {
 
 # ANÁLISIS: CREACIÓN DE PEDIDO
 if ($Operacion -eq "creacion-pedido" -or $Operacion -eq "todas") {
-    Write-Host "`n┌─ 💾 CREACIÓN DE PEDIDO (guardado)" -ForegroundColor Yellow
+    Write-Host "`n┌─  CREACIÓN DE PEDIDO (guardado)" -ForegroundColor Yellow
     Write-Host "└─" -ForegroundColor Yellow
     
     $creacionPedido = $lineas | Select-String 'CREAR-PEDIDO.*✨ TRANSACCIÓN'

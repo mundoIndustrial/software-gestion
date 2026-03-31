@@ -18,7 +18,7 @@ class EppMenuHandlerTabla extends EppMenuHandlerBase {
     }
 
     attachEventListeners() {
-        console.log('[EppMenuHandlerTabla] 🎧 Configurando event listeners para tabla...');
+        console.log('[EppMenuHandlerTabla]  Configurando event listeners para tabla...');
         
         document.addEventListener('click', (e) => {
             // Click en botón de menú

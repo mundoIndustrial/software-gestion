@@ -195,7 +195,7 @@
 @include('components.modals.novedades-advanced-modal')
 
 <script>
-console.log('🚀 SCRIPT DESPACHO CARGADO - Iniciando configuración...');
+console.log(' SCRIPT DESPACHO CARGADO - Iniciando configuración...');
 window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
 
@@ -395,7 +395,7 @@ function connectWebSocket() {
         console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            console.log(' Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
             console.log(' Debug evento recibido:', {
@@ -413,7 +413,7 @@ function connectWebSocket() {
             
             // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
             if (event.nuevo_estado === 'Entregado') {
-                    console.log('🔄 Eliminando pedido entregado de la lista:', event.numero_pedido);
+                    console.log(' Eliminando pedido entregado de la lista:', event.numero_pedido);
                     
                     // Buscar el pedido en la tabla y eliminarlo con animación
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
@@ -446,13 +446,13 @@ function connectWebSocket() {
                 }
                 // Si el pedido cambió a "Pendiente" y no está en la lista, agregarlo o recargar
                 else if (event.nuevo_estado === 'Pendiente') {
-                    console.log('🔄 Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
+                    console.log(' Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
                     
                     // Verificar si el pedido NO está en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (!pedidoRow) {
                         console.log(' Pedido no encontrado en lista, recargando para mostrarlo...');
-                        console.log('🔄 Recargando página por cambio en bodega...');
+                        console.log(' Recargando página por cambio en bodega...');
                         // Recargar la página para mostrar el nuevo pedido pendiente
                         window.location.reload();
                     } else {
@@ -461,14 +461,14 @@ function connectWebSocket() {
                 }
                 // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
                 else if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
-                    console.log('🔄 Hay cambios en bodega, verificando si hay que recargar...');
+                    console.log(' Hay cambios en bodega, verificando si hay que recargar...');
                     console.log('📊 Info de bodega:', event.changedFields);
                     
                     // Si hay items pendientes y el pedido no está en la lista, recargar
                     if (event.changedFields.bodega_pendientes_count > 0) {
                         const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                         if (!pedidoRow) {
-                            console.log('🔄 Hay items pendientes pero el pedido no está en lista, recargando...');
+                            console.log(' Hay items pendientes pero el pedido no está en lista, recargando...');
                             window.location.reload();
                         } else {
                             console.log(' Pedido con items pendientes ya está en lista');
@@ -477,7 +477,7 @@ function connectWebSocket() {
                 }
                 // Si el pedido volvió a "Pendiente" desde "Entregado" y no está en la lista, recargar la página
                 else if (event.nuevo_estado === 'Pendiente' && event.anterior_estado === 'Entregado') {
-                    console.log('🔄 Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
+                    console.log(' Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
                     
                     // Verificar si el pedido NO está en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
@@ -539,7 +539,7 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
 
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
+    console.log(' DOM cargado - Iniciando WebSocket de despacho...');
     console.log(' URL actual:', window.location.href);
     console.log(' Pathname:', window.location.pathname);
     
@@ -547,12 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.pathname.includes('/despacho/pendientes')) {
         console.log(' Estamos en la página de despacho pendientes');
     } else {
-        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+        console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+        console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
         connectWebSocket();
     });
 });

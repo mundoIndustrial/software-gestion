@@ -110,7 +110,7 @@ catch (\Exception $e) {
 }
 ```
 
-## 📊 Mejoras de Rendimiento
+##Mejoras de Rendimiento
 
 ### Antes de la Solución:
 - **Tiempo de aprobación**: ~10 segundos (timeout WebSocket)
@@ -183,7 +183,7 @@ En `config/broadcasting.php`:
 tail -f storage/logs/laravel.log | grep "\[CARTERA\]"
 ```
 
-## 🚀 Implementación
+##  Implementación
 
 ### Cambios Realizados:
 1.  **Broadcast asíncrono** con manejo de errores
@@ -205,12 +205,12 @@ tail -f storage/logs/laravel.log | grep "\[CARTERA\]"
 -  Mensajes de error claros para usuarios
 
 ### Largo Plazo:
-- 📊 Métricas de rendimiento disponibles
+-Métricas de rendimiento disponibles
 -  Facilidad para identificar problemas
 - 🛡️ Mejor experiencia de usuario
 - 📈 Mayor estabilidad del sistema
 
-## 🧪 Pruebas Recomendadas
+##  Pruebas Recomendadas
 
 ### 1. **Flujo Normal**
 ```bash

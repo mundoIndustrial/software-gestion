@@ -51,7 +51,7 @@ class PrendaCardService {
             console.log('[PrendaCardService.generar]  Info tela:', infoTela);
 
             // 3. Construir secciones expandibles
-            console.log('[PrendaCardService.generar] 🏗️ CONSTRUYENDO SECCIONES...');
+            console.log('[PrendaCardService.generar]  CONSTRUYENDO SECCIONES...');
             console.log('[PrendaCardService.generar]  Verificando builders:');
             console.log('[PrendaCardService.generar]   - VariacionesBuilder:', !!VariacionesBuilder);
             console.log('[PrendaCardService.generar]   - TallasBuilder:', !!TallasBuilder);

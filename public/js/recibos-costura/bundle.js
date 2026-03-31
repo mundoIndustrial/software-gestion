@@ -1,5 +1,5 @@
 /**
- * 📦 Bundle compilado del módulo Recibos Costura
+ *  Bundle compilado del módulo Recibos Costura
  * 
  * Este archivo incluye TODOS los componentes del módulo en un único archivo
  * para evitar problemas de carga con Vite y assets.
@@ -816,7 +816,7 @@ class RecibosCostruaModule {
 
     async init() {
         try {
-            console.log('🚀 Inicializando módulo de recibos de costura...');
+            console.log(' Inicializando módulo de recibos de costura...');
 
             this.state = RecibosState.getInstance();
             this.api = new ReciboCosturaAPI();
@@ -860,7 +860,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /**
  * Configurar event listeners para la tabla
- * ⚠️ COMENTADO: legacy-handlers.js ya maneja esto con mejor logging
+ *  COMENTADO: legacy-handlers.js ya maneja esto con mejor logging
  * Mantener solo para referencia en caso de fallback
  */
 function setupTableEventListeners() {
@@ -979,7 +979,7 @@ function crearDropdownRecibos(button) {
  * Posicionar dropdown cerca del botón
  */
 /**
- * ⚠️ COMENTADA: Usar la versión de legacy-handlers.js 
+ *  COMENTADA: Usar la versión de legacy-handlers.js 
  * Esta función tenía parámetros incompatibles causando que estilos se aplicaran al botón
  */
 /*
@@ -1102,10 +1102,10 @@ function openOrderDetailModal(datos) {
             // Usar el módulo pedidosRecibosModule si está disponible
             if (typeof window.pedidosRecibosModule !== 'undefined' && 
                 typeof window.pedidosRecibosModule.abrirRecibo === 'function') {
-                console.log(`📦 Delegando a pedidosRecibosModule.abrirRecibo(${pedidoId}, ${prendaSeleccionada.id}, 'costura')`);
+                console.log(` Delegando a pedidosRecibosModule.abrirRecibo(${pedidoId}, ${prendaSeleccionada.id}, 'costura')`);
                 window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaSeleccionada.id, 'costura');
             } else {
-                console.warn('⚠️ módulo pedidosRecibosModule no disponible');
+                console.warn(' módulo pedidosRecibosModule no disponible');
             }
 
             // Disparar evento personalizado
@@ -1131,7 +1131,7 @@ window.closeModalOverlay = function() {
     // Delegar al módulo de pedidos si está disponible (limpia estado, galería, botones)
     if (typeof window.pedidosRecibosModule !== 'undefined' && 
         typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
-        console.log('📦 Delegando cierre a pedidosRecibosModule.cerrarRecibo()');
+        console.log(' Delegando cierre a pedidosRecibosModule.cerrarRecibo()');
         window.pedidosRecibosModule.cerrarRecibo();
     }
 

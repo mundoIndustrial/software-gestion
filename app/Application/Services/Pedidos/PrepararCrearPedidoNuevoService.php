@@ -61,14 +61,14 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
                 $pedidoEditar->prendas = collect($datosEdicion['prendas']);
                 $eppsEditar = $datosEdicion['epps'];
 
-                Log::info('[PrepararCrearPedidoNuevoService] ✏️ MODO EDICIÓN activado', [
+                Log::info('[PrepararCrearPedidoNuevoService]  MODO EDICIÓN activado', [
                     'pedido_id' => $pedidoEditarId,
                     'prendas' => count($datosEdicion['prendas']),
                     'epps' => count($datosEdicion['epps']),
                     'mejora' => "Servicio encapsula lógica de edición",
                 ]);
             } else {
-                Log::warning('[PrepararCrearPedidoNuevoService] ⚠️ Pedido no encontrado', ['edit_id' => $editId]);
+                Log::warning('[PrepararCrearPedidoNuevoService]  Pedido no encontrado', ['edit_id' => $editId]);
             }
         }
 

@@ -91,7 +91,7 @@
             const seen = getSeenBadges();
             seen[pedidoId] = Date.now();
             localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
-            console.log(`[DEBUG-BADGE] 💾 setBadgeSeen - Pedido ${pedidoId} marcado como visto`);
+            console.log(`[DEBUG-BADGE]  setBadgeSeen - Pedido ${pedidoId} marcado como visto`);
             console.log(`[DEBUG-BADGE] - Timestamp: ${seen[pedidoId]}`);
             console.log(`[DEBUG-BADGE] - Total badges vistos: ${Object.keys(seen).length}`);
         } catch (e) {
@@ -240,7 +240,7 @@
     }
 
     async function refrescarBadgesObservacionesDespacho() {
-        console.log(`[DEBUG] 🔄 refrescarBadgesObservacionesDespacho INICIADO`);
+        console.log(`[DEBUG]  refrescarBadgesObservacionesDespacho INICIADO`);
         
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
@@ -269,7 +269,7 @@
             console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
             console.log(`[DEBUG] - URL a consultar: ${url}`);
 
-            console.log(`[DEBUG] 📡 Enviando request al servidor...`);
+            console.log(`[DEBUG]  Enviando request al servidor...`);
             const r = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -285,7 +285,7 @@
             console.log(`[DEBUG] - Response ok: ${r.ok}`);
 
             const data = await r.json().catch(() => null);
-            console.log(`[DEBUG] 📦 Respuesta del servidor:`, data);
+            console.log(`[DEBUG]  Respuesta del servidor:`, data);
             
             const map = (data && data.success && data.data) ? data.data : {};
             console.log(`[DEBUG] - Map de unread counts:`, map);
@@ -433,7 +433,7 @@
                 const esEditable = source === 'despacho';
                 const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
-                    <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
+                    <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar"></button>
                     <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
                 const fecha = item.updated_at || item.created_at || '';
@@ -1046,7 +1046,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log(`[DEBUG] 🚀 DOMContentLoaded - Iniciando sistema de badges`);
+        console.log(`[DEBUG]  DOMContentLoaded - Iniciando sistema de badges`);
         console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
         console.log(`[DEBUG] - URL completa: ${window.location.href}`);
         
@@ -1067,12 +1067,12 @@
                 console.log(`[DEBUG]  Previews cargados`);
                 
                 // Refresh badges after loading previews
-                console.log(`[DEBUG] 🔄 Refrescando badges después de cargar previews...`);
+                console.log(`[DEBUG]  Refrescando badges después de cargar previews...`);
                 await refrescarBadgesObservacionesDespacho();
                 refrescarBadgesNovedadesDespacho();
 
                 // Setup WebSocket para tiempo real
-                console.log(`[DEBUG] 📡 Configurando WebSocket...`);
+                console.log(`[DEBUG]  Configurando WebSocket...`);
                 setupObservacionesRealtime();
                 console.log(`[DEBUG]  Sistema de badges completamente inicializado`);
             };
@@ -1102,12 +1102,12 @@
                 console.log(`[DEBUG-BADGE]  Marcado como visto en localStorage`);
                 
                 // También marcar como visto en el backend
-                console.log(`[DEBUG-BADGE] 📡 Marcando como visto en el backend...`);
+                console.log(`[DEBUG-BADGE]  Marcando como visto en el backend...`);
                 marcarNotificacionesComoVistas(pedidoId);
                 console.log(`[DEBUG-BADGE]  Solicitado marcado como visto en backend`);
                 
                 console.log(`[DEBUG-BADGE] 🎯 Badge ${pedidoId} marcado como visto por clic del usuario`);
-                console.log(`[DEBUG-BADGE] 🔄 El badge debería desaparecer ahora`);
+                console.log(`[DEBUG-BADGE]  El badge debería desaparecer ahora`);
             }
         });
     });

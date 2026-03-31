@@ -51,7 +51,7 @@ Cantidad     → Cantidad total (visible en tabla)
 
 ---
 
-## 🏗️ Arquitectura Implementada
+##  Arquitectura Implementada
 
 ### Stack Técnico
 - **Frontend**: Blade + JavaScript Vanilla (sin librerías externas)
@@ -299,7 +299,7 @@ id  │ pedido_id │ tipo_item │ item_id │ talla_id │ pendiente_inicial �
 
 ---
 
-## 🧪 Validación de Requisitos
+##  Validación de Requisitos
 
 | Requisito |  | Detalles |
 |-----------|----|-|

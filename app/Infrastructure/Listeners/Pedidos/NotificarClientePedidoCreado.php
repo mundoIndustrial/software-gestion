@@ -27,7 +27,7 @@ class NotificarClientePedidoCreado
     public function __invoke(PedidoProduccionCreado $event): void
     {
         try {
-            Log::info('ðŸ“§ Notificando cliente de nuevo pedido', [
+            Log::info('§ Notificando cliente de nuevo pedido', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
                 'cliente' => $event->getCliente(),

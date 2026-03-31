@@ -431,7 +431,7 @@ class PayloadSanitizer {
      * @param {Object} despues 
      */
     static debug(antes, despues) {
-        console.group('🧪 PayloadSanitizer - Debug');
+        console.group(' PayloadSanitizer - Debug');
         console.log(' ANTES (con propiedades reactivas):');
         console.dir(antes, { depth: 3 });
         console.log('\n DESPUÉS (limpio para Laravel):');

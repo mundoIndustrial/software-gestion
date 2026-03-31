@@ -97,7 +97,7 @@ class PrendaEditorTelas {
                 if (imagenValida instanceof File) {
                     fileParaFallback = imagenValida;
                     imgSrc = URL.createObjectURL(imagenValida);
-                    console.log(`[Telas] 🔄 Blob URL creada para tela ${idx} desde File object crudo: ${imgSrc.substring(0, 60)}`);
+                    console.log(`[Telas]  Blob URL creada para tela ${idx} desde File object crudo: ${imgSrc.substring(0, 60)}`);
                 } else if (typeof imagenValida === 'string') {
                     if (imagenValida.startsWith('data:') || imagenValida.startsWith('blob:')) {
                         imgSrc = imagenValida;
@@ -109,7 +109,7 @@ class PrendaEditorTelas {
                         fileParaFallback = imagenValida.file;
                         imgSrc = URL.createObjectURL(imagenValida.file);
                         imagenValida.previewUrl = imgSrc;
-                        console.log(`[Telas] 🔄 Blob URL reconstituida para tela ${idx} desde File object`);
+                        console.log(`[Telas]  Blob URL reconstituida para tela ${idx} desde File object`);
                     } else if (imagenValida.previewUrl && !imagenValida.previewUrl.startsWith('blob:')) {
                         imgSrc = imagenValida.previewUrl;
                     } else if (imagenValida.previewUrl && imagenValida.previewUrl.startsWith('blob:')) {
@@ -148,11 +148,11 @@ class PrendaEditorTelas {
             
             // Evento de error: si blob URL falla, intentar data URL como fallback
             img.onerror = function() {
-                console.warn(`[Telas] ⚠️ Error cargando imagen tela ${idx}, src: ${img.src?.substring(0, 60)}`);
+                console.warn(`[Telas]  Error cargando imagen tela ${idx}, src: ${img.src?.substring(0, 60)}`);
                 
                 // Si tenemos el File original, re-intentar con data URL (base64)
                 if (fileParaFallback && fileParaFallback instanceof File) {
-                    console.log(`[Telas] 🔄 Intentando fallback con FileReader (data URL) para tela ${idx}`);
+                    console.log(`[Telas]  Intentando fallback con FileReader (data URL) para tela ${idx}`);
                     const reader = new FileReader();
                     reader.onload = function() {
                         img.onerror = null; // Evitar bucle infinito
@@ -315,7 +315,7 @@ window.agregarTelaNueva = function() {
         );
         
         if (telaExistente) {
-            console.warn('[agregarTelaNueva] ⚠️ Tela ya existe');
+            console.warn('[agregarTelaNueva]  Tela ya existe');
             alert('Esta tela ya está agregada');
             return false;
         }
@@ -367,13 +367,13 @@ window.agregarTelaNueva = function() {
 
 // 🔴 NUEVO: Función de prueba para verificar APIs
 window.probarApisTelasColores = async function() {
-    console.log('[probarApisTelasColores] 🧪 Iniciando prueba de APIs...');
+    console.log('[probarApisTelasColores]  Iniciando prueba de APIs...');
     
     try {
         // Probar API de telas
         console.log('[probarApisTelasColores] Probando /api/asesores/telas...');
         const responseTelas = await fetch('/api/asesores/telas');
-        console.log('[probarApisTelasColores] 📡 Status telas:', responseTelas.status);
+        console.log('[probarApisTelasColores]  Status telas:', responseTelas.status);
         
         if (responseTelas.ok) {
             const dataTelas = await responseTelas.json();
@@ -385,7 +385,7 @@ window.probarApisTelasColores = async function() {
         // Probar API de colores
         console.log('[probarApisTelasColores] Probando /api/asesores/colores...');
         const responseColores = await fetch('/api/asesores/colores');
-        console.log('[probarApisTelasColores] 📡 Status colores:', responseColores.status);
+        console.log('[probarApisTelasColores]  Status colores:', responseColores.status);
         
         if (responseColores.ok) {
             const dataColores = await responseColores.json();
@@ -401,17 +401,17 @@ window.probarApisTelasColores = async function() {
 
 // 🔴 NUEVO: Función para cargar datalist de telas y colores
 window.cargarDatalistTelasColores = async function() {
-    console.log('[cargarDatalistTelasColores] 🔄 Iniciando carga de datalist');
+    console.log('[cargarDatalistTelasColores]  Iniciando carga de datalist');
     
     try {
         console.log('[cargarDatalistTelasColores] Haciendo fetch a /api/asesores/telas...');
         // Cargar telas
         const responseTelas = await fetch('/api/asesores/telas');
-        console.log('[cargarDatalistTelasColores] 📡 Respuesta telas:', responseTelas.status, responseTelas.ok);
+        console.log('[cargarDatalistTelasColores]  Respuesta telas:', responseTelas.status, responseTelas.ok);
         
         if (responseTelas.ok) {
             const resultTelas = await responseTelas.json();
-            console.log('[cargarDatalistTelasColores] 📦 Datos telas recibidos:', resultTelas);
+            console.log('[cargarDatalistTelasColores]  Datos telas recibidos:', resultTelas);
             // Extraer el array de datos de la respuesta
             let telas = resultTelas.data || resultTelas;
             // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
@@ -420,7 +420,7 @@ window.cargarDatalistTelasColores = async function() {
             }
             const datalistTelas = document.getElementById('opciones-telas');
             console.log('[cargarDatalistTelasColores]  Datalist telas encontrado:', !!datalistTelas);
-            console.log('[cargarDatalistTelasColores] 📊 Telas array válido:', Array.isArray(telas), 'cantidad:', telas?.length);
+            console.log('[cargarDatalistTelasColores]Telas array válido:', Array.isArray(telas), 'cantidad:', telas?.length);
             
             if (datalistTelas && Array.isArray(telas)) {
                 datalistTelas.innerHTML = '';
@@ -433,7 +433,7 @@ window.cargarDatalistTelasColores = async function() {
                 });
                 console.log('[cargarDatalistTelasColores]  Telas cargadas:', telas.length);
             } else {
-                console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron telas o datalist no existe');
+                console.warn('[cargarDatalistTelasColores]  No se encontraron telas o datalist no existe');
             }
         } else {
             console.error('[cargarDatalistTelasColores]  Error en respuesta de telas:', responseTelas.status);
@@ -442,11 +442,11 @@ window.cargarDatalistTelasColores = async function() {
         // Cargar colores
         console.log('[cargarDatalistTelasColores] Haciendo fetch a /api/asesores/colores...');
         const responseColores = await fetch('/api/asesores/colores');
-        console.log('[cargarDatalistTelasColores] 📡 Respuesta colores:', responseColores.status, responseColores.ok);
+        console.log('[cargarDatalistTelasColores]  Respuesta colores:', responseColores.status, responseColores.ok);
         
         if (responseColores.ok) {
             const resultColores = await responseColores.json();
-            console.log('[cargarDatalistTelasColores] 📦 Datos colores recibidos:', resultColores);
+            console.log('[cargarDatalistTelasColores]  Datos colores recibidos:', resultColores);
             // Extraer el array de datos de la respuesta
             let colores = resultColores.data || resultColores;
             // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
@@ -455,7 +455,7 @@ window.cargarDatalistTelasColores = async function() {
             }
             const datalistColores = document.getElementById('opciones-colores');
             console.log('[cargarDatalistTelasColores]  Datalist colores encontrado:', !!datalistColores);
-            console.log('[cargarDatalistTelasColores] 📊 Colores array válido:', Array.isArray(colores), 'cantidad:', colores?.length);
+            console.log('[cargarDatalistTelasColores]Colores array válido:', Array.isArray(colores), 'cantidad:', colores?.length);
             
             if (datalistColores && Array.isArray(colores)) {
                 datalistColores.innerHTML = '';
@@ -468,7 +468,7 @@ window.cargarDatalistTelasColores = async function() {
                 });
                 console.log('[cargarDatalistTelasColores]  Colores cargados:', colores.length);
             } else {
-                console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron colores o datalist no existe');
+                console.warn('[cargarDatalistTelasColores]  No se encontraron colores o datalist no existe');
             }
         } else {
             console.error('[cargarDatalistTelasColores]  Error en respuesta de colores:', responseColores.status);
@@ -480,12 +480,12 @@ window.cargarDatalistTelasColores = async function() {
 
 // 🔴 NUEVO: Función para configurar drag & drop y paste en drop zones de tela
 window.configurarDragDropTela = function() {
-    console.log('[configurarDragDropTela] 🔄 Configurando drag & drop para telas');
+    console.log('[configurarDragDropTela]  Configurando drag & drop para telas');
     
     const dropZone = document.getElementById('nueva-prenda-tela-drop-zone')
         || document.getElementById('simple-tela-dropzone');
     if (!dropZone) {
-        console.warn('[configurarDragDropTela] ⚠️ Drop zone de tela no encontrada');
+        console.warn('[configurarDragDropTela]  Drop zone de tela no encontrada');
         return;
     }
     
@@ -551,15 +551,15 @@ window.configurarDragDropTela = function() {
 
 // 🔴 NUEVO: Función para configurar drag & drop en previews de procesos
 window.configurarDragDropProcesos = function() {
-    console.log('[configurarDragDropProcesos] 🔄 INICIO - Configurando drag & drop para procesos');
-    console.log('[configurarDragDropProcesos] 📊 Timestamp:', new Date().toISOString());
+    console.log('[configurarDragDropProcesos]  INICIO - Configurando drag & drop para procesos');
+    console.log('[configurarDragDropProcesos]Timestamp:', new Date().toISOString());
     console.log('[configurarDragDropProcesos]  Stack trace:', new Error().stack);
     
     // Configurar para cada preview de proceso (1, 2, 3)
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
         if (!preview) {
-            console.log(`[configurarDragDropProcesos] ⚠️ Preview ${i} no encontrado`);
+            console.log(`[configurarDragDropProcesos]  Preview ${i} no encontrado`);
             continue;
         }
         
@@ -568,17 +568,17 @@ window.configurarDragDropProcesos = function() {
         
         // 🔧 SOLUCIÓN: Eliminar listeners previos clonando el nodo
         // Esto evita la duplicación de listeners que causa doble apertura del input
-        console.log(`[configurarDragDropProcesos] 🔄 Clonando preview ${i} para eliminar listeners previos`);
+        console.log(`[configurarDragDropProcesos]  Clonando preview ${i} para eliminar listeners previos`);
         const newPreview = preview.cloneNode(true);
         console.log(`[configurarDragDropProcesos]  Preview ${i} clonado, reemplazando en DOM`);
         preview.parentNode.replaceChild(newPreview, preview);
-        console.log(`[configurarDragDropProcesos] 🔄 Preview ${i} reemplazado en DOM`);
+        console.log(`[configurarDragDropProcesos]  Preview ${i} reemplazado en DOM`);
         
         // Click para abrir file input
         console.log(`[configurarDragDropProcesos] 🖱️ Agregando listener CLICK al preview ${i}`);
         newPreview.addEventListener('click', (e) => {
             console.log(`[configurarDragDropProcesos] 🖱️ CLICK detectado en preview ${i}`);
-            console.log(`[configurarDragDropProcesos] 📊 Event details:`, {
+            console.log(`[configurarDragDropProcesos]Event details:`, {
                 target: e.target,
                 currentTarget: e.currentTarget,
                 timeStamp: e.timeStamp,
@@ -589,8 +589,8 @@ window.configurarDragDropProcesos = function() {
             console.log(`[configurarDragDropProcesos] 📁 Input file ${i}:`, fileInput);
             
             if (fileInput) {
-                console.log(`[configurarDragDropProcesos] 🚀 Abriendo input file ${i}`);
-                console.log(`[configurarDragDropProcesos] 📊 Input state antes de click:`, {
+                console.log(`[configurarDragDropProcesos]  Abriendo input file ${i}`);
+                console.log(`[configurarDragDropProcesos]Input state antes de click:`, {
                     files: fileInput.files?.length || 0,
                     value: fileInput.value,
                     disabled: fileInput.disabled
@@ -608,7 +608,7 @@ window.configurarDragDropProcesos = function() {
                         console.log(`[configurarDragDropProcesos] 🔓 Bandera liberada para input ${i}`);
                     }, 500);
                 } else {
-                    console.warn(`[configurarDragDropProcesos] ⚠️ Input ${i} ya está siendo abierto, IGNORANDO`);
+                    console.warn(`[configurarDragDropProcesos]  Input ${i} ya está siendo abierto, IGNORANDO`);
                 }
             } else {
                 console.error(`[configurarDragDropProcesos]  Input file ${i} NO encontrado`);
@@ -653,7 +653,7 @@ window.configurarDragDropProcesos = function() {
                     // Disparar evento change
                     const event = new Event('change', { bubbles: true });
                     fileInput.dispatchEvent(event);
-                    console.log(`[configurarDragDropProcesos] 📡 Event change disparado en input ${i}`);
+                    console.log(`[configurarDragDropProcesos]  Event change disparado en input ${i}`);
                 }
             }
         });
@@ -676,7 +676,7 @@ window.configurarDragDropProcesos = function() {
                         fileInput.files = dataTransfer.files;
                         const event = new Event('change', { bubbles: true });
                         fileInput.dispatchEvent(event);
-                        console.log(`[configurarDragDropProcesos] 📡 Event change disparado por paste en input ${i}`);
+                        console.log(`[configurarDragDropProcesos]  Event change disparado por paste en input ${i}`);
                     }
                 }
             }
@@ -686,7 +686,7 @@ window.configurarDragDropProcesos = function() {
     }
     
     console.log('[configurarDragDropProcesos]  FIN - Drag & drop configurado para procesos');
-    console.log('[configurarDragDropProcesos] 📊 Timestamp final:', new Date().toISOString());
+    console.log('[configurarDragDropProcesos]Timestamp final:', new Date().toISOString());
 };
 
 // Exportar

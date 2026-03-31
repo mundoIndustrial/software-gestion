@@ -613,7 +613,7 @@ class EppService {
             const html = epps.map(epp => {
                 const nombre = epp.nombre_completo || epp.nombre;
                 const codigo = epp.codigo ? `<span style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem; display: block;">Código: ${epp.codigo}</span>` : '';
-                const categoria = epp.categoria ? `<span style="color: #9ca3af; font-size: 0.75rem; margin-top: 0.15rem; display: block;">📦 ${epp.categoria}</span>` : '';
+                const categoria = epp.categoria ? `<span style="color: #9ca3af; font-size: 0.75rem; margin-top: 0.15rem; display: block;"> ${epp.categoria}</span>` : '';
                 const imagen = epp.imagen ? `<img src="${epp.imagen}" alt="${nombre}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px; margin-right: 0.75rem;">` : '';
                 
                 return `

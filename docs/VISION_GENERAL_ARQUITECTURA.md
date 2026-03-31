@@ -6,7 +6,7 @@
 
 ---
 
-## 📦 Archivos Creados: 13 Nuevos Archivos
+##  Archivos Creados: 13 Nuevos Archivos
 
 ### Arquitectura Base (5 archivos)
 ```
@@ -38,7 +38,7 @@ docs/
 
 ---
 
-## 🔄 Archivos Modificados: 1 Archivo
+##  Archivos Modificados: 1 Archivo
 
 ### `/resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php`
 
@@ -128,7 +128,7 @@ window.ColoresPorTallaV2.getWizardStatus()
 
 ---
 
-## 🚀 Cómo Probar
+##  Cómo Probar
 
 ### Test Rápido (2 minutos)
 1. Abre navegador en CrearPedido
@@ -153,7 +153,7 @@ window.ColoresPorTalla.init()  // OK
 
 ---
 
-## 📊 Impacto Medible
+##Impacto Medible
 
 | Métrica | Antes | Ahora | Mejora |
 |---------|-------|-------|--------|

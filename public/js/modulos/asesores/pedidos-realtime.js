@@ -142,7 +142,7 @@ class PedidosRealtimeRefresh {
                     if (this.debug) console.log('🔌 [PedidosRealtime] Configurando supervisor-pedidos');
 
                     ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                        if (this.debug) console.log('🔄 Pedido actualizado (supervisor)');
+                        if (this.debug) console.log(' Pedido actualizado (supervisor)');
                         try {
                             window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
                                 detail: { pedido: event?.pedido, source: 'pedidos.general' }
@@ -183,7 +183,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                        if (this.debug) console.log('🔄 Pedido actualizado (cartera)');
+                        if (this.debug) console.log(' Pedido actualizado (cartera)');
                         this.moverPedidoAlInicio(event?.pedido?.id);
                         if (typeof window.cargarPedidos === 'function') {
                             setTimeout(() => {
@@ -207,7 +207,7 @@ class PedidosRealtimeRefresh {
                         const userId = window.usuarioAutenticado.id;
                         try {
                             ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                                if (this.debug) console.log('📡 PedidoActualizado privado (cartera)');
+                                if (this.debug) console.log(' PedidoActualizado privado (cartera)');
                                 if (typeof window.cargarPedidos === 'function') {
                                     window.cargarPedidos();
                                 }
@@ -233,7 +233,7 @@ class PedidosRealtimeRefresh {
 
                 try {
                     ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                        if (this.debug) console.log('📡 Actualización privada');
+                        if (this.debug) console.log(' Actualización privada');
                         this.handlePedidoUpdate(event.pedido, 'pedido.actualizado');
                     });
 
@@ -264,7 +264,7 @@ class PedidosRealtimeRefresh {
      * Manejar actualización de pedido desde WebSocket
      */
     handlePedidoUpdate(pedido, action) {
-        if (this.debug) console.log('📡 Actualización de pedido:', pedido?.id);
+        if (this.debug) console.log(' Actualización de pedido:', pedido?.id);
         this.actualizarPedidoIndividual(pedido);
         this.lastChangeTime = new Date();
     }

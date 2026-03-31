@@ -118,7 +118,7 @@ class BodegaRealtimeRefresh {
             // Suscribirse a evento .detalle.actualizado
             try {
                 ws.subscribe(channelName, '.detalle.actualizado', (event) => {
-                    if (this.debug) console.log('[BodegaRealtime] 📡 Detalle actualizado:', event);
+                    if (this.debug) console.log('[BodegaRealtime]  Detalle actualizado:', event);
                     this.handleDetalleUpdate(event, numeroPedido, talla);
                 });
                 if (this.debug) console.log(`[BodegaRealtime]  Suscrito a ${channelName}/.detalle.actualizado`);
@@ -152,7 +152,7 @@ class BodegaRealtimeRefresh {
         const prendaId = event.detalles.prenda_id || event.prenda_id || null;
         
         if (this.debug) {
-            console.log(`📡 [BodegaRealtime] Actualizando detalle ${numeroPedido}-${talla}${prendaId ? ` (prenda_id: ${prendaId})` : ''}`);
+            console.log(` [BodegaRealtime] Actualizando detalle ${numeroPedido}-${talla}${prendaId ? ` (prenda_id: ${prendaId})` : ''}`);
         }
 
         // Construir selector base

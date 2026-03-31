@@ -4,7 +4,7 @@
 
 Sistema modular desacoplado para el manejo de prendas, imágenes y funcionalidades de drag & drop. Organizado en una carpeta específica para mejor claridad y mantenibilidad.
 
-## 🏗️ Estructura del Módulo
+##  Estructura del Módulo
 
 ```
 public/js/componentes/prendas-module/

@@ -347,7 +347,7 @@
             if (pedidos.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📭</div>
+                        <div class="empty-icon"></div>
                         <h3>No hay pedidos pendientes</h3>
                         <p>No se encontraron pedidos que coincidan con tus filtros</p>
                     </div>

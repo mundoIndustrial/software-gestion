@@ -350,7 +350,7 @@
                                                     colorImgIdx++;
                                                     console.log('[PayloadNormalizer]  Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
                                                 } else {
-                                                    console.warn('[PayloadNormalizer] ⚠️ imgData no es File:', {
+                                                    console.warn('[PayloadNormalizer]  imgData no es File:', {
                                                         imagen_id: colorItem.imagen_id,
                                                         color: colorItem.nombre,
                                                         tipo: typeof imgData,
@@ -358,15 +358,15 @@
                                                     });
                                                 }
                                             } else {
-                                                console.warn('[PayloadNormalizer] ⚠️ getImage() retornó null para: ' + colorItem.imagen_id);
+                                                console.warn('[PayloadNormalizer]  getImage() retornó null para: ' + colorItem.imagen_id);
                                             }
                                         }
                                     });
                                 }
                             });
-                            console.log('[PayloadNormalizer] 📊 Total imágenes de colores agregadas: ' + colorImgIdx);
+                            console.log('[PayloadNormalizer]Total imágenes de colores agregadas: ' + colorImgIdx);
                         } else {
-                            console.warn('[PayloadNormalizer] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                            console.warn('[PayloadNormalizer]  ColoresPorTalla no disponible o sin método getImage');
                         }
                     }
                 });

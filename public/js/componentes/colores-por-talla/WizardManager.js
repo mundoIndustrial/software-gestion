@@ -161,7 +161,7 @@ window.WizardManager = (function() {
         resetearFlujo() {
             flujoInterno.generoProcesado = null;
             flujoInterno.generoCambiado = false;
-            console.log('[WizardManager] 🔄 Flujo interno reseteado para nueva sesión');
+            console.log('[WizardManager]  Flujo interno reseteado para nueva sesión');
         },
 
         /**
@@ -547,7 +547,7 @@ window.WizardManager = (function() {
                     }
                 }
                 
-                console.log('[WizardManager] 💾 Guardando paso actual en StateManager...');
+                console.log('[WizardManager]  Guardando paso actual en StateManager...');
                 StateManager.setPasoActual(numeroPaso);
                 
                 console.log(`[WizardManager] irPaso(${numeroPaso}) completado exitosamente`);
@@ -1207,7 +1207,7 @@ window.WizardManager = (function() {
                 instruccionDiv.style.borderRadius = '4px';
                 instruccionDiv.style.fontSize = '0.85rem';
                 instruccionDiv.style.color = '#92400e';
-                instruccionDiv.innerHTML = '⚠️ <strong>Selecciona al menos una talla</strong> haciendo click en los botones de abajo';
+                instruccionDiv.innerHTML = ' <strong>Selecciona al menos una talla</strong> haciendo click en los botones de abajo';
                 tallasSubContainer.appendChild(instruccionDiv);
                 
                 // Contenedor para los checkboxes - HORIZONTAL

@@ -133,13 +133,13 @@ class PrendaEditorImagenes {
      * Actualizar preview después de agregar imagen en edición
      */
     static actualizarPreviewDespuesDeAgregar() {
-        console.log('[PrendaEditorImagenes] 🔄 Actualizando preview después de agregar imagen');
+        console.log('[PrendaEditorImagenes]  Actualizando preview después de agregar imagen');
         
         const preview = document.getElementById('nueva-prenda-foto-preview');
         const contador = document.getElementById('nueva-prenda-foto-contador');
         
         if (!preview || !window.imagenesPrendaStorage) {
-            console.warn('[PrendaEditorImagenes] ⚠️ Preview o storage no disponible');
+            console.warn('[PrendaEditorImagenes]  Preview o storage no disponible');
             return;
         }
         

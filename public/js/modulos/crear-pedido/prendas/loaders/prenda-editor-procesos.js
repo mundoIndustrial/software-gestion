@@ -17,7 +17,7 @@ class PrendaEditorProcesos {
         console.log(prenda.procesos);
         
         if (!prenda.procesos) {
-            console.log('⚠️ [PROCESOS-LOADER] procesos es NULL/UNDEFINED');
+            console.log(' [PROCESOS-LOADER] procesos es NULL/UNDEFINED');
             window.procesosSeleccionados = {};
             return;
         }
@@ -103,7 +103,7 @@ class PrendaEditorProcesos {
                     
                     // DEBUG: Registrar datosExtendidos si existen
                     if (datosNormalizados.datosExtendidos) {
-                        console.log(`[PROCESOS-LOADER] 📊 datosExtendidos para ${tipo}:`, {
+                        console.log(`[PROCESOS-LOADER]datosExtendidos para ${tipo}:`, {
                             tiene: true,
                             estructura: Object.keys(datosNormalizados.datosExtendidos),
                             contenido: datosNormalizados.datosExtendidos
@@ -225,16 +225,16 @@ class PrendaEditorProcesos {
                 
                 // 🔴 NUEVO: Configurar drag & drop para procesos
                 // El renderizador debe llamar a esto después de renderizar
-                console.log('[PROCESOS-LOADER] 🔄 Verificando configurarDragDropProcesos');
-                console.log('[PROCESOS-LOADER] 📊 Timestamp:', new Date().toISOString());
+                console.log('[PROCESOS-LOADER]  Verificando configurarDragDropProcesos');
+                console.log('[PROCESOS-LOADER]Timestamp:', new Date().toISOString());
                 console.log('[PROCESOS-LOADER]  Stack trace:', new Error().stack);
                 
                 if (typeof configurarDragDropProcesos === 'function') {
-                    console.log('[PROCESOS-LOADER] 🚀 Llamando a configurarDragDropProcesos desde loader');
+                    console.log('[PROCESOS-LOADER]  Llamando a configurarDragDropProcesos desde loader');
                     configurarDragDropProcesos();
                     console.log('[PROCESOS-LOADER]  configurarDragDropProcesos ejecutado');
                 } else {
-                    console.warn('[PROCESOS-LOADER] ⚠️ configurarDragDropProcesos no disponible');
+                    console.warn('[PROCESOS-LOADER]  configurarDragDropProcesos no disponible');
                 }
                 
                 // Verificación final: asegurar que el contenedor es visible
@@ -248,10 +248,10 @@ class PrendaEditorProcesos {
                 }
                 return;
             } else {
-                console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() retornó false');
+                console.warn(' [Procesos] renderizarTarjetasProcesos() retornó false');
             }
         } else {
-            console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() NO DISPONIBLE');
+            console.warn(' [Procesos] renderizarTarjetasProcesos() NO DISPONIBLE');
         }
         
         // Fallback: Si no existe renderizador, crear tarjetas simples
@@ -394,7 +394,7 @@ class PrendaEditorProcesos {
 
     /**
      * Limpiar procesos
-     * ⚠️ CRÍTICO: SOLO limpiar el contenedor de tarjetas (procesos configurados)
+     *  CRÍTICO: SOLO limpiar el contenedor de tarjetas (procesos configurados)
      * NO tocar el .procesos-container (que contiene los checkboxes)
      */
     static limpiar() {
@@ -413,7 +413,7 @@ class PrendaEditorProcesos {
             procesosAgregados.style.display = 'none';
         }
         
-        // ⚠️ NUNCA tocar .procesos-container (contiene los checkboxes!)
+        //  NUNCA tocar .procesos-container (contiene los checkboxes!)
         // const procesosContainer = document.querySelector('.procesos-container');
         // NO LIMPIAR - esto causa que desaparezcan los checkboxes
     }

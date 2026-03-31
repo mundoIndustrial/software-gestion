@@ -599,7 +599,7 @@ class ModalNovedadEdicion {
                 // Solo enviar si realmente fueron modificadas
                 const variantesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
                 formData.append('variantes', JSON.stringify(variantesArray));
-                console.log('[modal-novedad-edicion] ✏️ Variantes MODIFICADAS enviadas:', variantesArray);
+                console.log('[modal-novedad-edicion]  Variantes MODIFICADAS enviadas:', variantesArray);
             } else {
                 console.log('[modal-novedad-edicion]  Variantes NO modificadas - no se envían');
             }
@@ -700,7 +700,7 @@ class ModalNovedadEdicion {
                             if (fileObject) {
                                 //  IMAGEN NUEVA: Subir File object real
                                 formData.append(`telas[${idx}][imagenes][${imgIdx}]`, fileObject);
-                                console.log('[modal-novedad-edicion]  📤 Imagen nueva de tela agregada a FormData:', {
+                                console.log('[modal-novedad-edicion]   Imagen nueva de tela agregada a FormData:', {
                                     telaIdx: idx,
                                     imgIdx: imgIdx,
                                     fileName: fileObject.name,
@@ -753,7 +753,7 @@ class ModalNovedadEdicion {
                                 });
                                 fotoTelaFileIndex++;
                                 
-                                console.log('[modal-novedad-edicion]  📤 Foto de tela nueva agregada (MERGE):', {
+                                console.log('[modal-novedad-edicion]   Foto de tela nueva agregada (MERGE):', {
                                     telaIdx: telaIdx,
                                     imgIdx: imgIdx,
                                     fotoTelaFileIndex: fotoTelaFileIndex - 1,
@@ -1102,7 +1102,7 @@ class ModalNovedadEdicion {
                         const hayAlgunCambio = tieneCambiosOtros || tieneImagenesNuevas || tieneImagenesExistentes || 
                                                tieneUbicacionesActuales || tieneObservacionesActuales;
                         
-                        console.log('[modal-novedad-edicion] 📤 Enviando PATCH para proceso:', {
+                        console.log('[modal-novedad-edicion]  Enviando PATCH para proceso:', {
                             prendaId: prendaIdInt,
                             procesoId: procesoEditado.id,
                             cambios: procesoEditado.cambios,
@@ -1498,7 +1498,7 @@ class ModalNovedadEdicion {
                         console.log('🧹 [mostrarExito] Storage de imágenes de prenda limpiado (CREACIÓN)');
                     }
                     // NO limpiar imagenesTelaStorage - se necesitan para guardar telas en prendaData
-                    console.log('⚠️ [mostrarExito] imagenesTelaStorage NO limpiado (modo CREACIÓN - se preserva)');
+                    console.log(' [mostrarExito] imagenesTelaStorage NO limpiado (modo CREACIÓN - se preserva)');
                 }
                 
                 // IMPORTANTE: Solo cerrar el modal de prenda, NO abrir otro modal

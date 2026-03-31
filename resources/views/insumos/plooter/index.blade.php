@@ -263,7 +263,7 @@
                 ¿Estás seguro de que deseas <strong>eliminar</strong> la fecha de llegada de este recibo?
             </p>
             <p style="font-size: 14px; color: #999; margin: 0; font-style: italic;">
-                ⚠️ Esta acción NO se puede deshacer.
+                 Esta acción NO se puede deshacer.
             </p>
         </div>
         

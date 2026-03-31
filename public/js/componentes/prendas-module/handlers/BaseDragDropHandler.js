@@ -63,7 +63,7 @@ class BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log(`${this.constructor.name}`, '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log(`${this.constructor.name}`, ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -79,7 +79,7 @@ class BaseDragDropHandler {
                                 UIHelperService.log(`${this.constructor.name}`, `🖼️ Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log(`${this.constructor.name}`, `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log(`${this.constructor.name}`, ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `${this.tipo}-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type

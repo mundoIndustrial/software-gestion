@@ -386,7 +386,7 @@ function formatearMoneda(monto) {
 // ===== INICIALIZACIÓN =====
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Cartera Rechazados - Inicializado');
+  console.log(' Cartera Rechazados - Inicializado');
   
   // Validar que los elementos críticos existan
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');

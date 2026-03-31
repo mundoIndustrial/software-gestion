@@ -87,7 +87,7 @@ class MapeoImagenesService
         $request
     ): void {
         $inicioTotal = microtime(true);
-        Log::info('[MAPEO-IMAGENES] ðŸ“¸ INICIANDO MAPEO DE IMAGENES', [
+        Log::info('[MAPEO-IMAGENES] ¸ INICIANDO MAPEO DE IMAGENES', [
             'pedido_id' => $pedidoId,
             'prendas' => count($dto->prendas),
             'timestamp' => now(),

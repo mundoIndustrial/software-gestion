@@ -6,7 +6,7 @@
 
 class EppMenuHandlerBase {
     constructor(config = {}) {
-        console.log(`[${this.constructor.name}] 🏗️ Constructor iniciado`);
+        console.log(`[${this.constructor.name}]  Constructor iniciado`);
         
         this.inicializado = false;
         this.observer = null;
@@ -29,14 +29,14 @@ class EppMenuHandlerBase {
     }
 
     inicializar() {
-        console.log(`[${this.constructor.name}] 🔄 Inicializando...`);
+        console.log(`[${this.constructor.name}]  Inicializando...`);
         if (!this.inicializado) {
             console.log(`[${this.constructor.name}]  Primer inicialización - configurando listeners`);
             this.attachEventListeners();
             this.inicializado = true;
             console.log(`[${this.constructor.name}]  Inicializado correctamente`);
         } else {
-            console.warn(`[${this.constructor.name}] ⚠️ Ya fue inicializado, evitando duplicación`);
+            console.warn(`[${this.constructor.name}]  Ya fue inicializado, evitando duplicación`);
         }
     }
 

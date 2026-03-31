@@ -162,7 +162,7 @@ window.PrendaEditorPreloader = (function() {
 
             // Verificar si ya está precargado (fast path)
             if (config.isPreloaded) {
-                console.log('[PrendaEditorPreloader] 💾 ¡Ya precargado! Abriendo inmediatamente...');
+                console.log('[PrendaEditorPreloader]  ¡Ya precargado! Abriendo inmediatamente...');
                 resolve();
                 return;
             }

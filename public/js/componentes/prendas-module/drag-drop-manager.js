@@ -466,10 +466,10 @@ class DragDropManager {
                                 elementoCursor = document.elementFromPoint(clientX, clientY);
                                 UIHelperService.log('DragDropManager', `🎯 Elemento bajo cursor: ${elementoCursor?.id || elementoCursor?.tagName || 'desconocido'} (${clientX}, ${clientY})`);
                             } else {
-                                UIHelperService.log('DragDropManager', `⚠️ Posición del mouse no disponible, usando solo elemento activo`);
+                                UIHelperService.log('DragDropManager', ` Posición del mouse no disponible, usando solo elemento activo`);
                             }
                         } catch (error) {
-                            UIHelperService.log('DragDropManager', `⚠️ Error al obtener elemento bajo cursor: ${error.message}`);
+                            UIHelperService.log('DragDropManager', ` Error al obtener elemento bajo cursor: ${error.message}`);
                         }
                         
                         // 🔑 NUEVA LÓGICA: Usar el modal ya seleccionado para determinar el área
@@ -538,7 +538,7 @@ class DragDropManager {
                         
                         // Si no se detectó handler específico, usar fallback según el modal
                         if (!funcionManejo && modalSeleccionado) {
-                            UIHelperService.log('DragDropManager', '⚠️ No se detectó área específica, usando fallback del modal');
+                            UIHelperService.log('DragDropManager', ' No se detectó área específica, usando fallback del modal');
                             
                             // Fallback según el tipo de modal
                             switch (modalSeleccionado.tipo) {
@@ -597,7 +597,7 @@ class DragDropManager {
             
             // Si no se encontraron imágenes (pero ya verificamos que sí había)
             if (!foundImage) {
-                UIHelperService.log('DragDropManager', '⚠️ No se encontraron imágenes procesables en el portapapeles', 'warn');
+                UIHelperService.log('DragDropManager', ' No se encontraron imágenes procesables en el portapapeles', 'warn');
                 UIHelperService.mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
             }
         }, true); // Usar captura para interceptar antes que otros listeners
@@ -945,7 +945,7 @@ window.setupGlobalPasteListener = () => {
 window.setupDragAndDrop = (previewElement) => {
     // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
     if (!window.DragDropManager || !window.DragDropManager.inicializado) {
-        console.warn('[setupDragAndDrop] ⚠️ DragDropManager no inicializado, inicializando...');
+        console.warn('[setupDragAndDrop]  DragDropManager no inicializado, inicializando...');
         if (!window.DragDropManager) {
             window.DragDropManager = new DragDropManager();
         }
@@ -963,7 +963,7 @@ window.setupDragAndDrop = (previewElement) => {
 window.setupDragAndDropConImagen = (previewElement, imagenesActuales) => {
     // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
     if (!window.DragDropManager || !window.DragDropManager.inicializado) {
-        console.warn('[setupDragAndDropConImagen] ⚠️ DragDropManager no inicializado, inicializando...');
+        console.warn('[setupDragAndDropConImagen]  DragDropManager no inicializado, inicializando...');
         if (!window.DragDropManager) {
             window.DragDropManager = new DragDropManager();
         }

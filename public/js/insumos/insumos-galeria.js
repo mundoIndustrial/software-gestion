@@ -461,7 +461,7 @@ class InsumosGaleria {
             console.warn('[construirGaleria] No se encontraron imagenes en el pedido');
             html = `
                 <div style="padding: 3rem; text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">ðŸ“·</div>
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">·</div>
                     <p style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">No hay fotos de costura disponibles para este pedido</p>
                     <p style="color: #9ca3af; font-size: 0.875rem;">Las imagenes se mostraron aqui cuando estan disponibles</p>
                 </div>

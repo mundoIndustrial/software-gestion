@@ -228,7 +228,7 @@
         </div>
     @else
         <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
-            <p style="margin: 0; color: #666;">📭 {{ $emptyMessage ?? 'No hay registros' }}</p>
+            <p style="margin: 0; color: #666;"> {{ $emptyMessage ?? 'No hay registros' }}</p>
         </div>
     @endif
 </div>

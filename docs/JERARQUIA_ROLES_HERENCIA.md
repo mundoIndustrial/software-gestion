@@ -262,7 +262,7 @@ php artisan tinker
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 Para verificar que la jerarquía funciona:
 

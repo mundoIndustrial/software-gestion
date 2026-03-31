@@ -137,7 +137,7 @@ storage/logs/laravel.log
 
 **Por cada imagen:**
 ```
-[IMAGE-UPLOAD] 📤 Iniciando guardado de imagen
+[IMAGE-UPLOAD]  Iniciando guardado de imagen
 {
   "pedido_id": 123,
   "tipo": "prendas",

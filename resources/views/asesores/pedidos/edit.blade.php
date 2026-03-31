@@ -367,7 +367,7 @@
         function setupUpperCaseInput(inputId) {
             const input = document.getElementById(inputId);
             if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
+                console.log(' Configurando input para mayúsculas:', inputId);
                 
                 // Función para convertir a mayúsculas
                 function forceUpperCase() {
@@ -375,7 +375,7 @@
                     const upperValue = currentValue.toUpperCase();
                     if (currentValue !== upperValue) {
                         input.value = upperValue;
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
+                        console.log(' Convertido a mayúsculas:', currentValue, '→', upperValue);
                     }
                 }
                 
@@ -391,7 +391,7 @@
                 // Convertir valor inicial si existe
                 if (input.value) {
                     input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
+                    console.log(' Valor inicial convertido:', input.value);
                 }
                 
                 // Forzar mayúsculas cada segundo por si acaso
@@ -400,7 +400,7 @@
                 // Limpiar intervalo después de 10 segundos para no consumir recursos
                 setTimeout(() => clearInterval(intervalId), 10000);
             } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
+                console.warn(' Input no encontrado:', inputId);
             }
         }
         

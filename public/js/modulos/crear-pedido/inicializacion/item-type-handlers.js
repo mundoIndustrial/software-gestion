@@ -32,7 +32,7 @@
         const btnAgregarItemTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
         
         if (!btnAgregarItemTipoInline) {
-            console.warn('⚠️ Botón agregar ítem no encontrado');
+            console.warn(' Botón agregar ítem no encontrado');
             return;
         }
         

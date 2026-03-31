@@ -47,7 +47,7 @@ class InvoicePreviewOrchestrator {
                 setTimeout(() => this.verificarModulos(), 500);
             } else {
                 // Módulos no disponibles después de reintentos
-                console.warn('[InvoicePreview] ⚠️ Módulos no disponibles después de 15 segundos, usando fallback');
+                console.warn('[InvoicePreview]  Módulos no disponibles después de 15 segundos, usando fallback');
                 
                 // Intentar inicialización manual como último recurso
                 this.inicializarModulosManualmente();

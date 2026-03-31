@@ -2,8 +2,8 @@
 // Sin logs para una experiencia limpia
 
 window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
-    console.log(`[setupDragAndDropProceso] 🔄 INICIO - Configurando para preview ${procesoIndex}`);
-    console.log(`[setupDragAndDropProceso] 📊 Timestamp:`, new Date().toISOString());
+    console.log(`[setupDragAndDropProceso]  INICIO - Configurando para preview ${procesoIndex}`);
+    console.log(`[setupDragAndDropProceso]Timestamp:`, new Date().toISOString());
     console.log(`[setupDragAndDropProceso]  Stack trace:`, new Error().stack);
     
     // 🔴 IMPORTANTE: NO clonar el elemento para evitar acumular listeners
@@ -12,11 +12,11 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     console.log(`[setupDragAndDropProceso] 📸 Preview original:`, preview);
     
     // Remover todos los listeners anteriores clonando y reemplazando
-    console.log(`[setupDragAndDropProceso] 🔄 Clonando preview ${procesoIndex} para eliminar listeners`);
+    console.log(`[setupDragAndDropProceso]  Clonando preview ${procesoIndex} para eliminar listeners`);
     const newPreview = preview.cloneNode(true);
     console.log(`[setupDragAndDropProceso]  Preview ${procesoIndex} clonado`);
     preview.parentNode.replaceChild(newPreview, preview);
-    console.log(`[setupDragAndDropProceso] 🔄 Preview ${procesoIndex} reemplazado en DOM`);
+    console.log(`[setupDragAndDropProceso]  Preview ${procesoIndex} reemplazado en DOM`);
     
     // Prevenir comportamiento por defecto para todos los eventos
     const preventDefaults = (e) => {
@@ -61,7 +61,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         // Verificar si hay archivos
         const files = e.dataTransfer.files;
         if (files.length === 0) {
-            console.log(`[setupDragAndDropProceso] ⚠️ No hay archivos en drop ${procesoIndex}`);
+            console.log(`[setupDragAndDropProceso]  No hay archivos en drop ${procesoIndex}`);
             return;
         }
         
@@ -72,7 +72,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn(`[setupDragAndDropProceso] ⚠️ Archivo no es imagen en preview ${procesoIndex}:`, file.type);
+            console.warn(`[setupDragAndDropProceso]  Archivo no es imagen en preview ${procesoIndex}:`, file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen');
             return;
         }
@@ -84,7 +84,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         
         // Usar la función existente para manejar la imagen
         if (typeof window.manejarImagenProceso === 'function') {
-            console.log(`[setupDragAndDropProceso] 📡 Llamando manejarImagenProceso desde drop ${procesoIndex}`);
+            console.log(`[setupDragAndDropProceso]  Llamando manejarImagenProceso desde drop ${procesoIndex}`);
             window.manejarImagenProceso(tempInput, procesoIndex);
         } else {
             console.error(`[setupDragAndDropProceso]  manejarImagenProceso no disponible`);
@@ -94,11 +94,11 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     // 🔴 NUEVO: Usar event delegation a nivel del contenedor padre para evitar múltiples listeners
     // Esto se ejecuta UNA sola vez por contenedor, no por cada preview
     const fotoPanelContainer = newPreview.closest('.foto-panel');
-    console.log(`[setupDragAndDropProceso] 📦 Foto panel container:`, fotoPanelContainer);
+    console.log(`[setupDragAndDropProceso]  Foto panel container:`, fotoPanelContainer);
     
     // 🔴 DESACTIVADO: Event delegation causa conflicto con configurarDragDropProcesos
     // Ya no necesitamos event delegation porque configurarDragDropProcesos maneja los listeners directamente
-    console.log(`[setupDragAndDropProceso] ⚠️ Event delegation DESACTIVADO para evitar conflicto`);
+    console.log(`[setupDragAndDropProceso]  Event delegation DESACTIVADO para evitar conflicto`);
     
     if (false && fotoPanelContainer && !fotoPanelContainer._dragDropConfigured) { // DESACTIVADO
         console.log(`[setupDragAndDropProceso] 🔧 Configurando event delegation en contenedor`);
@@ -106,12 +106,12 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         
         fotoPanelContainer.addEventListener('click', (e) => {
             console.log(`[setupDragAndDropProceso] 🖱️ CLICK detectado en contenedor`);
-            console.log(`[setupDragAndDropProceso] 📊 Event target:`, e.target);
+            console.log(`[setupDragAndDropProceso]Event target:`, e.target);
             
             // Detectar si el click es en un preview (pero no en botón eliminar ni en img)
             const preview = e.target.closest('.foto-preview-proceso');
             if (!preview) {
-                console.log(`[setupDragAndDropProceso] ⚠️ Click no es en preview`);
+                console.log(`[setupDragAndDropProceso]  Click no es en preview`);
                 return;
             }
             
@@ -119,13 +119,13 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
             
             // NO interceptar clicks en el botón eliminar
             if (e.target.closest('.btn-eliminar-imagen-proceso')) {
-                console.log(`[setupDragAndDropProceso] ⚠️ Click en botón eliminar, IGNORANDO`);
+                console.log(`[setupDragAndDropProceso]  Click en botón eliminar, IGNORANDO`);
                 return;
             }
             
             // NO interceptar si el click es en la imagen misma
             if (e.target.tagName === 'IMG') {
-                console.log(`[setupDragAndDropProceso] ⚠️ Click en imagen, IGNORANDO`);
+                console.log(`[setupDragAndDropProceso]  Click en imagen, IGNORANDO`);
                 e.preventDefault();
                 e.stopPropagation();
                 return;
@@ -145,8 +145,8 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
             console.log(`[setupDragAndDropProceso] 📁 Input encontrado:`, inputProceso);
             
             if (inputProceso) {
-                console.log(`[setupDragAndDropProceso] 🚀 Intentando abrir input ${index}`);
-                console.log(`[setupDragAndDropProceso] 📊 Input state:`, {
+                console.log(`[setupDragAndDropProceso]  Intentando abrir input ${index}`);
+                console.log(`[setupDragAndDropProceso]Input state:`, {
                     files: inputProceso.files?.length || 0,
                     value: inputProceso.value,
                     disabled: inputProceso.disabled,
@@ -165,7 +165,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                         console.log(`[setupDragAndDropProceso] 🔓 Bandera liberada para input ${index}`);
                     }, 300);
                 } else {
-                    console.warn(`[setupDragAndDropProceso] ⚠️ Input ${index} ya está siendo abierto, IGNORANDO`);
+                    console.warn(`[setupDragAndDropProceso]  Input ${index} ya está siendo abierto, IGNORANDO`);
                 }
             } else {
                 console.error(`[setupDragAndDropProceso]  Input ${index} NO encontrado`);
@@ -174,7 +174,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         
         console.log(`[setupDragAndDropProceso]  Event delegation configurado en contenedor`);
     } else {
-        console.log(`[setupDragAndDropProceso] ⚠️ Contenedor ya configurado o no encontrado`);
+        console.log(`[setupDragAndDropProceso]  Contenedor ya configurado o no encontrado`);
     }
     
     console.log(`[setupDragAndDropProceso]  FIN - Configuración completada para preview ${procesoIndex}`);
@@ -291,10 +291,10 @@ window.setupDragAndDropSeccionCompleta = function() {
             console.log(`[Drop Fallback] Usando dragIndex: ${procesoIndex}`);
         }
         
-        // ⚠️ CRÍTICO: NO caer al preview 1 como fallback
+        //  CRÍTICO: NO caer al preview 1 como fallback
         // Si no se detectó correctamente, es mejor abortar
         if (!procesoIndex) {
-            console.warn('[Drop Fallback] ⚠️ No se pudo detectar preview destino');
+            console.warn('[Drop Fallback]  No se pudo detectar preview destino');
             return;
         }
         
@@ -322,8 +322,8 @@ window.setupDragAndDropSeccionCompleta = function() {
 };
 
 // Inicializar para los 3 previews individuales
-console.log('[drag-drop-procesos-estilo-prenda] 🔄 INICIO - Inicialización automática de previews');
-console.log('[drag-drop-procesos-estilo-prenda] 📊 Timestamp:', new Date().toISOString());
+console.log('[drag-drop-procesos-estilo-prenda]  INICIO - Inicialización automática de previews');
+console.log('[drag-drop-procesos-estilo-prenda]Timestamp:', new Date().toISOString());
 
 for (let i = 1; i <= 3; i++) {
     const preview = document.getElementById(`proceso-foto-preview-${i}`);
@@ -332,12 +332,12 @@ for (let i = 1; i <= 3; i++) {
         console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} encontrado, configurando setupDragAndDropProceso`);
         window.setupDragAndDropProceso(preview, i);
     } else {
-        console.log(`[drag-drop-procesos-estilo-prenda] ⚠️ Preview ${i} NO encontrado`);
+        console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} NO encontrado`);
     }
 }
 
 console.log('[drag-drop-procesos-estilo-prenda]  FIN - Inicialización automática completada');
 
 // También configurar la sección completa
-console.log('[drag-drop-procesos-estilo-prenda] 🔄 Configurando sección completa');
+console.log('[drag-drop-procesos-estilo-prenda]  Configurando sección completa');
 window.setupDragAndDropSeccionCompleta();

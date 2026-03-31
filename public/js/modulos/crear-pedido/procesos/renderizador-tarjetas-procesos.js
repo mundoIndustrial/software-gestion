@@ -225,7 +225,7 @@ const ProcesoEditService = {
     },
 
     editarDesdeModal(tipo) {
-        console.log('✏️ [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
+        console.log(' [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
         
         // Obtener datos del proceso
         const proceso = this.obtenerProceso(tipo);
@@ -233,18 +233,18 @@ const ProcesoEditService = {
         // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
         // CRÍTICO: Buscar en orden de prioridad correcto
         const modoTallas = proceso?.datos?.modo_tallas || 'generico';
-        console.log('✏️ [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas, {
+        console.log(' [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas, {
             datos_modo_tallas: proceso?.datos?.modo_tallas,
             procesoCompleto: proceso
         });
         
         if (this.esModoPorTallas(proceso)) {
-            console.log('✏️ [EDITAR-PROCESO-MODAL] Detectado modo POR TALLAS, abriendo modal por tallas');
+            console.log(' [EDITAR-PROCESO-MODAL] Detectado modo POR TALLAS, abriendo modal por tallas');
             this.abrirModalPorTallas(tipo);
             return;
         }
 
-        console.log('✏️ [EDITAR-PROCESO-MODAL] ESTRUCTURA COMPLETA del proceso:', {
+        console.log(' [EDITAR-PROCESO-MODAL] ESTRUCTURA COMPLETA del proceso:', {
             procesoCompleto: proceso,
             datos: proceso?.datos,
             todasLasKeys: proceso?.datos ? Object.keys(proceso.datos) : [],
@@ -357,7 +357,7 @@ const ProcesoEditService = {
                                 }
                             }
                             window.tallasSeleccionadasProceso.dama = tallasDama;
-                            console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
+                            console.log('[EDITAR-PROCESO-MODAL]  Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
                         }
 
                         // Copiar CABALLERO
@@ -386,14 +386,14 @@ const ProcesoEditService = {
                                 }
                             }
                             window.tallasSeleccionadasProceso.caballero = tallasCaballero;
-                            console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
+                            console.log('[EDITAR-PROCESO-MODAL]  Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
                         }
 
                         // Copiar UNISEX si existe
                         if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
                             window.tallasCantidadesProceso.unisex = { ...window.tallasRelacionales.UNISEX };
                             window.tallasSeleccionadasProceso.unisex = Object.keys(window.tallasRelacionales.UNISEX);
-                            console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas UNISEX copiadas al proceso:', window.tallasCantidadesProceso.unisex);
+                            console.log('[EDITAR-PROCESO-MODAL]  Tallas UNISEX copiadas al proceso:', window.tallasCantidadesProceso.unisex);
                         }
 
                         console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', {
@@ -476,7 +476,7 @@ const ProcesoEditService = {
         // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
         const proceso = this.obtenerProceso(tipo);
         if (proceso?.datos?.datosExtendidos || proceso?.datos?.modo_tallas === 'especifico') {
-            console.log('✏️ [EDITAR-PROCESO] Detectado modo POR TALLAS, abriendo modal por tallas');
+            console.log(' [EDITAR-PROCESO] Detectado modo POR TALLAS, abriendo modal por tallas');
             this.abrirModalPorTallas(tipo);
             return;
         }

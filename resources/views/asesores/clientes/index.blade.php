@@ -54,7 +54,7 @@
     @else
         <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 40px; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 1.1rem;">
-                📭 No hay clientes registrados aún
+                 No hay clientes registrados aún
             </p>
             <button onclick="abrirModalCliente()" style="display: inline-block; margin-top: 15px; background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer;">
                 Crear Primer Cliente

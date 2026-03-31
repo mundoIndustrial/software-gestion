@@ -149,7 +149,7 @@ window.ColoresPorTalla = (function() {
                     }
                 }
                 
-                // 🔄 Inicializar wizard al paso correcto (previene que se quede en el paso anterior)
+                //  Inicializar wizard al paso correcto (previene que se quede en el paso anterior)
                 if (window.WizardManager && typeof window.WizardManager.inicializarWizard === 'function') {
                     window.WizardManager.inicializarWizard();
                 }
@@ -642,7 +642,7 @@ window.ColoresPorTalla = (function() {
             if (seccionResumen) seccionResumen.style.display = 'none';
             if (seccionTallasOriginal) seccionTallasOriginal.style.display = 'block';
             tablaBody.innerHTML = '';
-            console.log('[ColoresPorTalla] 📭 Sin datos - tabla limpia, sección oculta');
+            console.log('[ColoresPorTalla]  Sin datos - tabla limpia, sección oculta');
             return;
         }
 

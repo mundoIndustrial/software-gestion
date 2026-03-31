@@ -89,7 +89,7 @@ function cerrarModalAlerta() {
  * Abrir modal de novedades de recibo (Estilo Despacho)
  */
 function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
-    console.log('[abrirModalNovedadesRecibo] 🚀 Iniciando apertura de modal');
+    console.log('[abrirModalNovedadesRecibo]  Iniciando apertura de modal');
     console.log('[abrirModalNovedadesRecibo]  Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
     
     try {
@@ -99,7 +99,7 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
         };
 
         const modal = document.getElementById('novedadesEditModal');
-        console.log('[abrirModalNovedadesRecibo] 📦 Modal encontrado:', !!modal);
+        console.log('[abrirModalNovedadesRecibo]  Modal encontrado:', !!modal);
         
         if (!modal) {
             console.error('[abrirModalNovedadesRecibo]  No existe #novedadesEditModal');
@@ -148,12 +148,12 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
  * Cargar novedades del recibo
  */
 async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
-    console.log('[cargarNovedadesRecibo] 🚀 Iniciando carga de novedades');
+    console.log('[cargarNovedadesRecibo]  Iniciando carga de novedades');
     console.log('[cargarNovedadesRecibo]  Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
     
     try {
         const historial = document.getElementById('novedadesHistorial');
-        console.log('[cargarNovedadesRecibo] 📦 Contenedor encontrado:', !!historial);
+        console.log('[cargarNovedadesRecibo]  Contenedor encontrado:', !!historial);
         
         if (!historial) return;
 
@@ -162,10 +162,10 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
         console.log('[cargarNovedadesRecibo]  Loading mostrado');
 
         const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`);
-        console.log('[cargarNovedadesRecibo] 📡 Response status:', response.status);
+        console.log('[cargarNovedadesRecibo]  Response status:', response.status);
         
         const data = await response.json();
-        console.log('[cargarNovedadesRecibo] 📊 Datos recibidos:', data);
+        console.log('[cargarNovedadesRecibo]Datos recibidos:', data);
 
         if (data.success && data.data && data.data.length > 0) {
             console.log('[cargarNovedadesRecibo]  Éxito - Novedades encontradas:', data.data.length);
@@ -241,7 +241,7 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
             historial.innerHTML = novedadesHTML || '<div class="text-center text-gray-500 py-8">Sin novedades registradas</div>';
             console.log('[cargarNovedadesRecibo] 🎨 HTML renderizado');
         } else {
-            console.log('[cargarNovedadesRecibo] 📭 Sin novedades encontradas');
+            console.log('[cargarNovedadesRecibo]  Sin novedades encontradas');
             historial.innerHTML = '<div class="text-center text-gray-500 py-8">Sin novedades registradas</div>';
         }
 
@@ -273,7 +273,7 @@ function getTipoColor(tipo) {
  * Guardar nueva novedad
  */
 async function guardarNovedad() {
-    console.log('[guardarNovedad] 🚀 Iniciando guardado de nueva novedad');
+    console.log('[guardarNovedad]  Iniciando guardado de nueva novedad');
     
     try {
         const ctx = window.__novedadesContext || {};
@@ -282,7 +282,7 @@ async function guardarNovedad() {
         const nuevaContent = document.getElementById('novedadesNuevaContent');
         
         console.log('[guardarNovedad]  Contexto:', ctx);
-        console.log('[guardarNovedad] 📦 Textarea encontrado:', !!nuevaContent);
+        console.log('[guardarNovedad]  Textarea encontrado:', !!nuevaContent);
         
         if (!pedidoId || !numeroRecibo || !nuevaContent) {
             console.error('[guardarNovedad]  Faltan datos para guardar la novedad');
@@ -294,7 +294,7 @@ async function guardarNovedad() {
         console.log('[guardarNovedad] 📝 Texto a guardar:', nuevaNovedadTexto);
         
         if (!nuevaNovedadTexto) {
-            console.warn('[guardarNovedad] ⚠️ Texto vacío');
+            console.warn('[guardarNovedad]  Texto vacío');
             mostrarAlerta('Error', 'La novedad no puede estar vacía', 'warning');
             return;
         }
@@ -307,7 +307,7 @@ async function guardarNovedad() {
             console.log('[guardarNovedad]  Botón en estado loading');
         }
 
-        console.log('[guardarNovedad] 📡 Enviando request a API...');
+        console.log('[guardarNovedad]  Enviando request a API...');
         const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`, {
             method: 'POST',
             headers: {
@@ -322,7 +322,7 @@ async function guardarNovedad() {
         });
 
         const result = await response.json();
-        console.log('[guardarNovedad] 📊 Respuesta API:', result);
+        console.log('[guardarNovedad]Respuesta API:', result);
 
         if (result.success) {
             console.log('[guardarNovedad]  Éxito al guardar');
@@ -337,7 +337,7 @@ async function guardarNovedad() {
             await cargarNovedadesRecibo(pedidoId, numeroRecibo);
             
             // Actualizar el botón en la tabla principal (si existe)
-            console.log('[guardarNovedad] 🔄 Actualizando botón principal...');
+            console.log('[guardarNovedad]  Actualizando botón principal...');
             actualizarBotonNovedadesEnTabla(pedidoId, numeroRecibo);
         } else {
             console.error('[guardarNovedad]  Error en respuesta:', result.message);
@@ -353,7 +353,7 @@ async function guardarNovedad() {
         if (btnGuardar) {
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = '✓ Guardar Novedad';
-            console.log('[guardarNovedad] 🔄 Botón restaurado');
+            console.log('[guardarNovedad]  Botón restaurado');
         }
     }
 }
@@ -362,7 +362,7 @@ async function guardarNovedad() {
  * Eliminar novedad
  */
 async function eliminarNovedad(novedadId) {
-    console.log('[eliminarNovedad] 🚀 Iniciando eliminación de novedad ID:', novedadId);
+    console.log('[eliminarNovedad]  Iniciando eliminación de novedad ID:', novedadId);
     
     try {
         // Limpiar cualquier modal existente primero
@@ -399,7 +399,7 @@ async function eliminarNovedad(novedadId) {
             </div>
         `;
         
-        console.log('[eliminarNovedad] 📦 Modal HTML creado');
+        console.log('[eliminarNovedad]  Modal HTML creado');
         
         // Agregar modal al body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
@@ -433,7 +433,7 @@ async function eliminarNovedad(novedadId) {
                 console.log('[eliminarNovedad]  Botón en estado loading');
                 
                 try {
-                    console.log('[eliminarNovedad] 📡 Enviando DELETE request...');
+                    console.log('[eliminarNovedad]  Enviando DELETE request...');
                     const response = await fetch(`/recibos-novedades/${novedadId}`, {
                         method: 'DELETE',
                         headers: {
@@ -442,7 +442,7 @@ async function eliminarNovedad(novedadId) {
                     });
 
                     const result = await response.json();
-                    console.log('[eliminarNovedad] 📊 Respuesta DELETE:', result);
+                    console.log('[eliminarNovedad]Respuesta DELETE:', result);
 
                     if (result.success) {
                         console.log('[eliminarNovedad]  Eliminación exitosa');
@@ -455,7 +455,7 @@ async function eliminarNovedad(novedadId) {
                         await cargarNovedadesRecibo(ctx.pedido_id, ctx.numero_recibo);
                         
                         // Actualizar el botón en la tabla principal (si existe)
-                        console.log('[eliminarNovedad] 🔄 Actualizando botón principal...');
+                        console.log('[eliminarNovedad]  Actualizando botón principal...');
                         actualizarBotonNovedadesEnTabla(ctx.pedido_id, ctx.numero_recibo);
                     } else {
                         console.error('[eliminarNovedad]  Error en respuesta:', result.message);
@@ -468,7 +468,7 @@ async function eliminarNovedad(novedadId) {
                     // Restaurar botón (por si el modal no se cierra inmediatamente)
                     this.disabled = false;
                     this.innerHTML = 'Eliminar Novedad';
-                    console.log('[eliminarNovedad] 🔄 Botón restaurado');
+                    console.log('[eliminarNovedad]  Botón restaurado');
                 }
             };
             
@@ -703,17 +703,17 @@ async function actualizarBotonNovedadesEnTabla(pedidoId, numeroRecibo) {
  * Cerrar modal de confirmación
  */
 function cerrarModalConfirmarEliminar() {
-    console.log('[cerrarModalConfirmarEliminar] 🚀 Iniciando cierre de modal');
+    console.log('[cerrarModalConfirmarEliminar]  Iniciando cierre de modal');
     
     const modal = document.getElementById('modalConfirmarEliminar');
-    console.log('[cerrarModalConfirmarEliminar] 📦 Modal encontrado:', !!modal);
+    console.log('[cerrarModalConfirmarEliminar]  Modal encontrado:', !!modal);
     
     if (modal) {
         console.log('[cerrarModalConfirmarEliminar]  Eliminando modal del DOM');
         modal.remove();
         console.log('[cerrarModalConfirmarEliminar]  Modal eliminado');
     } else {
-        console.warn('[cerrarModalConfirmarEliminar] ⚠️ No se encontró el modal para cerrar');
+        console.warn('[cerrarModalConfirmarEliminar]  No se encontró el modal para cerrar');
     }
 }
 

@@ -71,7 +71,7 @@ class ImageUploadService
             $basePath .= "/{$subcarpeta}";
         }
 
-        Log::debug('[IMAGE-UPLOAD] 📤 Iniciando guardado de imagen', [
+        Log::debug('[IMAGE-UPLOAD]  Iniciando guardado de imagen', [
             'pedido_id' => $pedidoId,
             'tipo' => $tipo,
             'tipo_singular' => $tipoSingular,

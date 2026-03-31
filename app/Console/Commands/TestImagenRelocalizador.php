@@ -15,7 +15,7 @@ class TestImagenRelocalizador extends Command
     {
         $servicio = app(ImagenRelocalizadorService::class);
 
-        $this->info('🧪 Test: ImagenRelocalizadorService');
+        $this->info(' Test: ImagenRelocalizadorService');
         $this->info('');
 
         // Test 1: Formato ANTIGUO (prendas/2026/01/archivo.jfif)

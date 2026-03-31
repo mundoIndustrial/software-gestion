@@ -107,7 +107,7 @@ class CotizacionBordadoController extends Controller
             $tecnicasFotosABorrar = json_decode($tecnicasFotosABorrar, true) ?? [];
         }
         
-        Log::info('📤 Acción detectada:', ['action' => $action, 'es_envio' => $esEnvio]);
+        Log::info(' Acción detectada:', ['action' => $action, 'es_envio' => $esEnvio]);
         
         // Ejecutar transacción para actualizar datos
         $resultado = DB::transaction(function () use ($request, $id, $esEnvio) {

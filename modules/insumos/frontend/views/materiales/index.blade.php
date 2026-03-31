@@ -241,7 +241,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
                     setupRealtimeListeners();
                 });
             } else {
-                console.warn('[⚠️ ' + nombre + '] Echo no disponible ni waitForEcho');
+                console.warn('[ ' + nombre + '] Echo no disponible ni waitForEcho');
             }
         }
         

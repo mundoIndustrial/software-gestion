@@ -1409,7 +1409,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         
         // Agregar IDs de imágenes a borrar DIRECTAMENTE al FormData
         formData.append('imagenes_a_borrar', JSON.stringify(imagenesABorrar));
-        console.log('📤 FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
+        console.log(' FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
 
         // Enviar IDs de imágenes existentes para preservarlas
         const imagenesExistentesIds = imagenesSeleccionadas
@@ -1444,7 +1444,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         }
     } else {
         // Si NO hay imágenes nuevas, enviar como JSON
-        console.log('📤 Enviando como JSON (sin imágenes nuevas)');
+        console.log(' Enviando como JSON (sin imágenes nuevas)');
         
         // Agregar datos adicionales al objeto data
         data.imagenes_a_borrar = imagenesABorrar;

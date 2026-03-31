@@ -20,7 +20,7 @@ window.fetch = function(...args) {
         console.log('╚════════════════════════════════════════════════════════════════╝\n');
         
         console.log(' URL:', resource);
-        console.log('📤 Método:', config?.method || 'GET');
+        console.log(' Método:', config?.method || 'GET');
         
         if (config?.body instanceof FormData) {
             console.log('\n FormData CAPTURADO:\n');

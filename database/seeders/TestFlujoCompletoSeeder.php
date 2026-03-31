@@ -20,7 +20,7 @@ class TestFlujoCompletoSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🧪 TEST: Flujo Completo Frontend → Backend\n";
+        echo " TEST: Flujo Completo Frontend → Backend\n";
         echo "========================================\n\n";
 
         try {

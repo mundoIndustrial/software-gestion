@@ -393,7 +393,7 @@
 <script defer src="{{ js_asset('js/componentes/prenda-editor-modal.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ $v }}"></script>
 
-<!-- 🧪 TEST SUITE: Solo en desarrollo -->
+<!--  TEST SUITE: Solo en desarrollo -->
 @if(config('app.debug'))
 <script defer src="{{ js_asset('js/tests/prenda-editor-test.js') }}?v={{ $v }}"></script>
 @endif

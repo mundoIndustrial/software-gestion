@@ -259,7 +259,7 @@ class InvoiceFromListOrchestrator {
         
         // Verificar scripts cargados
         const scripts = document.querySelectorAll('script[src*="modulos/invoice"]');
-        console.log('\n📦 Scripts encontrados:', scripts.length);
+        console.log('\n Scripts encontrados:', scripts.length);
         
         scripts.forEach((script, index) => {
             console.log(`  ${index + 1}. ${script.src}`);

@@ -304,10 +304,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Si no hay datos cargados, hacer la llamada al backend (flujo normal)
-        console.log('[cargarPrendasDesdeCotizacion] 📡 Cargando desde backend...');
+        console.log('[cargarPrendasDesdeCotizacion]  Cargando desde backend...');
         fetch(`/api/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacionId}`)
             .then(response => {
-                console.log('[cargarPrendasDesdeCotizacion] 📡 Response status:', response.status);
+                console.log('[cargarPrendasDesdeCotizacion]  Response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }

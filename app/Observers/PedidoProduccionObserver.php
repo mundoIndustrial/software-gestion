@@ -70,7 +70,7 @@ class PedidoProduccionObserver
             
             // Disparar evento de forma SÍNCRONA (sin cola)
             if ($user) {
-                Log::info('[PedidoProduccionObserver] 📤 Despachando PedidoCreado::dispatch', [
+                Log::info('[PedidoProduccionObserver]  Despachando PedidoCreado::dispatch', [
                     'pedido_id' => $pedido->id,
                     'user_id' => $user->id,
                     'user_name' => $user->name,
@@ -188,7 +188,7 @@ class PedidoProduccionObserver
 
             // Usar dispatch síncrono para evitar problemas de Process en Windows
             try {
-                Log::info('[PedidoProduccionObserver] 📤 Despachando PedidoActualizado::dispatch', [
+                Log::info('[PedidoProduccionObserver]  Despachando PedidoActualizado::dispatch', [
                     'pedido_id' => $pedido->id,
                     'asesor_id' => $asesor->id,
                     'asesor_name' => $asesor->name,

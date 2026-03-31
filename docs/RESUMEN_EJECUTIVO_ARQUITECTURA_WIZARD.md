@@ -11,12 +11,12 @@
 El wizard de asignación de colores sufre de:
 
 ```
-⚠️  Flags globales indefinidos          → window.evitarInicializacionWizard
-⚠️  Estados inconsistentes               → ¿Qué estado tiene realmente?
-⚠️  Memory leaks en múltiples aperturas  → Listeners acumulados
-⚠️  Parches sobre parches                → data-guardando, setTimeout(1500ms)
-⚠️  Imposible de testear                 → Dependencias globales
-⚠️  Difícil de mantener                  → Lógica esparcida en 100+ líneas
+  Flags globales indefinidos          → window.evitarInicializacionWizard
+  Estados inconsistentes               → ¿Qué estado tiene realmente?
+  Memory leaks en múltiples aperturas  → Listeners acumulados
+  Parches sobre parches                → data-guardando, setTimeout(1500ms)
+  Imposible de testear                 → Dependencias globales
+  Difícil de mantener                  → Lógica esparcida en 100+ líneas
 ```
 
 **Síntomas**: 

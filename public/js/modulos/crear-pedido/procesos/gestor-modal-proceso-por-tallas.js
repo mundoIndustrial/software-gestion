@@ -160,7 +160,7 @@ window.cambiarModoModalPorTallas = function(nuevoModo) {
     //  Registrar cambio de modo en el editor de procesos
     if (window.procesosEditor && procesoPorTallasActual) {
         window.procesosEditor.registrarCambioModoTallas(nuevoModo);
-        console.log('[por-tallas] 📊 Cambio de modo registrado en editor:', nuevoModo);
+        console.log('[por-tallas]Cambio de modo registrado en editor:', nuevoModo);
     }
 
     console.log('[por-tallas] Cambiado a modo:', nuevoModo);
@@ -198,7 +198,7 @@ function agregarImagenesGenerales(files) {
         const yaExiste = window._fotosGeneralesKeys && window._fotosGeneralesKeys.has(fileKey);
         
         if (yaExiste) {
-            console.warn('[agregarImagenesGenerales] ⚠️ DUPLICADO DETECTADO:', fileKey, '- Ignorando');
+            console.warn('[agregarImagenesGenerales]  DUPLICADO DETECTADO:', fileKey, '- Ignorando');
             return; // Skip this file
         }
         
@@ -444,7 +444,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             }
         });
         
-        console.log('[por-tallas] 📊 Resumen de filas leídas:', filasDebug);
+        console.log('[por-tallas]Resumen de filas leídas:', filasDebug);
         
         // Si encontró tallas en la tabla, marcar como exitoso
         if (Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0 || tallasPrenda.sobremedida) {
@@ -461,7 +461,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         );
         
         if (hayTallasRelacionales) {
-            console.log('[por-tallas] 📊 FUENTE 2 - Leyendo desde window.tallasRelacionales:', tallasRelacionales);
+            console.log('[por-tallas]FUENTE 2 - Leyendo desde window.tallasRelacionales:', tallasRelacionales);
             
             // Copiar DAMA
             if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
@@ -488,7 +488,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
             const asignaciones = window.StateManager.getAsignaciones();
             if (asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0) {
-                console.log('[por-tallas] 📊 FUENTE 3 - Leyendo tallas desde StateManager (asignaciones wizard):', asignaciones);
+                console.log('[por-tallas]FUENTE 3 - Leyendo tallas desde StateManager (asignaciones wizard):', asignaciones);
                 
                 Object.entries(asignaciones).forEach(([clave, asignacion]) => {
                     const genero = asignacion.genero ? asignacion.genero.toLowerCase() : 'dama';
@@ -537,7 +537,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         const cabObj = (procesoTallasGuardadas.caballero && !Array.isArray(procesoTallasGuardadas.caballero)) ? procesoTallasGuardadas.caballero : {};
         const sobreObj = (procesoTallasGuardadas.sobremedida && !Array.isArray(procesoTallasGuardadas.sobremedida)) ? procesoTallasGuardadas.sobremedida : null;
         if (Object.keys(damaObj).length > 0 || Object.keys(cabObj).length > 0) {
-            console.log('[por-tallas] 🔄 Combinando tallas guardadas en BD + nuevas tallas agregadas después (evitando duplicados)');
+            console.log('[por-tallas]  Combinando tallas guardadas en BD + nuevas tallas agregadas después (evitando duplicados)');
             
             // Extraer TALLAS BASE de las guardadas (primera parte antes de __)
             // Ej: M__AZUL_ACERO -> M, XXXXL__AZUL_CELESTE -> XXXXL, M -> M
@@ -725,7 +725,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         });
     }
     
-    console.log('[por-tallas] 🔄 Datos generales cargados:', {
+    console.log('[por-tallas]  Datos generales cargados:', {
         ubicacionDisplay: ubicacionDisplay,
         fotosExistentes: fotosGeneralesExistentes.length,
         fotosNuevas: fotosGeneralesTemp.length,
@@ -901,7 +901,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     // ─── Restaurar modo actual (fuente única canónica: datos.modo_tallas) ───
     const modoGuardado = datosGenerales?.modo_tallas || 'general';
     
-    console.log('[por-tallas] 📊 Modo guardado detectado:', {
+    console.log('[por-tallas]Modo guardado detectado:', {
         tipoProceso: tipoProceso,
         modo: modoGuardado,
         datosGenerales_modo_tallas: datosGenerales?.modo_tallas,
@@ -1182,7 +1182,7 @@ function handlePasteGlobalPorTallas(e) {
     const isContentEditable = activeEl?.isContentEditable || activeEl?.getAttribute('contenteditable') === 'true';
     
     if (tag === 'INPUT' || tag === 'TEXTAREA' || isContentEditable) {
-        console.log('[handlePasteGlobalPorTallas] ⚠️ Focus en', tag, 'o contenteditable - ignorando paste');
+        console.log('[handlePasteGlobalPorTallas]  Focus en', tag, 'o contenteditable - ignorando paste');
         return;
     }
 
@@ -1356,7 +1356,7 @@ window.guardarProcesoPorTallas = function() {
             if (datosPorTallaTemp[key]) {
                 datosPorTallaTemp[key].observaciones = valor;
             } else {
-                console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
+                console.warn('[GUARDAR-POR-TALLAS]  Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
             }
         });
 
@@ -1409,7 +1409,7 @@ window.guardarProcesoPorTallas = function() {
             if (datosPorTallaTemp[key]) {
                 datosPorTallaTemp[key].observaciones = valor;
             } else {
-                console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
+                console.warn('[GUARDAR-POR-TALLAS]  Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
             }
         });
 
@@ -1586,7 +1586,7 @@ window.guardarProcesoPorTallas = function() {
 
     // Actualizar la tabla de resumen si se sincronizaron nuevas tallas
     if (tallasSincronizadas) {
-        console.log('[por-tallas] 📊 Actualizando tabla de resumen tras sincronizar nuevas tallas');
+        console.log('[por-tallas]Actualizando tabla de resumen tras sincronizar nuevas tallas');
         if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
             window.ColoresPorTalla.actualizarTablaResumen();
         }

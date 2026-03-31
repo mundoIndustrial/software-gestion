@@ -18,7 +18,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtener($pedidoIdentifier): PedidoProduccion
     {
-        Log::info('ðŸ“– [DETALLE] Obteniendo detalles del pedido', [
+        Log::info('– [DETALLE] Obteniendo detalles del pedido', [
             'identificador' => $pedidoIdentifier
         ]);
 

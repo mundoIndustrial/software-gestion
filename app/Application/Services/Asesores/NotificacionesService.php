@@ -36,7 +36,7 @@ class NotificacionesService
                 return [
                     'id' => $notif->id,
                     'tipo' => 'fecha_estimada',
-                    'titulo' => 'ðŸ“… Fecha Estimada Asignada',
+                    'titulo' => '… Fecha Estimada Asignada',
                     'pedido_id' => $data['pedido_id'],
                     'numero_pedido' => $data['numero_pedido'],
                     'fecha_estimada' => $data['fecha_estimada'],

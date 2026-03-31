@@ -147,7 +147,7 @@ function validateMemoryCleanup() {
     if (status.state === 'IDLE') {
         console.log('   Wizard está en estado IDLE (limpio)');
     } else {
-        console.log(`  ⚠️  Wizard está en estado ${status.state} (verificar si debe limpiarse)`);
+        console.log(`    Wizard está en estado ${status.state} (verificar si debe limpiarse)`);
     }
 
     console.log('\n💡 CONSEJO: Llamar a window.ColoresPorTallaV2.cleanupWizard() para limpiar completamente');
@@ -193,7 +193,7 @@ function validateBackwardCompatibility() {
     if (allPresent) {
         console.log('\n TODOS LOS MÉTODOS LEGACY ESTÁN DISPONIBLES');
     } else {
-        console.log('\n⚠️  ALGUNOS MÉTODOS LEGACY FALTAN');
+        console.log('\n  ALGUNOS MÉTODOS LEGACY FALTAN');
     }
 
     return allPresent;

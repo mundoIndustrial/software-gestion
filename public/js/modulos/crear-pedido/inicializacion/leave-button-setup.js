@@ -29,7 +29,7 @@
             btnSubmit.style.display = 'block';
             console.log('[leave-button-setup] Botón submit inicializado ✓');
         } else {
-            console.warn('⚠️ Botón submit no encontrado');
+            console.warn(' Botón submit no encontrado');
         }
         
         if (btnGuardarBorrador) {

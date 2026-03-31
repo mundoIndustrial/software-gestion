@@ -19,7 +19,7 @@ class TestColorTelaSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🧪 TEST: Crear Colores y Telas Automáticamente\n";
+        echo " TEST: Crear Colores y Telas Automáticamente\n";
         echo "========================================\n\n";
 
         try {

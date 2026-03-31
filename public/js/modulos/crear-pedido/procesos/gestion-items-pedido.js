@@ -670,7 +670,7 @@ class GestionItemsUI {
                     resultado[clave] = copiaAsignacion;
                 });
 
-                console.log('[agregarPrendaNueva] 🧪 Hidratar asignaciones (pre-cierre modal):', {
+                console.log('[agregarPrendaNueva]  Hidratar asignaciones (pre-cierre modal):', {
                     grupos: Object.keys(resultado).length,
                     conImagenId,
                     conImagenFile
@@ -697,7 +697,7 @@ class GestionItemsUI {
             
             //  LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
             console.log('\n═══════════════════════════════════════════════════════════════');
-            console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
+            console.log('[agregarPrendaNueva]  DATOS RECOPILADOS POR prendaFormCollector:');
             console.log('═══════════════════════════════════════════════════════════════');
             console.log('[agregarPrendaNueva]   📸 prendaData.imagenes:', prendaData?.imagenes?.length || 0);
             console.log('[agregarPrendaNueva]      Contenido:', prendaData?.imagenes?.map(img => ({
@@ -830,7 +830,7 @@ class GestionItemsUI {
             
             // Determinar si vamos a editar o crear nueva
             const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
-            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? '✏️ EDITAR' : ' AGREGAR NUEVA');
+            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? ' EDITAR' : ' AGREGAR NUEVA');
             
             if (vamosAEditar) {
 
@@ -900,7 +900,7 @@ class GestionItemsUI {
                     return;
                 } else {
                     // Solo en memoria - sin novedades
-                    console.log('[guardarPrenda] 💾 MODO CREACIÓN: Actualizando prenda en memoria');
+                    console.log('[guardarPrenda]  MODO CREACIÓN: Actualizando prenda en memoria');
                     console.log('[guardarPrenda]   - this.prendaEditIndex:', this.prendaEditIndex);
                     console.log('[guardarPrenda]   - this.prendas.length:', this.prendas.length);
                     console.log('[guardarPrenda]   - ¿Existe prenda en este index?:', !!this.prendas[this.prendaEditIndex]);
@@ -965,7 +965,7 @@ class GestionItemsUI {
                         }
                         
                         //  CRÍTICO: Renderizar inmediatamente después de actualizar
-                        console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');
+                        console.log('[gestionItemsUI]  Prenda actualizada, re-renderizando...');
                         if (this.renderer) {
                             const itemsOrdenados = this.obtenerItemsOrdenados();
                             this.renderer.actualizar(itemsOrdenados).catch(err => {
@@ -1042,16 +1042,16 @@ class GestionItemsUI {
             // Cerrar el modal
             this.cerrarModalAgregarPrendaNueva();
             
-            console.log('[gestionItemsUI] 📤 PUNTO CRÍTICO: Después de agregar prenda');
-            console.log('[gestionItemsUI] 📤 this.prendas:', this.prendas.length);
-            console.log('[gestionItemsUI] 📤 this.epps:', this.epps.length);
-            console.log('[gestionItemsUI] 📤 this.ordenItems:', JSON.stringify(this.ordenItems));
+            console.log('[gestionItemsUI]  PUNTO CRÍTICO: Después de agregar prenda');
+            console.log('[gestionItemsUI]  this.prendas:', this.prendas.length);
+            console.log('[gestionItemsUI]  this.epps:', this.epps.length);
+            console.log('[gestionItemsUI]  this.ordenItems:', JSON.stringify(this.ordenItems));
             
             //  Solo en modo CREACIÓN: renderizar
             // En modo EDICIÓN ya salimos arriba con return
             if (this.renderer) {
                 const itemsOrdenados = this.obtenerItemsOrdenados();
-                console.log('[gestionItemsUI] 📤 Llamando renderer.actualizar() con', itemsOrdenados.length, 'items (CREACIÓN)');
+                console.log('[gestionItemsUI]  Llamando renderer.actualizar() con', itemsOrdenados.length, 'items (CREACIÓN)');
                 await this.renderer.actualizar(itemsOrdenados);
             }
 
@@ -1112,12 +1112,12 @@ class GestionItemsUI {
             if (pedidoData.prendas?.[0]?.procesos) {
                 Object.entries(pedidoData.prendas[0].procesos).forEach(([procesoKey, proceso]) => {
                     if (proceso.datos?.datosExtendidos) {
-                        console.log(`[gestion-items-pedido] 📊 Proceso "${procesoKey}" TIENE datosExtendidos:`, {
+                        console.log(`[gestion-items-pedido]Proceso "${procesoKey}" TIENE datosExtendidos:`, {
                             generos: Object.keys(proceso.datos.datosExtendidos),
                             datosExtendidos: proceso.datos.datosExtendidos
                         });
                     } else {
-                        console.log(`[gestion-items-pedido] ⚠️ Proceso "${procesoKey}" NO tiene datosExtendidos`);
+                        console.log(`[gestion-items-pedido]  Proceso "${procesoKey}" NO tiene datosExtendidos`);
                     }
                 });
             }

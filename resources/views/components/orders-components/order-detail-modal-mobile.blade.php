@@ -1406,7 +1406,7 @@ window.llenarReciboCosturaMobile = function(data) {
                 }
             }
         } catch (e) {
-            console.warn('⚠️ [TALLAS OVERRIDE] Error forzando tallas por color:', e);
+            console.warn(' [TALLAS OVERRIDE] Error forzando tallas por color:', e);
         }
 
         // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas o prenda.talla_colores

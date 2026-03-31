@@ -20,7 +20,7 @@ class TestConsecutivosCommand extends Command
 
     public function handle()
     {
-        $this->info('🧪 Probando generación de consecutivos...');
+        $this->info(' Probando generación de consecutivos...');
 
         try {
             // 1. Buscar un pedido en estado PENDIENTE_SUPERVISOR

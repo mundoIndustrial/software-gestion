@@ -1539,7 +1539,7 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             $datosArea
         );
 
-        // 🔄 SINCRONIZAR en bodega_detalles_talla
+        //  SINCRONIZAR en bodega_detalles_talla
         // Actualizar solo los campos que corresponden a esta área
         $updateBase = [
             $stateFieldName => $validatedData[$stateFieldName] ?? $estadoNuevo,

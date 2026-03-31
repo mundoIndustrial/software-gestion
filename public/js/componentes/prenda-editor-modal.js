@@ -128,7 +128,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
     
     try {
         // OBTENER DATOS FRESCOS DE LA BD
-        console.log('📡 [EDITAR-PRENDA] Obteniendo datos frescos del servidor...');
+        console.log(' [EDITAR-PRENDA] Obteniendo datos frescos del servidor...');
         const response = await fetch(`/pedidos-public/${pedidoId}/factura-datos`);
         
         if (!response.ok) {
@@ -1595,7 +1595,7 @@ function cargarPrendaEnFormularioModal(prendaData) {
                                          prendaData.cantidad_talla.GENERICO;
     
     if (tieneGenerico || tieneGenericoEnCantidadTalla) {
-        console.log('[cargarPrendaEnFormularioModal] 📦 DETECTADA PRENDA CON UNISEX (GENERICO)');
+        console.log('[cargarPrendaEnFormularioModal]  DETECTADA PRENDA CON UNISEX (GENERICO)');
         
         // LIMPIAR todas las tarjetas de géneros (DAMA, CABALLERO, SOBREMEDIDA)
         const containerGeneros = document.getElementById('tarjetas-generos-container');

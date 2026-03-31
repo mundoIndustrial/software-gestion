@@ -210,7 +210,7 @@ class ActualizarPedidoService
      */
     public function actualizarNovedades($pedidoIdentifier, string $novedades): Pedidos
     {
-        Log::info('ðŸ“Œ [NOVEDADES] Actualizando novedades del pedido');
+        Log::info('Œ [NOVEDADES] Actualizando novedades del pedido');
 
         return $this->actualizarCampos($pedidoIdentifier, ['novedades' => $novedades]);
     }

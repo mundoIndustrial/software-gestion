@@ -12,7 +12,7 @@ Sistema completo de actualización en tiempo real para tabla de pedidos que util
 -  **Mantener lógica existente** - Sin eliminar código, solo refactorización
 -  **Experiencia fluida** - Sin recargas completas, actualizaciones parciales
 
-## 🏗️ Arquitectura
+##  Arquitectura
 
 ### Backend Components
 
@@ -107,7 +107,7 @@ REVERB_SCHEME=http
 @endauth
 ```
 
-## 🧪 Testing y Debugging
+##  Testing y Debugging
 
 ### Página de Pruebas
 - **URL**: `/websocket-test.html`

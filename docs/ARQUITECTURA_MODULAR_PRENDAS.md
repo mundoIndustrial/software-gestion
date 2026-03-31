@@ -1,4 +1,4 @@
-## 📦 Arquitectura Modular - Prendas Editor (REFACTORIZADO)
+##  Arquitectura Modular - Prendas Editor (REFACTORIZADO)
 
 ### 🎯 Cambio Principal
 
@@ -41,7 +41,7 @@ lazy-loaders/
 
 ---
 
-## 🔄 Cómo Funciona
+##  Cómo Funciona
 
 ### 1️⃣ Flujo de Carga
 
@@ -123,7 +123,7 @@ class CotizacionEditor {
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 ### Opción 1: Con el nuevo loader (RECOMENDADO)
 
@@ -170,7 +170,7 @@ SI TODAVÍA USAS EL VIEJO CÓDIGO:
 
 ---
 
-## 📊 Comparación Antes/Después
+##Comparación Antes/Después
 
 ### ANTES: Monolítico
 ```

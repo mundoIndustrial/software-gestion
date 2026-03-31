@@ -248,7 +248,7 @@
     </script>
     
     <!-- CORE ARCHITECTURE LAYER - Hybrid DDD Implementation -->
-    <!-- ⚠️  CRITICAL: Order matters! Load in this sequence:
+    <!--   CRITICAL: Order matters! Load in this sequence:
          1. Shared Cache (base class)
          2. HttpClient (no dependencies)
          3. Domain Repository (interface)

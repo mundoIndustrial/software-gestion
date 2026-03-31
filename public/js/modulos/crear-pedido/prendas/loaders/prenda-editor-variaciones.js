@@ -45,7 +45,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('manga-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Manga] Elementos no encontrados');
+            console.warn(' [Manga] Elementos no encontrados');
             return;
         }
 
@@ -100,7 +100,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('bolsillos-obs');
 
         if (!checkbox || !obs) {
-            console.warn('⚠️ [Bolsillos] Elementos no encontrados');
+            console.warn(' [Bolsillos] Elementos no encontrados');
             return;
         }
 
@@ -152,7 +152,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('broche-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Broche] Elementos no encontrados');
+            console.warn(' [Broche] Elementos no encontrados');
             return;
         }
 

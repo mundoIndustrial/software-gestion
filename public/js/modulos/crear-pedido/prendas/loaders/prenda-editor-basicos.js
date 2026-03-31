@@ -24,7 +24,7 @@ class PrendaEditorBasicos {
             // Si no hay origen directo, intentar mapear desde prenda_bodega
             if (!origen && prenda.prenda_bodega !== undefined && prenda.prenda_bodega !== null) {
                 origen = (prenda.prenda_bodega === 1 || prenda.prenda_bodega === true) ? 'bodega' : 'confeccion';
-                console.log('[📝 Basicos] 🔄 Mapeado origen desde prenda_bodega:', {
+                console.log('[📝 Basicos]  Mapeado origen desde prenda_bodega:', {
                     prenda_bodega: prenda.prenda_bodega,
                     origen_resultante: origen
                 });

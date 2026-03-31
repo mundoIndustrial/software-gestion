@@ -1323,7 +1323,7 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
     console.log('[cargarDatosParaAgregarProceso] Cargando datos para pedido:', pedidoId, 'prenda:', prendaId);
     
     try {
-        // ⚠️ VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
+        //  VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
         if (!prendaId || prendaId === 'null' || prendaId === null) {
             throw new Error('CRÍTICO: No se proporcionó una prenda específica. No se puede asignar encargado sin prenda definida.');
         }
@@ -1781,7 +1781,7 @@ function showRecibAprobadoNotification(data) {
         <div style="font-size: 13px; opacity: 0.9;">
             <div> Recibo #${data.consecutivo}</div>
             <div>👤 Cliente: ${data.cliente || 'N/A'}</div>
-            <div>📦 Área: ${data.area || 'N/A'}</div>
+            <div> Área: ${data.area || 'N/A'}</div>
         </div>
     `;
     
@@ -1850,7 +1850,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
             console.error(' [ReciboAprobado] Error al recargar tabla:', error);
             // Como fallback, recargar toda la página después de 3 segundos
             setTimeout(() => {
-                console.log('🔄 [ReciboAprobado] Recargando página como fallback...');
+                console.log(' [ReciboAprobado] Recargando página como fallback...');
                 window.location.reload();
             }, 3000);
         });

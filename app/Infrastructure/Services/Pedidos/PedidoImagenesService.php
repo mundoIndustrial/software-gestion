@@ -93,7 +93,7 @@ class PedidoImagenesService
      */
     public function procesarYAsignarImagenes(Request $request, int $pedidoId, array $items): void
     {
-        Log::info('[PedidoImagenesService] ðŸ“¸ Procesando imagenes en carpetas finales', [
+        Log::info('[PedidoImagenesService] ¸ Procesando imagenes en carpetas finales', [
             'pedido_id' => $pedidoId,
             'items_count' => count($items),
         ]);
@@ -162,7 +162,7 @@ class PedidoImagenesService
                 'orden' => $imgIdx + 1,
             ]);
 
-            Log::debug('[PedidoImagenesService] ðŸ“¸ Imagen prenda guardada', [
+            Log::debug('[PedidoImagenesService] ¸ Imagen prenda guardada', [
                 'prenda_id' => $prenda->id,
                 'webp' => $resultado['webp'],
             ]);
@@ -220,7 +220,7 @@ class PedidoImagenesService
                     'ruta_webp' => $resultado['webp'],
                 ]);
 
-                Log::debug('[PedidoImagenesService] ðŸ“¸ Imagen tela guardada', [
+                Log::debug('[PedidoImagenesService] ¸ Imagen tela guardada', [
                     'tela_id' => $telaRelacion->id,
                     'webp' => $resultado['webp'],
                 ]);
@@ -275,7 +275,7 @@ class PedidoImagenesService
                         'ruta_webp' => $resultado['webp'],
                     ]);
 
-                    Log::debug('[PedidoImagenesService] ðŸ“¸ Imagen proceso guardada', [
+                    Log::debug('[PedidoImagenesService] ¸ Imagen proceso guardada', [
                         'proceso_nombre' => $nombreProceso,
                         'webp' => $resultado['webp'],
                     ]);
@@ -398,7 +398,7 @@ class PedidoImagenesService
 
                 $imagenesGuardadas++;
 
-                Log::debug('[PedidoImagenesService] ðŸ“¸ Imagen EPP guardada', [
+                Log::debug('[PedidoImagenesService] ¸ Imagen EPP guardada', [
                     'pedido_epp_id' => $pedidoEpp->id,
                     'webp' => $resultado['webp'],
                 ]);
@@ -717,7 +717,7 @@ class PedidoImagenesService
                             if (strtoupper($colorItem['nombre'] ?? '') === $colorNombre) {
                                 // OPCION A OPTIMIZATION: Reemplazar triple whereHas() con JOINs directos
                                 // whereHas() crea 3 JOINs implicitos - aca lo hacemos explicito y optimizado
-                                DB::table('prenda_pedido_talla_color as pptc')
+                                DB::table('prenda_pedido_talla_colores as pptc')
                                     ->join('prendas_pedido_talla as ppt', 'pptc.prenda_pedido_talla_id', '=', 'ppt.id')
                                     ->join('prendas_pedido as pp', 'ppt.prenda_pedido_id', '=', 'pp.id')
                                     ->where('pptc.color_nombre', $colorNombre)

@@ -176,7 +176,7 @@ function ejemploUsoStandalone() {
         ]
     };
 
-    console.log('🧪 [Ejemplo] Iniciando prueba de transformador');
+    console.log(' [Ejemplo] Iniciando prueba de transformador');
     
     // Usar el flujo completo
     const prendaProcesada = window.procesarTelasDesdeVariantes(prendaEjemplo);

@@ -978,7 +978,7 @@ function guardarEdicionEnModalEditarEPP() {
                     renderizarTablaEPPAgregados();
                 }
             } else {
-                console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No se encontró EPP en eppAgregadosList para sincronizar');
+                console.warn('[guardarEdicionEnModalEditarEPP]  No se encontró EPP en eppAgregadosList para sincronizar');
             }
         }
         
@@ -1016,7 +1016,7 @@ function guardarEdicionEnModalEditarEPP() {
             });
             console.log('[guardarEdicionEnModalEditarEPP]  Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
         } else {
-            console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No hay tarjetaId para actualizar la tarjeta visual');
+            console.warn('[guardarEdicionEnModalEditarEPP]  No hay tarjetaId para actualizar la tarjeta visual');
         }
         
         // RE-RENDERIZAR TARJETAS: Actualizar la UI con el ItemRenderer
@@ -1150,7 +1150,7 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             nombreElemento.textContent = datos.nombre || '-';
             console.log('[actualizarTarjetaEPPEnDOM] Nombre actualizado a:', datos.nombre);
         } else {
-            console.warn('[actualizarTarjetaEPPEnDOM] ⚠️ No se encontró elemento h4 para el nombre');
+            console.warn('[actualizarTarjetaEPPEnDOM]  No se encontró elemento h4 para el nombre');
         }
         
         // Actualizar cantidad y observaciones

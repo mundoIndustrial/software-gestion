@@ -443,7 +443,7 @@
         function setupUpperCaseInput(inputId) {
             const input = document.getElementById(inputId);
             if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
+                console.log(' Configurando input para mayúsculas:', inputId);
                 
                 // Función para convertir a mayúsculas preservando posición del cursor
                 function forceUpperCase() {
@@ -460,7 +460,7 @@
                         // Restaurar posición del cursor
                         input.setSelectionRange(start, end);
                         
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
+                        console.log(' Convertido a mayúsculas:', currentValue, '→', upperValue);
                     }
                 }
                 
@@ -476,7 +476,7 @@
                 // Convertir valor inicial si existe
                 if (input.value) {
                     input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
+                    console.log(' Valor inicial convertido:', input.value);
                 }
                 
                 // Forzar mayúsculas cada segundo por si acaso
@@ -485,7 +485,7 @@
                 // Limpiar intervalo después de 10 segundos para no consumir recursos
                 setTimeout(() => clearInterval(intervalId), 10000);
             } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
+                console.warn(' Input no encontrado:', inputId);
             }
         }
         
@@ -775,7 +775,7 @@
 <!-- Script para modal de prendas y autocomplete -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
 
-<!-- 🧪 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
+<!--  TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
 <script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 <!-- Script para ocultar loading cuando todo está listo -->

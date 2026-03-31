@@ -57,7 +57,7 @@ class WebSocketChannelConfigurator {
 
         try {
             this.ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] 🔄 Pedido actualizado:', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Pedido actualizado:', event?.pedido?.id);
                 this.onUpdate('pedido.actualizado', event?.pedido);
             });
 
@@ -88,7 +88,7 @@ class WebSocketChannelConfigurator {
 
             // Actualizaciones
             this.ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] 🔄 Actualizado (cartera):', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Actualizado (cartera):', event?.pedido?.id);
                 this.onUpdate('pedido.actualizado', event?.pedido);
             });
 
@@ -102,7 +102,7 @@ class WebSocketChannelConfigurator {
             if (window.usuarioAutenticado && window.usuarioAutenticado.id) {
                 const userId = window.usuarioAutenticado.id;
                 this.ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                    if (this.debug) console.log('[WebSocketChannelConfigurator] 📡 Privado (cartera):', event?.pedido?.id);
+                    if (this.debug) console.log('[WebSocketChannelConfigurator]  Privado (cartera):', event?.pedido?.id);
                     this.onUpdate('pedido.actualizado', event?.pedido);
                 });
             }
@@ -129,7 +129,7 @@ class WebSocketChannelConfigurator {
 
         try {
             this.ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] 📡 Actualizado privado:', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Actualizado privado:', event?.pedido?.id);
                 this.onUpdate('pedido.actualizado', event?.pedido);
             });
 

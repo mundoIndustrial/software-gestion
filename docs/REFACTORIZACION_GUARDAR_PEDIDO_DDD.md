@@ -1,4 +1,4 @@
-# 🏗️ Refactorización GuardarPedidoUseCase - DDD & Clean Architecture
+#  Refactorización GuardarPedidoUseCase - DDD & Clean Architecture
 
 ##  RESUMEN EJECUTIVO
 
@@ -301,7 +301,7 @@ app/
 
 ---
 
-## 📊 FLUJO DE DATOS (BEFORE vs AFTER)
+##FLUJO DE DATOS (BEFORE vs AFTER)
 
 ### ❌ ANTES (Acoplado)
 ```
@@ -339,7 +339,7 @@ Controller → Response JSON
 
 ---
 
-## 🧪 TESTABILIDAD
+##  TESTABILIDAD
 
 ### ❌ ANTES (Difícil de testear)
 ```php
@@ -373,7 +373,7 @@ public function testGuardarPedidoLogo() {
 
 ---
 
-## 🔄 CÓMO USAR EN LA PRÁCTICA
+##  CÓMO USAR EN LA PRÁCTICA
 
 ### 1. En el Controller
 ```php
@@ -428,7 +428,7 @@ public function testGuardarPedido() {
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Aplicar el mismo patrón a otros UseCases**
    - `CrearProduccionPedidoUseCase`

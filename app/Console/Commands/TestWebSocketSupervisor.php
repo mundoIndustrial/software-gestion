@@ -27,7 +27,7 @@ class TestWebSocketSupervisor extends Command
      */
     public function handle()
     {
-        $this->info('🧪 Iniciando prueba de WebSocket para supervisor-pedidos...');
+        $this->info(' Iniciando prueba de WebSocket para supervisor-pedidos...');
         
         // Simular datos de una orden
         $ordenData = [
@@ -44,7 +44,7 @@ class TestWebSocketSupervisor extends Command
         $orden = (object) $ordenData;
         
         $this->info(" Pedido: {$orden->numero_pedido}");
-        $this->info("🔄 Acción: created");
+        $this->info(" Acción: created");
         $this->info(" Canales: supervisor-pedidos, ordenes");
         
         Log::info('[TEST] Simulando evento OrdenUpdated', [

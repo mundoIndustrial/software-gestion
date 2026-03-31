@@ -119,7 +119,7 @@ class CargadorPrendasCotizacion {
             // Guardar en un lugar accesible para usarlas más adelante
             if (telasMultiplesDelOriginal.length > 0) {
                 window._telasMultiplesOriginales = telasMultiplesDelOriginal;
-                console.log('[transformarDatos] 💾 Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
+                console.log('[transformarDatos]  Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
                 telasMultiplesDelOriginal.forEach((t, idx) => {
                     console.log(`  [${idx}] ${t.tela} - ${t.color} -> ref: "${t.referencia}" | imagenes: ${t.imagenes ? JSON.stringify(t.imagenes).substring(0, 100) : 'undefined'}`);
                 });
@@ -507,7 +507,7 @@ class CargadorPrendasCotizacion {
                 telasDesdeVariantes = telasAgregadasTemp;
                 console.log('[transformarDatos]   Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
             } else {
-                console.log('[transformarDatos]  ⚠️ telas_multiples no es array o está vacío');
+                console.log('[transformarDatos]   telas_multiples no es array o está vacío');
             }
         } else {
             console.log('[transformarDatos]  La prenda no tiene variantes array');
@@ -673,11 +673,11 @@ class CargadorPrendasCotizacion {
                             telaTarget.imagenes = imagenesTemp;
                             console.log(`[transformarDatos] 📸 IMÁGENES ENRIQUECIDAS: ${imagenesTemp.length} foto(s)`);
                         } else {
-                            console.warn(`[transformarDatos]  ⚠️ imagenesTemp NO es array o está vacío:`, imagenesTemp);
+                            console.warn(`[transformarDatos]   imagenesTemp NO es array o está vacío:`, imagenesTemp);
                         }
                     }
                 } else {
-                    console.warn(`[transformarDatos] ⚠️ No se encontró coincidencia para enriquecer: ${telaOriginal.tela} - ${telaOriginal.color}`);
+                    console.warn(`[transformarDatos]  No se encontró coincidencia para enriquecer: ${telaOriginal.tela} - ${telaOriginal.color}`);
                 }
             });
             
@@ -1175,7 +1175,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 // Cerrar modal de selección
                 modal.remove();
 
-                // 💾 GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
+                //  GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
                 // Guardar la prenda original del selector para poder acceder a telas_multiples más tarde
                 window.prendaOriginalDesdeSelector = {
                     variantes: prenda.variantes,
@@ -1183,7 +1183,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     nombre_producto: prenda.nombre_producto,
                     cotizacion_id: cotizacion.id
                 };
-                console.log('[abrirSelectorPrendasCotizacion] 💾 Prenda original guardada para referencia:', {
+                console.log('[abrirSelectorPrendasCotizacion]  Prenda original guardada para referencia:', {
                     tiene_variantes: !!prenda.variantes,
                     variantes_es_array: Array.isArray(prenda.variantes),
                     variantes_length: prenda.variantes?.length || 0

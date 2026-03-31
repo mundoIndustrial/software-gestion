@@ -169,7 +169,7 @@
                                 style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
                                 onmouseover="this.style.background='#7c3aed'; this.style.transform='scale(1.05)';"
                                 onmouseout="this.style.background='#8b5cf6'; this.style.transform='scale(1)';">
-                                🔄 Homologar
+                                 Homologar
                             </button>
                         </div>
                     </div>
@@ -623,7 +623,7 @@
                         
                         if (!response.ok) {
                             const error = await response.json();
-                            console.warn(`⚠️ No se pudo eliminar imagen ${imagen.id}:`, error.message);
+                            console.warn(` No se pudo eliminar imagen ${imagen.id}:`, error.message);
                         } else {
                             console.log(` Imagen ${imagen.id} eliminada correctamente`);
                         }
@@ -660,7 +660,7 @@
                         }));
                         archivosAgregados++;
                     } else {
-                        console.warn(`⚠️ Imagen ${index} no tiene archivo:`, imagen);
+                        console.warn(` Imagen ${index} no tiene archivo:`, imagen);
                     }
                 });
                 
@@ -681,7 +681,7 @@
                     
                     if (!response.ok) {
                         const error = await response.json();
-                        console.warn(`⚠️ No se pudieron agregar imágenes:`, error.message);
+                        console.warn(` No se pudieron agregar imágenes:`, error.message);
                     } else {
                         const resultado = await response.json();
                         console.log(` Imágenes agregadas:`, resultado);
@@ -708,7 +708,7 @@
             const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
             const pedidoEppId = cambios.eppData.pedido_epp_id;
             
-            console.log('📡 [Modal Novedad] Guardando cambios con novedad...', {
+            console.log(' [Modal Novedad] Guardando cambios con novedad...', {
                 pedidoId,
                 pedidoEppId,
                 cantidad: cambios.cantidad,
@@ -723,7 +723,7 @@
             // Detectar si es una homologación
             let response;
             if (window.eppEnHomologacion) {
-                console.log('🔄 [Modal Novedad] Modo HOMOLOGACIÓN detectado');
+                console.log(' [Modal Novedad] Modo HOMOLOGACIÓN detectado');
                 
                 response = await fetch(`/api/asesores/pedidos/${pedidoId}/homologar-epp`, {
                     method: 'POST',
@@ -1184,7 +1184,7 @@
                 }
             });
 
-            console.log('[EPP] 📤 Enviando DELETE a: /api/asesores/pedidos/' + pedidoId + '/eliminar-epp');
+            console.log('[EPP]  Enviando DELETE a: /api/asesores/pedidos/' + pedidoId + '/eliminar-epp');
             
             const response = await fetch(`/api/asesores/pedidos/${pedidoId}/eliminar-epp`, {
                 method: 'POST',
@@ -1244,7 +1244,7 @@
         const eppId = epp.id || epp.pedido_epp_id;
         const nombreEpp = epp.nombre || epp.epp?.nombre || epp.nombre_completo || epp.epp_nombre || 'EPP Sin nombre';
         
-        console.log('[EPP] 🔄 Homologando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+        console.log('[EPP]  Homologando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
 
         if (!pedidoId || !eppId) {
             console.error('[EPP] Faltan pedidoId o eppId para homologar');
@@ -1262,7 +1262,7 @@
         try {
             Swal.close();
             abrirModalEditarEppForm(epp);
-            console.log('[EPP] 🔄 Modal abierto en modo homologación');
+            console.log('[EPP]  Modal abierto en modo homologación');
         } catch (error) {
             console.error('[EPP] Error abriendo modal:', error);
             Swal.fire('Error', 'No se pudo abrir el modal de edición', 'error');

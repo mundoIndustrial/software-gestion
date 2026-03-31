@@ -588,7 +588,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log('PrendaDragDropHandler', '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log('PrendaDragDropHandler', ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -604,7 +604,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                                 UIHelperService.log('PrendaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log('PrendaDragDropHandler', `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log('PrendaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `imagen-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type

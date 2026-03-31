@@ -65,7 +65,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     
     // 🔴 CRÍTICO: Resetear storage de imágenes eliminadas cuando se abre un nuevo modal
     window.imagenesEliminadasProcesoStorage = [];
-    console.log('[abrirModalProcesoGenerico] 🔄 Storage de imágenes eliminadas reseteado');
+    console.log('[abrirModalProcesoGenerico]  Storage de imágenes eliminadas reseteado');
     
     procesoActual = tipoProceso;
     // NUEVO: Establecer el modo (crear o editar)
@@ -209,11 +209,11 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         // Esto evita el warning "Blocked aria-hidden on an element because its descendant retained focus"
         modal.removeAttribute('aria-hidden');
         
-        // 🔄 SINCRONIZACIÓN UNIVERSAL: Ahora que el modal es visible, sincronizar tallas
+        //  SINCRONIZACIÓN UNIVERSAL: Ahora que el modal es visible, sincronizar tallas
         // Esto asegura que:
         // 1. En CREACIÓN: copia todas las tallas de la prenda
         // 2. En EDICIÓN: agrega las NUEVAS tallas que se crearon en la prenda después del proceso
-        console.log('[abrirModalProcesoGenerico] 🔄 Sincronizando tallas de la prenda con el proceso...');
+        console.log('[abrirModalProcesoGenerico]  Sincronizando tallas de la prenda con el proceso...');
         if (typeof window.sincronizarTallasConModalProceso === 'function') {
             window.sincronizarTallasConModalProceso();
         }
@@ -273,7 +273,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         
         // NUEVO: Guardar cambios en el gestor de edición
         if (window.gestorEditacionProcesos) {
-            console.log('[EDICIÓN] 💾 Guardando cambios en gestorEditacionProcesos...');
+            console.log('[EDICIÓN]  Guardando cambios en gestorEditacionProcesos...');
             window.gestorEditacionProcesos.guardarCambiosActuales();
             console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
         }
@@ -315,7 +315,7 @@ let imagenesProcesoActual = [null, null, null];
 
 // Manejar upload de imagen individual
 window.manejarImagenProceso = function(input, indice) {
-    console.log(`[manejarImagenProceso] 🚀 INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${window.procesoActualIndex}`);
+    console.log(`[manejarImagenProceso]  INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${window.procesoActualIndex}`);
     
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
@@ -338,7 +338,7 @@ window.manejarImagenProceso = function(input, indice) {
         
         // 🔴 NUEVO: Guardar en storage universal de PROCESOS
         if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
-            console.log(`[manejarImagenProceso] 💾 Guardando en storage universal - procesoActualIndex=${window.procesoActualIndex}`);
+            console.log(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${window.procesoActualIndex}`);
             const imagenData = {
                 file: file,
                 previewUrl: URL.createObjectURL(file),
@@ -352,7 +352,7 @@ window.manejarImagenProceso = function(input, indice) {
             const resultado = window.universalImagenesStorage.agregarImagen('procesos', window.procesoActualIndex, imagenData);
             console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${window.procesoActualIndex}] - resultado=${resultado}`);
         } else {
-            console.warn('[manejarImagenProceso] ⚠️ No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
+            console.warn('[manejarImagenProceso]  No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
             console.log('[manejarImagenProceso]  Debug:', {
                 universalStorage: !!window.universalImagenesStorage,
                 procesoActualIndex: window.procesoActualIndex,
@@ -506,7 +506,7 @@ window.confirmarEliminarImagenProceso = function() {
             });
             if (!yaGuardado) {
                 window.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
-                console.log('[confirmarEliminarImagenProceso] 💾 Imagen GUARDADA en storage de eliminadas:', {
+                console.log('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
                     id: imagenAeliminarObj.id,
                     ruta: imagenAeliminarObj.ruta_original,
                     identificador: identificador,
@@ -515,7 +515,7 @@ window.confirmarEliminarImagenProceso = function() {
                 });
             }
         } else {
-            console.warn('[confirmarEliminarImagenProceso] ⚠️ Imagen sin ID ni ruta_original, no se pudo guardar:', imagenAeliminarObj);
+            console.warn('[confirmarEliminarImagenProceso]  Imagen sin ID ni ruta_original, no se pudo guardar:', imagenAeliminarObj);
         }
         
         // AHORA marcar como null
@@ -913,7 +913,7 @@ function obtenerTallasDeLaPrenda() {
                 }
             }
 
-            console.log(`[obtenerTallasDeLaPrenda] 📊 Tabla HTML: ${tallaText} | ${generoRaw} | Cantidad: ${cantidad} | Colores: [${colores.join(', ')}]`);
+            console.log(`[obtenerTallasDeLaPrenda]Tabla HTML: ${tallaText} | ${generoRaw} | Cantidad: ${cantidad} | Colores: [${colores.join(', ')}]`);
 
             // Crear claves TALLA__COLOR si hay colores, si no solo TALLA
             if (colores.length > 0) {
@@ -956,9 +956,9 @@ function obtenerTallasDeLaPrenda() {
             return tallasDesdeTabla;
         }
 
-        // ⚠️ TABLA TIENE FILAS PERO SIN COLORES - Intenta StateManager primero
+        //  TABLA TIENE FILAS PERO SIN COLORES - Intenta StateManager primero
         if (tallasEnTabla > 0) {
-            console.log(`[obtenerTallasDeLaPrenda] ⚠️ Tabla tiene ${tallasEnTabla} filas pero SIN colores - consultando StateManager...`);
+            console.log(`[obtenerTallasDeLaPrenda]  Tabla tiene ${tallasEnTabla} filas pero SIN colores - consultando StateManager...`);
             // NO retorna aquí, continúa a FUENTE 2
         }
     }
@@ -1079,7 +1079,7 @@ function obtenerTallasDeLaPrenda() {
     }
 
     // Sin datos en ninguna fuente
-    console.log('[obtenerTallasDeLaPrenda] ⚠️ NINGUNA FUENTE disponible - retornando vacío');
+    console.log('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacío');
     return { dama: {}, caballero: {}, sobremedida: null };
 }
 
@@ -1676,20 +1676,20 @@ window.cerrarEditorTallas = function() {
 // Guardar tallas seleccionadas desde el editor
 window.guardarTallasSeleccionadas = function() {
 
-    console.log('💾 [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
-    console.log('💾 [guardarTallasSeleccionadas] Proceso actual:', procesoActual);
-    console.log('💾 [guardarTallasSeleccionadas] Modo:', modoActual);
+    console.log(' [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
+    console.log(' [guardarTallasSeleccionadas] Proceso actual:', procesoActual);
+    console.log(' [guardarTallasSeleccionadas] Modo:', modoActual);
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
     window.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
-    console.log('💾 [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', window.tallasSeleccionadasProceso.dama);
+    console.log(' [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', window.tallasSeleccionadasProceso.dama);
     
     // Recopilar tallas CABALLERO
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
     window.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
-    console.log('💾 [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', window.tallasSeleccionadasProceso.caballero);
-    console.log('💾 [guardarTallasSeleccionadas] Cantidades por talla (proceso):', window.tallasCantidadesProceso);
+    console.log(' [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', window.tallasSeleccionadasProceso.caballero);
+    console.log(' [guardarTallasSeleccionadas] Cantidades por talla (proceso):', window.tallasCantidadesProceso);
     
     // IMPORTANTE: Actualizar el objeto del proceso con las tallas y cantidades
     // para que no pierda los datos cuando se cierre el modal
@@ -1890,7 +1890,7 @@ window.agregarProcesoAlPedido = function() {
                         console.log(`  [agregarProcesoAlPedido] Fallback: Índice ${idx}: ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
                         if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                             imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                            console.log(`[agregarProcesoAlPedido] ⚠️ FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${idx}`);
+                            console.log(`[agregarProcesoAlPedido]  FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${idx}`);
                             break;
                         }
                     }
@@ -1979,7 +1979,7 @@ window.agregarProcesoAlPedido = function() {
                 imagenesFinales = imagenesDelStorage;
                 console.log(`[agregarProcesoAlPedido] 🔧 MODO CREACIÓN: Usando imágenes del storage índice ${window.procesoActualIndex}:`, imagenesFinales.length);
             } else {
-                console.warn('[agregarProcesoAlPedido] ⚠️ Sin índice de proceso definido, no se usarán imágenes');
+                console.warn('[agregarProcesoAlPedido]  Sin índice de proceso definido, no se usarán imágenes');
                 imagenesFinales = [];
             }
         }
@@ -2117,7 +2117,7 @@ window.agregarProcesoAlPedido = function() {
             
         } else if (modoActual === 'editar') {
             // EDICIÓN: Actualizar directamente en window.procesosSeleccionados
-            console.log('✏️ [EDICIÓN] Guardando cambios del proceso');
+            console.log(' [EDICIÓN] Guardando cambios del proceso');
             
             if (!window.procesosSeleccionados) {
                 window.procesosSeleccionados = {};

@@ -1,6 +1,6 @@
-# 🏗️ REFACTORIZACIÓN ImagenMapperService - DDD & Clean Architecture
+#  REFACTORIZACIÓN ImagenMapperService - DDD & Clean Architecture
 
-## 📊 RESUMEN EJECUTIVO
+##RESUMEN EJECUTIVO
 
 **Antes:** 1 monolítíco servicio con múltiples responsabilidades  
 **Después:** 5 componentes especializados con responsabilidad única
@@ -109,7 +109,7 @@ $result = $service->mapearImagenesTelas([
 
 ##  SOLUCIÓN: REFACTORIZACIÓN COMPLETA
 
-### 🏗️ NUEVA ARQUITECTURA
+###  NUEVA ARQUITECTURA
 
 ```
 app/
@@ -229,7 +229,7 @@ class ImagenesService {
 
 ---
 
-## 🔄 COMPARATIVA: ANTES vs DESPUÉS
+##  COMPARATIVA: ANTES vs DESPUÉS
 
 ### ❌ ANTES (Monolítíco)
 ```
@@ -321,7 +321,7 @@ $this->assertEquals('blob:...', $imagenVO->previewUrl);
 
 ---
 
-## 🧪 VENTAJAS PARA TESTING
+##  VENTAJAS PARA TESTING
 
 ### ❌ Antes (Difícil)
 ```php
@@ -381,7 +381,7 @@ public function testPrendaImagenesMapper() {
 
 ---
 
-## 📊 COMPARATIVA DE PRINCIPIOS SOLID
+##COMPARATIVA DE PRINCIPIOS SOLID
 
 | Principio | Antes | Después |
 |-----------|-------|---------|
@@ -393,7 +393,7 @@ public function testPrendaImagenesMapper() {
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 ### 1. Registrar en Service Provider
 ```php

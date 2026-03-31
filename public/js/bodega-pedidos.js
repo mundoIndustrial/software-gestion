@@ -841,7 +841,7 @@ async function guardarPedidoCompleto(numeroPedido) {
         }
         
         // DEBUG: Log de data que se envía
-        console.log('📤 ENVIANDO DETALLES:', detalles);
+        console.log(' ENVIANDO DETALLES:', detalles);
         
         // Preparar URL
         const url = `/gestion-bodega/pedidos/${numeroPedido}/guardar-completo`;
@@ -1052,7 +1052,7 @@ function generarHTMLFactura(datos) {
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
-        console.log(`📦 [BODEGA-FACTURA] Procesando prenda ${idx}:`, { 
+        console.log(` [BODEGA-FACTURA] Procesando prenda ${idx}:`, { 
             nombre: prenda.descripcion,
             tallas: prenda.tallas,
             cantidad_talla: prenda.cantidad_talla,
@@ -1062,12 +1062,12 @@ function generarHTMLFactura(datos) {
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
             // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const generosEnTallas = Object.keys(prenda.tallas);
-            console.log(`📦 [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
+            console.log(` [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
             
             const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
             
-            console.log(`📦 [BODEGA-FACTURA] tieneGenerico=${tieneGenerico}, soloGenerico=${soloGenerico}, generosEnTallas.length=${generosEnTallas.length}`);
+            console.log(` [BODEGA-FACTURA] tieneGenerico=${tieneGenerico}, soloGenerico=${soloGenerico}, generosEnTallas.length=${generosEnTallas.length}`);
             
             if (soloGenerico) {
                 // Extraer cantidad de GENERICO
@@ -1403,7 +1403,7 @@ function generarHTMLFactura(datos) {
                                             <img src="${imgUrl}" 
                                                  alt="Imagen EPP" 
                                                  style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='⚠️';">
+                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='';">
                                         </div>
                                     ` : '';
                                 }).join('')}
@@ -1709,7 +1709,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     
     // Fallback: Si no hay row-hash o no se encontraron elementos, usar método antiguo
     if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
-        console.warn('⚠️ [GUARDAR-FILA] Row-hash no funcionó, usando fallback');
+        console.warn(' [GUARDAR-FILA] Row-hash no funcionó, usando fallback');
         
         const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
             ? String(tallaColorId).trim()
@@ -1846,7 +1846,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         observaciones: observaciones || null
     };
 
-    console.log('📤 Guardando fila:', datos);
+    console.log(' Guardando fila:', datos);
 
     // Deshabilitar botón mientras se guarda
     btnGuardar.disabled = true;
@@ -1867,7 +1867,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         
         // Habilitar botón
         btnGuardar.disabled = false;
-        btnGuardar.textContent = '💾 Guardar';
+        btnGuardar.textContent = ' Guardar';
         
         if (data.success) {
             mostrarModalExito(data.message || 'Fila guardada correctamente');

@@ -1125,7 +1125,7 @@ function abrirModalAgregarEPP() {
         // Asegurarse que no esté registrado ya
         document.removeEventListener('paste', window.handlePasteEPP, true);
         document.addEventListener('paste', window.handlePasteEPP, true);
-        console.log('[abrirModalAgregarEPP] ⚠️ Fallback: usando listener manual (DragDropManager no disponible)');
+        console.log('[abrirModalAgregarEPP]  Fallback: usando listener manual (DragDropManager no disponible)');
     }
     
     console.log('[abrirModalAgregarEPP] Modal abierto - EPPs agregados:', eppAgregadosList.length);
@@ -1893,7 +1893,7 @@ async function guardarNuevoEPP() {
     }
 
     try {
-        console.log('📤 [guardarNuevoEPP] Creando EPP con nombre:', nombreCompleto);
+        console.log(' [guardarNuevoEPP] Creando EPP con nombre:', nombreCompleto);
         
         // Crear el EPP en la base de datos
         const response = await fetch('/api/epp', {
@@ -1995,7 +1995,7 @@ if (!window.eppEnEdicion) {
 let eppEnEdicion = null;  // Variable local para compatibilidad
 
 function editarEPPAgregado(eppData) {
-    console.log('✏️ [editarEPPAgregado] INICIANDO - Abriendo modal de edición para EPP:', eppData);
+    console.log(' [editarEPPAgregado] INICIANDO - Abriendo modal de edición para EPP:', eppData);
     
     // Usar el modal de edición individual que ya existe
     if (typeof abrirModalEditarEPP === 'function') {
@@ -2010,22 +2010,22 @@ function editarEPPAgregado(eppData) {
             tarjetaId: eppData.tarjetaId  // Pasar ID de la tarjeta visual
         };
         
-        console.log('✏️ [editarEPPAgregado] Abriendo modal de edición con datos:', eppParaEditar);
+        console.log(' [editarEPPAgregado] Abriendo modal de edición con datos:', eppParaEditar);
         abrirModalEditarEPP(eppParaEditar);
     } else {
-        console.error('✏️ [editarEPPAgregado] Función abrirModalEditarEPP no disponible');
+        console.error(' [editarEPPAgregado] Función abrirModalEditarEPP no disponible');
     }
 }
 
 function guardarEdicionEPP() {
-    console.log('💾 [guardarEdicionEPP] INICIANDO - window.eppEnEdicion:', window.eppEnEdicion);
-    console.log('💾 [guardarEdicionEPP] Es objeto válido:', window.eppEnEdicion && typeof window.eppEnEdicion === 'object');
+    console.log(' [guardarEdicionEPP] INICIANDO - window.eppEnEdicion:', window.eppEnEdicion);
+    console.log(' [guardarEdicionEPP] Es objeto válido:', window.eppEnEdicion && typeof window.eppEnEdicion === 'object');
     
     if (!window.eppEnEdicion || typeof window.eppEnEdicion !== 'object' || Object.keys(window.eppEnEdicion).length === 0) {
-        console.error('💾 [guardarEdicionEPP]  No hay EPP válido en edición:', window.eppEnEdicion);
+        console.error(' [guardarEdicionEPP]  No hay EPP válido en edición:', window.eppEnEdicion);
         return;
     }
-    console.log('💾 [guardarEdicionEPP] ✓ EPP en edición válido');
+    console.log(' [guardarEdicionEPP] ✓ EPP en edición válido');
 
     const nombre = document.getElementById('nombreProductoEPP').value;
     const cantidad = document.getElementById('cantidadEPP').value;
@@ -2059,7 +2059,7 @@ function guardarEdicionEPP() {
         return;
     }
 
-    console.log('💾 [guardarEdicionEPP] Guardando cambios para EPP:', {
+    console.log(' [guardarEdicionEPP] Guardando cambios para EPP:', {
         epp_id: window.eppEnEdicion.epp_id,
         nombre: nombre,
         cantidad: cantidad,
@@ -2083,7 +2083,7 @@ function guardarEdicionEPP() {
     if (window.eppStore) {
         const ok = window.eppStore.actualizarItem(targetId, datosActualizados);
         if (!ok) {
-            console.warn('💾 [guardarEdicionEPP] No se encontró EPP en eppStore para actualizar');
+            console.warn(' [guardarEdicionEPP] No se encontró EPP en eppStore para actualizar');
         }
     } else {
         // Fallback sin store
@@ -2264,7 +2264,7 @@ async function finalizarAgregarEPP() {
             inputPlaceholder: 'Describe brevemente el motivo...',
             inputAttributes: { 'aria-label': 'Novedad del cambio' },
             showCancelButton: true,
-            confirmButtonText: '💾 Guardar',
+            confirmButtonText: ' Guardar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#10b981',
             customClass: { container: 'swal-epp-novedad-container' },
@@ -2972,7 +2972,7 @@ function abrirModalEditarEPPNuevo(epp) {
     
     // Establecer variable eppEnEdicion para que guardarEdicionEPP funcione
     window.eppEnEdicion = epp;
-    console.log('🔄 [editarEPPAgregado - cotización] window.eppEnEdicion asignado:', epp);
+    console.log(' [editarEPPAgregado - cotización] window.eppEnEdicion asignado:', epp);
     console.log('[abrirModalEditarEPPNuevo] eppEnEdicion establecido:', epp);
     
     // Cargar imágenes si existen

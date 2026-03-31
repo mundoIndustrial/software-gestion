@@ -90,7 +90,7 @@
                                         }
                                     }, 150);
                                 }).call(this)">
-                                    ✏️ Editar
+                                     Editar
                                 </button>
                                 <button type="button" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)';" onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';" onclick="(function() {
                                     var item = JSON.parse(this.closest('[data-prenda]').getAttribute('data-prenda'));

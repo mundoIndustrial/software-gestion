@@ -522,7 +522,7 @@ class InvoiceModalManager {
             if (elemento) {
                 const estilos = window.getComputedStyle(elemento);
             } else {
-                console.warn(`[CSS-DIAGNOSTIC] ⚠️ Elemento no encontrado: ${selector}`);
+                console.warn(`[CSS-DIAGNOSTIC]  Elemento no encontrado: ${selector}`);
             }
         });
 

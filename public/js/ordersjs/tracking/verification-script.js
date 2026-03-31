@@ -79,7 +79,7 @@
             moduleResults[moduleName] = {
                 loaded: isLoaded,
                 hasInstance: hasInstance,
-                status: isLoaded ? (hasInstance ? ' Completo' : '⚠️ Sin instancia') : ' No cargado'
+                status: isLoaded ? (hasInstance ? ' Completo' : ' Sin instancia') : ' No cargado'
             };
             
             if (!isLoaded) {
@@ -87,7 +87,7 @@
             }
         });
 
-        console.group('📦 Estado de Módulos');
+        console.group(' Estado de Módulos');
         Object.entries(moduleResults).forEach(([name, result]) => {
             console.log(`${result.status} ${name}: ${result.loaded ? 'Cargado' : 'No cargado'}${result.hasInstance ? ' (con instancia)' : ''}`);
         });
@@ -163,7 +163,7 @@
 
     // Función de prueba rápida
     function quickTest() {
-        console.group('🧪 Pruebas Rápidas');
+        console.group(' Pruebas Rápidas');
         
         try {
             // Probar DateUtils
@@ -191,7 +191,7 @@
 
     // Ejecutar verificación completa
     function runFullVerification() {
-        console.log('🚀 Ejecutando verificación completa del sistema de tracking...');
+        console.log(' Ejecutando verificación completa del sistema de tracking...');
         
         const modulesOK = verifyModules();
         const functionsOK = verifyGlobalFunctions();
@@ -204,7 +204,7 @@
         console.log('\n' + '='.repeat(50));
         console.log(allOK ? 
             '🎉  VERIFICACIÓN COMPLETADA CON ÉXITO' : 
-            '⚠️  HAY PROBLEMAS EN LA VERIFICACIÓN'
+            '  HAY PROBLEMAS EN LA VERIFICACIÓN'
         );
         console.log('='.repeat(50));
         
@@ -212,7 +212,7 @@
             console.log(' Todos los módulos cargaron correctamente');
             console.log(' Todas las funciones globales están disponibles');
             console.log(' Las dependencias están funcionando');
-            console.log('🚀 El sistema está listo para usarse');
+            console.log(' El sistema está listo para usarse');
         } else {
             console.log(' Se encontraron problemas que deben ser resueltos');
         }

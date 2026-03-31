@@ -178,7 +178,7 @@ window.WizardValidation.validateMemoryCleanup()
 
 ---
 
-## 📊 ESTADÍSTICAS
+##ESTADÍSTICAS
 
 ### Código
 - **Líneas de arquitectura**: 1,090
@@ -201,7 +201,7 @@ window.WizardValidation.validateMemoryCleanup()
 
 ---
 
-## 🔄 FLUJO COMPLETO
+##  FLUJO COMPLETO
 
 ### Desde que el usuario abre la modal
 
@@ -263,7 +263,7 @@ window.WizardValidation.validateMemoryCleanup()
 
 ---
 
-## 🚀 PRÓXIMOS PASOS OPCIONALES
+##  PRÓXIMOS PASOS OPCIONALES
 
 ### Corto Plazo (Semana 1)
 - [ ] Validar en navegador con `validateAll()`
@@ -351,4 +351,4 @@ Para comenzar:
 window.WizardValidation.validateAll()
 ```
 
-¡Disfruta de la arquitectura limpia! 🚀
+¡Disfruta de la arquitectura limpia! 

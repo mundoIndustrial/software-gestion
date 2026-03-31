@@ -1,5 +1,5 @@
 /**
- * 📦 Servicio de Carga de Datos
+ *  Servicio de Carga de Datos
  * Responsabilidad: Orquestar la carga de todos los módulos loaders en orden
  */
 
@@ -12,7 +12,7 @@ class PrendaEditorDataLoaderService {
      * @returns {Promise<void>}
      */
     static async cargarTodos(prenda) {
-        console.log('[DataLoader] 🔄 Iniciando carga de todos los módulos...');
+        console.log('[DataLoader]  Iniciando carga de todos los módulos...');
 
         try {
             // 1. Basicos

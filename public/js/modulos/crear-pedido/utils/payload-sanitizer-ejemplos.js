@@ -319,7 +319,7 @@ console.log(ejemploVue3);
 console.log('\n Ejemplo 7: Testing del Sanitizador');
 
 function testSanitizador() {
-    console.group('🧪 Tests del PayloadSanitizer');
+    console.group(' Tests del PayloadSanitizer');
     
     // Test 1: Eliminar propiedades reactivas
     console.log('\n Test 1: Eliminar propiedades reactivas');

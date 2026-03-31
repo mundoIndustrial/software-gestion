@@ -1617,7 +1617,7 @@ document.addEventListener('paste', function(event) {
             
             if (intentos >= maxIntentos) {
                 clearInterval(verificarJQuery);
-                console.warn('⚠️ jQuery o Bootstrap Modal no disponibles después de 5 segundos');
+                console.warn(' jQuery o Bootstrap Modal no disponibles después de 5 segundos');
             }
         }, 100);
     });

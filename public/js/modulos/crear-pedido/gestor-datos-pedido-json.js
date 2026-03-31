@@ -333,7 +333,7 @@ class GestorDatosPedidoJSON {
                         }
                     });
                 } else {
-                    console.warn('[GestorDatosPedidoJSON] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                    console.warn('[GestorDatosPedidoJSON]  ColoresPorTalla no disponible o sin método getImage');
                 }
             }
         });

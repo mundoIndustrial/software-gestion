@@ -276,7 +276,7 @@
                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
                                             class="w-full mt-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                         >
-                                            💾 Guardar
+                                             Guardar
                                         </button>
                                         @else
                                         <div class="w-full mt-1 px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -526,13 +526,13 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
         if (data.success) {
             button.textContent = ' Guardado';
             setTimeout(() => {
-                button.textContent = '💾 Guardar';
+                button.textContent = ' Guardar';
                 button.disabled = false;
             }, 2000);
         } else {
             button.textContent = ' Error';
             setTimeout(() => {
-                button.textContent = '💾 Guardar';
+                button.textContent = ' Guardar';
                 button.disabled = false;
             }, 2000);
             alert('Error al guardar: ' + data.message);
@@ -542,7 +542,7 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
         console.error('Error al guardar:', error);
         button.textContent = ' Error';
         setTimeout(() => {
-            button.textContent = '💾 Guardar';
+            button.textContent = ' Guardar';
             button.disabled = false;
         }, 2000);
         alert('Error al guardar los datos');
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO-EPP] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO-EPP] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO-EPP] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO-EPP] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,
