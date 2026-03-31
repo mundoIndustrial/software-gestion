@@ -17,11 +17,19 @@ use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Infrastructure\Persistence\Eloquent\OperarioRepositoryImpl;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Domain\Operario\Repositories\ReciboNotificacionesRepository;
+use App\Domain\Operario\Repositories\NovedadReciboRepository;
+use App\Domain\Operario\Repositories\PedidoProduccionOperarioReadRepository;
+use App\Domain\Operario\Repositories\ReciboParcialReadRepository;
+use App\Domain\Operario\Repositories\PedidoProduccionNovedadesRepository;
+use App\Domain\Operario\Repositories\TablaOriginalBodegaNovedadesRepository;
+use App\Domain\Operario\Repositories\ReciboDistribucionReadRepository;
 use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Domain\Operario\Services\OperarioDashboardReadService;
 use App\Domain\Operario\Services\OperarioPedidosReadService;
 use App\Domain\Operario\Services\OperarioPrendasRecibosReadService;
 use App\Domain\Operario\Services\ReciboOperarioWorkflow;
+use App\Domain\Operario\Services\PedidoFotosReadService;
 use App\Domain\Bodega\Services\BodegaAuditoriaServiceContract;
 use App\Domain\Bodega\Services\BodegaDatosServiceContract;
 use App\Domain\Bodega\Services\BodegaFiltroServiceContract;
@@ -53,10 +61,18 @@ use App\Domain\Pedidos\UseCases\EliminarPrendaPedidoUseCaseContract;
 use App\Domain\Pedidos\UseCases\EliminarProcesoUseCaseContract;
 use App\Domain\Pedidos\Despacho\UseCases\GuardarDespachoUseCaseContract;
 use App\Infrastructure\Persistence\Eloquent\ConsecutivoReciboPedidoRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\ReciboNotificacionesRepositoryImpl;
 use App\Infrastructure\Persistence\Eloquent\ProcesoPrendaRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\NovedadReciboRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\PedidoProduccionOperarioReadRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\ReciboParcialReadRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\PedidoProduccionNovedadesRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\TablaOriginalBodegaNovedadesRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\ReciboDistribucionReadRepositoryImpl;
 use App\Infrastructure\Services\Operario\ControlCalidadWorkflowService;
 use App\Infrastructure\Services\Operario\OperarioDashboardReadServiceImpl;
 use App\Infrastructure\Services\Operario\ReciboOperarioWorkflowService;
+use App\Infrastructure\Services\Operario\PedidoFotosReadServiceImpl;
 use App\Infrastructure\Providers\AsesoresServiceProvider;
 use App\Infrastructure\Providers\PedidosLogoServiceProvider;
 use App\Infrastructure\Providers\PedidosProduccionServiceProvider;
@@ -91,11 +107,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(OperarioRepository::class, OperarioRepositoryImpl::class);
         $this->app->bind(ConsecutivoReciboPedidoRepository::class, ConsecutivoReciboPedidoRepositoryImpl::class);
         $this->app->bind(ProcesoPrendaRepository::class, ProcesoPrendaRepositoryImpl::class);
+        $this->app->bind(ReciboNotificacionesRepository::class, ReciboNotificacionesRepositoryImpl::class);
+        $this->app->bind(NovedadReciboRepository::class, NovedadReciboRepositoryImpl::class);
+        $this->app->bind(PedidoProduccionOperarioReadRepository::class, PedidoProduccionOperarioReadRepositoryImpl::class);
+        $this->app->bind(ReciboParcialReadRepository::class, ReciboParcialReadRepositoryImpl::class);
+        $this->app->bind(PedidoProduccionNovedadesRepository::class, PedidoProduccionNovedadesRepositoryImpl::class);
+        $this->app->bind(TablaOriginalBodegaNovedadesRepository::class, TablaOriginalBodegaNovedadesRepositoryImpl::class);
+        $this->app->bind(ReciboDistribucionReadRepository::class, ReciboDistribucionReadRepositoryImpl::class);
         $this->app->bind(ControlCalidadWorkflow::class, ControlCalidadWorkflowService::class);
         $this->app->bind(OperarioPedidosReadService::class, \App\Infrastructure\Services\Operario\ObtenerPedidosOperarioService::class);
         $this->app->bind(OperarioPrendasRecibosReadService::class, \App\Infrastructure\Services\Operario\ObtenerPrendasRecibosService::class);
         $this->app->bind(OperarioDashboardReadService::class, OperarioDashboardReadServiceImpl::class);
         $this->app->bind(ReciboOperarioWorkflow::class, ReciboOperarioWorkflowService::class);
+        $this->app->bind(PedidoFotosReadService::class, PedidoFotosReadServiceImpl::class);
     }
 
     private function registerBodegaAndPedidoServiceBindings(): void
@@ -288,6 +312,3 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 }
-
-
-

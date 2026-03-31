@@ -15,21 +15,43 @@
     <title>@yield('title', 'Panel de Operario') - MundoIndustrial</title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/operario/layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/operario/dashboard.css') }}">
+    <!--
+        Importante: estos CSS se cargan en modo "no render-blocking" para que el overlay
+        inicial aparezca inmediatamente (evita pantalla blanca al entrar/después de login).
+    -->
+    <link rel="preload" href="{{ asset('css/operario/layout.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="{{ asset('css/operario/dashboard.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('css/operario/layout.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/operario/dashboard.css') }}">
+    </noscript>
 
     <!-- Material Symbols para iconos -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" as="style" crossorigin onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    </noscript>
 
     <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" crossorigin="anonymous" referrerpolicy="no-referrer" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </noscript>
 
     <!-- Google Fonts - Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" as="style" crossorigin onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
 
     @stack('styles')
     
     <style>
+        /* Evita pantalla blanca mientras cargan estilos externos */
+        html, body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
         /* Loading overlay global */
         #loading-overlay {
             position: fixed;
@@ -100,25 +122,80 @@
     
     <script>
         console.log(' Script de loading overlay iniciado (operario)');
-        
-        // Ocultar loading cuando todo esté cargado
-        window.addEventListener('load', function() {
+
+        (function() {
             const overlay = document.getElementById('loading-overlay');
-            if (overlay) {
-                overlay.style.pointerEvents = 'none';
-                overlay.classList.add('hidden');
-            } else {
-            }
-        });
-        
-        // También ocultar inmediatamente si el documento ya está completamente cargado
-        if (document.readyState === 'complete') {
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {
-                overlay.style.pointerEvents = 'none';
-                overlay.classList.add('hidden');
-            }
-        }
+            if (!overlay) return;
+
+            const TRANSITION_KEY = 'mi_loading_overlay_transition';
+
+            const showLoadingOverlay = function() {
+                // Asegurar que sea visible aunque se haya puesto display:none
+                overlay.style.display = 'flex';
+                overlay.classList.remove('hidden');
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+                overlay.dataset.shownAt = String(Date.now());
+            };
+
+            const hideLoadingOverlay = function(opts) {
+                const minMs = Math.max(0, parseInt(opts?.minMs || 0, 10) || 0);
+                const shownAt = parseInt(overlay.dataset.shownAt || '0', 10) || 0;
+                const elapsed = shownAt ? (Date.now() - shownAt) : minMs;
+                const waitMs = Math.max(0, minMs - elapsed);
+
+                window.setTimeout(function() {
+                    overlay.style.pointerEvents = 'none';
+                    overlay.classList.add('hidden');
+                    overlay.style.opacity = '0';
+
+                    // Fallback: en algunos navegadores/transiciones el overlay puede quedar "pegado".
+                    // Forzar display:none después de la transición.
+                    window.setTimeout(function() {
+                        overlay.style.display = 'none';
+                    }, 350);
+                }, waitMs);
+            };
+
+            window.showLoadingOverlay = showLoadingOverlay;
+            window.hideLoadingOverlay = hideLoadingOverlay;
+
+            // Mantener overlay durante navegación y dejar que la página destino decida cuándo ocultarlo.
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest && e.target.closest('a');
+                if (!link) return;
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+                if (link.target && link.target !== '_self') return;
+                if (link.hasAttribute('download')) return;
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+                try { sessionStorage.setItem(TRANSITION_KEY, '1'); } catch (_) {}
+                showLoadingOverlay();
+            }, { capture: true });
+
+            document.addEventListener('submit', function() {
+                try { sessionStorage.setItem(TRANSITION_KEY, '1'); } catch (_) {}
+                showLoadingOverlay();
+            }, { capture: true });
+
+            // Ocultar overlay al cargar la página, salvo que la vista lo maneje manualmente.
+            window.addEventListener('load', function() {
+                const manual = !!window.__OVERLAY_MANUAL_HIDE;
+                let transition = false;
+                try { transition = sessionStorage.getItem(TRANSITION_KEY) === '1'; } catch (_) {}
+
+                if (manual) {
+                    // Aunque el hide sea manual, limpiar la bandera de transición para no arrastrarla.
+                    try { sessionStorage.removeItem(TRANSITION_KEY); } catch (_) {}
+                    return;
+                }
+
+                // Si venimos de transición, asegurar un mínimo de tiempo para evitar "parpadeos".
+                hideLoadingOverlay({ minMs: transition ? 300 : 0 });
+                try { sessionStorage.removeItem(TRANSITION_KEY); } catch (_) {}
+            });
+        })();
     </script>
 
     <!-- Main Content (Sin Sidebar) -->

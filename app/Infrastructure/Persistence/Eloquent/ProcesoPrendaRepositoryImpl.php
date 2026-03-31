@@ -7,6 +7,17 @@ use App\Models\ProcesoPrenda;
 
 class ProcesoPrendaRepositoryImpl implements ProcesoPrendaRepository
 {
+    public function findByNumeroPedidoProcesoEncargado(int $numeroPedido, string $proceso, string $encargado): ?ProcesoPrenda
+    {
+        return ProcesoPrenda::query()
+            ->where('numero_pedido', (int) $numeroPedido)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', [strtolower(trim($proceso))])
+            ->whereRaw('LOWER(TRIM(encargado)) = ?', [strtolower(trim($encargado))])
+            ->whereNull('deleted_at')
+            ->latest('created_at')
+            ->first();
+    }
+
     public function findLatestByPrendaAndProceso(int $prendaId, string $proceso): ?ProcesoPrenda
     {
         return ProcesoPrenda::where('prenda_pedido_id', $prendaId)

@@ -18,6 +18,11 @@ class ObtenerPrendasRecibosService
     {
     }
 
+    public function obtenerPrendasConRecibosTodosCostura(): Collection
+    {
+        return $this->service->obtenerPrendasConRecibosTodosCostura();
+    }
+
     public function obtenerPrendasConRecibos(User $usuario): Collection
     {
         

@@ -43,9 +43,6 @@
         <!-- Botón de navegación de procesos (esquina superior derecha) -->
         <div id="process-navigation-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>
         
-        <!-- Botón de navegación de prendas (esquina superior derecha, debajo de procesos) -->
-        <div id="arrow-container-mobile" style="position: absolute; top: 55px; right: 15px; display: none; z-index: 100;"></div>
-        
         <!-- Fecha -->
         <div id="order-date" class="order-date">
             <div class="fec-label">FECHA</div>
@@ -763,11 +760,6 @@ window.llenarReciboCosturaMobile = function(data) {
         if (processNavContainer) {
             processNavContainer.style.display = 'none';
             processNavContainer.innerHTML = '';
-        }
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            arrowContainer.style.display = 'none';
-            arrowContainer.innerHTML = '';
         }
         
         // IMPORTANTE: Aún sin navegación, debemos guardar los procesos disponibles
@@ -2235,77 +2227,7 @@ window.llenarReciboCosturaMobile = function(data) {
         }
     }
     
-    // Implementar carousel de prendas basado en bloques (igual que asesores)
-    const totalBloques = window.totalBloquesPrendas || 0;
-    const totalPaginas = Math.ceil(totalBloques / PRENDAS_POR_PAGINA);
-    const userRoleLocal = document.getElementById('factura-container-mobile')?.getAttribute('data-user-role');
-    const esVistaControlCalidadLocal = (window.location?.pathname || '').toString().includes('/control-calidad/');
-    const esRolControlCalidadLocal = (userRoleLocal || '').toString().trim().toLowerCase() === 'control de calidad';
-    const disableNavigationLocal = esVistaControlCalidadLocal || esRolControlCalidadLocal;
-
-    if (!disableNavigationLocal && totalBloques > PRENDAS_POR_PAGINA) {
-        // Obtener o crear el contenedor de flechas en la esquina superior derecha
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            // Limpiar botones anteriores
-            arrowContainer.innerHTML = '';
-            arrowContainer.style.display = 'flex';
-            arrowContainer.style.justifyContent = 'center';
-            arrowContainer.style.alignItems = 'center';
-            arrowContainer.style.gap = '10px';
-            
-            const currentPage = Math.floor((window.prendaCarouselIndex || 0) / PRENDAS_POR_PAGINA);
-            
-            // Determinar si mostrar botón anterior
-            const puedeRetroceder = currentPage > 0;
-            
-            // Botón anterior (< izquierda)
-            if (puedeRetroceder) {
-                const prevBtn = document.createElement('button');
-                prevBtn.id = 'prev-arrow-mobile';
-                prevBtn.style.background = 'none';
-                prevBtn.style.border = 'none';
-                prevBtn.style.color = 'red';
-                prevBtn.style.cursor = 'pointer';
-                prevBtn.style.padding = '5px';
-                prevBtn.style.transition = 'all 0.2s ease';
-                prevBtn.style.display = 'inline-flex';
-                prevBtn.style.alignItems = 'center';
-                prevBtn.style.justifyContent = 'center';
-                prevBtn.style.borderRadius = '50%';
-                prevBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-                prevBtn.onmouseover = function() {
-                    this.style.transform = 'scale(1.15)';
-                    this.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-                };
-                prevBtn.onmouseout = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.backgroundColor = 'transparent';
-                };
-                prevBtn.onclick = function() {
-                    window.prendaCarouselIndex = Math.max(0, window.prendaCarouselIndex - PRENDAS_POR_PAGINA);
-                    window.llenarReciboCosturaMobile(data);
-                    // Actualizar fotos para la nueva prenda
-                    if (window.actualizarFotosPrenda) {
-                        window.actualizarFotosPrenda();
-                    }
-                    // Actualizar número de recibo en el header
-                    if (window.actualizarNumeroPrendaHeader) {
-                        window.actualizarNumeroPrendaHeader();
-                    }
-                };
-                
-                arrowContainer.appendChild(prevBtn);
-            }
-        }
-    } else {
-        // Ocultar el contenedor de flechas si no hay más de 2 bloques o si está en Control de Calidad
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            arrowContainer.style.display = 'none';
-        }
-        console.log('🎪 Carousel no requerido - solo', totalBloques, 'bloque(s)');
-    }
+    // La navegación por flechas de prendas fue removida (UX: evitar overlays/botones flotantes en mobile).
     
     console.log('📱 [RECIBO MOBILE]  ========== FIN llenarReciboCosturaMobile ==========');
 };

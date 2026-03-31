@@ -6,6 +6,8 @@ use App\Models\ProcesoPrenda;
 
 interface ProcesoPrendaRepository
 {
+    public function findByNumeroPedidoProcesoEncargado(int $numeroPedido, string $proceso, string $encargado): ?ProcesoPrenda;
+
     public function findLatestByPrendaAndProceso(int $prendaId, string $proceso): ?ProcesoPrenda;
 
     public function findLatestByProceso(int $numeroPedido, int $prendaId, string $proceso): ?ProcesoPrenda;

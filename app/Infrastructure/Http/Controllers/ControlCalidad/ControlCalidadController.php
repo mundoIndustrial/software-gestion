@@ -8,6 +8,7 @@ use App\Models\ProcesoPrenda;
 use App\Models\PrendaReciboCompletado;
 use App\Models\ReciboPorPartes;
 use App\Models\PedidoProduccion;
+use App\Application\Operario\UseCases\GetPedidoDataOperarioUseCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -551,6 +552,17 @@ class ControlCalidadController extends Controller
             'usuario' => $usuario,
             'fotos' => $fotos,
         ]);
+    }
+
+    /**
+     * API: Obtener datos completos del pedido/recibo para Control de Calidad.
+     * Reutiliza la misma respuesta del endpoint Operario (incluye soporte de parciales).
+     */
+    public function getPedidoData(Request $request, int $numeroPedido, GetPedidoDataOperarioUseCase $useCase)
+    {
+        $result = $useCase->execute((int) $numeroPedido, $request);
+
+        return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));
     }
 
     private function obtenerFotosPedido($numeroPedido)

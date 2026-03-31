@@ -14,6 +14,14 @@ class ConsecutivoReciboPedidoRepositoryImpl implements ConsecutivoReciboPedidoRe
             ->first();
     }
 
+    public function findFirstActiveByPedidoTipo(int $pedidoProduccionId, string $tipoRecibo): ?ConsecutivoReciboPedido
+    {
+        return ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoProduccionId)
+            ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($tipoRecibo)])
+            ->where('activo', 1)
+            ->first();
+    }
+
     public function findActiveByPedidoPrendaTipo(int $pedidoProduccionId, int $prendaId, string $tipoRecibo): ?ConsecutivoReciboPedido
     {
         return ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoProduccionId)

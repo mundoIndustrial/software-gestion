@@ -104,6 +104,11 @@
                 event.preventDefault();
                 clearErrors();
 
+                let shouldHideOverlay = true;
+                if (typeof window.showGuestLoadingOverlay === 'function') {
+                    window.showGuestLoadingOverlay('Iniciando sesión...');
+                }
+
                 if (submitButton) {
                     submitButton.disabled = true;
                 }
@@ -135,6 +140,7 @@
 
                     if (response.ok && data?.success) {
                         const redirectTo = data?.data?.redirect_to || '/dashboard';
+                        shouldHideOverlay = false;
                         window.location.assign(redirectTo);
                         return;
                     }
@@ -151,10 +157,14 @@
 
                     showError(generalError, data?.message || 'No se pudo iniciar sesion. Intenta nuevamente.');
                 } catch (error) {
+                    shouldHideOverlay = false;
                     form.submit();
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
+                    }
+                    if (shouldHideOverlay && typeof window.hideGuestLoadingOverlay === 'function') {
+                        window.hideGuestLoadingOverlay();
                     }
                 }
             });
