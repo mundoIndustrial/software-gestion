@@ -139,7 +139,7 @@ curl -i -N -H "Connection: Upgrade" \
 
 ### Indicadores Visuales
 - **🟢 WebSocket**: Conexión directa en tiempo real
-- **🟡 Polling**: Fallback activo
+- ** Polling**: Fallback activo
 - ** Desconectado**: Sin conexión
 
 ### Logs Importantes
@@ -157,7 +157,7 @@ curl -i -N -H "Connection: Upgrade" \
  [PedidosRealtime] Actualización de pedido por WebSocket: 123
 ```
 
-## 🔒 Seguridad
+##  Seguridad
 
 ### Autorización de Canales
 - Solo usuarios autenticados pueden conectarse

@@ -1194,12 +1194,12 @@ function hayDatosNoGuardados() {
 }
 
 function cerrarModalAgregarEPP() {
-    console.log('🔒 [cerrarModalAgregarEPP] Cerrando modal');
+    console.log(' [cerrarModalAgregarEPP] Cerrando modal');
     
     // Validar si hay datos sin guardar (excepto en modo edición)
     const enModoEdicion = !!window.eppEnEdicion;
     if (!enModoEdicion && hayDatosNoGuardados()) {
-        console.log('🔒 [cerrarModalAgregarEPP] Hay datos sin guardar - pidiendo confirmación');
+        console.log(' [cerrarModalAgregarEPP] Hay datos sin guardar - pidiendo confirmación');
         Swal.fire({
             icon: 'warning',
             title: '¿Descartar cambios?',
@@ -1211,7 +1211,7 @@ function cerrarModalAgregarEPP() {
             cancelButtonColor: '#3085d6'
         }).then((result) => {
             if (result.isConfirmed) {
-                console.log('🔒 [cerrarModalAgregarEPP] Usuario confirmó descartar cambios');
+                console.log(' [cerrarModalAgregarEPP] Usuario confirmó descartar cambios');
                 cerrarModalAgregarEPPConfirmado();
             }
         });
@@ -1226,14 +1226,14 @@ function cerrarModalAgregarEPP() {
  * Función auxiliar que realmente cierra el modal
  */
 function cerrarModalAgregarEPPConfirmado() {
-    console.log('🔒 [cerrarModalAgregarEPPConfirmado] Cerrando modal confirmado');
+    console.log(' [cerrarModalAgregarEPPConfirmado] Cerrando modal confirmado');
     const modal = document.getElementById('modalAgregarEPP');
     
     // Resetear título del modal a estado por defecto
     const tituloModal = modal.querySelector('h2.text-white');
     if (tituloModal) {
         tituloModal.textContent = 'Agregar EPP al Pedido';
-        console.log('🔒 [cerrarModalAgregarEPPConfirmado] Título reseteado a: Agregar EPP al Pedido');
+        console.log(' [cerrarModalAgregarEPPConfirmado] Título reseteado a: Agregar EPP al Pedido');
     }
     
     modal.style.display = 'none';
@@ -1263,7 +1263,7 @@ function cerrarModalAgregarEPPConfirmado() {
     // Siempre limpiar estado de edición y formulario al cerrar/cancelar
     eppEnEdicion = null;
     window.eppEnEdicion = null;
-    console.log('🔒 [cerrarModalAgregarEPPConfirmado] window.eppEnEdicion limpiado');
+    console.log(' [cerrarModalAgregarEPPConfirmado] window.eppEnEdicion limpiado');
     
     // Limpiar imágenes temporales al cerrar
     limpiarImagenesTemporales();

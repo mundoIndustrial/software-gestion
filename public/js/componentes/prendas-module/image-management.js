@@ -11,20 +11,20 @@
 
 /**
  * WRAPPER: Maneja la carga de imágenes para prendas
- * Delega a window.imagenesPrendaStorage (ImageStorageService)
+ * Delega a globalThis.imagenesPrendaStorage (ImageStorageService)
  */
-window.manejarImagenesPrenda = function(input) {
+globalThis.manejarImagenesPrenda = function(input) {
     if (!input.files || input.files.length === 0) {
         return;
     }
     
     try {
-        if (!window.imagenesPrendaStorage) {
+        if (!globalThis.imagenesPrendaStorage) {
             alert('Error: Servicio de almacenamiento de imágenes no inicializado');
             return;
         }
         
-        window.imagenesPrendaStorage.agregarImagen(input.files[0])
+        globalThis.imagenesPrendaStorage.agregarImagen(input.files[0])
             .then(() => {
                 //  CRÍTICO: Detectar si estamos en creación o edición
                 const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
@@ -65,9 +65,9 @@ window.manejarImagenesPrenda = function(input) {
 
 /**
  * WRAPPER: Actualiza el preview de las imágenes de prenda
- * Usa window.imagenesPrendaStorage para obtener las imágenes
+ * Usa globalThis.imagenesPrendaStorage para obtener las imágenes
  */
-window.actualizarPreviewPrenda = function() {
+globalThis.actualizarPreviewPrenda = function() {
     console.log('[actualizarPreviewPrenda] 🎬 Iniciando actualización del preview');
     
     try {
@@ -85,12 +85,12 @@ window.actualizarPreviewPrenda = function() {
             return;
         }
         
-        if (!window.imagenesPrendaStorage) {
+        if (!globalThis.imagenesPrendaStorage) {
             console.warn('[actualizarPreviewPrenda]  imagenesPrendaStorage no disponible');
             return;
         }
         
-        const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+        const imagenes = globalThis.imagenesPrendaStorage.obtenerImagenes();
         console.log('[actualizarPreviewPrenda]  Imágenes cargadas:', imagenes.length);
         
         // Si no hay imágenes, mostrar placeholder con drag & drop
@@ -157,8 +157,8 @@ window.actualizarPreviewPrenda = function() {
         
         //  IMPORTANTE: Notificar al DragDropManager que las imágenes han cambiado
         // Esto hará que el handler se reconfigure si es necesario
-        if (window.dragDropManager && typeof window.dragDropManager.actualizarImagenesPrenda === 'function') {
-            window.dragDropManager.actualizarImagenesPrenda(imagenes);
+        if (globalThis.dragDropManager && typeof globalThis.dragDropManager.actualizarImagenesPrenda === 'function') {
+            globalThis.dragDropManager.actualizarImagenesPrenda(imagenes);
             console.log('[actualizarPreviewPrenda]  DragDropManager notificado de cambios en imágenes');
         } else {
             console.log('[actualizarPreviewPrenda]  DragDropManager no disponible para notificación');
@@ -173,7 +173,7 @@ window.actualizarPreviewPrenda = function() {
  * WRAPPER: Actualiza el preview temporal de imágenes de tela
  * Renderiza DENTRO de la celda de imagen de la fila de inputs
  */
-window.actualizarPreviewTela = function() {
+globalThis.actualizarPreviewTela = function() {
     try {
         const preview = document.getElementById('nueva-prenda-tela-preview');
         
@@ -182,12 +182,12 @@ window.actualizarPreviewTela = function() {
         }
         
         // Verificar que el servicio existe
-        if (!window.imagenesTelaStorage) {
+        if (!globalThis.imagenesTelaStorage) {
             return;
         }
         
         // Obtener imágenes del storage temporal
-        const imagenes = window.imagenesTelaStorage.obtenerImagenes();
+        const imagenes = globalThis.imagenesTelaStorage.obtenerImagenes();
         
         // Limpiar preview anterior
         preview.innerHTML = '';
@@ -208,7 +208,7 @@ window.actualizarPreviewTela = function() {
                 const imgElement = document.createElement('img');
                 imgElement.src = img.previewUrl;
                 imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #0066cc; cursor: pointer; transition: opacity 0.2s;';
-                imgElement.onclick = () => window.mostrarGaleriaImagenesTemporales(imagenes, index);
+                imgElement.onclick = () => globalThis.mostrarGaleriaImagenesTemporales(imagenes, index);
                 imgElement.onmouseover = () => imgElement.style.opacity = '0.7';
                 imgElement.onmouseout = () => imgElement.style.opacity = '1';
                 
@@ -222,7 +222,7 @@ window.actualizarPreviewTela = function() {
                     e.preventDefault();
                     e.stopPropagation();
 
-                    window.imagenesTelaStorage.eliminarImagen(index);
+                    globalThis.imagenesTelaStorage.eliminarImagen(index);
                     actualizarPreviewTela(); // Actualizar el preview después de eliminar
                 };
                 
@@ -231,9 +231,9 @@ window.actualizarPreviewTela = function() {
                 preview.appendChild(container);
             });
             
-            // 🔥 IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
-            if (typeof window.setupDragDropTelaPreview === 'function') {
-                window.setupDragDropTelaPreview(preview);
+            //  IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
+            if (typeof globalThis.setupDragDropTelaPreview === 'function') {
+                globalThis.setupDragDropTelaPreview(preview);
                 console.log('[actualizarPreviewTela]  Drag & drop configurado en preview con imágenes');
             }
             
@@ -251,7 +251,7 @@ window.actualizarPreviewTela = function() {
  * @param {HTMLElement} preview - Elemento preview
  * @param {Array} imagenes - Array de imágenes
  */
-window.agregarControlesNavegacionPrenda = function(preview, imagenes) {
+globalThis.agregarControlesNavegacionPrenda = function(preview, imagenes) {
     // Crear contenedor de controles
     const controles = document.createElement('div');
     controles.style.cssText = `

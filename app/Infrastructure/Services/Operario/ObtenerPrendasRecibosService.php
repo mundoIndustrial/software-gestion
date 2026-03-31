@@ -313,7 +313,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         return false;
                     }
                     
-                    // 🔒 CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
+                    //  CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
                     if (!$prendasDelCortador->contains($recibo->prenda_id)) {
                         return false;
                     }
@@ -516,7 +516,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         // Para cortadores: verificar que exista proceso "Corte" con encargado = usuario ESPECÍFICAMENTE PARA ESTA PRENDA
                         $usuarioNombre = strtolower(trim($usuario->name));
                         $tieneProcesoCorte = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                            ->where('prenda_pedido_id', $prenda->id)  // 🔒 CRÍTICO: Filtrar por PRENDA ESPECÍFICA
+                            ->where('prenda_pedido_id', $prenda->id)  //  CRÍTICO: Filtrar por PRENDA ESPECÍFICA
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                             ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                             ->exists();

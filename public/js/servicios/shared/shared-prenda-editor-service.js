@@ -1,8 +1,8 @@
 /**
- * 🔒 SharedPrendaEditorService
+ *  SharedPrendaEditorService
  * 
  * IMPORTANTE: Este servicio es AGNÓSTICO de cotizaciones
- * - NO toca window.cotizacionActual
+ * - NO toca globalThis.cotizacionActual
  * - NO tiene lógica de tipo_cotizacion_id
  * - NO interfiere con CotizacionEditorService
  * - COMPLETAMENTE AISLADO de módulo de cotizaciones
@@ -236,10 +236,10 @@ class SharedPrendaEditorService {
             nombre: nombreInput?.value || '',
             descripcion: descInput?.value || '',
             origen: origenSelect?.value || 'confeccion',
-            tallas: window.tallasRelacionales || [],
-            telas: window.telasCotizacion || [], // TODO: cambiar a nombre genérico
-            procesos: window.procesosSeleccionados || [],
-            imagenes: window.imagenesCreacion || []
+            tallas: globalThis.tallasRelacionales || [],
+            telas: globalThis.telasCotizacion || [], 
+            procesos: globalThis.procesosSeleccionados || [],
+            imagenes: globalThis.imagenesCreacion || []
         };
     }
 
@@ -293,5 +293,5 @@ class SharedPrendaEditorService {
 }
 
 // Exportar
-window.SharedPrendaEditorService = SharedPrendaEditorService;
+globalThis.SharedPrendaEditorService = SharedPrendaEditorService;
 Logger.debug('EditorService cargado', 'SharedPrendaEditor');

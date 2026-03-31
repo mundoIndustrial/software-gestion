@@ -10,7 +10,7 @@
  */
 
 // Flag global para debounce - evita múltiples aperturas rápidas
-window.__modalPrendaAbriendo = false;
+globalThis.__modalPrendaAbriendo = false;
 
 /**
  * WRAPPER: Abre el modal para agregar una prenda nueva
@@ -18,41 +18,41 @@ window.__modalPrendaAbriendo = false;
  * 
  * Incluye debouncing para prevenir múltiples clics rápidos
  */
-window.abrirModalPrendaNueva = function() {
+globalThis.abrirModalPrendaNueva = function() {
     // 🛡️ Guard: Evitar múltiples aperturas simultáneas
-    if (window.__modalPrendaAbriendo) {
+    if (globalThis.__modalPrendaAbriendo) {
         console.debug('[abrirModalPrendaNueva] 🚫 Debounced - modal ya está abriéndose');
         return;
     }
     
     // Marcar como que está abriendo
-    window.__modalPrendaAbriendo = true;
+    globalThis.__modalPrendaAbriendo = true;
     
     // Auto-reset después de 500ms (tiempo de animación + buffer)
     setTimeout(() => {
-        window.__modalPrendaAbriendo = false;
+        globalThis.__modalPrendaAbriendo = false;
     }, 500);
     
     // Intentar usar GestionItemsUI si existe
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
-        return window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
+        return globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva();
     }
     
     // Fallback: abrir el modal directamente si existe
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        // 🔥 Asegurar que estamos en modo CREATE (prendaEditIndex = null)
-        if (window.gestionItemsUI) {
-            window.gestionItemsUI.prendaEditIndex = null;
+        //  Asegurar que estamos en modo CREATE (prendaEditIndex = null)
+        if (globalThis.gestionItemsUI) {
+            globalThis.gestionItemsUI.prendaEditIndex = null;
         }
-        window.prendaEditIndex = null;
+        globalThis.prendaEditIndex = null;
         
-        // 🔥 Limpiar telas residuales ANTES de abrir el modal
-        if (window.telasAgregadas) {
-            window.telasAgregadas = [];
+        //  Limpiar telas residuales ANTES de abrir el modal
+        if (globalThis.telasAgregadas) {
+            globalThis.telasAgregadas = [];
         }
-        if (window.telasCreacion) {
-            window.telasCreacion = [];
+        if (globalThis.telasCreacion) {
+            globalThis.telasCreacion = [];
         }
         const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
@@ -74,16 +74,16 @@ window.abrirModalPrendaNueva = function() {
  * WRAPPER: Cierra el modal de prenda nueva
  * Delega a GestionItemsUI.cerrarModalAgregarPrendaNueva()
  */
-window.cerrarModalPrendaNueva = function() {
-    // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
-    if (window.gestionItemsUI) {
-        window.gestionItemsUI.prendaEditIndex = null;
+globalThis.cerrarModalPrendaNueva = function() {
+    //  CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
+    if (globalThis.gestionItemsUI) {
+        globalThis.gestionItemsUI.prendaEditIndex = null;
     }
-    window.prendaEditIndex = null;
+    globalThis.prendaEditIndex = null;
     
     // Intentar usar GestionItemsUI si existe
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.cerrarModalAgregarPrendaNueva === 'function') {
-        return window.gestionItemsUI.cerrarModalAgregarPrendaNueva();
+    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.cerrarModalAgregarPrendaNueva === 'function') {
+        return globalThis.gestionItemsUI.cerrarModalAgregarPrendaNueva();
     }
     
     // Fallback: cerrar el modal directamente si existe
@@ -97,10 +97,10 @@ window.cerrarModalPrendaNueva = function() {
  * WRAPPER: Agrega una prenda nueva al pedido
  * Delega a GestionItemsUI.agregarPrendaNueva()
  */
-window.agregarPrendaNueva = function() {
+globalThis.agregarPrendaNueva = function() {
     // Intentar usar GestionItemsUI si existe
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaNueva === 'function') {
-        return window.gestionItemsUI.agregarPrendaNueva();
+    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarPrendaNueva === 'function') {
+        return globalThis.gestionItemsUI.agregarPrendaNueva();
     }
     
     // Fallback: implementación básica
@@ -112,10 +112,10 @@ window.agregarPrendaNueva = function() {
  * WRAPPER: Carga un item en el modal para editar
  * Delega a GestionItemsUI.cargarItemEnModal()
  */
-window.cargarItemEnModal = function(item, itemIndex) {
+globalThis.cargarItemEnModal = function(item, itemIndex) {
     // Intentar usar GestionItemsUI si existe
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
-        return window.gestionItemsUI.cargarItemEnModal(item, itemIndex);
+    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.cargarItemEnModal === 'function') {
+        return globalThis.gestionItemsUI.cargarItemEnModal(item, itemIndex);
     }
     
     // Fallback: implementación básica
@@ -126,7 +126,7 @@ window.cargarItemEnModal = function(item, itemIndex) {
 /**
  * WRAPPER: Abre el selector de archivos para agregar foto a prenda
  */
-window.abrirSelectorPrendas = function() {
+globalThis.abrirSelectorPrendas = function() {
     const inputFotos = document.getElementById('nueva-prenda-foto-input');
     if (inputFotos) {
         inputFotos.click();

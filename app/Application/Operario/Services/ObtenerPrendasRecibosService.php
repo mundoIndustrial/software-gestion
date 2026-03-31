@@ -75,7 +75,7 @@ class ObtenerPrendasRecibosService
             $usuarioNombre = strtolower(trim($usuario->name));
             
             // Obtener TODAS las prendas donde el usuario es encargado de Corte
-            $prendasDelCortador = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+            $prendasDelCortador = ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                 ->pluck('prenda_pedido_id')
                 ->unique()
@@ -90,13 +90,13 @@ class ObtenerPrendasRecibosService
                         return false;
                     }
                     
-                    // 🔒 CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
+                    //  CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
                     if (!$prendasDelCortador->contains($recibo->prenda_id)) {
                         return false;
                     }
                     
                     // Además, solo si aún no hay encargado de Costura asignado
-                    $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                    $procesoCostura = ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                         ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                         ->whereNull('deleted_at')
                         ->first();
@@ -301,8 +301,8 @@ class ObtenerPrendasRecibosService
                     if ($tipoOperario === 'cortador') {
                         // Para cortadores: verificar que exista proceso "Corte" con encargado = usuario ESPECÍFICAMENTE PARA ESTA PRENDA
                         $usuarioNombre = strtolower(trim($usuario->name));
-                        $tieneProcesoCorte = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                            ->where('prenda_pedido_id', $prenda->id)  // 🔒 CRÍTICO: Filtrar por PRENDA ESPECÍFICA
+                        $tieneProcesoCorte = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $prenda->id)  //  CRÍTICO: Filtrar por PRENDA ESPECÍFICA
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                             ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                             ->exists();
@@ -331,7 +331,7 @@ class ObtenerPrendasRecibosService
                             $usuarioNombre = strtolower(trim($usuario->name));
                             
                             // Buscar proceso Costura específicamente para esta prenda
-                            $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            $procesoCosturaDelaPrenda = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                                 ->where('prenda_pedido_id', $prenda->id)
                                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                                 ->first();
@@ -370,7 +370,7 @@ class ObtenerPrendasRecibosService
                             $usuarioLiderReflectivo = $usuario->hasRole('lider-reflectivo');
                             
                             // Buscar encargado en el proceso Costura
-                            $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            $procesoCosturaDelaPrenda = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                                 ->where('prenda_pedido_id', $prenda->id)
                                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                                 ->first();
@@ -387,7 +387,7 @@ class ObtenerPrendasRecibosService
                             
                             if ($usuarioLiderReflectivo) {
                                 // lider-reflectivo: verificar que el encargado tenga rol costura-reflectivo
-                                $encargadoUsuario = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [$encargadoAsignado])->first();
+                                $encargadoUsuario = User::whereRaw('LOWER(TRIM(name)) = ?', [$encargadoAsignado])->first();
                                 if (!$encargadoUsuario || !$encargadoUsuario->hasRole('costura-reflectivo')) {
                                     \Log::info(' [Filtro LIDER-REFLECTIVO] Encargado no tiene rol costura-reflectivo', [
                                         'prenda_id' => $prenda->id,
@@ -501,7 +501,7 @@ class ObtenerPrendasRecibosService
                             return true;
                         }
 
-                        $tieneParciales = \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                        $tieneParciales = ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
                             ->where('prenda_pedido_id', $recibo->prenda_id)
                             ->where('tipo_recibo', 'REFLECTIVO')
                             ->where('consecutivo_original', $recibo->consecutivo_actual)
@@ -537,13 +537,13 @@ class ObtenerPrendasRecibosService
                     })->toArray() : [],
                     'recibos' => $recibosDelTipo->map(function ($recibo) use ($pedido) {
                         // Buscar el proceso de Control Calidad más reciente para este recibo
-                        $procesoCC = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                        $procesoCC = ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                             ->whereNull('deleted_at')
                             ->latest('created_at')
                             ->first();
 
-                        $procesoCostura = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                        $procesoCostura = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                             ->where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                             ->where('numero_recibo', $recibo->consecutivo_actual)
@@ -555,7 +555,7 @@ class ObtenerPrendasRecibosService
                             ->latest('created_at')
                             ->first();
 
-                        $procesoCorte = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                        $procesoCorte = ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                             ->whereNull('deleted_at')
                             ->latest('created_at')
@@ -659,11 +659,11 @@ class ObtenerPrendasRecibosService
         $usuarioNormalizado = strtolower(trim($usuario->name));
 
         // Obtener todos los pedidos que tengan proceso de Corte asignado al usuario
-        $pedidos = \App\Models\PedidoProduccion::with(['prendas', 'prendas.tallas'])
+        $pedidos = PedidoProduccion::with(['prendas', 'prendas.tallas'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function ($pedido) use ($usuarioNormalizado) {
-                $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)->get();
+                $procesos = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)->get();
                 
                 if ($procesos->isEmpty()) {
                     return false;

@@ -22,67 +22,96 @@ class PrendaEditorColores {
         
         // Necesitamos asignacionesColoresPorTalla para renderizar agrupado
         if (!prenda.asignacionesColoresPorTalla || Object.keys(prenda.asignacionesColoresPorTalla).length === 0) {
-            console.log(' [Colores] Sin asignaciones wizard para cargar');
-            
-            //  FIX: Aún sin asignaciones wizard, puede haber telas simples en
-            // window.telasCreacion (cargadas por PrendaEditorTelas). Delegar a
-            // actualizarTablaResumen() que maneja AMBOS tipos de datos y gestiona
-            // la visibilidad de seccion-resumen-asignaciones correctamente.
-            if (window.telasCreacion && window.telasCreacion.length > 0) {
-                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
-                    window.ColoresPorTalla.actualizarTablaResumen();
-                    console.log('[Carga]  Tabla actualizada con telas simples via actualizarTablaResumen()');
-                } else {
-                    console.warn('[Carga]  ColoresPorTalla no disponible para renderizar telas simples');
-                    this._ocultarSeccion();
-                    this._mostrarTarjetasTallas();
-                }
-            } else {
-                this._ocultarSeccion();
-                this._mostrarTarjetasTallas();
-            }
+            this._manejarAsignacionesVacias();
             return;
         }
         
-        // Guardar referencia interna de asignaciones agrupadas
-        this._asignacionesAgrupadas = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
+        this._cargarAsignacionesConDatos(prenda);
+        this._mostrarSeccion();
+        this._ocultarTarjetasTallas();
+        console.log('[Colores]  Flujo 2 detectado - tarjetas de tallas ocultadas');
+        console.log(' [Colores] Completado');
+    }
+
+    /**
+     * Manejar el caso cuando no hay asignaciones de colores
+     * @private
+     */
+    static _manejarAsignacionesVacias() {
+        console.log(' [Colores] Sin asignaciones wizard para cargar');
         
-        //  Replicar a global para que sea editable
-        window.ColoresPorTalla = window.ColoresPorTalla || {};
-        window.ColoresPorTalla.datos = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
-        console.log('[Carga]  Asignaciones de colores replicadas en ColoresPorTalla');
-        
-        // Poblar StateManager PRIMERO (para que actualizarTablaResumen lo lea)
-        if (window.StateManager && typeof window.StateManager.agregarAsignacion === 'function') {
-            // Limpiar asignaciones previas antes de cargar nuevas
-            if (typeof window.StateManager.limpiarAsignaciones === 'function') {
-                window.StateManager.limpiarAsignaciones();
-            }
-            Object.entries(prenda.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
-                window.StateManager.agregarAsignacion(clave, JSON.parse(JSON.stringify(asignacion)));
-            });
-            console.log('[Carga]  Asignaciones replicadas en StateManager');
+        if (globalThis.telasCreacion?.length > 0) {
+            this._actualizarTablaTelasSimples();
+        } else {
+            this._ocultarSeccion();
+            this._mostrarTarjetasTallas();
         }
+    }
+
+    /**
+     * Actualizar tabla con telas simples si está disponible
+     * @private
+     */
+    static _actualizarTablaTelasSimples() {
+        if (globalThis.ColoresPorTalla?.actualizarTablaResumen) {
+            globalThis.ColoresPorTalla.actualizarTablaResumen();
+            console.log('[Carga]  Tabla actualizada con telas simples via actualizarTablaResumen()');
+        } else {
+            console.warn('[Carga]  ColoresPorTalla no disponible para renderizar telas simples');
+            this._ocultarSeccion();
+            this._mostrarTarjetasTallas();
+        }
+    }
+
+    /**
+     * Cargar y procesar asignaciones con datos
+     * @private
+     */
+    static _cargarAsignacionesConDatos(prenda) {
+        this._replicarAsignacionesAGlobales(prenda);
+        this._poblarStateManagerConAsignaciones(prenda);
+        this._renderizarOFallbackAsignaciones();
+    }
+
+    /**
+     * Replicar asignaciones a variables globales
+     * @private
+     */
+    static _replicarAsignacionesAGlobales(prenda) {
+        const clon = structuredClone(prenda.asignacionesColoresPorTalla);
+        this._asignacionesAgrupadas = clon;
+        globalThis.ColoresPorTalla = globalThis.ColoresPorTalla || {};
+        globalThis.ColoresPorTalla.datos = clon;
+        console.log('[Carga]  Asignaciones de colores replicadas en ColoresPorTalla');
+    }
+
+    /**
+     * Poblar StateManager con asignaciones
+     * @private
+     */
+    static _poblarStateManagerConAsignaciones(prenda) {
+        if (!globalThis.StateManager?.agregarAsignacion) return;
         
-        // Usar ColoresPorTalla.actualizarTablaResumen() para renderizar Y vincular eventos
-        // Esto garantiza que los botones editar/eliminar funcionen (misma lógica que en creación)
-        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
-            window.ColoresPorTalla.actualizarTablaResumen();
+        globalThis.StateManager.limpiarAsignaciones?.();
+        
+        Object.entries(prenda.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
+            globalThis.StateManager.agregarAsignacion(clave, structuredClone(asignacion));
+        });
+        console.log('[Carga]  Asignaciones replicadas en StateManager');
+    }
+
+    /**
+     * Renderizar asignaciones o usar fallback manual
+     * @private
+     */
+    static _renderizarOFallbackAsignaciones() {
+        if (globalThis.ColoresPorTalla?.actualizarTablaResumen) {
+            globalThis.ColoresPorTalla.actualizarTablaResumen();
             console.log('[Carga]  Tabla renderizada via ColoresPorTalla.actualizarTablaResumen()');
         } else {
-            // Fallback: renderizar manualmente si ColoresPorTalla no está listo
             console.warn('[Carga]  ColoresPorTalla no disponible, renderizado manual');
             this._renderizarTablaAgrupada();
         }
-        
-        // Mostrar sección
-        this._mostrarSeccion();
-        
-        // Flujo 2: Ocultar tarjetas de tallas individuales
-        this._ocultarTarjetasTallas();
-        console.log('[Colores]  Flujo 2 detectado - tarjetas de tallas ocultadas');
-        
-        console.log(' [Colores] Completado');
     }
 
     /**
@@ -208,7 +237,7 @@ class PrendaEditorColores {
             Object.values(this._asignacionesAgrupadas).forEach(asig => {
                 if (asig.colores && Array.isArray(asig.colores)) {
                     asig.colores.forEach(c => {
-                        total += parseInt(c.cantidad) || 0;
+                        total += Number(c.cantidad) || 0;
                     });
                 }
             });
@@ -227,13 +256,12 @@ class PrendaEditorColores {
     static _getBlobUrl(imagenId) {
         if (!imagenId) return null;
         // Intentar obtener del almacén de ColoresPorTalla
-        if (window.ColoresPorTalla && window.ColoresPorTalla._imageStore) {
-            const img = window.ColoresPorTalla._imageStore.get(imagenId);
-            return img?.blobUrl || null;
-        }
-        if (typeof window._getImage === 'function') {
-            const img = window._getImage(imagenId);
-            return img?.blobUrl || null;
+        const img = globalThis.ColoresPorTalla?._imageStore?.get(imagenId);
+        if (img?.blobUrl) return img.blobUrl;
+        
+        if (typeof globalThis._getImage === 'function') {
+            const imgGlobal = globalThis._getImage(imagenId);
+            return imgGlobal?.blobUrl || null;
         }
         return null;
     }
@@ -303,18 +331,18 @@ class PrendaEditorColores {
         this._mostrarTarjetasTallas();
         
         // Limpiar StateManager y wizard para evitar datos residuales de prenda anterior
-        if (window.StateManager) {
-            if (typeof window.StateManager.limpiarAsignaciones === 'function') {
-                window.StateManager.limpiarAsignaciones();
+        if (globalThis.StateManager) {
+            if (typeof globalThis.StateManager.limpiarAsignaciones === 'function') {
+                globalThis.StateManager.limpiarAsignaciones();
             }
-            if (typeof window.StateManager.resetWizardState === 'function') {
-                window.StateManager.resetWizardState();
+            if (typeof globalThis.StateManager.resetWizardState === 'function') {
+                globalThis.StateManager.resetWizardState();
             }
         }
         
         // Limpiar ColoresPorTalla datos
-        if (window.ColoresPorTalla && window.ColoresPorTalla.datos) {
-            window.ColoresPorTalla.datos = {};
+        if (globalThis.ColoresPorTalla?.datos) {
+            globalThis.ColoresPorTalla.datos = {};
         }
     }
 }

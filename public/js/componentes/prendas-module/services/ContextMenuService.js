@@ -228,7 +228,7 @@ class ContextMenuService {
             
             // Cerrar menú si está configurado
             if (config.autoCerrar) {
-                UIHelperService.log('ContextMenuService', '🔒 Cerrando menú automáticamente...');
+                UIHelperService.log('ContextMenuService', ' Cerrando menú automáticamente...');
                 this.cerrarMenuActual();
             }
         });

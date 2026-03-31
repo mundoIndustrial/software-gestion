@@ -10,6 +10,11 @@ class LogoCotizacionTecnicaPrenda extends Model
 {
     protected $table = 'logo_cotizacion_tecnica_prendas';
 
+    public int $logo_cotizacion_id;
+    public int $tipo_logo_id;
+    public int $prenda_cot_id;
+    public ?string $observaciones;
+
     protected $fillable = [
         'logo_cotizacion_id',
         'tipo_logo_id',

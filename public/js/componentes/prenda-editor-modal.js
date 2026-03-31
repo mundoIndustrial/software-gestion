@@ -11,16 +11,16 @@
  * Abrir formulario para editar prendas del pedido (lista seleccionable)
  */
 function abrirEditarPrendas() {
-    if (!window.datosEdicionPedido) {
+    if (!globalThis.datosEdicionPedido) {
         Swal.fire('Error', 'No hay datos del pedido disponibles', 'error');
         return;
     }
-    const datos = window.datosEdicionPedido;
+    const datos = globalThis.datosEdicionPedido;
     const prendas = datos.prendas || [];
 
     
     // Guardar prendas en variable global para acceso desde onclick
-    window.prendasEdicion = {
+    globalThis.prendasEdicion = {
         pedidoId: datos.id || datos.numero_pedido,
         prendas: prendas
     };
@@ -99,16 +99,16 @@ function abrirEditarPrendas() {
  * USA EL MODAL DE "AGREGAR PRENDA NUEVA" para la edición
  */
 async function abrirEditarPrendaEspecifica(prendasIndex) {
-    console.log('🔥 [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
+    console.log(' [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
     
-    if (!window.prendasEdicion) {
+    if (!globalThis.prendasEdicion) {
         console.error(' No hay datos de prendas disponibles');
         Swal.fire('Error', 'No hay datos de prendas disponibles', 'error');
         return;
     }
     
-    const prenda = window.prendasEdicion.prendas[prendasIndex];
-    const pedidoId = window.prendasEdicion.pedidoId;
+    const prenda = globalThis.prendasEdicion.prendas[prendasIndex];
+    const pedidoId = globalThis.prendasEdicion.pedidoId;
     
     if (!prenda) {
         console.error(' Prenda no encontrada en índice:', prendasIndex);
@@ -362,7 +362,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             console.log(' [DETECCIÓN] Formato de tallas detectado: NUEVO (objeto por género)');
         } else if ((prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) || 
                    (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero))) {
-            formatoDetectado.tallas = 'antiguo'; // {tallas_dama: [{talla: "L", cantidad: 20}]}
+            formatoDetectado.tallas = 'antiguo';
             console.log(' [DETECCIÓN] Formato de tallas detectado: ANTIGUO (arrays por género)');
         } else {
             console.warn(' [DETECCIÓN] Formato de tallas no reconocido, usando defaults');
@@ -371,11 +371,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // DETECTAR FORMATO DE TELAS
         if (prendaCompleta.telas_array && Array.isArray(prendaCompleta.telas_array) && 
             prendaCompleta.telas_array.length > 0) {
-            formatoDetectado.telas = 'nuevo'; // {telas_array: [{id: 1, tela_id: 19, color_id: 61}]}
+            formatoDetectado.telas = 'nuevo'; 
             console.log(' [DETECCIÓN] Formato de telas detectado: NUEVO (telas_array)');
         } else if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas) && 
                    prendaCompleta.colores_telas.length > 0) {
-            formatoDetectado.telas = 'antiguo'; // {colores_telas: [{id: 1, color_id: 61}]}
+            formatoDetectado.telas = 'antiguo'; 
             console.log(' [DETECCIÓN] Formato de telas detectado: ANTIGUO (colores_telas)');
         } else {
             console.warn(' [DETECCIÓN] Formato de telas no reconocido, usando defaults');
@@ -796,7 +796,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 // Crear un identificador basado en hash simple de la ruta
                 // Esto es temporal hasta que el backend SIEMPRE envíe IDs
                 const rutaParaHash = img.ruta_webp || img.ruta_original || img.url || url;
-                imagenId = 'hash_' + rutaParaHash.split('/').pop().replace(/\D/g, '').slice(0, 10) || idx;
+                imagenId = 'hash_' + rutaParaHash.split('/').pop().replaceAll(/\D/g, '').slice(0, 10) || idx;
                 console.warn(' [EDITAR-PRENDA-ID-WORKAROUND] Imagen sin ID, creando workaround:', {
                     idx: idx,
                     rutaOriginal: rutaParaHash,
@@ -863,9 +863,9 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
 
         // 🎬 ESTABLECER SNAPSHOT DIRECTAMENTE CON IMÁGENES CORRECTAMENTE MAPEADAS
         // Esto asegura que el snapshot tenga id, ruta_original, ruta_webp
-        if (window.imagenesPrendaStorage) {
+        if (globalThis.imagenesPrendaStorage) {
             // Guardar snapshot ANTES de pasar a modal, con los IDs incluidos
-            window.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaImagenesMapeadas));
+            globalThis.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaImagenesMapeadas));
             console.log('🎬 [EDITAR-PRENDA] SNAPSHOT ESTABLECIDO CON IMÁGENES MAPEADAS:', {
                 cantidad: prendaImagenesMapeadas.length,
                 primerImagen: prendaImagenesMapeadas[0]
@@ -911,7 +911,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                     proc.nombre_proceso ||
                     proc.tipoProceso?.nombre ||
                     ''
-                ).toLowerCase().trim().replace(/\s+/g, '-');
+                ).toLowerCase().trim().replaceAll(/\s+/g, '-');
                 
                 console.log(' [EDITAR-PRENDA-PROCESOS] Transformando proceso:', {
                     procesoId: proc.id,
@@ -994,8 +994,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // Cerrar el modal de seleccionar prenda
         Swal.close();
         
-        //  DEBUG: Verificar qué se va a guardar en window.prendaEnEdicion
-        console.log(' [EDITAR-PRENDA] Guardando en window.prendaEnEdicion:', {
+        //  DEBUG: Verificar qué se va a guardar en globalThis.prendaEnEdicion
+        console.log(' [EDITAR-PRENDA] Guardando en globalThis.prendaEnEdicion:', {
             prendaCompletaId: prenda.id,
             prendaCompletaPrendaPedidoId: prenda.prenda_pedido_id,
             prendaCompletaNombre: prenda.nombre_prenda,
@@ -1003,7 +1003,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         });
         
         // Guardar en global
-        window.prendaEnEdicion = {
+        globalThis.prendaEnEdicion = {
             pedidoId: pedidoId,
             prendasIndex: prendasIndex,
             prendaOriginal: JSON.parse(JSON.stringify(prenda)),
@@ -1011,7 +1011,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         };
         
         // Abrir modal con datos transformados
-        if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
+        if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
             console.log(' [EDITAR-PRENDA] Abriendo modal con GestionItemsUI');
             
             const modal = document.getElementById('modal-agregar-prenda-nueva');
@@ -1019,17 +1019,17 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 document.body.appendChild(modal);
             }
             
-            window.gestionItemsUI.prendaEditIndex = prendasIndex;
-            window.gestionItemsUI.prendaEnModoEdicion = true;
-            window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+            globalThis.gestionItemsUI.prendaEditIndex = prendasIndex;
+            globalThis.gestionItemsUI.prendaEnModoEdicion = true;
+            globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva();
             
-            if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
+            if (typeof globalThis.gestionItemsUI.cargarItemEnModal === 'function') {
                 console.log(' [EDITAR-PRENDA] Cargando datos en modal');
-                window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
+                globalThis.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
                 
                 // 🔓 CRÍTICO: Habilitar controles de telas después de cargar los datos
-                if (typeof window.habilitarControlsTelasEdicion === 'function') {
-                    window.habilitarControlsTelasEdicion();
+                if (typeof globalThis.habilitarControlsTelasEdicion === 'function') {
+                    globalThis.habilitarControlsTelasEdicion();
                 }
             }
             
@@ -1047,12 +1047,12 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
 }
 
 function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {
-    if (!window.prendasEdicion) {
+    if (!globalThis.prendasEdicion) {
         Swal.fire('Error', 'No hay datos de prendas disponibles', 'error');
         return;
     }
     
-    const prenda = window.prendasEdicion.prendas[prendasIndex];
+    const prenda = globalThis.prendasEdicion.prendas[prendasIndex];
     const proceso = prenda.procesos[procesoIndex];
     
     if (!proceso) {
@@ -1210,10 +1210,10 @@ function cerrarModalPrendaNueva() {
     try {
         // PASO 1: Resetear prendaEditIndex
         console.log('→ PASO 1: Reseteando prendaEditIndex...');
-        if (window.gestionItemsUI) {
-            window.gestionItemsUI.prendaEditIndex = null;
+        if (globalThis.gestionItemsUI) {
+            globalThis.gestionItemsUI.prendaEditIndex = null;
         }
-        window.prendaEditIndex = null;
+        globalThis.prendaEditIndex = null;
         console.log('✓ PASO 1 completado');
         
         // PASO 2: Ocultar el modal
@@ -1244,11 +1244,11 @@ function cerrarModalPrendaNueva() {
         
         // PASO 5: Limpiar telas
         console.log('→ PASO 5: Limpiando arrays de telas...');
-        if (window.telasAgregadas) {
-            window.telasAgregadas = [];
+        if (globalThis.telasAgregadas) {
+            globalThis.telasAgregadas = [];
         }
-        if (window.telasCreacion) {
-            window.telasCreacion = [];
+        if (globalThis.telasCreacion) {
+            globalThis.telasCreacion = [];
         }
         const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
@@ -1263,8 +1263,8 @@ function cerrarModalPrendaNueva() {
         
         // PASO 5.6: Limpiar imágenes de prenda del storage
         console.log('→ PASO 5.6: Limpiando imagenesPrendaStorage...');
-        if (window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage.limpiar?.() || window.imagenesPrendaStorage.establecerImagenes([]);
+        if (globalThis.imagenesPrendaStorage) {
+            globalThis.imagenesPrendaStorage.limpiar?.() || globalThis.imagenesPrendaStorage.establecerImagenes([]);
         }
         const previewFoto = document.getElementById('nueva-prenda-foto-preview');
         if (previewFoto) {
@@ -1278,7 +1278,7 @@ function cerrarModalPrendaNueva() {
 
         // PASO 5.5: Limpiar "UNISEX" (antes "SOLO CANTIDAD")
         console.log('→ PASO 5.5: Limpiando opción "UNISEX"...');
-        window.cantidadSoloSeleccionada = null;
+        globalThis.cantidadSoloSeleccionada = null;
         const btnUnisex = document.getElementById('btn-genero-unisex');
         const checkUnisex = document.getElementById('check-unisex');
         
@@ -1308,7 +1308,7 @@ function cerrarModalPrendaNueva() {
         console.log('→ PASO 6: Asignaciones de colores mantienen datos para crearPedido()');
         
         // PASO 7: Resetear FSM a CLOSED para permitir reabrir el modal
-        const fsm = window.__MODAL_FSM__;
+        const fsm = globalThis.__MODAL_FSM__;
         if (fsm && fsm.obtenerEstado() !== 'CLOSED') {
             console.log('→ PASO 7: Reseteando FSM desde', fsm.obtenerEstado(), 'a CLOSED');
             fsm.estado = 'CLOSED';
@@ -1342,38 +1342,37 @@ function actualizarTituloModalPrenda(esEdicion = false) {
 }
 
 // Exponer funciones globalmente para onclick
-window.abrirEditarPrendas = abrirEditarPrendas;
-window.abrirEditarPrendaEspecifica = abrirEditarPrendaEspecifica;
-window.abrirEditarProcesoEspecifico = abrirEditarProcesoEspecifico;
-window.agregarFilaTela = agregarFilaTela;
-window.eliminarFilaTela = eliminarFilaTela;
-window.cerrarModalPrendaNueva = cerrarModalPrendaNueva;
-window.actualizarTituloModalPrenda = actualizarTituloModalPrenda;
-window.limpiarFormularioPrendaNueva = limpiarFormularioPrendaNueva;
-window.cargarPrendaEnFormularioModal = cargarPrendaEnFormularioModal;
+globalThis.abrirEditarPrendas = abrirEditarPrendas;
+globalThis.abrirEditarPrendaEspecifica = abrirEditarPrendaEspecifica;
+globalThis.abrirEditarProcesoEspecifico = abrirEditarProcesoEspecifico;
+globalThis.agregarFilaTela = agregarFilaTela;
+globalThis.eliminarFilaTela = eliminarFilaTela;
+globalThis.cerrarModalPrendaNueva = cerrarModalPrendaNueva;
+globalThis.actualizarTituloModalPrenda = actualizarTituloModalPrenda;
+globalThis.limpiarFormularioPrendaNueva = limpiarFormularioPrendaNueva;
+globalThis.cargarPrendaEnFormularioModal = cargarPrendaEnFormularioModal;
 
 /**
  * Función helper: Obtener GestionItemsUI desde cualquier contexto
- * Busca la instancia en window actual, parent, iframes, etc.
+ * Busca la instancia en globalThis actual, parent, iframes, etc.
  */
-window.obtenerGestionItemsUI = function() {
-    // Buscar en window actual
-    if (window.gestionItemsUI) return window.gestionItemsUI;
+globalThis.obtenerGestionItemsUI = function() {
+    // Buscar en globalThis actual
+    if (globalThis.gestionItemsUI) return globalThis.gestionItemsUI;
     
-    // Buscar en parent window
-    if (window.parent && window.parent !== window && window.parent.gestionItemsUI) {
-        return window.parent.gestionItemsUI;
+    // Buscar en parent globalThis
+    if (globalThis.parent && globalThis.parent !== globalThis && globalThis.parent.gestionItemsUI) {
+        return globalThis.parent.gestionItemsUI;
     }
     
     // Buscar en iframes
     const iframes = document.querySelectorAll('iframe');
     for (let iframe of iframes) {
         try {
-            if (iframe.contentWindow && iframe.contentWindow.gestionItemsUI) {
-                return iframe.contentWindow.gestionItemsUI;
+            if (iframe.contentglobalThis && iframe.contentglobalThis.gestionItemsUI) {
+                return iframe.contentglobalThis.gestionItemsUI;
             }
         } catch (e) {
-            // Ignorar errores de cross-origin
         }
     }
     
@@ -1383,7 +1382,7 @@ window.obtenerGestionItemsUI = function() {
 /**
  * Función helper: Obtener modal del DOM desde cualquier contexto
  */
-window.obtenerModalPrendaNueva = function() {
+globalThis.obtenerModalPrendaNueva = function() {
     // Buscar en document actual
     let modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
@@ -1409,9 +1408,9 @@ window.obtenerModalPrendaNueva = function() {
     }
     
     // Buscar en parent
-    if (window.parent && window.parent !== window) {
+    if (globalThis.parent && globalThis.parent !== globalThis) {
         try {
-            modal = window.parent.document.getElementById('modal-agregar-prenda-nueva');
+            modal = globalThis.parent.document.getElementById('modal-agregar-prenda-nueva');
             if (modal) {
 
                 return modal;
@@ -1456,12 +1455,12 @@ function limpiarFormularioPrendaNueva() {
         // DragDrop se reconfigura en shown.bs.modal, NO aquí
     }
     
-    // 🔥 CRÍTICO: Limpiar arrays de telas
-    if (window.telasAgregadas) {
-        window.telasAgregadas = [];
+    //  CRÍTICO: Limpiar arrays de telas
+    if (globalThis.telasAgregadas) {
+        globalThis.telasAgregadas = [];
     }
-    if (window.telasCreacion) {
-        window.telasCreacion = [];
+    if (globalThis.telasCreacion) {
+        globalThis.telasCreacion = [];
     }
     
     // Limpiar tabla de telas
@@ -1488,11 +1487,11 @@ function limpiarFormularioPrendaNueva() {
     }
     
     // Limpiar storage de imágenes
-    if (window.imagenesPrendaStorage) {
-        window.imagenesPrendaStorage.limpiar();
+    if (globalThis.imagenesPrendaStorage) {
+        globalThis.imagenesPrendaStorage.limpiar();
     }
-    if (window.imagenesTelaStorage) {
-        window.imagenesTelaStorage.limpiar();
+    if (globalThis.imagenesTelaStorage) {
+        globalThis.imagenesTelaStorage.limpiar();
     }
 }
 
@@ -1647,11 +1646,11 @@ function cargarPrendaEnFormularioModal(prendaData) {
         
         if (cantidadValue > 0) {
             // Guardar en variable global
-            window.cantidadSoloSeleccionada = cantidadValue;
+            globalThis.cantidadSoloSeleccionada = cantidadValue;
 
             // Crear tarjeta visual de Unisex
-            if (typeof window.crearTarjetaUnisex === 'function') {
-                window.crearTarjetaUnisex(cantidadValue);
+            if (typeof globalThis.crearTarjetaUnisex === 'function') {
+                globalThis.crearTarjetaUnisex(cantidadValue);
             } else {
                 // Fallback: marcar botón manualmente
                 const btnUnisex = document.getElementById('btn-genero-unisex');
@@ -1688,7 +1687,7 @@ async function cargarPrendasDatalist() {
         const busqueda = inputNombre.value.trim();
         
         // Realizar búsqueda en el backend
-        const url = new URL('/api/asesores/prendas/autocomplete', window.location.origin);
+        const url = new URL('/api/asesores/prendas/autocomplete', globalThis.location.origin);
         if (busqueda) {
             url.searchParams.append('q', busqueda);
         }
@@ -1732,13 +1731,13 @@ async function cargarPrendasDatalist() {
 }
 
 // Exponer función globalmente
-window.cargarPrendasDatalist = cargarPrendasDatalist;
+globalThis.cargarPrendasDatalist = cargarPrendasDatalist;
 
 /**
  * FUNCIÓN CRÍTICA: Asegurar que TODOS los controles de telas estén habilitados en modo edición
  * Se ejecuta después de cargar los datos en el modal
  */
-window.habilitarControlsTelasEdicion = function() {
+globalThis.habilitarControlsTelasEdicion = function() {
     console.log('[habilitarControlsTelasEdicion] 🔓 Habilitando controles de telas en modo edición...');
     
     // Esperar a que el DOM esté completamente renderizado
@@ -1780,7 +1779,7 @@ window.habilitarControlsTelasEdicion = function() {
         // 3. Verificar que las funciones existan
         const funciones = ['agregarTelaNueva', 'eliminarTela', 'actualizarTablaTelas'];
         funciones.forEach(fn => {
-            if (typeof window[fn] === 'function') {
+            if (typeof globalThis[fn] === 'function') {
                 console.log(`  ✓ Función ${fn} disponible`);
             } else {
                 console.warn(`  ✗ Función ${fn} NO disponible`);
@@ -1828,12 +1827,11 @@ function configurarListenersModalPrenda() {
     }
 
     // Si existía un listener previo de ESC (de versiones anteriores), removerlo.
-    if (window._escListenerModal) {
-        document.removeEventListener('keydown', window._escListenerModal);
-        window._escListenerModal = null;
+    if (globalThis._escListenerModal) {
+        document.removeEventListener('keydown', globalThis._escListenerModal);
+        globalThis._escListenerModal = null;
     }
     
-    // console.log(' [Modal] Todos los listeners configurados exitosamente');
 }
 
 // Ejecutar cuando el documento está listo
@@ -1849,7 +1847,7 @@ if (document.readyState === 'loading') {
 // ============================================================
 
 // Crear herramienta para diagnosticar qué causa los 3 segundos
-window.diagnosticarDelayModalCierre = function() {
+globalThis.diagnosticarDelayModalCierre = function() {
     console.log('\n ==================== DIAGNÓSTICO DE DELAY ====================');
     console.log('Para identificar el causante del delay de 3 segundos:\n');
     

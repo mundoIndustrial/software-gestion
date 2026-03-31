@@ -47,7 +47,7 @@ class PrendaCardService {
             const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
             
             console.log('[PrendaCardService.generar]  Foto principal:', fotoPrincipal);
-            console.log('[PrendaCardService.generar] 🧵 Foto tela:', fotoTela);
+            console.log('[PrendaCardService.generar]  Foto tela:', fotoTela);
             console.log('[PrendaCardService.generar]  Info tela:', infoTela);
 
             // 3. Construir secciones expandibles

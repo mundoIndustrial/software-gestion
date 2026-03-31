@@ -1,5 +1,5 @@
 /**
- * 🔒 FormatDetector
+ *  FormatDetector
  * 
  * Detecta automáticamente el formato de datos retornados por la API
  * Permite que el sistema sea flexible con cambios de formato backend
@@ -231,5 +231,5 @@ class FormatDetector {
 }
 
 // Exportar
-window.FormatDetector = FormatDetector;
+globalThis.FormatDetector = FormatDetector;
 Logger.debug('FormatDetector cargado', 'FormatDetector');

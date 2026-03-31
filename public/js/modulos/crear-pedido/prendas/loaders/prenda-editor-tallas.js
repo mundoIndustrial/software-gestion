@@ -65,48 +65,48 @@ class PrendaEditorTallas {
                 const input = tarjeta.querySelector(`input[data-talla="${talla}"]`);
                 if (input) {
                     input.value = cantidad || 0;
-                    // 🔥 AGREGAR EVENTO PARA ACTUALIZAR window.tallasRelacionales AL CAMBIAR
+                    //  AGREGAR EVENTO PARA ACTUALIZAR globalThis.tallasRelacionales AL CAMBIAR
                     input.addEventListener('change', () => {
                         const nuevaCantidad = parseInt(input.value) || 0;
                         console.log(`[Tallas]  Actualizando ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
                         
-                        // Actualizar window.tallasRelacionales
-                        if (!window.tallasRelacionales) {
-                            window.tallasRelacionales = {};
+                        // Actualizar globalThis.tallasRelacionales
+                        if (!globalThis.tallasRelacionales) {
+                            globalThis.tallasRelacionales = {};
                         }
-                        if (!window.tallasRelacionales[genero]) {
-                            window.tallasRelacionales[genero] = {};
+                        if (!globalThis.tallasRelacionales[genero]) {
+                            globalThis.tallasRelacionales[genero] = {};
                         }
                         
                         if (nuevaCantidad > 0) {
-                            window.tallasRelacionales[genero][talla] = nuevaCantidad;
+                            globalThis.tallasRelacionales[genero][talla] = nuevaCantidad;
                         } else {
-                            delete window.tallasRelacionales[genero][talla];
+                            delete globalThis.tallasRelacionales[genero][talla];
                         }
                         
-                        console.log(`[Tallas]window.tallasRelacionales actualizado:`, window.tallasRelacionales);
+                        console.log(`[Tallas]globalThis.tallasRelacionales actualizado:`, globalThis.tallasRelacionales);
                         
                         // Actualizar total
                         this._actualizarTotal();
                     });
                     
-                    // 🔥 AGREGAR EVENTO input PARA ACTUALIZAR EN TIEMPO REAL
+                    //  AGREGAR EVENTO input PARA ACTUALIZAR EN TIEMPO REAL
                     input.addEventListener('input', () => {
                         const nuevaCantidad = parseInt(input.value) || 0;
                         console.log(`[Tallas] ⌨️ Input en tiempo real ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
                         
-                        // Actualizar window.tallasRelacionales
-                        if (!window.tallasRelacionales) {
-                            window.tallasRelacionales = {};
+                        // Actualizar globalThis.tallasRelacionales
+                        if (!globalThis.tallasRelacionales) {
+                            globalThis.tallasRelacionales = {};
                         }
-                        if (!window.tallasRelacionales[genero]) {
-                            window.tallasRelacionales[genero] = {};
+                        if (!globalThis.tallasRelacionales[genero]) {
+                            globalThis.tallasRelacionales[genero] = {};
                         }
                         
                         if (nuevaCantidad > 0) {
-                            window.tallasRelacionales[genero][talla] = nuevaCantidad;
+                            globalThis.tallasRelacionales[genero][talla] = nuevaCantidad;
                         } else {
-                            delete window.tallasRelacionales[genero][talla];
+                            delete globalThis.tallasRelacionales[genero][talla];
                         }
                         
                         // Actualizar total
@@ -124,8 +124,8 @@ class PrendaEditorTallas {
         //  Replicar a global para que sea editable
         const tallasAUsar = prenda.cantidad_talla || prenda.tallasRelacionales;
         if (tallasAUsar) {
-            window.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
-            console.log('[Carga]  Tallas replicadas en window.tallasRelacionales');
+            globalThis.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
+            console.log('[Carga]  Tallas replicadas en globalThis.tallasRelacionales');
         }
         
         console.log(' [Tallas] Completado');
@@ -201,7 +201,7 @@ class PrendaEditorTallas {
         btnEliminar.onclick = () => {
             console.log(`[PrendaEditorTallas]  Eliminando tallas de ${genero}`);
             // Limpiar tallas del género
-            window.tallasRelacionales[genero] = {};
+            globalThis.tallasRelacionales[genero] = {};
             
             // Remover tarjeta del DOM
             tarjeta.remove();

@@ -116,9 +116,7 @@ globalThis.seleccionarModoProcesoTodas = function() {
         
         // Ocultar la sección de botones de tallas ya que son "para todas"
         const btnTodas = document.getElementById('btn-aplicar-todas-tallas');
-        // const btnEditar = document.getElementById('btn-editar-tallas-especificas'); // COMENTADO
         if (btnTodas) btnTodas.style.display = 'none';
-        // if (btnEditar) btnEditar.style.display = 'none'; // COMENTADO
     }, 100);
 };
 

@@ -13,7 +13,7 @@
         <div class="p-6 space-y-4">
             <p class="text-gray-700 text-center mb-6">¿Qué tipo de producto deseas agregar?</p>
             
-            <button type="button" onclick="seleccionarTipoProducto('prenda')" 
+            <button type="button" onclick="seleccionarTipoProducto('prenda')"
                 class="w-full px-6 py-4 border-2 border-blue-400 rounded-lg hover:bg-blue-50 transition flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <i class="material-symbols-rounded text-2xl text-blue-600">checkroom</i>
@@ -25,7 +25,7 @@
                 <i class="material-symbols-rounded text-blue-600">arrow_forward</i>
             </button>
 
-            <button type="button" onclick="seleccionarTipoProducto('epp')" 
+            <button type="button" onclick="seleccionarTipoProducto('epp')"
                 class="w-full px-6 py-4 border-2 border-green-400 rounded-lg hover:bg-green-50 transition flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <i class="material-symbols-rounded text-2xl text-green-600">engineering</i>
@@ -94,7 +94,7 @@
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label class="text-sm font-medium text-gray-700">Fotos de la Prenda (Opcional)</label>
-                    <button type="button" onclick="agregarFotoPrenda()" 
+                    <button type="button" onclick="agregarFotoPrenda()"
                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
                         <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
                         Agregar Foto
@@ -102,8 +102,8 @@
                 </div>
                 
                 <!-- Contenedor de imágenes -->
-                <div id="contenedorFotosPrenda" class="grid grid-cols-3 gap-3 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all" 
-                    tabindex="0" style="outline: none;" data-zona="prenda" onmouseover="this.focus()" onmouseleave="this.blur()" 
+                <div id="contenedorFotosPrenda" class="grid grid-cols-3 gap-3 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
+                    tabindex="0" style="outline: none;" data-zona="prenda" onmouseover="this.focus()" onmouseleave="this.blur()"
                     ondrop="handleDropPrenda(event)" ondragover="handleDragOverPrenda(event)" ondragleave="handleDragLeavePrenda(event)">
                     
                     <!-- Mensaje inicial -->
@@ -122,7 +122,7 @@
 
         <!-- Footer fijo -->
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
-            <button onclick="cerrarModalAgregarPrenda()" 
+            <button onclick="cerrarModalAgregarPrenda()"
                 class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition text-sm">
                 Cancelar
             </button>
@@ -157,11 +157,11 @@
                         <i class="material-symbols-rounded inline text-base mr-1">search</i>
                         Selecciona EPP (búsqueda y multi-select)
                     </label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         id="inputBuscadorEPPTabla"
                         onkeyup="filtrarDropdownEPP(this.value)"
-                        placeholder="Escribe para buscar y selecciona..." 
+                        placeholder="Escribe para buscar y selecciona..."
                         class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
                     >
                     <!-- Dropdown de opciones -->
@@ -206,7 +206,7 @@
             <div id="productoCardEPP" class="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-in fade-in" style="display: none;">
                 <div>
                     <label for="nombreProductoEPP" class="text-sm font-medium text-gray-700 block mb-2">Nombre del EPP</label>
-                    <input 
+                    <input
                         type="text"
                         id="nombreProductoEPP"
                         placeholder="Nombre del EPP"
@@ -220,7 +220,7 @@
             <div id="formularioAgregarEPP" style="display: none;">
                 <div>
                     <label for="cantidadEPP" class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
-                    <input 
+                    <input
                         type="number"
                         id="cantidadEPP"
                         value="1"
@@ -264,7 +264,7 @@
             <!-- Observaciones - PARA MODO EDICIÓN -->
             <div id="observacionesContainer" style="display: none;">
                 <label for="observacionesEPP" class="text-sm font-medium text-gray-700 block mb-2">Observaciones (Opcional)</label>
-                <textarea 
+                <textarea
                     id="observacionesEPP"
                     placeholder="Detalles adicionales..."
                     disabled
@@ -284,9 +284,9 @@
                 <!-- Zona de carga -->
                 <div class="space-y-3">
                     <!-- Zona Drag & Drop -->
-                    <div id="contenedorFotosEPP" 
+                    <div id="contenedorFotosEPP"
                         class="grid grid-cols-3 gap-3 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
-                        ondrop="handleDropEPP(event)" 
+                        ondrop="handleDropEPP(event)"
                         ondragover="handleDragOverEPP(event)"
                         ondragleave="handleDragLeaveEPP(event)">
                         <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
@@ -297,7 +297,7 @@
                     </div>
 
                     <!-- Botón para agregar fotos -->
-                    <button 
+                    <button
                         type="button"
                         onclick="document.getElementById('inputFotosEPP').click()"
                         class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2">
@@ -307,11 +307,11 @@
                 </div>
 
                 <!-- Input file oculto -->
-                <input 
-                    type="file" 
-                    id="inputFotosEPP" 
-                    multiple 
-                    accept="image/*" 
+                <input
+                    type="file"
+                    id="inputFotosEPP"
+                    multiple
+                    accept="image/*"
                     style="display: none !important;"
                     onchange="manejarSubidaFotosEPP(this)"
                 >
@@ -328,7 +328,7 @@
                     Cancelar
                 </button>
                 <!-- Botón Finalizar (visible en modo normal) -->
-                <button 
+                <button
                     id="btnFinalizarAgregarEPP"
                     onclick="finalizarAgregarEPP()"
                     disabled
@@ -338,7 +338,7 @@
                     Finalizar
                 </button>
                 <!-- Botón Guardar Cambios (visible en modo edición) -->
-                <button 
+                <button
                     id="btnGuardarCambiosEPP"
                     onclick="guardarEdicionEPP()"
                     disabled
@@ -491,10 +491,10 @@ function renderizarDropdownEPP(epps) {
         label.className = 'flex items-center p-2 hover:bg-blue-50 rounded cursor-pointer gap-2';
         
         label.innerHTML = `
-            <input 
-                type="checkbox" 
-                class="checkbox-epp-dropdown w-4 h-4" 
-                data-epp-id="${epp.id}" 
+            <input
+                type="checkbox"
+                class="checkbox-epp-dropdown w-4 h-4"
+                data-epp-id="${epp.id}"
                 data-epp-nombre="${epp.nombre_completo || epp.nombre}"
                 onchange="agregarEPPDesdeDropdown(this)"
             >
@@ -638,7 +638,7 @@ document.addEventListener('click', function(e) {
 /**
  * Manejo de Ctrl+V (paste) para agregar fotos en la tabla de EPP agregados
  * y en el modo edición (contenedorFotosEPP)
- * 
+ *
  * NOTA: El listener se registra dinámicamente en handlePasteEPP cuando se abre el modal
  * para evitar conflictos con otros listeners globales como DragDropManager
  */
@@ -722,15 +722,15 @@ function renderizarTablaEPPAgregados() {
         let fotosHtml = '';
         if (epp.imagenes && epp.imagenes.length > 0) {
             const fotosMostrar = epp.imagenes.slice(0, 3);
-            fotosHtml = fotosMostrar.map((foto, i) => 
-                `<div class="relative group foto-miniatura cursor-pointer" 
-                    data-epp-id="${epp.id}" 
+            fotosHtml = fotosMostrar.map((foto, i) =>
+                `<div class="relative group foto-miniatura cursor-pointer"
+                    data-epp-id="${epp.id}"
                     data-foto-index="${i}"
                     title="Click para eliminar, Ctrl+Click para expandir">
                     <img src="${foto.previewUrl || foto.base64}" alt="Foto ${i+1}" class="w-8 h-8 object-cover rounded border border-gray-200">
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition flex items-center justify-center">
-                        <button type="button" 
-                            onclick="event.stopPropagation(); eliminarFotoEPP(${epp.id}, ${i})" 
+                        <button type="button"
+                            onclick="event.stopPropagation(); eliminarFotoEPP(${epp.id}, ${i})"
                             class="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center transition transform hover:scale-110 hover:bg-red-600"
                             title="Eliminar imagen">
                             <i class="material-symbols-rounded" style="font-size: 14px;">delete</i>
@@ -746,10 +746,10 @@ function renderizarTablaEPPAgregados() {
         // Columnas de cotización (valor unitario y total)
         const columnasCotizacion = esCotizacion ? `
             <td class="px-4 py-2 text-center columna-cotizacion">
-                <input 
-                    type="number" 
-                    value="${epp.valor_unitario || ''}" 
-                    min="0" 
+                <input
+                    type="number"
+                    value="${epp.valor_unitario || ''}"
+                    min="0"
                     step="0.01"
                     onchange="actualizarValorUnitarioEPP(${epp.id}, this.value)"
                     class="w-24 px-2 py-1 border border-gray-300 rounded text-center text-sm"
@@ -766,18 +766,18 @@ function renderizarTablaEPPAgregados() {
         row.innerHTML = `
             <td class="px-4 py-2 text-gray-900 font-medium">${epp.nombre_completo}</td>
             <td class="px-4 py-2 text-center">
-                <input 
-                    type="number" 
-                    value="${epp.cantidad}" 
-                    min="1" 
+                <input
+                    type="number"
+                    value="${epp.cantidad}"
+                    min="1"
                     onchange="actualizarCantidadEPP(${epp.id}, this.value)"
                     class="w-14 px-2 py-1 border border-gray-300 rounded text-center text-sm"
                 >
             </td>
             <td class="px-4 py-2 text-gray-700 text-xs">
-                <input 
-                    type="text" 
-                    value="${epp.observaciones}" 
+                <input
+                    type="text"
+                    value="${epp.observaciones}"
                     onchange="actualizarObservacionesEPP(${epp.id}, this.value)"
                     class="w-full px-2 py-1 border border-gray-300 rounded text-xs"
                     placeholder="Observaciones..."
@@ -785,18 +785,18 @@ function renderizarTablaEPPAgregados() {
             </td>
             ${columnasCotizacion}
             <td class="px-4 py-2 text-center">
-                <div class="flex gap-1 items-center justify-center flex-wrap border-2 border-dashed border-gray-300 rounded p-2 min-h-10 cursor-pointer bg-gray-50 hover:bg-gray-100 transition" 
+                <div class="flex gap-1 items-center justify-center flex-wrap border-2 border-dashed border-gray-300 rounded p-2 min-h-10 cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
                     id="fotoZona_${epp.id}"
                     tabindex="0"
-                    ondrop="manejarDropFotosEPP(event, ${epp.id})" 
-                    ondragover="manejarDragOverFotosEPP(event)" 
+                    ondrop="manejarDropFotosEPP(event, ${epp.id})"
+                    ondragover="manejarDragOverFotosEPP(event)"
                     ondragleave="manejarDragLeaveFotosEPP(event)">
                     ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra imágenes</span>'}
                 </div>
                 <input type="file" id="inputFotos_${epp.id}" multiple accept="image/*" style="display: none;" onchange="manejarSeleccionFotosEPP(event, ${epp.id})">
             </td>
             <td class="px-4 py-2 text-center">
-                <button 
+                <button
                     type="button"
                     onclick="event.stopPropagation(); eliminarEPPDeLista(${epp.id})"
                     class="text-red-600 hover:text-red-800 font-medium transition"
@@ -1194,12 +1194,12 @@ function hayDatosNoGuardados() {
 }
 
 function cerrarModalAgregarEPP() {
-    console.log('🔒 [cerrarModalAgregarEPP] Cerrando modal');
+    console.log(' [cerrarModalAgregarEPP] Cerrando modal');
     
     // Validar si hay datos sin guardar (excepto en modo edición)
     const enModoEdicion = !!window.eppEnEdicion;
     if (!enModoEdicion && hayDatosNoGuardados()) {
-        console.log('🔒 [cerrarModalAgregarEPP] Hay datos sin guardar - pidiendo confirmación');
+        console.log(' [cerrarModalAgregarEPP] Hay datos sin guardar - pidiendo confirmación');
         Swal.fire({
             icon: 'warning',
             title: '¿Descartar cambios?',
@@ -1211,7 +1211,7 @@ function cerrarModalAgregarEPP() {
             cancelButtonColor: '#3085d6'
         }).then((result) => {
             if (result.isConfirmed) {
-                console.log('🔒 [cerrarModalAgregarEPP] Usuario confirmó descartar cambios');
+                console.log(' [cerrarModalAgregarEPP] Usuario confirmó descartar cambios');
                 cerrarModalAgregarEPPConfirmado();
             }
         });
@@ -1226,14 +1226,14 @@ function cerrarModalAgregarEPP() {
  * Función auxiliar que realmente cierra el modal
  */
 function cerrarModalAgregarEPPConfirmado() {
-    console.log('🔒 [cerrarModalAgregarEPPConfirmado] Cerrando modal confirmado');
+    console.log(' [cerrarModalAgregarEPPConfirmado] Cerrando modal confirmado');
     const modal = document.getElementById('modalAgregarEPP');
     
     // Resetear título del modal a estado por defecto
     const tituloModal = modal.querySelector('h2.text-white');
     if (tituloModal) {
         tituloModal.textContent = 'Agregar EPP al Pedido';
-        console.log('🔒 [cerrarModalAgregarEPPConfirmado] Título reseteado a: Agregar EPP al Pedido');
+        console.log(' [cerrarModalAgregarEPPConfirmado] Título reseteado a: Agregar EPP al Pedido');
     }
     
     modal.style.display = 'none';
@@ -1263,7 +1263,7 @@ function cerrarModalAgregarEPPConfirmado() {
     // Siempre limpiar estado de edición y formulario al cerrar/cancelar
     eppEnEdicion = null;
     window.eppEnEdicion = null;
-    console.log('🔒 [cerrarModalAgregarEPPConfirmado] window.eppEnEdicion limpiado');
+    console.log(' [cerrarModalAgregarEPPConfirmado] window.eppEnEdicion limpiado');
     
     // Limpiar imágenes temporales al cerrar
     limpiarImagenesTemporales();
@@ -1784,7 +1784,7 @@ function renderizarTablaEPP() {
         if (epp.imagenes && epp.imagenes.length > 0) {
             // Mostrar hasta 3 miniaturas
             const fotosMostrar = epp.imagenes.slice(0, 3);
-            fotosHtml = fotosMostrar.map(foto => 
+            fotosHtml = fotosMostrar.map(foto =>
                 `<img src="${foto.previewUrl || foto.base64}" alt="Foto EPP" class="w-8 h-8 object-cover rounded border border-gray-200" title="${foto.nombre}">`
             ).join(' ');
             
@@ -1806,7 +1806,7 @@ function renderizarTablaEPP() {
             <td class="px-4 py-2 text-gray-700">${epp.cantidad}</td>
             <td class="px-4 py-2 text-gray-700 text-xs">${epp.observaciones}</td>
             <td class="px-4 py-2 text-center">
-                <button 
+                <button
                     type="button"
                     onclick="event.stopPropagation(); eliminarEPPDeLista(${epp.id})"
                     class="text-red-600 hover:text-red-800 font-medium transition"
@@ -2715,8 +2715,8 @@ function mostrarVistaPreviaFoto(imagen) {
     
     divImagen.innerHTML = `
         <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
-            <img src="${imagen.previewUrl}" alt="Foto EPP" class="w-full h-32 object-cover" 
-                 onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjRGNEY2Ii8+CjxwYXRoIGQ9Ik00OCA0OEg4MFY4MEg0OFY0OFoiIHN0cm9rZT0iIzlDQTNBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJTNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMlMyMiA2LjQ4IDEyIDEyUzYuNDggMiAxMiAyWk0xMiA4QzEwLjkgOCA5IDguMSA5IDEwUzguMSAxMCAxMCAxMFMxMy45IDEwIDEzIDEwUzE0LjE4IDEwIDE0LjE4IDhTMTMuMSA2IDEyIDZaIiBmaWxsPSIjOUNDQTNBIi8+Cjwvc3ZnPgo8L3N2Zz4K'; this.style.opacity='0.5';" 
+            <img src="${imagen.previewUrl}" alt="Foto EPP" class="w-full h-32 object-cover"
+                 onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjRGNEY2Ii8+CjxwYXRoIGQ9Ik00OCA0OEg4MFY4MEg0OFY0OFoiIHN0cm9rZT0iIzlDQTNBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJTNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMlMyMiA2LjQ4IDEyIDEyUzYuNDggMiAxMiAyWk0xMiA4QzEwLjkgOCA5IDguMSA5IDEwUzguMSAxMCAxMCAxMFMxMy45IDEwIDEzIDEwUzE0LjE4IDEwIDE0LjE4IDhTMTMuMSA2IDEyIDZaIiBmaWxsPSIjOUNDQTNBIi8+Cjwvc3ZnPgo8L3N2Zz4K'; this.style.opacity='0.5';"
                  title="Imagen no disponible">
             <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <button type="button" onclick="eliminarFotoEPPEdicion('${imagen.id}', event)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition" title="Eliminar imagen">
@@ -3165,9 +3165,9 @@ function manejarSubidaFotosPrenda(input) {
             const div = document.createElement('div');
             div.className = 'relative group rounded-lg overflow-hidden';
             div.innerHTML = `
-                <img src="${e.target.result}" class="w-full h-24 object-cover border border-gray-300 rounded-lg cursor-pointer" 
+                <img src="${e.target.result}" class="w-full h-24 object-cover border border-gray-300 rounded-lg cursor-pointer"
                     onclick="mostrarVistaPreviaFotoPrenda(this.src)">
-                <button type="button" class="absolute top-1 right-1 bg-red-600 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition" 
+                <button type="button" class="absolute top-1 right-1 bg-red-600 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition"
                     onclick="this.parentElement.remove(); validarBotonesPrenda()">
                     <i class="material-symbols-rounded" style="font-size: 16px;">close</i>
                 </button>
@@ -3288,7 +3288,7 @@ function finalizarAgregarPrenda() {
     // Si estamos en modo edición, actualizar la prenda existente en prendasAgregadas
     if (enModoEdicion) {
         const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
-        const indexPrendas = window.prendasAgregadas.findIndex(p => 
+        const indexPrendas = window.prendasAgregadas.findIndex(p =>
             String(p.id) === String(targetId) || String(p.prenda_id) === String(targetId)
         );
         if (indexPrendas !== -1) {
@@ -3323,7 +3323,7 @@ function finalizarAgregarPrenda() {
     } else {
         // Actualizar en window.itemsPedido si existe
         const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
-        const index = window.itemsPedido.findIndex(item => 
+        const index = window.itemsPedido.findIndex(item =>
             String(item.id) === String(targetId) || String(item.epp_id) === String(targetId)
         );
         if (index !== -1) {
@@ -3408,7 +3408,7 @@ function finalizarAgregarPrenda() {
  * Guardar prenda en la base de datos
  */
 function guardarPrendaEnBD(prendaData) {
-    const cotizacionId = document.querySelector('[data-cotizacion-id]')?.getAttribute('data-cotizacion-id') 
+    const cotizacionId = document.querySelector('[data-cotizacion-id]')?.getAttribute('data-cotizacion-id')
         || new URLSearchParams(window.location.search).get('id')
         || window.__COTIZACION_ID__;
     

@@ -162,7 +162,6 @@ require base_path('routes/tableros.php');
 require base_path('routes/registros-pedidos.php');
 require base_path('routes/asistencia-personal.php');
 require base_path('routes/cartera.php');
-require base_path('routes/cotizaciones.php');
 require base_path('routes/recibos.php');
 require base_path('routes/pedidos.php');
 require base_path('routes/notifications.php');

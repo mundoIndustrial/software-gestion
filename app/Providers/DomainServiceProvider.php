@@ -20,6 +20,13 @@ use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Infrastructure\Storage\ImagenAlmacenador;
 use Intervention\Image\ImageManager;
 
+// ======================================== DDD COTIZACIONES BORDADO
+use App\Application\Cotizacion\Services\CrearCotizacionBordadoService;
+use App\Application\Cotizacion\Services\ActualizarBorradorCotizacionService;
+use App\Application\Cotizacion\Services\ProcesarTecnicasBordadoService;
+use App\Application\Cotizacion\Services\ProcesarTelasBordadoService;
+use App\Application\Cotizacion\Services\BorrarArchivoService;
+
 // ======================================== DDD PEDIDOS
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
@@ -127,6 +134,39 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->singleton(ImagenAlmacenador::class, function () {
             return new ImagenAlmacenador(ImageManager::gd());
         });
+
+        // ========================================
+        // SERVICIOS DE APLICACIÓN - COTIZACIONES BORDADO
+        // ========================================
+        // Servicios para procesar técnicas y telas
+        $this->app->singleton(ProcesarTecnicasBordadoService::class);
+        $this->app->singleton(ProcesarTelasBordadoService::class);
+        $this->app->singleton(BorrarArchivoService::class);
+
+        // Use Cases (Casos de Uso) para crear y actualizar cotizaciones de bordado
+        $this->app->singleton(
+            CrearCotizacionBordadoService::class,
+            function ($app) {
+                return new CrearCotizacionBordadoService(
+                    $app->make(\App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class),
+                    $app->make(ProcesarTecnicasBordadoService::class),
+                    $app->make(ProcesarTelasBordadoService::class)
+                );
+            }
+        );
+
+        $this->app->singleton(
+            ActualizarBorradorCotizacionService::class,
+            function ($app) {
+                return new ActualizarBorradorCotizacionService(
+                    $app->make(\App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class),
+                    $app->make(ProcesarTecnicasBordadoService::class),
+                    $app->make(ProcesarTelasBordadoService::class),
+                    $app->make(BorrarArchivoService::class)
+                );
+            }
+        );
+
 
         // Registrar Application Services
         $this->app->bind(

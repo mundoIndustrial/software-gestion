@@ -655,8 +655,8 @@ function abrirModalSeguimiento(pedidoId, prendaIdTarget) {
             if (prendas && prendas.length > 0) {
                 let prendaSeleccionada = null;
                 if (prendaIdTarget) {
-                    prendaSeleccionada = prendas.find(p => 
-                        String(p.id) === String(prendaIdTarget) || 
+                    prendaSeleccionada = prendas.find(p =>
+                        String(p.id) === String(prendaIdTarget) ||
                         String(p.prenda_pedido_id) === String(prendaIdTarget)
                     );
                 }
@@ -907,8 +907,8 @@ async function handleAgregarProcesoDesdeBadge() {
         const result = await response.json();
         
         //  Mostrar mensaje diferente según si fue creado o actualizado
-        const mensaje = result.action === 'actualizado' 
-            ? 'Proceso actualizado correctamente' 
+        const mensaje = result.action === 'actualizado'
+            ? 'Proceso actualizado correctamente'
             : 'Proceso agregado correctamente';
         showSuccess(mensaje);
         
@@ -1027,9 +1027,9 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
         if (data.prendas && Array.isArray(data.prendas)) {
             let prendaEncontrada = null;
             
-            // 🔒 SER ESTRICTO: Buscar EXACTAMENTE la prenda especificada, SIN FALLBACK
-            prendaEncontrada = data.prendas.find(p => 
-                String(p.id) === String(prendaId) || 
+            //  SER ESTRICTO: Buscar EXACTAMENTE la prenda especificada, SIN FALLBACK
+            prendaEncontrada = data.prendas.find(p =>
+                String(p.id) === String(prendaId) ||
                 String(p.prenda_pedido_id) === String(prendaId)
             );
             

@@ -38,7 +38,7 @@ class LoggerApp {
 
     // ─── Configuración global ───
     static config = {
-        // Nivel mínimo: se autodetecta desde window.APP_DEBUG
+        // Nivel mínimo: se autodetecta desde globalThis.APP_DEBUG
         // En desarrollo: 'debug' (muestra todo)
         // En producción: 'warn' (solo warn + error)
         nivel: null, // null = autodetectar
@@ -55,7 +55,7 @@ class LoggerApp {
             FormatDetector:         '',
             PrendasEditorHelper:    '',
             GestionItemsUI:         '📌',
-            TelaProcessor:          '🧵',
+            TelaProcessor:          '',
             PrendaDataBuilder:      '',
             ValidadorPrenda:        '✔️',
             Modal:                  '',
@@ -85,15 +85,15 @@ class LoggerApp {
      */
     static _getNivelEfectivo() {
         if (this.config.nivel !== null) return this.config.nivel;
-        // Autodetección: window.APP_DEBUG lo setea base.blade.php
-        return (typeof window !== 'undefined' && window.APP_DEBUG) ? 'debug' : 'warn';
+        // Autodetección: globalThis.APP_DEBUG lo setea base.blade.php
+        return (typeof globalThis !== 'undefined' && globalThis.APP_DEBUG) ? 'debug' : 'warn';
     }
 
     /**
      * ¿Estamos en modo desarrollo?
      */
     static get isDev() {
-        return typeof window !== 'undefined' && window.APP_DEBUG === true;
+        return typeof globalThis !== 'undefined' && globalThis.APP_DEBUG === true;
     }
 
     /**
@@ -379,6 +379,6 @@ class LoggerApp {
 const Logger = LoggerApp;
 
 // Exportar globalmente
-window.LoggerApp = LoggerApp;
-window.Logger = LoggerApp;
+globalThis.LoggerApp = LoggerApp;
+globalThis.Logger = LoggerApp;
 

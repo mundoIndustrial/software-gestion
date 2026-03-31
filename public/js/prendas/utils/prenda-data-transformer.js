@@ -53,7 +53,7 @@ class PrendaDataTransformer {
         }
 
         // Extraer datos de cotización con logs
-        console.log('[PrendaDataTransformer] 🧵 EXTRAYENDO DATOS DE TELA:');
+        console.log('[PrendaDataTransformer]  EXTRAYENDO DATOS DE TELA:');
         const telaExtraida = this._extraerTela(prendaRaw);
         const colorExtraido = this._extraerColor(prendaRaw);
         const referenciaExtraida = this._extraerReferencia(prendaRaw);

@@ -53,7 +53,7 @@ class InspectImagePaths extends Command
                 ->get(['id', 'ruta_webp', 'ruta_original', 'ruta_miniatura']);
 
             if ($fotosTela->isNotEmpty()) {
-                $this->line('  🧵 Fotos de Tela:');
+                $this->line('   Fotos de Tela:');
                 foreach ($fotosTela as $foto) {
                     $this->line("    - ID: {$foto->id}");
                     $this->line("      ruta_webp: {$foto->ruta_webp}");

@@ -115,4 +115,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
         Route::post('revisar-prenda/{reciboId}/aprobar-insumos', [AsesoresPedidosViewController::class, 'aprobarReciboCosturaParaInsumos'])
             ->name('revisar-prenda.aprobar-insumos');
     });
+
+    // ========================================
+    // COTIZACIONES - DDD Refactorizado
+    // ========================================
+    require base_path('routes/cotizaciones.php');
 });

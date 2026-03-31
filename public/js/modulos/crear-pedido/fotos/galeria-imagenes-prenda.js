@@ -346,7 +346,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                         timestamp: Date.now()
                     });
                     
-                    console.log('🔒 [galeria] Imagen marcada para eliminación del pedido (cotización protegida):', imagenEliminadaDatos);
+                    console.log(' [galeria] Imagen marcada para eliminación del pedido (cotización protegida):', imagenEliminadaDatos);
                 } else {
                     // Prenda normal: eliminar directamente
                     //  IMPORTANTE: marcar para eliminación diferida al guardar
@@ -386,7 +386,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                                 window.imagenesPrendaStorage.eliminarImagen(indiceActual);
                                 console.log(' [galeria] Eliminada imagen del storage en modo edición');
                             } else {
-                                console.log('🔒 [galeria] Protección: NO eliminada del storage (es cotización)');
+                                console.log(' [galeria] Protección: NO eliminada del storage (es cotización)');
                             }
                         }
                     } catch (error) {
@@ -422,7 +422,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                 // Para cotizaciones: ocultar visualmente pero mantener en array hasta guardar
                 imagenesConBlobUrl[indiceActual].eliminadaVisualmente = true;
                 imagenesConBlobUrl[indiceActual].motivoEliminacion = 'Eliminada del pedido (cotización protegida)';
-                console.log('🔒 [galeria] Imagen oculta visualmente (cotización protegida)');
+                console.log(' [galeria] Imagen oculta visualmente (cotización protegida)');
             } else {
                 // Para prendas normales: eliminar del array local
                 imagenesConBlobUrl.splice(indiceActual, 1);

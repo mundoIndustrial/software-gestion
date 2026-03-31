@@ -5,7 +5,7 @@
  * Coordina la apertura de modales genéricos y el resumen de procesos seleccionados
  */
 
-var procesosSeleccionados = globalThis.procesosSeleccionados && typeof globalThis.procesosSeleccionados === 'object'
+let procesosSeleccionados = globalThis.procesosSeleccionados && typeof globalThis.procesosSeleccionados === 'object'
     ? globalThis.procesosSeleccionados
     : {};
 
@@ -16,7 +16,7 @@ globalThis.procesosSeleccionados = procesosSeleccionados;
 // Estructura: { 'reflectivo': { tipo: 'reflectivo', datos: {...}, indiceResultado: 1 }, ... }
 globalThis.procesosGuardados = globalThis.procesosGuardados || {};
 
-var procesosIconos = {
+const procesosIconos = {
     reflectivo: 'light_mode',
     bordado: 'auto_awesome',
     estampado: 'format_paint',
@@ -24,7 +24,7 @@ var procesosIconos = {
     sublimado: 'palette'
 };
 
-var procesosNombres = {
+const procesosNombres = {
     reflectivo: 'Reflectivo',
     bordado: 'Bordado',
     estampado: 'Estampado',
@@ -37,41 +37,41 @@ var procesosNombres = {
  * @param {string} tipoProceso - reflectivo, bordado, estampado, dtf, sublimado
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
-globalThis.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
-
-    
-    if (estaChecked) {
-        // Registrar el proceso
-        if (!procesosSeleccionados[tipoProceso]) {
-            procesosSeleccionados[tipoProceso] = {
+function marcarProceso(tipoProceso) {
+    if (!procesosSeleccionados[tipoProceso]) {
+        procesosSeleccionados[tipoProceso] = {
+            tipo: tipoProceso,
+            datos: {
                 tipo: tipoProceso,
-                datos: {
-                    tipo: tipoProceso,
-                    modo_tallas: 'generico' // Fuente única canónica
-                }
-            };
-            //  CRÍTICO: Sincronizar con globalThis inmediatamente
-            globalThis.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+                modo_tallas: 'generico'
+            }
+        };
+        globalThis.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+    }
 
-        }
-        
-        // Actualizar resumen visual
-        actualizarResumenProcesos();
-        
-        // Abrir selector de modo (Para Todas / Por Tallas)
-        if (typeof globalThis.abrirSelectorModoProceso === 'function') {
-            globalThis.abrirSelectorModoProceso(tipoProceso);
-        } else {
-            // Fallback: abrir modal genérico directamente
-            globalThis.abrirModalProcesoGenerico(tipoProceso);
-        }
+    actualizarResumenProcesos();
 
+    if (typeof globalThis.abrirSelectorModoProceso === 'function') {
+        globalThis.abrirSelectorModoProceso(tipoProceso);
     } else {
-        // Usuario desmarcó el checkbox
+        globalThis.abrirModalProcesoGenerico(tipoProceso);
+    }
+}
 
+function desmarcarProceso(tipoProceso) {
+    if (procesosSeleccionados[tipoProceso]) {
         delete procesosSeleccionados[tipoProceso];
         delete globalThis.procesosSeleccionados[tipoProceso];
-        actualizarResumenProcesos();
+    }
+
+    actualizarResumenProcesos();
+}
+
+globalThis.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
+    if (estaChecked) {
+        marcarProceso(tipoProceso);
+    } else {
+        desmarcarProceso(tipoProceso);
     }
 };
 

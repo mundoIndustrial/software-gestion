@@ -191,7 +191,7 @@ class PrendaEditorVariaciones {
                 const brocheNormalizado = broche
                     .toLowerCase()
                     .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')  // quitar acentos
+                    .replaceAll(/[\u0300-\u036f]/g, '')  // quitar acentos
                     .trim();
                 input.value = brocheNormalizado;
                 
@@ -199,7 +199,7 @@ class PrendaEditorVariaciones {
                 if (input.value === '' || input.selectedIndex === 0) {
                     const options = Array.from(input.options);
                     const match = options.find(opt => {
-                        const optNorm = opt.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const optNorm = opt.value.toLowerCase().normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '');
                         return optNorm === brocheNormalizado || brocheNormalizado.includes(optNorm) || optNorm.includes(brocheNormalizado);
                     });
                     if (match) {

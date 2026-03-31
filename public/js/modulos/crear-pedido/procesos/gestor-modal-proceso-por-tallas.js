@@ -63,15 +63,15 @@ function construirImagenesPorTalla(datosExtendidos) {
     
     Object.entries(datosExtendidos).forEach(([genero, tallasDatos]) => {
         if (!tallasDatos || typeof tallasDatos !== 'object') return;
-        
+
         Object.entries(tallasDatos).forEach(([tallaKey, tallaData]) => {
-            if (!tallaData || !tallaData.imagenes) return;
-            
+            if (!tallaData?.imagenes) return;
+
             // Clave combinada: "genero__tallaKey"
             const claveCombinada = `${genero}__${tallaKey}`;
-            
+
             // Solo incluir si hay imágenes
-            if (tallaData.imagenes && tallaData.imagenes.length > 0) {
+            if (tallaData.imagenes?.length > 0) {
                 imagenesPorTalla[claveCombinada] = tallaData.imagenes;
             }
         });
@@ -85,7 +85,7 @@ function construirImagenesPorTalla(datosExtendidos) {
  * Usado para generar IDs válidos en HTML a partir de claves de datos
  */
 function convertirAKeySegura(actualKey) {
-    return actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return actualKey.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
 }
 
 const nombresPorTallas = {
@@ -195,7 +195,7 @@ function agregarImagenesGenerales(files) {
         const fileKey = `${file.name}_${file.size}_${file.type}`;
         
         // Verificar si ya existe una imagen con la misma clave en fotosGeneralesTemp
-        const yaExiste = globalThis._fotosGeneralesKeys && globalThis._fotosGeneralesKeys.has(fileKey);
+        const yaExiste = globalThis._fotosGeneralesKeys?.has(fileKey);
         
         if (yaExiste) {
             console.warn('[agregarImagenesGenerales]  DUPLICADO DETECTADO:', fileKey, '- Ignorando');
@@ -212,8 +212,9 @@ function agregarImagenesGenerales(files) {
         
         // NUEVO: Asignar UID único a cada File para mapeo backend
         if (!file.uid) {
-            file.uid = `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            console.log('[agregarImagenesGenerales] 🆔 UID asignado al File:', file.uid, file.name);
+            const randStr = Math.random().toString(36).substring(2, 11);
+            file.uid = `uid-${Date.now()}-${randStr}`;
+            console.log('[agregarImagenesGenerales]  UID asignado al File:', file.uid, file.name);
         }
         
         // Agregar a los arrays
@@ -282,7 +283,7 @@ function crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos) {
     const etiqueta = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
     
     const actualKey = `${genero}__${tallaKey}`;
-    const safeKey = actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeKey = actualKey.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
     const checkboxId = `checkbox-mg-${safeKey}`;
     const inputCantidadId = `cantidad-mg-${safeKey}`;
 
@@ -334,18 +335,459 @@ function crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos) {
     return card;
 };
 
+// ────────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS - Extracted for cognitive complexity reduction
+// ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Carga tallas desde tabla de resumen (Fuente 1 - PRIORITARIA)
+ */
+function _cargarTallasDesdeTabla() {
+    const tablaResumenBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+    const tallasPrenda = { dama: {}, caballero: {}, sobremedida: null };
+    
+    if (!tablaResumenBody?.querySelectorAll('tr').length) return { tallasPrenda, hayTallas: false };
+    
+    console.log('[por-tallas]  FUENTE 1 - Leyendo desde tabla de resumen (PRIORITARIO)');
+    
+    tablaResumenBody.querySelectorAll('tr[data-tipo="wizard"]').forEach((fila) => {
+        const genero = fila.querySelector('[data-field="genero"]')?.textContent?.trim().toLowerCase();
+        const talla = fila.querySelector('[data-field="talla"]')?.textContent?.trim().toUpperCase();
+        const cantidad = Number(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
+        
+        if (!talla || !cantidad) return;
+        
+        const colores = _extraerColoresDesdeTabla(fila);
+        const tallasKey = _determinarGrupoTalla(genero);
+        
+        _agregarTallasConColores(tallasPrenda, tallasKey, talla, colores, cantidad);
+    });
+    
+    const hayTallas = Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0 || tallasPrenda.sobremedida;
+    if (hayTallas) console.log('[por-tallas]  FUENTE 1 exitosa:', tallasPrenda);
+    
+    return { tallasPrenda, hayTallas };
+}
+
+/**
+ * Extrae colores y cantidades de una fila de tabla
+ */
+function _extraerColoresDesdeTabla(fila) {
+    const colorCell = fila.querySelector('[data-field="color"]');
+    const colores = [];
+    
+    if (!colorCell) return colores;
+    
+    colorCell.querySelectorAll('span').forEach(badge => {
+        const texto = badge.textContent?.trim();
+        if (!texto || texto === 'Sin color') return;
+        
+        const match = texto.match(/^(.+?)\s*\(\s*(\d+)\s*\)$/);
+        if (match) {
+            colores.push({ color: match[1].trim(), cantidad: Number(match[2]) || 1 });
+        } else {
+            colores.push({ color: texto, cantidad: 1 });
+        }
+    });
+    
+    return colores;
+}
+
+/**
+ * Determina grupo de talla (dama, caballero, sobremedida)
+ */
+function _determinarGrupoTalla(genero) {
+    if (genero === 'caballero') return 'caballero';
+    if (genero === 'sobremedida' || genero === 'unisex') return 'sobremedida';
+    return 'dama';
+}
+
+/**
+ * Agrega tallas con colores a la estructura
+ */
+function _agregarTallasConColores(tallasPrenda, grupo, talla, colores, cantidadTotal) {
+    const setupTarget = () => {
+        if (grupo === 'sobremedida') {
+            if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+            return tallasPrenda.sobremedida;
+        }
+        return tallasPrenda[grupo];
+    };
+    
+    if (colores.length > 0) {
+        colores.forEach(({ color, cantidad }) => {
+            const clave = `${talla}__${color}`;
+            const target = setupTarget();
+            target[clave] = (target[clave] || 0) + cantidad;
+        });
+    } else {
+        const target = setupTarget();
+        target[talla] = (target[talla] || 0) + cantidadTotal;
+    }
+}
+
+/**
+ * Carga tallas desde globalThis.tallasRelacionales (Fuente 2)
+ */
+function _cargarTallasDesdeRelacionales() {
+    const tallasRel = globalThis.tallasRelacionales || {};
+    const hayTallas = Object.values(tallasRel).some(gen => gen && Object.keys(gen).length > 0);
+    
+    if (!hayTallas) return { tallasPrenda: null, hayTallas: false };
+    
+    console.log('[por-tallas]FUENTE 2 - Leyendo desde tallasRelacionales');
+    
+    const { SOBREMEDIDA = {}, UNISEX = {} } = tallasRel;
+    const sobremedidaKeys = { ...SOBREMEDIDA, ...UNISEX };
+    const tallasPrenda = {
+        dama: { ...tallasRel.DAMA },
+        caballero: { ...tallasRel.CABALLERO },
+        sobremedida: Object.keys(sobremedidaKeys).length > 0 ? sobremedidaKeys : null
+    };
+    
+    return { tallasPrenda, hayTallas: true };
+}
+
+/**
+ * Carga tallas desde StateManager (Fuente 3)
+ */
+function _cargarTallasDesdeStateManager() {
+    if (!globalThis.StateManager?.getAsignaciones) return { tallasPrenda: null, hayTallas: false };
+    
+    const asignaciones = globalThis.StateManager.getAsignaciones();
+    if (!asignaciones || Object.keys(asignaciones).length === 0) return { tallasPrenda: null, hayTallas: false };
+    
+    console.log('[por-tallas]FUENTE 3 - Leyendo desde StateManager');
+    
+    const tallasPrenda = { dama: {}, caballero: {}, sobremedida: null };
+    
+    Object.values(asignaciones).forEach(asig => {
+        if (!asig.talla) return;
+        const genero = asig.genero?.toLowerCase() || 'dama';
+        const grupo = _determinarGrupoTalla(genero);
+        const cantidad = (asig.colores || []).reduce((sum, c) => sum + (c.cantidad || 1), 0) || 0;
+        
+        if (cantidad > 0) {
+            if (grupo === 'sobremedida') {
+                if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+                tallasPrenda.sobremedida[asig.talla] = (tallasPrenda.sobremedida[asig.talla] || 0) + cantidad;
+            } else {
+                tallasPrenda[grupo][asig.talla] = (tallasPrenda[grupo][asig.talla] || 0) + cantidad;
+            }
+        }
+    });
+    
+    const hayTallas = Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0;
+    return { tallasPrenda: hayTallas ? tallasPrenda : null, hayTallas };
+}
+
+/**
+ * Intenta obtener tallas de fuente secundaria (proceso guardado)
+ * Nota: Esta NO es una mala práctica de fallback silencioso.
+ * Se usa solo después de fallar todas las fuentes primarias.
+ */
+function _obtenerTallasDelProcesoGuardado() {
+    if (typeof obtenerTallasDeLaPrenda !== 'function') {
+        console.warn('[por-tallas]  obtenerTallasDeLaPrenda no disponible en window');
+        return null;
+    }
+    
+    try {
+        const tallasPrenda = obtenerTallasDeLaPrenda();
+        const validas = tallasPrenda && 
+                        (Object.keys(tallasPrenda.dama || {}).length > 0 || 
+                         Object.keys(tallasPrenda.caballero || {}).length > 0);
+        
+        if (validas) {
+            console.log('[por-tallas]  Tallas obtenidas desde proceso guardado (fuente secundaria)');
+            return tallasPrenda;
+        }
+    } catch (error) {
+        console.error('[por-tallas]  Error al obtener tallas del proceso guardado:', error);
+    }
+    
+    return null;
+}
+
+/**
+ * Combina tallas guardadas evitando duplicados
+ */
+function _combinarTallasEvitandoDuplicados(tallasPrenda, tipoProceso) {
+    const procesoTallas = globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
+    if (!procesoTallas?.dama && !procesoTallas?.caballero) return tallasPrenda;
+    
+    console.log('[por-tallas]  Combinando tallas evitando duplicados');
+    
+    const extraerBase = (clave) => clave.split('__')[0].toUpperCase();
+    const baseGuardadas = {
+        dama: new Set(Object.keys(procesoTallas.dama || {}).map(extraerBase)),
+        caballero: new Set(Object.keys(procesoTallas.caballero || {}).map(extraerBase))
+    };
+    
+    const damaObj = { ...procesoTallas.dama };
+    const cabObj = { ...procesoTallas.caballero };
+    
+    Object.entries(tallasPrenda.dama || {}).forEach(([key, val]) => {
+        if (!baseGuardadas.dama.has(key.toUpperCase())) damaObj[key] = val;
+    });
+    
+    Object.entries(tallasPrenda.caballero || {}).forEach(([key, val]) => {
+        if (!baseGuardadas.caballero.has(key.toUpperCase())) cabObj[key] = val;
+    });
+    
+    return { dama: damaObj, caballero: cabObj, sobremedida: tallasPrenda.sobremedida || procesoTallas.sobremedida };
+}
+
+/**
+ * Carga tallas respetando orden de prioridad explícito
+ * Cada fuente es intentada en orden:
+ * 1. TABLA DE RESUMEN (fuente primaria - estado actual)
+ * 2. TALLAS RELACIONALES (tarjetas manuales)
+ * 3. STATE MANAGER (wizard)
+ * 4. PROCESO GUARDADO (BD - fuente secundaria)
+ * Si todas fallan, retorna estructura vacía con log claro
+ */
+function _cargarTallasDesdeFuentes(tipoProceso) {
+    // Intenta cada fuente en orden de prioridad
+    const { tallasPrenda: tallasTabla, hayTallas: hayEnTabla } = _cargarTallasDesdeTabla();
+    if (hayEnTabla) {
+        console.log('[por-tallas] ✓ Usando TABLA DE RESUMEN (fuente primaria)');
+        return _combinarTallasEvitandoDuplicados(tallasTabla, tipoProceso);
+    }
+    console.log('[por-tallas] ✗ Tabla no available, intentando siguiente fuente...');
+
+    const { tallasPrenda: tallasRel, hayTallas: hayEnRel } = _cargarTallasDesdeRelacionales();
+    if (hayEnRel) {
+        console.log('[por-tallas] ✓ Usando TALLAS RELACIONALES (fuente secundaria)');
+        return _combinarTallasEvitandoDuplicados(tallasRel, tipoProceso);
+    }
+    console.log('[por-tallas] ✗ Relacionales no available, intentando siguiente fuente...');
+
+    const { tallasPrenda: tallasSM, hayTallas: hayEnSM } = _cargarTallasDesdeStateManager();
+    if (hayEnSM) {
+        console.log('[por-tallas] ✓ Usando STATE MANAGER (fuente terciaria)');
+        return _combinarTallasEvitandoDuplicados(tallasSM, tipoProceso);
+    }
+    console.log('[por-tallas] ✗ StateManager no available, intentando última fuente...');
+
+    const tallasBD = _obtenerTallasDelProcesoGuardado();
+    if (tallasBD) {
+        console.log('[por-tallas] ✓ Usando PROCESO GUARDADO (fuente cuaternaria)');
+        return _combinarTallasEvitandoDuplicados(tallasBD, tipoProceso);
+    }
+
+    console.warn('[por-tallas] ⚠ NINGUNA FUENTE disponible - no hay tallas para cargar');
+    return _combinarTallasEvitandoDuplicados({ dama: {}, caballero: {}, sobremedida: null }, tipoProceso);
+}
+
+/**
+ * Restaura fotos generales desde datos existentes
+ */
+function _restaurarFotosGenerales(datosGenerales) {
+    fotosGeneralesExistentes = [];
+    fotosGeneralesTemp = [];
+    fotosGeneralesFilesTemp = [];
+    globalThis._fotosGeneralesKeys = new Set();
+    
+    const fotosACargar = datosGenerales?.fotosGenerales || datosGenerales?.imagenes || [];
+    fotosGeneralesExistentes = fotosACargar.filter(img => _esUrlValida(img));
+    
+    if (datosGenerales?.imagenesFiles?.length > 0) {
+        datosGenerales.imagenesFiles.forEach(file => {
+            if (file instanceof File) {
+                if (!file.uid) {
+                    file.uid = `uid-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+                }
+                const blobUrl = URL.createObjectURL(file);
+                fotosGeneralesTemp.push(blobUrl);
+                fotosGeneralesFilesTemp.push(file);
+                globalThis._fotosGeneralesKeys.add(`${file.name}_${file.size}_${file.type}`);
+            }
+        });
+    }
+    
+    console.log('[por-tallas]  Fotos generales cargadas:', {
+        existentes: fotosGeneralesExistentes.length,
+        nuevas: fotosGeneralesTemp.length
+    });
+}
+
+/**
+ * Valida si una URL es válida para almacenamiento
+ */
+function _esUrlValida(img) {
+    if (typeof img === 'string') return !img.startsWith('blob:') && !img.startsWith('data:');
+    if (img && typeof img === 'object') {
+        const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+        return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+    }
+    return false;
+}
+
+/**
+ * Restaura ubicación general desde datos
+ */
+function _restaurarUbicacionGeneral(datosGenerales) {
+    let ubicacion = '';
+    if (datosGenerales?.ubicacionGeneral) {
+        ubicacion = datosGenerales.ubicacionGeneral;
+    } else if (Array.isArray(datosGenerales?.ubicaciones)) {
+        ubicacion = datosGenerales.ubicaciones.filter(u => u && typeof u === 'string').join(', ');
+    } else if (typeof datosGenerales?.ubicaciones === 'string') {
+        ubicacion = datosGenerales.ubicaciones;
+    }
+    
+    ubicacionGeneralTemp = ubicacion;
+    const input = document.getElementById('ubicacion-general-input');
+    if (input) input.value = ubicacion;
+    
+    return ubicacion;
+}
+
+/**
+ * Busca datos existentes por talla de forma explícita
+ * Intenta dos estrategias en orden:
+ * 1. Búsqueda exacta: tallaKey (ej: "M")
+ * 2. Búsqueda con variante de color: tallaKey__COLOR (ej: "M__AZUL")
+ * Retorna: { datos, estrategiaUsada: 'exacta'|'variante'|null }
+ */
+function _buscarDatosExistentesPorTalla(genero, tallaKey, datosExistentes) {
+    if (!datosExistentes?.[genero]) {
+        console.log(`[_buscarDatos] Género "${genero}" no encontrado en datosExistentes`);
+        return { datos: null, estrategiaUsada: null };
+    }
+    
+    // Estrategia 1: Búsqueda exacta
+    if (datosExistentes[genero][tallaKey]) {
+        console.log(`[_buscarDatos] ✓ Datos encontrados (búsqueda exacta): "${tallaKey}"`);
+        return { datos: datosExistentes[genero][tallaKey], estrategiaUsada: 'exacta' };
+    }
+    
+    // Estrategia 2: Búsqueda con variante de color
+    const claveConColor = Object.keys(datosExistentes[genero]).find(clave => 
+        clave.startsWith(tallaKey + '__')
+    );
+    
+    if (claveConColor) {
+        console.log(`[_buscarDatos] ✓ Datos encontrados (búsqueda con variante): "${tallaKey}" → "${claveConColor}"`);
+        return { datos: datosExistentes[genero][claveConColor], estrategiaUsada: 'variante' };
+    }
+    
+    console.log(`[_buscarDatos] ✗ No se encontraron datos para talla: "${tallaKey}"`);
+    return { datos: null, estrategiaUsada: null };
+}
+
+/**
+ * Inicializa datos de una talla en datosPorTallaTemp
+ */
+function _inicializarDatosTalla(key, cantidad, datosExistentes, genero, tallaKey) {
+    const resultado = _buscarDatosExistentesPorTalla(genero, tallaKey, datosExistentes);
+    const existente = resultado.datos;
+    const imagenesExistentes = _filtrarImagenesValidas(existente?.imagenes || existente?.imagen);
+    
+    datosPorTallaTemp[key] = {
+        seleccionada: true,
+        cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
+        ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
+        observaciones: existente?.observaciones || '',
+        imagenes: imagenesExistentes,
+        imagenesFiles: []
+    };
+    
+    if (existente?.imagenesFiles?.length > 0) {
+        existente.imagenesFiles.forEach(file => {
+            if (file instanceof File) {
+                const blobUrl = URL.createObjectURL(file);
+                datosPorTallaTemp[key].imagenes.push(blobUrl);
+                datosPorTallaTemp[key].imagenesFiles.push(file);
+            }
+        });
+    }
+}
+
+/**
+ * Filtra imágenes válidas de storage
+ */
+function _filtrarImagenesValidas(imagenes) {
+    if (!imagenes) return [];
+    const arr = Array.isArray(imagenes) ? imagenes : [imagenes];
+    return arr.filter(img => _esUrlValida(img));
+}
+
+/**
+ * Renderiza tarjetas para un género
+ */
+function _renderizarTallasPorGenero(genero, tallas, datosExistentes, contenedor, seccion, contenedorGeneral, seccionGeneral) {
+    if (tallas.length === 0) {
+        if (seccion) seccion.style.display = 'none';
+        if (seccionGeneral) seccionGeneral.style.display = 'none';
+        return;
+    }
+    
+    if (seccion) seccion.style.display = 'block';
+    if (contenedor) {
+        tallas.forEach(([tallaKey, cantidad]) => {
+            const key = `${genero}__${tallaKey}`;
+            _inicializarDatosTalla(key, cantidad, datosExistentes, genero, tallaKey);
+            contenedor.appendChild(crearTarjetaTalla(genero, tallaKey, cantidad, datosPorTallaTemp[key]));
+        });
+    }
+    
+    if (contenedorGeneral && seccionGeneral) {
+        seccionGeneral.style.display = 'block';
+        tallas.forEach(([tallaKey, cantidad]) => {
+            const key = `${genero}__${tallaKey}`;
+            const datos = datosPorTallaTemp[key] || { cantidadSeleccionada: cantidad, observaciones: '' };
+            contenedorGeneral.appendChild(crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos));
+        });
+    }
+}
+
+/**
+ * Limpia todos los contenedores DOM
+ */
+function _limpiarContenedores() {
+    const elementosALimpiar = [
+        'tallas-dama-por-tallas',
+        'tallas-caballero-por-tallas',
+        'tallas-dama-modo-general',
+        'tallas-caballero-modo-general',
+        'prt-galeria-general'
+    ];
+    
+    elementosALimpiar.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+        if (id === 'prt-galeria-general' && el) el._dragDropConfigured = false;
+    });
+}
+
+/**
+ * Determina el modo final (especifico o general)
+ */
+function _determinarModoFinal(tipoProceso) {
+    const dbData = globalThis.procesosGuardados?.[tipoProceso]?.datos || {};
+    const modoDb = dbData.modo_tallas?.toLowerCase();
+    const datosExt = dbData.datosExtendidos || {};
+    
+    const hayEspecificos = (datosExt.dama && Object.keys(datosExt.dama).length > 0) ||
+                           (datosExt.caballero && Object.keys(datosExt.caballero).length > 0) ||
+                           (datosExt.sobremedida && Object.keys(datosExt.sobremedida).length > 0);
+    
+    return (modoDb === 'especifico' && hayEspecificos) ? 'especifico' : 'general';
+}
+
 /**
  * Abre el modal de proceso por tallas
  */
 globalThis.abrirModalProcesoPorTallas = function(tipoProceso) {
     procesoPorTallasActual = tipoProceso;
     datosPorTallaTemp = {};
-    modoModalPorTallasActual = 'general'; // predeterminado cada vez que se abre modal
-    
-    // Limpiar ubicación general y campo input
+    modoModalPorTallasActual = 'general';
     ubicacionGeneralTemp = '';
-    const inputUbicacionGeneral = document.getElementById('ubicacion-general-input');
-    if (inputUbicacionGeneral) inputUbicacionGeneral.value = '';
+    
+    const inputUbicacion = document.getElementById('ubicacion-general-input');
+    if (inputUbicacion) inputUbicacion.value = '';
 
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal) {
@@ -353,272 +795,20 @@ globalThis.abrirModalProcesoPorTallas = function(tipoProceso) {
         return;
     }
 
-    // Actualizar header
     const iconEl = document.getElementById('modal-por-tallas-icon');
     const tituloEl = document.getElementById('modal-por-tallas-titulo');
     if (iconEl) iconEl.textContent = iconosPorTallas[tipoProceso] || 'edit_note';
     if (tituloEl) tituloEl.textContent = `${nombresPorTallas[tipoProceso] || tipoProceso} — Por Tallas`;
 
-    // 🔥 FIX: Obtener tallas desde MÚLTIPLES FUENTES en orden de prioridad
-    // 1. PRIMERO: Desde tabla de resumen visible (CONTIENE ESTADO ACTUAL: nuevas + guardadas)
-    // 2. SEGUNDO: Desde globalThis.tallasRelacionales (tallas MANUALMENTE ingresadas en tarjetas)
-    // 3. TERCERO: Desde StateManager (tallas del WIZARD con colores)
-    // 4. CUARTO: Desde obtenerTallasDeLaPrenda (fallback para datos guardados en BD)
-    
-    let tallasPrenda = { dama: {}, caballero: {}, sobremedida: null };
-    let leyóDesdeTabla = false;
-    
-    // ═ FUENTE 1: Tabla de resumen visible (PRIORITARIA - estado actual completo) ═
-    // En modo EDICIÓN, la tabla de resumen SIEMPRE es la más confiable porque muestra
-    // TODAS las tallas del pedido (tanto las de DB como las nuevas agregadas)
-    const tablaResumenBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
-    
-    if (tablaResumenBody && tablaResumenBody.querySelectorAll('tr').length > 0) {
-        console.log('[por-tallas]  FUENTE 1 - Leyendo desde tabla de resumen (PRIORITARIO)');
-        console.log('[por-tallas] Filas encontradas en tabla:', tablaResumenBody.querySelectorAll('tr').length);
-        
-        const filasDebug = [];
-        tablaResumenBody.querySelectorAll('tr[data-tipo="wizard"]').forEach((fila, idx) => {
-            const dataGenero = fila.querySelector('[data-field="genero"]')?.textContent?.trim().toLowerCase();
-            const dataTalla = fila.querySelector('[data-field="talla"]')?.textContent?.trim().toUpperCase();
-            const dataCantidadTotal = parseInt(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
-            
-            // EXTRAER COLORES Y CANTIDADES de la celda [data-field="color"]
-            // Estructura: <span>AQUA (1)</span><span>AMATISTA (1)</span> etc.
-            const colorCell = fila.querySelector('[data-field="color"]');
-            const coloresConCantidad = []; // Array de {color: 'AQUA', cantidad: 1}
-            if (colorCell) {
-                const badgesColores = colorCell.querySelectorAll('span');
-                badgesColores.forEach(badge => {
-                    const colorText = badge.textContent?.trim();
-                    if (colorText && colorText !== 'Sin color') {
-                        // Extraer color y cantidad: "AQUA (1)" → color: "AQUA", cantidad: 1
-                        const match = colorText.match(/^(.+?)\s*\(\s*(\d+)\s*\)$/);
-                        if (match) {
-                            const colorLimpio = match[1].trim();
-                            const cantidadColor = parseInt(match[2]) || 1;
-                            coloresConCantidad.push({ color: colorLimpio, cantidad: cantidadColor });
-                        } else {
-                            // Si no tiene formato (X), asumir cantidad 1
-                            coloresConCantidad.push({ color: colorText, cantidad: 1 });
-                        }
-                    }
-                });
-            }
-            
-            filasDebug.push({
-                idx,
-                genero: dataGenero,
-                talla: dataTalla,
-                cantidad: dataCantidadTotal,
-                colores: coloresConCantidad.map(c => c.color),
-                valido: dataTalla && dataCantidadTotal > 0
-            });
-            
-            if (dataTalla && dataCantidadTotal > 0) {
-                const tallasKey = dataGenero === 'caballero' ? 'caballero' : (dataGenero === 'sobremedida' || dataGenero === 'unisex' ? 'sobremedida' : 'dama');
-                
-                // 🔑 CREAR TARJETA PARA CADA COLOR (si hay) O UNA SOLA TARJETA (si no hay)
-                if (coloresConCantidad.length > 0) {
-                    // Para cada color, crear una clave TALLA__COLOR con su cantidad específica
-                    coloresConCantidad.forEach(({color, cantidad}) => {
-                        const claveParaAgregar = `${dataTalla}__${color}`;
-                        
-                        if (tallasKey === 'sobremedida') {
-                            if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
-                            tallasPrenda.sobremedida[claveParaAgregar] = (tallasPrenda.sobremedida[claveParaAgregar] || 0) + cantidad;
-                        } else {
-                            tallasPrenda[tallasKey][claveParaAgregar] = (tallasPrenda[tallasKey][claveParaAgregar] || 0) + cantidad;
-                        }
-                        console.log(`[por-tallas]  Fila ${idx}: ${tallasKey.toUpperCase()} - ${claveParaAgregar} - ${cantidad} unidades`);
-                    });
-                } else {
-                    // Sin colores: crear una sola tarjeta con solo TALLA
-                    if (tallasKey === 'sobremedida') {
-                        if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
-                        tallasPrenda.sobremedida[dataTalla] = (tallasPrenda.sobremedida[dataTalla] || 0) + dataCantidadTotal;
-                    } else {
-                        tallasPrenda[tallasKey][dataTalla] = (tallasPrenda[tallasKey][dataTalla] || 0) + dataCantidadTotal;
-                    }
-                    console.log(`[por-tallas]  Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidadTotal} unidades (sin color)`);
-                }
-            }
-        });
-        
-        console.log('[por-tallas]Resumen de filas leídas:', filasDebug);
-        
-        // Si encontró tallas en la tabla, marcar como exitoso
-        if (Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0 || tallasPrenda.sobremedida) {
-            leyóDesdeTabla = true;
-            console.log('[por-tallas]  FUENTE 1 exitosa - Tallas desde tabla de resumen:', tallasPrenda);
-        }
-    }
-
-    // ═ FUENTE 2: globalThis.tallasRelacionales (si tabla no tuvo datos) ═
-    if (!leyóDesdeTabla) {
-        const tallasRelacionales = globalThis.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
-        const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
-            generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
-        );
-        
-        if (hayTallasRelacionales) {
-            console.log('[por-tallas]FUENTE 2 - Leyendo desde globalThis.tallasRelacionales:', tallasRelacionales);
-            
-            // Copiar DAMA
-            if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
-                tallasPrenda.dama = { ...tallasRelacionales.DAMA };
-            }
-            // Copiar CABALLERO
-            if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
-                tallasPrenda.caballero = { ...tallasRelacionales.CABALLERO };
-            }
-            // Copiar SOBREMEDIDA y UNISEX
-            if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
-                tallasPrenda.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
-            }
-            if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
-                tallasPrenda.sobremedida = { ...(tallasPrenda.sobremedida || {}), ...tallasRelacionales.UNISEX };
-            }
-            
-            console.log('[por-tallas]  Tallas desde tallasRelacionales:', tallasPrenda);
-        }
-    }
-    
-    // ═ FUENTE 3: StateManager (si aún no hay datos) ═
-    if (!leyóDesdeTabla && (Object.keys(tallasPrenda.dama).length === 0 && Object.keys(tallasPrenda.caballero).length === 0) && !tallasPrenda.sobremedida) {
-        if (globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function') {
-            const asignaciones = globalThis.StateManager.getAsignaciones();
-            if (asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0) {
-                console.log('[por-tallas]FUENTE 3 - Leyendo tallas desde StateManager (asignaciones wizard):', asignaciones);
-                
-                Object.entries(asignaciones).forEach(([clave, asignacion]) => {
-                    const genero = asignacion.genero ? asignacion.genero.toLowerCase() : 'dama';
-                    const tallasKey = genero === 'caballero' ? 'caballero' : (genero === 'sobremedida' || genero === 'unisex' ? 'sobremedida' : 'dama');
-                    
-                    if (asignacion.talla) {
-                        const talla = asignacion.talla;
-                        const colores = asignacion.colores || [];
-                        const totalCant = colores.reduce((sum, c) => sum + (c.cantidad || 1), 0);
-                        if (totalCant > 0) {
-                            if (tallasKey === 'sobremedida') {
-                                if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
-                                tallasPrenda.sobremedida[talla] = (tallasPrenda.sobremedida[talla] || 0) + totalCant;
-                            } else {
-                                tallasPrenda[tallasKey][talla] = (tallasPrenda[tallasKey][talla] || 0) + totalCant;
-                            }
-                        }
-                    }
-                });
-                
-                console.log('[por-tallas]  Tallas desde StateManager:', tallasPrenda);
-            }
-        }
-    }
-
-    // ═ FUENTE 4: Fallback a obtenerTallasDeLaPrenda (datos guardados en BD) ═
-    if (!leyóDesdeTabla && (Object.keys(tallasPrenda.dama).length === 0 && Object.keys(tallasPrenda.caballero).length === 0) && !tallasPrenda.sobremedida) {
-        const tallasFallback = (typeof obtenerTallasDeLaPrenda === 'function')
-            ? obtenerTallasDeLaPrenda()
-            : { dama: {}, caballero: {}, sobremedida: null };
-        
-        if (Object.keys(tallasFallback.dama).length > 0 || Object.keys(tallasFallback.caballero).length > 0 || tallasFallback.sobremedida) {
-            tallasPrenda.dama = { ...tallasFallback.dama };
-            tallasPrenda.caballero = { ...tallasFallback.caballero };
-            tallasPrenda.sobremedida = tallasFallback.sobremedida;
-            console.log('[por-tallas]  Tallas desde obtenerTallasDeLaPrenda (fallback):', tallasPrenda);
-        }
-    }
-
-    // Si el proceso ya tiene tallas propias guardadas, COMBINARLAS con las nuevas tallas agregadas
-    // PERO evitando duplicados: si una talla ya existe con cualquier nombre (ej: M__AZUL_ACERO vs M),
-    // no se agrega duplicada
-    const procesoTallasGuardadas = globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
-    if (procesoTallasGuardadas && typeof procesoTallasGuardadas === 'object') {
-        const damaObj = (procesoTallasGuardadas.dama && !Array.isArray(procesoTallasGuardadas.dama)) ? procesoTallasGuardadas.dama : {};
-        const cabObj = (procesoTallasGuardadas.caballero && !Array.isArray(procesoTallasGuardadas.caballero)) ? procesoTallasGuardadas.caballero : {};
-        const sobreObj = (procesoTallasGuardadas.sobremedida && !Array.isArray(procesoTallasGuardadas.sobremedida)) ? procesoTallasGuardadas.sobremedida : null;
-        if (Object.keys(damaObj).length > 0 || Object.keys(cabObj).length > 0) {
-            console.log('[por-tallas]  Combinando tallas guardadas en BD + nuevas tallas agregadas después (evitando duplicados)');
-            
-            // Extraer TALLAS BASE de las guardadas (primera parte antes de __)
-            // Ej: M__AZUL_ACERO -> M, XXXXL__AZUL_CELESTE -> XXXXL, M -> M
-            const extraerTallaBase = (clave) => {
-                const partes = clave.split('__');
-                return partes[0].toUpperCase(); // PRIMERA parte es la talla
-            };
-            
-            const tallasBaseGuardadas = {
-                dama: new Set(Object.keys(damaObj).map(extraerTallaBase)),
-                caballero: new Set(Object.keys(cabObj).map(extraerTallaBase))
-            };
-            
-            console.log('[por-tallas]  Tallas base guardadas (DAMA):', Array.from(tallasBaseGuardadas.dama));
-            console.log('[por-tallas]  Tallas base guardadas (CABALLERO):', Array.from(tallasBaseGuardadas.caballero));
-            
-            // Agregar tallas nuevas SOLO si su nombre base no existe en guardadas
-            Object.entries(tallasPrenda.dama || {}).forEach(([key, val]) => {
-                const tallaBase = key.toUpperCase();
-                if (!tallasBaseGuardadas.dama.has(tallaBase)) {
-                    console.log(`[por-tallas]  Agregando talla DAMA nueva: ${key}`);
-                    damaObj[key] = val;
-                } else {
-                    console.log(`[por-tallas] ⊘ Talla DAMA duplicada ignorada: ${key}`);
-                }
-            });
-            
-            Object.entries(tallasPrenda.caballero || {}).forEach(([key, val]) => {
-                const tallaBase = key.toUpperCase();
-                if (!tallasBaseGuardadas.caballero.has(tallaBase)) {
-                    console.log(`[por-tallas]  Agregando talla CABALLERO nueva: ${key}`);
-                    cabObj[key] = val;
-                } else {
-                    console.log(`[por-tallas] ⊘ Talla CABALLERO duplicada ignorada: ${key}`);
-                }
-            });
-            
-            // Mantener sobremedida
-            if (sobreObj && Object.keys(sobreObj).length > 0) {
-                tallasPrenda.sobremedida = sobreObj;
-            }
-            
-            tallasPrenda.dama = damaObj;
-            tallasPrenda.caballero = cabObj;
-            console.log('[por-tallas]  Tallas combinadas sin duplicados:', tallasPrenda);
-        }
-    }
-
+    const tallasPrenda = _cargarTallasDesdeFuentes(tipoProceso);
     const tallasDama = Object.entries(tallasPrenda.dama || {});
     const tallasCaballero = Object.entries(tallasPrenda.caballero || {});
 
-    const secDama = document.getElementById('seccion-dama-por-tallas');
-    const secCab = document.getElementById('seccion-caballero-por-tallas');
     const sinTallas = document.getElementById('sin-tallas-por-tallas');
-    const contDama = document.getElementById('tallas-dama-por-tallas');
-    const contCab = document.getElementById('tallas-caballero-por-tallas');
-
-    // Limpiar contenedores
-    if (contDama) contDama.innerHTML = '';
-    if (contCab) contCab.innerHTML = '';
-    
-    // Limpiar contenedores del modo general
-    const contDamaGeneral = document.getElementById('tallas-dama-modo-general');
-    const secDamaGeneral = document.getElementById('seccion-dama-modo-general');
-    const contCabGeneral = document.getElementById('tallas-caballero-modo-general');
-    const secCabGeneral = document.getElementById('seccion-caballero-modo-general');
-    
-    if (contDamaGeneral) contDamaGeneral.innerHTML = '';
-    if (contCabGeneral) contCabGeneral.innerHTML = '';
-    
-    // Limpiar galería de fotos generales
-    const galeriaGeneral = document.getElementById('prt-galeria-general');
-    if (galeriaGeneral) galeriaGeneral.innerHTML = '';
-    
-    // Marcar como no configurado para reconfigurar
-    if (galeriaGeneral) galeriaGeneral._dragDropConfigured = false;
-
     if (tallasDama.length === 0 && tallasCaballero.length === 0) {
-        if (secDama) secDama.style.display = 'none';
-        if (secCab) secCab.style.display = 'none';
+        _limpiarContenedores();
+        document.getElementById('seccion-dama-por-tallas').style.display = 'none';
+        document.getElementById('seccion-caballero-por-tallas').style.display = 'none';
         if (sinTallas) sinTallas.style.display = 'block';
         modal.style.display = 'flex';
         return;
@@ -626,312 +816,27 @@ globalThis.abrirModalProcesoPorTallas = function(tipoProceso) {
 
     if (sinTallas) sinTallas.style.display = 'none';
 
-    // Restaurar datos si el proceso ya tiene datos guardados
     const datosExistentes = globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.datosExtendidos;
-    
-    console.log('[por-tallas]  DEBUGGING abrirModalProcesoPorTallas', {
-        tipoProceso,
-        procesoCompleto: globalThis.procesosSeleccionados?.[tipoProceso],
-        datosCompletos: globalThis.procesosSeleccionados?.[tipoProceso]?.datos,
-        datosExistentes,
-        tieneDatatos: !!datosExistentes,
-        estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO',
-        modo_tallas_directo: globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.modo_tallas,
-        todosLosCampos: globalThis.procesosSeleccionados?.[tipoProceso]?.datos ? Object.keys(globalThis.procesosSeleccionados?.[tipoProceso]?.datos).slice(0, 20) : 'SIN DATOS'
-    });
-
-    // ─── Recuperar datos generales si existen ───
     const datosGenerales = globalThis.procesosSeleccionados?.[tipoProceso]?.datos;
-    
-    // Mapear ubicación general (puede venir como ubicacionGeneral o ubicaciones array)
-    let ubicacionDisplay = '';
-    if (datosGenerales?.ubicacionGeneral) {
-        ubicacionDisplay = datosGenerales.ubicacionGeneral;
-    } else if (datosGenerales?.ubicaciones && Array.isArray(datosGenerales.ubicaciones)) {
-        ubicacionDisplay = datosGenerales.ubicaciones.filter(u => u && typeof u === 'string').join(', ');
-    } else if (datosGenerales?.ubicaciones && typeof datosGenerales.ubicaciones === 'string') {
-        ubicacionDisplay = datosGenerales.ubicaciones;
-    }
-    
-    if (ubicacionDisplay) {
-        ubicacionGeneralTemp = ubicacionDisplay;
-        const inputUbicacion = document.getElementById('ubicacion-general-input');
-        if (inputUbicacion) inputUbicacion.value = ubicacionGeneralTemp;
-    }
-    
-    // Mapear fotos generales (puede venir como fotosGenerales o imagenes array)
-    // IMPORTANTE: Cargar en fotosGeneralesExistentes (no modificar) e inicializar fotosGeneralesTemp vacío
-    fotosGeneralesExistentes = [];
-    fotosGeneralesTemp = [];
-    fotosGeneralesFilesTemp = [];
-    globalThis._fotosGeneralesKeys = new Set(); // Resetear Set de claves para detectar duplicados
-    
-    if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
-        // Filtrar URLs blob (temporales e inválidas) - solo mantener URLs del storage
-        fotosGeneralesExistentes = datosGenerales.fotosGenerales.filter(img => {
-            if (typeof img === 'string') {
-                // Rechazar blobs y data URLs - solo aceptar rutas del storage
-                return !img.startsWith('blob:') && !img.startsWith('data:');
-            }
-            if (typeof img === 'object' && img) {
-                // Para objetos, verificar que tengan una URL válida
-                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
-                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
-            }
-            return false;
-        });
-    } else if (datosGenerales?.imagenes && Array.isArray(datosGenerales.imagenes)) {
-        // Filtrar URLs blob (temporales e inválidas) - solo mantener URLs del storage
-        fotosGeneralesExistentes = datosGenerales.imagenes.filter(img => {
-            if (typeof img === 'string') {
-                // Rechazar blobs y data URLs - solo aceptar rutas del storage
-                return !img.startsWith('blob:') && !img.startsWith('data:');
-            }
-            if (typeof img === 'object' && img) {
-                // Para objetos, verificar que tengan una URL válida
-                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
-                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
-            }
-            return false;
-        });
-    }
-    
-    //  RESTAURAR FILES TEMPORALES: Si hay imagenesFiles (archivos que aún no se subieron al servidor),
-    // recrear los blobs para visualización
-    if (datosGenerales?.imagenesFiles && Array.isArray(datosGenerales.imagenesFiles) && datosGenerales.imagenesFiles.length > 0) {
-        console.log('[por-tallas]  Restaurando Files temporales:', datosGenerales.imagenesFiles.length);
-        
-        datosGenerales.imagenesFiles.forEach(file => {
-            if (file instanceof File) {
-                // NUEVO: Asignar UID único a cada File para mapeo backend
-                if (!file.uid) {
-                    file.uid = `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                    console.log('[por-tallas] 🆔 UID asignado al File restaurado:', file.uid, file.name);
-                }
-                
-                // Recrear blob URL para visualización
-                const blobUrl = URL.createObjectURL(file);
-                fotosGeneralesTemp.push(blobUrl);
-                fotosGeneralesFilesTemp.push(file);
-                
-                // Registrar clave para evitar duplicados
-                const fileKey = `${file.name}_${file.size}_${file.type}`;
-                globalThis._fotosGeneralesKeys.add(fileKey);
-            }
-        });
-        
-        console.log('[por-tallas]  Files restaurados:', {
-            filesTemp: fotosGeneralesFilesTemp.length,
-            blobsTemp: fotosGeneralesTemp.length
-        });
-    }
-    
-    console.log('[por-tallas]  Datos generales cargados:', {
-        ubicacionDisplay: ubicacionDisplay,
-        fotosExistentes: fotosGeneralesExistentes.length,
-        fotosNuevas: fotosGeneralesTemp.length,
-        filesTemp: fotosGeneralesFilesTemp.length,
-        datosGenerales_ubicacionGeneral: datosGenerales?.ubicacionGeneral,
-        datosGenerales_ubicaciones: datosGenerales?.ubicaciones,
-        datosGenerales_fotosGenerales: datosGenerales?.fotosGenerales,
-        datosGenerales_imagenes: datosGenerales?.imagenes,
-        datosGenerales_imagenesFiles: datosGenerales?.imagenesFiles?.length
-    });
-    
-    // Redibujar galería de fotos generales (con o sin fotos existentes)
+
+    _limpiarContenedores();
+    _restaurarUbicacionGeneral(datosGenerales);
+    _restaurarFotosGenerales(datosGenerales);
     renderizarGaleriaFotosGenerales();
 
-    // ─── FUNCTION HELPER: Buscar datos existentes de forma inteligente ───
-    // Si tallaKey es "M" pero en BD está como "M__AZUL_ACERO", encontrar esa clave
-    const buscarDatosExistentesPorTalla = (genero, tallaKey) => {
-        if (!datosExistentes || !datosExistentes[genero]) return null;
-        
-        // Primero intentar búsqueda exacta
-        if (datosExistentes[genero][tallaKey]) {
-            return datosExistentes[genero][tallaKey];
-        }
-        
-        // Si no encuentra exacta, buscar cualquier clave que comience con tallaKey__
-        // Ej: si busco "M", encontrar "M__AZUL_ACERO"
-        const claveConColor = Object.keys(datosExistentes[genero]).find(clave => 
-            clave.startsWith(tallaKey + '__')
-        );
-        
-        if (claveConColor) {
-            return datosExistentes[genero][claveConColor];
-        }
-        
-        return null;
-    };
+    const secDama = document.getElementById('seccion-dama-por-tallas');
+    const secCab = document.getElementById('seccion-caballero-por-tallas');
+    const contDama = document.getElementById('tallas-dama-por-tallas');
+    const contCab = document.getElementById('tallas-caballero-por-tallas');
+    const contDamaGeneral = document.getElementById('tallas-dama-modo-general');
+    const secDamaGeneral = document.getElementById('seccion-dama-modo-general');
+    const contCabGeneral = document.getElementById('tallas-caballero-modo-general');
+    const secCabGeneral = document.getElementById('seccion-caballero-modo-general');
 
-    // Renderizar DAMA
-    if (tallasDama.length > 0 && contDama) {
-        secDama.style.display = 'block';
-        tallasDama.forEach(([tallaKey, cantidad]) => {
-            const key = `dama__${tallaKey}`;
-            const existente = buscarDatosExistentesPorTalla('dama', tallaKey);
-            
-            // Filtrar imágenes: solo mantener URLs válidas del storage (no blobs ni data URLs)
-            let imagenesExistentes = [];
-            if (existente?.imagenes && Array.isArray(existente.imagenes)) {
-                imagenesExistentes = existente.imagenes.filter(img => {
-                    if (typeof img === 'string') {
-                        return !img.startsWith('blob:') && !img.startsWith('data:');
-                    }
-                    if (typeof img === 'object' && img) {
-                        const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
-                        return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
-                    }
-                    return false;
-                });
-            } else if (existente?.imagen) {
-                // Imagen única (formato antiguo)
-                const img = existente.imagen;
-                if (typeof img === 'string' && !img.startsWith('blob:') && !img.startsWith('data:')) {
-                    imagenesExistentes = [img];
-                }
-            }
-            
-            datosPorTallaTemp[key] = {
-                seleccionada: true,
-                cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
-                ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
-                observaciones: existente?.observaciones || '',
-                imagenes: imagenesExistentes,
-                imagenesFiles: []
-            };
-            
-            //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
-            if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
-                console.log(`[por-tallas]  Restaurando Files para ${key}:`, existente.imagenesFiles.length);
-                existente.imagenesFiles.forEach(file => {
-                    if (file instanceof File) {
-                        const blobUrl = URL.createObjectURL(file);
-                        datosPorTallaTemp[key].imagenes.push(blobUrl);
-                        datosPorTallaTemp[key].imagenesFiles.push(file);
-                    }
-                });
-            }
-            
-            contDama.appendChild(crearTarjetaTalla('dama', tallaKey, cantidad, datosPorTallaTemp[key]));
-        });
-        
-        // También renderizar para modo general
-        if (contDamaGeneral && secDamaGeneral) {
-            secDamaGeneral.style.display = 'block';
-            tallasDama.forEach(([tallaKey, cantidad]) => {
-                const key = `dama__${tallaKey}`;
-                const datosCard = datosPorTallaTemp[key] || { cantidadSeleccionada: cantidad, observaciones: '' };
-                contDamaGeneral.appendChild(crearTarjetaTallaGeneral('dama', tallaKey, cantidad, datosCard));
-            });
-        }
-    } else {
-        if (secDama) secDama.style.display = 'none';
-        if (document.getElementById('seccion-dama-modo-general')) {
-            document.getElementById('seccion-dama-modo-general').style.display = 'none';
-        }
-    }
+    _renderizarTallasPorGenero('dama', tallasDama, datosExistentes, contDama, secDama, contDamaGeneral, secDamaGeneral);
+    _renderizarTallasPorGenero('caballero', tallasCaballero, datosExistentes, contCab, secCab, contCabGeneral, secCabGeneral);
 
-    // Renderizar CABALLERO
-    if (tallasCaballero.length > 0 && contCab) {
-        secCab.style.display = 'block';
-        tallasCaballero.forEach(([tallaKey, cantidad]) => {
-            const key = `caballero__${tallaKey}`;
-            const existente = buscarDatosExistentesPorTalla('caballero', tallaKey);
-            
-            // Filtrar imágenes: solo mantener URLs válidas del storage (no blobs ni data URLs)
-            let imagenesExistentes = [];
-            if (existente?.imagenes && Array.isArray(existente.imagenes)) {
-                imagenesExistentes = existente.imagenes.filter(img => {
-                    if (typeof img === 'string') {
-                        return !img.startsWith('blob:') && !img.startsWith('data:');
-                    }
-                    if (typeof img === 'object' && img) {
-                        const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
-                        return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
-                    }
-                    return false;
-                });
-            } else if (existente?.imagen) {
-                const img = existente.imagen;
-                if (typeof img === 'string' && !img.startsWith('blob:') && !img.startsWith('data:')) {
-                    imagenesExistentes = [img];
-                }
-            }
-            
-            datosPorTallaTemp[key] = {
-                seleccionada: true,
-                cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
-                ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
-                observaciones: existente?.observaciones || '',
-                imagenes: imagenesExistentes,
-                imagenesFiles: []
-            };
-            
-            //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
-            if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
-                console.log(`[por-tallas]  Restaurando Files para ${key}:`, existente.imagenesFiles.length);
-                existente.imagenesFiles.forEach(file => {
-                    if (file instanceof File) {
-                        const blobUrl = URL.createObjectURL(file);
-                        datosPorTallaTemp[key].imagenes.push(blobUrl);
-                        datosPorTallaTemp[key].imagenesFiles.push(file);
-                    }
-                });
-            }
-            
-            contCab.appendChild(crearTarjetaTalla('caballero', tallaKey, cantidad, datosPorTallaTemp[key]));
-        });
-        
-        // También renderizar para modo general
-        if (contCabGeneral && secCabGeneral) {
-            secCabGeneral.style.display = 'block';
-            tallasCaballero.forEach(([tallaKey, cantidad]) => {
-                const key = `caballero__${tallaKey}`;
-                const datosCard = datosPorTallaTemp[key] || { cantidadSeleccionada: cantidad, observaciones: '' };
-                contCabGeneral.appendChild(crearTarjetaTallaGeneral('caballero', tallaKey, cantidad, datosCard));
-            });
-        }
-    } else {
-        if (secCab) secCab.style.display = 'none';
-        if (document.getElementById('seccion-caballero-modo-general')) {
-            document.getElementById('seccion-caballero-modo-general').style.display = 'none';
-        }
-    }
-
-    // ─── Restaurar modo actual (fuente única canónica: datos guardados en DB) ───
-    const datosGuardadosDB = globalThis.procesosGuardados?.[tipoProceso]?.datos || {};
-    const modoGuardadoDB = datosGuardadosDB.modo_tallas ? String(datosGuardadosDB.modo_tallas).toLowerCase() : null;
-    const datosExtendidosDB = datosGuardadosDB.datosExtendidos || {};
-    const hayDatosEspecificosDB = datosExtendidosDB && typeof datosExtendidosDB === 'object' && (
-        (datosExtendidosDB.dama && Object.keys(datosExtendidosDB.dama).length > 0) ||
-        (datosExtendidosDB.caballero && Object.keys(datosExtendidosDB.caballero).length > 0) ||
-        (datosExtendidosDB.sobremedida && Object.keys(datosExtendidosDB.sobremedida).length > 0)
-    );
-
-    // Si DB no tiene modo 'especifico' con datos, se muestra GENERAL por defecto (presentación no-forzada).
-    const modoGuardado = (modoGuardadoDB === 'especifico' && hayDatosEspecificosDB)
-        ? 'especifico'
-        : 'general';
-
-    console.log('[por-tallas]Modo guardado detectado:', {
-        tipoProceso: tipoProceso,
-        modo: modoGuardado,
-        modoGuardadoDB,
-        hayDatosEspecificosDB: hayDatosEspecificosDB ? 'SÍ' : 'NO',
-        datosGenerales_modo_tallas: datosGenerales?.modo_tallas,
-        datosGenerales_tipo: datosGenerales?.tipo,
-        datosGenerales_id: datosGenerales?.id,
-        datosGenerales_exists: !!datosGenerales,
-        datosExistentes_exists: !!datosExistentes,
-        datosEspecificos_count: (datosExistentes && Object.keys(datosExistentes).length > 0) ? 'SÍ' : 'NO',
-        procesosSeleccionados_keys: Object.keys(globalThis.procesosSeleccionados || {}),
-        datosGenerales_allKeys: datosGenerales ? Object.keys(datosGenerales).slice(0, 10) : 'N/A'
-    });
-
-    const modoFinal = modoGuardado;
-
-    // Cambiar al modo correcto (activa los botones correspondientes)
+    const modoFinal = _determinarModoFinal(tipoProceso);
     if (modoFinal === 'especifico') {
         cambiarModoModalPorTallas('especifico');
     } else {
@@ -957,7 +862,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     const dashedColor = esRosa ? '#f9a8d4' : '#93c5fd';
     // IMPORTANTE: Usar actualKey (con espacios) para data-key, y safeKey (con underscores) solo para IDs HTML
     const actualKey = `${genero}__${tallaKey}`;
-    const safeKey = actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeKey = actualKey.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
     const checkboxId = `checkbox-${safeKey}`;
     const inputCantidadId = `cantidad-${safeKey}`;
     
@@ -1082,7 +987,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
 
         if (inputCantidad) {
             inputCantidad.addEventListener('change', () => {
-                const nuevaCantidad = Math.max(0, parseInt(inputCantidad.value) || cantidad);
+                const nuevaCantidad = Math.max(0, Number(inputCantidad.value) || cantidad);
                 datosPorTallaTemp[actualKey].cantidadSeleccionada = nuevaCantidad;
                 inputCantidad.value = nuevaCantidad;
             });
@@ -1094,6 +999,20 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     }, 0);
 
     return card;
+}
+
+/**
+ * Handler de dragLeave reutilizable para galerías
+ */
+function _crearHandlerDragLeave() {
+    return (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const galeria = e.currentTarget;
+        galeria.style.outline = '';
+        galeria.style.outlineOffset = '';
+        galeria.style.background = '';
+    };
 }
 
 /**
@@ -1129,13 +1048,7 @@ function configurarDragDropPasteTalla(galeria, key) {
     };
     galeria.addEventListener('dragover', manejadorDragOver);
 
-    const manejadorDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        galeria.style.outline = '';
-        galeria.style.outlineOffset = '';
-        galeria.style.background = '';
-    };
+    const manejadorDragLeave = _crearHandlerDragLeave();
     galeria.addEventListener('dragleave', manejadorDragLeave);
 
     const manejadorDrop = (e) => {
@@ -1169,37 +1082,107 @@ function configurarDragDropPasteTalla(galeria, key) {
 /**
  * Handler global de paste (Ctrl+V) — activo mientras el modal por tallas esté abierto
  */
+// ────────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS - handlePasteGlobalPorTallas refactoring
+// ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Valida si el paste debe ser procesado
+ */
+function _validarPasteEventoValido(e) {
+    const modal = document.getElementById('modal-proceso-por-tallas');
+    if (!modal?.style.display || modal.style.display === 'none') return null;
+    
+    if (!modal.contains(e.target)) return null;
+    
+    const modalEditWizard = document.getElementById('modal-editar-asignacion-wizard');
+    if (modalEditWizard && modalEditWizard.style.display !== 'none' && modalEditWizard.classList.contains('show')) {
+        return null;
+    }
+    
+    return modal;
+}
+
+/**
+ * Valida si el focus actual permite paste
+ */
+function _validarFocusPermitePaste() {
+    const activeEl = document.activeElement;
+    const tag = activeEl?.tagName;
+    return !(tag === 'INPUT' || tag === 'TEXTAREA' || activeEl?.isContentEditable || activeEl?.getAttribute('contenteditable') === 'true');
+}
+
+/**
+ * Extrae archivos de imagen desde clipboard items
+ */
+function _extraerArchivosDelClipboard(items) {
+    const files = [];
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) files.push(file);
+        }
+    }
+    return files;
+}
+
+/**
+ * Aplica feedback visual a una galería
+ */
+function _aplicarFeedbackVisual(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.outline = '2px solid #22c55e';
+        element.style.outlineOffset = '2px';
+        setTimeout(() => {
+            element.style.outline = '';
+            element.style.outlineOffset = '';
+        }, 600);
+    }
+}
+
+/**
+ * Maneja paste para fotos generales
+ */
+function _manejarPasteGeneral(files) {
+    console.log('[handlePasteGlobalPorTallas]  Agregando a GENERAL');
+    agregarImagenesGenerales(files);
+    _aplicarFeedbackVisual('prt-galeria-general');
+}
+
+/**
+ * Maneja paste para fotos por talla
+ */
+function _manejarPastePosTalla(files) {
+    let targetKey = tallaActivaParaPaste;
+    
+    if (!targetKey || !datosPorTallaTemp[targetKey]) {
+        const keys = Object.keys(datosPorTallaTemp);
+        if (keys.length === 0) return;
+        targetKey = keys[0];
+    }
+    
+    console.log('[handlePasteGlobalPorTallas]  Agregando a talla:', targetKey);
+    agregarImagenesATalla(targetKey, files);
+    const safeKey = convertirAKeySegura(targetKey);
+    _aplicarFeedbackVisual(`prt-galeria-${safeKey}`);
+}
+
+/**
+ * Handler principal de paste global
+ */
 function handlePasteGlobalPorTallas(e) {
     console.log('[handlePasteGlobalPorTallas]  PASTE event processing');
 
-    const modal = document.getElementById('modal-proceso-por-tallas');
-    if (!modal || modal.style.display === 'none') {
-        console.log('[handlePasteGlobalPorTallas]  Modal no visible, ignorando paste');
+    // ─── Validaciones iniciales ───
+    const modal = _validarPasteEventoValido(e);
+    if (!modal) {
+        console.log('[handlePasteGlobalPorTallas]  Validación fallida, ignorando paste');
         return;
     }
 
-    //  CRÍTICO: Verificar que el paste ocurrió DENTRO del modal de procesos
-    // Si el usuario está en otro lugar de la página (ej: fotos de prenda o modal wizard), ignorar
-    const targetElement = e.target;
-    if (!modal.contains(targetElement)) {
-        console.log('[handlePasteGlobalPorTallas]  Paste fuera del modal de procesos, ignorando');
-        return;
-    }
-    
-    //  NUEVO: Si hay otro modal visible encima (como modal de edición wizard), ignorar
-    const modalEditWizard = document.getElementById('modal-editar-asignacion-wizard');
-    if (modalEditWizard && modalEditWizard.style.display !== 'none' && modalEditWizard.classList.contains('show')) {
-        console.log('[handlePasteGlobalPorTallas]  Modal wizard de edición está abierto, delegando');
-        return;
-    }
-
-    // Ignorar si el focus está en un input/textarea (el usuario está escribiendo)
-    const activeEl = document.activeElement;
-    const tag = activeEl?.tagName;
-    const isContentEditable = activeEl?.isContentEditable || activeEl?.getAttribute('contenteditable') === 'true';
-    
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || isContentEditable) {
-        console.log('[handlePasteGlobalPorTallas]  Focus en', tag, 'o contenteditable - ignorando paste');
+    if (!_validarFocusPermitePaste()) {
+        console.log('[handlePasteGlobalPorTallas]  Focus en input/textarea/contenteditable - ignorando');
         return;
     }
 
@@ -1208,65 +1191,24 @@ function handlePasteGlobalPorTallas(e) {
         console.log('[handlePasteGlobalPorTallas]  No clipboard items');
         return;
     }
-    
-    const files = [];
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith('image/')) {
-            const file = items[i].getAsFile();
-            if (file) files.push(file);
-        }
-    }
-    
+
+    // ─── Extrae imágenes del clipboard ───
+    const files = _extraerArchivosDelClipboard(items);
     console.log('[handlePasteGlobalPorTallas]  Archivos detectados:', files.length);
     if (files.length === 0) return;
 
     e.preventDefault();
-    e.stopImmediatePropagation(); //  CRÍTICO: stopImmediatePropagation evita que otros listeners procesen este evento
+    e.stopImmediatePropagation();
 
     try {
-        //  MEJORADO: Detectar automáticamente si el paste ocurrió en la galería general
+        // ─── Determina destino (general o talla específica) ───
         const galeriaGeneral = document.getElementById('prt-galeria-general');
-        const targetIsInGeneral = galeriaGeneral && galeriaGeneral.contains(e.target);
+        const targetIsInGeneral = galeriaGeneral?.contains(e.target);
         
-        if (targetIsInGeneral) {
-            console.log('[handlePasteGlobalPorTallas] 📍 Paste detectado dentro de galería general (por target)');
-        }
-        
-        // ─── Manejo para FOTOS GENERALES ───
         if (tallaActivaParaPaste === 'GENERAL' || targetIsInGeneral) {
-            console.log('[handlePasteGlobalPorTallas]  Agregando a GENERAL', {
-                porVariable: tallaActivaParaPaste === 'GENERAL',
-                porTarget: targetIsInGeneral
-            });
-            agregarImagenesGenerales(files);
-            const galeria = document.getElementById('prt-galeria-general');
-            if (galeria) {
-                galeria.style.outline = '2px solid #22c55e';
-                galeria.style.outlineOffset = '2px';
-                setTimeout(() => { galeria.style.outline = ''; galeria.style.outlineOffset = ''; }, 600);
-            }
-            return;
-        }
-
-        // ─── Manejo para FOTOS POR TALLA (específico) ───
-        let targetKey = tallaActivaParaPaste;
-
-        // Si no hay talla activa, usar la primera disponible
-        if (!targetKey || !datosPorTallaTemp[targetKey]) {
-            const keys = Object.keys(datosPorTallaTemp);
-            if (keys.length > 0) targetKey = keys[0];
-        }
-
-        if (targetKey && datosPorTallaTemp[targetKey]) {
-            console.log('[handlePasteGlobalPorTallas]  Agregando a talla:', targetKey);
-            agregarImagenesATalla(targetKey, files);
-            const safeKey = convertirAKeySegura(targetKey);
-            const gal = document.getElementById(`prt-galeria-${safeKey}`);
-            if (gal) {
-                gal.style.outline = '2px solid #22c55e';
-                gal.style.outlineOffset = '2px';
-                setTimeout(() => { gal.style.outline = ''; gal.style.outlineOffset = ''; }, 600);
-            }
+            _manejarPasteGeneral(files);
+        } else {
+            _manejarPastePosTalla(files);
         }
     } catch (error) {
         console.error('[handlePasteGlobalPorTallas]  Error:', error);
@@ -1293,7 +1235,7 @@ globalThis.eliminarFotoPorTalla = function(key, index) {
     if (index < 0 || index >= imgs.length) return;
 
     // Revocar blob URL
-    if (imgs[index] && imgs[index].startsWith('blob:')) {
+    if (imgs[index]?.startsWith('blob:')) {
         URL.revokeObjectURL(imgs[index]);
     }
     imgs.splice(index, 1);
@@ -1382,10 +1324,10 @@ globalThis.guardarProcesoPorTallas = function() {
             const id = input.id.replace('cantidad-mg-', '');
             // Necesitamos encontrar la clave real desde el IDs
             const tallaKey = Object.keys(datosPorTallaTemp).find(k => 
-                k.replace(/[^a-zA-Z0-9_-]/g, '_') === id
+                k.replaceAll(/[^a-zA-Z0-9_-]/g, '_') === id
             );
             if (tallaKey && datosPorTallaTemp[tallaKey]) {
-                datosPorTallaTemp[tallaKey].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
+                datosPorTallaTemp[tallaKey].cantidadSeleccionada = Math.max(0, Number(input.value) || 0);
             }
         });
 
@@ -1393,14 +1335,14 @@ globalThis.guardarProcesoPorTallas = function() {
         document.querySelectorAll('[id^="checkbox-mg-"]').forEach(checkbox => {
             const id = checkbox.id.replace('checkbox-mg-', '');
             const tallaKey = Object.keys(datosPorTallaTemp).find(k => 
-                k.replace(/[^a-zA-Z0-9_-]/g, '_') === id
+                k.replaceAll(/[^a-zA-Z0-9_-]/g, '_') === id
             );
             if (tallaKey && datosPorTallaTemp[tallaKey]) {
                 datosPorTallaTemp[tallaKey].seleccionada = checkbox.checked;
             }
         });
     } else {
-        // Modo específico: recoger todo (ubicación, observaciones e imágenes por talla)
+        // Modo específico: recoger  (ubicación, observaciones e imágenes por talla)
         const textareasUbicacion = document.querySelectorAll('.prt-ubicacion-input');
         console.log('[GUARDAR-POR-TALLAS] Modo ESPECÍFICO - Encontrados textareas de ubicación:', textareasUbicacion.length);
         
@@ -1434,7 +1376,7 @@ globalThis.guardarProcesoPorTallas = function() {
             const id = input.id.replace('cantidad-', '');
             const key = id;
             if (datosPorTallaTemp[key]) {
-                datosPorTallaTemp[key].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
+                datosPorTallaTemp[key].cantidadSeleccionada = Math.max(0, Number(input.value) || 0);
             }
         });
 
@@ -1452,11 +1394,6 @@ globalThis.guardarProcesoPorTallas = function() {
     // Construir estructura de tallas y datosExtendidos
     const tallas = { dama: {}, caballero: {}, sobremedida: {} };
     const datosExtendidos = { dama: {}, caballero: {}, sobremedida: {} };
-
-    // Obtener cantidades de la prenda
-    const tallasPrenda = (typeof obtenerTallasDeLaPrenda === 'function')
-        ? obtenerTallasDeLaPrenda()
-        : { dama: {}, caballero: {}, sobremedida: null };
 
     Object.entries(datosPorTallaTemp).forEach(([key, datos]) => {
         // Solo guardar si está seleccionada
@@ -1558,57 +1495,6 @@ globalThis.guardarProcesoPorTallas = function() {
         globalThis.renderizarTarjetasProcesos();
     }
 
-    //  COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a globalThis.telasCreacion
-    // Los procesos (estampado, DTF, sublimado) NO son telas y no deberían estar en esta lista
-    // Las tallas reales ya están asignadas con sus telas correspondientes (ej: ANT BABILONIA)
-    
-    /* 
-    // 🔥 FIX: Sincronizar nuevas tallas con globalThis.telasCreacion para que se muestren en la tabla
-    // Las nuevas tallas que se agregaron en el modal deben estar disponibles en telasCreacion
-    // para que actualizarTablaResumen() las pueda mostrar
-    if (!globalThis.telasCreacion) {
-        globalThis.telasCreacion = [];
-    }
-
-    let tallasSincronizadas = false;
-    Object.entries(tallas).forEach(([genero, tallaDict]) => {
-        Object.entries(tallaDict).forEach(([tallaKey, cantidad]) => {
-            if (cantidad > 0) {
-                // Buscar si esta talla ya existe en telasCreacion
-                const yaExiste = globalThis.telasCreacion.some(t => 
-                    (t.genero === genero || t.genero === genero.toUpperCase()) &&
-                    (t.talla === tallaKey || t.talla === tallaKey.toUpperCase())
-                );
-                
-                if (!yaExiste) {
-                    // Agregar nueva talla a telasCreacion
-                    const telaDelProceso = procesoPorTallasActual || 'bordado';
-                    globalThis.telasCreacion.push({
-                        tela: telaDelProceso.toUpperCase(),
-                        genero: genero.toUpperCase(),
-                        talla: tallaKey.toUpperCase(),
-                        color: '',
-                        referencia: '',
-                        imagenes: [],
-                        observaciones: datosExtendidos[genero]?.[tallaKey]?.observaciones || '',
-                        cantidad: cantidad,
-                        fechaCreacion: new Date().toISOString()
-                    });
-                    tallasSincronizadas = true;
-                    console.log(`[por-tallas]  Sincronizado ${genero.toUpperCase()} - ${tallaKey.toUpperCase()} a telasCreacion`);
-                }
-            }
-        });
-    });
-
-    // Actualizar la tabla de resumen si se sincronizaron nuevas tallas
-    if (tallasSincronizadas) {
-        console.log('[por-tallas]Actualizando tabla de resumen tras sincronizar nuevas tallas');
-        if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.actualizarTablaResumen === 'function') {
-            globalThis.ColoresPorTalla.actualizarTablaResumen();
-        }
-    }
-    */
 
     // Cerrar modal
     const modal = document.getElementById('modal-proceso-por-tallas');
@@ -1668,52 +1554,81 @@ globalThis.cerrarModalProcesoPorTallas = function() {
 /**
  * Elimina una foto general (compartida)
  */
+// ────────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS - eliminarFotoGeneral refactoring
+// ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Convierte una foto (string u objeto) a estructura normalizada
+ */
+function _normalizarImagenParaEliminar(fotoEliminada) {
+    if (typeof fotoEliminada === 'string') {
+        return {
+            url: fotoEliminada,
+            ruta_original: fotoEliminada
+        };
+    }
+    
+    if (typeof fotoEliminada === 'object') {
+        return {
+            id: fotoEliminada.id || undefined,
+            url: fotoEliminada.url || fotoEliminada.ruta_original || fotoEliminada.ruta_webp || '',
+            ruta_original: fotoEliminada.ruta_original || fotoEliminada.url || fotoEliminada.ruta_webp || '',
+            ruta_webp: fotoEliminada.ruta_webp || ''
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Elimina foto existente de BD
+ */
+function _eliminarFotoExistenteBD(index) {
+    if (index >= fotosGeneralesExistentes.length) return;
+    
+    const fotoEliminada = fotosGeneralesExistentes[index];
+    console.log('[eliminarFotoGeneral] Eliminando foto existente de BD:', index, fotoEliminada);
+    
+    const imagenAEliminar = _normalizarImagenParaEliminar(fotoEliminada);
+    
+    if (imagenAEliminar && (imagenAEliminar.url || imagenAEliminar.id)) {
+        fotosGeneralesEliminadas.push(imagenAEliminar);
+        console.log('[eliminarFotoGeneral] Foto eliminada registrada:', imagenAEliminar);
+    }
+    
+    fotosGeneralesExistentes.splice(index, 1);
+    console.log('[eliminarFotoGeneral] Fotos eliminadas registradas (total):', fotosGeneralesEliminadas.length);
+}
+
+/**
+ * Elimina foto nueva agregada por usuario
+ */
+function _eliminarFotoNuevaAñadida(index) {
+    const indiceNueva = index - fotosGeneralesExistentes.length;
+    
+    if (indiceNueva < 0 || indiceNueva >= fotosGeneralesTemp.length) return;
+    
+    console.log('[eliminarFotoGeneral] Eliminando foto nueva:', indiceNueva);
+    
+    // Revocar URL del blob para liberar memoria
+    const blobUrl = fotosGeneralesTemp[indiceNueva];
+    if (typeof blobUrl === 'string' && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl);
+    }
+    
+    fotosGeneralesTemp.splice(indiceNueva, 1);
+    fotosGeneralesFilesTemp.splice(indiceNueva, 1);
+}
+
+/**
+ * Elimina foto general (existente o nueva)
+ */
 globalThis.eliminarFotoGeneral = function(index, esExistente) {
     if (esExistente) {
-        // Eliminar foto existente de BD - REGISTRARLA PARA ELIMINACIÓN
-        if (index < fotosGeneralesExistentes.length) {
-            const fotoEliminada = fotosGeneralesExistentes[index];
-            console.log('[eliminarFotoGeneral] Eliminando foto existente de BD:', index, fotoEliminada);
-            
-            // Registrar en array de eliminadas con TODOS los datos para que el backend la identifique
-            let imagenAEliminar = {};
-            
-            if (typeof fotoEliminada === 'string') {
-                // Si es solo URL
-                imagenAEliminar = {
-                    url: fotoEliminada,
-                    ruta_original: fotoEliminada
-                };
-            } else if (typeof fotoEliminada === 'object') {
-                // Si es un objeto con id, ruta_original, etc.
-                imagenAEliminar = {
-                    id: fotoEliminada.id || undefined,
-                    url: fotoEliminada.url || fotoEliminada.ruta_original || fotoEliminada.ruta_webp || '',
-                    ruta_original: fotoEliminada.ruta_original || fotoEliminada.url || fotoEliminada.ruta_webp || '',
-                    ruta_webp: fotoEliminada.ruta_webp || ''
-                };
-            }
-            
-            if (imagenAEliminar.url || imagenAEliminar.id) {
-                fotosGeneralesEliminadas.push(imagenAEliminar);
-                console.log('[eliminarFotoGeneral] Foto eliminada registrada:', imagenAEliminar);
-            }
-            
-            fotosGeneralesExistentes.splice(index, 1);
-            console.log('[eliminarFotoGeneral] Fotos eliminadas registradas (total):', fotosGeneralesEliminadas.length);
-        }
+        _eliminarFotoExistenteBD(index);
     } else {
-        // Eliminar foto nueva agregada
-        const indiceNueva = index - fotosGeneralesExistentes.length;
-        if (indiceNueva >= 0 && indiceNueva < fotosGeneralesTemp.length) {
-            console.log('[eliminarFotoGeneral] Eliminando foto nueva:', indiceNueva);
-            // Revocar URL del blob para liberar memoria
-            if (typeof fotosGeneralesTemp[indiceNueva] === 'string' && fotosGeneralesTemp[indiceNueva].startsWith('blob:')) {
-                URL.revokeObjectURL(fotosGeneralesTemp[indiceNueva]);
-            }
-            fotosGeneralesTemp.splice(indiceNueva, 1);
-            fotosGeneralesFilesTemp.splice(indiceNueva, 1);
-        }
+        _eliminarFotoNuevaAñadida(index);
     }
     renderizarGaleriaFotosGenerales();
 };
@@ -1739,13 +1654,7 @@ function configurarDragDropPasteGeneral() {
     galeria.addEventListener('dragover', manejadorDragOver);
 
     // ─── Drag Leave ───
-    const manejadorDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        galeria.style.outline = '';
-        galeria.style.outlineOffset = '';
-        galeria.style.background = '';
-    };
+    const manejadorDragLeave = _crearHandlerDragLeave();
     galeria.addEventListener('dragleave', manejadorDragLeave);
 
     // ─── Drop ───

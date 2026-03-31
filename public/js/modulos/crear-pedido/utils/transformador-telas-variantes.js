@@ -48,7 +48,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
         // Recorrer todas las telas de esta variante
         variante.telas_multiples.forEach((tela, telaIndex) => {
-            console.log(`🧵 [Tela ${telaIndex}] Procesando tela:`, {
+            console.log(` [Tela ${telaIndex}] Procesando tela:`, {
                 tela: tela.tela,
                 color: tela.color,
                 referencia: tela.referencia,

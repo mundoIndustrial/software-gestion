@@ -1171,7 +1171,7 @@
             
             // Fotos de telas
             if (prenda.telas_array && Array.isArray(prenda.telas_array)) {
-                console.log('  🧵 Telas encontradas:', prenda.telas_array.length);
+                console.log('   Telas encontradas:', prenda.telas_array.length);
                 prenda.telas_array.forEach((tela, telaIdx) => {
                     console.log('    Tela ' + telaIdx + ':', tela.tela_nombre || 'N/A', '- Color:', tela.color_nombre || 'N/A');
                     if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {

@@ -1072,7 +1072,7 @@ function mostrarModalAdvertenciaTallas() {
     document.body.appendChild(modal);
     modal.style.display = 'flex';
     
-    // Forzar z-index máximo para asegurar que esté encima de todo
+
     setTimeout(() => {
         modal.style.setProperty('z-index', '9999999999', 'important');
         console.log('[MODAL-ADVERTENCIA-TALLAS] Modal visible');

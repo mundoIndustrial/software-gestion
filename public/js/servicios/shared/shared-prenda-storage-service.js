@@ -1,5 +1,5 @@
 /**
- * 🔒 SharedPrendaStorageService
+ *  SharedPrendaStorageService
  * 
  * IMPORTANTE: AISLADO DE COTIZACIONES
  * - Solo maneja imágenes de prendas
@@ -279,5 +279,5 @@ class SharedPrendaStorageService {
 }
 
 // Exportar
-window.SharedPrendaStorageService = SharedPrendaStorageService;
+globalThis.SharedPrendaStorageService = SharedPrendaStorageService;
 Logger.debug('StorageService cargado', 'SharedPrendaStorage');

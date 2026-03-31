@@ -94,7 +94,7 @@ class ImageStorageService {
                 if (!img.file || !(img.file instanceof File)) {
                     URL.revokeObjectURL(img.previewUrl);
                 } else {
-                    console.log('[ImageStorageService.establecerImagenes] 🔒 Preservando blob URL de imagen con File object');
+                    console.log('[ImageStorageService.establecerImagenes]  Preservando blob URL de imagen con File object');
                 }
             }
         });

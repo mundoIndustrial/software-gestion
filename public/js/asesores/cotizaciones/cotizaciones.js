@@ -388,7 +388,7 @@ function actualizarResumenFriendly() {
                     }
                     
                     if (telas.length > 0) {
-                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong> Telas:</strong></small><div style="margin-top: 6px;">';
                         telas.forEach(t => {
                             telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
@@ -465,7 +465,7 @@ function actualizarResumenFriendly() {
                     });
                     
                     if (telasDesdeDOM.length > 0) {
-                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong> Telas:</strong></small><div style="margin-top: 6px;">';
                         telasDesdeDOM.forEach(t => {
                             telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
@@ -1245,7 +1245,7 @@ function recopilarDatos() {
     productos.forEach((prod, idx) => {
         console.log(`  [${idx + 1}] ${prod.nombre_producto}:`, {
             ' Fotos': prod.fotos.length,
-            '🧵 Telas': prod.telas.length,
+            ' Telas': prod.telas.length,
             ' Tallas': prod.tallas.length,
             ' Variantes': Object.keys(prod.variantes).length
         });

@@ -597,22 +597,7 @@ class ControlCalidadController extends Controller
                     if($ruta) $fotos[] = $ruta;
                 }
 
-                $logoCotIds = \App\Models\LogoCotizacion::select('id')
-                    ->where('cotizacion_id', $pedido->cotizacion_id)
-                    ->pluck('id')
-                    ->toArray();
-
-                if (!empty($logoCotIds)) {
-                    $fotosLogos = \App\Models\LogoFotoCot::select('ruta_webp', 'ruta_original')
-                        ->whereIn('logo_cotizacion_id', $logoCotIds)
-                        ->orderBy('orden')
-                        ->get();
-
-                    foreach($fotosLogos as $foto) {
-                        $ruta = $foto->ruta_webp ?: $foto->ruta_original;
-                        if($ruta) $fotos[] = $ruta;
-                    }
-                }
+                // LogoFotoCot ya no se usa (tabla no utilizada)
             } catch (\Exception $e) {
                 return [];
             }

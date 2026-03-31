@@ -1,5 +1,5 @@
 /**
- * 🔒 SharedPrendaDataService
+ *  SharedPrendaDataService
  * 
  * IMPORTANTE: AISLADO DE COTIZACIONES
  * - Solo maneja datos de PRENDAS (tabla prendas_pedido)
@@ -410,5 +410,5 @@ class SharedPrendaDataService {
 }
 
 // Exportar
-window.SharedPrendaDataService = SharedPrendaDataService;
+globalThis.SharedPrendaDataService = SharedPrendaDataService;
 Logger.debug('DataService cargado', 'SharedPrendaData');

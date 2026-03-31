@@ -13,120 +13,151 @@ class PrendaEditorImagenes {
             tipo: typeof prenda.imagenes
         });
         
-        const preview = document.getElementById('nueva-prenda-foto-preview');
-        const contador = document.getElementById('nueva-prenda-foto-contador');
-        const btn = document.getElementById('nueva-prenda-foto-btn');
+        const { preview, contador, btn } = this._obtenerElementosDom();
+        if (!preview) return;
         
-        if (!preview) {
-            console.warn(' [Imagenes] Preview no encontrado');
-            return;
-        }
-        
-        // Limpiar preview
         preview.innerHTML = '';
         
-        //  CRÍTICO: Renderizar EXACTAMENTE igual a creación
-        if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
-            // Procesar imágenes
-            const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
-                const imagenConId = {
-                    ...img,
-                    id: img.id || img.imagen_id || null,
-                };
-                
-                if (img.file instanceof File) {
-                    const nuevoBlob = URL.createObjectURL(img.file);
-                    return {
-                        ...imagenConId,
-                        file: img.file,
-                        previewUrl: nuevoBlob,
-                        nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
-                        tamano: img.tamano || img.file.size,
-                    };
-                }
-                
-                if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
-                    return imagenConId;
-                }
-                
-                if (typeof img === 'object') {
-                    const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
-                    return {
-                        ...imagenConId,
-                        previewUrl: url,
-                        url: url,
-                        nombre: img.nombre || `imagen-${idx + 1}`,
-                        tamano: img.tamano || 0
-                    };
-                }
-                
-                return img;
-            });
-            
-            // Guardar en storage si está disponible
-            if (window.imagenesPrendaStorage) {
-                window.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
-            }
-            
-            // Renderizar SOLO la primera imagen (igual a creación)
-            const container = document.createElement('div');
-            container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
-            
-            const img = document.createElement('img');
-            
-            //  CRÍTICO: Validar previewUrl antes de asignar
-            if (!imagenesConBlobUrl[0].previewUrl || imagenesConBlobUrl[0].previewUrl === 'undefined' || imagenesConBlobUrl[0].previewUrl === undefined) {
-                console.error('[Imagenes]  previewUrl inválido en carga:', imagenesConBlobUrl[0].previewUrl);
-                img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
-                img.alt = 'Imagen no disponible';
-                img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
-            } else {
-                img.src = imagenesConBlobUrl[0].previewUrl;
-                img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
-            }
-            
-            container.appendChild(img);
-            preview.appendChild(container);
-            
-            // Guardar datos en preview (igual a creación)
-            preview.dataset.imagenes = JSON.stringify(imagenesConBlobUrl);
-            preview.dataset.indiceActual = '0';
-            
-            // Actualizar contador
-            if (contador) {
-                contador.textContent = imagenesConBlobUrl.length === 1 ? '1 foto' : imagenesConBlobUrl.length + ' fotos';
-            }
-            
-            // Actualizar botón
-            if (btn) {
-                btn.style.display = imagenesConBlobUrl.length < 3 ? 'block' : 'none';
-            }
-            
-            // Configurar drag & drop (igual a creación)
-            setupDragAndDropConImagen(preview, imagenesConBlobUrl);
-            
-            //  NUEVO: Agregar listener de paste usando la función centralizada
-            this._agregarListenerPaste(preview);
-            console.log('[PrendaEditorImagenes]  Listener de paste configurado en preview (cargar)');
-            
-            console.log('[Imagenes]  Preview renderizado idéntico a creación');
+        if (prenda.imagenes?.length > 0) {
+            this._cargarConImagenes(prenda, preview, contador, btn);
         } else {
-            // Sin imágenes - siempre limpiar el storage para evitar fotos de otra prenda
-            if (window.imagenesPrendaStorage) {
-                console.log(' [Imagenes]  Prenda sin imágenes, limpiando storage');
-                window.imagenesPrendaStorage.establecerImagenes([]);
-            }
-            
-            preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
-            preview.style.cursor = 'pointer';
-            
-            if (contador) contador.textContent = '';
-            if (btn) btn.style.display = 'block';
-            
-            setupDragAndDrop(preview);
+            this._cargarSinImagenes(preview, contador, btn);
         }
         
         console.log(' [Imagenes] Completado');
+    }
+
+    /**
+     * Obtener referencias a elementos del DOM
+     * @private
+     */
+    static _obtenerElementosDom() {
+        return {
+            preview: document.getElementById('nueva-prenda-foto-preview'),
+            contador: document.getElementById('nueva-prenda-foto-contador'),
+            btn: document.getElementById('nueva-prenda-foto-btn')
+        };
+    }
+
+    /**
+     * Cargar preview con imágenes
+     * @private
+     */
+    static _cargarConImagenes(prenda, preview, contador, btn) {
+        const imagenesConBlobUrl = this._procesarImagenesConBlobUrl(prenda.imagenes);
+        
+        if (globalThis.imagenesPrendaStorage) {
+            globalThis.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
+        }
+        
+        this._renderizarPreviewConImagenes(preview, imagenesConBlobUrl, contador, btn);
+        setupDragAndDropConImagen(preview, imagenesConBlobUrl);
+        this._agregarListenerPaste(preview);
+        console.log('[PrendaEditorImagenes]  Listener de paste configurado en preview (cargar)');
+        console.log('[Imagenes]  Preview renderizado idéntico a creación');
+    }
+
+    /**
+     * Cargar preview sin imágenes
+     * @private
+     */
+    static _cargarSinImagenes(preview, contador, btn) {
+        if (globalThis.imagenesPrendaStorage) {
+            console.log(' [Imagenes]  Prenda sin imágenes, limpiando storage');
+            globalThis.imagenesPrendaStorage.establecerImagenes([]);
+        }
+        
+        preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
+        preview.style.cursor = 'pointer';
+        
+        if (contador) contador.textContent = '';
+        if (btn) btn.style.display = 'block';
+        
+        setupDragAndDrop(preview);
+    }
+
+    /**
+     * Procesar imágenes agregando blob URLs
+     * @private
+     */
+    static _procesarImagenesConBlobUrl(imagenes) {
+        return imagenes.map((img, idx) => {
+            const imagenConId = {
+                ...img,
+                id: img.id || img.imagen_id || null,
+            };
+            
+            if (img.file instanceof File) {
+                const nuevoBlob = URL.createObjectURL(img.file);
+                return {
+                    ...imagenConId,
+                    file: img.file,
+                    previewUrl: nuevoBlob,
+                    nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
+                    tamano: img.tamano || img.file.size,
+                };
+            }
+            
+            if (img.previewUrl?.startsWith('blob:') || img.previewUrl?.startsWith('data:')) {
+                return imagenConId;
+            }
+            
+            if (typeof img === 'object') {
+                const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
+                return {
+                    ...imagenConId,
+                    previewUrl: url,
+                    url: url,
+                    nombre: img.nombre || `imagen-${idx + 1}`,
+                    tamano: img.tamano || 0
+                };
+            }
+            
+            return img;
+        });
+    }
+
+    /**
+     * Renderizar preview con imágenes
+     * @private
+     */
+    static _renderizarPreviewConImagenes(preview, imagenes, contador, btn) {
+        const container = document.createElement('div');
+        container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+        
+        const img = document.createElement('img');
+        const primeraImagen = imagenes[0];
+        
+        if (!primeraImagen.previewUrl || primeraImagen.previewUrl === 'undefined') {
+            console.error('[Imagenes]  previewUrl inválido en carga:', primeraImagen.previewUrl);
+            this._establecerImagenNoDisponible(img);
+        } else {
+            img.src = primeraImagen.previewUrl;
+            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+        }
+        
+        container.appendChild(img);
+        preview.appendChild(container);
+        preview.dataset.imagenes = JSON.stringify(imagenes);
+        preview.dataset.indiceActual = '0';
+        
+        if (contador) {
+            contador.textContent = imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos';
+        }
+        
+        if (btn) {
+            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        }
+    }
+
+    /**
+     * Establecer estilos para imagen no disponible
+     * @private
+     */
+    static _establecerImagenNoDisponible(img) {
+        img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6;';
+        img.alt = 'Imagen no disponible';
+        img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
     }
     
     /**
@@ -138,12 +169,12 @@ class PrendaEditorImagenes {
         const preview = document.getElementById('nueva-prenda-foto-preview');
         const contador = document.getElementById('nueva-prenda-foto-contador');
         
-        if (!preview || !window.imagenesPrendaStorage) {
+        if (!preview || !globalThis.imagenesPrendaStorage) {
             console.warn('[PrendaEditorImagenes]  Preview o storage no disponible');
             return;
         }
         
-        const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+        const imagenes = globalThis.imagenesPrendaStorage.obtenerImagenes();
         console.log('[PrendaEditorImagenes]  Imágenes en storage:', imagenes.length);
         
         // Limpiar preview
@@ -198,8 +229,8 @@ class PrendaEditorImagenes {
      * Agregar listener de paste al preview
      * @private
      * 
-     * NOTA: El listener global de paste en DragDropManager ya maneja todo.
-     * Solo configuramos contenteditable para que el preview pueda recibir el foco.
+     * ✓ COMPLETADO: El listener global de paste en DragDropManager maneja
+     * Solo configuramos contenteditable para que el preview pueda recibir el foco y paste events.
      */
     static _agregarListenerPaste(preview) {
         if (!preview) {
@@ -268,25 +299,18 @@ class PrendaEditorImagenes {
     static _configurarClickGaleria(preview, imagenes) {
         if (!preview || !imagenes || imagenes.length === 0) return;
         
-        // Remover handler anterior si existe
         if (preview._galeriaClickHandler) {
             preview.removeEventListener('click', preview._galeriaClickHandler);
         }
         
-        // Guardar referencia a la clase para usar en el handler
-        const self = this;
-        
-        preview._galeriaClickHandler = function(e) {
+        preview._galeriaClickHandler = (e) => {
             if (e.target.closest('button') || e.target.closest('input')) return;
             e.preventDefault();
             e.stopPropagation();
             if (typeof Swal === 'undefined') return;
             
             // Obtener URLs actualizadas del storage en el momento del click
-            let currentImages = [];
-            if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
-                currentImages = window.imagenesPrendaStorage.obtenerImagenes();
-            }
+            const currentImages = globalThis.imagenesPrendaStorage?.obtenerImagenes() || [];
             if (currentImages.length === 0) return;
             
             const urls = currentImages
@@ -296,7 +320,7 @@ class PrendaEditorImagenes {
             
             let idx = 0;
             const keyHandler = (ev) => {
-                if (!window.__galeriaPrendaActiva) return;
+                if (!globalThis.__galeriaPrendaActiva) return;
                 if (ev.key === 'ArrowLeft') { ev.preventDefault(); document.getElementById('gal-prenda-prev')?.click(); }
                 else if (ev.key === 'ArrowRight') { ev.preventDefault(); document.getElementById('gal-prenda-next')?.click(); }
             };
@@ -324,23 +348,23 @@ class PrendaEditorImagenes {
                     
                     if (imagenId) {
                         // Marcar imagen para eliminación (se eliminará al guardar)
-                        if (!window.imagenesAEliminar) {
-                            window.imagenesAEliminar = [];
+                        if (!globalThis.imagenesAEliminar) {
+                            globalThis.imagenesAEliminar = [];
                         }
-                        if (!window.imagenesAEliminar.includes(imagenId)) {
-                            window.imagenesAEliminar.push(imagenId);
+                        if (!globalThis.imagenesAEliminar.includes(imagenId)) {
+                            globalThis.imagenesAEliminar.push(imagenId);
                             console.log('[prenda-editor-imagenes]  Imagen marcada para eliminación al guardar', {
                                 id: imagenId,
-                                totalMarcadas: window.imagenesAEliminar.length
+                                totalMarcadas: globalThis.imagenesAEliminar.length
                             });
                         }
                     }
                     
                     // Eliminar del storage local SOLO
-                    if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
-                        const imgs = window.imagenesPrendaStorage.obtenerImagenes();
+                    if (globalThis.imagenesPrendaStorage?.obtenerImagenes) {
+                        const imgs = globalThis.imagenesPrendaStorage.obtenerImagenes();
                         imgs.splice(idx, 1);
-                        window.imagenesPrendaStorage.establecerImagenes(imgs);
+                        globalThis.imagenesPrendaStorage.establecerImagenes(imgs);
                         console.log('[prenda-editor-imagenes]  Imagen eliminada del storage local (no de BD)', {
                             imagenId: imagenId,
                             imagenesRestantes: imgs.length
@@ -349,21 +373,20 @@ class PrendaEditorImagenes {
                     
                     //  CRÍTICO: Actualizar preview correctamente sin apilar
                     // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
-                    if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
+                    if (PrendaEditorImagenes?.actualizarPreviewDespuesDeAgregar) {
                         PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                         console.log('[prenda-editor-imagenes]  Preview actualizado después de eliminar (edición)');
-                    } else if (typeof window.actualizarPreviewPrenda === 'function') {
+                    } else if (typeof globalThis.actualizarPreviewPrenda === 'function') {
                         // Fallback para creación
-                        window.actualizarPreviewPrenda();
+                        globalThis.actualizarPreviewPrenda();
                     }
                     
                     // Si quedan imágenes, reabrir galería
-                    const remaining = window.imagenesPrendaStorage?.obtenerImagenes() || [];
+                    const remaining = globalThis.imagenesPrendaStorage?.obtenerImagenes() || [];
                     if (remaining.length > 0) {
                         idx = Math.min(idx, remaining.length - 1);
-                        urls.splice(0, urls.length, ...remaining
-                            .map(img => img.previewUrl || img.url || img.ruta || '')
-                            .filter(u => u));
+                        const urlsActualizadas = this._extraerUrlsDeImagenes(remaining);
+                        urls.splice(0, urls.length, ...urlsActualizadas);
                         renderModal();
                     } else {
                         // Sin imágenes: limpiar handler y restaurar placeholder
@@ -407,18 +430,13 @@ class PrendaEditorImagenes {
                         if (popup) {
                             popup.style.maxWidth = '1400px !important';
                         }
-                        window.__galeriaPrendaActiva = true;
-                        const prev = document.getElementById('gal-prenda-prev');
-                        const next = document.getElementById('gal-prenda-next');
-                        const del = document.getElementById('gal-prenda-delete');
-                        if (prev) prev.onclick = () => { idx = (idx - 1 + urls.length) % urls.length; renderModal(); };
-                        if (next) next.onclick = () => { idx = (idx + 1) % urls.length; renderModal(); };
-                        if (del) del.onclick = () => eliminarImagenActual();
-                        window.addEventListener('keydown', keyHandler);
+                        globalThis.__galeriaPrendaActiva = true;
+                        this._configurarBotonesGaleria({ idx, urls, renderModal, eliminarImagenActual });
+                        globalThis.addEventListener('keydown', keyHandler);
                     },
                     willClose: () => {
-                        window.__galeriaPrendaActiva = false;
-                        window.removeEventListener('keydown', keyHandler);
+                        globalThis.__galeriaPrendaActiva = false;
+                        globalThis.removeEventListener('keydown', keyHandler);
                     }
                 });
             };
@@ -454,6 +472,42 @@ class PrendaEditorImagenes {
         `;
         
         console.log('[Imagenes] Click handler de galería configurado para', imagenes.length, 'imágenes');
+    }
+
+    /**
+     * Extraer URLs válidas de array de imágenes
+     * @private
+     */
+    static _extraerUrlsDeImagenes(imagenes) {
+        return imagenes
+            .map(img => img.previewUrl || img.url || img.ruta || '')
+            .filter(Boolean);
+    }
+
+    /**
+     * Configurar botones de navegación en galería modal
+     * @private
+     */
+    static _configurarBotonesGaleria({ idx, urls, renderModal, eliminarImagenActual }) {
+        const prev = document.getElementById('gal-prenda-prev');
+        const next = document.getElementById('gal-prenda-next');
+        const del = document.getElementById('gal-prenda-delete');
+        
+        if (prev) {
+            prev.onclick = () => {
+                idx = (idx - 1 + urls.length) % urls.length;
+                renderModal();
+            };
+        }
+        if (next) {
+            next.onclick = () => {
+                idx = (idx + 1) % urls.length;
+                renderModal();
+            };
+        }
+        if (del) {
+            del.onclick = () => eliminarImagenActual();
+        }
     }
     
     /**
@@ -545,13 +599,13 @@ class PrendaEditorImagenes {
         // Event listeners
         btnAnterior.addEventListener('click', (e) => {
             e.stopPropagation();
-            const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+            const indiceActual = Number.parseInt(preview.dataset.indiceActual || '0');
             cambiarImagen(indiceActual - 1);
         });
         
         btnSiguiente.addEventListener('click', (e) => {
             e.stopPropagation();
-            const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+            const indiceActual = Number.parseInt(preview.dataset.indiceActual || '0');
             cambiarImagen(indiceActual + 1);
         });
         

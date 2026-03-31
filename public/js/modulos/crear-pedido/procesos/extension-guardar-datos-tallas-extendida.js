@@ -52,8 +52,8 @@ globalThis.guardarTallasSeleccionadas = function() {
         
         console.log(` [guardarTallasSeleccionadas EXTENDIDO] Datos extendidos guardados para "${procesoActual}":`, {
             datosExtendidos: globalThis.procesosSeleccionados[procesoActual].datos.datosExtendidos,
-            ubicaciones: Object.values(datosExtendidos.dama || {}).map(d => d.ubicaciones).flat(),
-            observaciones: Object.values(datosExtendidos.dama || {}).map(d => d.observaciones).filter(o => o),
+            ubicaciones: Object.values(datosExtendidos.dama || {}).flatMap(d => d.ubicaciones),
+            observaciones: Object.values(datosExtendidos.dama || {}).map(d => d.observaciones).filter(Boolean),
             imagenes: Object.values(datosExtendidos.dama || {}).map(d => d.imagen ? '✓' : '✗').filter(i => i === '✓').length
         });
     }
@@ -83,9 +83,9 @@ globalThis.restaurarDatosExtendidosTallasProceso = function(proceso) {
     
     // Restaurar en la estructura de trabajo
     globalThis.datosExtendidosTallasProceso = {
-        dama: { ...datosGuardados.dama || {} },
-        caballero: { ...datosGuardados.caballero || {} },
-        sobremedida: { ...datosGuardados.sobremedida || {} }
+        dama: datosGuardados.dama ? { ...datosGuardados.dama } : {},
+        caballero: datosGuardados.caballero ? { ...datosGuardados.caballero } : {},
+        sobremedida: datosGuardados.sobremedida ? { ...datosGuardados.sobremedida } : {}
     };
     
     console.log(` [restaurarDatosExtendidosTallasProceso] Datos restaurados para "${proceso}":`, globalThis.datosExtendidosTallasProceso);

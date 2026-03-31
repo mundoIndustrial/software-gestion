@@ -332,7 +332,7 @@ const ProcesoEditService = {
                             globalThis.tallasCantidadesProceso.dama = {};
                             const tallasDama = [];
 
-                            // 🔥 FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
+                            //  FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
                             for (const [talla, valor] of Object.entries(globalThis.tallasRelacionales.DAMA)) {
                                 if (talla === 'SOBREMEDIDA') {
                                     // SOBREMEDIDA puede ser:
@@ -365,7 +365,7 @@ const ProcesoEditService = {
                             globalThis.tallasCantidadesProceso.caballero = {};
                             const tallasCaballero = [];
 
-                            // 🔥 FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
+                            //  FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
                             for (const [talla, valor] of Object.entries(globalThis.tallasRelacionales.CABALLERO)) {
                                 if (talla === 'SOBREMEDIDA') {
                                     // SOBREMEDIDA puede ser número o objeto

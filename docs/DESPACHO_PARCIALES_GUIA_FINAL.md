@@ -441,7 +441,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 |---|---|
 | ** Precisión** | Cada valor se guarda exactamente como se digita |
 | ** Velocidad** | Actualización en tiempo real sin recarga |
-| **🔒 Seguridad** | Transacciones DB, auditoría de usuario |
+| ** Seguridad** | Transacciones DB, auditoría de usuario |
 | ** Escalabilidad** | Fácil agregar más parciales si es necesario |
 | ** UX** | Modal elegante, feedback visual claro |
 | **📱 Responsive** | Funciona en desktop y mobile |

@@ -234,7 +234,7 @@ bg-blue-100 → bg-green-100
 4. Crea endpoint en el controlador
 5. Valida en backend
 
-## 🔒 Seguridad
+##  Seguridad
 
 -  CSRF Protection en todas las peticiones POST
 -  Validación de permisos por rol

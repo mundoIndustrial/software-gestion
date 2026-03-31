@@ -1,5 +1,5 @@
 /**
- * 🧵 Módulo de Telas
+ *  Módulo de Telas
  * Responsabilidad: Cargar y gestionar tabla de telas
  */
 
@@ -8,19 +8,19 @@ class PrendaEditorTelas {
      * Cargar telas en la tabla
      */
     static cargar(prenda) {
-        console.log('🧵 [Telas] Cargando:', {
+        console.log(' [Telas] Cargando:', {
             cantidad: prenda.telasAgregadas?.length || 0,
             telas: prenda.telasAgregadas?.map(t => t.nombre_tela || t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
-        // 🔥 Replicar a global para que sea editable (ANTES de verificar DOM)
+        //  Replicar a global para que sea editable (ANTES de verificar DOM)
         //  NO usar JSON.parse/stringify - destruye File objects y blob URLs
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-            window.telasCreacion = prenda.telasAgregadas.map(tela => ({
+            globalThis.telasCreacion = prenda.telasAgregadas.map(tela => ({
                 ...tela,
                 imagenes: tela.imagenes ? [...tela.imagenes] : []
             }));
-            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (preservando File objects):', window.telasCreacion.length);
+            console.log('[Carga]  Telas replicadas en globalThis.telasCreacion (preservando File objects):', globalThis.telasCreacion.length);
         }
         
         // Cargar datalist de telas y colores
@@ -38,8 +38,8 @@ class PrendaEditorTelas {
         if (!tablaTelas) {
             // Tabla legacy no existe, usar tabla unificada de resumen
             console.log('[Telas] #tbody-telas no encontrado, usando tabla unificada de resumen');
-            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
-                window.ColoresPorTalla.actualizarTablaResumen();
+            if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                globalThis.ColoresPorTalla.actualizarTablaResumen();
             }
             console.log(' [Telas] Completado (vía tabla unificada)');
             return;
@@ -207,7 +207,7 @@ class PrendaEditorTelas {
 }
 
 //  NUEVO: Función global para eliminar tela en modal de edición
-window.eliminarTela = function(index, event) {
+globalThis.eliminarTela = function(index, event) {
     console.log('[eliminarTela]  Iniciando eliminación de tela:', index);
     
     if (event) {
@@ -216,7 +216,7 @@ window.eliminarTela = function(index, event) {
     }
     
     try {
-        const telas = window.telasCreacion;
+        const telas = globalThis.telasCreacion;
         if (!telas || index < 0 || index >= telas.length) {
             console.warn('[eliminarTela] Índice inválido:', index);
             return;
@@ -226,18 +226,18 @@ window.eliminarTela = function(index, event) {
         console.log('[eliminarTela] Tela a eliminar:', telaAEliminar);
         
         // 🚨 IMPORTANTE: Eliminar tallas asociadas a esta tela
-        if (window.tallasRelacionales && typeof window.tallasRelacionales === 'object') {
+        if (globalThis.tallasRelacionales && typeof globalThis.tallasRelacionales === 'object') {
             console.log('[eliminarTela]  Eliminando tallas asociadas a la tela:', telaAEliminar.tela);
             
             let tallasEliminadas = 0;
-            for (const genero in window.tallasRelacionales) {
-                if (window.tallasRelacionales.hasOwnProperty(genero)) {
+            for (const genero in globalThis.tallasRelacionales) {
+                if (globalThis.tallasRelacionales.hasOwnProperty(genero)) {
                     // Eliminar todas las tallas de este género
-                    const generoData = window.tallasRelacionales[genero];
+                    const generoData = globalThis.tallasRelacionales[genero];
                     console.log('[eliminarTela]  Eliminando tallas del género:', genero, 'tallas:', Object.keys(generoData));
                     
                     // Limpiar todas las tallas de este género
-                    window.tallasRelacionales[genero] = {};
+                    globalThis.tallasRelacionales[genero] = {};
                     tallasEliminadas += Object.keys(generoData).length;
                 }
             }
@@ -250,11 +250,11 @@ window.eliminarTela = function(index, event) {
             }
             
             // Recargar las tarjetas de tallas para reflejar los cambios
-            if (window.PrendaEditorTallas && typeof window.PrendaEditorTallas.cargar === 'function') {
+            if (globalThis.PrendaEditorTallas && typeof globalThis.PrendaEditorTallas.cargar === 'function') {
                 const prenda = {
-                    cantidad_talla: window.tallasRelacionales || {}
+                    cantidad_talla: globalThis.tallasRelacionales || {}
                 };
-                window.PrendaEditorTallas.cargar(prenda);
+                globalThis.PrendaEditorTallas.cargar(prenda);
             }
         }
         
@@ -263,9 +263,9 @@ window.eliminarTela = function(index, event) {
         console.log('[eliminarTela]  Tela eliminada. Telas restantes:', telas.length);
         
         // 🚨 IMPORTANTE: Limpiar asignaciones de colores asociadas
-        if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
+        if (globalThis.StateManager && typeof globalThis.StateManager.limpiarAsignaciones === 'function') {
             console.log('[eliminarTela] Limpiando asignaciones de colores');
-            window.StateManager.limpiarAsignaciones();
+            globalThis.StateManager.limpiarAsignaciones();
         }
         
         // Recargar tabla
@@ -280,7 +280,7 @@ window.eliminarTela = function(index, event) {
 };
 
 //  NUEVO: Función global para agregar tela en modal de edición
-window.agregarTelaNueva = function() {
+globalThis.agregarTelaNueva = function() {
     console.log('[agregarTelaNueva]  CLICK DETECTADO EN BOTÓN AGREGAR TELA');
     
     try {
@@ -309,7 +309,7 @@ window.agregarTelaNueva = function() {
         }
         
         // Verificar duplicados
-        const telaExistente = window.telasCreacion.find(t => 
+        const telaExistente = globalThis.telasCreacion.find(t => 
             t.color.toUpperCase() === color && 
             t.tela.toUpperCase() === tela
         );
@@ -321,7 +321,7 @@ window.agregarTelaNueva = function() {
         }
         
         // Obtener imágenes temporales
-        const imagenesActuales = window.imagenesTelaModalNueva || [];
+        const imagenesActuales = globalThis.imagenesTelaModalNueva || [];
         
         // Crear objeto de tela
         const nuevaTela = {
@@ -335,14 +335,14 @@ window.agregarTelaNueva = function() {
         console.log('[agregarTelaNueva]  OBJETO TELA CREADO:', nuevaTela);
         
         // Agregar al array
-        window.telasCreacion.push(nuevaTela);
-        console.log('[agregarTelaNueva]  Tela agregada. Total:', window.telasCreacion.length);
+        globalThis.telasCreacion.push(nuevaTela);
+        console.log('[agregarTelaNueva]  Tela agregada. Total:', globalThis.telasCreacion.length);
         
         // Limpiar campos
         colorElement.value = '';
         telaElement.value = '';
         referenciaElement.value = '';
-        window.imagenesTelaModalNueva = [];
+        globalThis.imagenesTelaModalNueva = [];
         
         // Limpiar preview
         const preview = document.getElementById('nueva-prenda-tela-preview');
@@ -353,7 +353,7 @@ window.agregarTelaNueva = function() {
         
         // Recargar tabla
         const prenda = {
-            telasAgregadas: window.telasCreacion
+            telasAgregadas: globalThis.telasCreacion
         };
         PrendaEditorTelas.cargar(prenda);
         
@@ -366,7 +366,7 @@ window.agregarTelaNueva = function() {
 };
 
 //  NUEVO: Función de prueba para verificar APIs
-window.probarApisTelasColores = async function() {
+globalThis.probarApisTelasColores = async function() {
     console.log('[probarApisTelasColores]  Iniciando prueba de APIs...');
     
     try {
@@ -400,7 +400,7 @@ window.probarApisTelasColores = async function() {
 };
 
 //  NUEVO: Función para cargar datalist de telas y colores
-window.cargarDatalistTelasColores = async function() {
+globalThis.cargarDatalistTelasColores = async function() {
     console.log('[cargarDatalistTelasColores]  Iniciando carga de datalist');
     
     try {
@@ -479,7 +479,7 @@ window.cargarDatalistTelasColores = async function() {
 };
 
 //  NUEVO: Función para configurar drag & drop y paste en drop zones de tela
-window.configurarDragDropTela = function() {
+globalThis.configurarDragDropTela = function() {
     console.log('[configurarDragDropTela]  Configurando drag & drop para telas');
     
     const dropZone = document.getElementById('nueva-prenda-tela-drop-zone')
@@ -550,7 +550,7 @@ window.configurarDragDropTela = function() {
 };
 
 //  NUEVO: Función para configurar drag & drop en previews de procesos
-window.configurarDragDropProcesos = function() {
+globalThis.configurarDragDropProcesos = function() {
     console.log('[configurarDragDropProcesos]  INICIO - Configurando drag & drop para procesos');
     console.log('[configurarDragDropProcesos]Timestamp:', new Date().toISOString());
     console.log('[configurarDragDropProcesos]  Stack trace:', new Error().stack);

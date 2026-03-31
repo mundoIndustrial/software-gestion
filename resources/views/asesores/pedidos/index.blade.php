@@ -418,14 +418,13 @@
 
     /**
      * Editar pedido - OPTIMIZADO CON LAZY LOADING
-     * 
      *  CAMBIOS:
      * - Carga módulos de edición bajo demanda (NO en la carga inicial)
      * - SIEMPRE hace fetch para obtener datos completos (modal necesita estructura completa)
      * - Tiempo: <100ms para lazy loader (cacheado), ~500ms para fetch datos
      */
     async function editarPedido(pedidoId) {
-        // 🔒 Prevenir múltiples clics simultáneos
+        //  Prevenir múltiples clics simultáneos
         if (window.edicionEnProgreso) {
             return;
         }
@@ -638,8 +637,8 @@
             <div style="text-align: left;">
                 <div style="margin-bottom: 1rem;">
                     <label for="justificacion-cambio" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
-                    <textarea id="justificacion-cambio" 
-                        placeholder="Explica brevemente el motivo de los cambios..." 
+                    <textarea id="justificacion-cambio"
+                        placeholder="Explica brevemente el motivo de los cambios..."
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical;">
                     </textarea>
                 </div>
@@ -837,8 +836,8 @@
                 const numeroPedido = (row.getAttribute('data-numero-pedido') || '').toLowerCase();
                 const cliente = (row.getAttribute('data-cliente') || '').toLowerCase();
                 
-                const matches = !searchTerm || 
-                               numeroPedido.includes(searchTerm) || 
+                const matches = !searchTerm ||
+                               numeroPedido.includes(searchTerm) ||
                                cliente.includes(searchTerm);
 
                 if (matches) {
@@ -1354,7 +1353,6 @@
 
     /**
      *  INICIALIZACIÓN DE LAZY LOADERS
-     * 
      * Envuelve funciones de interfaz para cargar módulos bajo demanda
      */
     document.addEventListener('DOMContentLoaded', function() {

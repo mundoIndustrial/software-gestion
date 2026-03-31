@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * LogoCotizacion Model
+ * @property int $id
+ * @property int $cotizacion_id
+ * @property array $observaciones_generales
+ * @property string $tipo_venta
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class LogoCotizacion extends Model
 {
     use HasFactory;
@@ -37,14 +46,6 @@ class LogoCotizacion extends Model
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
-    }
-
-    /**
-     * Relación: Un logo puede tener múltiples fotos (máximo 5)
-     */
-    public function fotos(): HasMany
-    {
-        return $this->hasMany(LogoFotoCot::class, 'logo_cotizacion_id')->orderBy('orden');
     }
 
     /**

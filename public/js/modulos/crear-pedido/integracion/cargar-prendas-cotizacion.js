@@ -79,10 +79,10 @@ class CargadorPrendasCotizacion {
         
         //  FIX CRÍTICO: Usar telas_multiples de la prenda original guardada (tienen la referencia)
         // El backend NO devuelve telas_multiples, pero lo tenemos guardado en el cliente
-        if (window.prendaOriginalDesdeSelector && window.prendaOriginalDesdeSelector.variantes) {
+        if (globalThis.prendaOriginalDesdeSelector && globalThis.prendaOriginalDesdeSelector.variantes) {
             console.log('[transformarDatos]  USANDO telas_multiples de prenda original guardada:');
             
-            const variantesOriginales = window.prendaOriginalDesdeSelector.variantes;
+            const variantesOriginales = globalThis.prendaOriginalDesdeSelector.variantes;
             let telasMultiplesDelOriginal = [];
             
             if (Array.isArray(variantesOriginales)) {
@@ -118,7 +118,7 @@ class CargadorPrendasCotizacion {
             
             // Guardar en un lugar accesible para usarlas más adelante
             if (telasMultiplesDelOriginal.length > 0) {
-                window._telasMultiplesOriginales = telasMultiplesDelOriginal;
+                globalThis._telasMultiplesOriginales = telasMultiplesDelOriginal;
                 console.log('[transformarDatos]  Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
                 telasMultiplesDelOriginal.forEach((t, idx) => {
                     console.log(`  [${idx}] ${t.tela} - ${t.color} -> ref: "${t.referencia}" | imagenes: ${t.imagenes ? JSON.stringify(t.imagenes).substring(0, 100) : 'undefined'}`);
@@ -238,8 +238,8 @@ class CargadorPrendasCotizacion {
         console.log('[transformarDatos]  FOTOS PROCESADAS FINAL:', fotosFormato.map(f => ({ ruta: f.ruta, uid: f.uid })));
 
         // Preparar telas CON TODAS LAS REFERENCIAS
-        console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
-        console.log('[transformarDatos] 🧵 ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
+        console.log('[transformarDatos]  TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
+        console.log('[transformarDatos]  ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
         
         //  LÓGICA NUEVA: Verificar si hay telas desde logoCotizacionTelasPrenda
         // Estas vienen de la tabla logo_cotizacion_telas_prenda cuando la cotización es de tipo Logo
@@ -281,7 +281,7 @@ class CargadorPrendasCotizacion {
         // PROcesar telas desde el backend (prioridad 1)
         let telasDesdeBackend = (prenda.telas || []).map((tela, idx) => {
             const teleImagen = tela.imagenes || [];
-            console.log(`[transformarDatos] 🧵 Procesando tela ${idx} desde backend:`, {
+            console.log(`[transformarDatos]  Procesando tela ${idx} desde backend:`, {
                 id: tela.id,
                 nombre_tela: tela.nombre_tela,
                 color: tela.color,
@@ -376,7 +376,7 @@ class CargadorPrendasCotizacion {
                 
                 // Verificar si esta variante tiene telas_multiples
                 if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
-                    console.log(`[transformarDatos] 🧵 [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
+                    console.log(`[transformarDatos]  [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
                     
                     // Recorrer todas las telas de esta variante
                     variante.telas_multiples.forEach((tela, telaIndex) => {
@@ -469,7 +469,7 @@ class CargadorPrendasCotizacion {
             console.log('[transformarDatos]   telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
             
             if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
-                console.log('[transformarDatos]  🧵 Encontradas', telasMultiples.length, 'telas en telas_multiples');
+                console.log('[transformarDatos]   Encontradas', telasMultiples.length, 'telas en telas_multiples');
                 telasMultiples.forEach((tela, idx) => {
                     console.log(`[transformarDatos]  [TelaMultiple ${idx}] Procesando:`, {
                         tela: tela.tela,
@@ -597,10 +597,10 @@ class CargadorPrendasCotizacion {
         
         //  FIX CRÍTICO: Si tenemos telas_multiples originales guardadas, usarlas para enriquecer
         // Esto asegura que referencias como '43534543' se asignen correctamente
-        if (window._telasMultiplesOriginales && window._telasMultiplesOriginales.length > 0 && telasFormato.length > 0) {
+        if (globalThis._telasMultiplesOriginales && globalThis._telasMultiplesOriginales.length > 0 && telasFormato.length > 0) {
             console.log('[transformarDatos]  ENRIQUECIENDO CON telas_multiples ORIGINALES...');
             
-            window._telasMultiplesOriginales.forEach(telaOriginal => {
+            globalThis._telasMultiplesOriginales.forEach(telaOriginal => {
                 // Estrategia 1: Buscar por índice directo (más confiable)
                 let indiceEncontrado = -1;
                 
@@ -955,14 +955,14 @@ class CargadorPrendasCotizacion {
     agregarPrendaAGestion(prendaCompleta) {
         console.log('[CargadorPrendasCotizacion]  Agregando prenda a GestionItemsUI');
 
-        if (!window.gestionItemsUI) {
+        if (!globalThis.gestionItemsUI) {
             console.error(' GestionItemsUI no disponible');
             return false;
         }
 
         try {
             // Agregar al array de prendas
-            window.gestionItemsUI.agregarPrendaAlOrden(prendaCompleta);
+            globalThis.gestionItemsUI.agregarPrendaAlOrden(prendaCompleta);
 
             console.log('[CargadorPrendasCotizacion] ✓ Prenda agregada a GestionItemsUI');
             return true;
@@ -974,13 +974,13 @@ class CargadorPrendasCotizacion {
 }
 
 // Instancia global
-window.cargadorPrendasCotizacion = new CargadorPrendasCotizacion();
+globalThis.cargadorPrendasCotizacion = new CargadorPrendasCotizacion();
 
 /**
  * Abrir modal para seleccionar prenda de cotización
  * Usar el mismo modal-agregar-prenda-nueva que en crear sin cotización
  */
-window.abrirSelectorPrendasCotizacion = function(cotizacion) {
+globalThis.abrirSelectorPrendasCotizacion = function(cotizacion) {
     console.log('[abrirSelectorPrendasCotizacion]  Abriendo selector de prendas');
     console.log('  Cotización:', cotizacion);
 
@@ -1177,7 +1177,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
 
                 //  GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
                 // Guardar la prenda original del selector para poder acceder a telas_multiples más tarde
-                window.prendaOriginalDesdeSelector = {
+                globalThis.prendaOriginalDesdeSelector = {
                     variantes: prenda.variantes,
                     id: prenda.id,
                     nombre_producto: prenda.nombre_producto,
@@ -1189,7 +1189,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     variantes_length: prenda.variantes?.length || 0
                 });
 
-                const prendaCompleta = await window.cargadorPrendasCotizacion.cargarPrendaCompletaDesdeCotizacion(
+                const prendaCompleta = await globalThis.cargadorPrendasCotizacion.cargarPrendaCompletaDesdeCotizacion(
                     cotizacion.id,
                     prenda.id
                 );
@@ -1199,12 +1199,12 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
 
                 // Abrir el modal modal-agregar-prenda-nueva con la prenda PRECARGADA
                 // Esto permite al usuario ver todos los campos llenos desde la cotización
-                if (window.gestionItemsUI && window.gestionItemsUI.prendaEditor) {
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendaEditor) {
                     //  ASIGNAR COTIZACIÓN AL PRENDAEDITOR (para origen automático)
                     // Usar el objeto original si existe, para tener acceso a tipo_cotizacion_id y tipo_cotizacion
                     const cotizacionParaPrendaEditor = cotizacion.original || cotizacion;
                     
-                    window.gestionItemsUI.prendaEditor.cotizacionActual = cotizacionParaPrendaEditor;
+                    globalThis.gestionItemsUI.prendaEditor.cotizacionActual = cotizacionParaPrendaEditor;
                     
                     console.log('[abrirSelectorPrendasCotizacion]  Cotización asignada al PrendaEditor:', {
                         id: cotizacionParaPrendaEditor.id,
@@ -1215,7 +1215,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     
                     // Cargar la prenda en el modal (NO como edición de existente, sino como NUEVA)
                     // Pero con todos los datos precargados
-                    window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
+                    globalThis.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
                     console.log('[abrirSelectorPrendasCotizacion] ✓ Prenda cargada en modal para edición');
                     
                     // Los procesos se cargarán automáticamente mediante PrendaEditorProcesos.cargar()
@@ -1231,8 +1231,8 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 }
 
                 // Notificar éxito
-                if (window.gestionItemsUI?.notificationService) {
-                    window.gestionItemsUI.notificationService.exito(
+                if (globalThis.gestionItemsUI?.notificationService) {
+                    globalThis.gestionItemsUI.notificationService.exito(
                         `Prenda "${nombrePrenda}" cargada desde cotización`
                     );
                 }

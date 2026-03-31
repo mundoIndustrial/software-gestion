@@ -412,7 +412,7 @@
             });
             // Siempre enviar, incluso si está vacío (para eliminar telas en BD)
             formData.append('colores_telas', JSON.stringify(telasJSON));
-            console.log('[PedidosAdapter] 🧵 Telas enviadas:', telasJSON.length, 'telas');
+            console.log('[PedidosAdapter]  Telas enviadas:', telasJSON.length, 'telas');
 
             // Procesos (JSON) - transformar de objeto a array si es necesario
             if (datos.procesos) {
@@ -1155,7 +1155,7 @@
                     _original_id: ct.id
                 };
             });
-            console.log('[PedidosAdapter] 🧵 Telas normalizadas:', prenda.telasAgregadas.length, 'telas');
+            console.log('[PedidosAdapter]  Telas normalizadas:', prenda.telasAgregadas.length, 'telas');
         }
 
         // ---- 3b. FALLBACK TELAS: si no hay colores_telas pero sí talla_colores, extraer telas únicas ----
@@ -1178,7 +1178,7 @@
             });
             
             prenda.telasAgregadas = Array.from(telasUnicas.values());
-            console.log('[PedidosAdapter] 🧵 Telas extraídas desde talla_colores (fallback):', prenda.telasAgregadas.length, 'telas');
+            console.log('[PedidosAdapter]  Telas extraídas desde talla_colores (fallback):', prenda.telasAgregadas.length, 'telas');
         }
 
         // ---- 4. IMÁGENES DE PRENDA: agregar /storage/ a rutas relativas y asegurar estructura correcta ----

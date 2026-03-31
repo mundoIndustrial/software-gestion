@@ -356,7 +356,7 @@ function obtenerDatosTallaExtendida(genero, talla) {
  */
 globalThis.agregarUbicacionATallaExtendido = function(genero, talla) {
     const input = document.querySelector(`.ubicacion-talla-input-extended[data-genero="${genero}"][data-talla="${talla}"]`);
-    if (!input || !input.value.trim()) {
+    if (!input?.value?.trim()) {
         return;
     }
     
@@ -412,20 +412,29 @@ globalThis.cargarImagenTallaExtendida = function(genero, talla, input) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const datos = obtenerDatosTallaExtendida(genero, talla);
-        datos.imagen = e.target.result;
-        
+        let imgSrc = e.target.result;
+        if (typeof imgSrc !== 'string' || !imgSrc.startsWith('data:image/')) {
+            console.warn('[cargarImagenTallaExtendida] El resultado del FileReader no es una Data URL de imagen:', imgSrc);
+            imgSrc = '';
+        }
+        datos.imagen = imgSrc;
+
         const imagenId = `imagen-extendida-${genero}-${talla}`;
         const previewDiv = document.getElementById(imagenId);
-        
+
         if (previewDiv) {
-            previewDiv.innerHTML = `
-                <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
-                <button type="button" 
-                    onclick="eliminarImagenTallaExtendida('${genero}', '${talla}')"
-                    style="position: absolute; top: 5px; right: 5px; background: #dc2626; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
-                    Eliminar
-                </button>
-            `;
+            if (imgSrc) {
+                previewDiv.innerHTML = `
+                    <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <button type="button" 
+                        onclick="eliminarImagenTallaExtendida('${genero}', '${talla}')"
+                        style="position: absolute; top: 5px; right: 5px; background: #dc2626; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                        Eliminar
+                    </button>
+                `;
+            } else {
+                previewDiv.innerHTML = `<div style="color: #dc2626; font-size: 0.9rem;">Imagen inválida</div>`;
+            }
             previewDiv.style.position = 'relative';
         }
     };

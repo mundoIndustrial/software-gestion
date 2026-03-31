@@ -235,7 +235,7 @@ class DiasTranscurridos {
         if (!fechaInicio || !fechaFin) throw new Error('Las fechas no pueden ser nulas');
         const inicio = new Date(fechaInicio);
         const fin = new Date(fechaFin);
-        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) throw new Error('Las fechas no son válidas');
+        if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) throw new Error('Las fechas no son válidas');
         const tiempoTranscurrido = fin.getTime() - inicio.getTime();
         const diasTranscurridos = Math.ceil(tiempoTranscurrido / (1000 * 60 * 60 * 24));
         return new DiasTranscurridos(Math.max(0, diasTranscurridos));
@@ -278,7 +278,7 @@ class EncargadoProceso {
         const nombre = this._value.toLowerCase();
         let hash = 0;
         for (let i = 0; i < nombre.length; i++) {
-            hash = ((hash << 5) - hash) + nombre.charCodeAt(i);
+            hash = ((hash << 5) - hash) + (nombre.codePointAt(i) || 0);
             hash = hash & hash;
         }
         const hue = Math.abs(hash) % 360;
@@ -287,9 +287,9 @@ class EncargadoProceso {
 
     _getTextColor() {
         const hslString = this._hashStringToColor();
-        const hslMatch = hslString.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
+        const hslMatch = /(\d+),\s*(\d+)%,\s*(\d+)%/.exec(hslString);
         if (!hslMatch) return '#000000';
-        const lightness = parseInt(hslMatch[3]);
+        const lightness = Number(hslMatch[3]);
         return lightness > 50 ? '#000000' : '#ffffff';
     }
 
@@ -316,7 +316,12 @@ class EncargadoProceso {
 
     static tryFrom(nombre) {
         if (!nombre || typeof nombre !== 'string' || nombre.trim() === '') return null;
-        try { return new EncargadoProceso(nombre); } catch (e) { return null; }
+        try { 
+            return new EncargadoProceso(nombre); 
+        } catch (error) { 
+            console.error('Error al crear EncargadoProceso desde tryFrom:', error);
+            return null; 
+        }
     }
 
     static isEncargadoValido(valor) {
@@ -456,7 +461,7 @@ class RecibosState {
         return RecibosState.#instance;
     }
 
-    getState() { return JSON.parse(JSON.stringify(this._state)); }
+    getState() { return structuredClone(this._state); }
 
     get(ruta) {
         const partes = ruta.split('.');
@@ -522,32 +527,24 @@ class RecibosState {
         };
     }
 
-    _notify(ruta) {
-        if (this._subscribers.has(ruta)) {
-            const valor = this.get(ruta);
-            for (const callback of this._subscribers.get(ruta)) {
-                try {
-                    callback(valor);
-                } catch (error) {
-                    console.error(`Error en subscriber de "${ruta}":`, error);
-                }
+    _notifySubscribers(ruta) {
+        if (!this._subscribers.has(ruta)) return;
+        const valor = this.get(ruta);
+        for (const callback of this._subscribers.get(ruta)) {
+            try {
+                callback(valor);
+            } catch (error) {
+                console.error(`Error en subscriber de "${ruta}":`, error);
             }
         }
+    }
 
+    _notify(ruta) {
+        this._notifySubscribers(ruta);
         const partes = ruta.split('.');
         while (partes.length > 1) {
             partes.pop();
-            const rutaPadre = partes.join('.');
-            if (this._subscribers.has(rutaPadre)) {
-                const valor = this.get(rutaPadre);
-                for (const callback of this._subscribers.get(rutaPadre)) {
-                    try {
-                        callback(valor);
-                    } catch (error) {
-                        console.error(`Error en subscriber de "${rutaPadre}":`, error);
-                    }
-                }
-            }
+            this._notifySubscribers(partes.join('.'));
         }
     }
 
@@ -785,7 +782,7 @@ class RecibosTableController {
         ul.querySelectorAll('[data-page]').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.irAPageina(parseInt(link.dataset.page));
+                this.irAPageina(Number(link.dataset.page));
             });
         });
 
@@ -807,12 +804,10 @@ class RecibosTableController {
 // ========================================
 
 class RecibosCostruaModule {
-    constructor() {
-        this.state = null;
-        this.api = null;
-        this.tableController = null;
-        this.initialized = false;
-    }
+    state = null;
+    api = null;
+    tableController = null;
+    initialized = false;
 
     async init() {
         try {
@@ -830,7 +825,7 @@ class RecibosCostruaModule {
                 successAlert: document.querySelector('.alert-success')
             });
 
-            window.recibosCostruaModule = this;
+            globalThis.recibosCostruaModule = this;
             this.initialized = true;
             
             console.log(' Módulo de recibos de costura inicializado exitosamente');
@@ -867,54 +862,14 @@ function setupTableEventListeners() {
     //  Event listener delegado POR LEGACY-HANDLERS.JS - No duplicar aquí
     console.log(' Event listeners configurados para tabla (delegados a legacy-handlers.js)');
     
-    /*
-    // LEGACY: Event listener delegado para botones "Ver detalles"
-    document.addEventListener('click', (e) => {
-        const btnVerDropdown = e.target.closest('.btn-ver-dropdown');
-        if (btnVerDropdown) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const menuId = btnVerDropdown.getAttribute('data-menu-id');
-            const pedidoId = btnVerDropdown.getAttribute('data-pedido-id');
-            const prendaId = btnVerDropdown.getAttribute('data-prenda-id');
-            const tipoRecibo = btnVerDropdown.getAttribute('data-tipo-recibo') || 'COSTURA';
-            const esParcial = String(btnVerDropdown.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
-            const pedidoParcialId = btnVerDropdown.getAttribute('data-pedido-parcial-id');
-
-            console.log('👁️ Bot Ver Detalles - Pedido:', pedidoId, 'Prenda:', prendaId);
-
-            // Crear o mostrar dropdown
-            const dropdown = crearDropdownRecibos(btnVerDropdown);
-            
-            // Colocar dropdown cerca del botón
-            posicionarDropdown(btnVerDropdown, dropdown, menuId);
-            
-            // Mostrar dropdown
-            dropdown.style.display = 'block';
-            dropdown.style.pointerEvents = 'auto';
-        }
-    });
-
-    // Cerrar dropdowns cuando se hace click fuera
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.btn-ver-dropdown') && !e.target.closest('.dropdown-menu-recibos')) {
-            closeDropdownRecibos();
-        }
-    });
-    */
+    
 }
 
 /**
  * Crear dropdown dinámico para recibos-costura
  */
 function crearDropdownRecibos(button) {
-    const menuId = button.getAttribute('data-menu-id');
-    const pedidoId = button.getAttribute('data-pedido-id');
-    const prendaId = button.getAttribute('data-prenda-id');
-    const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
-    const esParcial = String(button.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
-    const parcialId = button.getAttribute('data-pedido-parcial-id');
+    const { menuId, pedidoId, prendaId, tipoRecibo = 'COSTURA' } = button.dataset;
 
     // Verificar si ya existe
     let existing = document.getElementById(menuId);
@@ -982,13 +937,7 @@ function crearDropdownRecibos(button) {
  *  COMENTADA: Usar la versión de legacy-handlers.js 
  * Esta función tenía parámetros incompatibles causando que estilos se aplicaran al botón
  */
-/*
-function posicionarDropdown(button, dropdown, menuId) {
-    const rect = button.getBoundingClientRect();
-    dropdown.style.top = (rect.bottom + 8) + 'px';
-    dropdown.style.left = (rect.left) + 'px';
-}
-*/
+
 
 /**
  * Cerrar todos los dropdowns
@@ -1100,10 +1049,10 @@ function openOrderDetailModal(datos) {
             console.log('🔓 Modal abierto con datos:', datos);
 
             // Usar el módulo pedidosRecibosModule si está disponible
-            if (typeof window.pedidosRecibosModule !== 'undefined' && 
-                typeof window.pedidosRecibosModule.abrirRecibo === 'function') {
+            if (globalThis.pedidosRecibosModule !== undefined && 
+                typeof globalThis.pedidosRecibosModule.abrirRecibo === 'function') {
                 console.log(` Delegando a pedidosRecibosModule.abrirRecibo(${pedidoId}, ${prendaSeleccionada.id}, 'costura')`);
-                window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaSeleccionada.id, 'costura');
+                globalThis.pedidosRecibosModule.abrirRecibo(pedidoId, prendaSeleccionada.id, 'costura');
             } else {
                 console.warn(' módulo pedidosRecibosModule no disponible');
             }
@@ -1125,14 +1074,14 @@ function openOrderDetailModal(datos) {
 /**
  * Cerrar modal de detalles (función global)
  */
-window.closeModalOverlay = function() {
-    console.log('🔒 Cerrando modal de detalles...');
+globalThis.closeModalOverlay = function() {
+    console.log(' Cerrando modal de detalles...');
     
     // Delegar al módulo de pedidos si está disponible (limpia estado, galería, botones)
-    if (typeof window.pedidosRecibosModule !== 'undefined' && 
-        typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+    if (globalThis.pedidosRecibosModule !== undefined && 
+        typeof globalThis.pedidosRecibosModule.cerrarRecibo === 'function') {
         console.log(' Delegando cierre a pedidosRecibosModule.cerrarRecibo()');
-        window.pedidosRecibosModule.cerrarRecibo();
+        globalThis.pedidosRecibosModule.cerrarRecibo();
     }
 
     // Cerrar overlay y wrapper
