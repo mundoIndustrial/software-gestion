@@ -863,7 +863,7 @@ window.UIRenderer = (function() {
          * Cargar y mostrar colores disponibles para asignación
          */
         cargarColoresDispAsignacion() {
-            console.log('[UIRenderer] 🔵 Cargando colores disponibles...');
+            console.log('[UIRenderer]  Cargando colores disponibles...');
             
             try {
                 const contenedor = document.getElementById('lista-colores-checkboxes');

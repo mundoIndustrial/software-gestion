@@ -38,10 +38,9 @@ require_once base_path('routes/procesos.php');
 require_once base_path('routes/epp.php');
 
 /**
- * Cotizaciones Management Routes
- * Gestión completa de cotizaciones en módulo separado
+ * Logo Cotización Técnicas Routes
+ * Gestión de técnicas en cotizaciones de logo
  */
-require_once base_path('routes/cotizaciones.php');
 require_once base_path('routes/logo-cotizacion-tecnicas.php');
 
 /**

@@ -115,7 +115,7 @@ final class CotizacionController extends Controller
 
             $mapeoTipos = [
                 1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}&editar_cotizacion=1',
-                2 => '/asesores/cotizaciones/bordado/crear?editar={id}&editar_cotizacion=1',
+                2 => '/asesores/cotizaciones-bordado/crear?editar={id}&editar_cotizacion=1',
                 3 => '/asesores/cotizaciones/create?tipo=P&editar={id}&editar_cotizacion=1',
             ];
 
@@ -641,7 +641,7 @@ final class CotizacionController extends Controller
             // Mapeo de tipos a rutas de redirección
             $mapeoTipos = [
                 1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}',  // Combinada (Prenda + Logo)
-                2 => '/asesores/cotizaciones/bordado/crear?editar={id}',  // Logo only
+                2 => '/asesores/cotizaciones-bordado/crear?editar={id}',  // Logo only
                 3 => '/asesores/cotizaciones/create?tipo=P&editar={id}',   // Prenda only
             ];
 

@@ -297,7 +297,7 @@ function openCotizacionModal(cotizacionId) {
     const modal = document.getElementById('cotizacionModal');
     const content = document.getElementById('modalBody');
     
-    fetch(`/contador/cotizacion/${cotizacionId}`)
+    fetch(`/asesores/contador/cotizacion/${cotizacionId}`)
         .then(response => response.text())
         .then(html => {
             content.innerHTML = html;

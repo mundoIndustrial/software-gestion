@@ -43,7 +43,7 @@ class CrearCotizacionBordadoService
     {
         return DB::transaction(function () use ($request) {
             try {
-                Log::info('🔵 CrearCotizacionBordadoService - Iniciando creación', [
+                Log::info(' CrearCotizacionBordadoService - Iniciando creación', [
                     'es_borrador' => $request->es_borrador,
                     'asesor_id' => Auth::id(),
                 ]);
@@ -96,6 +96,7 @@ class CrearCotizacionBordadoService
                 if (!empty($request->tecnicas)) {
                     $this->procesarTecnicasService->ejecutar(
                         $logoCotizacion->id,
+                        $cotizacion->id,
                         $request->tecnicas,
                         $request->archivos_tecnicas,
                     );
@@ -126,12 +127,7 @@ class CrearCotizacionBordadoService
                 }
 
                 // 9. Recargar y retornar
-                $cotizacionCompleta = $cotizacion->load([
-                    'cliente',
-                    'logoCotizacion' => function ($query) {
-                        $query->with(['fotos', 'prendas.tipoLogo', 'prendas.prendaCot']);
-                    }
-                ]);
+                $cotizacionCompleta = $cotizacion->fresh();
 
                 return CotizacionResponse::fromModel($cotizacionCompleta);
 

@@ -1106,7 +1106,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     
     const action = submitButton.value;
     
-    console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
+    console.log(' Botón presionado:', submitButton?.textContent?.trim());
 
 
 
@@ -1117,11 +1117,11 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     if (window.location.search.includes('editar=')) {
         // Editando borrador
         const cotizacionId = new URLSearchParams(window.location.search).get('editar');
-        url = `/cotizaciones-bordado/${cotizacionId}/borrador`;
+        url = `/asesores/cotizaciones-bordado/${cotizacionId}/borrador`;
         method = 'PUT';
     } else {
         // Creando nueva cotización
-        url = `/cotizaciones-bordado`;
+        url = `/asesores/cotizaciones-bordado`;
         method = 'POST';
     }
 

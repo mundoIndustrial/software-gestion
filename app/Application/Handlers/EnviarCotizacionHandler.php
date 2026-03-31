@@ -39,7 +39,7 @@ class EnviarCotizacionHandler
     public function handle(EnviarCotizacionCommand $command): Cotizacion
     {
         return \Illuminate\Support\Facades\DB::transaction(function () use ($command) {
-            Log::info('🔵 EnviarCotizacionHandler - Iniciando envío de cotización', [
+            Log::info(' EnviarCotizacionHandler - Iniciando envío de cotización', [
                 'cotizacion_id' => $command->cotizacionId,
                 'tipo_cotizacion_id' => $command->tipoCotizacionId
             ]);

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -12,23 +11,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $logo_cotizacion_tecnica_prenda_id
  * @property string $ruta_original
  * @property string $ruta_webp
- * @property string $ruta_miniatura
  * @property int $orden
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 class LogoCotizacionTecnicaPrendaFoto extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'logo_cotizacion_tecnica_prendas_fotos';
 
     protected $fillable = [
         'logo_cotizacion_tecnica_prenda_id',
         'ruta_original',
         'ruta_webp',
-        'ruta_miniatura',
         'orden',
     ];
 

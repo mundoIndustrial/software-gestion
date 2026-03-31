@@ -77,7 +77,7 @@ async function confirmarEnvio(cotizacionId) {
     }
 
     try {
-        const response = await fetch(`/cotizaciones/bordado/${cotizacionId}/enviar`, {
+        const response = await fetch(`/asesores/cotizaciones-bordado/${cotizacionId}/enviar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ async function confirmarEliminar(cotizacionId) {
     }
 
     try {
-        const response = await fetch(`/cotizaciones/bordado/${cotizacionId}`, {
+        const response = await fetch(`/asesores/cotizaciones-bordado/${cotizacionId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

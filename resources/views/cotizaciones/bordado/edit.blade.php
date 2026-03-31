@@ -277,7 +277,7 @@ document.getElementById('btnGuardar').addEventListener('click', async function()
     };
 
     try {
-        const response = await fetch(`/cotizaciones/bordado/${cotizacionId}`, {
+        const response = await fetch(`/asesores/cotizaciones-bordado/${cotizacionId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ document.getElementById('btnEnviar').addEventListener('click', async function() 
     }
 
     try {
-        const response = await fetch(`/cotizaciones/bordado/${cotizacionId}/enviar`, {
+        const response = await fetch(`/asesores/cotizaciones-bordado/${cotizacionId}/enviar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

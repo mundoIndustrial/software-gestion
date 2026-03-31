@@ -64,7 +64,7 @@ class CotizacionPrendaController extends Controller
         // Si algo falla, TODO se revierte (ROLLBACK)
         return DB::transaction(function () use ($request) {
             try {
-                Log::info('🔵 CotizacionPrendaController@store - Iniciando guardado de cotización de Prenda');
+                Log::info(' CotizacionPrendaController@store - Iniciando guardado de cotización de Prenda');
 
                 // Determinar si es borrador o enviada
                 $action = $request->input('action') ?? $request->input('accion');

@@ -262,7 +262,7 @@ window.AsignacionManager = (function() {
          * Obtener colores disponibles de los arrays de telas
          */
         obtenerColoresDisponibles() {
-            console.log('[AsignacionManager] 🔵 Obteniendo colores disponibles...');
+            console.log('[AsignacionManager]  Obteniendo colores disponibles...');
             
             const colores = [];
             

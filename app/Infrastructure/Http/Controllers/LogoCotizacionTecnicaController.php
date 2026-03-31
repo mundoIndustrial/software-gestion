@@ -27,7 +27,7 @@ class LogoCotizacionTecnicaController extends Controller
     public function tiposDisponibles()
     {
         try {
-            Log::info('µ tiposDisponibles() - Iniciando');
+            Log::info(' tiposDisponibles() - Iniciando');
             
             $tipos = TipoLogoCotizacion::activos()->get();
             
@@ -85,7 +85,7 @@ class LogoCotizacionTecnicaController extends Controller
                 $prendasPreview = json_encode($prendasPreview);
             }
 
-            Log::info('µ agregarTecnica() - Request FormData recibido', [
+            Log::info(' agregarTecnica() - Request FormData recibido', [
                 'logo_cotizacion_id' => $request->input('logo_cotizacion_id'),
                 'tipo_logo_id' => $request->input('tipo_logo_id'),
                 'es_combinada' => $request->input('es_combinada'),

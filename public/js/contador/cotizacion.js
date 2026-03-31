@@ -235,7 +235,7 @@ function openCotizacionModal(cotizacionId) {
     ensureModules.then(() => {
 
 
-    fetch(`/contador/cotizacion/${cotizacionId}`)
+    fetch(`/asesores/contador/cotizacion/${cotizacionId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -934,7 +934,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
             });
 
             // Proceder con la eliminación
-            fetch(`/contador/cotizacion/${cotizacionId}`, {
+            fetch(`/asesores/contador/cotizacion/${cotizacionId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

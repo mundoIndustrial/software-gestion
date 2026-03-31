@@ -179,19 +179,8 @@ Route::middleware(['auth', 'verified'])->name('cotizaciones.estado.')->group(fun
 // ========================================
 // API ROUTES - COTIZACIONES (DDD)
 // ========================================
-// CRUD Principal de Cotizaciones
-Route::withoutMiddleware(['api'])
-    ->middleware(['web', 'auth'])
-    ->group(function () {
-    
-    // APIResource: GET, POST, PUT, DELETE, PATCH
-    Route::apiResource('cotizaciones', CotizacionPrendaController::class);
-    
-    // GET adicional: Obtener telas para una prenda en cotizacion
-    Route::get('cotizaciones/{cotizacion_id}/prendas/{prenda_id}/telas-cotizacion', 
-        [CotizacionPrendaController::class, 'obtenerTelasCotizacion'])
-        ->name('cotizaciones.prendas.telas-cotizacion');
-});
+// NOTA: Las rutas específicas ya están definidas en las secciones anteriores
+// No usar apiResource aquí para evitar conflictos con rutas explícitas
 
 // Datos especificos para prendas en cotizaciones
 Route::prefix('cotizacion')->name('cotizacion.')->middleware(['auth'])->group(function () {

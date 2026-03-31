@@ -12,7 +12,7 @@ class TodosTiposCotizacionesTest extends TestCase
 
     public function test_todos_tipos_cotizaciones_numeracion_global()
     {
-        echo "\nµ TEST: Todos los tipos de cotizaciones - Numeración Global\n";
+        echo "\n TEST: Todos los tipos de cotizaciones - Numeración Global\n";
         echo "===========================================================\n\n";
 
         $servicio = app(GenerarNumeroCotizacionService::class);

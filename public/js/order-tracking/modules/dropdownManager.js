@@ -22,14 +22,14 @@ const ViewDropdownManager = (() => {
         dropdown.className = 'view-button-dropdown';
         dropdown.dataset.orderId = orderId;
         dropdown.innerHTML = `
-            <button class="dropdown-option detail-option" onclick="console.log('🔵 [DROPDOWN] Click en Detalle'); viewDetail(${orderId}); ViewDropdownManager.closeViewDropdown(${orderId})">
+            <button class="dropdown-option detail-option" onclick="console.log(' [DROPDOWN] Click en Detalle'); viewDetail(${orderId}); ViewDropdownManager.closeViewDropdown(${orderId})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 </svg>
                 <span>Detalle</span>
             </button>
-            <button class="dropdown-option tracking-option" onclick="console.log('🔵 [DROPDOWN] Click en Seguimiento'); openOrderTracking(${orderId}); ViewDropdownManager.closeViewDropdown(${orderId})">
+            <button class="dropdown-option tracking-option" onclick="console.log(' [DROPDOWN] Click en Seguimiento'); openOrderTracking(${orderId}); ViewDropdownManager.closeViewDropdown(${orderId})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 11l3 3L22 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>

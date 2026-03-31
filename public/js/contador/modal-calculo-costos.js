@@ -117,7 +117,7 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
     costosTodasPrendas = {};
     
     // Obtener las prendas de la cotización
-    fetch(`/contador/cotizacion/${cotizacionId}`)
+    fetch(`/asesores/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
             // El endpoint retorna {cotizacion: {...}, prendas_cotizaciones: [...]}

@@ -30,10 +30,11 @@ class ProcesarTecnicasBordadoService
     /**
      * Ejecutar: Procesar técnicas nuevas
      */
-    public function ejecutar(int $logoCotizacionId, array $tecnicas, array $archivos = []): void
+    public function ejecutar(int $logoCotizacionId, int $cotizacionId, array $tecnicas, array $archivos = []): void
     {
         Log::info('Procesando técnicas nuevas', [
             'logo_cotizacion_id' => $logoCotizacionId,
+            'cotizacion_id' => $cotizacionId,
             'tecnicas_count' => count($tecnicas),
         ]);
 
@@ -47,6 +48,7 @@ class ProcesarTecnicasBordadoService
         foreach ($tecnicas as $tecnicaIdx => $tecnica) {
             $this->procesarTecnicaIndividual(
                 $logoCotizacionId,
+                $cotizacionId,
                 $tecnicaIdx,
                 $tecnica,
                 $archivos,
@@ -58,7 +60,7 @@ class ProcesarTecnicasBordadoService
     /**
      * Sincronizar: Actualizar técnicas existentes
      */
-    public function sincronizar(int $logoCotizacionId, array $tecnicas, array $archivos = []): void
+    public function sincronizar(int $logoCotizacionId, int $cotizacionId, array $tecnicas, array $archivos = []): void
     {
         Log::info('Sincronizando técnicas existentes', [
             'logo_cotizacion_id' => $logoCotizacionId,
@@ -88,6 +90,7 @@ class ProcesarTecnicasBordadoService
                     // Nueva prenda técnica: crearla
                     $this->crearPrendaTecnica(
                         $logoCotizacionId,
+                        $cotizacionId,
                         $tecnicaIdx,
                         $prendaIdx,
                         $tecnica,
@@ -129,6 +132,7 @@ class ProcesarTecnicasBordadoService
      */
     private function procesarTecnicaIndividual(
         int $logoCotizacionId,
+        int $cotizacionId,
         int $tecnicaIdx,
         array $tecnica,
         array $archivos,
@@ -146,6 +150,7 @@ class ProcesarTecnicasBordadoService
         foreach (($tecnica['prendas'] ?? []) as $prendaIdx => $prenda) {
             $this->crearPrendaTecnica(
                 $logoCotizacionId,
+                $cotizacionId,
                 $tecnicaIdx,
                 $prendaIdx,
                 $tecnica,
@@ -161,6 +166,7 @@ class ProcesarTecnicasBordadoService
      */
     private function crearPrendaTecnica(
         int $logoCotizacionId,
+        int $cotizacionId,
         int $tecnicaIdx,
         int $prendaIdx,
         array $tecnica,
@@ -171,6 +177,7 @@ class ProcesarTecnicasBordadoService
         // Obtener o crear prenda base
         $prendaCotId = $this->obtenerOCrearPrendaCot(
             $logoCotizacionId,
+            $cotizacionId,
             $prenda['nombre_prenda'] ?? 'Prenda',
             $prenda['variaciones_prenda'] ?? null,
             $tecnica['grupo_combinado'] ?? null
@@ -195,6 +202,7 @@ class ProcesarTecnicasBordadoService
         // Procesar fotos de esta prenda técnica
         $this->procesarFotosDelPrenda(
             $prendaTecnica->id,
+            $logoCotizacionId,
             $tecnicaIdx,
             $prendaIdx,
             $archivos
@@ -206,6 +214,7 @@ class ProcesarTecnicasBordadoService
      */
     private function procesarFotosDelPrenda(
         int $prendaTecnicaId,
+        int $logoCotizacionId,
         int $tecnicaIdx,
         int $prendaIdx,
         array $archivos
@@ -224,7 +233,7 @@ class ProcesarTecnicasBordadoService
                 try {
                     $rutas = $this->imagenService->guardarImagen(
                         $archivo,
-                        (int) LogoCotizacionTecnicaPrenda::find($prendaTecnicaId)->logo_cotizacion_id,
+                        $logoCotizacionId,
                         'TÉCNICA'
                     );
 
@@ -232,7 +241,6 @@ class ProcesarTecnicasBordadoService
                         'logo_cotizacion_tecnica_prenda_id' => $prendaTecnicaId,
                         'ruta_original' => $rutas['ruta_original'] ?? $rutas['ruta_webp'],
                         'ruta_webp' => $rutas['ruta_webp'],
-                        'ruta_miniatura' => $rutas['ruta_miniatura'],
                         'orden' => $orden,
                     ]);
 
@@ -257,17 +265,14 @@ class ProcesarTecnicasBordadoService
      */
     private function obtenerOCrearPrendaCot(
         int $logoCotizacionId,
+        int $cotizacionId,
         string $nombre,
         $variaciones = null,
         $grupo = null
     ): int {
-        $variacionesKey = is_string($variaciones)
-            ? $variaciones
-            : json_encode($variaciones ?? null);
-
-        // Buscar prenda existente con mismo nombre y variaciones
+        // Buscar prenda existente con mismo nombre y cotización
         $prenda = PrendaCot::where('nombre_producto', $nombre)
-            ->where('variaciones', $variacionesKey)
+            ->where('cotizacion_id', $cotizacionId)
             ->first();
 
         if ($prenda) {
@@ -277,8 +282,7 @@ class ProcesarTecnicasBordadoService
         // Crear prenda nueva
         $prenda = PrendaCot::create([
             'nombre_producto' => $nombre,
-            'variaciones' => $variacionesKey,
-            'grupo' => $grupo,
+            'cotizacion_id' => $cotizacionId,
         ]);
 
         Log::info('✓ Prenda base creada', ['prenda_id' => $prenda->id]);

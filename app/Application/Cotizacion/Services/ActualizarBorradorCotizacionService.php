@@ -176,6 +176,7 @@ class ActualizarBorradorCotizacionService
 
         $this->procesarTecnicasService->sincronizar(
             $logoCotizacion->id,
+            $logoCotizacion->cotizacion_id,
             $request->tecnicas,
             $request->archivos_tecnicas
         );

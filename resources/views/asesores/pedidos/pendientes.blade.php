@@ -273,12 +273,12 @@
 
 @push('scripts')
     <script>
-        console.log('🔵 Script de pendientes iniciando...');
+        console.log(' Script de pendientes iniciando...');
         
         let currentPage = 1;
         let searchTimeout = null;
 
-        console.log('🔵 Variables inicializadas');
+        console.log(' Variables inicializadas');
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🟢 DOMContentLoaded disparado');

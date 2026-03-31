@@ -10,10 +10,9 @@ class LogoCotizacionTecnicaPrenda extends Model
 {
     protected $table = 'logo_cotizacion_tecnica_prendas';
 
-    public int $logo_cotizacion_id;
-    public int $tipo_logo_id;
-    public int $prenda_cot_id;
-    public ?string $observaciones;
+    // Para evitar errores de propiedades tipadas en relaciones Eloquent,
+    // no declaramos propiedades publicas tipadas directamente. 
+    // Eloquent maneja dinámicamente los atributos.
 
     protected $fillable = [
         'logo_cotizacion_id',

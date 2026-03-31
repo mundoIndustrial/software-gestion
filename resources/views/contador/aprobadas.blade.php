@@ -148,7 +148,7 @@ document.addEventListener('click', function(event) {
                                             <i class="fas fa-chart-bar"></i>
                                             <span>Ver Costos</span>
                                         </a>
-                                        <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
+                                        <a href="/asesores/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
                                             <i class="fas fa-file-pdf"></i>
                                             <span>Ver PDF</span>
                                         </a>
