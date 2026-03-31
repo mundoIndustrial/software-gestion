@@ -3,8 +3,19 @@
 @section('title', 'Revisar Prenda')
 @section('page-title', 'Revisar Prenda')
 
+@section('extra_styles')
+    {{-- Estilos necesarios para que el modal de prenda se vea igual que en crear-nuevo --}}
+    <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
+@endsection
+
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
 <style>
     .revisar-toolbar {
         display: flex;
@@ -146,7 +157,7 @@
 
 @if($recibos->count() === 0)
     <div class="revisar-empty">
-        No hay prendas para revisar con recibo de costura en estado <strong>DEVUELTO A ASESOR</strong>.
+        No hay prendas para revisar con recibo de costura en estado <strong>DEVUELTO ASESOR</strong>.
     </div>
 @else
     <div style="overflow:auto;">
@@ -170,6 +181,14 @@
                                 <button type="button" class="btn-revisar btn-revisar-editar"
                                         onclick="editarPrendaDesdeRevision({{ $item['pedido_produccion_id'] }}, {{ $item['prenda_id'] }}, @js($item['nombre_prenda']))">
                                     Editar
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-revisar"
+                                    style="background:#fef3c7;color:#92400e;"
+                                    onclick="aprobarReciboParaInsumos({{ $item['id'] }})"
+                                >
+                                    Aprobar
                                 </button>
                             </div>
                         </td>
@@ -212,36 +231,40 @@
 <script>
     window.revisionPrendasMap = @json($recibos->getCollection()->keyBy('id'));
 
+    // Reutilizar el mismo modal de recibos usado en Insumos (order-detail-modal)
+    // Se carga bajo demanda via dynamic import para no acoplar la página al bundle completo.
+    let _openOrderDetailModalHandler = null;
+    async function _resolveOpenOrderDetailModalHandler() {
+        if (typeof _openOrderDetailModalHandler === 'function') return _openOrderDetailModalHandler;
+
+        const { PedidosRecibosModule } = await import('/js/modulos/pedidos-recibos/PedidosRecibosModule.js');
+        const module = new PedidosRecibosModule();
+        _openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) =>
+            module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+
+        return _openOrderDetailModalHandler;
+    }
+
+    function _abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo) {
+        const parsedPedidoId = parseInt(pedidoId, 10) || null;
+        const parsedPrendaId = (prendaId === 'null' || prendaId === '' || !prendaId)
+            ? null
+            : (parseInt(prendaId, 10) || null);
+
+        _resolveOpenOrderDetailModalHandler()
+            .then((handler) => handler(parsedPedidoId, parsedPrendaId, tipoRecibo))
+            .catch((error) => {
+                console.error('[revisar-prenda] Error abriendo recibo:', error);
+                alert('No se pudo abrir el recibo. Recarga la página e intenta de nuevo.');
+            });
+    }
+
     function abrirModalVerRecibo(reciboId) {
         const registro = window.revisionPrendasMap[String(reciboId)];
         if (!registro) return;
 
-        const info = [
-            ['Pedido', `#${registro.numero_pedido || '-'}`],
-            ['Prenda', registro.nombre_prenda || '-'],
-            ['Recibo', `${registro.tipo_recibo || '-'}-${registro.consecutivo_actual || '-'}`],
-            ['Estado', registro.estado || '-'],
-            ['Área', registro.area || '-'],
-            ['Fecha envío', registro.fecha_envio || '-'],
-            ['Fecha llegada', registro.fecha_llegada || '-'],
-            ['Notas', registro.notas || '-']
-        ];
-
-        const infoHtml = info.map(([label, value]) => `
-            <div class="ver-card">
-                <div class="ver-card-label">${label}</div>
-                <div class="ver-card-value">${String(value)}</div>
-            </div>
-        `).join('');
-
-        const imagenes = Array.isArray(registro.imagenes_prenda) ? registro.imagenes_prenda : [];
-        const imagenesHtml = imagenes.length > 0
-            ? imagenes.map(url => `<img src="${url}" alt="Imagen prenda">`).join('')
-            : '<div style="color:#6b7280;">Sin imágenes registradas para esta prenda.</div>';
-
-        document.getElementById('verReciboInfo').innerHTML = infoHtml;
-        document.getElementById('verReciboImagenes').innerHTML = imagenesHtml;
-        document.getElementById('modalVerReciboPrenda').style.display = 'flex';
+        // Abrir el recibo COSTURA en el modal estándar (igual que Insumos)
+        _abrirDetalleRecibo(registro.pedido_produccion_id, registro.prenda_id, 'COSTURA');
     }
 
     function cerrarModalVerRecibo(event) {
@@ -266,11 +289,43 @@
         window.editarPrendaDePedido(prendaBase, 0, Number(pedidoId));
     }
 
+    async function aprobarReciboParaInsumos(reciboId) {
+        if (!confirm('¿Aprobar esta prenda y enviarla a PENDIENTE_INSUMOS?')) return;
+
+        try {
+            const res = await fetch(`{{ route('asesores.pedidos.revisar-prenda.aprobar-insumos', ['reciboId' => '__RID__']) }}`.replace('__RID__', String(reciboId)), {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                alert(data.message || 'No se pudo aprobar el recibo.');
+                return;
+            }
+
+            window.location.reload();
+        } catch (e) {
+            alert('Error de red al aprobar el recibo.');
+        }
+    }
+
     window.addEventListener('prendaActualizada', function () {
         window.location.reload();
     });
 </script>
 
+{{-- Dependencias del modal order-detail (misma superficie que /insumos/materiales) --}}
+<script defer src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
+<script defer src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+<script defer src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
+<script defer src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ config('app.asset_version', time()) }}"></script>

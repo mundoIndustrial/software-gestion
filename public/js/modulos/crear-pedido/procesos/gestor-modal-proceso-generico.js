@@ -11,11 +11,11 @@ let modoActual = 'crear';  // 'crear' o 'editar'
 // NUEVO: Buffer temporal para cambios en EDICIÓN (no se sincroniza hasta GUARDAR CAMBIOS final)
 let cambiosProceso = null;
 
-window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
-window.ubicacionesProcesoSeleccionadas = [];
+globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
+globalThis.ubicacionesProcesoSeleccionadas = [];
 // ESTRUCTURA INDEPENDIENTE: Cantidades de TALLAS DEL PROCESO (NO de la prenda)
 // Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 }, sobremedida: { DAMA: 10, CABALLERO: 5 } }
-window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
 
 // Configuración por tipo de proceso
 const procesosConfig = {
@@ -52,188 +52,180 @@ const tallasEstandar = {
     caballero: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
 };
 
-// Abrir modal para un tipo específico de proceso
-window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
+// helpers para abrir modal genérico de proceso
+function _procesoGenerico_resetImagenesEliminadas() {
+    globalThis.imagenesEliminadasProcesoStorage = [];
+    console.log('[abrirModalProcesoGenerico]  Storage de imágenes eliminadas reseteado');
+}
 
-    
-    // Verificar que el modal existe
+function _procesoGenerico_determinarIndice(tipoProceso, esEdicion) {
+    if (esEdicion && globalThis.procesosSeleccionados?.[tipoProceso]?.indiceResultado !== undefined) {
+        globalThis.procesoActualIndex = globalThis.procesosSeleccionados[tipoProceso].indiceResultado;
+        console.log(`🔢 [abrirModalProcesoGenerico] EDICIÓN: Usando índice existente ${globalThis.procesoActualIndex} para ${tipoProceso}`);
+        return;
+    }
+
+    const indicesUsados = new Set();
+    Object.values(globalThis.procesosSeleccionados || {}).forEach(proceso => {
+        if (proceso.indiceResultado !== undefined) {
+            indicesUsados.add(proceso.indiceResultado);
+        }
+    });
+
+    let indiceDisponible = 1;
+    while (indicesUsados.has(indiceDisponible) && indiceDisponible <= 3) {
+        indiceDisponible++;
+    }
+
+    globalThis.procesoActualIndex = indiceDisponible;
+    console.log(`🔢 [abrirModalProcesoGenerico] CREACIÓN: Índices usados=${[...indicesUsados]}, index asignado=${globalThis.procesoActualIndex} para ${tipoProceso}`);
+}
+
+function _procesoGenerico_limpiarStorageUniversal(esEdicion) {
+    if (globalThis.universalImagenesStorage && !esEdicion && globalThis.procesoActualIndex !== undefined) {
+        console.log(`[abrirModalProcesoGenerico]  LIMPIEZA FORZADA: Storage de PROCESOS[${globalThis.procesoActualIndex}] para nuevo proceso`);
+        globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
+    }
+}
+
+function _procesoGenerico_limpiarCreacion() {
+    globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
+    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+
+    if (globalThis.imagenesProcesoActual) {
+        globalThis.imagenesProcesoActual = [null, null, null];
+        console.log('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoActual limpiado para nuevo proceso');
+    }
+
+    if (globalThis.imagenesProcesoExistentes) {
+        globalThis.imagenesProcesoExistentes = [];
+        console.log('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoExistentes limpiado para nuevo proceso');
+    }
+
+    const resumenTallas = document.getElementById('proceso-tallas-resumen');
+    if (resumenTallas) resumenTallas.innerHTML = '';
+
+    globalThis.ubicacionesProcesoSeleccionadas = [];
+    const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
+    if (listaUbicaciones) listaUbicaciones.innerHTML = '';
+    const inputUbicacion = document.getElementById('input-ubicacion-nueva');
+    if (inputUbicacion) inputUbicacion.value = '';
+
+    if (typeof limpiarImagenesProceso === 'function') {
+        limpiarImagenesProceso();
+    }
+}
+
+function _procesoGenerico_cargarEdicion(tipoProceso) {
+    const procesoDatos = globalThis.procesosSeleccionados?.[tipoProceso]?.datos;
+    if (!procesoDatos?.tallas) {
+        return;
+    }
+
+    globalThis.tallasCantidadesProceso = {
+        dama: { ...(procesoDatos.tallas.dama ?? {}) },
+        caballero: { ...(procesoDatos.tallas.caballero ?? {}) },
+        sobremedida: { ...(procesoDatos.tallas.sobremedida ?? {}) }
+    };
+
+    const sobremedidaSel = Object.keys(procesoDatos.tallas.sobremedida ?? {}).length > 0
+        ? { ...procesoDatos.tallas.sobremedida }
+        : null;
+
+    globalThis.tallasSeleccionadasProceso = {
+        dama: Object.keys(procesoDatos.tallas.dama ?? {}),
+        caballero: Object.keys(procesoDatos.tallas.caballero ?? {}),
+        sobremedida: sobremedidaSel
+    };
+
+    console.log(' [EDICIÓN] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
+        tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
+        tallasSeleccionadasProceso: globalThis.tallasSeleccionadasProceso
+    });
+
+    if (globalThis.renderizarListaUbicaciones) {
+        globalThis.renderizarListaUbicaciones();
+    }
+    if (globalThis.actualizarResumenTallasProceso) {
+        globalThis.actualizarResumenTallasProceso();
+    }
+}
+
+function _procesoGenerico_actualizarTextos(config, tipoProceso, esEdicion) {
+    const titleEl = document.getElementById('modal-proceso-titulo');
+    const iconEl = document.getElementById('modal-proceso-icon');
+    const btnTextoEl = document.getElementById('modal-btn-texto');
+
+    const textoTitulo = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.titulo;
+    const textoBtnTexto = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.btnTexto;
+
+    if (titleEl) titleEl.textContent = textoTitulo;
+    if (iconEl) iconEl.textContent = config.icon;
+    if (btnTextoEl) btnTextoEl.textContent = textoBtnTexto;
+
+    if (!esEdicion) {
+        const form = document.getElementById('form-proceso-generico');
+        if (form) form.reset();
+    }
+}
+
+function _procesoGenerico_abrirModal(modal) {
+    modal.style.display = 'flex';
+    modal.style.zIndex = '999999999';
+    console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
+    modal.removeAttribute('aria-hidden');
+}
+
+function _procesoGenerico_postOpen(esEdicion) {
+    console.log('[abrirModalProcesoGenerico]  Sincronizando tallas de la prenda con el proceso...');
+    globalThis.sincronizarTallasConModalProceso?.();
+    console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
+
+    if (!esEdicion) {
+        globalThis.aplicarProcesoParaTodasTallas();
+        console.log('[abrirModalProcesoGenerico]  Tallas aplicadas automáticamente al abrir modal');
+    }
+}
+
+// Abrir modal para un tipo específico de proceso
+globalThis.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     const modal = document.getElementById('modal-proceso-generico');
     if (!modal) {
-
         return;
     }
-    
-    //  CRÍTICO: Resetear storage de imágenes eliminadas cuando se abre un nuevo modal
-    window.imagenesEliminadasProcesoStorage = [];
-    console.log('[abrirModalProcesoGenerico]  Storage de imágenes eliminadas reseteado');
-    
+
+    _procesoGenerico_resetImagenesEliminadas();
+
     procesoActual = tipoProceso;
-    // NUEVO: Establecer el modo (crear o editar)
     modoActual = esEdicion ? 'editar' : 'crear';
-    
-    //  FIX CRÍTICO: Establecer procesoActualIndex basándose en el orden de creación
-    // Los índices 1, 2, 3 en window.procesosImagenesStorage corresponden al ORDEN de creación de procesos
-    if (esEdicion && window.procesosSeleccionados?.[tipoProceso]?.indiceResultado !== undefined) {
-        // En EDICIÓN: Usar el índice ya asignado
-        window.procesoActualIndex = window.procesosSeleccionados[tipoProceso].indiceResultado;
-        console.log(`🔢 [abrirModalProcesoGenerico] EDICIÓN: Usando índice existente ${window.procesoActualIndex} para ${tipoProceso}`);
-    } else {
-        // En CREACIÓN: Encontrar el primer índice disponible (1, 2, 3)
-        const indicesUsados = new Set();
-        
-        // Recolectar todos los índices ya usados
-        Object.values(window.procesosSeleccionados || {}).forEach(proceso => {
-            if (proceso.indiceResultado !== undefined) {
-                indicesUsados.add(proceso.indiceResultado);
-            }
-        });
-        
-        // Encontrar el primer índice disponible
-        let indiceDisponible = 1;
-        while (indicesUsados.has(indiceDisponible) && indiceDisponible <= 3) {
-            indiceDisponible++;
-        }
-        
-        window.procesoActualIndex = indiceDisponible;
-        console.log(`🔢 [abrirModalProcesoGenerico] CREACIÓN: Índices usados=${[...indicesUsados]}, index asignado=${window.procesoActualIndex} para ${tipoProceso}`);
-    }
-    
-    //  CORRECCIÓN CRÍTICA: Siempre limpiar el storage en CREACIÓN de proceso nuevo
-    // Esto evita contaminación de imágenes de procesos anteriores
-    if (window.universalImagenesStorage && !esEdicion && window.procesoActualIndex !== undefined) {
-        console.log(`[abrirModalProcesoGenerico]  LIMPIEZA FORZADA: Storage de PROCESOS[${window.procesoActualIndex}] para nuevo proceso`);
-        window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
-    }
-    const config = procesosConfig[tipoProceso];
-    
-    if (!config) {
 
+    _procesoGenerico_determinarIndice(tipoProceso, esEdicion);
+    _procesoGenerico_limpiarStorageUniversal(esEdicion);
+
+    const config = procesosConfig[tipoProceso];
+    if (!config) {
         return;
     }
-    
+
     try {
-        // Actualizar título e icono
-        const titleEl = document.getElementById('modal-proceso-titulo');
-        const iconEl = document.getElementById('modal-proceso-icon');
-        const btnTextoEl = document.getElementById('modal-btn-texto');
-        
-        // Determinar el texto basado en el modo (crear o editar)
-        const textoTitulo = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.titulo;
-        const textoBtnTexto = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.btnTexto;
-        
-        if (titleEl) titleEl.textContent = textoTitulo;
-        if (iconEl) iconEl.textContent = config.icon;
-        if (btnTextoEl) btnTextoEl.textContent = textoBtnTexto;
-        
-        // SOLO limpiar formulario si NO es edición
-        if (!esEdicion) {
-            const form = document.getElementById('form-proceso-generico');
-            if (form) form.reset();
-        }
-        
-        // SOLO limpiar variables si NO es edición
-        if (!esEdicion) {
-            // En CREACIÓN: limpiar todo
-            window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
-            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
-            
-            //  CRÍTICO: Limpiar también window.imagenesProcesoActual para evitar contaminación
-            if (window.imagenesProcesoActual) {
-                window.imagenesProcesoActual = [null, null, null];
-                console.log('[abrirModalProcesoGenerico]  window.imagenesProcesoActual limpiado para nuevo proceso');
-            }
-            
-            //  CRÍTICO: Limpiar window.imagenesProcesoExistentes también
-            if (window.imagenesProcesoExistentes) {
-                window.imagenesProcesoExistentes = [];
-                console.log('[abrirModalProcesoGenerico]  window.imagenesProcesoExistentes limpiado para nuevo proceso');
-            }
-            
-            // Limpiar resumen
-            const resumenTallas = document.getElementById('proceso-tallas-resumen');
-            if (resumenTallas) resumenTallas.innerHTML = '';
-            
-            // Limpiar ubicaciones
-            window.ubicacionesProcesoSeleccionadas = [];
-            const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
-            if (listaUbicaciones) listaUbicaciones.innerHTML = '';
-            const inputUbicacion = document.getElementById('input-ubicacion-nueva');
-            if (inputUbicacion) inputUbicacion.value = '';
-            
-            // Limpiar imágenes
-            if (typeof limpiarImagenesProceso === 'function') {
-                limpiarImagenesProceso();
-            }
+        _procesoGenerico_actualizarTextos(config, tipoProceso, esEdicion);
+
+        if (esEdicion) {
+            _procesoGenerico_cargarEdicion(tipoProceso);
         } else {
-            // En EDICIÓN: renderizar lo que ya está cargado
-            // IMPORTANTE: Cargar las tallas del proceso existente en el window
-            const procesoDatos = window.procesosSeleccionados[tipoProceso]?.datos;
-            if (procesoDatos && procesoDatos.tallas) {
-                window.tallasCantidadesProceso = {
-                    dama: { ...(procesoDatos.tallas.dama || {}) },
-                    caballero: { ...(procesoDatos.tallas.caballero || {}) },
-                    sobremedida: { ...(procesoDatos.tallas.sobremedida || {}) }
-                };
-
-                const sobremedidaSel = (procesoDatos.tallas.sobremedida && Object.keys(procesoDatos.tallas.sobremedida).length > 0)
-                    ? { ...(procesoDatos.tallas.sobremedida || {}) }
-                    : null;
-
-                window.tallasSeleccionadasProceso = {
-                    dama: Object.keys(procesoDatos.tallas.dama || {}),
-                    caballero: Object.keys(procesoDatos.tallas.caballero || {}),
-                    sobremedida: sobremedidaSel
-                };
-
-                console.log(' [EDICIÓN] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
-                    tallasCantidadesProceso: window.tallasCantidadesProceso,
-                    tallasSeleccionadasProceso: window.tallasSeleccionadasProceso
-                });
-            }
-            
-            if (window.renderizarListaUbicaciones) {
-                window.renderizarListaUbicaciones();
-            }
-            if (window.actualizarResumenTallasProceso) {
-                window.actualizarResumenTallasProceso();
-            }
-        }
-        
-        // Mostrar modal PRIMERO
-        modal.style.display = 'flex';
-        //  CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
-        modal.style.zIndex = '999999999';
-        console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
-        
-        //  NUEVO: Remover aria-hidden para que los elementos dentro sean accesibles
-        // Esto evita el warning "Blocked aria-hidden on an element because its descendant retained focus"
-        modal.removeAttribute('aria-hidden');
-        
-        //  SINCRONIZACIÓN UNIVERSAL: Ahora que el modal es visible, sincronizar tallas
-        // Esto asegura que:
-        // 1. En CREACIÓN: copia todas las tallas de la prenda
-        // 2. En EDICIÓN: agrega las NUEVAS tallas que se crearon en la prenda después del proceso
-        console.log('[abrirModalProcesoGenerico]  Sincronizando tallas de la prenda con el proceso...');
-        if (typeof window.sincronizarTallasConModalProceso === 'function') {
-            window.sincronizarTallasConModalProceso();
-        }
-        console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
-
-        //  NUEVO: Aplicar automáticamente todas las tallas cuando se crea un proceso nuevo
-        // En CREACIÓN (no edición): después de mostrar el modal, aplicar tallas automáticamente
-        if (!esEdicion) {
-            window.aplicarProcesoParaTodasTallas();
-            console.log('[abrirModalProcesoGenerico]  Tallas aplicadas automáticamente al abrir modal');
+            _procesoGenerico_limpiarCreacion();
         }
 
+        _procesoGenerico_abrirModal(modal);
+        _procesoGenerico_postOpen(esEdicion);
     } catch (error) {
-
+        console.error('[abrirModalProcesoGenerico] Error:', error);
     }
 };
 
 // Cerrar modal
 // @param {boolean} procesoGuardado - Si es true, mantiene el checkbox seleccionado (proceso guardado exitosamente)
-window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
+globalThis.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     const modal = document.getElementById('modal-proceso-generico');
     if (modal) {
         modal.style.display = 'none';
@@ -248,7 +240,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         // IMPORTANTE: Hacemos esto ANTES de llamar a manejarCheckboxProceso
         // para que el .onclick no se dispare automáticamente
         const checkbox = document.getElementById(`checkbox-${procesoActual}`);
-        if (checkbox && checkbox.checked) {
+        if (checkbox?.checked) {
             // Usar una bandera temporal para evitar que onclick se dispare
             checkbox._ignorarOnclick = true;
             checkbox.checked = false;
@@ -256,9 +248,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
         
         //  PASO 2: Actualizar el estado del gestor (procesos seleccionados)
-        if (window.manejarCheckboxProceso) {
-            window.manejarCheckboxProceso(procesoActual, false);
-        }
+        globalThis.manejarCheckboxProceso?.(procesoActual, false);
         
         // Limpiar la bandera
         if (checkbox) {
@@ -266,15 +256,15 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
         
         // PASO 3: Limpiar estructura de tallas del proceso
-        window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+        globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
         
     } else if (modoActual === 'editar' && procesoGuardado) {
         console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
         
         // NUEVO: Guardar cambios en el gestor de edición
-        if (window.gestorEditacionProcesos) {
+        if (globalThis.gestorEditacionProcesos) {
             console.log('[EDICIÓN]  Guardando cambios en gestorEditacionProcesos...');
-            window.gestorEditacionProcesos.guardarCambiosActuales();
+            globalThis.gestorEditacionProcesos.guardarCambiosActuales();
             console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
         }
     }
@@ -282,21 +272,21 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     //  NO limpiar storage de imágenes inmediatamente después de guardar
     // Las imágenes se necesitan para renderizar las tarjetas
     // Se limpiarán en el próximo proceso nuevo o al recargar la página
-    if (false && modoActual === 'crear' && procesoGuardado && window.procesoActualIndex !== undefined) {
+    if (false && modoActual === 'crear' && procesoGuardado && globalThis.procesoActualIndex !== undefined) {
         // Código desactivado: No limpiar storage inmediatamente
         console.log(`[cerrarModalProcesoGenerico] 🚫 NO se limpia storage - imágenes necesarias para tarjetas`);
         
         // Limpiar el storage de imágenes del índice usado para este proceso
-        console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${window.procesoActualIndex}`);
-        if (window.universalImagenesStorage && typeof window.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
-            window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
-            console.log(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para índice ${window.procesoActualIndex}`);
+        console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${globalThis.procesoActualIndex}`);
+        if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
+            globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
+            console.log(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para índice ${globalThis.procesoActualIndex}`);
         }
         
         // También limpiar el array local
         imagenesProcesoActual = [null, null, null];
-        if (window.imagenesProcesoActual) {
-            window.imagenesProcesoActual = [null, null, null];
+        if (globalThis.imagenesProcesoActual) {
+            globalThis.imagenesProcesoActual = [null, null, null];
         }
         console.log('[cerrarModalProcesoGenerico]  Arrays locales de imágenes limpiados');
     } else {
@@ -305,7 +295,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     
     // NUEVO: Reset de variables después de cerrar
     procesoActual = null;
-    window.procesoActualIndex = undefined;
+    globalThis.procesoActualIndex = undefined;
     modoActual = 'crear';  // Reset a valor por defecto
 };
 
@@ -314,8 +304,8 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
 let imagenesProcesoActual = [null, null, null];
 
 // Manejar upload de imagen individual
-window.manejarImagenProceso = function(input, indice) {
-    console.log(`[manejarImagenProceso]  INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${window.procesoActualIndex}`);
+globalThis.manejarImagenProceso = function(input, indice) {
+    console.log(`[manejarImagenProceso]  INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${globalThis.procesoActualIndex}`);
     
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
@@ -324,12 +314,12 @@ window.manejarImagenProceso = function(input, indice) {
         //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
-        //  CRÍTICO: Sincronizar con window.imagenesProcesoActual (usado en PATCH)
-        if (!window.imagenesProcesoActual) {
-            window.imagenesProcesoActual = [null, null, null];
+        //  CRÍTICO: Sincronizar con globalThis.imagenesProcesoActual (usado en PATCH)
+        if (!globalThis.imagenesProcesoActual) {
+            globalThis.imagenesProcesoActual = [null, null, null];
         }
-        window.imagenesProcesoActual[indice - 1] = file;
-        console.log('[manejarImagenProceso]  Imagen guardada en window.imagenesProcesoActual:', {
+        globalThis.imagenesProcesoActual[indice - 1] = file;
+        console.log('[manejarImagenProceso]  Imagen guardada en globalThis.imagenesProcesoActual:', {
             indice: indice,
             filename: file.name,
             size: file.size,
@@ -337,8 +327,8 @@ window.manejarImagenProceso = function(input, indice) {
         });
         
         //  NUEVO: Guardar en storage universal de PROCESOS
-        if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
-            console.log(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${window.procesoActualIndex}`);
+        if (globalThis.universalImagenesStorage && globalThis.procesoActualIndex !== undefined) {
+            console.log(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${globalThis.procesoActualIndex}`);
             const imagenData = {
                 file: file,
                 previewUrl: URL.createObjectURL(file),
@@ -349,14 +339,14 @@ window.manejarImagenProceso = function(input, indice) {
                 fechaCreacion: new Date().toISOString()
             };
             
-            const resultado = window.universalImagenesStorage.agregarImagen('procesos', window.procesoActualIndex, imagenData);
-            console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${window.procesoActualIndex}] - resultado=${resultado}`);
+            const resultado = globalThis.universalImagenesStorage.agregarImagen('procesos', globalThis.procesoActualIndex, imagenData);
+            console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${globalThis.procesoActualIndex}] - resultado=${resultado}`);
         } else {
             console.warn('[manejarImagenProceso]  No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
             console.log('[manejarImagenProceso]  Debug:', {
-                universalStorage: !!window.universalImagenesStorage,
-                procesoActualIndex: window.procesoActualIndex,
-                agregarImagen: typeof window.universalImagenesStorage?.agregarImagen
+                universalStorage: !!globalThis.universalImagenesStorage,
+                procesoActualIndex: globalThis.procesoActualIndex,
+                agregarImagen: typeof globalThis.universalImagenesStorage?.agregarImagen
             });
         }
         
@@ -392,7 +382,7 @@ window.manejarImagenProceso = function(input, indice) {
 };
 
 //  NUEVO: Variable global para rastrear qué imagen se está eliminando
-window._imagenAEliminarIndice = null;
+globalThis._imagenAEliminarIndice = null;
 
 //  EVENT DELEGATION GLOBAL: Detectar clicks en botones .btn-eliminar-imagen-proceso
 // Esto funciona incluso después de que setupDragAndDropProceso clone el preview con cloneNode(true)
@@ -409,11 +399,11 @@ window._imagenAEliminarIndice = null;
             const indice = parseInt(btn.getAttribute('data-indice'), 10);
             console.log('[EVENT-DELEGATION] 📌 Índice del botón:', indice);
             
-            if (indice && typeof window.eliminarImagenProceso === 'function') {
+            if (indice && typeof globalThis.eliminarImagenProceso === 'function') {
                 console.log('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
-                window.eliminarImagenProceso(indice);
+                globalThis.eliminarImagenProceso(indice);
             } else {
-                console.error('[EVENT-DELEGATION]  Índice inválido o función no existe:', indice, typeof window.eliminarImagenProceso);
+                console.error('[EVENT-DELEGATION]  Índice inválido o función no existe:', indice, typeof globalThis.eliminarImagenProceso);
             }
         }
     }, true); // true = capture phase, se ejecuta ANTES que otros handlers
@@ -421,10 +411,10 @@ window._imagenAEliminarIndice = null;
 })();
 
 // Mostrar modal de confirmación para eliminar imagen
-window.mostrarModalConfirmarEliminarImagen = function(indice) {
+globalThis.mostrarModalConfirmarEliminarImagen = function(indice) {
     console.log('[mostrarModalConfirmarEliminarImagen]  INICIANDO - Mostrando modal para imagen:', indice);
-    window._imagenAEliminarIndice = indice;
-    console.log('[mostrarModalConfirmarEliminarImagen] 📌 window._imagenAEliminarIndice establecido a:', window._imagenAEliminarIndice);
+    globalThis._imagenAEliminarIndice = indice;
+    console.log('[mostrarModalConfirmarEliminarImagen] 📌 globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     console.log('[mostrarModalConfirmarEliminarImagen]  Modal encontrado?:', !!modal);
@@ -432,7 +422,6 @@ window.mostrarModalConfirmarEliminarImagen = function(indice) {
     if (modal) {
         console.log('[mostrarModalConfirmarEliminarImagen]  Modal existe, mostrando...');
         modal.style.display = 'flex';
-        // Forzar z-index máximo para que esté encima de todo
         modal.style.zIndex = '999999999';
         console.log('[mostrarModalConfirmarEliminarImagen]  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
@@ -446,9 +435,9 @@ window.mostrarModalConfirmarEliminarImagen = function(indice) {
 };
 
 // Cerrar modal de confirmación
-window.cerrarModalConfirmarEliminarImagen = function() {
+globalThis.cerrarModalConfirmarEliminarImagen = function() {
     console.log('[cerrarModalConfirmarEliminarImagen]  Cerrando modal');
-    window._imagenAEliminarIndice = null;
+    globalThis._imagenAEliminarIndice = null;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     if (modal) {
@@ -457,8 +446,8 @@ window.cerrarModalConfirmarEliminarImagen = function() {
 };
 
 // Confirmar eliminación de imagen
-window.confirmarEliminarImagenProceso = function() {
-    const indice = window._imagenAEliminarIndice;
+globalThis.confirmarEliminarImagenProceso = function() {
+    const indice = globalThis._imagenAEliminarIndice;
     if (!indice) return;
     
     console.log('[confirmarEliminarImagenProceso]  Confirmando eliminación de imagen:', indice);
@@ -470,7 +459,7 @@ window.confirmarEliminarImagenProceso = function() {
     const preview = document.getElementById(`proceso-foto-preview-${indice}`);
     if (preview) {
         const imgEl = preview.querySelector('img');
-        if (imgEl && imgEl.src && imgEl.src.startsWith('blob:')) {
+        if (imgEl?.src?.startsWith('blob:')) {
             URL.revokeObjectURL(imgEl.src);
         }
         if (preview._objectUrl) {
@@ -483,17 +472,17 @@ window.confirmarEliminarImagenProceso = function() {
     if (typeof imagenesProcesoActual !== 'undefined') {
         imagenesProcesoActual[indice - 1] = null;
     }
-    if (window.imagenesProcesoActual) {
-        window.imagenesProcesoActual[indice - 1] = null;
+    if (globalThis.imagenesProcesoActual) {
+        globalThis.imagenesProcesoActual[indice - 1] = null;
     }
     
     //  CRÍTICO: Guardar la imagen ANTES de marcarla como null
-    if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
-        const imagenAeliminarObj = window.imagenesProcesoExistentes[indice - 1];
+    if (globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > (indice - 1)) {
+        const imagenAeliminarObj = globalThis.imagenesProcesoExistentes[indice - 1];
         
         // Inicializar array de eliminadas si no existe
-        if (!window.imagenesEliminadasProcesoStorage) {
-            window.imagenesEliminadasProcesoStorage = [];
+        if (!globalThis.imagenesEliminadasProcesoStorage) {
+            globalThis.imagenesEliminadasProcesoStorage = [];
         }
         
         // Guardar el objeto completo de la imagen a eliminar
@@ -501,17 +490,17 @@ window.confirmarEliminarImagenProceso = function() {
         if (imagenAeliminarObj && (imagenAeliminarObj.id || imagenAeliminarObj.ruta_original)) {
             const identificador = imagenAeliminarObj.id || imagenAeliminarObj.ruta_original;
             // Verificar que no esté duplicado
-            const yaGuardado = window.imagenesEliminadasProcesoStorage.some(img => {
+            const yaGuardado = globalThis.imagenesEliminadasProcesoStorage.some(img => {
                 return (img.id || img.ruta_original) === identificador;
             });
             if (!yaGuardado) {
-                window.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
+                globalThis.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
                 console.log('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
                     id: imagenAeliminarObj.id,
                     ruta: imagenAeliminarObj.ruta_original,
                     identificador: identificador,
-                    totalEliminadas: window.imagenesEliminadasProcesoStorage.length,
-                    contenidoStorage: window.imagenesEliminadasProcesoStorage
+                    totalEliminadas: globalThis.imagenesEliminadasProcesoStorage.length,
+                    contenidoStorage: globalThis.imagenesEliminadasProcesoStorage
                 });
             }
         } else {
@@ -519,23 +508,23 @@ window.confirmarEliminarImagenProceso = function() {
         }
         
         // AHORA marcar como null
-        window.imagenesProcesoExistentes[indice - 1] = null;
-        const imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        globalThis.imagenesProcesoExistentes[indice - 1] = null;
+        const imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
         console.log('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
             indice: indice - 1,
             imagenesRestantes: imagenesParaEnviar.length,
-            storageLlenado: window.imagenesEliminadasProcesoStorage,
-            windowImagenesProcesoExistentes: window.imagenesProcesoExistentes,
+            storageLlenado: globalThis.imagenesEliminadasProcesoStorage,
+            globalThisImagenesProcesoExistentes: globalThis.imagenesProcesoExistentes,
             imagenesParaEnviar: imagenesParaEnviar
         });
     } else {
         // Combinar imágenes existentes + nuevas que quedan
         let imagenesParaEnviar = [];
-        if (window.imagenesProcesoExistentes) {
-            imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        if (globalThis.imagenesProcesoExistentes) {
+            imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
         }
-        if (window.imagenesProcesoActual) {
-            window.imagenesProcesoActual.forEach(img => {
+        if (globalThis.imagenesProcesoActual) {
+            globalThis.imagenesProcesoActual.forEach(img => {
                 if (img instanceof File) imagenesParaEnviar.push(img);
             });
         }
@@ -543,17 +532,17 @@ window.confirmarEliminarImagenProceso = function() {
     }
     
     // Registrar cambio en editor de procesos
-    if (window.procesosEditor) {
+    if (globalThis.procesosEditor) {
         let imagenesParaRegistrar = [];
-        if (window.imagenesProcesoExistentes) {
-            imagenesParaRegistrar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        if (globalThis.imagenesProcesoExistentes) {
+            imagenesParaRegistrar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
         }
-        if (window.imagenesProcesoActual) {
-            window.imagenesProcesoActual.forEach(img => {
+        if (globalThis.imagenesProcesoActual) {
+            globalThis.imagenesProcesoActual.forEach(img => {
                 if (img instanceof File) imagenesParaRegistrar.push(img);
             });
         }
-        window.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
+        globalThis.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
     }
     
     // Restaurar preview a estado vacío con estilo correcto
@@ -581,12 +570,12 @@ window.confirmarEliminarImagenProceso = function() {
 };
 
 // Eliminar imagen del proceso (ahora muestra modal de confirmación)
-window.eliminarImagenProceso = function(indice) {
+globalThis.eliminarImagenProceso = function(indice) {
     console.log('[eliminarImagenProceso]  INICIANDO - Click en botón eliminar para imagen:', indice);
     
     // Guardar el índice globalmente
-    window._imagenAEliminarIndice = indice;
-    console.log('[eliminarImagenProceso]  window._imagenAEliminarIndice establecido a:', window._imagenAEliminarIndice);
+    globalThis._imagenAEliminarIndice = indice;
+    console.log('[eliminarImagenProceso]  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
     
     // Buscar el modal directamente
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
@@ -612,7 +601,7 @@ function limpiarImagenesProceso() {
     // Limpiar URLs generadas
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
-        if (preview && preview._objectUrl) {
+        if (preview?._objectUrl) {
             URL.revokeObjectURL(preview._objectUrl);
             preview._objectUrl = null;
         }
@@ -622,20 +611,20 @@ function limpiarImagenesProceso() {
     imagenesProcesoActual = [null, null, null];
     
     //  CRÍTICO: Limpiar arrays globales para evitar contaminación
-    if (window.imagenesProcesoActual) {
-        window.imagenesProcesoActual = [null, null, null];
-        console.log('[limpiarImagenesProceso]  window.imagenesProcesoActual limpiado');
+    if (globalThis.imagenesProcesoActual) {
+        globalThis.imagenesProcesoActual = [null, null, null];
+        console.log('[limpiarImagenesProceso]  globalThis.imagenesProcesoActual limpiado');
     }
     
-    if (window.imagenesProcesoExistentes) {
-        window.imagenesProcesoExistentes = [];
-        console.log('[limpiarImagenesProceso]  window.imagenesProcesoExistentes limpiado');
+    if (globalThis.imagenesProcesoExistentes) {
+        globalThis.imagenesProcesoExistentes = [];
+        console.log('[limpiarImagenesProceso]  globalThis.imagenesProcesoExistentes limpiado');
     }
     
     //  NUEVO: Limpiar también el storage universal si hay un índice activo
-    if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
-        console.log(`[limpiarImagenesProceso]  Limpiando storage universal de PROCESOS[${window.procesoActualIndex}]`);
-        window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
+    if (globalThis.universalImagenesStorage && globalThis.procesoActualIndex !== undefined) {
+        console.log(`[limpiarImagenesProceso]  Limpiando storage universal de PROCESOS[${globalThis.procesoActualIndex}]`);
+        globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
     }
     
     for (let i = 1; i <= 3; i++) {
@@ -660,7 +649,7 @@ function limpiarImagenesProceso() {
 }
 
 // Agregar ubicación a la lista
-window.agregarUbicacionProceso = function() {
+globalThis.agregarUbicacionProceso = function() {
     const input = document.getElementById('input-ubicacion-nueva');
     const ubicacion = input?.value?.trim();
     
@@ -670,54 +659,54 @@ window.agregarUbicacionProceso = function() {
     }
     
     // Evitar duplicados
-    if (window.ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
+    if (globalThis.ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
 
         return;
     }
     
     // Agregar a la lista
-    window.ubicacionesProcesoSeleccionadas.push(ubicacion);
+    globalThis.ubicacionesProcesoSeleccionadas.push(ubicacion);
 
     
     // Limpiar input
     input.value = '';
     
     // Renderizar lista
-    window.renderizarListaUbicaciones();
+    globalThis.renderizarListaUbicaciones();
 };
 
 // Remover ubicación de la lista
-window.removerUbicacionProceso = function(ubicacion) {
+globalThis.removerUbicacionProceso = function(ubicacion) {
     // Si es objeto, comparar por ubicacion.ubicacion
     if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
-        window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => {
+        globalThis.ubicacionesProcesoSeleccionadas = globalThis.ubicacionesProcesoSeleccionadas.filter(u => {
             if (typeof u === 'object') return u.ubicacion !== ubicacion.ubicacion;
             return u !== ubicacion.ubicacion;
         });
     } else {
         // Si es string
-        window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => {
+        globalThis.ubicacionesProcesoSeleccionadas = globalThis.ubicacionesProcesoSeleccionadas.filter(u => {
             if (typeof u === 'object') return u.ubicacion !== ubicacion;
             return u !== ubicacion;
         });
     }
 
-    window.renderizarListaUbicaciones();
+    globalThis.renderizarListaUbicaciones();
 };
 
 // Renderizar la lista de ubicaciones
-window.renderizarListaUbicaciones = function() {
+globalThis.renderizarListaUbicaciones = function() {
     const container = document.getElementById('lista-ubicaciones-proceso');
     if (!container) return;
     
     container.innerHTML = '';
     
-    if (window.ubicacionesProcesoSeleccionadas.length === 0) {
+    if (globalThis.ubicacionesProcesoSeleccionadas.length === 0) {
         container.innerHTML = '<small style="color: #9ca3af;">Escribe una ubicación y haz click en "+" para agregarla</small>';
         return;
     }
     
-    window.ubicacionesProcesoSeleccionadas.forEach((ubicacion, idx) => {
+    globalThis.ubicacionesProcesoSeleccionadas.forEach((ubicacion, idx) => {
         const tag = document.createElement('div');
         
         // Determinar si es objeto con descripcion o solo string
@@ -779,7 +768,7 @@ window.renderizarListaUbicaciones = function() {
 };
 
 // Aplicar proceso para TODAS las tallas (de la prenda)
-window.aplicarProcesoParaTodasTallas = function() {
+globalThis.aplicarProcesoParaTodasTallas = function() {
 
     
     // Obtener las tallas registradas de la prenda actual (con cantidades)
@@ -803,7 +792,7 @@ window.aplicarProcesoParaTodasTallas = function() {
     }
     
     // Para UI, usamos arrays (nombres de tallas) o sobremedida
-    window.tallasSeleccionadasProceso = {
+    globalThis.tallasSeleccionadasProceso = {
         dama: tallasPrendaArrays.dama,
         caballero: tallasPrendaArrays.caballero,
         sobremedida: tallasPrendaArrays.sobremedida
@@ -811,46 +800,165 @@ window.aplicarProcesoParaTodasTallas = function() {
     
     //  IMPORTANTE: Copiar TODAS las cantidades de la prenda al proceso
     // Esto hace que "Aplicar para todas" asigne las cantidades completas de la prenda
-    window.tallasCantidadesProceso = {
-        dama: { ...tallasPrendaConCantidades.dama } || {},
-        caballero: { ...tallasPrendaConCantidades.caballero } || {},
+    globalThis.tallasCantidadesProceso = {
+        dama: { ...tallasPrendaConCantidades.dama },
+        caballero: { ...tallasPrendaConCantidades.caballero },
         sobremedida: tallasPrendaConCantidades.sobremedida || {}
     };
     
     console.log(' [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
-        tallasCantidadesProceso: window.tallasCantidadesProceso,
-        tallasSeleccionadas: window.tallasSeleccionadasProceso
+        tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
+        tallasSeleccionadas: globalThis.tallasSeleccionadasProceso
     });
 
     actualizarResumenTallasProceso();
 };
 
+// helpers internos para obtención de tallas
+function _acumularTalla(tallas, genero, key, cantidad) {
+    if (genero === 'sobremedida') {
+        tallas.sobremedida = tallas.sobremedida || {};
+        tallas.sobremedida[key] = (tallas.sobremedida[key] || 0) + cantidad;
+    } else {
+        tallas[genero][key] = (tallas[genero][key] || 0) + cantidad;
+    }
+}
+
+function _extraerColoresDeCelda(colorCell) {
+    if (!colorCell) return [];
+
+    const colorDiv = colorCell.querySelector('div');
+    if (!colorDiv) return [];
+
+    const colores = [];
+    colorDiv.querySelectorAll('span').forEach(span => {
+        let colorText = span.textContent;
+        if (!colorText) return;
+
+        colorText = colorText.replace(/[\s\n\r\t]+/g, ' ').trim();
+        if (!colorText) return;
+
+        let colorLimpio = colorText.split('(')[0].trim();
+        if (!colorLimpio || colorLimpio === colorText) {
+            colorLimpio = colorText.replace(/\s*\(\d+\)\s*/g, '').trim();
+        }
+
+        if (colorLimpio && !colores.includes(colorLimpio)) {
+            colores.push(colorLimpio);
+        }
+    });
+
+    return colores;
+}
+
+function _leerTablaConTallas(tablaBody, normalizarGenero) {
+    const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
+    const tallasSinColor = { dama: {}, caballero: {}, sobremedida: null };
+    const filas = tablaBody.querySelectorAll('tr[data-tipo="wizard"]');
+    let totalFilas = 0;
+    let conColorFilas = 0;
+
+    filas.forEach(fila => {
+        const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
+        const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
+        const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
+        if (!generoRaw || !tallaText || !cantidadText) return;
+
+        const genero = normalizarGenero(generoRaw);
+        if (!genero) return;
+
+        const cantidad = parseInt(cantidadText, 10) || 0;
+        if (cantidad <= 0) return;
+
+        totalFilas += 1;
+        const colores = _extraerColoresDeCelda(fila.querySelector('[data-field="color"]'));
+        const keyBase = tallaText;
+
+        if (colores.length > 0) {
+            conColorFilas += 1;
+            colores.forEach(color => {
+                _acumularTalla(tallasConColor, genero, `${keyBase}__${color}`, cantidad);
+            });
+        } else {
+            _acumularTalla(tallasSinColor, genero, keyBase, cantidad);
+        }
+    });
+
+    return { tallasConColor, tallasSinColor, totalFilas, conColorFilas };
+}
+
+function _tieneTallas(tallas) {
+    return Boolean(
+        Object.keys(tallas.dama || {}).length ||
+        Object.keys(tallas.caballero || {}).length ||
+        Object.keys(tallas.sobremedida || {}).length
+    );
+}
+
+function _obtenerAsignacionesColores() {
+    const datosColores = globalThis.ColoresPorTalla?.datos;
+    if (datosColores && typeof datosColores === 'object' && Object.keys(datosColores).length > 0) {
+        return { fuente: 'ColoresPorTalla.datos', asignaciones: datosColores };
+    }
+
+    const asignacionesState = globalThis.StateManager?.getAsignaciones?.();
+    if (asignacionesState && typeof asignacionesState === 'object' && Object.keys(asignacionesState).length > 0) {
+        return { fuente: 'StateManager.getAsignaciones()', asignaciones: asignacionesState };
+    }
+
+    return { fuente: null, asignaciones: null };
+}
+
+function _extraerTallasDeAsignaciones(asignaciones, normalizarGenero) {
+    const tallas = { dama: {}, caballero: {}, sobremedida: null };
+
+    Object.values(asignaciones).forEach(asignacion => {
+        const genero = normalizarGenero(asignacion?.genero);
+        if (!genero) return;
+
+        const talla = String(asignacion?.talla || '').trim().toUpperCase();
+        if (!talla) return;
+
+        const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+        colores.forEach(c => {
+            const color = String(c?.nombre || '').trim().toUpperCase();
+            const cantidad = parseInt(c?.cantidad, 10) || 0;
+            if (!color || cantidad <= 0) return;
+
+            _acumularTalla(tallas, genero, `${talla}__${color}`, cantidad);
+        });
+    });
+
+    return tallas;
+}
+
+function _obtenerTallasDeLaPrendaDesdeRelacionales() {
+    const tallasRelacionales = globalThis.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+    const hay = Object.values(tallasRelacionales).some(g => g && typeof g === 'object' && Object.keys(g).length > 0);
+    if (!hay) return null;
+
+    const tallas = { dama: {}, caballero: {}, sobremedida: null };
+
+    if (Object.keys(tallasRelacionales.DAMA || {}).length > 0) {
+        tallas.dama = { ...tallasRelacionales.DAMA };
+    }
+    if (Object.keys(tallasRelacionales.CABALLERO || {}).length > 0) {
+        tallas.caballero = { ...tallasRelacionales.CABALLERO };
+    }
+    if (Object.keys(tallasRelacionales.SOBREMEDIDA || {}).length > 0) {
+        tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
+    }
+    if (Object.keys(tallasRelacionales.UNISEX || {}).length > 0) {
+        tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
+    }
+
+    return tallas;
+}
+
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    // ════════════════════════════════════════════════════════════════════════════════════
-    // ARQUITECTURA: Existe UNA ÚNICA FUENTE DE VERDAD por contexto
-    // ════════════════════════════════════════════════════════════════════════════════════
-    // 
-    // ORDEN DE PRIORIDAD (de más reciente a más viejo):
-    // 1. Tabla HTML (tabla-resumen-asignaciones-cuerpo) ← FUENTE DEFINITIVA
-    //    - Contiene TODO: género + talla + cantidad + color ACTUALIZADO
-    //    - Se completa DESPUÉS del wizard
-    //    - Se actualiza en EDICIÓN desde backend
-    // 
-    // 2. StateManager/ColoresPorTalla ← Fallback si tabla vacía
-    //    - Útil si acaba de completarse el wizard pero tabla aún no visible
-    //    - Tiene colores pero SIN actualizar en DOM
-    // 
-    // 3. tallasRelacionales ← Últimas opciones legacy
-    //    - Para compatibilidad con flujos antiguos
-    //    - NO tiene colores
-    // 
-    // 4. cantidadSoloSeleccionada ← Último recurso para UNISEX
-    //
-    // ════════════════════════════════════════════════════════════════════════════════════
-    
     console.log('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
-    
+
     const normalizarGenero = (generoRaw) => {
         const g = String(generoRaw || '').trim().toLowerCase();
         if (!g) return null;
@@ -860,225 +968,36 @@ function obtenerTallasDeLaPrenda() {
         return null;
     };
 
-    // ═══ FUENTE 1: Tabla HTML (PRIORIDAD MÁXIMA si tiene COLORES) ═══
-    // Lee directamente de la tabla visible que tiene TODA la información actualizada
     const tablaBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
-    if (tablaBody) {
-        const tallasDesdeTabla = { dama: {}, caballero: {}, sobremedida: null };
-        const filas = tablaBody.querySelectorAll('tr[data-tipo="wizard"]');
-        let tallasEnTabla = 0;
-        let tallasConColorEnTabla = 0;
+    const tablaInfo = tablaBody ? _leerTablaConTallas(tablaBody, normalizarGenero) : null;
 
-        filas.forEach(fila => {
-            const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
-            const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
-            const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
-            const colorCell = fila.querySelector('[data-field="color"]');
-
-            if (!generoRaw || !tallaText || !cantidadText) return;
-
-            const genero = normalizarGenero(generoRaw);
-            if (!genero) return;
-
-            const cantidad = parseInt(cantidadText, 10) || 0;
-            if (cantidad <= 0) return;
-
-            // Extraer colores del cell: buscar spans dentro del div
-            const colores = [];
-            if (colorCell) {
-                const colorDiv = colorCell.querySelector('div');
-                if (colorDiv) {
-                    const spansDirectos = colorDiv.querySelectorAll('span');
-                    spansDirectos.forEach(span => {
-                        let colorText = span.textContent;
-                        if (!colorText) return;
-
-                        // Limpiar: normalizar espacios
-                        colorText = colorText
-                            .replace(/[\s\n\r\t]+/g, ' ')
-                            .trim();
-
-                        if (!colorText) return;
-
-                        // Eliminar cantidad entre paréntesis: "AMATISTA (1)" → "AMATISTA"
-                        let colorLimpio = colorText.split('(')[0].trim();
-                        if (!colorLimpio || colorLimpio === colorText) {
-                            colorLimpio = colorText.replace(/\s*\(\d+\)\s*/g, '').trim();
-                        }
-
-                        if (colorLimpio && !colores.includes(colorLimpio)) {
-                            colores.push(colorLimpio);
-                        }
-                    });
-                }
-            }
-
-            console.log(`[obtenerTallasDeLaPrenda]Tabla HTML: ${tallaText} | ${generoRaw} | Cantidad: ${cantidad} | Colores: [${colores.join(', ')}]`);
-
-            // Crear claves TALLA__COLOR si hay colores, si no solo TALLA
-            if (colores.length > 0) {
-                colores.forEach(color => {
-                    const key = `${tallaText}__${color}`;
-                    if (genero === 'dama') {
-                        tallasDesdeTabla.dama[key] = (tallasDesdeTabla.dama[key] || 0) + cantidad;
-                    } else if (genero === 'caballero') {
-                        tallasDesdeTabla.caballero[key] = (tallasDesdeTabla.caballero[key] || 0) + cantidad;
-                    } else if (genero === 'sobremedida') {
-                        if (!tallasDesdeTabla.sobremedida) tallasDesdeTabla.sobremedida = {};
-                        tallasDesdeTabla.sobremedida[key] = (tallasDesdeTabla.sobremedida[key] || 0) + cantidad;
-                    }
-                });
-                tallasConColorEnTabla++;
-            } else {
-                // Sin colores, usar solo talla
-                const key = tallaText;
-                if (genero === 'dama') {
-                    tallasDesdeTabla.dama[key] = (tallasDesdeTabla.dama[key] || 0) + cantidad;
-                } else if (genero === 'caballero') {
-                    tallasDesdeTabla.caballero[key] = (tallasDesdeTabla.caballero[key] || 0) + cantidad;
-                } else if (genero === 'sobremedida') {
-                    if (!tallasDesdeTabla.sobremedida) tallasDesdeTabla.sobremedida = {};
-                    tallasDesdeTabla.sobremedida[key] = (tallasDesdeTabla.sobremedida[key] || 0) + cantidad;
-                }
-            }
-
-            tallasEnTabla++;
-        });
-
-        //  USAR TABLA SI TIENE COLORES (tabla COMPLETA)
-        if (tallasConColorEnTabla > 0) {
-            console.log('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
-            console.log('  → DAMA:', JSON.stringify(tallasDesdeTabla.dama));
-            console.log('  → CABALLERO:', JSON.stringify(tallasDesdeTabla.caballero));
-            if (tallasDesdeTabla.sobremedida) {
-                console.log('  → SOBREMEDIDA:', JSON.stringify(tallasDesdeTabla.sobremedida));
-            }
-            return tallasDesdeTabla;
-        }
-
-        //  TABLA TIENE FILAS PERO SIN COLORES - Intenta StateManager primero
-        if (tallasEnTabla > 0) {
-            console.log(`[obtenerTallasDeLaPrenda]  Tabla tiene ${tallasEnTabla} filas pero SIN colores - consultando StateManager...`);
-            // NO retorna aquí, continúa a FUENTE 2
-        }
+    if (tablaInfo?.conColorFilas > 0) {
+        console.log('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
+        return tablaInfo.tallasConColor;
     }
 
-    // ═══ FUENTE 2: StateManager / ColoresPorTalla (Fallback si tabla SIN colores) ═══
-    const obtenerAsignacionesColores = () => {
-        const datosColores = window.ColoresPorTalla?.datos;
-        if (datosColores && typeof datosColores === 'object' && Object.keys(datosColores).length > 0) {
-            return { fuente: 'ColoresPorTalla.datos', asignaciones: datosColores };
-        }
-
-        if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
-            const asignacionesState = window.StateManager.getAsignaciones();
-            if (asignacionesState && typeof asignacionesState === 'object' && Object.keys(asignacionesState).length > 0) {
-                return { fuente: 'StateManager.getAsignaciones()', asignaciones: asignacionesState };
-            }
-        }
-
-        return { fuente: null, asignaciones: null };
-    };
-
-    const { fuente, asignaciones } = obtenerAsignacionesColores();
-    const tieneColores = !!(asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0);
-
-    if (tieneColores) {
-        const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
-        console.log(`[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)`);
-
-        Object.values(asignaciones).forEach(asignacion => {
-            const genero = normalizarGenero(asignacion?.genero);
-            if (!genero) return;
-
-            const talla = String(asignacion?.talla || '').trim().toUpperCase();
-            if (!talla) return;
-
-            const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
-            colores.forEach(c => {
-                const color = String(c?.nombre || '').trim().toUpperCase();
-                const cantidad = parseInt(c?.cantidad, 10) || 0;
-                if (!color || cantidad <= 0) return;
-
-                const key = `${talla}__${color}`;
-                tallasConColor[genero][key] = (tallasConColor[genero][key] || 0) + cantidad;
-            });
-        });
-
-        console.log('[obtenerTallasDeLaPrenda]  Datos extraídos desde:', fuente);
-        return tallasConColor;
+    const { fuente, asignaciones } = _obtenerAsignacionesColores();
+    if (asignaciones) {
+        console.log(`[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: ${fuente}`);
+        return _extraerTallasDeAsignaciones(asignaciones, normalizarGenero);
     }
 
-    // ═══ FUENTE 3: Tabla HTML SIN COLORES (fallback si StateManager vacío) ═══
-    if (tablaBody) {
-        const filas = tablaBody.querySelectorAll('tr[data-tipo="wizard"]');
-        if (filas.length > 0) {
-            const tallasDesdeTabla = { dama: {}, caballero: {}, sobremedida: null };
-            
-            filas.forEach(fila => {
-                const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
-                const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
-                const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
-
-                if (!generoRaw || !tallaText || !cantidadText) return;
-
-                const genero = normalizarGenero(generoRaw);
-                if (!genero) return;
-
-                const cantidad = parseInt(cantidadText, 10) || 0;
-                if (cantidad <= 0) return;
-
-                const key = tallaText;
-                if (genero === 'dama') {
-                    tallasDesdeTabla.dama[key] = (tallasDesdeTabla.dama[key] || 0) + cantidad;
-                } else if (genero === 'caballero') {
-                    tallasDesdeTabla.caballero[key] = (tallasDesdeTabla.caballero[key] || 0) + cantidad;
-                } else if (genero === 'sobremedida') {
-                    if (!tallasDesdeTabla.sobremedida) tallasDesdeTabla.sobremedida = {};
-                    tallasDesdeTabla.sobremedida[key] = (tallasDesdeTabla.sobremedida[key] || 0) + cantidad;
-                }
-            });
-
-            if (Object.keys(tallasDesdeTabla.dama).length > 0 || Object.keys(tallasDesdeTabla.caballero).length > 0) {
-                console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
-                return tallasDesdeTabla;
-            }
-        }
+    if (tablaInfo?.totalFilas > 0 && _tieneTallas(tablaInfo.tallasSinColor)) {
+        console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
+        return tablaInfo.tallasSinColor;
     }
 
-    // ═══ FUENTE 4: tallasRelacionales (Legacy Compatibility) ═══
-    const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
-    const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
-        generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
-    );
-
-    if (hayTallasRelacionales) {
-        const tallas = { dama: {}, caballero: {}, sobremedida: null };
+    const rel = _obtenerTallasDeLaPrendaDesdeRelacionales();
+    if (rel) {
         console.log('[obtenerTallasDeLaPrenda]  FUENTE 4 USADA: tallasRelacionales (legacy)');
-
-        if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
-            tallas.dama = { ...tallasRelacionales.DAMA };
-        }
-        if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
-            tallas.caballero = { ...tallasRelacionales.CABALLERO };
-        }
-        if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
-            tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
-        }
-        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
-            tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
-        }
-
-        return tallas;
+        return rel;
     }
 
-    // ═══ FUENTE 5: cantidadSoloSeleccionada (Último recurso) ═══
-    if (window.cantidadSoloSeleccionada) {
+    if (globalThis.cantidadSoloSeleccionada) {
         console.log('[obtenerTallasDeLaPrenda]  FUENTE 5 USADA: cantidadSoloSeleccionada');
-        return { dama: {}, caballero: {}, sobremedida: { 'UNISEX': window.cantidadSoloSeleccionada } };
+        return { dama: {}, caballero: {}, sobremedida: { 'UNISEX': globalThis.cantidadSoloSeleccionada } };
     }
 
-    // Sin datos en ninguna fuente
     console.log('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacío');
     return { dama: {}, caballero: {}, sobremedida: null };
 }
@@ -1129,7 +1048,7 @@ function mostrarModalAdvertenciaTallas() {
     try {
         const swal2Container = document.querySelector('.swal2-container');
         if (swal2Container) {
-            console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', window.getComputedStyle(swal2Container).zIndex);
+            console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', globalThis.getComputedStyle(swal2Container).zIndex);
         }
     } catch (e) {
         console.log('[MODAL-ADVERTENCIA-TALLAS] Sin swal2-container activo');
@@ -1146,7 +1065,7 @@ function mostrarModalAdvertenciaTallas() {
 }
 
 // Cerrar modal de advertencia
-window.cerrarModalAdvertencia = function() {
+globalThis.cerrarModalAdvertencia = function() {
     const modal = document.getElementById('modal-advertencia-tallas');
     if (modal) {
         modal.remove();
@@ -1154,7 +1073,7 @@ window.cerrarModalAdvertencia = function() {
 };
 
 // Abrir editor de tallas específicas
-window.abrirEditorTallasEspecificas = function() {
+globalThis.abrirEditorTallasEspecificas = function() {
 
     
     const modalEditor = document.getElementById('modal-editor-tallas');
@@ -1191,9 +1110,9 @@ window.abrirEditorTallasEspecificas = function() {
             containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
         } else {
             tallasDamaArray.forEach(tallaKey => {
-                const isSelected = window.tallasSeleccionadasProceso.dama.includes(tallaKey);
+                const isSelected = globalThis.tallasSeleccionadasProceso.dama.includes(tallaKey);
                 const cantidadPrenda = tallasPrenda.dama[tallaKey] || 0;
-                const cantidadProceso = window.tallasCantidadesProceso?.dama?.[tallaKey] || 0;
+                const cantidadProceso = globalThis.tallasCantidadesProceso?.dama?.[tallaKey] || 0;
 
                 const parts = String(tallaKey).split('__');
                 const tallaDisplay = (parts[0] || tallaKey);
@@ -1265,9 +1184,9 @@ window.abrirEditorTallasEspecificas = function() {
             containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
         } else {
             tallasCaballeroArray.forEach(tallaKey => {
-                const isSelected = window.tallasSeleccionadasProceso.caballero.includes(tallaKey);
+                const isSelected = globalThis.tallasSeleccionadasProceso.caballero.includes(tallaKey);
                 const cantidadPrenda = tallasPrenda.caballero[tallaKey] || 0;
-                const cantidadProceso = window.tallasCantidadesProceso?.caballero?.[tallaKey] || 0;
+                const cantidadProceso = globalThis.tallasCantidadesProceso?.caballero?.[tallaKey] || 0;
 
                 const parts = String(tallaKey).split('__');
                 const tallaDisplay = (parts[0] || tallaKey);
@@ -1333,18 +1252,18 @@ window.abrirEditorTallasEspecificas = function() {
     //  DIAGNÓSTICO Z-INDEX
     console.log('📌 [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
     console.log('📌 [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
-    console.log('📌 [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
+    console.log('📌 [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Obtener z-index del modal principal
     const modalPrincipal = document.getElementById('modal-proceso-generico');
     if (modalPrincipal) {
         console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
-        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', window.getComputedStyle(modalPrincipal).zIndex);
+        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', globalThis.getComputedStyle(modalPrincipal).zIndex);
     }
     
     // Forzar z-index aún más alto
-    const zIndexEditorActual = parseInt(window.getComputedStyle(modalEditor).zIndex) || 100002;
-    const zIndexPrincipalActual = parseInt(window.getComputedStyle(modalPrincipal).zIndex) || 999999999;
+    const zIndexEditorActual = parseInt(globalThis.getComputedStyle(modalEditor).zIndex) || 100002;
+    const zIndexPrincipalActual = parseInt(globalThis.getComputedStyle(modalPrincipal).zIndex) || 999999999;
     const nuevoZIndexEditor = zIndexPrincipalActual + 1;
     
     console.log('📌 [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
@@ -1354,21 +1273,21 @@ window.abrirEditorTallasEspecificas = function() {
     // Aplicar z-index forzado
     modalEditor.style.zIndex = nuevoZIndexEditor.toString();
     console.log(' [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
-    console.log(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
+    console.log(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Verificar contexto de apilamiento
     console.log('📌 [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
-    console.log('   - Modal Principal display:', window.getComputedStyle(modalPrincipal).display);
-    console.log('   - Modal Principal position:', window.getComputedStyle(modalPrincipal).position);
-    console.log('   - Editor display:', window.getComputedStyle(modalEditor).display);
-    console.log('   - Editor position:', window.getComputedStyle(modalEditor).position);
+    console.log('   - Modal Principal display:', globalThis.getComputedStyle(modalPrincipal).display);
+    console.log('   - Modal Principal position:', globalThis.getComputedStyle(modalPrincipal).position);
+    console.log('   - Editor display:', globalThis.getComputedStyle(modalEditor).display);
+    console.log('   - Editor position:', globalThis.getComputedStyle(modalEditor).position);
     
     // Listar todos los elementos con z-index alto en la página
     console.log('📌 [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
     document.querySelectorAll('[style*="z-index"], [class*="modal"], [class*="overlay"]').forEach((el, idx) => {
-        const zIdx = window.getComputedStyle(el).zIndex;
+        const zIdx = globalThis.getComputedStyle(el).zIndex;
         if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100) {
-            console.log(`   ${idx}. ${el.id || el.className || el.tagName} - Z-index: ${zIdx}, Display: ${window.getComputedStyle(el).display}`);
+            console.log(`   ${idx}. ${el.id || el.className || el.tagName} - Z-index: ${zIdx}, Display: ${globalThis.getComputedStyle(el).display}`);
         }
     });
 
@@ -1380,8 +1299,8 @@ function calcularCantidadAsignadaOtrosProcesos(talla, generoKey, procesoActualEx
     const procesosDetalle = [];
     
     // Recorrer TODOS los procesos
-    if (window.procesosSeleccionados) {
-        Object.entries(window.procesosSeleccionados).forEach(([tipoProceso, datosProc]) => {
+    if (globalThis.procesosSeleccionados) {
+        Object.entries(globalThis.procesosSeleccionados).forEach(([tipoProceso, datosProc]) => {
             // Excluir el proceso actual
             if (tipoProceso === procesoActualExcluir) {
                 return;
@@ -1406,7 +1325,7 @@ function calcularCantidadAsignadaOtrosProcesos(talla, generoKey, procesoActualEx
 }
 
 // Actualizar cantidad de talla en el modal de proceso
-window.actualizarCantidadTallaProceso = function(input) {
+globalThis.actualizarCantidadTallaProceso = function(input) {
     const genero = input.dataset.genero;
     const talla = input.dataset.talla;
     const cantidad = parseInt(input.value) || 0;
@@ -1437,7 +1356,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         input.style.borderColor = '#dc2626';
         input.style.backgroundColor = '#fee2e2';
         
-        // Buscar el label padre que contiene todo
+        // Buscar el label padre que contiene 
         const label = input.closest('label');
         console.log(' [ERROR-CSS] Label encontrado:', !!label);
         
@@ -1450,7 +1369,7 @@ window.actualizarCantidadTallaProceso = function(input) {
             wrapper.className = 'talla-error-wrapper';
             wrapper.style.cssText = 'display: contents;';
             
-            if (label && label.parentNode) {
+            if (label?.parentNode) {
                 // Reemplazar label con wrapper en el DOM
                 label.parentNode.insertBefore(wrapper, label);
                 // Meter label dentro del wrapper
@@ -1475,7 +1394,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         console.log(' [ERROR-CSS] ErrorDiv después de crear:');
         console.log('   - Existe:', !!errorDiv);
         console.log('   - Display (style):', errorDiv.style.display);
-        console.log('   - Display (computed):', window.getComputedStyle(errorDiv).display);
+        console.log('   - Display (computed):', globalThis.getComputedStyle(errorDiv).display);
         
         errorDiv.textContent = ` Máximo: ${cantidadDisponibleEnPrenda} unidades`;
         errorDiv.style.display = 'block';
@@ -1486,144 +1405,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         input.value = 0;
         return;
         
-        // CÓDIGO VIEJO - DESCARTAR
-        /* Swal.fire({
-            title: ' Cantidad Excedida',
-            html: `<div style="text-align: left;">
-                <p><strong>Talla:</strong> ${talla} (${generoKey.toUpperCase()})</p>
-                <p><strong>Cantidad disponible en PRENDA:</strong> <span style="color: #dc2626; font-weight: bold;">${cantidadDisponibleEnPrenda}</span></p>
-                <p><strong>Cantidad intentada:</strong> <span style="color: #dc2626; font-weight: bold;">${cantidad}</span></p>
-                <hr>
-                <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
-                    💡 <strong>Nota:</strong> Las mismas prendas pueden recibir múltiples procesos.
-                </p>
-            </div>`,
-            icon: 'warning',
-            confirmButtonText: 'Entendido',
-            confirmButtonColor: '#dc2626',
-            allowOutsideClick: false,
-            didOpen: (modal) => {
-                //  DESPUÉS DE ABRIR
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] ABIERTO');
-                
-                // Buscar elemento Swal2
-                const swalContainer = document.querySelector('.swal2-container');
-                const backdrop = document.querySelector('.swal2-backdrop-show');
-                const swalModal = document.querySelector('.swal2-popup');
-                
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] DIAGNÓSTICO INICIAL:');
-                console.log('   - swalContainer encontrado:', !!swalContainer);
-                console.log('   - backdrop encontrado:', !!backdrop);
-                console.log('   - swalModal encontrado:', !!swalModal);
-                
-                if (!swalContainer) {
-                    console.error(' [MODAL-CANTIDAD-EXCEDIDA] NO SE ENCONTRÓ .swal2-container');
-                    console.log(' [MODAL-CANTIDAD-EXCEDIDA] Elementos en DOM:');
-                    document.querySelectorAll('[class*="swal"]').forEach((el, idx) => {
-                        console.log(`   ${idx}. ${el.className} - display: ${window.getComputedStyle(el).display}, z-index: ${window.getComputedStyle(el).zIndex}`);
-                    });
-                    return;
-                }
-                
-                // Z-index ANTES
-                const zindexAntes = window.getComputedStyle(swalContainer).zIndex;
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX ANTES DE FORZAR:');
-                console.log('   - Swal2 Container zIndex:', zindexAntes);
-                console.log('   - Swal2 Container display:', window.getComputedStyle(swalContainer).display);
-                console.log('   - Swal2 Container position:', window.getComputedStyle(swalContainer).position);
-                console.log('   - Backdrop zIndex:', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
-                
-                // Verificar padres
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] PADRES DE SWAL2:');
-                let padre = swalContainer.parentElement;
-                let nivel = 0;
-                while (padre && nivel < 5) {
-                    const padreZindex = window.getComputedStyle(padre).zIndex;
-                    console.log(`   Nivel ${nivel}: ${padre.tagName}#${padre.id} - z-index: ${padreZindex}, position: ${window.getComputedStyle(padre).position}`);
-                    padre = padre.parentElement;
-                    nivel++;
-                }
-                
-                // Forzar z-index MÁS ALTO
-                const zindexActual = parseInt(zindexAntes) || 9999998;
-                const nuevoZindex = Math.max(zindexActual, 2000000000);
-                
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] FORZANDO Z-INDEX:');
-                console.log('   - Z-index actual (parseado):', zindexActual);
-                console.log('   - Nuevo z-index:', nuevoZindex);
-                
-                swalContainer.style.zIndex = nuevoZindex.toString();
-                
-                if (backdrop) {
-                    const backdropZindex = Math.max(nuevoZindex - 1, 1999999999);
-                    backdrop.style.zIndex = backdropZindex.toString();
-                    console.log('   - Backdrop z-index también forzado a:', backdropZindex);
-                }
-                
-                // Verificar DESPUÉS de forzar
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX DESPUÉS DE FORZAR:');
-                const zindexDespues = window.getComputedStyle(swalContainer).zIndex;
-                console.log('   - Swal2 Container zIndex (style):', swalContainer.style.zIndex);
-                console.log('   - Swal2 Container zIndex (computed):', zindexDespues);
-                console.log('   - Backdrop zIndex (computed):', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
-                
-                // Buscar si algo está ENCIMA
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] BÚSQUEDA DE ELEMENTOS ENCIMA:');
-                document.querySelectorAll('*').forEach(el => {
-                    const zIdx = window.getComputedStyle(el).zIndex;
-                    if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > parseInt(nuevoZindex)) {
-                        console.warn(`    ELEMENTO ENCIMA: ${el.tagName}#${el.id}.${el.className} - z-index: ${zIdx}`);
-                    }
-                });
-                
-                // Listar todos los elementos con z-index alto
-                console.log('📌 [MODAL-CANTIDAD-EXCEDIDA] ELEMENTOS CON Z-INDEX ALTO (> 100000):');
-                let encontradosAltos = [];
-                document.querySelectorAll('*').forEach((el) => {
-                    const zIdx = window.getComputedStyle(el).zIndex;
-                    if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100000) {
-                        encontradosAltos.push({
-                            elemento: el.id ? `#${el.id}` : el.className ? `.${el.className}` : el.tagName,
-                            zIndex: zIdx,
-                            position: window.getComputedStyle(el).position
-                        });
-                    }
-                });
-                
-                if (encontradosAltos.length === 0) {
-                    console.log('    NO HAY ELEMENTOS CON Z-INDEX > 100000 (excepto Swal2)');
-                } else {
-                    encontradosAltos.sort((a, b) => parseInt(b.zIndex) - parseInt(a.zIndex));
-                    encontradosAltos.forEach((item, idx) => {
-                        console.log(`   ${idx + 1}. ${item.elemento} - z-index: ${item.zIndex}, position: ${item.position}`);
-                    });
-                }
-                
-                // Verificar si modal-editor-tallas está creando stacking context
-                const editorTallas = document.getElementById('modal-editor-tallas');
-                if (editorTallas) {
-                    console.log(' [MODAL-CANTIDAD-EXCEDIDA] STACKING CONTEXT EDITOR-TALLAS:');
-                    console.log('   - Encontrado: SI');
-                    console.log('   - Z-index:', window.getComputedStyle(editorTallas).zIndex);
-                    console.log('   - Position:', window.getComputedStyle(editorTallas).position);
-                    console.log('   - Display:', window.getComputedStyle(editorTallas).display);
-                    console.log('   - Visibility:', window.getComputedStyle(editorTallas).visibility);
-                    console.log('   - Opacity:', window.getComputedStyle(editorTallas).opacity);
-                }
-                
-                console.log(' [MODAL-CANTIDAD-EXCEDIDA] CSS PROPERTIES SWAL2:');
-                console.log('   - Visibility:', window.getComputedStyle(swalContainer).visibility);
-                console.log('   - Opacity:', window.getComputedStyle(swalContainer).opacity);
-                console.log('   - Pointer-events:', window.getComputedStyle(swalContainer).pointerEvents);
-                console.log('   - Overflow:', window.getComputedStyle(swalContainer).overflow);
-                
-                if (swalModal) {
-                    console.log('   - swalModal visibility:', window.getComputedStyle(swalModal).visibility);
-                    console.log('   - swalModal opacity:', window.getComputedStyle(swalModal).opacity);
-                }
-            }
-        });
-        */
+      
     } else {
         // Limpiar error si la cantidad es válida
         input.style.borderColor = '#be185d';
@@ -1635,17 +1417,17 @@ window.actualizarCantidadTallaProceso = function(input) {
     }
     
     // Actualizar SOLO en la estructura de TALLAS DEL PROCESO
-    // NO tocar window.tallasRelacionales (que son las tallas de la PRENDA)
+    // NO tocar globalThis.tallasRelacionales (que son las tallas de la PRENDA)
     const generoMinuscula = genero.toLowerCase();
-    if (!window.tallasCantidadesProceso[generoMinuscula]) {
-        window.tallasCantidadesProceso[generoMinuscula] = {};
+    if (!globalThis.tallasCantidadesProceso[generoMinuscula]) {
+        globalThis.tallasCantidadesProceso[generoMinuscula] = {};
     }
     
     if (cantidad > 0) {
-        window.tallasCantidadesProceso[generoMinuscula][talla] = cantidad;
+        globalThis.tallasCantidadesProceso[generoMinuscula][talla] = cantidad;
     } else {
         // Si la cantidad es 0, eliminar la talla de las cantidades del proceso
-        delete window.tallasCantidadesProceso[generoMinuscula][talla];
+        delete globalThis.tallasCantidadesProceso[generoMinuscula][talla];
     }
     
     // Limpiar estilos de error si la validación pasó
@@ -1657,24 +1439,24 @@ window.actualizarCantidadTallaProceso = function(input) {
         talla,
         cantidad,
         cantidadDisponibleEnPrenda: cantidadDisponibleEnPrenda,
-        estructuraActual: window.tallasCantidadesProceso
+        estructuraActual: globalThis.tallasCantidadesProceso
     });
 };
 
 // Cerrar editor de tallas
-window.cerrarEditorTallas = function() {
+globalThis.cerrarEditorTallas = function() {
     const modal = document.getElementById('modal-editor-tallas');
     if (modal) {
         console.log(' [EDITOR-TALLAS] Cerrando modal...');
-        console.log(' [EDITOR-TALLAS] Z-index ANTES de cerrar:', window.getComputedStyle(modal).zIndex);
+        console.log(' [EDITOR-TALLAS] Z-index ANTES de cerrar:', globalThis.getComputedStyle(modal).zIndex);
         modal.style.display = 'none';
-        console.log(' [EDITOR-TALLAS] Modal cerrado. Display:', window.getComputedStyle(modal).display);
+        console.log(' [EDITOR-TALLAS] Modal cerrado. Display:', globalThis.getComputedStyle(modal).display);
     }
 
 };
 
 // Guardar tallas seleccionadas desde el editor
-window.guardarTallasSeleccionadas = function() {
+globalThis.guardarTallasSeleccionadas = function() {
 
     console.log(' [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
     console.log(' [guardarTallasSeleccionadas] Proceso actual:', procesoActual);
@@ -1682,49 +1464,49 @@ window.guardarTallasSeleccionadas = function() {
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
-    window.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
-    console.log(' [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', window.tallasSeleccionadasProceso.dama);
+    globalThis.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
+    console.log(' [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', globalThis.tallasSeleccionadasProceso.dama);
     
     // Recopilar tallas CABALLERO
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
-    window.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
-    console.log(' [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', window.tallasSeleccionadasProceso.caballero);
-    console.log(' [guardarTallasSeleccionadas] Cantidades por talla (proceso):', window.tallasCantidadesProceso);
+    globalThis.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
+    console.log(' [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', globalThis.tallasSeleccionadasProceso.caballero);
+    console.log(' [guardarTallasSeleccionadas] Cantidades por talla (proceso):', globalThis.tallasCantidadesProceso);
     
     // IMPORTANTE: Actualizar el objeto del proceso con las tallas y cantidades
     // para que no pierda los datos cuando se cierre el modal
-    if (procesoActual && window.procesosSeleccionados[procesoActual]?.datos) {
-        window.procesosSeleccionados[procesoActual].datos.tallas = {
-            dama: window.tallasCantidadesProceso.dama || {},
-            caballero: window.tallasCantidadesProceso.caballero || {},
-            sobremedida: window.tallasCantidadesProceso.sobremedida || {}
+    if (procesoActual && globalThis.procesosSeleccionados[procesoActual]?.datos) {
+        globalThis.procesosSeleccionados[procesoActual].datos.tallas = {
+            dama: globalThis.tallasCantidadesProceso.dama || {},
+            caballero: globalThis.tallasCantidadesProceso.caballero || {},
+            sobremedida: globalThis.tallasCantidadesProceso.sobremedida || {}
         };
         
         console.log(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoActual}":`, {
-            tallas: window.procesosSeleccionados[procesoActual].datos.tallas,
-            tallasCantidadesProceso: window.tallasCantidadesProceso
+            tallas: globalThis.procesosSeleccionados[procesoActual].datos.tallas,
+            tallasCantidadesProceso: globalThis.tallasCantidadesProceso
         });
     } else {
-        console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!window.procesosSeleccionados}`);
+        console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!globalThis.procesosSeleccionados}`);
     }
 
     console.log('📌 [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
-    console.log('   - Modal editor display:', window.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
-    console.log('   - Modal principal display:', window.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
+    console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
     
     console.log('📌 [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
-    console.log('   - Modal editor display:', window.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
-    console.log('   - Modal principal display:', window.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
+    console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     actualizarResumenTallasProceso();
     console.log(' [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
 };
 
 // Actualizar resumen de tallas
-window.actualizarResumenTallasProceso = function() {
+globalThis.actualizarResumenTallasProceso = function() {
     console.log('[actualizarResumenTallasProceso] 🎬 Iniciando renderización de resumen...');
     
     const resumen = document.getElementById('proceso-tallas-resumen');
@@ -1735,11 +1517,11 @@ window.actualizarResumenTallasProceso = function() {
         return;
     }
     
-    console.log('[actualizarResumenTallasProceso]  window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
-    console.log('[actualizarResumenTallasProceso]  window.tallasCantidadesProceso:', window.tallasCantidadesProceso);
+    console.log('[actualizarResumenTallasProceso]  globalThis.tallasSeleccionadasProceso:', globalThis.tallasSeleccionadasProceso);
+    console.log('[actualizarResumenTallasProceso]  globalThis.tallasCantidadesProceso:', globalThis.tallasCantidadesProceso);
     
-    const totalTallas = window.tallasSeleccionadasProceso.dama.length + window.tallasSeleccionadasProceso.caballero.length;
-    const haySobremedida = window.tallasSeleccionadasProceso.sobremedida && Object.keys(window.tallasSeleccionadasProceso.sobremedida).length > 0;
+    const totalTallas = globalThis.tallasSeleccionadasProceso.dama.length + globalThis.tallasSeleccionadasProceso.caballero.length;
+    const haySobremedida = globalThis.tallasSeleccionadasProceso.sobremedida && Object.keys(globalThis.tallasSeleccionadasProceso.sobremedida).length > 0;
     console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas, ' | Hay sobremedida:', haySobremedida);
     
     if (totalTallas === 0 && !haySobremedida) {
@@ -1751,7 +1533,7 @@ window.actualizarResumenTallasProceso = function() {
     let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
     
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
-    const tallasProceso = window.tallasCantidadesProceso || { dama: {}, caballero: {} };
+    const tallasProceso = globalThis.tallasCantidadesProceso || { dama: {}, caballero: {} };
     console.log('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
 
     const formatearTallaKey = (tallaKey) => {
@@ -1761,9 +1543,9 @@ window.actualizarResumenTallasProceso = function() {
         return color ? `${talla} - ${color}` : talla;
     };
     
-    if (window.tallasSeleccionadasProceso.dama.length > 0) {
-        console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', window.tallasSeleccionadasProceso.dama);
-        const tallasDamaHTML = window.tallasSeleccionadasProceso.dama.map(t => {
+    if (globalThis.tallasSeleccionadasProceso.dama.length > 0) {
+        console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', globalThis.tallasSeleccionadasProceso.dama);
+        const tallasDamaHTML = globalThis.tallasSeleccionadasProceso.dama.map(t => {
             const cantidad = tallasProceso.dama?.[t] || 0;
             console.log(`[actualizarResumenTallasProceso]  DAMA ${t}: cantidad=${cantidad}`);
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
@@ -1775,7 +1557,7 @@ window.actualizarResumenTallasProceso = function() {
         html += `
             <div>
                 <strong style="color: #be185d; margin-bottom: 0.5rem; display: block;">
-                    <i class="fas fa-female"></i> DAMA (${window.tallasSeleccionadasProceso.dama.length})
+                    <i class="fas fa-female"></i> DAMA (${globalThis.tallasSeleccionadasProceso.dama.length})
                 </strong>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
                     ${tallasDamaHTML}
@@ -1784,9 +1566,9 @@ window.actualizarResumenTallasProceso = function() {
         `;
     }
     
-    if (window.tallasSeleccionadasProceso.caballero.length > 0) {
-        console.log('[actualizarResumenTallasProceso] 👨 Renderizando CABALLERO:', window.tallasSeleccionadasProceso.caballero);
-        const tallasCaballeroHTML = window.tallasSeleccionadasProceso.caballero.map(t => {
+    if (globalThis.tallasSeleccionadasProceso.caballero.length > 0) {
+        console.log('[actualizarResumenTallasProceso] 👨 Renderizando CABALLERO:', globalThis.tallasSeleccionadasProceso.caballero);
+        const tallasCaballeroHTML = globalThis.tallasSeleccionadasProceso.caballero.map(t => {
             const cantidad = tallasProceso.caballero?.[t] || 0;
             console.log(`[actualizarResumenTallasProceso]  CABALLERO ${t}: cantidad=${cantidad}`);
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
@@ -1798,7 +1580,7 @@ window.actualizarResumenTallasProceso = function() {
         html += `
             <div>
                 <strong style="color: #1d4ed8; margin-bottom: 0.5rem; display: block;">
-                    <i class="fas fa-male"></i> CABALLERO (${window.tallasSeleccionadasProceso.caballero.length})
+                    <i class="fas fa-male"></i> CABALLERO (${globalThis.tallasSeleccionadasProceso.caballero.length})
                 </strong>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
                     ${tallasCaballeroHTML}
@@ -1808,10 +1590,10 @@ window.actualizarResumenTallasProceso = function() {
     }
     
     // AGREGAR SOBREMEDIDA AL RESUMEN
-    if (haySobremedida && window.tallasCantidadesProceso.sobremedida) {
-        console.log('[actualizarResumenTallasProceso] 📐 Renderizando SOBREMEDIDA:', window.tallasCantidadesProceso.sobremedida);
+    if (haySobremedida && globalThis.tallasCantidadesProceso.sobremedida) {
+        console.log('[actualizarResumenTallasProceso] 📐 Renderizando SOBREMEDIDA:', globalThis.tallasCantidadesProceso.sobremedida);
         
-        const sobremedidaHTML = Object.entries(window.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
+        const sobremedidaHTML = Object.entries(globalThis.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
             console.log(`[actualizarResumenTallasProceso]  SOBREMEDIDA ${genero}: ${cantidad}`);
             const colorMap = {
                 'DAMA': { bg: '#fce7f3', text: '#be185d' },
@@ -1848,7 +1630,7 @@ window.actualizarResumenTallasProceso = function() {
 };
 
 // Agregar proceso al pedido
-window.agregarProcesoAlPedido = function() {
+globalThis.agregarProcesoAlPedido = function() {
     if (!procesoActual) {
         alert('Error: no hay proceso seleccionado');
         return;
@@ -1857,14 +1639,14 @@ window.agregarProcesoAlPedido = function() {
     try {
         //  FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
         // Las imágenes se guardan por índice numérico (1, 2, 3), NO por nombre de proceso
-        console.log('[agregarProcesoAlPedido]  Buscando imágenes en window.procesosImagenesStorage...');
+        console.log('[agregarProcesoAlPedido]  Buscando imágenes en globalThis.procesosImagenesStorage...');
         console.log('[agregarProcesoAlPedido] 📌 procesoActual:', procesoActual);
-        console.log('[agregarProcesoAlPedido] 📌 procesoActualIndex:', window.procesoActualIndex);
-        console.log('[agregarProcesoAlPedido] 📌 window.procesosImagenesStorage.obtenerImagenes:', typeof window.procesosImagenesStorage?.obtenerImagenes);
+        console.log('[agregarProcesoAlPedido] 📌 procesoActualIndex:', globalThis.procesoActualIndex);
+        console.log('[agregarProcesoAlPedido] 📌 globalThis.procesosImagenesStorage.obtenerImagenes:', typeof globalThis.procesosImagenesStorage?.obtenerImagenes);
         
         //  CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
         // PERO TAMBIÉN capturar imágenes NUEVAS de imagenesProcesoActual (agregadas después de eliminar)
-        const imagenesExistentes = (window.imagenesProcesoExistentes || []).filter(img => img !== null);
+        const imagenesExistentes = (globalThis.imagenesProcesoExistentes || []).filter(img => img !== null);
         
         let imagenesDelStorage = [];
         let imagenesNuevasAgregadas = [];
@@ -1874,19 +1656,19 @@ window.agregarProcesoAlPedido = function() {
             console.log('[agregarProcesoAlPedido]  Modo CREACIÓN: Buscando imágenes en storage UNIVERSAL de PROCESOS...');
             
             //  CORRECCIÓN: Usar storage universal separado por tipo
-            if (window.universalImagenesStorage && typeof window.universalImagenesStorage.obtenerImagenes === 'function') {
-                if (window.procesoActualIndex !== undefined && window.procesoActualIndex > 0) {
-                    const imagenesEnIndice = window.universalImagenesStorage.obtenerImagenes('procesos', window.procesoActualIndex);
-                    console.log(`[agregarProcesoAlPedido] 🔢 Usando ÍNDICE ESPECÍFICO: ${window.procesoActualIndex} → ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
+            if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.obtenerImagenes === 'function') {
+                if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
+                    const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', globalThis.procesoActualIndex);
+                    console.log(`[agregarProcesoAlPedido] 🔢 Usando ÍNDICE ESPECÍFICO: ${globalThis.procesoActualIndex} → ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
                     if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                         imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                        console.log(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${window.procesoActualIndex}`);
+                        console.log(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${globalThis.procesoActualIndex}`);
                     }
                 } else {
                     console.warn('[agregarProcesoAlPedido]  procesoActualIndex NO definido, buscando en índices 1-3 como fallback...');
                     // FALLBACK: Si no está definido (error), buscar en todos (pero esto no debería pasar)
                     for (let idx = 1; idx <= 3; idx++) {
-                        const imagenesEnIndice = window.universalImagenesStorage.obtenerImagenes('procesos', idx);
+                        const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', idx);
                         console.log(`  [agregarProcesoAlPedido] Fallback: Índice ${idx}: ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
                         if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                             imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
@@ -1899,18 +1681,18 @@ window.agregarProcesoAlPedido = function() {
             
             // Fallback: Imágenes locales del array imagenesProcesoActual
             if (imagenesDelStorage.length === 0) {
-                //  CORRECCIÓN: Usar window.imagenesProcesoActual en lugar de la variable local
-                const imagenesNuevas = (window.imagenesProcesoActual || []).filter(img => img !== null);
+                //  CORRECCIÓN: Usar globalThis.imagenesProcesoActual en lugar de la variable local
+                const imagenesNuevas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null);
                 if (imagenesNuevas.length > 0) {
                     imagenesDelStorage = imagenesNuevas;
-                    console.log('[agregarProcesoAlPedido]  Fallback: Imágenes obtenidas desde window.imagenesProcesoActual:', imagenesDelStorage.length);
+                    console.log('[agregarProcesoAlPedido]  Fallback: Imágenes obtenidas desde globalThis.imagenesProcesoActual:', imagenesDelStorage.length);
                 }
             }
         } else {
             console.log('[agregarProcesoAlPedido]  Modo EDICIÓN: Usando imagenesExistentes + imágenes NUEVAS agregadas');
             //  NUEVO: En modo EDICIÓN, también capturar imágenes NUEVAS de imagenesProcesoActual
             // Esto permite agregar imágenes después de eliminar
-            imagenesNuevasAgregadas = (window.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
+            imagenesNuevasAgregadas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
             console.log('[agregarProcesoAlPedido]  Imágenes nuevas agregadas en edición:', imagenesNuevasAgregadas.length);
         }
         
@@ -1922,9 +1704,9 @@ window.agregarProcesoAlPedido = function() {
             //  CORRECCIÓN: En modo edición, usar el estado ACTUAL del modal
             // que refleja las eliminaciones hechas por el usuario
             console.log('[agregarProcesoAlPedido]  DEBUG EDICIÓN - Estado de variables:', {
-                'window.imagenesProcesoExistentes': window.imagenesProcesoExistentes,
-                'length': window.imagenesProcesoExistentes?.length || 0,
-                'contenido': window.imagenesProcesoExistentes?.map((img, idx) => ({
+                'globalThis.imagenesProcesoExistentes': globalThis.imagenesProcesoExistentes,
+                'length': globalThis.imagenesProcesoExistentes?.length || 0,
+                'contenido': globalThis.imagenesProcesoExistentes?.map((img, idx) => ({
                     idx,
                     esNull: img === null,
                     esUndefined: img === undefined,
@@ -1933,9 +1715,9 @@ window.agregarProcesoAlPedido = function() {
                 }))
             });
             
-            if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > 0) {
+            if (globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > 0) {
                 // Usar imágenes del estado actual del modal (con eliminaciones aplicadas)
-                imagenesFinales = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined);
+                imagenesFinales = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined);
                 console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes del estado actual del modal:', imagenesFinales.length);
                 console.log('[agregarProcesoAlPedido]  Imágenes filtradas (no null):', imagenesFinales.map((img, idx) => ({
                     idx,
@@ -1944,7 +1726,7 @@ window.agregarProcesoAlPedido = function() {
                 })));
             } else {
                 // Fallback: usar imágenes del proceso guardado
-                const procesoGuardado = window.procesosSeleccionados?.[procesoActual]?.datos;
+                const procesoGuardado = globalThis.procesosSeleccionados?.[procesoActual]?.datos;
                 console.log('[agregarProcesoAlPedido]  DEBUG - procesoGuardado:', procesoGuardado);
                 if (procesoGuardado?.imagenes && procesoGuardado.imagenes.length > 0) {
                     imagenesFinales = procesoGuardado.imagenes.filter(img => img !== null && img !== undefined);
@@ -1975,9 +1757,9 @@ window.agregarProcesoAlPedido = function() {
             }
         } else {
             // En modo creación: SOLO usar imágenes del storage del proceso actual
-            if (window.procesoActualIndex !== undefined && window.procesoActualIndex > 0) {
+            if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
                 imagenesFinales = imagenesDelStorage;
-                console.log(`[agregarProcesoAlPedido]  MODO CREACIÓN: Usando imágenes del storage índice ${window.procesoActualIndex}:`, imagenesFinales.length);
+                console.log(`[agregarProcesoAlPedido]  MODO CREACIÓN: Usando imágenes del storage índice ${globalThis.procesoActualIndex}:`, imagenesFinales.length);
             } else {
                 console.warn('[agregarProcesoAlPedido]  Sin índice de proceso definido, no se usarán imágenes');
                 imagenesFinales = [];
@@ -1989,7 +1771,7 @@ window.agregarProcesoAlPedido = function() {
         
         console.log('[agregarProcesoAlPedido]  IMÁGENES CAPTURADAS:', {
             modoActual: modoActual,
-            procesoActualIndex: window.procesoActualIndex,
+            procesoActualIndex: globalThis.procesoActualIndex,
             imagenesFinales: imagenesFinales.length,
             imagenesValidas: imagenesValidas.length,
             fuentes: {
@@ -2012,13 +1794,13 @@ window.agregarProcesoAlPedido = function() {
         });
         
         // IMPORTANTE: Usar tallasCantidadesProceso que contiene las cantidades DEL PROCESO
-        // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
-        const cantidadOriginales = (window.imagenesProcesoExistentes || []).length;
+        // NO globalThis.tallasRelacionales que son las cantidades DE LA PRENDA
+        const cantidadOriginales = (globalThis.imagenesProcesoExistentes || []).length;
         
         //  CRÍTICO: Usar storage de eliminadas, no nulls
-        const imagenesEliminadasArray = window.imagenesEliminadasProcesoStorage || [];
+        const imagenesEliminadasArray = globalThis.imagenesEliminadasProcesoStorage || [];
         
-        const ubicacionesClonadas = (window.ubicacionesProcesoSeleccionadas || []).map(u => {
+        const ubicacionesClonadas = (globalThis.ubicacionesProcesoSeleccionadas || []).map(u => {
             if (u && typeof u === 'object') {
                 return { ...u };
             }
@@ -2027,13 +1809,13 @@ window.agregarProcesoAlPedido = function() {
 
         const datos = {
             tipo: procesoActual,
-            modo_tallas: window.procesosSeleccionados?.[procesoActual]?.datos?.modo_tallas || 'generico',
+            modo_tallas: globalThis.procesosSeleccionados?.[procesoActual]?.datos?.modo_tallas || 'generico',
             ubicaciones: ubicacionesClonadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
-                dama: { ...window.tallasCantidadesProceso?.dama } || {},
-                caballero: { ...window.tallasCantidadesProceso?.caballero } || {},
-                sobremedida: { ...window.tallasCantidadesProceso?.sobremedida } || {}
+                dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
+                caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
+                sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
             },
             imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
             //  CRÍTICO: imagenesEliminadas debe contener IDs de imágenes a eliminar
@@ -2058,13 +1840,13 @@ window.agregarProcesoAlPedido = function() {
             tieneImagenes: !!datos.imagenes,
             tieneImagenesEliminadas: !!datos.imagenesEliminadas,
             imagenesEliminadasContent: datos.imagenesEliminadas,
-            storageEliminadas: window.imagenesEliminadasProcesoStorage
+            storageEliminadas: globalThis.imagenesEliminadasProcesoStorage
         });
         
         console.log('[agregarProcesoAlPedido]  DEBUG imagenesEliminadas:', {
             cantidadOriginales: cantidadOriginales,
-            storageLength: (window.imagenesEliminadasProcesoStorage || []).length,
-            storageContent: window.imagenesEliminadasProcesoStorage,
+            storageLength: (globalThis.imagenesEliminadasProcesoStorage || []).length,
+            storageContent: globalThis.imagenesEliminadasProcesoStorage,
             imagenesValidas: imagenesValidas.map((img, idx) => ({
                 idx,
                 esFile: img instanceof File,
@@ -2082,49 +1864,49 @@ window.agregarProcesoAlPedido = function() {
         console.log('[agregarProcesoAlPedido] Datos capturados:', {
             tipo: procesoActual,
             tallas: datos.tallas,
-            tallasCantidadesProceso: window.tallasCantidadesProceso,
+            tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
             tieneUbicaciones: ubicacionesProcesoSeleccionadas.length > 0
         });
         
         // NUEVO: DIFERENCIAR ENTRE CREACIÓN Y EDICIÓN
         if (modoActual === 'crear') {
             // CREACIÓN: Guardar directamente en procesosSeleccionados (comportamiento actual)
-            if (!window.procesosSeleccionados) {
-                window.procesosSeleccionados = {};
+            if (!globalThis.procesosSeleccionados) {
+                globalThis.procesosSeleccionados = {};
             }
             
             // Si el proceso NO existe todavía, crearlo
-            if (!window.procesosSeleccionados[procesoActual]) {
-                window.procesosSeleccionados[procesoActual] = {
+            if (!globalThis.procesosSeleccionados[procesoActual]) {
+                globalThis.procesosSeleccionados[procesoActual] = {
                     tipo: procesoActual,
-                    indiceResultado: window.procesoActualIndex, //  Guardar el índice para futuras ediciones
+                    indiceResultado: globalThis.procesoActualIndex, //  Guardar el índice para futuras ediciones
                     datos: null
                 };
             }
             
             // Asignar los datos capturados
-            window.procesosSeleccionados[procesoActual].datos = {
+            globalThis.procesosSeleccionados[procesoActual].datos = {
                 ...datos,
                 ubicaciones: [...ubicacionesClonadas]
             };
-            window.procesosSeleccionados[procesoActual].indiceResultado = window.procesoActualIndex; // Garantizar que el índice está guardado
+            globalThis.procesosSeleccionados[procesoActual].indiceResultado = globalThis.procesoActualIndex; // Garantizar que el índice está guardado
             
-            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en window.procesosSeleccionados:', {
+            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en globalThis.procesosSeleccionados:', {
                 tipo: procesoActual,
-                indice: window.procesoActualIndex,
-                datosGuardados: window.procesosSeleccionados[procesoActual].datos
+                indice: globalThis.procesoActualIndex,
+                datosGuardados: globalThis.procesosSeleccionados[procesoActual].datos
             });
             
         } else if (modoActual === 'editar') {
-            // EDICIÓN: Actualizar directamente en window.procesosSeleccionados
+            // EDICIÓN: Actualizar directamente en globalThis.procesosSeleccionados
             console.log(' [EDICIÓN] Guardando cambios del proceso');
             
-            if (!window.procesosSeleccionados) {
-                window.procesosSeleccionados = {};
+            if (!globalThis.procesosSeleccionados) {
+                globalThis.procesosSeleccionados = {};
             }
             
             //  NUEVO: Preservar el ID del proceso existente en BD
-            const procesoExistente = window.procesosSeleccionados[procesoActual];
+            const procesoExistente = globalThis.procesosSeleccionados[procesoActual];
             const idExistente = procesoExistente?.datos?.id;
             const tipoProcesoId = procesoExistente?.datos?.tipo_proceso_id;
             
@@ -2136,16 +1918,16 @@ window.agregarProcesoAlPedido = function() {
             }
             
             // Actualizar directamente con los datos capturados del modal
-            window.procesosSeleccionados[procesoActual] = {
+            globalThis.procesosSeleccionados[procesoActual] = {
                 tipo: procesoActual,
-                indiceResultado: window.procesoActualIndex,
+                indiceResultado: globalThis.procesoActualIndex,
                 datos: {
                     ...datos,
                     ubicaciones: [...ubicacionesClonadas]
                 }
             };
             
-            console.log(' [EDICIÓN] Datos actualizados en window.procesosSeleccionados:', {
+            console.log(' [EDICIÓN] Datos actualizados en globalThis.procesosSeleccionados:', {
                 tipo: procesoActual,
                 id: datos.id,
                 ubicaciones: datos.ubicaciones?.length || 0,
@@ -2154,11 +1936,11 @@ window.agregarProcesoAlPedido = function() {
             });
             
             // También registrar en ProcesosEditor para tracking de cambios
-            if (window.procesosEditor) {
-                window.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
-                window.procesosEditor.registrarCambioImagenes(datos.imagenes);
-                window.procesosEditor.registrarCambioObservaciones(datos.observaciones);
-                window.procesosEditor.registrarCambioTallas(datos.tallas);
+            if (globalThis.procesosEditor) {
+                globalThis.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
+                globalThis.procesosEditor.registrarCambioImagenes(datos.imagenes);
+                globalThis.procesosEditor.registrarCambioObservaciones(datos.observaciones);
+                globalThis.procesosEditor.registrarCambioTallas(datos.tallas);
             }
             
             // Mantener buffer para compatibilidad
@@ -2170,17 +1952,17 @@ window.agregarProcesoAlPedido = function() {
         console.log('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
         
         //  CRÍTICO: Resetear storage de eliminadas después de guardar
-        window.imagenesEliminadasProcesoStorage = [];
+        globalThis.imagenesEliminadasProcesoStorage = [];
         console.log('[agregarProcesoAlPedido]  Storage de eliminadas reseteado después de guardar');
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);
         
         // Renderizar tarjetas SIEMPRE después de guardar (tanto en edición como en creación)
-        if (window.renderizarTarjetasProcesos) {
+        if (globalThis.renderizarTarjetasProcesos) {
             setTimeout(() => {
                 console.log(` [agregarProcesoAlPedido] Renderizando tarjetas (modo: ${modoAntesDeCerrar})...`);
-                window.renderizarTarjetasProcesos();
+                globalThis.renderizarTarjetasProcesos();
                 
                 // VERIFICACIÓN: Confirmar que se renderizó correctamente
                 setTimeout(() => {
@@ -2190,7 +1972,7 @@ window.agregarProcesoAlPedido = function() {
                         console.log(` [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
                         if (tarjetas.length === 0) {
                             console.warn(' [agregarProcesoAlPedido-VERIFY]  NO se encontraron tarjetas. Re-renderizando...');
-                            window.renderizarTarjetasProcesos();
+                            globalThis.renderizarTarjetasProcesos();
                         }
                     }
                 }, 100);
@@ -2198,8 +1980,8 @@ window.agregarProcesoAlPedido = function() {
         }
         
         // Actualizar resumen en prenda modal
-        if (window.actualizarResumenProcesos) {
-            window.actualizarResumenProcesos();
+        if (globalThis.actualizarResumenProcesos) {
+            globalThis.actualizarResumenProcesos();
         }
         
     } catch (error) {
@@ -2209,17 +1991,17 @@ window.agregarProcesoAlPedido = function() {
 
 // NUEVO: Función para aplicar cambios del buffer cuando se hace GUARDAR CAMBIOS de la prenda
 // Esta función es llamada ANTES de hacer el PATCH final
-window.aplicarCambiosProcesosDesdeBuffer = function() {
+globalThis.aplicarCambiosProcesosDesdeBuffer = function() {
     if (cambiosProceso) {
         console.log('[APLICAR-BUFFER] Aplicando cambios del proceso al procesosSeleccionados:', cambiosProceso);
         
         // Si no existe, crear
-        if (!window.procesosSeleccionados) {
-            window.procesosSeleccionados = {};
+        if (!globalThis.procesosSeleccionados) {
+            globalThis.procesosSeleccionados = {};
         }
         
         // Crear o actualizar el proceso con los cambios del buffer
-        window.procesosSeleccionados[cambiosProceso.tipo] = {
+        globalThis.procesosSeleccionados[cambiosProceso.tipo] = {
             tipo: cambiosProceso.tipo,
             datos: cambiosProceso
         };
@@ -2232,12 +2014,12 @@ window.aplicarCambiosProcesosDesdeBuffer = function() {
 };
 
 // NUEVO: Función para obtener el estado actual del buffer (para debugging/validación)
-window.obtenerBufferProcesoActual = function() {
+globalThis.obtenerBufferProcesoActual = function() {
     return cambiosProceso;
 };
 
 // NUEVO: Función para obtener el modo actual (para debugging)
-window.obtenerModoActual = function() {
+globalThis.obtenerModoActual = function() {
     return modoActual;
 };
 

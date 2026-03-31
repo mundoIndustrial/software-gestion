@@ -81,7 +81,8 @@ class Order
             throw new \DomainException('Solo se pueden aprobar órdenes pendientes');
         }
 
-        $this->status = new OrderStatus('Pendiente Insumos');
+        // Persistimos el valor de estado canonical del dominio/BD
+        $this->status = new OrderStatus('PENDIENTE_INSUMOS');
         $this->approvedBySupervisorAt = Carbon::now();
 
         $this->recordDomainEvent(new OrderApprovedEvent($this->id));

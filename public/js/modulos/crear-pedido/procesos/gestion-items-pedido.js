@@ -10,14 +10,19 @@
  */
 
 class GestionItemsUI {
+    prendaEditIndex = null;
+    items = [];
+    prendas = [];      // Array separado para prendas
+    epps = [];         // Array separado para EPPs
+    ordenItems = [];   // Orden de inserción: [{tipo: 'prenda', index: 0}, {tipo: 'epp', index: 0}, ...]
+    prendasEliminadas = []; // [{ prenda_id, nombre_prenda, motivo }]
+    notificationService = null;
+    apiService = null;
+    formCollector = null;
+    renderer = null;
+    prendaEditor = null;
+
     constructor(options = {}) {
-        this.prendaEditIndex = null;
-        this.items = [];
-        this.prendas = [];      // Array separado para prendas
-        this.epps = [];         // Array separado para EPPs
-        this.ordenItems = [];   // Orden de inserción: [{tipo: 'prenda', index: 0}, {tipo: 'epp', index: 0}, ...]
-        this.prendasEliminadas = []; // [{ prenda_id, nombre_prenda, motivo }]
-        
         // Inicializar servicios con validación de disponibilidad
         try {
             this.notificationService = options.notificationService || (typeof NotificationService !== 'undefined' ? new NotificationService() : null);
@@ -29,11 +34,8 @@ class GestionItemsUI {
             // Solo inicializar si los servicios esenciales están disponibles
             if (this.formCollector && this.notificationService) {
                 this.inicializar();
-            } else {
-
             }
         } catch (error) {
-
         }
     }
 
@@ -362,9 +364,9 @@ class GestionItemsUI {
                 console.log(`[eliminarItem]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
                 
                 //  SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
-                if (tipoBuscado === 'prenda' && window.gestorPrendaSinCotizacion?.eliminar) {
+                if (tipoBuscado === 'prenda' && globalThis.gestorPrendaSinCotizacion?.eliminar) {
                     console.log(`[eliminarItem]  Sincronizando eliminación en gestorPrendaSinCotizacion (índice original: ${indiceBuscado})`);
-                    window.gestorPrendaSinCotizacion.eliminar(indiceBuscado);
+                    globalThis.gestorPrendaSinCotizacion.eliminar(indiceBuscado);
                 }
             }
             
@@ -380,8 +382,8 @@ class GestionItemsUI {
     }
 
     abrirModalSeleccionPrendas() {
-        if (window.abrirModalSeleccionPrendas) {
-            window.abrirModalSeleccionPrendas();
+        if (globalThis.abrirModalSeleccionPrendas) {
+            globalThis.abrirModalSeleccionPrendas();
         }
     }
 
@@ -391,7 +393,7 @@ class GestionItemsUI {
      * Flujo: FSM guard → OPENING → catálogos → shown.bs.modal({once}) → DragDrop → OPEN
      */
     async abrirModalAgregarPrendaNueva() {
-        const fsm = window.__MODAL_FSM__;
+        const fsm = globalThis.__MODAL_FSM__;
 
         // Guard: FSM previene doble apertura
         if (fsm && !fsm.puedeAbrir()) {
@@ -415,8 +417,8 @@ class GestionItemsUI {
             }
 
             // 1. Cargar catálogos (deduplicado automáticamente)
-            if (typeof window.cargarCatalogosModal === 'function') {
-                await window.cargarCatalogosModal();
+            if (typeof globalThis.cargarCatalogosModal === 'function') {
+                await globalThis.cargarCatalogosModal();
             }
 
             // 2. Registrar listener shown ANTES de abrir (se auto-elimina con {once})
@@ -424,8 +426,8 @@ class GestionItemsUI {
             if (modal) {
                 modal.addEventListener('shown.bs.modal', () => {
                     // DragDrop init (guard interno previene doble init)
-                    if (window.DragDropManager) {
-                        window.DragDropManager.inicializar();
+                    if (globalThis.DragDropManager) {
+                        globalThis.DragDropManager.inicializar();
                     }
                     // FSM → OPEN
                     if (fsm) fsm.cambiarEstado('OPEN', { origen: 'shown.bs.modal' });
@@ -463,18 +465,18 @@ class GestionItemsUI {
                     this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
                 }
             } else {
-                //  CRÍTICO: RESETEAR window.telasCreacion para NUEVA PRENDA (modo creación)
+                //  CRÍTICO: RESETEAR globalThis.telasCreacion para NUEVA PRENDA (modo creación)
                 // Esto evita que telas de prenda anterior contaminen la nueva prenda
-                console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando window.telasCreacion para NUEVA prenda');
-                console.log('[abrirModalAgregarPrendaNueva]   ANTES:', window.telasCreacion);
-                window.telasCreacion = [];
-                window.telasAgregadas = [];
-                window.imagenesTelaModalNueva = [];
-                console.log('[abrirModalAgregarPrendaNueva]   DESPUÉS:', window.telasCreacion);
+                console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando globalThis.telasCreacion para NUEVA prenda');
+                console.log('[abrirModalAgregarPrendaNueva]   ANTES:', globalThis.telasCreacion);
+                globalThis.telasCreacion = [];
+                globalThis.telasAgregadas = [];
+                globalThis.imagenesTelaModalNueva = [];
+                console.log('[abrirModalAgregarPrendaNueva]   DESPUÉS:', globalThis.telasCreacion);
                 
                 // Actualizar chips de telas (vaciar)
-                if (typeof window.renderizarTelasChips === 'function') {
-                    window.renderizarTelasChips();
+                if (typeof globalThis.renderizarTelasChips === 'function') {
+                    globalThis.renderizarTelasChips();
                 }
                 
                 if (this.prendaEditor) {
@@ -497,7 +499,7 @@ class GestionItemsUI {
      * Cerrar modal de agregar/editar prenda
      */
     cerrarModalAgregarPrendaNueva() {
-        const fsm = window.__MODAL_FSM__;
+        const fsm = globalThis.__MODAL_FSM__;
 
         try {
             // Limpiar timeout de seguridad
@@ -528,7 +530,7 @@ class GestionItemsUI {
             } else {
                 this.prendaEditIndex = null;
                 if (this.prendaEditor) this.prendaEditor.prendaEditIndex = null;
-                window.prendaEditIndex = null;
+                globalThis.prendaEditIndex = null;
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
                 if (modal) modal.style.display = 'none';
             }
@@ -539,8 +541,8 @@ class GestionItemsUI {
             }
 
             // Destruir DragDrop (resetea inicializado=false para próxima apertura)
-            if (window.DragDropManager) {
-                window.DragDropManager.destruir();
+            if (globalThis.DragDropManager) {
+                globalThis.DragDropManager.destruir();
             }
 
             // FSM → CLOSED
@@ -572,9 +574,9 @@ class GestionItemsUI {
             console.log('═══════════════════════════════════════════════════════════════');
             
             // ESTADO DE STORAGES ANTES DE PROCESAR
-            const estadoImagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-            const estadoTelasCreacion = window.telasCreacion || [];
-            const estadoProcesos = window.procesosSeleccionados || {};
+            const estadoImagenesPrenda = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+            const estadoTelasCreacion = globalThis.telasCreacion || [];
+            const estadoProcesos = globalThis.procesosSeleccionados || {};
             
             console.log('[agregarPrendaNueva] ESTADO INICIAL DE STORAGES:');
             console.log('[agregarPrendaNueva]   imagenesPrendaStorage:', estadoImagenesPrenda.length, 'imagenes');
@@ -585,7 +587,7 @@ class GestionItemsUI {
                 constructor: img?.constructor?.name
             })));
             
-            console.log('[agregarPrendaNueva]   window.telasCreacion:', estadoTelasCreacion.length, 'telas');
+            console.log('[agregarPrendaNueva]   globalThis.telasCreacion:', estadoTelasCreacion.length, 'telas');
             console.log('[agregarPrendaNueva]      Primera tela (meta):', estadoTelasCreacion[0] ? {
                 id: estadoTelasCreacion[0].id || estadoTelasCreacion[0]._original_id || estadoTelasCreacion[0].prenda_pedido_colores_telas_id || null,
                 tela_id: estadoTelasCreacion[0].tela_id || 0,
@@ -621,8 +623,8 @@ class GestionItemsUI {
             }
 
             // Recolectar datos del formulario modal usando el componente extraído
-            window.prendaFormCollector.setNotificationService(this.notificationService);
-            const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
+            globalThis.prendaFormCollector.setNotificationService(this.notificationService);
+            const prendaData = globalThis.prendaFormCollector.construirPrendaDesdeFormulario(
                 this.prendaEditIndex,
                 this.prendas
             );
@@ -633,8 +635,8 @@ class GestionItemsUI {
                     return asignacionesBase;
                 }
 
-                const getImageWizard = (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function')
-                    ? window.ColoresPorTalla.getImage.bind(window.ColoresPorTalla)
+                const getImageWizard = (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.getImage === 'function')
+                    ? globalThis.ColoresPorTalla.getImage.bind(globalThis.ColoresPorTalla)
                     : null;
 
                 let conImagenId = 0;
@@ -687,11 +689,11 @@ class GestionItemsUI {
             
             //  IMPORTANTE: Agregar imágenes marcadas para eliminación
             // Solo se eliminarán cuando se guarden los cambios
-            if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
-                prendaData.imagenes_a_eliminar = window.imagenesAEliminar;
+            if (globalThis.imagenesAEliminar && globalThis.imagenesAEliminar.length > 0) {
+                prendaData.imagenes_a_eliminar = globalThis.imagenesAEliminar;
                 console.log('[agregarPrendaNueva]  Imágenes marcadas para eliminación:', {
-                    cantidad: window.imagenesAEliminar.length,
-                    ids: window.imagenesAEliminar
+                    cantidad: globalThis.imagenesAEliminar.length,
+                    ids: globalThis.imagenesAEliminar
                 });
             }
             
@@ -737,7 +739,7 @@ class GestionItemsUI {
                     Object.keys(genero).length > 0
                 );
             
-            const tieneSoloCantidad = window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0;
+            const tieneSoloCantidad = globalThis.cantidadSoloSeleccionada && globalThis.cantidadSoloSeleccionada > 0;
 
             console.log('[gestion-items-pedido]  Validación de tallas:');
             console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
@@ -752,8 +754,8 @@ class GestionItemsUI {
             
             // Si solo tiene cantidad, agregar a los datos
             if (tieneSoloCantidad) {
-                prendaData.cantidad_solo = window.cantidadSoloSeleccionada;
-                console.log('[gestion-items-pedido] Cantidad sin talla agregada:', window.cantidadSoloSeleccionada);
+                prendaData.cantidad_solo = globalThis.cantidadSoloSeleccionada;
+                console.log('[gestion-items-pedido] Cantidad sin talla agregada:', globalThis.cantidadSoloSeleccionada);
             }
 
             console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas o cantidad, procediendo a guardar');
@@ -806,10 +808,10 @@ class GestionItemsUI {
 
 
             // Verificar si estamos en un pedido existente
-            const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);
+            const enPedidoExistente = globalThis.datosEdicionPedido && (globalThis.datosEdicionPedido.id || globalThis.datosEdicionPedido.numero_pedido);
             // IMPORTANTE: Usar SIEMPRE el .id de la BD, nunca numero_pedido
             // El numero_pedido es solo para mostrar en UI, no para rutas de API
-            const pedidoId = enPedidoExistente ? window.datosEdicionPedido.id : null;
+            const pedidoId = enPedidoExistente ? globalThis.datosEdicionPedido.id : null;
             
             if (!pedidoId && enPedidoExistente) {
 
@@ -839,16 +841,16 @@ class GestionItemsUI {
                 if (enPedidoExistente) {
 
                     
-                    // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
-                    const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
+                    // Obtener la prenda original desde globalThis.prendaEnEdicion (guardada por prenda-editor-modal.js)
+                    const prendaOriginal = globalThis.prendaEnEdicion?.prendaOriginal;
 
-                    //  DEBUG: Verificar qué contiene window.prendaEnEdicion
-                    console.log('[gestion-items-pedido]  DEBUG window.prendaEnEdicion:', {
-                        existe: !!window.prendaEnEdicion,
-                        prendaOriginal: window.prendaEnEdicion?.prendaOriginal,
-                        prendaOriginalId: window.prendaEnEdicion?.prendaOriginal?.prenda_pedido_id || window.prendaEnEdicion?.prendaOriginal?.id,
-                        pedidoId: window.prendaEnEdicion?.pedidoId,
-                        prendasIndex: window.prendaEnEdicion?.prendasIndex
+                    //  DEBUG: Verificar qué contiene globalThis.prendaEnEdicion
+                    console.log('[gestion-items-pedido]  DEBUG globalThis.prendaEnEdicion:', {
+                        existe: !!globalThis.prendaEnEdicion,
+                        prendaOriginal: globalThis.prendaEnEdicion?.prendaOriginal,
+                        prendaOriginalId: globalThis.prendaEnEdicion?.prendaOriginal?.prenda_pedido_id || globalThis.prendaEnEdicion?.prendaOriginal?.id,
+                        pedidoId: globalThis.prendaEnEdicion?.pedidoId,
+                        prendasIndex: globalThis.prendaEnEdicion?.prendasIndex
                     });
 
                     
@@ -863,9 +865,9 @@ class GestionItemsUI {
                     });
 
                     // Fuente unica: telasAgregadas solo conserva metadata/relaciones.
-                    if ((window.telasAgregadas && window.telasAgregadas.length > 0) || 
-                        (window.telasCreacion && window.telasCreacion.length > 0)) {
-                        const telasFuente = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
+                    if ((globalThis.telasAgregadas && globalThis.telasAgregadas.length > 0) || 
+                        (globalThis.telasCreacion && globalThis.telasCreacion.length > 0)) {
+                        const telasFuente = globalThis.telasAgregadas?.length > 0 ? globalThis.telasAgregadas : globalThis.telasCreacion;
                         const mapearTelaCanonica = (tela = {}) => ({
                             id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
                             _original_id: tela._original_id || tela.id || null,
@@ -883,7 +885,7 @@ class GestionItemsUI {
 
                         console.log('[gestion-items-pedido] Telas incluidas en prendaData (fuente unica):', {
                             cantidad: prendaData.telasAgregadas.length,
-                            origen: window.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
+                            origen: globalThis.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
                             telas: prendaData.telasAgregadas.map(t => ({
                                 id: t.prenda_pedido_colores_telas_id || t.id || null,
                                 tela_id: t.tela_id || 0,
@@ -894,8 +896,8 @@ class GestionItemsUI {
                         });
                     }
                     
-                    await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
-                    // El modal de novedades maneja todo: actualización, cierre, etc.
+                    await globalThis.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
+                    // El modal de novedades maneja: actualización, cierre, etc.
                     // NO continuamos aquí
                     return;
                 } else {
@@ -908,8 +910,8 @@ class GestionItemsUI {
                     if (this.prendas[this.prendaEditIndex]) {
                         //  MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
                         // Si estamos en modo CREATE (no edición desde backend) y se eliminaron todas las imágenes
-                        const esModoCreate = !window.datosEdicionPedido || (!window.datosEdicionPedido.id && !window.datosEdicionPedido.numero_pedido);
-                        const imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+                        const esModoCreate = !globalThis.datosEdicionPedido || (!globalThis.datosEdicionPedido.id && !globalThis.datosEdicionPedido.numero_pedido);
+                        const imagenesStorage = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
                         const seEliminaronTodasLasImagenes = imagenesStorage.length === 0;
                         
                         if (esModoCreate && seEliminaronTodasLasImagenes) {
@@ -1009,7 +1011,7 @@ class GestionItemsUI {
 
                     
                     // PASO 1: MOSTRAR MODAL DE NOVEDAD USANDO COMPONENTE EXTRAÍDO
-                    await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
+                    await globalThis.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
                     // El modal de novedades maneja todo: guardado, cierre, etc.
                     // NO continuamos aquí
                     return;
@@ -1055,10 +1057,10 @@ class GestionItemsUI {
                 await this.renderer.actualizar(itemsOrdenados);
             }
 
-            // IMPORTANTE: Actualizar window.datosEdicionPedido.prendas (sin reabrirse automáticamente)
-            if (window.datosEdicionPedido) {
+            // IMPORTANTE: Actualizar globalThis.datosEdicionPedido.prendas (sin reabrirse automáticamente)
+            if (globalThis.datosEdicionPedido) {
 
-                window.datosEdicionPedido.prendas = this.prendas;
+                globalThis.datosEdicionPedido.prendas = this.prendas;
 
                 // El modal de éxito se mostrará y el usuario decidirá si ver la lista
             }
@@ -1340,8 +1342,8 @@ class GestionItemsUI {
         if (typeof limpiarAsignacionesColores === 'function') {
             limpiarAsignacionesColores();
             console.log('[mostrarModalExito] ✓ Asignaciones limpiadas');
-        } else if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
-            window.StateManager.limpiarAsignaciones();
+        } else if (globalThis.StateManager && typeof globalThis.StateManager.limpiarAsignaciones === 'function') {
+            globalThis.StateManager.limpiarAsignaciones();
             console.log('[mostrarModalExito] ✓ Asignaciones limpiadas (StateManager)');
         }
         
@@ -1366,7 +1368,7 @@ class GestionItemsUI {
             console.log('[mostrarModalExito]  Asignando onclick');
             btnVolverAPedidos.onclick = () => {
                 console.log('[mostrarModalExito] 👉 Botón presionado, redirigiendo...');
-                window.location.href = '/asesores/pedidos';
+                globalThis.location.href = '/asesores/pedidos';
             };
         }
 
@@ -1384,7 +1386,7 @@ class GestionItemsUI {
 /**
  * Wrapper para editarProceso que funciona en contexto de edición
  */
-window.editarProcesoEdicion = function(tipo) {
+globalThis.editarProcesoEdicion = function(tipo) {
 
     
     // Asegurar que el modal de proceso esté encima
@@ -1395,19 +1397,20 @@ window.editarProcesoEdicion = function(tipo) {
     }
     
     // Usar la función global si existe
-    if (window.editarProceso && window.editarProceso !== window.editarProcesoEdicion) {
-        window.editarProceso(tipo);
+    if (globalThis.editarProceso && globalThis.editarProceso !== globalThis.editarProcesoEdicion) {
+        globalThis.editarProceso(tipo);
         return;
     }
     
     // Si no existe, detectar modo y abrir el modal correcto
-    const procesoData = window.procesosSeleccionados?.[tipo];
-    if (procesoData?.datos?.datosExtendidos || procesoData?.datos?.modo_tallas === 'especifico') {
-        if (window.abrirModalProcesoPorTallas) {
-            window.abrirModalProcesoPorTallas(tipo);
+    const procesoData = globalThis.procesosSeleccionados?.[tipo];
+    const modoTallas = procesoData?.datos?.modo_tallas || 'generico';
+    if (modoTallas === 'general' || modoTallas === 'especifico') {
+        if (globalThis.abrirModalProcesoPorTallas) {
+            globalThis.abrirModalProcesoPorTallas(tipo);
         }
-    } else if (window.abrirModalProcesoGenerico) {
-        window.abrirModalProcesoGenerico(tipo);
+    } else if (globalThis.abrirModalProcesoGenerico) {
+        globalThis.abrirModalProcesoGenerico(tipo);
         
         // Asegurar nuevamente que el z-index esté alto después de abrir
         if (modalProceso) {
@@ -1432,13 +1435,13 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
 
     
     // Limpiar imágenes anteriores
-    if (window.imagenesProcesoActual) {
-        window.imagenesProcesoActual = [null, null, null];
+    if (globalThis.imagenesProcesoActual) {
+        globalThis.imagenesProcesoActual = [null, null, null];
     }
-    if (!window.imagenesProcesoExistentes) {
-        window.imagenesProcesoExistentes = [];
+    if (!globalThis.imagenesProcesoExistentes) {
+        globalThis.imagenesProcesoExistentes = [];
     }
-    window.imagenesProcesoExistentes = [];
+    globalThis.imagenesProcesoExistentes = [];
     
     // Cargar imágenes
     const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
@@ -1455,18 +1458,18 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
                 preview.innerHTML = htmlImg;
             }
             
-            if (window.imagenesProcesoActual) {
-                window.imagenesProcesoActual[idx] = img;
+            if (globalThis.imagenesProcesoActual) {
+                globalThis.imagenesProcesoActual[idx] = img;
             }
         }
     });
     
     // Cargar ubicaciones
-    if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
-        window.ubicacionesProcesoSeleccionadas.length = 0;
-        window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
-        if (window.renderizarListaUbicaciones) {
-            window.renderizarListaUbicaciones();
+    if (datos.ubicaciones && globalThis.ubicacionesProcesoSeleccionadas) {
+        globalThis.ubicacionesProcesoSeleccionadas.length = 0;
+        globalThis.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
+        if (globalThis.renderizarListaUbicaciones) {
+            globalThis.renderizarListaUbicaciones();
         }
     }
     
@@ -1477,7 +1480,7 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
     }
     
     // Cargar tallas
-    if (datos.tallas && window.tallasSeleccionadasProceso) {
+    if (datos.tallas && globalThis.tallasSeleccionadasProceso) {
         let damaTallas = datos.tallas.dama || {};
         let caballeroTallas = datos.tallas.caballero || {};
         let sobremedidaTallas = datos.tallas.sobremedida || {};
@@ -1517,20 +1520,20 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
         }
         caballeroTallas = caballeroTallasLimpias;
         
-        window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
-        window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
-        window.tallasSeleccionadasProceso.sobremedida = sobremedidaTallas;
+        globalThis.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
+        globalThis.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
+        globalThis.tallasSeleccionadasProceso.sobremedida = sobremedidaTallas;
         
         // Actualizar tallasCantidadesProceso también
-        if (!window.tallasCantidadesProceso) {
-            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+        if (!globalThis.tallasCantidadesProceso) {
+            globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
         }
-        window.tallasCantidadesProceso.dama = damaTallas;
-        window.tallasCantidadesProceso.caballero = caballeroTallas;
-        window.tallasCantidadesProceso.sobremedida = sobremedidaTallas;
+        globalThis.tallasCantidadesProceso.dama = damaTallas;
+        globalThis.tallasCantidadesProceso.caballero = caballeroTallas;
+        globalThis.tallasCantidadesProceso.sobremedida = sobremedidaTallas;
         
-        if (window.actualizarResumenTallasProceso) {
-            window.actualizarResumenTallasProceso();
+        if (globalThis.actualizarResumenTallasProceso) {
+            globalThis.actualizarResumenTallasProceso();
         }
     }
 }
@@ -1540,22 +1543,22 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
 if (document.readyState === 'loading') {
     // Si aún está cargando el DOM, esperar
     document.addEventListener('DOMContentLoaded', () => {
-        if (!window.gestionItemsUI) {
+        if (!globalThis.gestionItemsUI) {
             // Inicializar con servicios disponibles
             const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
             
-            window.gestionItemsUI = new GestionItemsUI({
+            globalThis.gestionItemsUI = new GestionItemsUI({
                 notificationService: notificationService
             });
         }
     });
 } else {
     // Si el DOM ya está cargado (carga dinámica de script), inicializar inmediatamente
-    if (!window.gestionItemsUI) {
+    if (!globalThis.gestionItemsUI) {
         // Inicializar con servicios disponibles
         const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
         
-        window.gestionItemsUI = new GestionItemsUI({
+        globalThis.gestionItemsUI = new GestionItemsUI({
             notificationService: notificationService
         });
         

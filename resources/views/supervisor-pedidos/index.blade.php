@@ -110,6 +110,7 @@
 @include('supervisor-pedidos.partials.modales-edicion-compartidos')
 
 @push('scripts')
+    <script defer src="{{ asset('js/supervisor-pedidos/modales-acciones.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/modales-acciones.js')) }}"></script>
     <script defer src="{{ asset('js/supervisor-pedidos/index.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/index.js')) }}"></script>
 
     <!--  SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->

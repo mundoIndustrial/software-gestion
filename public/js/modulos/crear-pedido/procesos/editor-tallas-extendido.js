@@ -9,7 +9,7 @@
  */
 
 // Estructura para guardar datos por talla: { dama: { 'M': { ubicacion: [], imagen: null }, ... }, caballero: {...} }
-window.datosEstructuraTallasProceso = window.datosEstructuraTallasProceso || {
+globalThis.datosEstructuraTallasProceso = globalThis.datosEstructuraTallasProceso || {
     dama: {},
     caballero: {},
     sobremedida: {}
@@ -19,17 +19,17 @@ window.datosEstructuraTallasProceso = window.datosEstructuraTallasProceso || {
  * Obtiene los datos guardados de una talla específica
  */
 function obtenerDatosTalla(genero, talla) {
-    if (!window.datosEstructuraTallasProceso[genero]) {
-        window.datosEstructuraTallasProceso[genero] = {};
+    if (!globalThis.datosEstructuraTallasProceso[genero]) {
+        globalThis.datosEstructuraTallasProceso[genero] = {};
     }
-    if (!window.datosEstructuraTallasProceso[genero][talla]) {
-        window.datosEstructuraTallasProceso[genero][talla] = {
+    if (!globalThis.datosEstructuraTallasProceso[genero][talla]) {
+        globalThis.datosEstructuraTallasProceso[genero][talla] = {
             ubicaciones: [],
             imagen: null,
             observaciones: ''
         };
     }
-    return window.datosEstructuraTallasProceso[genero][talla];
+    return globalThis.datosEstructuraTallasProceso[genero][talla];
 }
 
 /**
@@ -154,9 +154,9 @@ function renderizarObservacionesTalla(genero, talla, containerElement) {
 /**
  * Agregar una ubicación a una talla
  */
-window.agregarUbicacionATalla = function(genero, talla) {
+globalThis.agregarUbicacionATalla = function(genero, talla) {
     const input = document.querySelector(`.ubicacion-talla-input[data-genero="${genero}"][data-talla="${talla}"]`);
-    if (!input || !input.value.trim()) {
+    if (!input?.value?.trim()) {
         alert('Por favor ingresa una ubicación');
         return;
     }
@@ -180,7 +180,7 @@ window.agregarUbicacionATalla = function(genero, talla) {
 /**
  * Eliminar una ubicación de una talla
  */
-window.eliminarUbicacionDeTalla = function(genero, talla, index) {
+globalThis.eliminarUbicacionDeTalla = function(genero, talla, index) {
     const datosTalla = obtenerDatosTalla(genero, talla);
     datosTalla.ubicaciones.splice(index, 1);
     
@@ -199,7 +199,7 @@ window.eliminarUbicacionDeTalla = function(genero, talla, index) {
 /**
  * Cargar imagen para una talla
  */
-window.cargarImagenTalla = function(genero, talla, input) {
+globalThis.cargarImagenTalla = function(genero, talla, input) {
     const file = input.files[0];
     if (!file) return;
     
@@ -212,7 +212,12 @@ window.cargarImagenTalla = function(genero, talla, input) {
     // Leer archivo como Data URL
     const reader = new FileReader();
     reader.onload = function(e) {
-        const imagenData = e.target.result;
+        const result = e?.target?.result;
+        if (typeof result !== 'string' || !result) {
+            alert('No se pudo leer la imagen correctamente');
+            return;
+        }
+        const imagenData = result;
         const datosTalla = obtenerDatosTalla(genero, talla);
         datosTalla.imagen = imagenData;
         
@@ -237,7 +242,7 @@ window.cargarImagenTalla = function(genero, talla, input) {
 /**
  * Eliminar imagen de una talla
  */
-window.eliminarImagenTalla = function(genero, talla) {
+globalThis.eliminarImagenTalla = function(genero, talla) {
     const datosTalla = obtenerDatosTalla(genero, talla);
     datosTalla.imagen = null;
     
@@ -262,7 +267,7 @@ window.eliminarImagenTalla = function(genero, talla) {
 /**
  * Guardar observaciones de una talla
  */
-window.guardarObservacionesTalla = function(genero, talla) {
+globalThis.guardarObservacionesTalla = function(genero, talla) {
     const input = document.querySelector(`.observaciones-talla-input[data-genero="${genero}"][data-talla="${talla}"]`);
     if (input) {
         const datosTalla = obtenerDatosTalla(genero, talla);
@@ -273,15 +278,15 @@ window.guardarObservacionesTalla = function(genero, talla) {
 /**
  * Obtener todos los datos de tallas (para guardar en el proceso)
  */
-window.obtenerTodosDatosTallasProceso = function() {
-    return window.datosEstructuraTallasProceso;
+globalThis.obtenerTodosDatosTallasProceso = function() {
+    return globalThis.datosEstructuraTallasProceso;
 };
 
 /**
  * Limpiar datos de tallas cuando se cierra el editor
  */
-window.limpiarDatosTallasProceso = function() {
-    window.datosEstructuraTallasProceso = {
+globalThis.limpiarDatosTallasProceso = function() {
+    globalThis.datosEstructuraTallasProceso = {
         dama: {},
         caballero: {},
         sobremedida: {}

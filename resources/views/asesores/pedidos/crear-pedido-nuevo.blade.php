@@ -242,7 +242,7 @@
 
     <!-- ─── Core: tallas, telas, utilidades, procesos ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/dom-utils.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/modal-cleanup.js') }}?v={{ $v }}"></script>

@@ -110,5 +110,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
             ->name('crear-nuevo');
         Route::get('revisar-prenda', [AsesoresPedidosViewController::class, 'revisarPrendas'])
             ->name('revisar-prenda');
+
+        // Acciones (POST)
+        Route::post('revisar-prenda/{reciboId}/aprobar-insumos', [AsesoresPedidosViewController::class, 'aprobarReciboCosturaParaInsumos'])
+            ->name('revisar-prenda.aprobar-insumos');
     });
 });

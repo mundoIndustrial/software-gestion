@@ -6,7 +6,9 @@ final class OrderStatus
 {
     private const VALID_STATUSES = [
         'PENDIENTE_SUPERVISOR',
+        'PENDIENTE_INSUMOS',
         'Pendiente',
+        // Legacy display value kept for backward compatibility on old rows
         'Pendiente Insumos',
         'En Ejecución',
         'No iniciado',
@@ -37,7 +39,7 @@ final class OrderStatus
 
     public function isApproved(): bool
     {
-        return in_array($this->value, ['Pendiente', 'Pendiente Insumos', 'En Ejecución']);
+        return in_array($this->value, ['Pendiente', 'PENDIENTE_INSUMOS', 'Pendiente Insumos', 'En Ejecución']);
     }
 
     public function isDelivered(): bool

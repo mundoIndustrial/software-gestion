@@ -15,6 +15,7 @@ use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Models\ConsecutivoReciboPedido;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -342,7 +343,7 @@ final class AsesoresPedidosViewController extends Controller
                     'nombre_prenda' => (string) ($recibo->prenda?->nombre_prenda ?? 'PRENDA'),
                     'tipo_recibo' => (string) $recibo->tipo_recibo,
                     'consecutivo_actual' => (int) ($recibo->consecutivo_actual ?? 0),
-                    'estado' => (string) ($recibo->estado ?? ''),
+                    'estado' => $this->formatEstadoRecibo($recibo->estado),
                     'area' => (string) ($recibo->area ?? ''),
                     'notas' => (string) ($recibo->notas ?? ''),
                     'fecha_envio' => optional($recibo->fecha_envio)->format('Y-m-d H:i'),
@@ -359,6 +360,60 @@ final class AsesoresPedidosViewController extends Controller
         } catch (\Throwable $e) {
             \Log::error('[revisarPrendas] Error', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Error al cargar prendas para revisión.');
+        }
+    }
+
+    private function formatEstadoRecibo(?string $estado): string
+    {
+        $estadoNormalized = strtoupper(trim((string)$estado));
+
+        if (in_array($estadoNormalized, ['DEVUELTO_ASESOR', 'DEVUELTO_A_ASESOR'], true)) {
+            return 'DEVUELTO ASESOR';
+        }
+
+        return str_replace('_', ' ', $estadoNormalized);
+    }
+
+    public function aprobarReciboCosturaParaInsumos(Request $request, int $reciboId): JsonResponse
+    {
+        try {
+            $asesorId = (int) Auth::id();
+
+            /** @var ConsecutivoReciboPedido|null $recibo */
+            $recibo = ConsecutivoReciboPedido::query()
+                ->with(['pedido:id,asesor_id'])
+                ->where('id', $reciboId)
+                ->where('activo', 1)
+                ->first();
+
+            if (!$recibo || !$recibo->pedido) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado.'], 404);
+            }
+
+            if ((int) $recibo->pedido->asesor_id !== $asesorId) {
+                return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
+            }
+
+            $tipo = strtoupper(trim((string) $recibo->tipo_recibo));
+            if ($tipo !== 'COSTURA') {
+                return response()->json(['success' => false, 'message' => 'Solo aplica para recibos de COSTURA.'], 422);
+            }
+
+            $estadoNormalizado = strtoupper(str_replace(' ', '_', trim((string) ($recibo->estado ?? ''))));
+            if (!in_array($estadoNormalizado, ['DEVUELTO_ASESOR', 'DEVUELTO_A_ASESOR'], true)) {
+                return response()->json(['success' => false, 'message' => 'El recibo no está en estado devuelto.'], 422);
+            }
+
+            $recibo->estado = ConsecutivoReciboPedido::ESTADO_PENDIENTE_INSUMOS;
+            $recibo->save();
+
+            return response()->json(['success' => true, 'message' => 'Recibo aprobado y enviado a Insumos.']);
+        } catch (\Throwable $e) {
+            \Log::error('[aprobarReciboCosturaParaInsumos] Error', [
+                'reciboId' => $reciboId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error al aprobar el recibo.'], 500);
         }
     }
 }

@@ -35,7 +35,7 @@ let modalPasteListenerRegistrado = false;
 let procesandoPasteEvent = false;
 
 // ─── Listener global de PASTE en document (capture phase) ───
-window.pasteListenerPorTallas = function(e) {
+globalThis.pasteListenerPorTallas = function(e) {
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal || modal.style.display === 'none') return;
     
@@ -44,7 +44,7 @@ window.pasteListenerPorTallas = function(e) {
 };
 
 // Registrar listener globalmente en capture phase (máxima prioridad)
-document.addEventListener('paste', window.pasteListenerPorTallas, true);
+document.addEventListener('paste', globalThis.pasteListenerPorTallas, true);
 
 const iconosPorTallas = {
     reflectivo: 'light_mode',
@@ -117,7 +117,7 @@ function desregistrarListenerPasteDelModal() {
 /**
  * Cambiar el modo de configuración del modal (General ↔ Específico)
  */
-window.cambiarModoModalPorTallas = function(nuevoModo) {
+globalThis.cambiarModoModalPorTallas = function(nuevoModo) {
     const btnGeneral = document.getElementById('btn-modo-general');
     const btnEspecifico = document.getElementById('btn-modo-especifico');
     
@@ -158,8 +158,8 @@ window.cambiarModoModalPorTallas = function(nuevoModo) {
     }
 
     //  Registrar cambio de modo en el editor de procesos
-    if (window.procesosEditor && procesoPorTallasActual) {
-        window.procesosEditor.registrarCambioModoTallas(nuevoModo);
+    if (globalThis.procesosEditor && procesoPorTallasActual) {
+        globalThis.procesosEditor.registrarCambioModoTallas(nuevoModo);
         console.log('[por-tallas]Cambio de modo registrado en editor:', nuevoModo);
     }
 
@@ -169,7 +169,7 @@ window.cambiarModoModalPorTallas = function(nuevoModo) {
 /**
  * Cargar fotos generales (compartidas para todas las tallas)
  */
-window.cargarFotosGenerales = function(inputElement) {
+globalThis.cargarFotosGenerales = function(inputElement) {
     const files = Array.from(inputElement.files || []);
     if (files.length > 0) {
         agregarImagenesGenerales(files);
@@ -195,7 +195,7 @@ function agregarImagenesGenerales(files) {
         const fileKey = `${file.name}_${file.size}_${file.type}`;
         
         // Verificar si ya existe una imagen con la misma clave en fotosGeneralesTemp
-        const yaExiste = window._fotosGeneralesKeys && window._fotosGeneralesKeys.has(fileKey);
+        const yaExiste = globalThis._fotosGeneralesKeys && globalThis._fotosGeneralesKeys.has(fileKey);
         
         if (yaExiste) {
             console.warn('[agregarImagenesGenerales]  DUPLICADO DETECTADO:', fileKey, '- Ignorando');
@@ -203,12 +203,12 @@ function agregarImagenesGenerales(files) {
         }
         
         // Inicializar el Set si no existe
-        if (!window._fotosGeneralesKeys) {
-            window._fotosGeneralesKeys = new Set();
+        if (!globalThis._fotosGeneralesKeys) {
+            globalThis._fotosGeneralesKeys = new Set();
         }
         
         // Marcar como procesado
-        window._fotosGeneralesKeys.add(fileKey);
+        globalThis._fotosGeneralesKeys.add(fileKey);
         
         // NUEVO: Asignar UID único a cada File para mapeo backend
         if (!file.uid) {
@@ -337,9 +337,10 @@ function crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos) {
 /**
  * Abre el modal de proceso por tallas
  */
-window.abrirModalProcesoPorTallas = function(tipoProceso) {
+globalThis.abrirModalProcesoPorTallas = function(tipoProceso) {
     procesoPorTallasActual = tipoProceso;
     datosPorTallaTemp = {};
+    modoModalPorTallasActual = 'general'; // predeterminado cada vez que se abre modal
     
     // Limpiar ubicación general y campo input
     ubicacionGeneralTemp = '';
@@ -360,7 +361,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
 
     // 🔥 FIX: Obtener tallas desde MÚLTIPLES FUENTES en orden de prioridad
     // 1. PRIMERO: Desde tabla de resumen visible (CONTIENE ESTADO ACTUAL: nuevas + guardadas)
-    // 2. SEGUNDO: Desde window.tallasRelacionales (tallas MANUALMENTE ingresadas en tarjetas)
+    // 2. SEGUNDO: Desde globalThis.tallasRelacionales (tallas MANUALMENTE ingresadas en tarjetas)
     // 3. TERCERO: Desde StateManager (tallas del WIZARD con colores)
     // 4. CUARTO: Desde obtenerTallasDeLaPrenda (fallback para datos guardados en BD)
     
@@ -453,15 +454,15 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         }
     }
 
-    // ═ FUENTE 2: window.tallasRelacionales (si tabla no tuvo datos) ═
+    // ═ FUENTE 2: globalThis.tallasRelacionales (si tabla no tuvo datos) ═
     if (!leyóDesdeTabla) {
-        const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+        const tallasRelacionales = globalThis.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
         const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
             generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
         );
         
         if (hayTallasRelacionales) {
-            console.log('[por-tallas]FUENTE 2 - Leyendo desde window.tallasRelacionales:', tallasRelacionales);
+            console.log('[por-tallas]FUENTE 2 - Leyendo desde globalThis.tallasRelacionales:', tallasRelacionales);
             
             // Copiar DAMA
             if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
@@ -485,8 +486,8 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     
     // ═ FUENTE 3: StateManager (si aún no hay datos) ═
     if (!leyóDesdeTabla && (Object.keys(tallasPrenda.dama).length === 0 && Object.keys(tallasPrenda.caballero).length === 0) && !tallasPrenda.sobremedida) {
-        if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
-            const asignaciones = window.StateManager.getAsignaciones();
+        if (globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function') {
+            const asignaciones = globalThis.StateManager.getAsignaciones();
             if (asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0) {
                 console.log('[por-tallas]FUENTE 3 - Leyendo tallas desde StateManager (asignaciones wizard):', asignaciones);
                 
@@ -531,7 +532,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     // Si el proceso ya tiene tallas propias guardadas, COMBINARLAS con las nuevas tallas agregadas
     // PERO evitando duplicados: si una talla ya existe con cualquier nombre (ej: M__AZUL_ACERO vs M),
     // no se agrega duplicada
-    const procesoTallasGuardadas = window.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
+    const procesoTallasGuardadas = globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
     if (procesoTallasGuardadas && typeof procesoTallasGuardadas === 'object') {
         const damaObj = (procesoTallasGuardadas.dama && !Array.isArray(procesoTallasGuardadas.dama)) ? procesoTallasGuardadas.dama : {};
         const cabObj = (procesoTallasGuardadas.caballero && !Array.isArray(procesoTallasGuardadas.caballero)) ? procesoTallasGuardadas.caballero : {};
@@ -626,21 +627,21 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     if (sinTallas) sinTallas.style.display = 'none';
 
     // Restaurar datos si el proceso ya tiene datos guardados
-    const datosExistentes = window.procesosSeleccionados?.[tipoProceso]?.datos?.datosExtendidos;
+    const datosExistentes = globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.datosExtendidos;
     
     console.log('[por-tallas]  DEBUGGING abrirModalProcesoPorTallas', {
         tipoProceso,
-        procesoCompleto: window.procesosSeleccionados?.[tipoProceso],
-        datosCompletos: window.procesosSeleccionados?.[tipoProceso]?.datos,
+        procesoCompleto: globalThis.procesosSeleccionados?.[tipoProceso],
+        datosCompletos: globalThis.procesosSeleccionados?.[tipoProceso]?.datos,
         datosExistentes,
         tieneDatatos: !!datosExistentes,
         estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO',
-        modo_tallas_directo: window.procesosSeleccionados?.[tipoProceso]?.datos?.modo_tallas,
-        todosLosCampos: window.procesosSeleccionados?.[tipoProceso]?.datos ? Object.keys(window.procesosSeleccionados?.[tipoProceso]?.datos).slice(0, 20) : 'SIN DATOS'
+        modo_tallas_directo: globalThis.procesosSeleccionados?.[tipoProceso]?.datos?.modo_tallas,
+        todosLosCampos: globalThis.procesosSeleccionados?.[tipoProceso]?.datos ? Object.keys(globalThis.procesosSeleccionados?.[tipoProceso]?.datos).slice(0, 20) : 'SIN DATOS'
     });
 
     // ─── Recuperar datos generales si existen ───
-    const datosGenerales = window.procesosSeleccionados?.[tipoProceso]?.datos;
+    const datosGenerales = globalThis.procesosSeleccionados?.[tipoProceso]?.datos;
     
     // Mapear ubicación general (puede venir como ubicacionGeneral o ubicaciones array)
     let ubicacionDisplay = '';
@@ -663,7 +664,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     fotosGeneralesExistentes = [];
     fotosGeneralesTemp = [];
     fotosGeneralesFilesTemp = [];
-    window._fotosGeneralesKeys = new Set(); // Resetear Set de claves para detectar duplicados
+    globalThis._fotosGeneralesKeys = new Set(); // Resetear Set de claves para detectar duplicados
     
     if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
         // Filtrar URLs blob (temporales e inválidas) - solo mantener URLs del storage
@@ -715,7 +716,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 
                 // Registrar clave para evitar duplicados
                 const fileKey = `${file.name}_${file.size}_${file.type}`;
-                window._fotosGeneralesKeys.add(fileKey);
+                globalThis._fotosGeneralesKeys.add(fileKey);
             }
         });
         
@@ -898,17 +899,33 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         }
     }
 
-    // ─── Restaurar modo actual (fuente única canónica: datos.modo_tallas) ───
-    const modoGuardado = datosGenerales?.modo_tallas || 'general';
-    
+    // ─── Restaurar modo actual (fuente única canónica: datos guardados en DB) ───
+    const datosGuardadosDB = globalThis.procesosGuardados?.[tipoProceso]?.datos || {};
+    const modoGuardadoDB = datosGuardadosDB.modo_tallas ? String(datosGuardadosDB.modo_tallas).toLowerCase() : null;
+    const datosExtendidosDB = datosGuardadosDB.datosExtendidos || {};
+    const hayDatosEspecificosDB = datosExtendidosDB && typeof datosExtendidosDB === 'object' && (
+        (datosExtendidosDB.dama && Object.keys(datosExtendidosDB.dama).length > 0) ||
+        (datosExtendidosDB.caballero && Object.keys(datosExtendidosDB.caballero).length > 0) ||
+        (datosExtendidosDB.sobremedida && Object.keys(datosExtendidosDB.sobremedida).length > 0)
+    );
+
+    // Si DB no tiene modo 'especifico' con datos, se muestra GENERAL por defecto (presentación no-forzada).
+    const modoGuardado = (modoGuardadoDB === 'especifico' && hayDatosEspecificosDB)
+        ? 'especifico'
+        : 'general';
+
     console.log('[por-tallas]Modo guardado detectado:', {
         tipoProceso: tipoProceso,
         modo: modoGuardado,
+        modoGuardadoDB,
+        hayDatosEspecificosDB: hayDatosEspecificosDB ? 'SÍ' : 'NO',
         datosGenerales_modo_tallas: datosGenerales?.modo_tallas,
         datosGenerales_tipo: datosGenerales?.tipo,
         datosGenerales_id: datosGenerales?.id,
         datosGenerales_exists: !!datosGenerales,
-        procesosSeleccionados_keys: Object.keys(window.procesosSeleccionados || {}),
+        datosExistentes_exists: !!datosExistentes,
+        datosEspecificos_count: (datosExistentes && Object.keys(datosExistentes).length > 0) ? 'SÍ' : 'NO',
+        procesosSeleccionados_keys: Object.keys(globalThis.procesosSeleccionados || {}),
         datosGenerales_allKeys: datosGenerales ? Object.keys(datosGenerales).slice(0, 10) : 'N/A'
     });
 
@@ -1261,7 +1278,7 @@ function handlePasteGlobalPorTallas(e) {
 /**
  * Carga múltiples fotos para una talla (desde input file)
  */
-window.cargarFotosPorTalla = function(key, input) {
+globalThis.cargarFotosPorTalla = function(key, input) {
     if (!input.files || input.files.length === 0) return;
     agregarImagenesATalla(key, input.files);
     input.value = '';
@@ -1270,7 +1287,7 @@ window.cargarFotosPorTalla = function(key, input) {
 /**
  * Elimina una foto específica de una talla por índice
  */
-window.eliminarFotoPorTalla = function(key, index) {
+globalThis.eliminarFotoPorTalla = function(key, index) {
     if (!datosPorTallaTemp[key]) return;
     const imgs = datosPorTallaTemp[key].imagenes;
     if (index < 0 || index >= imgs.length) return;
@@ -1334,7 +1351,7 @@ function renderizarGaleriaFotos(key) {
 /**
  * Guardar proceso con datos por talla
  */
-window.guardarProcesoPorTallas = function() {
+globalThis.guardarProcesoPorTallas = function() {
     if (!procesoPorTallasActual) return;
 
     console.log('[GUARDAR-POR-TALLAS] Iniciando guardado del proceso:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual);
@@ -1485,18 +1502,18 @@ window.guardarProcesoPorTallas = function() {
     });
 
     // Guardar en procesosSeleccionados
-    if (!window.procesosSeleccionados) {
-        window.procesosSeleccionados = {};
+    if (!globalThis.procesosSeleccionados) {
+        globalThis.procesosSeleccionados = {};
     }
 
-    if (!window.procesosSeleccionados[procesoPorTallasActual]) {
-        window.procesosSeleccionados[procesoPorTallasActual] = {
+    if (!globalThis.procesosSeleccionados[procesoPorTallasActual]) {
+        globalThis.procesosSeleccionados[procesoPorTallasActual] = {
             tipo: procesoPorTallasActual,
             datos: null
         };
     }
 
-    window.procesosSeleccionados[procesoPorTallasActual].datos = {
+    globalThis.procesosSeleccionados[procesoPorTallasActual].datos = {
         tipo: procesoPorTallasActual,
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
@@ -1523,12 +1540,12 @@ window.guardarProcesoPorTallas = function() {
         fotosNuevas: fotosGeneralesTemp.length,
         fotosEliminadas: fotosGeneralesEliminadas.length,
         archivosNuevos: fotosGeneralesFilesTemp.length,
-        proceso: window.procesosSeleccionados[procesoPorTallasActual]
+        proceso: globalThis.procesosSeleccionados[procesoPorTallasActual]
     });
 
     // Guardar en procesosGuardados si existe
-    if (window.procesosGuardados) {
-        window.procesosGuardados[procesoPorTallasActual] = { ...window.procesosSeleccionados[procesoPorTallasActual] };
+    if (globalThis.procesosGuardados) {
+        globalThis.procesosGuardados[procesoPorTallasActual] = { ...globalThis.procesosSeleccionados[procesoPorTallasActual] };
     }
 
     // Actualizar resumen visual
@@ -1537,20 +1554,20 @@ window.guardarProcesoPorTallas = function() {
     }
     
     // Renderizar tarjeta del proceso si existe la función
-    if (typeof window.renderizarTarjetasProcesos === 'function') {
-        window.renderizarTarjetasProcesos();
+    if (typeof globalThis.renderizarTarjetasProcesos === 'function') {
+        globalThis.renderizarTarjetasProcesos();
     }
 
-    //  COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a window.telasCreacion
+    //  COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a globalThis.telasCreacion
     // Los procesos (estampado, DTF, sublimado) NO son telas y no deberían estar en esta lista
     // Las tallas reales ya están asignadas con sus telas correspondientes (ej: ANT BABILONIA)
     
     /* 
-    // 🔥 FIX: Sincronizar nuevas tallas con window.telasCreacion para que se muestren en la tabla
+    // 🔥 FIX: Sincronizar nuevas tallas con globalThis.telasCreacion para que se muestren en la tabla
     // Las nuevas tallas que se agregaron en el modal deben estar disponibles en telasCreacion
     // para que actualizarTablaResumen() las pueda mostrar
-    if (!window.telasCreacion) {
-        window.telasCreacion = [];
+    if (!globalThis.telasCreacion) {
+        globalThis.telasCreacion = [];
     }
 
     let tallasSincronizadas = false;
@@ -1558,7 +1575,7 @@ window.guardarProcesoPorTallas = function() {
         Object.entries(tallaDict).forEach(([tallaKey, cantidad]) => {
             if (cantidad > 0) {
                 // Buscar si esta talla ya existe en telasCreacion
-                const yaExiste = window.telasCreacion.some(t => 
+                const yaExiste = globalThis.telasCreacion.some(t => 
                     (t.genero === genero || t.genero === genero.toUpperCase()) &&
                     (t.talla === tallaKey || t.talla === tallaKey.toUpperCase())
                 );
@@ -1566,7 +1583,7 @@ window.guardarProcesoPorTallas = function() {
                 if (!yaExiste) {
                     // Agregar nueva talla a telasCreacion
                     const telaDelProceso = procesoPorTallasActual || 'bordado';
-                    window.telasCreacion.push({
+                    globalThis.telasCreacion.push({
                         tela: telaDelProceso.toUpperCase(),
                         genero: genero.toUpperCase(),
                         talla: tallaKey.toUpperCase(),
@@ -1587,8 +1604,8 @@ window.guardarProcesoPorTallas = function() {
     // Actualizar la tabla de resumen si se sincronizaron nuevas tallas
     if (tallasSincronizadas) {
         console.log('[por-tallas]Actualizando tabla de resumen tras sincronizar nuevas tallas');
-        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
-            window.ColoresPorTalla.actualizarTablaResumen();
+        if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.actualizarTablaResumen === 'function') {
+            globalThis.ColoresPorTalla.actualizarTablaResumen();
         }
     }
     */
@@ -1612,7 +1629,7 @@ window.guardarProcesoPorTallas = function() {
 /**
  * Cerrar modal sin guardar
  */
-window.cerrarModalProcesoPorTallas = function() {
+globalThis.cerrarModalProcesoPorTallas = function() {
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (modal) modal.style.display = 'none';
 
@@ -1623,7 +1640,7 @@ window.cerrarModalProcesoPorTallas = function() {
 
     // Desmarcar checkbox si no tiene datos guardados
     if (procesoPorTallasActual) {
-        const yaGuardado = window.procesosSeleccionados?.[procesoPorTallasActual]?.datos;
+        const yaGuardado = globalThis.procesosSeleccionados?.[procesoPorTallasActual]?.datos;
         if (!yaGuardado) {
             const checkbox = document.getElementById(`checkbox-${procesoPorTallasActual}`);
             if (checkbox) {
@@ -1631,7 +1648,7 @@ window.cerrarModalProcesoPorTallas = function() {
                 checkbox.checked = false;
                 checkbox._ignorarOnclick = false;
             }
-            delete window.procesosSeleccionados[procesoPorTallasActual];
+            delete globalThis.procesosSeleccionados[procesoPorTallasActual];
             if (typeof actualizarResumenProcesos === 'function') {
                 actualizarResumenProcesos();
             }
@@ -1651,7 +1668,7 @@ window.cerrarModalProcesoPorTallas = function() {
 /**
  * Elimina una foto general (compartida)
  */
-window.eliminarFotoGeneral = function(index, esExistente) {
+globalThis.eliminarFotoGeneral = function(index, esExistente) {
     if (esExistente) {
         // Eliminar foto existente de BD - REGISTRARLA PARA ELIMINACIÓN
         if (index < fotosGeneralesExistentes.length) {

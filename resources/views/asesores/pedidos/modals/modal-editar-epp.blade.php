@@ -55,7 +55,7 @@
             <!-- Sección de Fotos -->
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <label class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
+                    <label for="modalEditarEPPInputFotos" class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
                     <span class="text-xs text-gray-500">(<span id="modalEditarEPPFotosCount">0</span> foto/s)</span>
                 </div>
 

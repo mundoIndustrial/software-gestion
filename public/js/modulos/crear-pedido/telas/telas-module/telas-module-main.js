@@ -25,27 +25,27 @@ if (!window.TelasModule) {
 const components = [
     {
         name: 'estado-validacion',
-        file: './estado-validacion.js',
+        file: '/js/modulos/crear-pedido/telas/telas-module/estado-validacion.js',
         description: 'Estado global y validaciones de campos'
     },
     {
         name: 'gestion-telas',
-        file: './gestion-telas.js',
+        file: '/js/modulos/crear-pedido/telas/telas-module/gestion-telas.js',
         description: 'CRUD de telas (agregar, eliminar, actualizar)'
     },
     {
         name: 'manejo-imagenes',
-        file: './manejo-imagenes.js',
+        file: '/js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js',
         description: 'Manejo de imágenes y galería'
     },
     {
         name: 'ui-renderizado',
-        file: './ui-renderizado.js',
+        file: '/js/modulos/crear-pedido/telas/telas-module/ui-renderizado.js',
         description: 'UI y renderizado de tabla'
     },
     {
         name: 'storage-datos',
-        file: './storage-datos.js',
+        file: '/js/modulos/crear-pedido/telas/telas-module/storage-datos.js',
         description: 'Storage y obtención de datos'
     }
 ];
@@ -54,7 +54,13 @@ const components = [
 function loadComponent(component) {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = component.file;
+        // Resolver rutas relativas contra la ubicación de ESTE loader, no contra la URL de la página.
+        // Evita errores tipo: /asesores/pedidos/estado-validacion.js (404)
+        const baseUrl = document.currentScript?.src
+            ? new URL(document.currentScript.src)
+            : new URL(window.location.href);
+
+        script.src = new URL(component.file, baseUrl).toString();
         script.async = true;
         
         script.onload = () => {

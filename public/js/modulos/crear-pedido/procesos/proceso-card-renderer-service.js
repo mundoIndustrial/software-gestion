@@ -15,8 +15,8 @@
     }
 
 function generarTarjetaProceso(tipo, datos) {
-    const icono = (window.iconosProcesos || {})[tipo] || '<span class="material-symbols-rounded">settings</span>';
-    const nombre = (window.nombresProcesos || {})[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
+    const icono = (globalThis.iconosProcesos || {})[tipo] || '<span class="material-symbols-rounded">settings</span>';
+    const nombre = (globalThis.nombresProcesos || {})[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
 
     const formatearTallaKey = (tallaKey) => {
         const parts = String(tallaKey).split('__');
@@ -43,7 +43,7 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     };
     
-    // Función auxiliar para agregar /storage/ a URLs
+    // Funciï¿½n auxiliar para agregar /storage/ a URLs
     const agregarStorage = (url) => {
         if (!url) return '';
         if (url.startsWith('/')) return url;
@@ -143,10 +143,10 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     }
     
-    // HTML de imágenes
+    // HTML de imï¿½genes
     let imagenesHTML = '';
     
-    // ?? PRIORIDAD: Usar imagenesFiles si están disponibles (para archivos que aún no se subieron)
+    // ?? PRIORIDAD: Usar imagenesFiles si estï¿½n disponibles (para archivos que aï¿½n no se subieron)
     // Esto evita depender de blob URLs antiguos que se invalidan
     let imagenesParaRenderizar = datos.imagenes || [];
     if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
@@ -155,22 +155,22 @@ function generarTarjetaProceso(tipo, datos) {
     }
     
     if (imagenesParaRenderizar && imagenesParaRenderizar.length > 0) {
-        // ?? CRÍTICO: Filtrar imágenes eliminadas usando imagenesEliminadas
-        // imagenesEliminadas contiene null para imágenes eliminadas, objeto para válidas
-        // IMPORTANTE: imagenesEliminadas solo contiene las imágenes ORIGINALES (de BD)
-        // Las imágenes nuevas (File objects) no están en imagenesEliminadas
+        // ?? CRï¿½TICO: Filtrar imï¿½genes eliminadas usando imagenesEliminadas
+        // imagenesEliminadas contiene null para imï¿½genes eliminadas, objeto para vï¿½lidas
+        // IMPORTANTE: imagenesEliminadas solo contiene las imï¿½genes ORIGINALES (de BD)
+        // Las imï¿½genes nuevas (File objects) no estï¿½n en imagenesEliminadas
         
         let imagenesValidas = [];
         
-        // Si hay imagenesEliminadas, usarla para filtrar las imágenes originales
+        // Si hay imagenesEliminadas, usarla para filtrar las imï¿½genes originales
         if (datos.imagenesEliminadas && datos.imagenesEliminadas.length > 0) {
-            // Filtrar solo las imágenes originales usando imagenesEliminadas
-            // Las primeras N imágenes corresponden a imagenesEliminadas
+            // Filtrar solo las imï¿½genes originales usando imagenesEliminadas
+            // Las primeras N imï¿½genes corresponden a imagenesEliminadas
             const cantidadOriginales = datos.imagenesEliminadas.length;
             const imagenesOriginales = imagenesParaRenderizar.slice(0, cantidadOriginales);
             const imagenesNuevas = imagenesParaRenderizar.slice(cantidadOriginales);
             
-            // Filtrar originales: solo incluir si no está marcada como null en imagenesEliminadas
+            // Filtrar originales: solo incluir si no estï¿½ marcada como null en imagenesEliminadas
             const originalesFiltradas = imagenesOriginales.filter((img, idx) => {
                 return datos.imagenesEliminadas[idx] !== null;
             });
@@ -178,14 +178,14 @@ function generarTarjetaProceso(tipo, datos) {
             // Combinar: originales filtradas + todas las nuevas
             imagenesValidas = [...originalesFiltradas, ...imagenesNuevas];
             
-            console.log(`??? [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} válidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
+            console.log(`??? [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} vï¿½lidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
         } else {
-            // Sin imagenesEliminadas: incluir todas las imágenes válidas
+            // Sin imagenesEliminadas: incluir todas las imï¿½genes vï¿½lidas
             imagenesValidas = imagenesParaRenderizar.filter(img => img !== null && img !== undefined);
-            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} imágenes válidas`);
+            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} imï¿½genes vï¿½lidas`);
         }
         
-        console.log(`??? [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} imágenes`, {
+        console.log(`??? [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} imï¿½genes`, {
             imagenesArray: imagenesValidas.map(img => ({
                 tipo: img instanceof File ? 'File' : typeof img,
                 nombre: img?.nombre || img?.name || 'sin-nombre',
@@ -198,10 +198,10 @@ function generarTarjetaProceso(tipo, datos) {
         if (imagenesValidas.length > 0) {
             imagenesHTML = `
                 <div style="margin-top: 0.75rem;">
-                    <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">IMÁGENES (${imagenesValidas.length})</strong>
+                    <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">IMï¿½GENES (${imagenesValidas.length})</strong>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         ${imagenesValidas.slice(0, 4).map((img, idx) => {
-                            // Determinar la URL según el tipo de objeto
+                            // Determinar la URL segï¿½n el tipo de objeto
                             let imgSrc = '';
                             if (img instanceof File) {
                                 imgSrc = URL.createObjectURL(img);
@@ -237,7 +237,7 @@ function generarTarjetaProceso(tipo, datos) {
                             return imgSrc ? `
                                 <div style="position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" 
                                      onclick="abrirGaleriaImagenesProceso('${tipo}', ${idx})"
-                                     title="Click para ver galería">
+                                     title="Click para ver galerï¿½a">
                                     <img src="${imgSrc}" 
                                         style="width: 100%; height: 100%; object-fit: cover;" 
                                         alt="Imagen ${idx + 1}">
@@ -255,10 +255,10 @@ function generarTarjetaProceso(tipo, datos) {
                 </div>
             `;
         } else {
-            console.log(`?? [RENDER-TARJETA-${tipo}] Imágenes array existe pero está vacío`);
+            console.log(`?? [RENDER-TARJETA-${tipo}] Imï¿½genes array existe pero estï¿½ vacï¿½o`);
         }
     } else {
-        console.log(`?? [RENDER-TARJETA-${tipo}] NO hay imágenes en datos.imagenes`, {
+        console.log(`?? [RENDER-TARJETA-${tipo}] NO hay imï¿½genes en datos.imagenes`, {
             tieneImagenes: !!datos.imagenes,
             esArray: Array.isArray(datos.imagenes),
             longitud: datos.imagenes?.length || 0
@@ -267,8 +267,9 @@ function generarTarjetaProceso(tipo, datos) {
     
     // --- Detectar modo "por_tallas" con datosExtendidos ---
     const esGeneralMode = datos.modoTallas === 'general' || datos.modoTallas === 'generico';
+    const esEspecificoMode = datos.modoTallas === 'especifico';
     const datosExtendidos = datos.datosExtendidos || {};
-    const tieneDetallePorTalla = !esGeneralMode && Object.keys(datosExtendidos).some(genero => 
+    const tieneDetallePorTalla = esEspecificoMode && Object.keys(datosExtendidos).some(genero => 
         datosExtendidos[genero] && Object.keys(datosExtendidos[genero]).length > 0
     );
 
@@ -357,9 +358,9 @@ function generarTarjetaProceso(tipo, datos) {
                 
                 const tallaDisplay = formatearTallaKey(tallaKey);
 
-                // Ubicaciones - cada línea en su propia fila
+                // Ubicaciones - cada lï¿½nea en su propia fila
                 const ubicsTalla = (detalle.ubicaciones || []).filter(u => u);
-                // Expandir: si una ubicación tiene saltos de línea, separar en líneas individuales
+                // Expandir: si una ubicaciï¿½n tiene saltos de lï¿½nea, separar en lï¿½neas individuales
                 const lineasUbic = [];
                 ubicsTalla.forEach(u => {
                     String(u).split(/\n/).forEach(linea => {
@@ -377,10 +378,10 @@ function generarTarjetaProceso(tipo, datos) {
                     ? `<div style="padding: 0.3rem 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px; font-size: 0.75rem; color: #78350f;">${obsTalla}</div>`
                     : '';
 
-                // ?? PRIORIDAD: Combinar imágenes existentes con Files nuevos
+                // ?? PRIORIDAD: Combinar imï¿½genes existentes con Files nuevos
                 let imgsTalla = [];
                 
-                // 1. Agregar imágenes existentes (URLs del servidor)
+                // 1. Agregar imï¿½genes existentes (URLs del servidor)
                 if (detalle.imagenes && Array.isArray(detalle.imagenes)) {
                     imgsTalla = detalle.imagenes.filter(img => {
                         if (!img) return false;
@@ -456,7 +457,7 @@ function generarTarjetaProceso(tipo, datos) {
                     <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
                         <span class="material-symbols-rounded" style="font-size: 1rem; color: #6b7280;">view_list</span>
                         <strong style="font-size: 0.875rem;">DETALLE POR TALLA (${totalDetalle})</strong>
-                        <span style="font-size: 0.65rem; background: #8b5cf6; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">Por Tallas</span>
+                        <span style="font-size: 0.65rem; background: #8b5cf6; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">${esEspecificoMode ? 'Por Tallas (EspecÃ­fico)' : 'Por Tallas'}</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                         ${tarjetasTallas}
@@ -477,10 +478,10 @@ function generarTarjetaProceso(tipo, datos) {
             : String(datos.ubicaciones)
     )) || '';
     
-    // ?? PRIORIDAD: Combinar imágenes existentes (del servidor) con Files nuevos (no subidos)
+    // ?? PRIORIDAD: Combinar imï¿½genes existentes (del servidor) con Files nuevos (no subidos)
     let fotosDisplay = [];
     
-    // 1. Agregar imágenes existentes del servidor (URLs válidas)
+    // 1. Agregar imï¿½genes existentes del servidor (URLs vï¿½lidas)
     if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
         fotosDisplay = [...datos.fotosGenerales];
     } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
@@ -516,19 +517,19 @@ function generarTarjetaProceso(tipo, datos) {
         debeRenderizarFotosGenerales: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0
     });
     
-    // Renderizar ubicación general si está en modo "general"
+    // Renderizar ubicaciï¿½n general si estï¿½ en modo "general"
     if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && ubicacionesDisplay) {
         ubicacionGeneralHTML = `
             <div style="background: #f3f4f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #d1d5db;">
                 <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                    <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACIÓN GENERAL
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACIï¿½N GENERAL
                 </strong>
                 <span style="color: #6b7280; font-size: 0.8rem; line-height: 1.4;">${ubicacionesDisplay}</span>
             </div>
         `;
     }
     
-    // Renderizar fotos generales si está en modo "general"
+    // Renderizar fotos generales si estï¿½ en modo "general"
     if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0) {
         const fotosHTML = fotosDisplay.map((src, idx) => {
             let imgSrc = src;
@@ -557,16 +558,16 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     }
 
-    // --- Construir contenido según el modo ---
+    // --- Construir contenido segï¿½n el modo ---
     let contenidoHTML;
     if (esGeneralMode) {
-        // Modo GENERAL: ubicación general + fotos generales + tallas + observaciones por talla
+        // Modo GENERAL: ubicaciï¿½n general + fotos generales + tallas + observaciones por talla
         contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${tallasHTML}${tallasConObservacionesHTML}`;
     } else if (contenidoPorTallasHTML) {
-        // Modo ESPECÍFICO: ubicación general (si existe) + fotos generales (si existen) + detalles por talla
+        // Modo ESPECï¿½FICO: ubicaciï¿½n general (si existe) + fotos generales (si existen) + detalles por talla
         contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`;
     } else {
-        // Modo GENÉRICO (sin tallas o formato antiguo)
+        // Modo GENï¿½RICO (sin tallas o formato antiguo)
         contenidoHTML = `<div style="margin-bottom: 0.75rem;">
                 <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
                 <div>${ubicacionesHTML}</div>
@@ -617,7 +618,7 @@ function generarTarjetaProceso(tipo, datos) {
 }
 
 
-    window.ProcesoCardRendererService = Object.freeze({
+    globalThis.ProcesoCardRendererService = Object.freeze({
         generarTarjetaProceso
     });
 })();
