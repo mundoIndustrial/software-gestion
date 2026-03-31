@@ -38,7 +38,7 @@
         abrir(tipoProceso) {
             console.log('[GALERIA] Abriendo galeria para proceso:', tipoProceso);
 
-            const proceso = window.procesosSeleccionados?.[tipoProceso];
+            const proceso = globalThis.procesosSeleccionados?.[tipoProceso];
             if (!proceso?.datos?.imagenes || proceso.datos.imagenes.length === 0) {
                 console.error('[GALERIA] No hay imagenes para mostrar en proceso:', tipoProceso);
                 return;
@@ -75,21 +75,21 @@
             `;
 
             galeria.dataset.indiceActual = '0';
-            window.imagenesGaleriaProceso = imagenes;
+            globalThis.imagenesGaleriaProceso = imagenes;
             document.body.appendChild(galeria);
         },
 
         navegar(direccion) {
             const galeria = document.getElementById('galeria-proceso-modal');
-            if (!galeria || !window.imagenesGaleriaProceso) return;
+            if (!galeria || !globalThis.imagenesGaleriaProceso) return;
 
             let indice = parseInt(galeria.dataset.indiceActual, 10) + direccion;
-            if (indice < 0) indice = window.imagenesGaleriaProceso.length - 1;
-            if (indice >= window.imagenesGaleriaProceso.length) indice = 0;
+            if (indice < 0) indice = globalThis.imagenesGaleriaProceso.length - 1;
+            if (indice >= globalThis.imagenesGaleriaProceso.length) indice = 0;
 
             galeria.dataset.indiceActual = indice;
 
-            const img = window.imagenesGaleriaProceso[indice];
+            const img = globalThis.imagenesGaleriaProceso[indice];
             const imgElement = document.getElementById('galeria-imagen-actual');
             if (imgElement) {
                 imgElement.src = resolverUrlImagenProceso(img);
@@ -106,11 +106,11 @@
 
         irAImagen(indice) {
             const galeria = document.getElementById('galeria-proceso-modal');
-            if (!galeria || !window.imagenesGaleriaProceso) return;
+            if (!galeria || !globalThis.imagenesGaleriaProceso) return;
 
             galeria.dataset.indiceActual = indice;
 
-            const img = window.imagenesGaleriaProceso[indice];
+            const img = globalThis.imagenesGaleriaProceso[indice];
             const imgElement = document.getElementById('galeria-imagen-actual');
             if (imgElement) {
                 imgElement.src = resolverUrlImagenProceso(img);
@@ -130,13 +130,13 @@
             if (galeria) {
                 galeria.remove();
             }
-            window.imagenesGaleriaProceso = null;
+            globalThis.imagenesGaleriaProceso = null;
         }
     };
 
-    window.ProcesoGaleriaService = ProcesoGaleriaService;
-    window.abrirGaleriaImagenesProceso = (tipo) => ProcesoGaleriaService.abrir(tipo);
-    window.navegarGaleriaImagenesProceso = (direccion) => ProcesoGaleriaService.navegar(direccion);
-    window.irAImagenProceso = (indice) => ProcesoGaleriaService.irAImagen(indice);
-    window.cerrarGaleriaImagenesProceso = () => ProcesoGaleriaService.cerrar();
+    globalThis.ProcesoGaleriaService = ProcesoGaleriaService;
+    globalThis.abrirGaleriaImagenesProceso = (tipo) => ProcesoGaleriaService.abrir(tipo);
+    globalThis.navegarGaleriaImagenesProceso = (direccion) => ProcesoGaleriaService.navegar(direccion);
+    globalThis.irAImagenProceso = (indice) => ProcesoGaleriaService.irAImagen(indice);
+    globalThis.cerrarGaleriaImagenesProceso = () => ProcesoGaleriaService.cerrar();
 })();

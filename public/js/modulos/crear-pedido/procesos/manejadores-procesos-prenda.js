@@ -5,16 +5,16 @@
  * Coordina la apertura de modales genéricos y el resumen de procesos seleccionados
  */
 
-var procesosSeleccionados = window.procesosSeleccionados && typeof window.procesosSeleccionados === 'object'
-    ? window.procesosSeleccionados
+var procesosSeleccionados = globalThis.procesosSeleccionados && typeof globalThis.procesosSeleccionados === 'object'
+    ? globalThis.procesosSeleccionados
     : {};
 
-// Exponer en window para acceso global
-window.procesosSeleccionados = procesosSeleccionados;
+// Exponer en globalThis para acceso global
+globalThis.procesosSeleccionados = procesosSeleccionados;
 
 //  ALMACENAJE PERSISTENTE: Guardar procesos aunque se limpie procesosSeleccionados
 // Estructura: { 'reflectivo': { tipo: 'reflectivo', datos: {...}, indiceResultado: 1 }, ... }
-window.procesosGuardados = window.procesosGuardados || {};
+globalThis.procesosGuardados = globalThis.procesosGuardados || {};
 
 var procesosIconos = {
     reflectivo: 'light_mode',
@@ -37,7 +37,7 @@ var procesosNombres = {
  * @param {string} tipoProceso - reflectivo, bordado, estampado, dtf, sublimado
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
-window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
+globalThis.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
 
     
     if (estaChecked) {
@@ -50,8 +50,8 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
                     modo_tallas: 'generico' // Fuente única canónica
                 }
             };
-            //  CRÍTICO: Sincronizar con window inmediatamente
-            window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+            //  CRÍTICO: Sincronizar con globalThis inmediatamente
+            globalThis.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
 
         }
         
@@ -59,18 +59,18 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         actualizarResumenProcesos();
         
         // Abrir selector de modo (Para Todas / Por Tallas)
-        if (typeof window.abrirSelectorModoProceso === 'function') {
-            window.abrirSelectorModoProceso(tipoProceso);
+        if (typeof globalThis.abrirSelectorModoProceso === 'function') {
+            globalThis.abrirSelectorModoProceso(tipoProceso);
         } else {
             // Fallback: abrir modal genérico directamente
-            window.abrirModalProcesoGenerico(tipoProceso);
+            globalThis.abrirModalProcesoGenerico(tipoProceso);
         }
 
     } else {
         // Usuario desmarcó el checkbox
 
         delete procesosSeleccionados[tipoProceso];
-        delete window.procesosSeleccionados[tipoProceso];
+        delete globalThis.procesosSeleccionados[tipoProceso];
         actualizarResumenProcesos();
     }
 };
@@ -107,17 +107,17 @@ function actualizarResumenProcesos() {
 /**
  * Obtiene los procesos configurados para la prenda
  */
-window.obtenerProcesosConfigurables = function() {
+globalThis.obtenerProcesosConfigurables = function() {
     return procesosSeleccionados;
 };
 
 /**
  * Limpia todos los procesos seleccionados
  */
-window.limpiarProcesosSeleccionados = function() {
+globalThis.limpiarProcesosSeleccionados = function() {
 
     procesosSeleccionados = {};
-    window.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con window
+    globalThis.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con globalThis
     
     // Desmarcar todos los checkboxes
     const checkboxes = [

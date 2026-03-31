@@ -5,11 +5,11 @@
 (function() {
     'use strict';
 
-    window.procesosParaEliminarIds = window.procesosParaEliminarIds || new Set();
+    globalThis.procesosParaEliminarIds = globalThis.procesosParaEliminarIds || new Set();
 
     const ProcesoDeleteService = {
         obtenerProceso(tipo) {
-            return window.procesosSeleccionados?.[tipo] || null;
+            return globalThis.procesosSeleccionados?.[tipo] || null;
         },
 
         async confirmarYEliminarTarjeta(tipo) {
@@ -26,7 +26,7 @@
             const result = await Swal.fire({
                 icon: 'warning',
                 title: '¿Eliminar proceso?',
-                html: `<p>Esta a punto de eliminar el proceso <strong>${window.nombresProcesos?.[tipo] || tipo}</strong></p>
+                html: `<p>Esta a punto de eliminar el proceso <strong>${globalThis.nombresProcesos?.[tipo] || tipo}</strong></p>
                        <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">El cambio se aplicara cuando guardes los cambios de la prenda.</p>`,
                 showCancelButton: true,
                 confirmButtonText: 'Si, eliminar',
@@ -63,7 +63,7 @@
 
         marcarParaEliminar(tipo, proceso) {
             if (proceso?.datos?.id) {
-                window.procesosParaEliminarIds.add(proceso.datos.id);
+                globalThis.procesosParaEliminarIds.add(proceso.datos.id);
             }
 
             proceso.marcadoParaEliminar = true;
@@ -83,20 +83,20 @@
             Swal.fire({
                 icon: 'success',
                 title: 'Marcado para eliminar',
-                html: `<p>El proceso <strong>${window.nombresProcesos?.[tipo] || tipo}</strong> sera eliminado cuando guardes los cambios.</p>`,
+                html: `<p>El proceso <strong>${globalThis.nombresProcesos?.[tipo] || tipo}</strong> sera eliminado cuando guardes los cambios.</p>`,
                 timer: 1500
             });
         },
 
         obtenerNumeroPedido() {
-            return window.prendaEnEdicion?.pedidoId ||
-                   window.numeroPedidoActual ||
+            return globalThis.prendaEnEdicion?.pedidoId ||
+                   globalThis.numeroPedidoActual ||
                    document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido') ||
                    document.querySelector('[data-pedido-id]')?.getAttribute('data-pedido-id');
         },
 
         async eliminarMarcadosDelBackend() {
-            const idsParaEliminar = Array.from(window.procesosParaEliminarIds || new Set());
+            const idsParaEliminar = Array.from(globalThis.procesosParaEliminarIds || new Set());
             if (idsParaEliminar.length === 0) {
                 return true;
             }
@@ -120,16 +120,16 @@
                 }
             }
 
-            window.procesosParaEliminarIds.clear();
+            globalThis.procesosParaEliminarIds.clear();
             return true;
         }
     };
 
-    window.ProcesoDeleteService = ProcesoDeleteService;
-    window.eliminarProcesossMarcadosDelBackend = async function() {
+    globalThis.ProcesoDeleteService = ProcesoDeleteService;
+    globalThis.eliminarProcesossMarcadosDelBackend = async function() {
         return ProcesoDeleteService.eliminarMarcadosDelBackend();
     };
-    window.eliminarTarjetaProceso = function(tipo) {
+    globalThis.eliminarTarjetaProceso = function(tipo) {
         return ProcesoDeleteService.confirmarYEliminarTarjeta(tipo);
     };
 })();

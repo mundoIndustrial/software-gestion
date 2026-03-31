@@ -25,17 +25,27 @@ class GestionItemsUI {
     constructor(options = {}) {
         // Inicializar servicios con validación de disponibilidad
         try {
-            this.notificationService = options.notificationService || (typeof NotificationService !== 'undefined' ? new NotificationService() : null);
-            this.apiService = options.apiService || (typeof ItemAPIService !== 'undefined' ? new ItemAPIService() : null);
-            this.formCollector = options.formCollector || (typeof ItemFormCollector !== 'undefined' ? new ItemFormCollector() : null);
-            this.renderer = options.renderer || (typeof ItemRenderer !== 'undefined' && this.apiService ? new ItemRenderer({ apiService: this.apiService }) : null);
-            this.prendaEditor = options.prendaEditor || (typeof PrendaEditor !== 'undefined' && this.notificationService ? new PrendaEditor({ notificationService: this.notificationService }) : null);
+            this.notificationService = options.notificationService || (typeof NotificationService === 'undefined' ? null : new NotificationService());
+            this.apiService = options.apiService || (typeof ItemAPIService === 'undefined' ? null : new ItemAPIService());
+            this.formCollector = options.formCollector || (typeof ItemFormCollector === 'undefined' ? null : new ItemFormCollector());
+
+            this.renderer = options.renderer || null;
+            if (!this.renderer && typeof ItemRenderer !== 'undefined' && this.apiService) {
+                this.renderer = new ItemRenderer({ apiService: this.apiService });
+            }
+
+            this.prendaEditor = options.prendaEditor || null;
+            if (!this.prendaEditor && typeof PrendaEditor !== 'undefined' && this.notificationService) {
+                this.prendaEditor = new PrendaEditor({ notificationService: this.notificationService });
+            }
             
             // Solo inicializar si los servicios esenciales están disponibles
             if (this.formCollector && this.notificationService) {
                 this.inicializar();
             }
         } catch (error) {
+            console.error('[GestionItemsUI] Error inicializando servicios:', error);
+            throw error;
         }
     }
 
@@ -102,70 +112,83 @@ class GestionItemsUI {
      */
     eliminarEPPPorTarjetaId(tarjetaId) {
         try {
-            // Encontrar la posición visual de esta tarjeta ANTES de que se elimine del DOM
-            const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
-            let posicionVisual = -1;
-            todasLasTarjetas.forEach((tarjeta, idx) => {
-                if (tarjeta.getAttribute('data-epp-id') === tarjetaId) {
-                    posicionVisual = idx;
-                }
-            });
-            
-            console.log(`[gestionItemsUI]  eliminarEPPPorTarjetaId - tarjetaId: ${tarjetaId}, posicionVisual: ${posicionVisual}`);
-            
-            if (posicionVisual < 0) {
-                // Tarjeta ya eliminada del DOM, intentar por índice en arrays
-                // Buscar en ordenItems los EPPs y eliminar el último que coincida
-                console.warn('[gestionItemsUI] Tarjeta no encontrada en DOM, eliminando último EPP del array');
-                const lastEppIdx = this.ordenItems.map((item, i) => item.tipo === 'epp' ? i : -1).filter(i => i >= 0);
-                if (lastEppIdx.length > 0) {
-                    posicionVisual = lastEppIdx.length - 1; // Última posición
-                }
+            const posicionVisual = this._getEppPositionFromDom(tarjetaId);
+            const eppIdx = posicionVisual >= 0 ? posicionVisual : this._getLastEppIndex();
+
+            if (!this._isPosicionValidaEpp(eppIdx)) {
+                console.warn('[gestionItemsUI] No se pudo eliminar EPP - posición inválida:', eppIdx);
+                return false;
             }
-            
-            if (posicionVisual >= 0 && posicionVisual < this.epps.length) {
-                // Eliminar del array de epps
-                this.epps.splice(posicionVisual, 1);
-                console.log(`[gestionItemsUI]  EPP eliminado del array. Quedan: ${this.epps.length}`);
-                
-                // Eliminar de ordenItems - buscar el epp en la posición correcta
-                let eppCount = 0;
-                let ordenIdx = -1;
-                for (let i = 0; i < this.ordenItems.length; i++) {
-                    if (this.ordenItems[i].tipo === 'epp') {
-                        if (eppCount === posicionVisual) {
-                            ordenIdx = i;
-                            break;
-                        }
-                        eppCount++;
-                    }
-                }
-                
-                if (ordenIdx >= 0) {
-                    this.ordenItems.splice(ordenIdx, 1);
-                }
-                
-                // Reconstruir índices
-                let prendaIdx = 0, eppIdx = 0;
-                this.ordenItems.forEach(item => {
-                    if (item.tipo === 'prenda') {
-                        item.index = prendaIdx++;
-                    } else if (item.tipo === 'epp') {
-                        item.index = eppIdx++;
-                    }
-                });
-                
-                console.log(`[gestionItemsUI]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
-                console.log(`[gestionItemsUI]  EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
-                return true;
+
+            this.epps.splice(eppIdx, 1);
+            console.log(`[gestionItemsUI]  EPP eliminado del array. Quedan: ${this.epps.length}`);
+
+            const ordenIdx = this._findOrdenItemIndexForEpp(eppIdx);
+            if (ordenIdx >= 0) {
+                this.ordenItems.splice(ordenIdx, 1);
             }
-            
-            console.warn('[gestionItemsUI] No se pudo eliminar EPP - posición inválida:', posicionVisual);
-            return false;
+
+            this._rebuildOrdenIndices();
+
+            console.log(`[gestionItemsUI]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
+            console.log(`[gestionItemsUI]  EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
+            return true;
         } catch (error) {
             console.error('[gestionItemsUI] Error eliminando EPP:', error);
             return false;
         }
+    }
+
+    _getEppPositionFromDom(tarjetaId) {
+        const tarjetas = document.querySelectorAll('.item-epp-card-nuevo');
+        for (let i = 0; i < tarjetas.length; i++) {
+            if (tarjetas[i].getAttribute('data-epp-id') === tarjetaId) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    _getLastEppIndex() {
+        const eppPositions = this.ordenItems
+            .map(item => (item.tipo === 'epp' ? item : null))
+            .filter(Boolean);
+
+        if (eppPositions.length === 0) {
+            return -1;
+        }
+
+        return eppPositions.length - 1;
+    }
+
+    _isPosicionValidaEpp(index) {
+        return Number.isInteger(index) && index >= 0 && index < this.epps.length;
+    }
+
+    _findOrdenItemIndexForEpp(eppIndex) {
+        let eppCount = 0;
+        for (let i = 0; i < this.ordenItems.length; i++) {
+            if (this.ordenItems[i].tipo === 'epp') {
+                if (eppCount === eppIndex) {
+                    return i;
+                }
+                eppCount++;
+            }
+        }
+        return -1;
+    }
+
+    _rebuildOrdenIndices() {
+        let prendaIdx = 0;
+        let eppIdx = 0;
+
+        this.ordenItems.forEach(item => {
+            if (item.tipo === 'prenda') {
+                item.index = prendaIdx++;
+            } else if (item.tipo === 'epp') {
+                item.index = eppIdx++;
+            }
+        });
     }
 
     /**

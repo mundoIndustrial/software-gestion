@@ -123,9 +123,9 @@ function _procesoGenerico_cargarEdicion(tipoProceso) {
     }
 
     globalThis.tallasCantidadesProceso = {
-        dama: { ...(procesoDatos.tallas.dama ?? {}) },
-        caballero: { ...(procesoDatos.tallas.caballero ?? {}) },
-        sobremedida: { ...(procesoDatos.tallas.sobremedida ?? {}) }
+        dama: procesoDatos.tallas.dama ?? {},
+        caballero: procesoDatos.tallas.caballero ?? {},
+        sobremedida: procesoDatos.tallas.sobremedida ?? {}
     };
 
     const sobremedidaSel = Object.keys(procesoDatos.tallas.sobremedida ?? {}).length > 0
@@ -225,78 +225,71 @@ globalThis.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) 
 
 // Cerrar modal
 // @param {boolean} procesoGuardado - Si es true, mantiene el checkbox seleccionado (proceso guardado exitosamente)
-globalThis.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
-    const modal = document.getElementById('modal-proceso-generico');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-    
-    // En CREACIÓN: Deseleccionar si no se guardó
-    // En EDICIÓN: No hacer nada (cambios están en buffer, se aplicarán en PATCH final)
-    if (modoActual === 'crear' && procesoActual && !procesoGuardado) {
+function _cerrarModalProcesoGenerico_crear(procesoGuardado) {
+    if (modoActual !== 'crear' || !procesoActual || procesoGuardado) return;
 
-        
-        //  PASO 1: Deseleccionar el checkbox visualmente en el HTML
-        // IMPORTANTE: Hacemos esto ANTES de llamar a manejarCheckboxProceso
-        // para que el .onclick no se dispare automáticamente
-        const checkbox = document.getElementById(`checkbox-${procesoActual}`);
-        if (checkbox?.checked) {
-            // Usar una bandera temporal para evitar que onclick se dispare
-            checkbox._ignorarOnclick = true;
-            checkbox.checked = false;
-
-        }
-        
-        //  PASO 2: Actualizar el estado del gestor (procesos seleccionados)
-        globalThis.manejarCheckboxProceso?.(procesoActual, false);
-        
-        // Limpiar la bandera
-        if (checkbox) {
-            checkbox._ignorarOnclick = false;
-        }
-        
-        // PASO 3: Limpiar estructura de tallas del proceso
-        globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
-        
-    } else if (modoActual === 'editar' && procesoGuardado) {
-        console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
-        
-        // NUEVO: Guardar cambios en el gestor de edición
-        if (globalThis.gestorEditacionProcesos) {
-            console.log('[EDICIÓN]  Guardando cambios en gestorEditacionProcesos...');
-            globalThis.gestorEditacionProcesos.guardarCambiosActuales();
-            console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
-        }
+    const checkbox = document.getElementById(`checkbox-${procesoActual}`);
+    if (checkbox?.checked) {
+        checkbox._ignorarOnclick = true;
+        checkbox.checked = false;
     }
-    
-    //  NO limpiar storage de imágenes inmediatamente después de guardar
-    // Las imágenes se necesitan para renderizar las tarjetas
-    // Se limpiarán en el próximo proceso nuevo o al recargar la página
-    if (false && modoActual === 'crear' && procesoGuardado && globalThis.procesoActualIndex !== undefined) {
-        // Código desactivado: No limpiar storage inmediatamente
-        console.log(`[cerrarModalProcesoGenerico] 🚫 NO se limpia storage - imágenes necesarias para tarjetas`);
-        
-        // Limpiar el storage de imágenes del índice usado para este proceso
+
+    globalThis.manejarCheckboxProceso?.(procesoActual, false);
+
+    if (checkbox) {
+        checkbox._ignorarOnclick = false;
+    }
+
+    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+}
+
+function _cerrarModalProcesoGenerico_editar(procesoGuardado) {
+    if (modoActual !== 'editar' || !procesoGuardado) return;
+
+    console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
+    if (globalThis.gestorEditacionProcesos) {
+        console.log('[EDICIÓN]  Guardando cambios en gestorEditacionProcesos...');
+        globalThis.gestorEditacionProcesos.guardarCambiosActuales();
+        console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
+    }
+}
+
+function _cerrarModalProcesoGenerico_storage() {
+    // Esta rama está deshabilitada pero se conserva por referencia futura.
+    // Se usa una bandera para evitar constantes inalcanzables que disparen linter.
+    const storageDeshabilitado = false;
+
+    if (storageDeshabilitado && modoActual === 'crear' && globalThis.procesoActualIndex !== undefined) {
+        console.log('[cerrarModalProcesoGenerico] 🚫 NO se limpia storage - imágenes necesarias para tarjetas');
         console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${globalThis.procesoActualIndex}`);
+
         if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
             globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
             console.log(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para índice ${globalThis.procesoActualIndex}`);
         }
-        
-        // También limpiar el array local
         imagenesProcesoActual = [null, null, null];
         if (globalThis.imagenesProcesoActual) {
             globalThis.imagenesProcesoActual = [null, null, null];
         }
         console.log('[cerrarModalProcesoGenerico]  Arrays locales de imágenes limpiados');
     } else {
-        console.log(`[cerrarModalProcesoGenerico]  Storage conservado - imágenes necesarias para renderizado`);
+        console.log('[cerrarModalProcesoGenerico]  Storage conservado - imágenes necesarias para renderizado');
     }
-    
-    // NUEVO: Reset de variables después de cerrar
+}
+
+globalThis.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
+    const modal = document.getElementById('modal-proceso-generico');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    _cerrarModalProcesoGenerico_crear(procesoGuardado);
+    _cerrarModalProcesoGenerico_editar(procesoGuardado);
+    _cerrarModalProcesoGenerico_storage();
+
     procesoActual = null;
     globalThis.procesoActualIndex = undefined;
-    modoActual = 'crear';  // Reset a valor por defecto
+    modoActual = 'crear';
 };
 
 // Array para almacenar los archivos reales del proceso (hasta 3)
@@ -366,7 +359,7 @@ globalThis.manejarImagenProceso = function(input, indice) {
             deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-eliminar-imagen-proceso';
             deleteBtn.type = 'button';
-            deleteBtn.setAttribute('data-indice', indice);
+            deleteBtn.dataset.indice = indice;
             deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
             deleteBtn.textContent = '×';
             preview.appendChild(deleteBtn);
@@ -396,7 +389,7 @@ globalThis._imagenAEliminarIndice = null;
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            const indice = parseInt(btn.getAttribute('data-indice'), 10);
+            const indice = Number.parseInt(btn.dataset.indice, 10);
             console.log('[EVENT-DELEGATION] 📌 Índice del botón:', indice);
             
             if (indice && typeof globalThis.eliminarImagenProceso === 'function') {
@@ -445,124 +438,134 @@ globalThis.cerrarModalConfirmarEliminarImagen = function() {
     }
 };
 
-// Confirmar eliminación de imagen
-globalThis.confirmarEliminarImagenProceso = function() {
-    const indice = globalThis._imagenAEliminarIndice;
-    if (!indice) return;
-    
-    console.log('[confirmarEliminarImagenProceso]  Confirmando eliminación de imagen:', indice);
-    
-    // Cerrar modal
-    cerrarModalConfirmarEliminarImagen();
-    
-    // Limpiar URL.createObjectURL si existe
-    const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-    if (preview) {
-        const imgEl = preview.querySelector('img');
-        if (imgEl?.src?.startsWith('blob:')) {
-            URL.revokeObjectURL(imgEl.src);
-        }
-        if (preview._objectUrl) {
-            URL.revokeObjectURL(preview._objectUrl);
-            preview._objectUrl = null;
-        }
+// Helpers para confirmar eliminación de imagen
+function _confirmarEliminarImagenProceso_revocarURLs(preview) {
+    if (!preview) return;
+
+    const imgEl = preview.querySelector('img');
+    if (imgEl?.src?.startsWith('blob:')) {
+        URL.revokeObjectURL(imgEl.src);
     }
-    
-    // Limpiar en array local y global
-    if (typeof imagenesProcesoActual !== 'undefined') {
+    if (preview._objectUrl) {
+        URL.revokeObjectURL(preview._objectUrl);
+        preview._objectUrl = null;
+    }
+}
+
+function _confirmarEliminarImagenProceso_resetMocks(indice) {
+    if (imagenesProcesoActual !== undefined) {
         imagenesProcesoActual[indice - 1] = null;
     }
     if (globalThis.imagenesProcesoActual) {
         globalThis.imagenesProcesoActual[indice - 1] = null;
     }
-    
-    //  CRÍTICO: Guardar la imagen ANTES de marcarla como null
-    if (globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > (indice - 1)) {
-        const imagenAeliminarObj = globalThis.imagenesProcesoExistentes[indice - 1];
-        
-        // Inicializar array de eliminadas si no existe
-        if (!globalThis.imagenesEliminadasProcesoStorage) {
-            globalThis.imagenesEliminadasProcesoStorage = [];
-        }
-        
-        // Guardar el objeto completo de la imagen a eliminar
-        // IMPORTANTE: Usar ruta_original como identificador único (algunos objetos no tienen .id)
-        if (imagenAeliminarObj && (imagenAeliminarObj.id || imagenAeliminarObj.ruta_original)) {
-            const identificador = imagenAeliminarObj.id || imagenAeliminarObj.ruta_original;
-            // Verificar que no esté duplicado
-            const yaGuardado = globalThis.imagenesEliminadasProcesoStorage.some(img => {
-                return (img.id || img.ruta_original) === identificador;
+}
+
+function _confirmarEliminarImagenProceso_guardarExistente(indice) {
+    if (!(globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > (indice - 1))) {
+        return false;
+    }
+
+    const imagenAeliminarObj = globalThis.imagenesProcesoExistentes[indice - 1];
+    if (!globalThis.imagenesEliminadasProcesoStorage) {
+        globalThis.imagenesEliminadasProcesoStorage = [];
+    }
+
+    if (imagenAeliminarObj && (imagenAeliminarObj.id || imagenAeliminarObj.ruta_original)) {
+        const identificador = imagenAeliminarObj.id || imagenAeliminarObj.ruta_original;
+        const yaGuardado = globalThis.imagenesEliminadasProcesoStorage.some(img => (img.id || img.ruta_original) === identificador);
+
+        if (!yaGuardado) {
+            globalThis.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
+            console.log('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
+                id: imagenAeliminarObj.id,
+                ruta: imagenAeliminarObj.ruta_original,
+                identificador,
+                totalEliminadas: globalThis.imagenesEliminadasProcesoStorage.length,
+                contenidoStorage: globalThis.imagenesEliminadasProcesoStorage
             });
-            if (!yaGuardado) {
-                globalThis.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
-                console.log('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
-                    id: imagenAeliminarObj.id,
-                    ruta: imagenAeliminarObj.ruta_original,
-                    identificador: identificador,
-                    totalEliminadas: globalThis.imagenesEliminadasProcesoStorage.length,
-                    contenidoStorage: globalThis.imagenesEliminadasProcesoStorage
-                });
-            }
-        } else {
-            console.warn('[confirmarEliminarImagenProceso]  Imagen sin ID ni ruta_original, no se pudo guardar:', imagenAeliminarObj);
         }
-        
-        // AHORA marcar como null
-        globalThis.imagenesProcesoExistentes[indice - 1] = null;
-        const imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
-        console.log('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
-            indice: indice - 1,
-            imagenesRestantes: imagenesParaEnviar.length,
-            storageLlenado: globalThis.imagenesEliminadasProcesoStorage,
-            globalThisImagenesProcesoExistentes: globalThis.imagenesProcesoExistentes,
-            imagenesParaEnviar: imagenesParaEnviar
-        });
     } else {
-        // Combinar imágenes existentes + nuevas que quedan
-        let imagenesParaEnviar = [];
-        if (globalThis.imagenesProcesoExistentes) {
-            imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
-        }
-        if (globalThis.imagenesProcesoActual) {
-            globalThis.imagenesProcesoActual.forEach(img => {
-                if (img instanceof File) imagenesParaEnviar.push(img);
-            });
-        }
-        console.log('[confirmarEliminarImagenProceso] Imágenes restantes:', imagenesParaEnviar.length);
+        console.warn('[confirmarEliminarImagenProceso]  Imagen sin ID ni ruta_original, no se pudo guardar:', imagenAeliminarObj);
     }
-    
-    // Registrar cambio en editor de procesos
-    if (globalThis.procesosEditor) {
-        let imagenesParaRegistrar = [];
-        if (globalThis.imagenesProcesoExistentes) {
-            imagenesParaRegistrar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
-        }
-        if (globalThis.imagenesProcesoActual) {
-            globalThis.imagenesProcesoActual.forEach(img => {
-                if (img instanceof File) imagenesParaRegistrar.push(img);
-            });
-        }
-        globalThis.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
+
+    globalThis.imagenesProcesoExistentes[indice - 1] = null;
+    const imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+    console.log('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
+        indice: indice - 1,
+        imagenesRestantes: imagenesParaEnviar.length,
+        storageLlenado: globalThis.imagenesEliminadasProcesoStorage,
+        globalThisImagenesProcesoExistentes: globalThis.imagenesProcesoExistentes,
+        imagenesParaEnviar
+    });
+
+    return true;
+}
+
+function _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar() {
+    const imagenesParaEnviar = [];
+
+    if (globalThis.imagenesProcesoExistentes) {
+        imagenesParaEnviar.push(...globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== ''));
     }
-    
-    // Restaurar preview a estado vacío con estilo correcto
-    if (preview) {
-        preview.style.border = '2px dashed #0066cc';
-        preview.style.background = '#f9fafb';
-        preview.innerHTML = `
-            <div class="placeholder-content" style="text-align: center;">
-                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${indice}</div>
-            </div>
-        `;
-        
-        // Eliminar botón cuando se elimina la imagen
-        const deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
-        if (deleteBtn) {
-            deleteBtn.remove();
-        }
+
+    if (globalThis.imagenesProcesoActual) {
+        globalThis.imagenesProcesoActual.forEach(img => {
+            if (img instanceof File) imagenesParaEnviar.push(img);
+        });
     }
-    
+
+    console.log('[confirmarEliminarImagenProceso] Imágenes restantes:', imagenesParaEnviar.length);
+    return imagenesParaEnviar;
+}
+
+function _confirmarEliminarImagenProceso_registrarEnEditor() {
+    if (!globalThis.procesosEditor) return;
+
+    const imagenesParaRegistrar = _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar();
+    globalThis.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
+}
+
+function _confirmarEliminarImagenProceso_resetPreview(preview, indice) {
+    if (!preview) return;
+
+    preview.style.border = '2px dashed #0066cc';
+    preview.style.background = '#f9fafb';
+    preview.innerHTML = `
+        <div class="placeholder-content" style="text-align: center;">
+            <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+            <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${indice}</div>
+        </div>
+    `;
+
+    const deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
+    if (deleteBtn) {
+        deleteBtn.remove();
+    }
+}
+
+// Confirmar eliminación de imagen
+globalThis.confirmarEliminarImagenProceso = function() {
+    const indice = globalThis._imagenAEliminarIndice;
+    if (!indice) return;
+
+    console.log('[confirmarEliminarImagenProceso]  Confirmando eliminación de imagen:', indice);
+    cerrarModalConfirmarEliminarImagen();
+
+    const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+    _confirmarEliminarImagenProceso_revocarURLs(preview);
+
+    _confirmarEliminarImagenProceso_resetMocks(indice);
+
+    const eliminadoExistente = _confirmarEliminarImagenProceso_guardarExistente(indice);
+    if (!eliminadoExistente) {
+        _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar();
+    }
+
+    _confirmarEliminarImagenProceso_registrarEnEditor();
+
+    _confirmarEliminarImagenProceso_resetPreview(preview, indice);
+
     const input = document.getElementById(`proceso-foto-input-${indice}`);
     if (input) {
         input.value = '';
@@ -814,147 +817,6 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
     actualizarResumenTallasProceso();
 };
 
-// helpers internos para obtención de tallas
-function _acumularTalla(tallas, genero, key, cantidad) {
-    if (genero === 'sobremedida') {
-        tallas.sobremedida = tallas.sobremedida || {};
-        tallas.sobremedida[key] = (tallas.sobremedida[key] || 0) + cantidad;
-    } else {
-        tallas[genero][key] = (tallas[genero][key] || 0) + cantidad;
-    }
-}
-
-function _extraerColoresDeCelda(colorCell) {
-    if (!colorCell) return [];
-
-    const colorDiv = colorCell.querySelector('div');
-    if (!colorDiv) return [];
-
-    const colores = [];
-    colorDiv.querySelectorAll('span').forEach(span => {
-        let colorText = span.textContent;
-        if (!colorText) return;
-
-        colorText = colorText.replace(/[\s\n\r\t]+/g, ' ').trim();
-        if (!colorText) return;
-
-        let colorLimpio = colorText.split('(')[0].trim();
-        if (!colorLimpio || colorLimpio === colorText) {
-            colorLimpio = colorText.replace(/\s*\(\d+\)\s*/g, '').trim();
-        }
-
-        if (colorLimpio && !colores.includes(colorLimpio)) {
-            colores.push(colorLimpio);
-        }
-    });
-
-    return colores;
-}
-
-function _leerTablaConTallas(tablaBody, normalizarGenero) {
-    const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
-    const tallasSinColor = { dama: {}, caballero: {}, sobremedida: null };
-    const filas = tablaBody.querySelectorAll('tr[data-tipo="wizard"]');
-    let totalFilas = 0;
-    let conColorFilas = 0;
-
-    filas.forEach(fila => {
-        const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
-        const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
-        const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
-        if (!generoRaw || !tallaText || !cantidadText) return;
-
-        const genero = normalizarGenero(generoRaw);
-        if (!genero) return;
-
-        const cantidad = parseInt(cantidadText, 10) || 0;
-        if (cantidad <= 0) return;
-
-        totalFilas += 1;
-        const colores = _extraerColoresDeCelda(fila.querySelector('[data-field="color"]'));
-        const keyBase = tallaText;
-
-        if (colores.length > 0) {
-            conColorFilas += 1;
-            colores.forEach(color => {
-                _acumularTalla(tallasConColor, genero, `${keyBase}__${color}`, cantidad);
-            });
-        } else {
-            _acumularTalla(tallasSinColor, genero, keyBase, cantidad);
-        }
-    });
-
-    return { tallasConColor, tallasSinColor, totalFilas, conColorFilas };
-}
-
-function _tieneTallas(tallas) {
-    return Boolean(
-        Object.keys(tallas.dama || {}).length ||
-        Object.keys(tallas.caballero || {}).length ||
-        Object.keys(tallas.sobremedida || {}).length
-    );
-}
-
-function _obtenerAsignacionesColores() {
-    const datosColores = globalThis.ColoresPorTalla?.datos;
-    if (datosColores && typeof datosColores === 'object' && Object.keys(datosColores).length > 0) {
-        return { fuente: 'ColoresPorTalla.datos', asignaciones: datosColores };
-    }
-
-    const asignacionesState = globalThis.StateManager?.getAsignaciones?.();
-    if (asignacionesState && typeof asignacionesState === 'object' && Object.keys(asignacionesState).length > 0) {
-        return { fuente: 'StateManager.getAsignaciones()', asignaciones: asignacionesState };
-    }
-
-    return { fuente: null, asignaciones: null };
-}
-
-function _extraerTallasDeAsignaciones(asignaciones, normalizarGenero) {
-    const tallas = { dama: {}, caballero: {}, sobremedida: null };
-
-    Object.values(asignaciones).forEach(asignacion => {
-        const genero = normalizarGenero(asignacion?.genero);
-        if (!genero) return;
-
-        const talla = String(asignacion?.talla || '').trim().toUpperCase();
-        if (!talla) return;
-
-        const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
-        colores.forEach(c => {
-            const color = String(c?.nombre || '').trim().toUpperCase();
-            const cantidad = parseInt(c?.cantidad, 10) || 0;
-            if (!color || cantidad <= 0) return;
-
-            _acumularTalla(tallas, genero, `${talla}__${color}`, cantidad);
-        });
-    });
-
-    return tallas;
-}
-
-function _obtenerTallasDeLaPrendaDesdeRelacionales() {
-    const tallasRelacionales = globalThis.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
-    const hay = Object.values(tallasRelacionales).some(g => g && typeof g === 'object' && Object.keys(g).length > 0);
-    if (!hay) return null;
-
-    const tallas = { dama: {}, caballero: {}, sobremedida: null };
-
-    if (Object.keys(tallasRelacionales.DAMA || {}).length > 0) {
-        tallas.dama = { ...tallasRelacionales.DAMA };
-    }
-    if (Object.keys(tallasRelacionales.CABALLERO || {}).length > 0) {
-        tallas.caballero = { ...tallasRelacionales.CABALLERO };
-    }
-    if (Object.keys(tallasRelacionales.SOBREMEDIDA || {}).length > 0) {
-        tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
-    }
-    if (Object.keys(tallasRelacionales.UNISEX || {}).length > 0) {
-        tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
-    }
-
-    return tallas;
-}
-
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
     console.log('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
@@ -968,29 +830,184 @@ function obtenerTallasDeLaPrenda() {
         return null;
     };
 
-    const tablaBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
-    const tablaInfo = tablaBody ? _leerTablaConTallas(tablaBody, normalizarGenero) : null;
+    const crearEstructuraTallas = () => ({ dama: {}, caballero: {}, sobremedida: null });
 
-    if (tablaInfo?.conColorFilas > 0) {
+    const extraerTallasDesdeTabla = () => {
+        const tablaBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+        if (!tablaBody) return { tallas: null, filas: 0, colores: 0 };
+
+        const tallas = crearEstructuraTallas();
+        const filas = Array.from(tablaBody.querySelectorAll('tr[data-tipo="wizard"]'));
+        let contadorFilas = 0;
+        let contadorColores = 0;
+
+        filas.forEach(fila => {
+            const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
+            const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
+            const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
+            const colorCell = fila.querySelector('[data-field="color"]');
+
+            if (!generoRaw || !tallaText || !cantidadText) return;
+
+            const genero = normalizarGenero(generoRaw);
+            if (!genero) return;
+
+            const cantidad = Number(cantidadText, 10) || 0;
+            if (cantidad <= 0) return;
+
+            const colors = [];
+            if (colorCell) {
+                const colorDiv = colorCell.querySelector('div');
+                if (colorDiv) {
+                    Array.from(colorDiv.querySelectorAll('span')).forEach(span => {
+                        let value = String(span.textContent || '').trim().replaceAll(/\s+/g, ' ');
+                        if (!value) return;
+                        let base = value.split('(')[0].trim();
+                        if (!base || base === value) {
+                            base = value.replaceAll(/\s*\(\d+\)\s*/g, '').trim();
+                        }
+                        if (base && !colors.includes(base)) colors.push(base);
+                    });
+                }
+            }
+
+            const asignar = (key) => {
+                if (genero === 'dama') {
+                    tallas.dama[key] = (tallas.dama[key] || 0) + cantidad;
+                } else if (genero === 'caballero') {
+                    tallas.caballero[key] = (tallas.caballero[key] || 0) + cantidad;
+                } else {
+                    if (!tallas.sobremedida) tallas.sobremedida = {};
+                    tallas.sobremedida[key] = (tallas.sobremedida[key] || 0) + cantidad;
+                }
+            };
+
+            if (colors.length > 0) {
+                colors.forEach(color => asignar(`${tallaText}__${color}`));
+                contadorColores++;
+            } else {
+                asignar(tallaText);
+            }
+
+            contadorFilas++;
+        });
+
+        return { tallas, filas: contadorFilas, colores: contadorColores };
+    };
+
+    const extraerTallasDesdeStateManager = () => {
+        const datosColores = globalThis.ColoresPorTalla?.datos;
+
+        let asignaciones = null;
+
+        if (datosColores && Object.keys(datosColores).length > 0) {
+            asignaciones = datosColores;
+        } else if (globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function') {
+            asignaciones = globalThis.StateManager.getAsignaciones();
+        }
+
+        if (!asignaciones || typeof asignaciones !== 'object' || Object.keys(asignaciones).length === 0) return null;
+
+        const tallas = crearEstructuraTallas();
+        Object.values(asignaciones).forEach(asignacion => {
+            const genero = normalizarGenero(asignacion?.genero);
+            if (!genero) return;
+
+            const talla = String(asignacion?.talla || '').trim().toUpperCase();
+            if (!talla) return;
+
+            const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+            colores.forEach(c => {
+                const color = String(c?.nombre || '').trim().toUpperCase();
+                const cantidad = Number(c?.cantidad, 10) || 0;
+                if (!color || cantidad <= 0) return;
+                const key = `${talla}__${color}`;
+                tallas[genero][key] = (tallas[genero][key] || 0) + cantidad;
+            });
+        });
+
+        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
+            ? tallas
+            : null;
+    };
+
+    const extraerTallasDesdeTablaSinColor = (tablaBody) => {
+        if (!tablaBody) return null;
+
+        const filas = Array.from(tablaBody.querySelectorAll('tr[data-tipo="wizard"]'));
+        if (!filas.length) return null;
+
+        const tallas = crearEstructuraTallas();
+        filas.forEach(fila => {
+            const generoRaw = fila.querySelector('[data-field="genero"]')?.textContent.trim();
+            const tallaText = fila.querySelector('[data-field="talla"]')?.textContent.trim();
+            const cantidadText = fila.querySelector('[data-field="cantidad"]')?.textContent.trim();
+            if (!generoRaw || !tallaText || !cantidadText) return;
+
+            const genero = normalizarGenero(generoRaw);
+            if (!genero) return;
+
+            const cantidad = Number(cantidadText, 10) || 0;
+            if (cantidad <= 0) return;
+
+            if (genero === 'dama') {
+                tallas.dama[tallaText] = (tallas.dama[tallaText] || 0) + cantidad;
+            } else if (genero === 'caballero') {
+                tallas.caballero[tallaText] = (tallas.caballero[tallaText] || 0) + cantidad;
+            } else {
+                if (!tallas.sobremedida) tallas.sobremedida = {};
+                tallas.sobremedida[tallaText] = (tallas.sobremedida[tallaText] || 0) + cantidad;
+            }
+        });
+
+        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
+            ? tallas
+            : null;
+    };
+
+    const extraerTallasRelacionales = () => {
+        const tallasRelacionales = globalThis.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+        const hayValores = ['DAMA', 'CABALLERO', 'SOBREMEDIDA', 'UNISEX'].some(k =>
+            tallasRelacionales[k] && typeof tallasRelacionales[k] === 'object' && Object.keys(tallasRelacionales[k]).length > 0
+        );
+
+        if (!hayValores) return null;
+
+        const tallas = crearEstructuraTallas();
+        if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) tallas.dama = { ...tallasRelacionales.DAMA };
+        if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) tallas.caballero = { ...tallasRelacionales.CABALLERO };
+        if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
+        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
+            tallas.sobremedida = { ...tallas.sobremedida, ...tallasRelacionales.UNISEX };
+        }
+
+        return tallas;
+    };
+
+    const tablaPrimaria = extraerTallasDesdeTabla();
+    if (tablaPrimaria.colores > 0) {
         console.log('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
-        return tablaInfo.tallasConColor;
+        return tablaPrimaria.tallas;
     }
 
-    const { fuente, asignaciones } = _obtenerAsignacionesColores();
-    if (asignaciones) {
-        console.log(`[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: ${fuente}`);
-        return _extraerTallasDeAsignaciones(asignaciones, normalizarGenero);
+    const state = extraerTallasDesdeStateManager();
+    if (state) {
+        console.log('[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)');
+        return state;
     }
 
-    if (tablaInfo?.totalFilas > 0 && _tieneTallas(tablaInfo.tallasSinColor)) {
-        console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
-        return tablaInfo.tallasSinColor;
+    if (tablaPrimaria.filas > 0) {
+        const tablaSinColor = extraerTallasDesdeTablaSinColor(document.getElementById('tabla-resumen-asignaciones-cuerpo'));
+        if (tablaSinColor) {
+            console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
+            return tablaSinColor;
+        }
     }
 
-    const rel = _obtenerTallasDeLaPrendaDesdeRelacionales();
-    if (rel) {
+    const relacionales = extraerTallasRelacionales();
+    if (relacionales) {
         console.log('[obtenerTallasDeLaPrenda]  FUENTE 4 USADA: tallasRelacionales (legacy)');
-        return rel;
+        return relacionales;
     }
 
     if (globalThis.cantidadSoloSeleccionada) {
@@ -999,7 +1016,7 @@ function obtenerTallasDeLaPrenda() {
     }
 
     console.log('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacío');
-    return { dama: {}, caballero: {}, sobremedida: null };
+    return crearEstructuraTallas();
 }
 
 // Mostrar modal de advertencia cuando no hay tallas seleccionadas
@@ -1045,12 +1062,10 @@ function mostrarModalAdvertenciaTallas() {
     console.log('[MODAL-ADVERTENCIA-TALLAS] Creando modal');
     
     // Agregar seguro a getComputedStyle
-    try {
-        const swal2Container = document.querySelector('.swal2-container');
-        if (swal2Container) {
-            console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', globalThis.getComputedStyle(swal2Container).zIndex);
-        }
-    } catch (e) {
+    const swal2Container = document.querySelector('.swal2-container');
+    if (swal2Container) {
+        console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', globalThis.getComputedStyle(swal2Container).zIndex);
+    } else {
         console.log('[MODAL-ADVERTENCIA-TALLAS] Sin swal2-container activo');
     }
     

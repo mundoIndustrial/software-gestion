@@ -11,10 +11,10 @@
  */
 
 // Guardar la función original antes de reemplazarla
-const abrirEditorTallasEspecificasOriginal = window.abrirEditorTallasEspecificas;
+const abrirEditorTallasEspecificasOriginal = globalThis.abrirEditorTallasEspecificas;
 
 // Estructura para almacenar datos por talla
-window.datosExtendidosTallasProceso = {
+globalThis.datosExtendidosTallasProceso = {
     dama: {},
     caballero: {},
     sobremedida: {}
@@ -23,7 +23,7 @@ window.datosExtendidosTallasProceso = {
 /**
  * Nueva función que extiende abrirEditorTallasEspecificas
  */
-window.abrirEditorTallasEspecificas = function() {
+globalThis.abrirEditorTallasEspecificas = function() {
     
     const modalEditor = document.getElementById('modal-editor-tallas');
     if (!modalEditor) {
@@ -52,9 +52,9 @@ window.abrirEditorTallasEspecificas = function() {
         containerDama.style.gap = '1rem';
         
         tallasDamaArray.forEach(tallaKey => {
-            const isSelected = window.tallasSeleccionadasProceso.dama.includes(tallaKey);
+            const isSelected = globalThis.tallasSeleccionadasProceso.dama.includes(tallaKey);
             const cantidadPrenda = tallasPrenda.dama[tallaKey] || 0;
-            const cantidadProceso = window.tallasCantidadesProceso?.dama?.[tallaKey] || 0;
+            const cantidadProceso = globalThis.tallasCantidadesProceso?.dama?.[tallaKey] || 0;
 
             const parts = String(tallaKey).split('__');
             const tallaDisplay = (parts[0] || tallaKey);
@@ -195,9 +195,9 @@ window.abrirEditorTallasEspecificas = function() {
         containerCaballero.style.gap = '1rem';
         
         tallasCaballeroArray.forEach(tallaKey => {
-            const isSelected = window.tallasSeleccionadasProceso.caballero.includes(tallaKey);
+            const isSelected = globalThis.tallasSeleccionadasProceso.caballero.includes(tallaKey);
             const cantidadPrenda = tallasPrenda.caballero[tallaKey] || 0;
-            const cantidadProceso = window.tallasCantidadesProceso?.caballero?.[tallaKey] || 0;
+            const cantidadProceso = globalThis.tallasCantidadesProceso?.caballero?.[tallaKey] || 0;
 
             const parts = String(tallaKey).split('__');
             const tallaDisplay = (parts[0] || tallaKey);
@@ -338,23 +338,23 @@ window.abrirEditorTallasEspecificas = function() {
  * Obtener o crear estructura de datos para una talla
  */
 function obtenerDatosTallaExtendida(genero, talla) {
-    if (!window.datosExtendidosTallasProceso[genero]) {
-        window.datosExtendidosTallasProceso[genero] = {};
+    if (!globalThis.datosExtendidosTallasProceso[genero]) {
+        globalThis.datosExtendidosTallasProceso[genero] = {};
     }
-    if (!window.datosExtendidosTallasProceso[genero][talla]) {
-        window.datosExtendidosTallasProceso[genero][talla] = {
+    if (!globalThis.datosExtendidosTallasProceso[genero][talla]) {
+        globalThis.datosExtendidosTallasProceso[genero][talla] = {
             ubicaciones: [],
             imagen: null,
             observaciones: ''
         };
     }
-    return window.datosExtendidosTallasProceso[genero][talla];
+    return globalThis.datosExtendidosTallasProceso[genero][talla];
 }
 
 /**
  * Agregar ubicación a una talla específica
  */
-window.agregarUbicacionATallaExtendido = function(genero, talla) {
+globalThis.agregarUbicacionATallaExtendido = function(genero, talla) {
     const input = document.querySelector(`.ubicacion-talla-input-extended[data-genero="${genero}"][data-talla="${talla}"]`);
     if (!input || !input.value.trim()) {
         return;
@@ -374,7 +374,7 @@ window.agregarUbicacionATallaExtendido = function(genero, talla) {
 /**
  * Eliminar ubicación de una talla
  */
-window.eliminarUbicacionTallaExtendida = function(genero, talla, index) {
+globalThis.eliminarUbicacionTallaExtendida = function(genero, talla, index) {
     const datos = obtenerDatosTallaExtendida(genero, talla);
     datos.ubicaciones.splice(index, 1);
     actualizarListaUbicacionesExtendida(genero, talla);
@@ -400,7 +400,7 @@ function actualizarListaUbicacionesExtendida(genero, talla) {
 /**
  * Cargar imagen para una talla
  */
-window.cargarImagenTallaExtendida = function(genero, talla, input) {
+globalThis.cargarImagenTallaExtendida = function(genero, talla, input) {
     const file = input.files[0];
     if (!file) return;
     
@@ -435,7 +435,7 @@ window.cargarImagenTallaExtendida = function(genero, talla, input) {
 /**
  * Eliminar imagen de una talla
  */
-window.eliminarImagenTallaExtendida = function(genero, talla) {
+globalThis.eliminarImagenTallaExtendida = function(genero, talla) {
     const datos = obtenerDatosTallaExtendida(genero, talla);
     datos.imagen = null;
     
@@ -459,7 +459,7 @@ window.eliminarImagenTallaExtendida = function(genero, talla) {
 /**
  * Guardar observaciones (se llama automáticamente cuando el usuario escribe)
  */
-window.guardarObservacionesTallaExtendida = function(genero, talla, texto) {
+globalThis.guardarObservacionesTallaExtendida = function(genero, talla, texto) {
     const datos = obtenerDatosTallaExtendida(genero, talla);
     datos.observaciones = texto;
 };
@@ -467,15 +467,15 @@ window.guardarObservacionesTallaExtendida = function(genero, talla, texto) {
 /**
  * Obtener todos los datos extendidos de tallas para guardar
  */
-window.obtenerDatosExtendidosTallasProceso = function() {
-    return window.datosExtendidosTallasProceso;
+globalThis.obtenerDatosExtendidosTallasProceso = function() {
+    return globalThis.datosExtendidosTallasProceso;
 };
 
 /**
  * Limpiar datos extendidos cuando se cierra el editor
  */
-window.limpiarDatosExtendidosTallasProceso = function() {
-    window.datosExtendidosTallasProceso = {
+globalThis.limpiarDatosExtendidosTallasProceso = function() {
+    globalThis.datosExtendidosTallasProceso = {
         dama: {},
         caballero: {},
         sobremedida: {}

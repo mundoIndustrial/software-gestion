@@ -37,12 +37,12 @@
     }
 
     function inicializarEstadoModalProceso(datos) {
-        window.imagenesProcesoActual = [null, null, null];
-        window.imagenesProcesoExistentes = [];
-        window.imagenesEliminadasProcesoStorage = [];
+        globalThis.imagenesProcesoActual = [null, null, null];
+        globalThis.imagenesProcesoExistentes = [];
+        globalThis.imagenesEliminadasProcesoStorage = [];
 
-        if (!window.ubicacionesProcesoSeleccionadas) {
-            window.ubicacionesProcesoSeleccionadas = [];
+        if (!globalThis.ubicacionesProcesoSeleccionadas) {
+            globalThis.ubicacionesProcesoSeleccionadas = [];
         }
 
         const imagenesValidas = (datos.imagenes || []).filter(img => {
@@ -50,7 +50,7 @@
             return img !== null && img !== undefined && img !== '';
         });
 
-        window.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
+        globalThis.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
     }
 
     function resetearPreviewsProceso() {
@@ -137,12 +137,12 @@
     function registrarImagenEnEstadoModal(previewIndex, img) {
         const isFile = img instanceof File;
         if (isFile) {
-            if (window.imagenesProcesoActual) {
-                window.imagenesProcesoActual[previewIndex - 1] = img;
+            if (globalThis.imagenesProcesoActual) {
+                globalThis.imagenesProcesoActual[previewIndex - 1] = img;
             }
             return;
         }
-        window.imagenesProcesoExistentes[previewIndex - 1] = img;
+        globalThis.imagenesProcesoExistentes[previewIndex - 1] = img;
     }
 
     function limpiarUbicacionesProceso(raw) {
@@ -190,14 +190,14 @@
     }
 
     function sincronizarUbicacionesModal(datos) {
-        if (!datos.ubicaciones || !window.ubicacionesProcesoSeleccionadas) return;
+        if (!datos.ubicaciones || !globalThis.ubicacionesProcesoSeleccionadas) return;
 
         const ubicacionesLimpias = limpiarUbicacionesProceso(datos.ubicaciones);
-        window.ubicacionesProcesoSeleccionadas.length = 0;
-        window.ubicacionesProcesoSeleccionadas.push(...ubicacionesLimpias);
+        globalThis.ubicacionesProcesoSeleccionadas.length = 0;
+        globalThis.ubicacionesProcesoSeleccionadas.push(...ubicacionesLimpias);
 
-        if (window.renderizarListaUbicaciones) {
-            window.renderizarListaUbicaciones();
+        if (globalThis.renderizarListaUbicaciones) {
+            globalThis.renderizarListaUbicaciones();
         }
     }
 
@@ -266,32 +266,32 @@
             obsInput.value = datos.observaciones || '';
         }
 
-        if (!datos.tallas || !window.tallasSeleccionadasProceso) {
+        if (!datos.tallas || !globalThis.tallasSeleccionadasProceso) {
             return;
         }
 
         const { damaTallas, caballeroTallas, sobremedidaTallas } = normalizarTallasProceso(datos.tallas);
 
-        window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
-        window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
-        window.tallasSeleccionadasProceso.sobremedida = Object.keys(sobremedidaTallas).length > 0 ? sobremedidaTallas : null;
+        globalThis.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
+        globalThis.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
+        globalThis.tallasSeleccionadasProceso.sobremedida = Object.keys(sobremedidaTallas).length > 0 ? sobremedidaTallas : null;
 
-        if (!window.tallasCantidadesProceso) {
-            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+        if (!globalThis.tallasCantidadesProceso) {
+            globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
         }
 
-        window.tallasCantidadesProceso.dama = { ...damaTallas };
-        window.tallasCantidadesProceso.caballero = { ...caballeroTallas };
-        window.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
+        globalThis.tallasCantidadesProceso.dama = { ...damaTallas };
+        globalThis.tallasCantidadesProceso.caballero = { ...caballeroTallas };
+        globalThis.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
 
-        if (window.actualizarResumenTallasProceso) {
-            window.actualizarResumenTallasProceso();
+        if (globalThis.actualizarResumenTallasProceso) {
+            globalThis.actualizarResumenTallasProceso();
         }
     }
 
-    window.ProcesoModalLoaderService = Object.freeze({
+    globalThis.ProcesoModalLoaderService = Object.freeze({
         cargarDatos: cargarDatosProcesoEnModal
     });
 
-    window.cargarDatosProcesoEnModal = cargarDatosProcesoEnModal;
+    globalThis.cargarDatosProcesoEnModal = cargarDatosProcesoEnModal;
 })();

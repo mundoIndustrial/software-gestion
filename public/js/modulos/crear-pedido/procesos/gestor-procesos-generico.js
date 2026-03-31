@@ -7,10 +7,8 @@
 
 // Variables globales para controlar el tipo de proceso activo
 // Nota: procesoActual también se declara en gestor-modal-proceso-generico.js
-// Usamos var aquí para evitar conflicto de redeclaración con let
-if (typeof procesoActual === 'undefined') {
-    var procesoActual = null;
-}
+// Usamos globalThis para mantener referencia compartida y evitar variable local no usada
+globalThis.procesoActual = globalThis.procesoActual ?? null;
 const procesosConfig = {
     reflectivo: {
         titulo: 'Agregar Reflectivo',
@@ -67,8 +65,8 @@ const procesosConfig = {
 /**
  * Abre el modal genérico con configuración específica del proceso
  */
-window.abrirModalProcesoGenerico = function(tipoProceso) {
-    procesoActual = tipoProceso;
+globalThis.abrirModalProcesoGenerico = function(tipoProceso) {
+    globalThis.procesoActual = tipoProceso;
     const config = procesosConfig[tipoProceso];
     
     if (!config) {
@@ -106,17 +104,17 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
 /**
  * Cierra el modal genérico
  */
-window.cerrarModalProcesoGenerico = function() {
+globalThis.cerrarModalProcesoGenerico = function() {
     const modal = document.getElementById('modal-proceso-generico');
     modal.style.display = 'none';
-    procesoActual = null;
+    globalThis.procesoActual = null;
 
 };
 
 /**
  * Maneja las imágenes del proceso
  */
-window.manejarImagenesProceso = function(input) {
+globalThis.manejarImagenesProceso = function(input) {
     if (!input.files || input.files.length === 0) return;
     
     const file = input.files[0];
@@ -124,7 +122,8 @@ window.manejarImagenesProceso = function(input) {
     
     reader.onload = function(e) {
         const preview = document.getElementById('proceso-foto-preview');
-        preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+        const imageUrl = (e?.target?.result && typeof e.target.result === 'string') ? e.target.result : '';
+        preview.innerHTML = `<img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
         
         const contador = document.getElementById('proceso-foto-contador');
         contador.innerHTML = `<span class="foto-count">1 foto</span>`;
@@ -141,12 +140,12 @@ window.manejarImagenesProceso = function(input) {
 /**
  * Abre el modal para seleccionar tallas del proceso
  */
-window.abrirModalSeleccionarTallasProceso = function(genero) {
+globalThis.abrirModalSeleccionarTallasProceso = function(genero) {
 
     
     // Guardar referencia para que el gestor de tallas sepa que es para un proceso
-    window._tallas_modal_tipo = 'proceso';
-    window._tallas_modal_proceso = procesoActual;
+    globalThis._tallas_modal_tipo = 'proceso';
+    globalThis._tallas_modal_proceso = globalThis.procesoActual;
     
     // Reutilizar la función existente si está disponible
     // Si no, podemos crear una versión adaptada
@@ -154,17 +153,15 @@ window.abrirModalSeleccionarTallasProceso = function(genero) {
         abrirModalSeleccionarTallasReflectivo(genero);
     } else if (typeof abrirModalSeleccionarTallas === 'function') {
         // Alternativa si existe una función más genérica
-        abrirModalSeleccionarTallas(genero, 'proceso', procesoActual);
-    } else {
-
+        abrirModalSeleccionarTallas(genero, 'proceso', globalThis.procesoActual);
     }
 };
 
 /**
  * Agrega el proceso al pedido
  */
-window.agregarProceso = function() {
-    if (!procesoActual) {
+globalThis.agregarProceso = function() {
+    if (!globalThis.procesoActual) {
 
         return;
     }
@@ -186,40 +183,40 @@ window.agregarProceso = function() {
     
     // Obtener ubicaciones si aplica
     let ubicaciones = [];
-    if (procesosConfig[procesoActual].mostrarUbicacion) {
+    if (procesosConfig[globalThis.procesoActual].mostrarUbicacion) {
         ubicaciones = Array.from(document.querySelectorAll('input[name="proceso-ubicaciones"]:checked'))
             .map(cb => cb.value);
     }
     
     // Obtener especificaciones si aplica
     let especificaciones = '';
-    if (procesosConfig[procesoActual].mostrarEspecificaciones) {
+    if (procesosConfig[globalThis.procesoActual].mostrarEspecificaciones) {
         especificaciones = document.getElementById('proceso-especificaciones').value.trim();
     }
     
     // Obtener procesos adicionales si aplica
     let procesosAdicionales = [];
-    if (procesosConfig[procesoActual].mostrarProcesosAdicionales) {
+    if (procesosConfig[globalThis.procesoActual].mostrarProcesosAdicionales) {
         procesosAdicionales = Array.from(document.querySelectorAll('input[name="proceso-procesos-adicionales"]:checked'))
             .map(cb => cb.value);
     }
     
     const datos = {
-        tipo: procesoActual,
+        tipo: globalThis.procesoActual,
         nombre: nombre,
         origen: origen,
         descripcion: descripcion,
-        total: parseInt(total),
+        total: Number(total),
         ubicaciones: ubicaciones,
         especificaciones: especificaciones,
         procesosAdicionales: procesosAdicionales,
-        tallas: obtenerTallasSeleccionadas(procesoActual)
+        tallas: obtenerTallasSeleccionadas(globalThis.procesoActual)
     };
     
 
     
     // Agregar a la lista de ítems del pedido
-    window.agregarItemPedido(datos);
+    globalThis.agregarItemPedido(datos);
     
     // Cerrar modal
     cerrarModalProcesoGenerico();
