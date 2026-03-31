@@ -61,13 +61,26 @@ class PrendaExistenteArchivosExtractor
 
     private function agregarFotosTela(array &$archivos, string $claveNormalizada, mixed $value): bool
     {
-        if (!preg_match('/^fotos_tela\[(\d+)\]$/', $claveNormalizada, $matches)) {
-            return false;
+        // Formato explícito: fotos_tela[0]
+        if (preg_match('/^fotos_tela\[(\d+)\]$/', $claveNormalizada, $matches)) {
+            $indice = (int) $matches[1];
+            $archivos['fotos_tela'][$indice] = $value;
+            return true;
         }
 
-        $archivos['fotos_tela[' . $matches[1] . ']'] = $value;
+        // Formato normalizado por PHP/Laravel: fotos_tela => [0 => UploadedFile, ...]
+        if ($claveNormalizada === 'fotos_tela') {
+            if (is_array($value)) {
+                foreach ($value as $indice => $archivo) {
+                    $archivos['fotos_tela'][(int) $indice] = $archivo;
+                }
+            } elseif ($value !== null) {
+                $archivos['fotos_tela'][] = $value;
+            }
+            return true;
+        }
 
-        return true;
+        return false;
     }
 
     private function agregarFotosProcesoNuevo(array &$archivos, string $claveNormalizada, mixed $value): bool
@@ -95,10 +108,24 @@ class PrendaExistenteArchivosExtractor
 
     private function agregarFotosColor(array &$archivos, string $claveNormalizada, mixed $value): void
     {
-        if (!preg_match('/^fotos_color\[(\d+)\]$/', $claveNormalizada, $matches)) {
+        if (preg_match('/^fotos_color\[(\d+)\]$/', $claveNormalizada, $matches)) {
+            $archivos['fotos_color'][(int) $matches[1]] = $value;
             return;
         }
 
-        $archivos['fotos_color'][$matches[1]] = $value;
+        if ($claveNormalizada !== 'fotos_color') {
+            return;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $indice => $archivo) {
+                $archivos['fotos_color'][(int) $indice] = $archivo;
+            }
+            return;
+        }
+
+        if ($value !== null) {
+            $archivos['fotos_color'][] = $value;
+        }
     }
 }

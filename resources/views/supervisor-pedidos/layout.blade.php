@@ -470,11 +470,11 @@
                         <input type="hidden" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
                     @endif
                     <div style="display: flex; gap: 0.5rem; width: 100%;">
-                        <input type="text" 
-                               name="busqueda" 
-                               id="busqueda" 
-                               class="filtro-input" 
-                               placeholder="Buscar por pedido o cliente..." 
+                        <input type="text"
+                               name="busqueda"
+                               id="busqueda"
+                               class="filtro-input"
+                               placeholder="Buscar por pedido o cliente..."
                                value="{{ request('busqueda') }}"
                                style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
                     </div>

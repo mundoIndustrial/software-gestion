@@ -35,9 +35,9 @@
                     
                     <!-- Input para nueva categoría (oculto por defecto) -->
                     <div id="nuevaCategoriaContainer" style="display: none; margin-top: 0.75rem;">
-                        <input type="text" 
-                               id="nueva_categoria_input" 
-                               class="form-input" 
+                        <input type="text"
+                               id="nueva_categoria_input"
+                               class="form-input"
                                placeholder="Nombre de la nueva categoría">
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button type="button" class="btn btn-sm btn-primary" onclick="agregarNuevaCategoria()">
@@ -56,10 +56,10 @@
                         <span class="material-symbols-rounded">texture</span>
                         Nombre de la Tela
                     </label>
-                    <input type="text" 
-                           id="nombre_tela_nueva" 
-                           name="nombre_tela" 
-                           class="form-input" 
+                    <input type="text"
+                           id="nombre_tela_nueva"
+                           name="nombre_tela"
+                           class="form-input"
                            placeholder="Ej: Algodón Premium, Poliéster Stretch..."
                            required>
                 </div>
@@ -70,12 +70,12 @@
                         <span class="material-symbols-rounded">inventory_2</span>
                         Stock Inicial (metros)
                     </label>
-                    <input type="number" 
-                           id="stock_inicial" 
-                           name="stock" 
-                           class="form-input" 
-                           step="0.01" 
-                           min="0" 
+                    <input type="number"
+                           id="stock_inicial"
+                           name="stock"
+                           class="form-input"
+                           step="0.01"
+                           min="0"
                            value="0"
                            required>
                 </div>
@@ -87,11 +87,11 @@
                         Metraje Sugerido (metros)
                         <span class="label-optional">(Opcional)</span>
                     </label>
-                    <input type="number" 
-                           id="metraje_sugerido_nuevo" 
-                           name="metraje_sugerido" 
-                           class="form-input" 
-                           step="0.01" 
+                    <input type="number"
+                           id="metraje_sugerido_nuevo"
+                           name="metraje_sugerido"
+                           class="form-input"
+                           step="0.01"
                            min="0"
                            placeholder="Cantidad recomendada para mantener en stock">
                     <small class="form-hint">Este valor ayuda a identificar cuándo reabastecer</small>

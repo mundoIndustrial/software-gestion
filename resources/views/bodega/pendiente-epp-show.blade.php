@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="text-xl sm:text-2xl font-semibold text-black">Gestión de Bodega</h1>
                     <p class="text-xs sm:text-sm text-black mt-1">
-                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> | 
+                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> |
                         Cliente: <span class="font-semibold text-black">{{ $pedido['cliente'] ?? 'No especificado' }}</span>
                         @if($pedido['asesor'])
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
@@ -84,7 +84,7 @@
                                         <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
                                             {{ $nombre }}
                                             @if($item['tiene_historial'] ?? false)
-                                                <button type="button" 
+                                                <button type="button"
                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                         onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
                                                     <span class="text-sm">🔽</span>
@@ -320,7 +320,7 @@
             
             @if(!($esReadOnly ?? false))
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
+                <label for="notasNuevaContent" class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
                     id="notasNuevaContent"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"

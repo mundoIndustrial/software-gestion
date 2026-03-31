@@ -56,6 +56,47 @@ window.PrendaCardService = {
         return [];
     },
 
+    _deduplicarTelasParaVista(telas) {
+        if (!Array.isArray(telas) || telas.length === 0) return [];
+
+        const mapa = new Map();
+
+        telas.forEach((telaItem, idx) => {
+            const nombre = String(telaItem?.tela || telaItem?.nombre_tela || telaItem?.nombre || '').trim();
+            const referencia = String(telaItem?.referencia || '').trim();
+            const key = `${nombre.toUpperCase()}|${referencia.toUpperCase()}`;
+
+            if (!mapa.has(key)) {
+                mapa.set(key, {
+                    ...telaItem,
+                    _displayCount: 1,
+                    _displayIndices: [idx],
+                    _displayColores: telaItem?.color || telaItem?.color_nombre ? [String(telaItem.color || telaItem.color_nombre).trim()] : []
+                });
+                return;
+            }
+
+            const existente = mapa.get(key);
+            existente._displayCount += 1;
+            existente._displayIndices.push(idx);
+
+            const colorActual = String(telaItem?.color || telaItem?.color_nombre || '').trim();
+            if (colorActual && !existente._displayColores.some((c) => c.toUpperCase() === colorActual.toUpperCase())) {
+                existente._displayColores.push(colorActual);
+            }
+
+            if (!existente.id && (telaItem?.id || telaItem?._original_id || telaItem?.prenda_pedido_colores_telas_id)) {
+                existente.id = telaItem?.id || telaItem?._original_id || telaItem?.prenda_pedido_colores_telas_id;
+            }
+
+            if ((!existente.imagenes || existente.imagenes.length === 0) && Array.isArray(telaItem?.imagenes) && telaItem.imagenes.length > 0) {
+                existente.imagenes = telaItem.imagenes;
+            }
+        });
+
+        return Array.from(mapa.values());
+    },
+
     _normalizarImagenes(imagenes) {
         if (!imagenes) return [];
         if (Array.isArray(imagenes)) return imagenes;
@@ -113,6 +154,90 @@ window.PrendaCardService = {
         }
 
         return {};
+    },
+
+    _escapeHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    _normalizarSrcImagen(imagen) {
+        if (!imagen) return null;
+
+        if (imagen instanceof File || imagen instanceof Blob) {
+            return URL.createObjectURL(imagen);
+        }
+
+        if (typeof imagen === 'string') {
+            const src = imagen.trim();
+            if (!src) return null;
+            if (src.startsWith('blob:') || src.startsWith('data:') || src.startsWith('http') || src.startsWith('/')) {
+                return src;
+            }
+            if (src.startsWith('storage/')) {
+                return `/${src}`;
+            }
+            return `/storage/${src}`;
+        }
+
+        if (typeof imagen === 'object') {
+            if (imagen.file instanceof File || imagen.file instanceof Blob) {
+                return URL.createObjectURL(imagen.file);
+            }
+
+            const candidata =
+                imagen.blobUrl ||
+                imagen.previewUrl ||
+                imagen.dataURL ||
+                imagen.ruta ||
+                imagen.ruta_webp ||
+                imagen.ruta_original ||
+                imagen.url ||
+                imagen.src ||
+                null;
+
+            return this._normalizarSrcImagen(candidata);
+        }
+
+        return null;
+    },
+
+    _obtenerImagenDesdeStore(imagenId) {
+        if (!imagenId || !window.ColoresPorTalla || typeof window.ColoresPorTalla.getImage !== 'function') {
+            return null;
+        }
+
+        try {
+            return this._normalizarSrcImagen(window.ColoresPorTalla.getImage(imagenId));
+        } catch (error) {
+            console.warn('[PrendaCardService] No se pudo resolver imagen del store:', imagenId, error);
+            return null;
+        }
+    },
+
+    _obtenerImagenColorAsignacion(color, imagenFallback = null) {
+        if (!color || typeof color !== 'object') {
+            return imagenFallback;
+        }
+
+        return (
+            this._obtenerImagenDesdeStore(color.imagen_id) ||
+            this._normalizarSrcImagen(
+                color.imagen ||
+                color.imagen_ruta ||
+                color.ruta ||
+                color.ruta_webp ||
+                color.ruta_original ||
+                color.url ||
+                color.src ||
+                color.previewUrl
+            ) ||
+            imagenFallback
+        );
     },
 
     generar(prenda, indice) {
@@ -515,6 +640,10 @@ window.PrendaCardService = {
                     let coloresHTML = '';
                     const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
                     if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
+                        const imagenesAsignacion = this._normalizarImagenes(asignacion.imagenes)
+                            .map((img) => this._normalizarSrcImagen(img))
+                            .filter(Boolean);
+                        const totalColores = asignacion.colores.length;
                         const coloresItems = asignacion.colores.map(c => {
                             const nombre = c.nombre || c.color || 'Sin nombre';
                             const cant = c.cantidad || 0;
@@ -525,16 +654,62 @@ window.PrendaCardService = {
                             </div>`;
                         }).join('');
                         coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+
+                        const imagenesAsignacionDet = this._normalizarImagenes(asignacion.imagenes)
+                            .map((img) => this._normalizarSrcImagen(img))
+                            .filter(Boolean);
+                        const totalColoresDet = asignacion.colores.length;
+                        const coloresDetallados = asignacion.colores.map((color) => {
+                            const nombreColor = color.nombre || color.color || 'Sin nombre';
+                            const cantidadColor = parseInt(color.cantidad, 10) || 0;
+                            const referenciaColor = color.referencia || asignacion.referencia || '';
+                            const imagenColor = this._obtenerImagenColorAsignacion(color, imagenesAsignacionDet[0] || null);
+                            const mostrarCantidad = totalColoresDet > 1 || cantidadColor !== cantidad;
+
+                            return `
+                                <div style="display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 0.5rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(125,211,252,0.45); border-radius: 8px;">
+                                    ${imagenColor ? `
+                                        <img src="${imagenColor}" alt="${this._escapeHtml(nombreColor)}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 7px; border: 1px solid rgba(14,165,233,0.25); flex-shrink: 0;" />
+                                    ` : `
+                                        <span style="display: inline-flex; width: 38px; height: 38px; border-radius: 7px; background: #e0f2fe; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background: #0ea5e9; border-radius: 999px;"></span>
+                                        </span>
+                                    `}
+                                    <div style="min-width: 0; display: flex; flex-direction: column; gap: 0.1rem;">
+                                        <span style="font-size: 0.72rem; font-weight: 700; color: #0f172a; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this._escapeHtml(nombreColor)}</span>
+                                        ${referenciaColor ? `<span style="font-size: 0.64rem; color: #64748b; line-height: 1.1;">Ref: ${this._escapeHtml(referenciaColor)}</span>` : ''}
+                                    </div>
+                                    ${mostrarCantidad ? `<span style="margin-left: auto; background: #e0f2fe; color: #0369a1; min-width: 28px; text-align: center; padding: 0.18rem 0.45rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">${cantidadColor}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+
+                        coloresHTML = `
+                            <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; display: grid; gap: 0.4rem;">
+                                ${coloresDetallados}
+                            </div>
+                        `;
                     }
                     
                     return `
-                        <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
-                                ${talla}
-                                <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                        <div style="background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%); padding: 0.7rem 0.8rem; border-radius: 10px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 220px; flex: 1 1 220px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+                                    <span style="display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.8); color: #0284c7; flex-shrink: 0;">
+                                        <i class="fas fa-ruler" style="font-size: 0.8rem;"></i>
+                                    </span>
+                                    <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${this._escapeHtml(talla)}</span>
+                                </div>
+                                <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
-                            ${coloresHTML}
+                            <div style="margin-top: 0.35rem; font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                                ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? 'Colores asignados' : 'Sin colores asignados'}
+                            </div>
+                            ${coloresHTML || `
+                                <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; font-size: 0.72rem; color: #64748b;">
+                                    No hay imagenes o colores asociados para esta talla.
+                                </div>
+                            `}
                         </div>
                     `;
                 }).join('');
@@ -604,21 +779,24 @@ window.PrendaCardService = {
         return null;
     },
 
-    _obtenerFotoTelaConFallback(prenda, telaItem, telaIndex) {
+    _obtenerFotoTelaDesdeRelacion(prenda, telaItem) {
         if (!Array.isArray(prenda?.colores_telas) || prenda.colores_telas.length === 0 || !window.ImageConverterService) {
             return null;
         }
 
-        const nombreTela = String(telaItem?.tela || telaItem?.nombre_tela || '').trim().toUpperCase();
-        const colorTela = String(telaItem?.color || '').trim().toUpperCase();
-        const idTela = telaItem?.id ?? telaItem?._original_id ?? null;
+        const relacionId = telaItem?.prenda_pedido_colores_telas_id ?? telaItem?.id ?? telaItem?._original_id ?? null;
+        const colorId = Number(telaItem?.color_id || 0);
+        const telaId = Number(telaItem?.tela_id || 0);
 
         const match = prenda.colores_telas.find((ct) => {
             if (!ct) return false;
-            if (idTela && (ct.id === idTela || ct.prenda_pedido_colores_telas_id === idTela)) return true;
-            const nombreCt = String(ct.tela_nombre || ct.tela || '').trim().toUpperCase();
-            const colorCt = String(ct.color_nombre || ct.color || '').trim().toUpperCase();
-            return nombreTela && nombreTela === nombreCt && (!colorTela || !colorCt || colorTela === colorCt);
+            if (relacionId && (ct.id === relacionId || ct.prenda_pedido_colores_telas_id === relacionId)) {
+                return true;
+            }
+
+            const ctColorId = Number(ct.color_id || 0);
+            const ctTelaId = Number(ct.tela_id || 0);
+            return colorId > 0 && telaId > 0 && ctColorId === colorId && ctTelaId === telaId;
         });
 
         if (!match) return null;
@@ -641,6 +819,7 @@ window.PrendaCardService = {
         } else if (prenda.telas) {
             telas = this._normalizarTelas(prenda.telas);
         }
+        const telasParaVista = this._deduplicarTelasParaVista(telas);
 
         // ── Obtener tallas (misma lógica de _construirTallasYCantidades) ──
         let generosConTallas = prenda.generosConTallas;
@@ -700,22 +879,26 @@ window.PrendaCardService = {
             }
         });
 
-        if (totalTallas === 0 && telas.length === 0) return '';
+        if (totalTallas === 0 && telasParaVista.length === 0) return '';
 
         const asignacionesColores = this._resolverAsignacionesColoresPorTalla(prenda);
 
         // ── Construir HTML de telas (mini-badges en vez de tabla) ──
         let telasInfoHTML = '';
-        if (telas.length > 0) {
-            const telasBadges = telas.map((t, idx) => {
+        if (telasParaVista.length > 0) {
+            const telasBadges = telasParaVista.map((t, idx) => {
                 const nombre = t.tela || t.nombre_tela || 'N/A';
-                const col = t.color || '';
-                const ref = t.referencia || t.ref || '';
-                const telaFoto = this._obtenerFotoTelaConFallback(prenda, t, idx);
+                const telaFoto = this._obtenerFotoTelaDesdeRelacion(prenda, t);
 
-                const obs = t.observaciones || '';
-                let detalles = '';
-                if (col && col !== 'N/A' && col !== '') detalles += `<span style="color: #64748b;">Color: <b>${col}</b></span>`;
+                const referencias = [t.referencia].filter(Boolean);
+                const colores = Array.isArray(t._displayColores) ? t._displayColores.filter(Boolean) : [];
+                const partesDetalle = [];
+                if (colores.length > 0) {
+                    partesDetalle.push(`<span style="color: #64748b;">Colores: <b>${this._escapeHtml(colores.join(', '))}</b></span>`);
+                }
+                let detalles = partesDetalle.join(' · ');
+                const ref = referencias.length > 0 ? this._escapeHtml(referencias.join(', ')) : '';
+                const obs = t._displayCount > 1 ? `Registros: ${t._displayCount}` : '';
                 if (ref && ref !== 'N/A' && ref !== '') detalles += `${detalles ? ' · ' : ''}<span style="color: #64748b;">Ref: <b>${ref}</b></span>`;
                 if (obs) detalles += `${detalles ? ' · ' : ''}<span style="color: #64748b;">Obs: <b>${obs}</b></span>`;
 
@@ -730,7 +913,7 @@ window.PrendaCardService = {
                         `}
                         <div>
                             <div style="font-weight: 700; color: #0369a1; font-size: 0.9rem;">${nombre}</div>
-                            ${detalles ? `<div style="font-size: 0.75rem; margin-top: 0.15rem;">${detalles}</div>` : ''}
+                            ${detalles ? `<div style="font-size: 0.73rem; margin-top: 0.15rem; color: #64748b;">${detalles}</div>` : ''}
                         </div>
                     </div>
                 `;
@@ -739,7 +922,7 @@ window.PrendaCardService = {
             telasInfoHTML = `
                 <div style="margin-bottom: 1rem;">
                     <div style="font-weight: 600; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
-                        <i class="fas fa-scroll" style="color: #0ea5e9; font-size: 0.75rem;"></i> Tela${telas.length > 1 ? 's' : ''}
+                        <i class="fas fa-scroll" style="color: #0ea5e9; font-size: 0.75rem;"></i> Tela${telasParaVista.length > 1 ? 's' : ''}
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                         ${telasBadges}
@@ -799,16 +982,62 @@ window.PrendaCardService = {
                             </div>`;
                         }).join('');
                         coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+
+                        const imagenesAsignacionDet = this._normalizarImagenes(asignacion.imagenes)
+                            .map((img) => this._normalizarSrcImagen(img))
+                            .filter(Boolean);
+                        const totalColoresDet = asignacion.colores.length;
+                        const coloresDetallados = asignacion.colores.map((color) => {
+                            const nombreColor = color.nombre || color.color || 'Sin nombre';
+                            const cantidadColor = parseInt(color.cantidad, 10) || 0;
+                            const referenciaColor = color.referencia || asignacion.referencia || '';
+                            const imagenColor = this._obtenerImagenColorAsignacion(color, imagenesAsignacionDet[0] || null);
+                            const mostrarCantidad = totalColoresDet > 1 || cantidadColor !== cantidad;
+
+                            return `
+                                <div style="display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 0.5rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(125,211,252,0.45); border-radius: 8px;">
+                                    ${imagenColor ? `
+                                        <img src="${imagenColor}" alt="${this._escapeHtml(nombreColor)}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 7px; border: 1px solid rgba(14,165,233,0.25); flex-shrink: 0;" />
+                                    ` : `
+                                        <span style="display: inline-flex; width: 38px; height: 38px; border-radius: 7px; background: #e0f2fe; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background: #0ea5e9; border-radius: 999px;"></span>
+                                        </span>
+                                    `}
+                                    <div style="min-width: 0; display: flex; flex-direction: column; gap: 0.1rem;">
+                                        <span style="font-size: 0.72rem; font-weight: 700; color: #0f172a; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this._escapeHtml(nombreColor)}</span>
+                                        ${referenciaColor ? `<span style="font-size: 0.64rem; color: #64748b; line-height: 1.1;">Ref: ${this._escapeHtml(referenciaColor)}</span>` : ''}
+                                    </div>
+                                    ${mostrarCantidad ? `<span style="margin-left: auto; background: #e0f2fe; color: #0369a1; min-width: 28px; text-align: center; padding: 0.18rem 0.45rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">${cantidadColor}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+
+                        coloresHTML = `
+                            <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; display: grid; gap: 0.4rem;">
+                                ${coloresDetallados}
+                            </div>
+                        `;
                     }
 
                     return `
-                        <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
-                                ${talla}
-                                <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                        <div style="background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%); padding: 0.7rem 0.8rem; border-radius: 10px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 220px; flex: 1 1 220px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+                                    <span style="display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.8); color: #0284c7; flex-shrink: 0;">
+                                        <i class="fas fa-ruler" style="font-size: 0.8rem;"></i>
+                                    </span>
+                                    <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${this._escapeHtml(talla)}</span>
+                                </div>
+                                <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
-                            ${coloresHTML}
+                            <div style="margin-top: 0.35rem; font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                                ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? 'Colores asignados' : 'Sin colores asignados'}
+                            </div>
+                            ${coloresHTML || `
+                                <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; font-size: 0.72rem; color: #64748b;">
+                                    No hay imagenes o colores asociados para esta talla.
+                                </div>
+                            `}
                         </div>
                     `;
                 }).join('');
@@ -1269,7 +1498,7 @@ window.PrendaCardService = {
                 return; // skip normal rendering for this proceso
             }
             
-            // ─── Modo GENÉRICO (fallback para formatos antiguos) ───
+            // ─── Modo GENÉRICO (compatibilidad para formatos antiguos) ───
             let ubicacionesHTML = '';
             if (datos.ubicaciones && datos.ubicaciones.length > 0) {
                 ubicacionesHTML = datos.ubicaciones
@@ -1565,3 +1794,4 @@ window.PrendaCardService = {
         `;
     }
 };
+

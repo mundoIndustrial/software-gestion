@@ -144,8 +144,8 @@ class PrendaFormCollector {
                             urlDesdeDB: true
                         };
                     }
-                    // Fallback: Si solo tiene blob URL y datos de BD, preservar ID para merge
-                    console.log(`[prenda-form-classifier]   ⚠️ DECISIÓN: Preservando con blob URL fallback`);
+                    // Respaldo controlado: si solo tiene blob URL y datos de BD, preservar ID para merge
+                    console.log(`[prenda-form-classifier]   ⚠️ DECISIÓN: Preservando con blob URL de respaldo`);
                     return {
                         id: img.id,
                         prenda_foto_id: img.prenda_foto_id,
@@ -158,7 +158,7 @@ class PrendaFormCollector {
                     };
                 }
                 
-                // 4️⃣ FALLBACK DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
+                // 4️⃣ RESGUARDO DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
                 // preservarlo de todas formas porque algo debe tener
                 if (img && typeof img === 'object') {
                     console.log(`[prenda-form-collector]   ⚠️ Objeto sin previewUrl - preservando como está`);
@@ -397,225 +397,60 @@ class PrendaFormCollector {
             console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === window.procesosSeleccionados);
 
             // ============================================
-            // 4. PROCESAR TELAS AGREGADAS (FLUJO CREACIÓN)
+            // 4. PROCESAR TELAS AGREGADAS (FUENTE UNICA)
             // ============================================
-            console.log('[prenda-form-collector]  INICIANDO PROCESAMIENTO DE TELAS:', {
+            // Nota: las imagenes de tela NO viven en telasAgregadas; la fuente unica es
+            // asignacionesColoresPorTalla[colores[].imagen / imagen_id / imagen_ruta].
+            const mapearTelaCanonica = (tela = {}) => ({
+                id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
+                _original_id: tela._original_id || tela.id || null,
+                prenda_pedido_colores_telas_id: tela.prenda_pedido_colores_telas_id || tela.id || tela._original_id || null,
+                tela: tela.nombre_tela || tela.tela || '',
+                color: tela.color || tela.color_nombre || '',
+                referencia: tela.referencia || '',
+                observaciones: tela.observaciones || '',
+                tela_id: tela.tela_id || 0,
+                color_id: tela.color_id || 0,
+                nombre_tela: tela.nombre_tela || tela.tela || '',
+                color_nombre: tela.color_nombre || tela.color || '',
+                imagenes: []
+            });
+
+            console.log('[prenda-form-collector] INICIANDO PROCESAMIENTO DE TELAS (fuente unica):', {
                 window_telasCreacion_exists: !!window.telasCreacion,
                 window_telasCreacion_isArray: Array.isArray(window.telasCreacion),
                 window_telasCreacion_length: window.telasCreacion?.length || 0
             });
 
-            if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                console.log('[prenda-form-collector]  ANTES DE MAPEAR window.telasCreacion:', {
-                    length: window.telasCreacion.length,
-                    primer_elemento: window.telasCreacion[0]
-                });
-
-                prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
-                    // Copiar imágenes de tela: CRÍTICO - NUNCA usar blob URLs (se revoca en limpieza)
-                    // Solo preservar File objects NUEVOS o rutas de almacenamiento PERMANENTES de BD
-                    let imagenesDelaTela = tela.imagenes || [];
-                    
-                    // 🆕 CRÍTICO: Si tela.imagenes está vacío pero existe imagenesTelaStorage con imágenes
-                    // usar las del storage como fallback (esto ocurre cuando se guardan cambios)
-                    console.log(`[prenda-form-collector]   ANTES de fallback - Tela ${telaIdx}:`, {
-                        imagenesDelaTela_length: imagenesDelaTela?.length || 0,
-                        imagenesDelaTela_content: imagenesDelaTela,
-                        imagenesTelaStorage_exists: !!window.imagenesTelaStorage,
-                        imagenesTelaStorage_count: window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0
-                    });
-                    
-                    if ((!imagenesDelaTela || imagenesDelaTela.length === 0 || 
-                         (imagenesDelaTela.length > 0 && imagenesDelaTela[0] && Object.keys(imagenesDelaTela[0]).length === 0)) &&
-                        window.imagenesTelaStorage && typeof window.imagenesTelaStorage.obtenerImagenes === 'function') {
-                        
-                        const imagenesDelStorage = window.imagenesTelaStorage.obtenerImagenes() || [];
-                        if (imagenesDelStorage.length > 0) {
-                            console.log(`[prenda-form-collector]  🆘 FALLBACK: Tela ${telaIdx} sin imágenes válidas, usando imagenesTelaStorage (${imagenesDelStorage.length} imágenes)`);
-                            console.log(`[prenda-form-collector]  🆘 Imágenes del storage:`, imagenesDelStorage);
-                            imagenesDelaTela = imagenesDelStorage;
-                        } else {
-                            console.log(`[prenda-form-collector]  ⚠️ imagenesTelaStorage VACÍO! No hay imágenes en storage`);
-                        }
-                    }
-                    
-                    const imagenesCopia = (imagenesDelaTela).map((img, imgIdx) => {
-                        //  DEBUG PROFUNDO: Analizar exactamente qué es este objeto
-                        let imagenDiagnostico = {
-                            tipo: typeof img,
-                            esFile: img instanceof File,
-                            esObjeto: img && typeof img === 'object',
-                            esNull: img === null,
-                            esUndefined: img === undefined,
-                            campos: img && typeof img === 'object' ? Object.keys(img) : 'N/A',
-                            propiedadesEnumerables: img && typeof img === 'object' ? Object.getOwnPropertyNames(img).slice(0, 10) : 'N/A',
-                            constructor: img?.constructor?.name || 'N/A',
-                            toStringValor: Object.prototype.toString.call(img),
-                            // Intentar acceder a propiedades directamente
-                            _previewUrl: img?.previewUrl,
-                            _ruta: img?.ruta,
-                            _ruta_original: img?.ruta_original,
-                            _ruta_webp: img?.ruta_webp,
-                            _url: img?.url,
-                            _id: img?.id,
-                            _file: img?.file instanceof File ? 'File object' : typeof img?.file,
-                            stringify_resultado: JSON.stringify(img)
-                        };
-                        console.log(`[prenda-form-collector] 🖼️ PROCESANDO imagen ${imgIdx} de tela ${telaIdx}:`, imagenDiagnostico);
-                        
-                        // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva a subir)
-                        if (img instanceof File) {
-                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: FILE OBJECT`);
-                            return img;
-                        }
-                        
-                        // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
-                        if (img && img.file instanceof File) {
-                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: FILE object dentro de propiedad`);
-                            return img.file;
-                        }
-                        
-                        // 3️⃣ CRÍTICO: Si es un objeto con información de BD, extraer RUTA DE ALMACENAMIENTO PERMANENTE
-                        // NUNCA usar previewUrl/blob URLs aquí porque se revocan durante limpiarDespuésDeGuardar()
-                        if (img && typeof img === 'object') {
-                            // Buscar ruta de almacenamiento permanente en este orden de prioridad
-                            if (img.ruta && img.ruta.startsWith('/')) {
-                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta = ${img.ruta}`);
-                                return img.ruta;  // 🎯 Prioridad 1: ruta absoluta de storage
-                            }
-                            if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta_original = ${img.ruta_original}`);
-                                return img.ruta_original;  // 🎯 Prioridad 2: ruta original
-                            }
-                            if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta_webp = ${img.ruta_webp}`);
-                                return img.ruta_webp;  // 🎯 Prioridad 3: ruta webp
-                            }
-                            // Si tiene URL de acceso, usarla si es path absoluto
-                            if (img.url && img.url.startsWith('/')) {
-                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.url = ${img.url}`);
-                                return img.url;
-                            }
-                            // Si tienen información de ID de BD, conservarla en un objeto (para merge posterior)
-                            if (img.id || img.prenda_foto_id) {
-                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: PRESERVANDO como objeto de BD (ID encontrado)`);
-                                return {
-                                    id: img.id || img.prenda_foto_id,
-                                    // Conservar alguna ruta aunque sea blob, porque es respaldo
-                                    urlFallback: img.previewUrl,
-                                    enBD: true
-                                };
-                            }
-                            
-                            // 🆕 FALLBACK: Si es un objeto con 0 propiedades enumerables pero era en telasCreacion,
-                            // intentar usar previewUrl como blob URL (último recurso)
-                            if (Object.keys(img).length === 0 && img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: FALLBACK blob URL (objeto vacío pero con previewUrl)`);
-                                // Retornar un objeto con la información que tenemos
-                                return {
-                                    previewUrl: img.previewUrl,
-                                    esBlob: true,
-                                    warning: 'Blob URL - puede revocar después'
-                                };
-                            }
-                        }
-                        
-                        // 4️⃣ Si img es un string (ruta directa), usarlo
-                        if (typeof img === 'string' && img.startsWith('/')) {
-                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: STRING (ruta) = ${img}`);
-                            return img;
-                        }
-                        
-                        //  Ignorar blob URLs y otros valores inválidos
-                        console.log(`[prenda-form-collector]    Imagen ${imgIdx}: DESCARTADA (blob URL o inválida)`);
-                        return null;
-                    }).filter(img => img !== null && img !== undefined);
-                    
-                    return {
-                        id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
-                        _original_id: tela._original_id || tela.id || null,
-                        prenda_pedido_colores_telas_id: tela.prenda_pedido_colores_telas_id || tela.id || tela._original_id || null,
-                        tela: tela.nombre_tela || tela.tela || '',
-                        color: tela.color || tela.color_nombre || '',
-                        referencia: tela.referencia || '',
-                        observaciones: tela.observaciones || '',
-                        tela_id: tela.tela_id || 0,
-                        color_id: tela.color_id || 0,
-                        nombre_tela: tela.nombre_tela || tela.tela || '',
-                        color_nombre: tela.color_nombre || tela.color || '',
-                        imagenes: imagenesCopia
-                    };
-                });
-
-                console.log('[prenda-form-collector] 🧵 DESPUÉS DE MAPEAR prendaData.telasAgregadas:', {
-                    length: prendaData.telasAgregadas?.length || 0,
-                    primer_elemento: prendaData.telasAgregadas?.[0]
-                });
-            } else {
-                console.log('[prenda-form-collector]  NO HAY TELAS EN window.telasCreacion, mantiendo array vacío:', {
-                    telasAgregadas_iniciales: prendaData.telasAgregadas
-                });
-            }
-            // ============================================
-            // 4.1. PROCESAR TELAS AGREGADAS (FLUJO EDICIÓN DESDE BD O COTIZACIÓN)
-            // ============================================
-            // IMPORTANTE: Solo usar window.telasAgregadas si window.telasCreacion NO fue definido
-            // Si window.telasCreacion existe (incluso si está vacío), significa estamos en edición
-            // y debemos respetar el estado actual [incluyendo la intención de eliminar todas las telas]
-            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0 
-                && (!window.telasCreacion || !Array.isArray(window.telasCreacion))) {
-                console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS (BD o Cotización)');
-                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
-                    // Para cotización/BD, las imágenes ya vienen procesadas
-                    const imagenesCopia = (tela.imagenes || []).map(img => {
-                        // Si es una URL de BD, mantenerla como string
-                        if (typeof img === 'string' && img.startsWith('/storage/')) {
-                            return img;
-                        }
-                        // Si es un objeto con ruta, usar la ruta
-                        if (img && img.ruta) {
-                            return img.ruta;
-                        }
-                        // Si es un File object, usarlo
-                        if (img instanceof File) {
-                            return img;
-                        }
-                        return img;
-                    }).filter(img => img !== null);
-                    
-                    return {
-                        id: tela.id,  // Preservar ID de relación para MERGE
-                        tela: tela.nombre_tela || tela.tela || '',
-                        color: tela.color_nombre || tela.color || '',
-                        referencia: tela.referencia || '',
-                        observaciones: tela.observaciones || '',
-                        color_id: tela.color_id,  // Preservar para MERGE
-                        tela_id: tela.tela_id,    // Preservar para MERGE
-                        imagenes: imagenesCopia
-                    };
-                });
-            }
-            // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
-            // obtener telas Y VARIANTES de la prenda anterior
-            // PERO SOLO si window.telasCreacion no existe (no estamos en flujo de edición)
-            else if (!window.telasCreacion && prendaEditIndex !== null && prendaEditIndex !== undefined && prendasArray[prendaEditIndex]) {
+            if (Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
+                prendaData.telasAgregadas = window.telasCreacion.map(mapearTelaCanonica);
+            } else if (
+                Array.isArray(window.telasAgregadas) &&
+                window.telasAgregadas.length > 0 &&
+                (!window.telasCreacion || !Array.isArray(window.telasCreacion))
+            ) {
+                prendaData.telasAgregadas = window.telasAgregadas.map(mapearTelaCanonica);
+            } else if (
+                !window.telasCreacion &&
+                prendaEditIndex !== null &&
+                prendaEditIndex !== undefined &&
+                prendasArray[prendaEditIndex]
+            ) {
                 const prendaAnterior = prendasArray[prendaEditIndex];
-                
-                // Copiar telas anteriores
-                if (prendaAnterior && prendaAnterior.telasAgregadas && prendaAnterior.telasAgregadas.length > 0) {
-                    prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(tela => ({
-                        tela: tela.tela || '',
-                        color: tela.color || '',
-                        referencia: tela.referencia || '',
-                        imagenes: tela.imagenes || []
-                    }));
+                if (Array.isArray(prendaAnterior?.telasAgregadas) && prendaAnterior.telasAgregadas.length > 0) {
+                    prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(mapearTelaCanonica);
                 }
-                
-                // IMPORTANTE: También copiar variantes anteriores si existen
+
+                // IMPORTANTE: Tambien copiar variantes anteriores si existen
                 if (prendaAnterior && prendaAnterior.variantes && Object.keys(prendaAnterior.variantes).length > 0) {
                     prendaData.variantes = prendaAnterior.variantes;
                 }
             }
+
+            console.log('[prenda-form-collector] TELAS CANONICAS mapeadas (sin imagenes):', {
+                length: prendaData.telasAgregadas?.length || 0,
+                primer_elemento: prendaData.telasAgregadas?.[0]
+            });
 
             // ============================================
             // 5. RECOLECTAR VARIACIONES/VARIANTES
@@ -753,10 +588,57 @@ class PrendaFormCollector {
                 }
             }
             
-            const asignacionesColoresCopia = JSON.parse(JSON.stringify(asignacionesColores || {}));
+            const construirAsignacionesConImagenesPersistidas = (asignacionesBase) => {
+                const resultado = {};
+                const getImageWizard = (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function')
+                    ? window.ColoresPorTalla.getImage.bind(window.ColoresPorTalla)
+                    : null;
+
+                Object.entries(asignacionesBase || {}).forEach(([clave, asignacion]) => {
+                    const copiaAsignacion = {
+                        ...(asignacion || {}),
+                        colores: []
+                    };
+
+                    const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+                    copiaAsignacion.colores = colores.map((color) => {
+                        const colorCopia = { ...(color || {}) };
+
+                        if (getImageWizard && colorCopia.imagen_id) {
+                            const imagenWizard = getImageWizard(colorCopia.imagen_id);
+                            if (imagenWizard) {
+                                const file = imagenWizard.file instanceof File ? imagenWizard.file : null;
+                                if (file) {
+                                    colorCopia.imagen = {
+                                        file,
+                                        nombre: imagenWizard.nombre || file.name || '',
+                                        blobUrl: imagenWizard.blobUrl || null
+                                    };
+                                }
+                            }
+                        }
+
+                        return colorCopia;
+                    });
+
+                    resultado[clave] = copiaAsignacion;
+                });
+
+                return resultado;
+            };
+
+            const asignacionesColoresCopia = construirAsignacionesConImagenesPersistidas(asignacionesColores || {});
             prendaData.asignacionesColoresPorTalla = asignacionesColoresCopia;
             prendaData.asignacionesColores = asignacionesColoresCopia;
             console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
+            console.log('[prenda-form-collector] 🧪 Imagenes preservadas en asignaciones:', Object.values(asignacionesColoresCopia).reduce((acc, asig) => {
+                const colores = Array.isArray(asig?.colores) ? asig.colores : [];
+                acc.totalColores += colores.length;
+                acc.conImagenId += colores.filter(c => !!c?.imagen_id).length;
+                acc.conImagenFile += colores.filter(c => !!(c?.imagen?.file instanceof File)).length;
+                acc.conImagenRuta += colores.filter(c => typeof c?.imagen_ruta === 'string' && c.imagen_ruta.trim() !== '').length;
+                return acc;
+            }, { totalColores: 0, conImagenId: 0, conImagenFile: 0, conImagenRuta: 0 }));
 
             // ============================================
             // 7. SEPARACIÓN DE FLUJOS: SIMPLE vs WIZARD
@@ -823,3 +705,4 @@ class PrendaFormCollector {
 
 // Instancia global para usar en toda la aplicación
 window.prendaFormCollector = new PrendaFormCollector();
+

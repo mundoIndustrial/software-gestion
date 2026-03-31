@@ -134,7 +134,7 @@ class LoggerApp {
         }
 
         if (grupo) {
-            const emoji = this.config.grupos[grupo] || '🔹';
+            const emoji = this.config.grupos[grupo] || '';
             parts.push(`${emoji} [${grupo}]`);
         }
 

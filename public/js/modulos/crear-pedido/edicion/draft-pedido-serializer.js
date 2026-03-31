@@ -98,86 +98,295 @@
             ? prenda.asignacionesColoresPorTalla
             : null;
 
+        const obtenerArchivoDesdeImagen = (imagen) => {
+            if (!imagen) return null;
+            if (imagen instanceof File) return imagen;
+            if (imagen?.file instanceof File) return imagen.file;
+            if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
+                return convertirBlobUrlAFileSincrono(imagen);
+            }
+            if (typeof imagen === 'object') {
+                const blobUrl =
+                    (typeof imagen.blobUrl === 'string' && imagen.blobUrl.startsWith('blob:') && imagen.blobUrl) ||
+                    (typeof imagen.previewUrl === 'string' && imagen.previewUrl.startsWith('blob:') && imagen.previewUrl) ||
+                    (typeof imagen.url === 'string' && imagen.url.startsWith('blob:') && imagen.url) ||
+                    (typeof imagen.ruta === 'string' && imagen.ruta.startsWith('blob:') && imagen.ruta) ||
+                    (typeof imagen.ruta_original === 'string' && imagen.ruta_original.startsWith('blob:') && imagen.ruta_original) ||
+                    (typeof imagen.imagen_ruta === 'string' && imagen.imagen_ruta.startsWith('blob:') && imagen.imagen_ruta) ||
+                    null;
+
+                if (blobUrl) {
+                    return convertirBlobUrlAFileSincrono(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+                }
+            }
+            return null;
+        };
+
+        const convertirBlobUrlAFileSincrono = (blobUrl, nombreSugerido = null) => {
+            if (typeof blobUrl !== 'string' || !blobUrl.startsWith('blob:')) return null;
+
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', blobUrl, false);
+                xhr.responseType = 'blob';
+                xhr.send();
+
+                if (xhr.status !== 200 && xhr.status !== 0) return null;
+                const blob = xhr.response;
+                if (!(blob instanceof Blob)) return null;
+
+                const extension = blob.type === 'image/png'
+                    ? 'png'
+                    : blob.type === 'image/webp'
+                        ? 'webp'
+                        : 'jpg';
+                const nombreArchivo = nombreSugerido || `color_wizard_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${extension}`;
+
+                return new File([blob], nombreArchivo, { type: blob.type || 'image/jpeg' });
+            } catch (error) {
+                console.warn('[DraftPedidoSerializer] No se pudo convertir blob URL a File:', error);
+                return null;
+            }
+        };
+
+        const obtenerArchivoDesdeColorWizard = (color) => {
+            if (!color || typeof color !== 'object') return null;
+
+            const archivoDirecto = obtenerArchivoDesdeImagen(color.imagen);
+            if (archivoDirecto) return archivoDirecto;
+
+            const archivoPorRutaBlob = obtenerArchivoDesdeImagen(
+                color.imagen_ruta || color.ruta_original || color.ruta_webp || color.url || color.ruta || null
+            );
+            if (archivoPorRutaBlob) return archivoPorRutaBlob;
+
+            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function' && color.imagen_id) {
+                return obtenerArchivoDesdeImagen(window.ColoresPorTalla.getImage(color.imagen_id));
+            }
+
+            return null;
+        };
+
+        const normalizarRutaPersistible = (ruta) => {
+            if (typeof ruta !== 'string') return null;
+            const limpia = ruta.trim();
+            if (!limpia) return null;
+            if (limpia.startsWith('blob:') || limpia.startsWith('data:')) return null;
+            return limpia;
+        };
+
         const telas = prenda.telasAgregadas || prenda.colores_telas || prenda.telas || [];
         const fotosTelaJSON = [];
+        const imagenesTelaAgregadas = new Set();
+        let indiceFotoTelaArchivo = 0;
 
-        const telasJSON = telas.map((t, idx) => {
-            const colorTelaId = t.id || t._original_id || t.prenda_pedido_colores_telas_id || null;
+        const textoNoVacio = (valor) => {
+            if (typeof valor !== 'string') return '';
+            return valor.trim();
+        };
 
-            if (Array.isArray(t.imagenes)) {
-                t.imagenes.forEach((img) => {
-                    const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
-                    if (file) {
-                        agregarArchivo(`fotos_tela[${idx}]`, file);
+        const construirPlaceholderFotoTela = (colorTelaId, colorId, telaId, colorNombre = '', telaNombre = '') => {
+            const payload = {};
+            if (colorTelaId !== null && colorTelaId !== undefined && colorTelaId !== '') {
+                payload.prenda_pedido_colores_telas_id = colorTelaId;
+            }
+
+            const colorIdNum = Number(colorId || 0);
+            if (Number.isFinite(colorIdNum) && colorIdNum > 0) {
+                payload.color_id = colorIdNum;
+            }
+
+            const telaIdNum = Number(telaId || 0);
+            if (Number.isFinite(telaIdNum) && telaIdNum > 0) {
+                payload.tela_id = telaIdNum;
+            }
+
+            const colorNombreNorm = textoNoVacio(colorNombre);
+            if (colorNombreNorm) {
+                payload.color_nombre = colorNombreNorm;
+            }
+
+            const telaNombreNorm = textoNoVacio(telaNombre);
+            if (telaNombreNorm) {
+                payload.tela_nombre = telaNombreNorm;
+            }
+
+            return payload;
+        };
+
+        const tieneRelacionExplicitaFotoTela = (payload) => {
+            return !!(
+                payload?.prenda_pedido_colores_telas_id ||
+                (payload?.color_id && payload?.tela_id)
+            );
+        };
+
+        const validarRelacionExplicita = (payload, contexto) => {
+            if (tieneRelacionExplicitaFotoTela(payload)) {
+                return;
+            }
+
+            throw new Error(
+                `Falta vínculo explícito color/tela para ${contexto}. Esta pantalla usa una sola fuente de verdad.`
+            );
+        };
+
+        const agregarNuevaFotoTelaDesdeArchivo = (file, contexto = {}) => {
+            if (!(file instanceof File)) return;
+
+            const colorTelaId = contexto.colorTelaId ?? null;
+            const dedupeBase = contexto.imagenId
+                ? String(contexto.imagenId)
+                : `${file.name}::${file.size}::${file.lastModified}`;
+            const dedupeKey = `${colorTelaId ?? contexto.colorId ?? 'sin_relacion'}::${dedupeBase}`;
+            if (imagenesTelaAgregadas.has(dedupeKey)) return;
+            imagenesTelaAgregadas.add(dedupeKey);
+
+            agregarArchivo(`fotos_tela[${indiceFotoTelaArchivo}]`, file);
+            indiceFotoTelaArchivo++;
+
+            const placeholder = construirPlaceholderFotoTela(
+                colorTelaId,
+                contexto.colorId,
+                contexto.telaId,
+                contexto.colorNombre,
+                contexto.telaNombre
+            );
+            validarRelacionExplicita(placeholder, 'una imagen nueva de tela');
+            fotosTelaJSON.push(placeholder);
+        };
+
+        const telasJSON = telas.map((t) => ({
+            tela: t.tela || t.nombre_tela || '',
+            color: t.color || t.color_nombre || '',
+            referencia: t.referencia || '',
+            tela_id: t.tela_id || 0,
+            color_id: t.color_id || 0,
+            id: t.id || t._original_id || t.prenda_pedido_colores_telas_id || undefined
+        }));
+
+        const tieneAsignacionesWizard = !!(
+            asignacionesColores
+            && typeof asignacionesColores === 'object'
+            && !Array.isArray(asignacionesColores)
+            && Object.keys(asignacionesColores).length > 0
+        );
+
+        if (tieneAsignacionesWizard) {
+            Object.entries(asignacionesColores).forEach(([claveAsignacion, asignacion]) => {
+                const coloresAsignados = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+                coloresAsignados.forEach((color, idxColor) => {
+                    const contextoRelacion = {
+                        colorTelaId:
+                            color?.prenda_pedido_colores_telas_id ||
+                            color?.color_tela_id ||
+                            asignacion?.prenda_pedido_colores_telas_id ||
+                            asignacion?.color_tela_id ||
+                            null,
+                        colorId: color?.color_id || asignacion?.color_id || null,
+                        telaId: color?.tela_id || asignacion?.tela_id || null,
+                        colorNombre: color?.nombre || color?.color || '',
+                        telaNombre: asignacion?.tela || ''
+                    };
+
+                    const placeholderRelacion = construirPlaceholderFotoTela(
+                        contextoRelacion.colorTelaId,
+                        contextoRelacion.colorId,
+                        contextoRelacion.telaId,
+                        contextoRelacion.colorNombre,
+                        contextoRelacion.telaNombre
+                    );
+                    validarRelacionExplicita(
+                        placeholderRelacion,
+                        `la asignación ${claveAsignacion} (color ${idxColor + 1})`
+                    );
+
+                    const archivoColor = obtenerArchivoDesdeColorWizard(color);
+                    if (archivoColor) {
+                        agregarNuevaFotoTelaDesdeArchivo(archivoColor, {
+                            ...contextoRelacion,
+                            imagenId: color?.imagen_id || color?.id
+                        });
                         return;
                     }
-                    // Imagen existente guardada en DB — incluir en fotos_telas JSON
-                    const ruta = (typeof img === 'string')
-                        ? img
-                        : (img?.ruta_original || img?.ruta_webp || img?.url || img?.ruta || null);
-                    if (colorTelaId && (ruta || img?.id)) {
+
+                    const rutaColor = normalizarRutaPersistible(
+                        color?.imagen_ruta ||
+                        color?.ruta_webp ||
+                        color?.ruta_original ||
+                        color?.url ||
+                        color?.ruta ||
+                        color?.imagen ||
+                        null
+                    );
+
+                    if (rutaColor || color?.id) {
                         fotosTelaJSON.push({
-                            prenda_pedido_colores_telas_id: colorTelaId,
-                            id: img?.id || undefined,
-                            ruta_original: ruta || '',
-                            ruta_webp: img?.ruta_webp || ''
+                            ...placeholderRelacion,
+                            id: color?.id || undefined,
+                            ruta_original: rutaColor || '',
+                            ruta_webp: color?.ruta_webp || ''
                         });
                     }
                 });
-            }
-
-            // Fuente de verdad oficial en edición: colores_telas[].fotos_tela[]
-            if (colorTelaId && Array.isArray(prenda.colores_telas)) {
-                const colorTelaOficial = prenda.colores_telas.find((ct) =>
-                    ct && (ct.id === colorTelaId || ct.prenda_pedido_colores_telas_id === colorTelaId)
+            });
+        } else if (Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
+            // Fuente unica fuera de wizard: relaciones oficiales color/tela desde el payload de la prenda.
+            prenda.colores_telas.forEach((colorTela, idxRelacion) => {
+                const placeholderBase = construirPlaceholderFotoTela(
+                    colorTela?.prenda_pedido_colores_telas_id || colorTela?.id || null,
+                    colorTela?.color_id || null,
+                    colorTela?.tela_id || null,
+                    colorTela?.color_nombre || colorTela?.color || '',
+                    colorTela?.tela_nombre || colorTela?.tela || ''
                 );
-                if (colorTelaOficial && Array.isArray(colorTelaOficial.fotos_tela)) {
-                    colorTelaOficial.fotos_tela.forEach((foto) => {
-                        const rutaOriginal = foto?.ruta_original || foto?.url || '';
-                        const rutaWebp = foto?.ruta_webp || '';
-                        if (rutaOriginal || rutaWebp || foto?.id) {
-                            fotosTelaJSON.push({
-                                prenda_pedido_colores_telas_id: colorTelaId,
-                                id: foto?.id || undefined,
-                                ruta_original: rutaOriginal,
-                                ruta_webp: rutaWebp
-                            });
-                        }
-                    });
-                }
-            }
 
-            // Imágenes de tela pre-subidas al servidor desde el modal (ya tienen rutas, no son Files)
-            const telasFotosGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[idx];
-            if (colorTelaId && Array.isArray(telasFotosGestor) && telasFotosGestor.length > 0) {
-                telasFotosGestor.forEach(foto => {
-                    fotosTelaJSON.push({
-                        prenda_pedido_colores_telas_id: colorTelaId,
-                        ruta_original: foto.ruta_original || foto.url || '',
-                        ruta_webp: foto.ruta_webp || ''
-                    });
+                validarRelacionExplicita(placeholderBase, `la relacion color/tela ${idxRelacion + 1}`);
+
+                const fotosOficiales = Array.isArray(colorTela?.fotos_tela) ? colorTela.fotos_tela : [];
+                fotosOficiales.forEach((foto) => {
+                    const rutaOriginal = normalizarRutaPersistible(foto?.ruta_original || foto?.url || '');
+                    const rutaWebp = normalizarRutaPersistible(foto?.ruta_webp || '');
+                    if (rutaOriginal || rutaWebp || foto?.id) {
+                        fotosTelaJSON.push({
+                            ...placeholderBase,
+                            id: foto?.id || undefined,
+                            ruta_original: rutaOriginal || '',
+                            ruta_webp: rutaWebp || ''
+                        });
+                    }
                 });
-            }
-
-            return {
-                tela: t.tela || t.nombre_tela || '',
-                color: t.color || t.color_nombre || '',
-                referencia: t.referencia || '',
-                tela_id: t.tela_id || 0,
-                color_id: t.color_id || 0,
-                id: t.id || t._original_id || t.prenda_pedido_colores_telas_id || undefined
-            };
-        });
+            });
+        }
 
         const fotosTelaUnicas = [];
         const fotosTelaKeys = new Set();
         fotosTelaJSON.forEach((f) => {
-            const key = `${f?.prenda_pedido_colores_telas_id || ''}|${f?.id || ''}|${f?.ruta_original || ''}|${f?.ruta_webp || ''}`;
+            if (!f || typeof f !== 'object') return;
+
+            const esPlaceholderSinRuta = !f?.id && !f?.ruta_original && !f?.ruta_webp;
+            if (esPlaceholderSinRuta) {
+                fotosTelaUnicas.push(f);
+                return;
+            }
+
+            const key = `${f?.prenda_pedido_colores_telas_id || ''}|${f?.color_id || ''}|${f?.tela_id || ''}|${f?.id || ''}|${f?.ruta_original || ''}|${f?.ruta_webp || ''}`;
             if (!fotosTelaKeys.has(key)) {
                 fotosTelaKeys.add(key);
                 fotosTelaUnicas.push(f);
             }
         });
+
+        const fotosTelaConVinculo = fotosTelaUnicas.filter((f) => tieneRelacionExplicitaFotoTela(f)).length;
+
+        if (indiceFotoTelaArchivo > 0 && fotosTelaConVinculo < indiceFotoTelaArchivo) {
+            throw new Error('Hay imágenes de tela sin vínculo color/tela. Corrige las asignaciones antes de guardar.');
+        }
+
+        const placeholdersNuevos = fotosTelaUnicas.filter((f) => !f?.id && !f?.ruta_original && !f?.ruta_webp).length;
+        if (placeholdersNuevos !== indiceFotoTelaArchivo) {
+            throw new Error('Desfase entre archivos de tela y metadatos fotos_telas. Reabre la asignación y guarda de nuevo.');
+        }
 
         const imagenesExistentes = [];
         const archivosYaAgregados = new Set();
@@ -320,6 +529,26 @@
         const procesosAEliminar = Array.isArray(prenda.procesos_a_eliminar)
             ? prenda.procesos_a_eliminar
             : (estaPrendaEnEdicion && window.procesosParaEliminarIds ? Array.from(window.procesosParaEliminarIds) : []);
+
+        console.debug('[DraftPedidoSerializer] Prenda existente serializada', {
+            prendaIndex,
+            prendaId,
+            asignacionesCount: asignacionesColores ? Object.keys(asignacionesColores).length : 0,
+            coloresAsignadosTotales: asignacionesColores
+                ? Object.values(asignacionesColores).reduce((acc, asig) => acc + (Array.isArray(asig?.colores) ? asig.colores.length : 0), 0)
+                : 0,
+            coloresConImagenId: asignacionesColores
+                ? Object.values(asignacionesColores).reduce((acc, asig) => acc + (Array.isArray(asig?.colores) ? asig.colores.filter((c) => !!c?.imagen_id).length : 0), 0)
+                : 0,
+            coloresConImagenFile: asignacionesColores
+                ? Object.values(asignacionesColores).reduce((acc, asig) => acc + (Array.isArray(asig?.colores) ? asig.colores.filter((c) => !!(c?.imagen?.file instanceof File)).length : 0), 0)
+                : 0,
+            telasCount: Array.isArray(telasJSON) ? telasJSON.length : 0,
+            fotosTelasCount: fotosTelaUnicas.length,
+            fotosTelasConRelacion: fotosTelaUnicas.filter((f) =>
+                !!(f?.prenda_pedido_colores_telas_id || (f?.color_id && f?.tela_id))
+            ).length
+        });
 
         return {
             prenda_id: prendaId,

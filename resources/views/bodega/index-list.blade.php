@@ -9,21 +9,21 @@
         <!-- Buscador -->
         <div class="px-6 py-4 border-b border-slate-200">
             <form method="GET" class="flex gap-2">
-                <input 
-                    type="text" 
-                    name="search" 
+                <input
+                    type="text"
+                    name="search"
                     placeholder="Buscar por número de pedido o cliente..."
                     value="{{ $search ?? '' }}"
                     class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                 >
-                <button 
+                <button
                     type="submit"
                     class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
                 >
                     Buscar
                 </button>
                 @if($search ?? false)
-                    <a 
+                    <a
                         href="{{ route('gestion-bodega.pedidos') }}"
                         class="px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
                     >
@@ -65,8 +65,8 @@
                             @foreach($pedidosPorPagina as $pedidoData)
                                 <tr class="hover:opacity-75 transition-opacity @if($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
                                     <td class="px-6 py-4 text-center">
-                                        <input type="checkbox" 
-                                               class="w-5 h-5 rounded cursor-pointer" 
+                                        <input type="checkbox"
+                                               class="w-5 h-5 rounded cursor-pointer"
                                                @if(!empty($pedidoData['pedido_revisado'])) checked @endif
                                                onchange="guardarCheckPedido({{ $pedidoData['id'] }}, this.checked)"
                                                title="Marcar pedido como revisado">
@@ -149,7 +149,7 @@
 
 <!-- Botón flotante para limpiar filtros -->
 <div id="btnLimpiarFiltros" class="fixed bottom-6 right-6 z-50 hidden">
-    <button 
+    <button
         type="button"
         onclick="limpiarTodosLosFiltros()"
         class="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:scale-105"
@@ -166,7 +166,7 @@
         <div class="p-6 border-b border-slate-200 flex-shrink-0">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-slate-900">Filtrar Pedidos</h3>
-                <button 
+                <button
                     type="button"
                     onclick="cerrarModalFiltros()"
                     class="p-1 hover:bg-slate-100 rounded transition-colors"
@@ -177,14 +177,14 @@
             
             <!-- Buscador dentro del modal -->
             <div class="relative">
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     id="buscadorModal"
                     placeholder="Buscar para filtrar resultados..."
                     class="w-full px-4 py-2 pl-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                 >
                 <span class="material-symbols-rounded absolute left-3 top-2.5 text-slate-400">search</span>
-                <button 
+                <button
                     type="button"
                     onclick="buscarEnModal()"
                     class="absolute right-2 top-2 p-1 hover:bg-slate-100 rounded transition-colors"
@@ -202,7 +202,7 @@
                     <span class="text-sm text-slate-600">
                         <span id="contadorSeleccionados">0</span> seleccionados
                     </span>
-                    <button 
+                    <button
                         id="btnSeleccionarTodo"
                         type="button"
                         onclick="toggleSeleccionarTodo()"
@@ -226,14 +226,14 @@
         <!-- Botones de acción -->
         <div class="p-6 border-t border-slate-200 bg-slate-50 flex-shrink-0">
             <div class="flex gap-3">
-                <button 
+                <button
                     type="button"
                     onclick="aplicarFiltroSeleccionado()"
                     class="flex-1 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
                 >
                     Aplicar Filtro
                 </button>
-                <button 
+                <button
                     type="button"
                     onclick="cerrarModalFiltros()"
                     class="flex-1 px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
@@ -357,7 +357,7 @@ function renderizarContenidoModal(datos) {
         const cantidad = item.cantidad || 0;
         
         html += `
-            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors" 
+            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                  onclick="seleccionarValor('${valor}')">
                 <div class="flex items-center gap-3">
                     <input type="checkbox" id="valor_${valor.replace(/[^a-zA-Z0-9]/g, '_')}" class="rounded border-slate-300">
@@ -397,7 +397,7 @@ function renderizarPaginacionModal(paginacion) {
     // Botón anterior
     if (paginacion.current_page > 1) {
         html += `
-            <button onclick="cambiarPagina(${paginacion.current_page - 1})" 
+            <button onclick="cambiarPagina(${paginacion.current_page - 1})"
                     class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
                 ← Anterior
             </button>
@@ -414,7 +414,7 @@ function renderizarPaginacionModal(paginacion) {
     // Botón siguiente
     if (paginacion.current_page < paginacion.total_pages) {
         html += `
-            <button onclick="cambiarPagina(${paginacion.current_page + 1})" 
+            <button onclick="cambiarPagina(${paginacion.current_page + 1})"
                     class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
                 Siguiente →
             </button>
@@ -591,7 +591,7 @@ function verificarFiltrosActivos() {
     // Verificar si hay algún parámetro de filtro activo
     const filtrosActivos = [
         'filtro_numero_pedido',
-        'filtro_cliente', 
+        'filtro_cliente',
         'filtro_asesor',
         'filtro_estado',
         'filtro_fecha_desde',
@@ -788,8 +788,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Verificar si changedFields es un array o un objeto
                 const changedFields = e.changedFields || [];
-                const hasEstadoChange = Array.isArray(changedFields) 
-                    ? changedFields.includes('estado') 
+                const hasEstadoChange = Array.isArray(changedFields)
+                    ? changedFields.includes('estado')
                     : (changedFields.estado !== undefined);
                 
                 // Si el pedido fue aprobado, recargar la página para mostrarlo

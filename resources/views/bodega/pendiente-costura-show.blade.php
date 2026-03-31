@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="text-xl sm:text-2xl font-semibold text-black">Pendientes de Costura</h1>
                     <p class="text-xs sm:text-sm text-black mt-1">
-                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> | 
+                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> |
                         Cliente: <span class="font-semibold text-black">{{ $pedido['cliente'] ?? 'No especificado' }}</span>
                         @if($pedido['asesor'])
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('gestion-bodega.pendientes-costura') }}" 
+                    <a href="{{ route('gestion-bodega.pendientes-costura') }}"
                        class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
                         ← Volver a Pendientes
                     </a>
@@ -525,7 +525,7 @@
             
             @if(!($esReadOnly ?? false))
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
+                <label for="notasNuevaContent" class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
                     id="notasNuevaContent"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"

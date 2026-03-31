@@ -216,8 +216,11 @@ window.PrendaCardHandlers = {
                                 console.log('[PrendaCardHandlers]  No se encontró TBODY en la tabla');
                             }
                         } else if (section === 'tallas-y-cantidades') {
-                            const tallas = content.querySelectorAll('.talla-item, .talla-row');
-                            console.log('[PrendaCardHandlers] 📏 Tallas encontradas:', tallas.length);
+                            // El markup actual usa tarjetas inline (sin .talla-item/.talla-row).
+                            const tallas = content.querySelectorAll('i.fa-ruler');
+                            const contadorHeader = header.querySelector('.tallas-cantidades-count')?.textContent?.trim() || 'N/A';
+                            console.log('[PrendaCardHandlers] Tallas encontradas (iconos fa-ruler):', tallas.length);
+                            console.log('[PrendaCardHandlers] Tallas segun contador header:', contadorHeader);
                         } else if (section === 'procesos') {
                             const procesos = content.querySelectorAll('.proceso-item');
                             console.log('[PrendaCardHandlers]  Procesos encontrados:', procesos.length);

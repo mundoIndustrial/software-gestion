@@ -50,7 +50,7 @@ window.ColoresPorTalla = (function() {
      * Configurar eventos globales
      */
     function configurarEventosGlobales() {
-        console.log('[ColoresPorTalla] 🔹 Configurando eventos globales...');
+        console.log('[ColoresPorTalla]  Configurando eventos globales...');
         
         // Botones principales
         const btnAsignarColores = document.getElementById('btn-asignar-colores-tallas');

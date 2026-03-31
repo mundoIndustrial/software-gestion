@@ -1,6 +1,129 @@
 (function() {
     'use strict';
 
+    function obtenerArchivoDesdeImagen(imagen) {
+        if (!imagen) return null;
+        if (imagen instanceof File) return imagen;
+        if (imagen.file instanceof File) return imagen.file;
+        if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
+            return convertirBlobUrlAFileSincrono(imagen);
+        }
+        if (typeof imagen === 'object') {
+            const blobUrl =
+                (typeof imagen.blobUrl === 'string' && imagen.blobUrl.startsWith('blob:') && imagen.blobUrl) ||
+                (typeof imagen.previewUrl === 'string' && imagen.previewUrl.startsWith('blob:') && imagen.previewUrl) ||
+                (typeof imagen.url === 'string' && imagen.url.startsWith('blob:') && imagen.url) ||
+                (typeof imagen.ruta === 'string' && imagen.ruta.startsWith('blob:') && imagen.ruta) ||
+                (typeof imagen.ruta_original === 'string' && imagen.ruta_original.startsWith('blob:') && imagen.ruta_original) ||
+                (typeof imagen.imagen_ruta === 'string' && imagen.imagen_ruta.startsWith('blob:') && imagen.imagen_ruta) ||
+                null;
+            if (blobUrl) {
+                return convertirBlobUrlAFileSincrono(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+            }
+        }
+        return null;
+    }
+
+    function convertirBlobUrlAFileSincrono(blobUrl, nombreSugerido = null) {
+        if (typeof blobUrl !== 'string' || !blobUrl.startsWith('blob:')) return null;
+
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', blobUrl, false);
+            xhr.responseType = 'blob';
+            xhr.send();
+
+            if (xhr.status !== 200 && xhr.status !== 0) return null;
+            const blob = xhr.response;
+            if (!(blob instanceof Blob)) return null;
+
+            const extension = blob.type === 'image/png'
+                ? 'png'
+                : blob.type === 'image/webp'
+                    ? 'webp'
+                    : 'jpg';
+            const nombreArchivo = nombreSugerido || `color_wizard_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${extension}`;
+
+            return new File([blob], nombreArchivo, { type: blob.type || 'image/jpeg' });
+        } catch (error) {
+            console.warn('[DraftPedidoBuilder] No se pudo convertir blob URL a File:', error);
+            return null;
+        }
+    }
+
+    function obtenerArchivoDesdeColorWizard(color) {
+        if (!color || typeof color !== 'object') {
+            return null;
+        }
+
+        const archivoDirecto = obtenerArchivoDesdeImagen(color.imagen);
+        if (archivoDirecto) {
+            return archivoDirecto;
+        }
+
+        const archivoPorRutaBlob = obtenerArchivoDesdeImagen(
+            color.imagen_ruta || color.ruta_original || color.ruta_webp || color.url || color.ruta || null
+        );
+        if (archivoPorRutaBlob) {
+            return archivoPorRutaBlob;
+        }
+
+        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function' && color.imagen_id) {
+            const imagenStore = window.ColoresPorTalla.getImage(color.imagen_id);
+            return obtenerArchivoDesdeImagen(imagenStore);
+        }
+
+        return null;
+    }
+
+    function construirMapaIndicesTelas(telasArr) {
+        const mapa = new Map();
+        (telasArr || []).forEach((tela, idx) => {
+            const nombreTela = String(tela?.nombre_tela || tela?.tela || tela?.nombre || '')
+                .trim()
+                .toUpperCase();
+            if (nombreTela && !mapa.has(nombreTela)) {
+                mapa.set(nombreTela, idx);
+            }
+        });
+        return mapa;
+    }
+
+    function adjuntarImagenesWizardATelas(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela) {
+        const asignaciones = p?.asignacionesColoresPorTalla;
+        if (!asignaciones || typeof asignaciones !== 'object') {
+            return;
+        }
+
+        const mapaIndicesTelas = construirMapaIndicesTelas(telasArr);
+        const imagenesYaAgregadas = new Set();
+
+        Object.values(asignaciones).forEach((asignacion) => {
+            const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+            if (colores.length === 0) return;
+
+            const telaNombre = String(asignacion?.tela || '').trim().toUpperCase();
+            let telaIdx = mapaIndicesTelas.has(telaNombre) ? mapaIndicesTelas.get(telaNombre) : null;
+            if (telaIdx === null && telasArr.length > 0) {
+                telaIdx = 0;
+            }
+            if (telaIdx === null || telaIdx === undefined) return;
+
+            colores.forEach((color) => {
+                const file = obtenerArchivoDesdeColorWizard(color);
+                if (!file) return;
+
+                const idUnico = color?.imagen_id || `${telaIdx}::${file.name}::${file.size}::${file.lastModified}`;
+                if (imagenesYaAgregadas.has(idUnico)) return;
+                imagenesYaAgregadas.add(idUnico);
+
+                const imgIdx = contadoresPorTela[telaIdx] || 0;
+                formData.append(`nuevas_prendas[${nuevaPrendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`, file);
+                contadoresPorTela[telaIdx] = imgIdx + 1;
+            });
+        });
+    }
+
     function construirEppsProcesados(datos, formData) {
         return (datos.epps || []).map((e, eppIndex) => {
             const imagenesExistentes = [];
@@ -74,17 +197,22 @@
             });
 
             const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
+            const contadoresPorTela = {};
             telasArr.forEach((tela, telaIdx) => {
                 let telaImgFileIdx = 0;
                 const imagenesTelaArr = Array.isArray(tela.imagenes) ? tela.imagenes : [];
                 imagenesTelaArr.forEach((imgTela) => {
-                    const file = (imgTela instanceof File) ? imgTela : (imgTela && imgTela.file instanceof File ? imgTela.file : null);
+                    const file = obtenerArchivoDesdeImagen(imgTela);
                     if (file) {
                         formData.append(`nuevas_prendas[${nuevaPrendaIdx}][telas][${telaIdx}][imagenes][${telaImgFileIdx}]`, file);
                         telaImgFileIdx++;
                     }
                 });
+                contadoresPorTela[telaIdx] = telaImgFileIdx;
             });
+
+            // Fallback para wizard: imágenes por color/talla (imagen_id en asignaciones)
+            adjuntarImagenesWizardATelas(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela);
 
             nuevasPrendasJson.push({
                 tipo: 'prenda',

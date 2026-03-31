@@ -104,7 +104,7 @@
                                             min-width: min-content;
                                             background: white;
                                             transition: background 0.2s ease;
-                                        " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                                        ">
                                         <div>
                                             <span>{{ \Carbon\Carbon::parse($proceso->fecha_creacion)->format('d/m/Y H:i') }}</span>
                                         </div>
@@ -229,9 +229,8 @@
             </div>
             <div class="modal-body" id="detalles-contenido">
                 <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
+                    <div class="spinner-border" aria-hidden="true"></div>
+                    <output class="visually-hidden">Cargando...</output>
                 </div>
             </div>
             <div class="modal-footer">
@@ -262,6 +261,11 @@
     .material-symbols-rounded {
         vertical-align: middle;
     }
+
+    [data-row="proceso"]:hover,
+    [data-row="proceso"]:focus-within {
+        background: #f9fafb !important;
+    }
 </style>
 @endpush
 
@@ -273,9 +277,8 @@ function verDetalles(procesoId, tipoRecibo) {
     const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
     document.getElementById('detalles-contenido').innerHTML = `
         <div class="text-center">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
+            <div class="spinner-border" aria-hidden="true"></div>
+            <output class="visually-hidden">Cargando...</output>
             <p class="mt-2">Cargando detalles...</p>
         </div>
     `;
@@ -373,8 +376,8 @@ function renderizarDetalles(data) {
         data.imagenes.forEach(imagen => {
             html += `
                 <div class="col-md-3 mb-3">
-                    <img src="/storage/${imagen.ruta_webp || imagen.ruta_original}" 
-                         class="img-fluid img-thumbnail" 
+                    <img src="/storage/${imagen.ruta_webp || imagen.ruta_original}"
+                         class="img-fluid img-thumbnail"
                          alt="Imagen del proceso"
                          onclick="window.open('/storage/${imagen.ruta_webp || imagen.ruta_original}', '_blank')"
                          style="cursor: pointer;">
@@ -831,8 +834,3 @@ styleSpin.textContent = `@keyframes spinPendientes { from { transform: rotate(0d
 document.head.appendChild(styleSpin);
 </script>
 @endpush
-
-
-
-
-

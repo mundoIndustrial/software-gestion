@@ -826,6 +826,17 @@ class ObtenerPedidoDetalleService
         
         Log::info('🎨 [TALLA-COLORES] Encontrados ' . count($tallaColores) . ' registros de colores por talla');
         
+        $mapaColorTelaId = DB::table('prenda_pedido_colores_telas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->get(['id', 'color_id', 'tela_id'])
+            ->reduce(function(array $carry, $rel) {
+                $clave = ($rel->color_id ?? '') . ':' . ($rel->tela_id ?? '');
+                if ($clave !== ':') {
+                    $carry[$clave] = (int) $rel->id;
+                }
+                return $carry;
+            }, []);
+
         // NUEVO: Construir asignacionesColoresPorTalla desde talla_colores para compatibilidad con invoice y edit
         $asignacionesColoresPorTalla = [];
         if (!empty($prendaArray['talla_colores'])) {
@@ -837,13 +848,17 @@ class ObtenerPedidoDetalleService
                 // ESTO DEBE COINCIDIR CON EL FRONTEND (cargar-prendas-cotizacion.js)
                 $generoLower = strtolower($color->genero);
                 $clave = $generoLower . '-' . $tipoTalla . '-' . $color->talla;
+                $claveRelacion = ($color->color_id ?? '') . ':' . ($color->tela_id ?? '');
+                $colorTelaId = $mapaColorTelaId[$claveRelacion] ?? null;
                 
                 if (!isset($asignacionesColoresPorTalla[$clave])) {
                     $asignacionesColoresPorTalla[$clave] = [
                         'genero' => $generoLower,
                         'tela' => $color->tela_nombre ?? 'SIN_TELA',
+                        'tela_id' => $color->tela_id ? (int) $color->tela_id : null,
                         'tipo' => $tipoTalla,
                         'talla' => $color->talla,
+                        'prenda_pedido_colores_telas_id' => $colorTelaId,
                         'colores' => []
                     ];
                 }
@@ -853,7 +868,10 @@ class ObtenerPedidoDetalleService
                     'cantidad' => $color->cantidad,
                     'referencia' => $color->referencia,
                     'observaciones' => $color->observaciones,
-                    'imagen_ruta' => $color->imagen_ruta  // ← CRUCIAL: Incluir imagen_ruta
+                    'imagen_ruta' => $color->imagen_ruta,  // ← CRUCIAL: Incluir imagen_ruta
+                    'prenda_pedido_colores_telas_id' => $colorTelaId,
+                    'color_id' => $color->color_id ? (int) $color->color_id : null,
+                    'tela_id' => $color->tela_id ? (int) $color->tela_id : null,
                 ];
             }
         }
@@ -1041,4 +1059,3 @@ class ObtenerPedidoDetalleService
         return $procesoArray;
     }
 }
-

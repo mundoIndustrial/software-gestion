@@ -90,7 +90,7 @@ class CrearPedidoCompletoHandler implements CommandHandler, CrearPedidoCompletoH
             
             foreach ($command->getItems() as $index => $itemData) {
                 try {
-                    Log::info("🔹 [CrearPedidoCompletoHandler] Procesando item #{$index}", [
+                    Log::info(" [CrearPedidoCompletoHandler] Procesando item #{$index}", [
                         'nombre_prenda' => $itemData['nombre_prenda'] ?? 'Sin nombre',
                         'tipo' => $itemData['tipo'] ?? 'prenda_nueva',
                     ]);

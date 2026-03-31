@@ -62,7 +62,7 @@ foreach ($prendas as $index => $prenda) {
     // COSTURA se genera si NO es de bodega
     if (!$prenda->de_bodega) {
         $prendasPorProceso['COSTURA'][] = $prenda->id;
-        echo "    - 🔹 COSTURA - DEBERÍA TENER CONSECUTIVO (de_bodega=false)\n";
+        echo "    -  COSTURA - DEBERÍA TENER CONSECUTIVO (de_bodega=false)\n";
     }
     
     // Obtener procesos de la prenda
@@ -84,23 +84,23 @@ foreach ($prendas as $index => $prenda) {
             
             if ($tipoProceso === 'BORDADO') {
                 $prendasPorProceso['BORDADO'][] = $prenda->id;
-                echo "    - 🔹 BORDADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  BORDADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'ESTAMPADO') {
                 $prendasPorProceso['ESTAMPADO'][] = $prenda->id;
-                echo "    - 🔹 ESTAMPADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  ESTAMPADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'DTF') {
                 $prendasPorProceso['DTF'][] = $prenda->id;
-                echo "    - 🔹 DTF - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  DTF - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'SUBLIMADO') {
                 $prendasPorProceso['SUBLIMADO'][] = $prenda->id;
-                echo "    - 🔹 SUBLIMADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  SUBLIMADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'REFLECTIVO') {
                 $prendasPorProceso['REFLECTIVO'][] = $prenda->id;
-                echo "    - 🔹 REFLECTIVO";
+                echo "    -  REFLECTIVO";
                 if ($prenda->de_bodega) {
                     echo " - DEBERÍA TENER CONSECUTIVO (de_bodega=true)\n";
                 } else {

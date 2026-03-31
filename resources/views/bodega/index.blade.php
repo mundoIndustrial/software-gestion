@@ -177,11 +177,11 @@
                                 
                                 @php
                                     $columnasBase = [
-                                        'total_de_dias_', 'pedido', 'cliente', 'descripcion', 
-                                        'cantidad', 'novedades', 'asesora', 'forma_de_pago', 'created_at', 
+                                        'total_de_dias_', 'pedido', 'cliente', 'descripcion',
+                                        'cantidad', 'novedades', 'asesora', 'forma_de_pago', 'created_at',
                                         'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario', 'dias_inventario',
                                         'insumos_y_telas', 'encargados_insumos', 'dias_insumos', 'corte', 'encargados_de_corte',
-                                        'dias_corte', 'bordado', 'codigo_de_bordado', 'dias_bordado', 'estampado', 
+                                        'dias_corte', 'bordado', 'codigo_de_bordado', 'dias_bordado', 'estampado',
                                         'encargados_estampado', 'dias_estampado', 'costura', 'modulo', 'dias_costura',
                                         'reflectivo', 'encargado_reflectivo', 'total_de_dias_reflectivo', 'lavanderia',
                                         'encargado_lavanderia', 'dias_lavanderia', 'arreglos', 'encargado_arreglos',
@@ -198,7 +198,7 @@
                                     <div class="table-cell" style="flex: 0 0 {{ $colConfig['width'] }}; width: {{ $colConfig['width'] }}; max-width: {{ $colConfig['width'] }}; justify-content: {{ $colConfig['justify'] }};">
                                         @if($colName === 'novedades')
                                             <!-- Botón de Novedades para Bodega -->
-                                            <button 
+                                            <button
                                                 class="btn-edit-novedades"
                                                 data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
                                                 onclick="event.stopPropagation(); openNovedadesBodegaModal('{{ $orden->pedido }}', `{{ addslashes($orden->novedades ?? '') }}`)"
@@ -212,7 +212,7 @@
                                                 <span class="material-symbols-rounded">edit</span>
                                             </button>
                                         @else
-                                            <div class="cell-content" title="{{ $orden->$colName ?? '' }}" onclick="openCellEditModal('{{ $colName }}', '{{ addslashes($orden->$colName ?? '') }}', {{ $orden->pedido }})" style="cursor: pointer;">
+                                            <button type="button" class="cell-content" title="{{ $orden->$colName ?? '' }}" aria-label="Editar {{ $colConfig['label'] ?? $colName }}" onclick="openCellEditModal('{{ $colName }}', '{{ addslashes($orden->$colName ?? '') }}', {{ $orden->pedido }})" style="cursor: pointer; background: none; border: none; padding: 0; margin: 0; color: inherit; font: inherit; text-align: inherit;">
                                                 <span class="cell-text" data-pedido="{{ $orden->pedido }}" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                     @if($colName === 'total_de_dias_')
                                                         <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
@@ -224,7 +224,7 @@
                                                         {{ $orden->$colName ?? '' }}
                                                     @endif
                                                 </span>
-                                            </div>
+                                            </button>
                                         @endif
                                     </div>
                                 @endforeach
@@ -335,4 +335,3 @@
         }, 500);
     </script>
 @endsection
-

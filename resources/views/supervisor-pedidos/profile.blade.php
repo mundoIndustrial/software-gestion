@@ -329,11 +329,11 @@
                             <span class="material-symbols-rounded">badge</span>
                             Nombre Completo *
                         </label>
-                        <input type="text" 
-                               id="name" 
-                               name="name" 
-                               class="form-input" 
-                               value="{{ $user->name }}" 
+                        <input type="text"
+                               id="name"
+                               name="name"
+                               class="form-input"
+                               value="{{ $user->name }}"
                                required>
                     </div>
 
@@ -342,11 +342,11 @@
                             <span class="material-symbols-rounded">email</span>
                             Correo Electrónico *
                         </label>
-                        <input type="email" 
-                               id="email" 
-                               name="email" 
-                               class="form-input" 
-                               value="{{ $user->email }}" 
+                        <input type="email"
+                               id="email"
+                               name="email"
+                               class="form-input"
+                               value="{{ $user->email }}"
                                required>
                     </div>
                 </div>
@@ -357,10 +357,10 @@
                             <span class="material-symbols-rounded">phone</span>
                             Teléfono
                         </label>
-                        <input type="tel" 
-                               id="telefono" 
-                               name="telefono" 
-                               class="form-input" 
+                        <input type="tel"
+                               id="telefono"
+                               name="telefono"
+                               class="form-input"
                                value="{{ $user->telefono ?? '' }}"
                                placeholder="Ej: 3001234567">
                     </div>
@@ -370,10 +370,10 @@
                             <span class="material-symbols-rounded">location_city</span>
                             Ciudad
                         </label>
-                        <input type="text" 
-                               id="ciudad" 
-                               name="ciudad" 
-                               class="form-input" 
+                        <input type="text"
+                               id="ciudad"
+                               name="ciudad"
+                               class="form-input"
                                value="{{ $user->ciudad ?? '' }}"
                                placeholder="Ej: Pereira">
                     </div>
@@ -384,10 +384,10 @@
                         <span class="material-symbols-rounded">map</span>
                         Departamento
                     </label>
-                    <input type="text" 
-                           id="departamento" 
-                           name="departamento" 
-                           class="form-input" 
+                    <input type="text"
+                           id="departamento"
+                           name="departamento"
+                           class="form-input"
                            value="{{ $user->departamento ?? '' }}"
                            placeholder="Ej: Risaralda">
                 </div>
@@ -397,9 +397,9 @@
                         <span class="material-symbols-rounded">description</span>
                         Biografía
                     </label>
-                    <textarea id="bio" 
-                              name="bio" 
-                              class="form-textarea" 
+                    <textarea id="bio"
+                              name="bio"
+                              class="form-textarea"
                               rows="4"
                               maxlength="500"
                               placeholder="Cuéntanos un poco sobre ti...">{{ $user->bio ?? '' }}</textarea>

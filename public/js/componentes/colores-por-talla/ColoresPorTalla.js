@@ -869,7 +869,7 @@ window.ColoresPorTalla = (function() {
             btn.addEventListener('click', function(e) {
                 e.preventDefault(); e.stopPropagation();
                 const clave = btn.getAttribute('data-clave');
-                if (clave) _abrirModalEditarWizard(clave);
+                if (clave) _abrirModalEditarWizard(clave, btn);
             });
         });
 
@@ -960,7 +960,40 @@ window.ColoresPorTalla = (function() {
     /**
      * Abre el modal de edición para una asignación wizard (agrupada)
      */
-    function _abrirModalEditarWizard(clave) {
+    function _desenfocarActivoDentroDeModal(modal) {
+        if (!modal) return;
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && modal.contains(active)) {
+            active.blur();
+        }
+    }
+
+    function _cerrarModalWizardConFoco(modal, focusReturnEl = null) {
+        if (!modal) return;
+
+        _desenfocarActivoDentroDeModal(modal);
+
+        const fallbackFocus = document.getElementById('btn-asignar-colores-prenda');
+        const destinoFoco = (
+            focusReturnEl instanceof HTMLElement &&
+            focusReturnEl.isConnected &&
+            !focusReturnEl.disabled
+        ) ? focusReturnEl : fallbackFocus;
+
+        if (destinoFoco) {
+            jQuery(modal).one('hidden.bs.modal.focusRestoreWizard', () => {
+                requestAnimationFrame(() => {
+                    if (destinoFoco.isConnected && !destinoFoco.disabled) {
+                        destinoFoco.focus({ preventScroll: true });
+                    }
+                });
+            });
+        }
+
+        jQuery(modal).modal('hide');
+    }
+
+    function _abrirModalEditarWizard(clave, focusReturnEl = null) {
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asig = asignaciones[clave];
         if (!asig) return;
@@ -972,7 +1005,11 @@ window.ColoresPorTalla = (function() {
 
         // Eliminar modal previo si existe
         const existing = document.getElementById('modal-editar-asignacion-wizard');
-        if (existing) { jQuery(existing).modal('hide'); existing.remove(); }
+        if (existing) {
+            _desenfocarActivoDentroDeModal(existing);
+            jQuery(existing).modal('hide');
+            existing.remove();
+        }
 
         // Construir tarjetas de color
         const coloresCardsHtml = asig.colores.map((color, idx) => {
@@ -1134,12 +1171,12 @@ window.ColoresPorTalla = (function() {
 
         // Cerrar
         modal.querySelectorAll('.btn-cerrar-wizard-edit').forEach(btn => {
-            btn.addEventListener('click', () => jQuery(modal).modal('hide'));
+            btn.addEventListener('click', () => _cerrarModalWizardConFoco(modal, focusReturnEl));
         });
 
         // Guardar
         modal.querySelector('.btn-guardar-wizard-edit').addEventListener('click', () => {
-            _guardarEdicionWizard(clave, modal);
+            _guardarEdicionWizard(clave, modal, focusReturnEl);
         });
 
         // Limpieza al cerrar
@@ -1239,10 +1276,14 @@ window.ColoresPorTalla = (function() {
     /**
      * Guarda los cambios del modal de edición wizard
      */
-    function _guardarEdicionWizard(claveOriginal, modal) {
+    function _guardarEdicionWizard(claveOriginal, modal, focusReturnEl = null) {
         const nTela = (modal.querySelector('#wz-edit-tela').value || '').trim().toUpperCase();
         const nGenero = modal.querySelector('#wz-edit-genero').value;
         const nTalla = (modal.querySelector('#wz-edit-talla').value || '').trim().toUpperCase();
+        const asignacionesActuales = window.StateManager ? window.StateManager.getAsignaciones() : {};
+        const asignacionOriginal = asignacionesActuales[claveOriginal] || {};
+        const telaOriginal = (asignacionOriginal?.tela || '').trim().toUpperCase();
+        const telaCambio = !!(telaOriginal && telaOriginal !== nTela);
         
         // 🔴 FIX: Leer referencia común (si existe)
         const refComun = modal.querySelector('#wz-edit-referencia-comun') 
@@ -1260,6 +1301,7 @@ window.ColoresPorTalla = (function() {
             const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
             const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  // 🔴 FIX: Usar referencia común
             const observaciones = ''; // (card.querySelector('.wz-edit-obs').value || '').trim();
+            const colorOriginal = Array.isArray(asignacionOriginal?.colores) ? asignacionOriginal.colores[idx] : null;
 
             if (!colorNombre) return; // omitir colores vacíos
 
@@ -1277,6 +1319,30 @@ window.ColoresPorTalla = (function() {
                 // Preservar imagen del servidor si no se cambió
                 colorData.imagen_ruta = window._wizardEditImagenesRuta[idx];
             }
+
+            const colorOriginalNombre = (colorOriginal?.nombre || '').trim().toUpperCase();
+            const colorCambio = !!(colorOriginalNombre && colorOriginalNombre !== colorNombre);
+            if (!telaCambio && !colorCambio) {
+                const colorTelaId =
+                    colorOriginal?.prenda_pedido_colores_telas_id ||
+                    colorOriginal?.color_tela_id ||
+                    asignacionOriginal?.prenda_pedido_colores_telas_id ||
+                    asignacionOriginal?.color_tela_id ||
+                    null;
+                const colorId = colorOriginal?.color_id || asignacionOriginal?.color_id || null;
+                const telaId = colorOriginal?.tela_id || asignacionOriginal?.tela_id || null;
+
+                if (colorTelaId) {
+                    colorData.prenda_pedido_colores_telas_id = colorTelaId;
+                }
+                if (colorId) {
+                    colorData.color_id = colorId;
+                }
+                if (telaId) {
+                    colorData.tela_id = telaId;
+                }
+            }
+
             nuevosColores.push(colorData);
         });
 
@@ -1287,22 +1353,30 @@ window.ColoresPorTalla = (function() {
 
         // Actualizar StateManager
         if (window.StateManager) {
-            const asignaciones = window.StateManager.getAsignaciones();
+            const asignaciones = asignacionesActuales;
             delete asignaciones[claveOriginal];
 
             const tipo = 'Letra';
             const nuevaClave = `${nGenero.toLowerCase()}-${tipo}-${nTalla}`;
+            const primerColor = nuevosColores[0] || null;
+            const relacionUnica = (nuevosColores.length === 1 && primerColor)
+                ? (primerColor.prenda_pedido_colores_telas_id || primerColor.color_tela_id || null)
+                : null;
+
             asignaciones[nuevaClave] = {
                 genero: nGenero.toLowerCase(),
                 tela: nTela,
                 tipo: tipo,
                 talla: nTalla,
+                tela_id: telaCambio ? null : (asignacionOriginal?.tela_id || primerColor?.tela_id || null),
+                color_id: (nuevosColores.length === 1 && !telaCambio) ? (primerColor?.color_id || asignacionOriginal?.color_id || null) : null,
+                prenda_pedido_colores_telas_id: telaCambio ? null : relacionUnica,
                 colores: nuevosColores
             };
             window.StateManager.setAsignaciones(asignaciones);
         }
 
-        jQuery(modal).modal('hide');
+        _cerrarModalWizardConFoco(modal, focusReturnEl);
         actualizarTablaResumen();
         console.log('[ColoresPorTalla]  Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
     }

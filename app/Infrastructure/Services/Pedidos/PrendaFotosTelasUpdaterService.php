@@ -21,32 +21,45 @@ final class PrendaFotosTelasUpdaterService
         ?array $fotosTelas,
         ?array $fotosTelasProcesadas = null
     ): void {
-        if (is_null($fotosTelas) && !empty($fotosTelasProcesadas)) {
-            $fotosTelasDesdeProcesadas = [];
-            foreach ($fotosTelasProcesadas as $procesada) {
-                $ultimaColorTela = $prenda->coloresTelas()->latest('id')->first();
-                if ($ultimaColorTela) {
-                    $fotosTelasDesdeProcesadas[] = [
-                        'prenda_pedido_colores_telas_id' => $ultimaColorTela->id,
-                        'ruta_original' => $procesada['ruta_original'] ?? null,
-                        'ruta_webp' => $procesada['ruta_webp'] ?? null,
-                    ];
-                }
-            }
-
-            if (!empty($fotosTelasDesdeProcesadas)) {
-                $this->procesarFotosTelasArray($prenda, $fotosTelasDesdeProcesadas);
-                return;
-            }
-        }
-
         if (is_null($fotosTelas)) {
+            if (!empty($fotosTelasProcesadas)) {
+                \Log::error('[PrendaFotosTelasUpdaterService] Fotos de tela recibidas sin metadatos fotos_telas', [
+                    'prenda_id' => $prenda->id,
+                    'cantidad_archivos' => count($fotosTelasProcesadas),
+                ]);
+                throw new \RuntimeException('Se recibieron archivos de fotos_tela sin metadatos fotos_telas.');
+            }
             return;
         }
 
         if (empty($fotosTelas)) {
             $prenda->fotosTelas()->delete();
             return;
+        }
+
+        if (!empty($fotosTelasProcesadas)) {
+            $placeholdersNuevos = 0;
+            foreach ($fotosTelas as $foto) {
+                if (!is_array($foto)) {
+                    continue;
+                }
+
+                $id = $foto['id'] ?? null;
+                $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+
+                if (empty($id) && empty($ruta)) {
+                    $placeholdersNuevos++;
+                }
+            }
+
+            if ($placeholdersNuevos !== count($fotosTelasProcesadas)) {
+                \Log::error('[PrendaFotosTelasUpdaterService] Desfase entre fotos_telas y fotos_telas_procesadas', [
+                    'prenda_id' => $prenda->id,
+                    'placeholders_nuevos' => $placeholdersNuevos,
+                    'archivos_procesados' => count($fotosTelasProcesadas),
+                ]);
+                throw new \RuntimeException('Desfase entre archivos fotos_tela y metadatos fotos_telas.');
+            }
         }
 
         // Eliminación por diferencia
@@ -135,6 +148,16 @@ final class PrendaFotosTelasUpdaterService
             }
 
             if (!$colorTelaId || !$ruta) {
+                \Log::warning('[PrendaFotosTelasUpdaterService] Foto de tela omitida por falta de vínculo color/tela o ruta', [
+                    'prenda_id' => $prenda->id,
+                    'foto_id' => $id,
+                    'color_tela_id' => $colorTelaId,
+                    'color_id' => $foto['color_id'] ?? null,
+                    'tela_id' => $foto['tela_id'] ?? null,
+                    'color_nombre' => $foto['color_nombre'] ?? null,
+                    'tela_nombre' => $foto['tela_nombre'] ?? null,
+                    'ruta' => $ruta,
+                ]);
                 continue;
             }
 
@@ -156,41 +179,6 @@ final class PrendaFotosTelasUpdaterService
                 }
                 continue;
             }
-
-            $existente = PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId)
-                ->where('ruta_original', $ruta)
-                ->first();
-
-            if (!$existente) {
-                PrendaFotoTelaPedido::create($datosFoto);
-            }
-        }
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $fotosTelas
-     */
-    private function procesarFotosTelasArray(PrendaPedido $prenda, array $fotosTelas): void
-    {
-        foreach ($fotosTelas as $idx => $foto) {
-            $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? null;
-            $ruta = $foto['ruta_original'] ?? null;
-            $rutaWebp = $foto['ruta_webp'] ?? null;
-
-            if (!$colorTelaId || !$ruta) {
-                continue;
-            }
-
-            if (!$rutaWebp) {
-                $rutaWebp = $this->generarRutaWebp($ruta);
-            }
-
-            $datosFoto = [
-                'prenda_pedido_colores_telas_id' => $colorTelaId,
-                'ruta_original' => $ruta,
-                'ruta_webp' => $rutaWebp,
-                'orden' => $idx + 1,
-            ];
 
             $existente = PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId)
                 ->where('ruta_original', $ruta)
@@ -226,4 +214,3 @@ final class PrendaFotosTelasUpdaterService
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }
-

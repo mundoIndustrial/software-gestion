@@ -75,6 +75,7 @@
 
     function renderSewingRow(proceso, escapeHtml) {
         const color = proceso?.color_costura || '';
+        const rowBaseColor = color || '#ffffff';
         const area = proceso?.area || '';
         const prendas = normalizeGarments(proceso?.prendas || []);
         const prendasHtml = prendas.length
@@ -87,6 +88,7 @@
 
         return `
             <div data-row="processo" data-color-stored="${escapeHtml(color)}" style="
+                --row-bg-color: ${escapeHtml(rowBaseColor)};
                 display: grid;
                 grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                 gap: 0.15rem;
@@ -94,9 +96,8 @@
                 border-bottom: 1px solid #e5e7eb;
                 align-items: start;
                 min-width: min-content;
-                background: white;
                 transition: background 0.2s ease;
-            " onmouseover="mostrarHoverFila(this)" onmouseout="restaurarColorFila(this)">
+            ">
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(formatDateShort(proceso?.fecha_creacion))}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(String(proceso?.numero_recibo || ''))}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))}</div>

@@ -573,12 +573,11 @@ class GestionItemsUI {
             
             // ESTADO DE STORAGES ANTES DE PROCESAR
             const estadoImagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-            const estadoImagenesTela = window.imagenesTelaStorage?.obtenerImagenes?.() || [];
             const estadoTelasCreacion = window.telasCreacion || [];
             const estadoProcesos = window.procesosSeleccionados || {};
             
-            console.log('[agregarPrendaNueva] 📸 ESTADO INICIAL DE STORAGES:');
-            console.log('[agregarPrendaNueva]   🖼️ imagenesPrendaStorage:', estadoImagenesPrenda.length, 'imágenes');
+            console.log('[agregarPrendaNueva] ESTADO INICIAL DE STORAGES:');
+            console.log('[agregarPrendaNueva]   imagenesPrendaStorage:', estadoImagenesPrenda.length, 'imagenes');
             console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesPrenda.map(img => ({
                 tipo: typeof img,
                 previewUrl: img?.previewUrl?.substring(0, 50),
@@ -586,18 +585,14 @@ class GestionItemsUI {
                 constructor: img?.constructor?.name
             })));
             
-            console.log('[agregarPrendaNueva]   🧵 imagenesTelaStorage:', estadoImagenesTela.length, 'imágenes');
-            console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesTela.map(img => ({
-                tipo: typeof img,
-                previewUrl: img?.previewUrl?.substring(0, 50),
-                ruta: img?.ruta,
-                constructor: img?.constructor?.name
-            })));
-            
-            console.log('[agregarPrendaNueva]   🧵 window.telasCreacion:', estadoTelasCreacion.length, 'telas');
-            console.log('[agregarPrendaNueva]      Primera tela imagenes:', estadoTelasCreacion[0]?.imagenes?.length || 0);
-            console.log('[agregarPrendaNueva]      Contenido primera tela imágenes:', estadoTelasCreacion[0]?.imagenes);
-            
+            console.log('[agregarPrendaNueva]   window.telasCreacion:', estadoTelasCreacion.length, 'telas');
+            console.log('[agregarPrendaNueva]      Primera tela (meta):', estadoTelasCreacion[0] ? {
+                id: estadoTelasCreacion[0].id || estadoTelasCreacion[0]._original_id || estadoTelasCreacion[0].prenda_pedido_colores_telas_id || null,
+                tela_id: estadoTelasCreacion[0].tela_id || 0,
+                color_id: estadoTelasCreacion[0].color_id || 0,
+                tela: estadoTelasCreacion[0].tela || estadoTelasCreacion[0].nombre_tela || '',
+                color: estadoTelasCreacion[0].color || estadoTelasCreacion[0].color_nombre || ''
+            } : null);
             console.log('[agregarPrendaNueva]   ⚙️ procesosSeleccionados types:', Object.keys(estadoProcesos));
             console.log('[agregarPrendaNueva]      procesosSeleccionados imagenes:', 
                 Object.entries(estadoProcesos).map(([tipo, proc]) => ({
@@ -616,7 +611,7 @@ class GestionItemsUI {
             
             // Verificar si el servicio de notificaciones está disponible
             if (!this.notificationService) {
-                console.warn('[GestionItemsUI]  notificationService no disponible, usando fallback');
+                console.warn('[GestionItemsUI]  notificationService no disponible, usando servicio alterno temporal');
                 // Crear servicio de notificaciones temporal para este caso
                 this.notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : {
                     success: (msg) => console.log('', msg),
@@ -631,6 +626,64 @@ class GestionItemsUI {
                 this.prendaEditIndex,
                 this.prendas
             );
+
+            // 🔒 Refuerzo: preservar File objects de imágenes por color antes de cerrar modal
+            const hidratarAsignacionesConArchivos = (asignacionesBase) => {
+                if (!asignacionesBase || typeof asignacionesBase !== 'object') {
+                    return asignacionesBase;
+                }
+
+                const getImageWizard = (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function')
+                    ? window.ColoresPorTalla.getImage.bind(window.ColoresPorTalla)
+                    : null;
+
+                let conImagenId = 0;
+                let conImagenFile = 0;
+
+                const resultado = {};
+                Object.entries(asignacionesBase).forEach(([clave, asignacion]) => {
+                    const copiaAsignacion = { ...(asignacion || {}), colores: [] };
+                    const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+                    copiaAsignacion.colores = colores.map((color) => {
+                        const colorCopia = { ...(color || {}) };
+                        if (colorCopia.imagen_id) conImagenId++;
+
+                        if (colorCopia?.imagen?.file instanceof File) {
+                            conImagenFile++;
+                            return colorCopia;
+                        }
+
+                        if (getImageWizard && colorCopia.imagen_id) {
+                            const imagenWizard = getImageWizard(colorCopia.imagen_id);
+                            if (imagenWizard?.file instanceof File) {
+                                colorCopia.imagen = {
+                                    file: imagenWizard.file,
+                                    nombre: imagenWizard.nombre || imagenWizard.file.name || '',
+                                    blobUrl: imagenWizard.blobUrl || null
+                                };
+                                conImagenFile++;
+                            }
+                        }
+
+                        return colorCopia;
+                    });
+                    resultado[clave] = copiaAsignacion;
+                });
+
+                console.log('[agregarPrendaNueva] 🧪 Hidratar asignaciones (pre-cierre modal):', {
+                    grupos: Object.keys(resultado).length,
+                    conImagenId,
+                    conImagenFile
+                });
+
+                return resultado;
+            };
+
+            if (prendaData?.asignacionesColoresPorTalla && typeof prendaData.asignacionesColoresPorTalla === 'object') {
+                const asignacionesHidratadas = hidratarAsignacionesConArchivos(prendaData.asignacionesColoresPorTalla);
+                prendaData.asignacionesColoresPorTalla = asignacionesHidratadas;
+                prendaData.asignacionesColores = asignacionesHidratadas;
+            }
             
             //  IMPORTANTE: Agregar imágenes marcadas para eliminación
             // Solo se eliminarán cuando se guarden los cambios
@@ -659,13 +712,10 @@ class GestionItemsUI {
                 console.log('[agregarPrendaNueva]      Primera tela:');
                 const primeraTela = prendaData.telasAgregadas[0];
                 console.log('[agregarPrendaNueva]        - tela:', primeraTela.tela);
-                console.log('[agregarPrendaNueva]        - imagenes:', primeraTela.imagenes?.length || 0);
-                console.log('[agregarPrendaNueva]        - contenido imagenes:', primeraTela.imagenes?.map(img => ({
-                    tipo: typeof img,
-                    previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
-                    ruta: typeof img === 'object' ? img?.ruta : undefined,
-                    constructor: typeof img === 'object' ? img?.constructor?.name : 'string'
-                })));
+                console.log('[agregarPrendaNueva]        - prenda_pedido_colores_telas_id:', primeraTela.prenda_pedido_colores_telas_id || null);
+                console.log('[agregarPrendaNueva]        - tela_id:', primeraTela.tela_id || 0);
+                console.log('[agregarPrendaNueva]        - color_id:', primeraTela.color_id || 0);
+                console.log('[agregarPrendaNueva]        - imagenes (debe ir vacio en fuente unica):', primeraTela.imagenes?.length || 0);
             }
             
             console.log('[agregarPrendaNueva]   ⚙️ prendaData.procesos types:', Object.keys(prendaData?.procesos || {}));
@@ -812,18 +862,35 @@ class GestionItemsUI {
                         prendaDataId: prendaData.id
                     });
 
-                    //  CRÍTICO: Incluir telas nuevas si fueron agregadas
-                    // Si hay telas en window.telasAgg o window.telasCreacion, incluirlas en prendaData
+                    // Fuente unica: telasAgregadas solo conserva metadata/relaciones.
                     if ((window.telasAgregadas && window.telasAgregadas.length > 0) || 
                         (window.telasCreacion && window.telasCreacion.length > 0)) {
-                        
-                        const telasAIncluir = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
-                        prendaData.telasAgregadas = telasAIncluir;
-                        
-                        console.log('[gestion-items-pedido]  Telas nuevas incluidas en prendaData:', {
-                            cantidad: telasAIncluir.length,
+                        const telasFuente = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
+                        const mapearTelaCanonica = (tela = {}) => ({
+                            id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
+                            _original_id: tela._original_id || tela.id || null,
+                            prenda_pedido_colores_telas_id: tela.prenda_pedido_colores_telas_id || tela.id || tela._original_id || null,
+                            tela: tela.nombre_tela || tela.tela || '',
+                            color: tela.color || tela.color_nombre || '',
+                            referencia: tela.referencia || '',
+                            observaciones: tela.observaciones || '',
+                            color_id: tela.color_id || 0,
+                            tela_id: tela.tela_id || 0,
+                            imagenes: []
+                        });
+
+                        prendaData.telasAgregadas = telasFuente.map(mapearTelaCanonica);
+
+                        console.log('[gestion-items-pedido] Telas incluidas en prendaData (fuente unica):', {
+                            cantidad: prendaData.telasAgregadas.length,
                             origen: window.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
-                            telas: telasAIncluir.map(t => ({ color: t.color, tela: t.tela, imagenes: t.imagenes?.length }))
+                            telas: prendaData.telasAgregadas.map(t => ({
+                                id: t.prenda_pedido_colores_telas_id || t.id || null,
+                                tela_id: t.tela_id || 0,
+                                color_id: t.color_id || 0,
+                                tela: t.tela,
+                                color: t.color
+                            }))
                         });
                     }
                     
@@ -860,61 +927,40 @@ class GestionItemsUI {
                         //  ANTES: Estado de la prenda antes de actualizar
                         const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
                         
-                        console.log('[guardarPrenda]  ESTADO ANTES DE ACTUALIZAR:');
+                        console.log('[guardarPrenda] ESTADO ANTES DE ACTUALIZAR:');
                         console.log('[guardarPrenda]   telasAgregadas:', prendaAnterior.telasAgregadas?.length || 'undefined');
-                        if (prendaAnterior.telasAgregadas?.length > 0) {
-                            console.log('[guardarPrenda]     Primera tela imagenes:', prendaAnterior.telasAgregadas[0].imagenes?.length || 0);
-                        }
                         
                         // Actualizar prenda con los datos modificados
                         this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
                         
-                        // 🟢 DESPUÉS: Verificar que se actualizó
                         const prendaActualizada = this.prendas[this.prendaEditIndex];
-                        console.log('[guardarPrenda] ✏️ PRENDA ACTUALIZADA:');
+                        console.log('[guardarPrenda] PRENDA ACTUALIZADA:');
                         console.log('[guardarPrenda]   - Nombre ANTES:', prendaAnterior.nombre_prenda);
-                        console.log('[guardarPrenda]   - Nombre DESPUÉS:', prendaActualizada.nombre_prenda);
-                        console.log('[guardarPrenda]   - Descripción ANTES:', prendaAnterior.descripcion);
-                        console.log('[guardarPrenda]   - Descripción DESPUÉS:', prendaActualizada.descripcion);
-                        
-                        // 🔴 CRÍTICO: LOG DE IMÁGENES DE PRENDA
-                        console.log('[guardarPrenda] 🔴 IMÁGENES DE PRENDA:');
-                        console.log('[guardarPrenda]   ANTES:', prendaAnterior.imagenes?.length || 0, 'imágenes');
-                        console.log('[guardarPrenda]   DESPUÉS:', prendaActualizada.imagenes?.length || 0, 'imágenes');
-                        console.log('[guardarPrenda]   prendaData.imagenes durante actualización:', prendaData.imagenes?.length || 0, 'imágenes');
-                        
-                        if (prendaActualizada.imagenes?.length > 0) {
-                            console.log('[guardarPrenda]   DETALLE IMÁGENES ACTUALIZADAS:');
-                            prendaActualizada.imagenes.forEach((img, idx) => {
-                                console.log('[guardarPrenda]     Imagen ' + idx + ':', {
-                                    tipo: img instanceof File ? 'File' : typeof img,
-                                    esFile: img instanceof File,
-                                    id: img?.id,
-                                    previewUrl: img?.previewUrl?.substring(0, 50),
-                                    ruta: img?.ruta,
-                                    propiedades: typeof img === 'object' ? Object.keys(img || {}).slice(0, 5) : 'N/A'
-                                });
-                            });
-                        } else {
-                            console.log('[guardarPrenda]   ⚠️ SIN IMÁGENES DESPUÉS DE ACTUALIZAR!');
-                            console.log('[guardarPrenda]   imagenesCopia pasado a prendaData tenía:', prendaData.imagenes?.length || 0);
-                            console.log('[guardarPrenda]   Verificando si prendaData.imagenes es referencia válida...');
+                        console.log('[guardarPrenda]   - Nombre DESPUES:', prendaActualizada.nombre_prenda);
+                        console.log('[guardarPrenda]   - Descripcion ANTES:', prendaAnterior.descripcion);
+                        console.log('[guardarPrenda]   - Descripcion DESPUES:', prendaActualizada.descripcion);
+
+                        console.log('[guardarPrenda] IMAGENES DE PRENDA (no aplica a fotos de tela):');
+                        console.log('[guardarPrenda]   ANTES:', prendaAnterior.imagenes?.length || 0, 'imagenes');
+                        console.log('[guardarPrenda]   DESPUES:', prendaActualizada.imagenes?.length || 0, 'imagenes');
+                        if (!prendaActualizada.imagenes?.length) {
+                            console.log('[guardarPrenda]   INFO: sin imagenes generales de prenda (esperado si solo hay imagenes por color/tela).');
                         }
-                        
+
                         console.log('[guardarPrenda]   - telasAgregadas ANTES:', prendaAnterior.telasAgregadas?.length || 'undefined');
-                        console.log('[guardarPrenda]   - telasAgregadas DESPUÉS:', prendaActualizada.telasAgregadas?.length || 'undefined');
+                        console.log('[guardarPrenda]   - telasAgregadas DESPUES:', prendaActualizada.telasAgregadas?.length || 'undefined');
                         
                         if (prendaActualizada.telasAgregadas?.length > 0) {
-                            console.log('[guardarPrenda]     DETALLE TELAS ACTUALIZADAS:');
+                            console.log('[guardarPrenda]     DETALLE TELAS ACTUALIZADAS (metadata canonica):');
                             prendaActualizada.telasAgregadas.forEach((tela, idx) => {
-                                console.log('[guardarPrenda]       Tela ' + idx + ' (' + tela.tela + '): ' + (tela.imagenes?.length || 0) + ' imagenes');
-                                if (tela.imagenes?.length > 0) {
-                                    console.log('[guardarPrenda]         IMG[0]:', {
-                                        tipo: typeof tela.imagenes[0],
-                                        previewUrl: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].previewUrl?.substring(0, 50) : 'N/A',
-                                        constructor: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].constructor?.name : 'string'
-                                    });
-                                }
+                                console.log('[guardarPrenda]       Tela ' + idx + ':', {
+                                    id: tela.prenda_pedido_colores_telas_id || tela.id || null,
+                                    tela_id: tela.tela_id || 0,
+                                    color_id: tela.color_id || 0,
+                                    tela: tela.tela || '',
+                                    color: tela.color || '',
+                                    imagenes: tela.imagenes?.length || 0
+                                });
                             });
                         }
                         
@@ -932,22 +978,21 @@ class GestionItemsUI {
                         console.error('[guardarPrenda]  ERROR: No existe prenda en index', this.prendaEditIndex);
                     }
                     
-//  🔴 CRÍTICO: FINAL CHECK ANTES DE RESETEAR prendaEditIndex
+                    // Final check antes de resetear prendaEditIndex
                     const indexAntesDeLimpiar = this.prendaEditIndex;
-                    console.log('[guardarPrenda] 🔴 ANTES DE CERRAR MODAL - FINAL CHECK CON ÍNDICE VÁLIDO:');
+                    console.log('[guardarPrenda] ANTES DE CERRAR MODAL - FINAL CHECK:');
                     console.log('[guardarPrenda]   prendaEditIndex ANTES de limpiar:', indexAntesDeLimpiar);
                     const prendaFinalAntesDeReset = this.prendas[indexAntesDeLimpiar];
-                    console.log('[guardarPrenda]   📸 imagenes en this.prendas[' + indexAntesDeLimpiar + ']:', prendaFinalAntesDeReset?.imagenes?.length || 0, 'imágenes');
-                    if (prendaFinalAntesDeReset?.imagenes?.length > 0) {
-                        prendaFinalAntesDeReset.imagenes.forEach((img, idx) => {
-                            console.log('[guardarPrenda]     IMG[' + idx + ']: tipo=' + typeof img + ', esFile=' + (img instanceof File) + ', previewUrl=' + (img?.previewUrl?.substring(0, 40) || 'undefined'));
-                        });
-                    } else {
-                        console.log('[guardarPrenda]    CRÍTICO: NO HAY IMÁGENES EN LA PRENDA FINAL!');
-                    }
-                    console.log('[guardarPrenda]   🧵 telasAgregadas:', prendaFinalAntesDeReset?.telasAgregadas?.length || 0);
+                    console.log('[guardarPrenda]   imagenes generales en this.prendas[' + indexAntesDeLimpiar + ']:', prendaFinalAntesDeReset?.imagenes?.length || 0);
+                    console.log('[guardarPrenda]   telasAgregadas (metadata):', prendaFinalAntesDeReset?.telasAgregadas?.length || 0);
                     if (prendaFinalAntesDeReset?.telasAgregadas?.length > 0) {
-                        console.log('[guardarPrenda]     Primera tela imagenes:', prendaFinalAntesDeReset.telasAgregadas[0].imagenes?.length || 0);
+                        const primeraTela = prendaFinalAntesDeReset.telasAgregadas[0];
+                        console.log('[guardarPrenda]     Primera tela metadata:', {
+                            id: primeraTela.prenda_pedido_colores_telas_id || primeraTela.id || null,
+                            tela_id: primeraTela.tela_id || 0,
+                            color_id: primeraTela.color_id || 0,
+                            imagenes: primeraTela.imagenes?.length || 0
+                        });
                     }
                     
                     //  Cerrar modal AQUÍ en modo edición
@@ -1381,7 +1426,7 @@ window.editarProcesoEdicion = function(tipo) {
 };
 
 /**
- * Cargar datos de un proceso en el modal para editar (fallback)
+ * Cargar datos de un proceso en el modal para editar (compatibilidad)
  */
 function cargarDatosProcesoEnModalEdicion(tipo, datos) {
 
@@ -1517,3 +1562,5 @@ if (document.readyState === 'loading') {
     }
 }
  
+
+

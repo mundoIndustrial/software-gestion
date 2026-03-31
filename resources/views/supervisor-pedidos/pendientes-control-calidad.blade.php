@@ -132,6 +132,23 @@
         opacity: 1;
         transform: scale(1);
     }
+
+    [data-row="processo"] {
+        background: var(--row-bg-color, #ffffff) !important;
+        opacity: 1;
+        transition: background 0.2s ease, opacity 0.2s ease;
+    }
+
+    [data-row="processo"]:hover,
+    [data-row="processo"]:focus-within {
+        background: #f9fafb !important;
+    }
+
+    [data-row="processo"][data-color-stored]:not([data-color-stored=""]):hover,
+    [data-row="processo"][data-color-stored]:not([data-color-stored=""]):focus-within {
+        background: var(--row-bg-color, #ffffff) !important;
+        opacity: 0.9;
+    }
 </style>
 @endpush
 
@@ -214,6 +231,7 @@
                             @else
                                 @foreach($procesosConCantidad as $proceso)
                                     <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
+                                        --row-bg-color: {{ $proceso['color_costura'] ?: '#ffffff' }};
                                         display: grid;
                                         grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
@@ -221,9 +239,8 @@
                                         border-bottom: 1px solid #e5e7eb;
                                         align-items: start;
                                         min-width: min-content;
-                                        background: white;
                                         transition: background 0.2s ease;
-                                    " onmouseover="mostrarHoverFila(this)" onmouseout="restaurarColorFila(this)">
+                                    ">
                                         
                                         <!-- Fecha de Creacion -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
@@ -554,31 +571,6 @@ document.addEventListener('click', function(e) {
     navegarPendientesControlCalidad(urlAbs);
 });
 
-// Funcionalidad de selector de colores con persistencia en BD
-function mostrarHoverFila(elemento) {
-    const colorGuardado = elemento.getAttribute('data-color-stored');
-    if (colorGuardado && colorGuardado.trim()) {
-        // Si tiene color guardado, usar un hover mas suave
-        elemento.style.background = colorGuardado;
-        elemento.style.opacity = '0.9';
-    } else {
-        // Si no tiene color, usar el hover gris
-        elemento.style.background = '#f9fafb';
-    }
-}
-
-function restaurarColorFila(elemento) {
-    const colorGuardado = elemento.getAttribute('data-color-stored');
-    if (colorGuardado && colorGuardado.trim()) {
-        // Restaurar el color guardado
-        elemento.style.background = colorGuardado;
-        elemento.style.opacity = '1';
-    } else {
-        // Si no tiene color, volver a blanco
-        elemento.style.background = 'white';
-    }
-}
-
 function inicializarSelectorColores() {
     // Aplicar colores guardados al cargar la pagina
     document.querySelectorAll('[data-row="processo"]').forEach((fila) => {
@@ -586,7 +578,7 @@ function inicializarSelectorColores() {
         
         if (color && color.trim()) {
             // Aplicar el color al fondo de la fila
-            fila.style.backgroundColor = color;
+            fila.style.setProperty('--row-bg-color', color);
             
             // Encontrar y marcar el boton correspondiente
             const wrapper = fila.querySelector('.color-selector-wrapper');
@@ -610,7 +602,7 @@ function inicializarSelectorColores() {
             const filaBg = wrapper.closest('[data-row="processo"]');
 
             // Aplicar color a la fila
-            filaBg.style.backgroundColor = color;
+            filaBg.style.setProperty('--row-bg-color', color);
             filaBg.setAttribute('data-color-stored', color);
             
             // Retroalimentacion visual
@@ -651,8 +643,6 @@ function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
-
-
 
 
 

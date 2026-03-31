@@ -67,6 +67,8 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
             'tiene_variantes' => !is_null($dto->variantes),
             'tiene_colores_telas' => !is_null($dto->coloresTelas),
             'tiene_fotos_telas' => !is_null($dto->fotosTelas),
+            'tiene_fotos_telas_procesadas' => !empty($dto->fotosTelasProcesadas),
+            'cantidad_fotos_telas_procesadas' => is_array($dto->fotosTelasProcesadas) ? count($dto->fotosTelasProcesadas) : 0,
             'tiene_fotos' => !is_null($dto->fotos),
             'tiene_tallas' => !is_null($dto->cantidadTalla),
             'tiene_imagenes_a_eliminar' => !is_null($dto->imagenesAEliminar),
