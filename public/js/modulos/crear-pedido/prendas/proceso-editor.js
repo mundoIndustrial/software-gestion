@@ -111,7 +111,7 @@ class ProcesosEditor {
             return;
         }
 
-        console.log('🖼️ [PROCESO-EDITOR] Registrando cambio de imágenes:', {
+        console.log(' [PROCESO-EDITOR] Registrando cambio de imágenes:', {
             imagenesAnteriores: this.cambios.imagenes || (this.procesoOriginal.imagenes?.length || 0),
             imagenesNuevas: nuevasImagenes.length,
             imagenes: nuevasImagenes

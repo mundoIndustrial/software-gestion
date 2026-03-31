@@ -1110,6 +1110,6 @@ function actualizarTallasHidden(container) {
     // Formatear como JSON para mantener estructura por género
     tallasHidden.value = JSON.stringify(tallasPorGenero);
     console.log(' Tallas guardadas por género:', tallasPorGenero);
-    console.log('📝 Valor del campo hidden:', tallasHidden.value);
+    console.log(' Valor del campo hidden:', tallasHidden.value);
 }
 

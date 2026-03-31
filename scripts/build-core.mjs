@@ -112,7 +112,7 @@ if (process.argv.includes('--watch')) {
     const allFiles = BUNDLES.flatMap(b => b.files);
     for (const file of allFiles) {
         watchFile(join(ROOT, file), { interval: 500 }, () => {
-            console.log(`\n📝 Cambio detectado: ${file}`);
+            console.log(`\n Cambio detectado: ${file}`);
             buildAll().catch(console.error);
         });
     }

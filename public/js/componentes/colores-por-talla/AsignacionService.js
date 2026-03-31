@@ -53,7 +53,7 @@ window.AsignacionService = (function() {
         if (colorExistente) {
             // Actualizar cantidad
             colorExistente.cantidad += cantidad;
-            console.log('[AsignacionService] 📝 Color existente actualizado:', colorExistente);
+            console.log('[AsignacionService]  Color existente actualizado:', colorExistente);
         } else {
             // Agregar nuevo color
             asignaciones[clave].colores.push({
@@ -61,7 +61,7 @@ window.AsignacionService = (function() {
                 cantidad: cantidad,
                 fecha: new Date()
             });
-            console.log('[AsignacionService] ➕ Nuevo color agregado');
+            console.log('[AsignacionService]  Nuevo color agregado');
         }
         
         // Actualizar StateManager
@@ -129,7 +129,7 @@ window.AsignacionService = (function() {
      * Actualizar cantidad de un color específico
      */
     function actualizarCantidad(genero, talla, color, nuevaCantidad) {
-        console.log('[AsignacionService] 📝 Actualizando cantidad:', { genero, talla, color, nuevaCantidad });
+        console.log('[AsignacionService]  Actualizando cantidad:', { genero, talla, color, nuevaCantidad });
         
         const tipo = window.StateManager ? window.StateManager.getTipoTallaSel() : 'Letra';
         const clave = generarClave(genero, tipo, talla);
@@ -294,7 +294,7 @@ window.AsignacionService = (function() {
      * Limpiar todas las asignaciones
      */
     function limpiar() {
-        console.log('[AsignacionService] 🧹 Limpiando todas las asignaciones...');
+        console.log('[AsignacionService]  Limpiando todas las asignaciones...');
         asignaciones = {};
         
         // Actualizar StateManager

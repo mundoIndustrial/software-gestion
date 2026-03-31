@@ -179,13 +179,13 @@ class ItemFormCollector {
                 };
                 
                 let procesosParaEnviar = {};
-                let procesosAEliminarLocal = []; // 🔴 NUEVO: Recopilar IDs de procesos a eliminar
+                let procesosAEliminarLocal = []; //  NUEVO: Recopilar IDs de procesos a eliminar
                 
                 if (prenda.procesos && typeof prenda.procesos === 'object') {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                         const datosProceso = proceso.datos || proceso;
                         
-                        // 🔴 CRÍTICO: Filtrar procesos marcados para eliminar
+                        //  CRÍTICO: Filtrar procesos marcados para eliminar
                         // Si el proceso tiene ID y está en window.procesosParaEliminarIds (Set), NO incluirlo
                         if (datosProceso.id && window.procesosParaEliminarIds && window.procesosParaEliminarIds.has(datosProceso.id)) {
                             console.log('[ItemFormCollector]  Proceso excluido (marcado para eliminar):', {
@@ -193,7 +193,7 @@ class ItemFormCollector {
                                 tipo: key,
                                 procesosParaEliminar: Array.from(window.procesosParaEliminarIds)
                             });
-                            // 🔴 NUEVO: Agregar a lista de procesos a eliminar
+                            //  NUEVO: Agregar a lista de procesos a eliminar
                             procesosAEliminarLocal.push(datosProceso.id);
                             return; // Saltar este proceso
                         }
@@ -279,7 +279,7 @@ class ItemFormCollector {
                     tipo_manga_id: prenda.tipo_manga_id || null,
                     tipo_broche_boton_id: prenda.tipo_broche_boton_id || null,
                     procesos: procesosParaEnviar,
-                    procesos_a_eliminar: procesosAEliminarLocal, // 🔴 NUEVO: Agregar IDs de procesos a eliminar
+                    procesos_a_eliminar: procesosAEliminarLocal, //  NUEVO: Agregar IDs de procesos a eliminar
                     imagenes: fotosParaEnviar
                 };
                 

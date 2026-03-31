@@ -87,7 +87,7 @@ class EppImagenesHelper
      */
     public static function logMapearAgregado(int $eppId, string $codigo): void
     {
-        Log::debug('🔗 [EPP-IMAGENES] Mapeando agregado EPP sin cargar epp_imagenes', [
+        Log::debug(' [EPP-IMAGENES] Mapeando agregado EPP sin cargar epp_imagenes', [
             'epp_id' => $eppId,
             'codigo' => $codigo,
             'advertencia' => 'tabla epp_imagenes no existe',

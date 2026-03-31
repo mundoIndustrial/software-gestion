@@ -22,9 +22,9 @@ storage/logs/laravel.log
 ```
 
 **Componentes medidos:**
--  `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO]  Tallas cargadas` → tiempo_ms
 -  `[CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados` → tiempo_ms
--  `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO]  Clientes cargados` → tiempo_ms
 -  `[CREAR-DESDE-COTIZACION]  Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
 
 **Log final:**
@@ -97,7 +97,7 @@ storage/logs/laravel.log
 
 **Log inicial:**
 ```
-[RESOLVER-IMAGENES] 📸 INICIANDO EXTRACCIÓN DE IMÁGENES
+[RESOLVER-IMAGENES]  INICIANDO EXTRACCIÓN DE IMÁGENES
 {
   "archivos_en_request": 10,
   "imagenes_en_dto": 10,
@@ -164,7 +164,7 @@ storage/logs/laravel.log
 ### 5️⃣ MAPEO DE IMÁGENES - `MapeoImagenesService`
 
 ```
-[MAPEO-IMAGENES] 📸 INICIANDO MAPEO DE IMÁGENES
+[MAPEO-IMAGENES]  INICIANDO MAPEO DE IMÁGENES
 {
   "pedido_id": 123,
   "prendas": 5,
@@ -273,13 +273,13 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 -  Los logs usan prefijo `[CREAR-PEDIDO]`, `[RESOLVER-IMAGENES]`, etc. para fácil filtrado
 -  Todos los tiempos están en **milisegundos (ms)**
 -  Los logs incluyen "resumen" en una línea para análisis rápido
 -  **NO dejar estos logs en producción** - aumentan overhead (2-5%)
-- 🔐 Después de debugging, considerar cambiar `Log::info()` a `Log::debug()` para reducir ruido
+-  Después de debugging, considerar cambiar `Log::info()` a `Log::debug()` para reducir ruido
 
 ---
 

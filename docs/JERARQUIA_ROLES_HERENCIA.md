@@ -1,4 +1,4 @@
-# 🔐 Jerarquía de Roles - Sistema de Herencia
+#  Jerarquía de Roles - Sistema de Herencia
 
 ## Descripción
 

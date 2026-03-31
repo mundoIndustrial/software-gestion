@@ -80,7 +80,7 @@ window.abrirModalFiltro = function(tipo, event) {
 
 // Función global para limpiar todos los filtros
 window.limpiarTodosLosFiltros = function() {
-  console.log('🧹 INICIANDO limpiarTodosLosFiltros (global)');
+  console.log(' INICIANDO limpiarTodosLosFiltros (global)');
   
   // Limpiar variables de filtro
   filtroFechaActual = '';
@@ -914,4 +914,4 @@ function aplicarFiltroFecha() {
   cerrarModalFiltro('fecha');
 }
 
-console.log('🎯 Sistema de Filtros Compartidos cargado correctamente');
+console.log(' Sistema de Filtros Compartidos cargado correctamente');

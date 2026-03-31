@@ -104,7 +104,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         });
         
         if (response.success) {
-            // 🔴 DIAGNÓSTICO: Verificar estructura de respuesta
+            //  DIAGNÓSTICO: Verificar estructura de respuesta
             console.log('[Builder]  DIAGNÓSTICO de pedido_id:', {
                 valor: response.pedido_id,
                 esUndefined: response.pedido_id === undefined,
@@ -137,7 +137,7 @@ window.crearPedidoConBuilderUnificado = async function() {
                 }
             }
             
-            console.log('[Builder] 🎯 pedidoId final:', pedidoId, 'tipo:', typeof pedidoId);
+            console.log('[Builder]  pedidoId final:', pedidoId, 'tipo:', typeof pedidoId);
             
             if (!pedidoId || pedidoId === undefined || pedidoId === 'undefined') {
                 console.error('[Builder]  No se pudo determinar un ID de pedido válido');

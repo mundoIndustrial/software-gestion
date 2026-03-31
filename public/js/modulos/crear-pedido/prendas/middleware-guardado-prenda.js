@@ -167,7 +167,7 @@ class MiddlewareGuardadoPrenda {
     limpiarProcesosEditados() {
         if (window.gestorEditacionProcesos) {
             window.gestorEditacionProcesos.limpiar();
-            console.log('🧹 [MIDDLEWARE-GUARDADO] Registro de procesos editados limpiado');
+            console.log(' [MIDDLEWARE-GUARDADO] Registro de procesos editados limpiado');
         }
     }
 }

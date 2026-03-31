@@ -1,5 +1,5 @@
 /**
- * 🎯 LOADER MODULAR - Prendas Editor (Refactorizado)
+ *  LOADER MODULAR - Prendas Editor (Refactorizado)
  * 
  * Responsabilidad: Cargar todos los módulos especializados de edición de prendas
  * 

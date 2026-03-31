@@ -135,7 +135,7 @@ DB::table('recibo_prendas')->count(); // Ver cantidad de registros
 
 ---
 
-## 🐛 Solucionar Problemas Comunes
+## Solucionar Problemas Comunes
 
 ### Error: "Undefined variable: pedidosAgrupados"
 
@@ -195,7 +195,7 @@ npm run build
 
 ---
 
-## 📝 Archivos Necesarios
+##  Archivos Necesarios
 
 Verifica que existan estos archivos:
 
@@ -256,7 +256,7 @@ Esto crea 6 pedidos con múltiples items.
 
 ---
 
-## 🔐 Configuración de Seguridad
+##  Configuración de Seguridad
 
 ### Middleware Recomendado
 

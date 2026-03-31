@@ -83,7 +83,7 @@ class EppService {
         );
 
         // Limpiar imágenes previas
-        console.log('[EppService] 📸 Limpiando imágenes previas en stateManager');
+        console.log('[EppService]  Limpiando imágenes previas en stateManager');
         this.stateManager.limpiarImagenesSubidas();
         this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacío para poder agregar nuevas
 
@@ -374,7 +374,7 @@ class EppService {
             }
 
             // Si NO estamos editando, crear nuevo item
-            console.log('[EppService] ➕ Creando nuevo EPP');
+            console.log('[EppService]  Creando nuevo EPP');
             
             this.itemManager.crearItem(
                 producto.id,
@@ -508,7 +508,7 @@ class EppService {
      * Filtrar EPP por término de búsqueda - OPTIMIZADO (debounce + validación mínima)
      */
     async filtrarEPP(valor) {
-        console.log('🔎 [EppService] filtrarEPP iniciado con valor:', valor);
+        console.log(' [EppService] filtrarEPP iniciado con valor:', valor);
         const container = document.getElementById('resultadosBuscadorEPP');
         const inputBuscador = document.getElementById('inputBuscadorEPP');
         
@@ -520,7 +520,7 @@ class EppService {
         const valorLimpio = (valor || '').trim().toLowerCase();
 
         if (!valorLimpio) {
-            console.log('🔎 [EppService] Valor vacío, ocultando resultados');
+            console.log(' [EppService] Valor vacío, ocultando resultados');
             container.style.display = 'none';
             return;
         }
@@ -568,11 +568,11 @@ class EppService {
             }
 
             try {
-                console.log('🔎 [EppService] Ejecutando búsqueda con debounce para:', terminoBusqueda);
+                console.log(' [EppService] Ejecutando búsqueda con debounce para:', terminoBusqueda);
                 
                 // Verificar si está en caché
                 if (this.cacheBusqueda[terminoBusqueda]) {
-                    console.log('🔎 [EppService] Resultado obtenido del caché');
+                    console.log(' [EppService] Resultado obtenido del caché');
                     const epps = this.cacheBusqueda[terminoBusqueda];
                     this._renderizarResultadosBusqueda(epps, terminoBusqueda, container);
                     return;
@@ -584,11 +584,11 @@ class EppService {
                 // Guardar en caché
                 this.cacheBusqueda[terminoBusqueda] = epps;
                 
-                console.log('🔎 [EppService] EPPs retornados:', epps.length);
+                console.log(' [EppService] EPPs retornados:', epps.length);
                 this._renderizarResultadosBusqueda(epps, terminoBusqueda, container);
 
             } catch (error) {
-                console.error('🔎 [EppService] Error en filtrarEPP:', error);
+                console.error(' [EppService] Error en filtrarEPP:', error);
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626; font-size: 0.9rem;"> Error al buscar EPP</div>`;
                 container.style.display = 'block';
             }

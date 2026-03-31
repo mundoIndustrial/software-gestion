@@ -153,7 +153,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                        if (this.debug) console.log('➕ Pedido creado (supervisor)');
+                        if (this.debug) console.log(' Pedido creado (supervisor)');
                         try {
                             window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { 
                                 detail: { pedido: event?.pedido, source: 'pedidos.creados' }
@@ -173,7 +173,7 @@ class PedidosRealtimeRefresh {
                     if (this.debug) console.log('🔌 [PedidosRealtime] Configurando cartera/pedidos');
 
                     ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                        if (this.debug) console.log('➕ Pedido creado (cartera)');
+                        if (this.debug) console.log(' Pedido creado (cartera)');
                         if (this.uiUpdate) {
                             this.uiUpdate.showRealtimeToast(`Nuevo pedido recibido`, 'success');
                         }
@@ -238,7 +238,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     ws.subscribe(`pedidos.${userId}`, '.PedidoCreado', (event) => {
-                        if (this.debug) console.log('➕ Nuevo pedido privado');
+                        if (this.debug) console.log(' Nuevo pedido privado');
                         this.handlePedidoUpdate(event.pedido, 'pedido.creado');
                     });
 
@@ -281,7 +281,7 @@ class PedidosRealtimeRefresh {
         if (fila) {
             this.actualizarFila(fila, pedido);
         } else if (!this.isCarteraPage && this.debug) {
-            console.log('➕ Nuevo pedido:', pedido.id);
+            console.log(' Nuevo pedido:', pedido.id);
             this.agregarFilaNueva(pedido);
         }
         
@@ -402,7 +402,7 @@ class PedidosRealtimeRefresh {
             const anterior = this.pedidosAnterior.get(pedido.id);
             
             if (!anterior) {
-                if (this.debug) console.log('➕ Nuevo pedido:', pedido.id);
+                if (this.debug) console.log(' Nuevo pedido:', pedido.id);
                 hayCambios = true;
                 continue;
             }

@@ -199,7 +199,7 @@ curl -i -N -H "Connection: Upgrade" \
 -  Edge 12+
 -  IE 11 (sin WebSockets, usa fallback)
 
-## 📝 Ejemplos de Uso
+##  Ejemplos de Uso
 
 ### 1. Actualización Manual
 ```javascript
@@ -232,7 +232,7 @@ const realtime = new PedidosRealtimeRefresh({
 realtime.start();
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Problemas Comunes
 

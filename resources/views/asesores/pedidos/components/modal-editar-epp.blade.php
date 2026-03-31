@@ -635,14 +635,14 @@
             
             // Procesar agregaciones de nuevas imágenes
             if (cambios.imagenesAAgregar && cambios.imagenesAAgregar.length > 0) {
-                console.log('📸 [Modal Novedad] Procesando agregación de imágenes:', cambios.imagenesAAgregar);
+                console.log(' [Modal Novedad] Procesando agregación de imágenes:', cambios.imagenesAAgregar);
                 
                 const formData = new FormData();
                 let archivosAgregados = 0;
                 
                 cambios.imagenesAAgregar.forEach((imagen, index) => {
                     if (imagen.file) {
-                        console.log(`📸 Agregando archivo ${index}:`, {
+                        console.log(` Agregando archivo ${index}:`, {
                             nombre: imagen.nombre,
                             size: imagen.size,
                             type: imagen.type,
@@ -664,7 +664,7 @@
                     }
                 });
                 
-                console.log('📸 FormData creado:', {
+                console.log(' FormData creado:', {
                     archivosCount: archivosAgregados,
                     formDataEntries: Array.from(formData.entries())
                 });
@@ -932,7 +932,7 @@
             }
         });
         
-        console.log('📸 [confirmarSeleccionImagenes] Imágenes para agregar:', imagenesAAgregar);
+        console.log(' [confirmarSeleccionImagenes] Imágenes para agregar:', imagenesAAgregar);
         actualizarGaleriaImagenes();
         cerrarModalSelectorImagenes();
     }

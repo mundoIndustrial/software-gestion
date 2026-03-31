@@ -205,7 +205,7 @@
 @endpush
 
 @push('scripts')
-<!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
+<!--  SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
 <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
@@ -277,7 +277,7 @@
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}"></script>
 
 <!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
@@ -312,7 +312,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
-<!-- 🆕 PrendaEditor sin legacy -->
+<!--  PrendaEditor sin legacy -->
 <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
@@ -358,7 +358,7 @@
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
 
 <!-- Resto de handlers que necesitan DOMContentLoaded -->
 <script>

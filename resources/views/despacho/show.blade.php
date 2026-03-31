@@ -1173,7 +1173,7 @@ function generarHTMLFactura(datos) {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // 🔴 Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            //  Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const generosEnTallas = Object.keys(prenda.tallas);
             const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
@@ -1204,7 +1204,7 @@ function generarHTMLFactura(datos) {
             // Convertir objeto de géneros a array de tallas con género y colores
             let todasLasTallas = [];
             Object.keys(prenda.tallas).forEach(genero => {
-                // 🔴 Excluir GENERICO completamente
+                //  Excluir GENERICO completamente
                 if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
                     return; // Saltar GENERICO
                 }
@@ -1301,7 +1301,7 @@ function generarHTMLFactura(datos) {
             }
             } // cierre del else de soloGenerico
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // 🔴 Filtrar GENERICO de variantes
+            //  Filtrar GENERICO de variantes
             const variantesFiltradas = prenda.variantes.filter(v => 
                 !(v.genero && String(v.genero).toUpperCase().trim() === 'GENERICO')
             );
@@ -1470,7 +1470,7 @@ function generarHTMLFactura(datos) {
             <div style="padding: 12px; space-y: 8px;">
                 ${datos.epps.map(epp => {
                     // Debug logging para EPPs en despacho
-                    console.log('🖼️ [DESPACHO-FACTURA] EPP con imágenes:', {
+                    console.log(' [DESPACHO-FACTURA] EPP con imágenes:', {
                         nombre: epp.nombre_completo || epp.nombre,
                         cantidad: epp.cantidad,
                         imagenes_existe: !!epp.imagenes,
@@ -1482,7 +1482,7 @@ function generarHTMLFactura(datos) {
                     // Generar HTML para imágenes si existen
                     const imagenesHTML = (epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) ? `
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes.length})</div>
+                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes.length})</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
                                 ${epp.imagenes.map((imagen, index) => {
                                     let imgUrl = '';

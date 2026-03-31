@@ -17,7 +17,7 @@ window.WizardManager = (function() {
         generoProcesado: null,  // Género del último paso 2 procesado
         generoCambiado: false,  // Bandera si el género cambió en Paso 1
         generoSeleccionandoEnPaso1: false,  // Flag para recordar selección en PASO 1
-        generoAnterior: null  // 🆕 Guardar género anterior para restaurar al volver
+        generoAnterior: null  //  Guardar género anterior para restaurar al volver
     };
 
     return {
@@ -46,7 +46,7 @@ window.WizardManager = (function() {
                 if (btnCancelar && this._storedHandlers.cancelar) {
                     btnCancelar.removeEventListener('click', this._storedHandlers.cancelar, false);
                 }
-                console.log('[WizardManager] 🧹 Listeners anteriores removidos');
+                console.log('[WizardManager]  Listeners anteriores removidos');
             }
             
             // Crear nuevos handlers y guardar referencias
@@ -187,7 +187,7 @@ window.WizardManager = (function() {
             const generoActual = StateManager.getGeneroSeleccionado();
             const generesCambian = generoActual !== genero;
             
-            // 🆕 Guardar género anterior antes de cambiar
+            //  Guardar género anterior antes de cambiar
             flujoInterno.generoAnterior = generoActual;
             
             StateManager.setGeneroSeleccionado(genero);
@@ -279,7 +279,7 @@ window.WizardManager = (function() {
             console.log('[WizardManager]  pasoSiguiente() llamado...');
             const pasoActual = StateManager.getPasoActual();
             
-            // 🔧 VERIFICACIÓN: Asegurar que los botones estén en estado usable
+            //  VERIFICACIÓN: Asegurar que los botones estén en estado usable
             this._verificarYRepararBotones();
             
             switch (pasoActual) {
@@ -320,7 +320,7 @@ window.WizardManager = (function() {
         },
 
         /**
-         * 🎯 ALERTA: Mostrar cuando se restaura género automáticamente
+         *  ALERTA: Mostrar cuando se restaura género automáticamente
          */
         _mostrarAlertaGeneroRestaurado(genero) {
             // Buscar si existe un elemento para mostrar alertas
@@ -463,7 +463,7 @@ window.WizardManager = (function() {
          */
         irPaso(numeroPaso) {
             try {
-                console.log('[WizardManager] 🎯 irPaso() llamado con:', numeroPaso);
+                console.log('[WizardManager]  irPaso() llamado con:', numeroPaso);
                 
                 const totalPasos = this.obtenerTotalPasos();
                 console.log('[WizardManager] Total de pasos disponibles:', totalPasos);
@@ -519,13 +519,13 @@ window.WizardManager = (function() {
                 
                 // Si es paso 1, cargar los géneros (no hace falta, ya están)
                 if (numeroPaso === 1) {
-                    console.log('[WizardManager] 👥 Paso 1 - géneros ya cargados');
+                    console.log('[WizardManager]  Paso 1 - géneros ya cargados');
                 }
                 
                 // Si es paso 2, cargar las tallas disponibles
                 if (numeroPaso === 2) {
                     try {
-                        console.log('[WizardManager] 📏 Cargando tallas para género...');
+                        console.log('[WizardManager]  Cargando tallas para género...');
                         const generoSeleccionado = StateManager.getGeneroSeleccionado();
                         if (generoSeleccionado) {
                             window.WizardManager.cargarTallasParaGenero(generoSeleccionado);
@@ -980,7 +980,7 @@ window.WizardManager = (function() {
                 
                 // Evento click
                 btn.addEventListener('click', () => {
-                    console.log('[WizardManager] 🎯 Tipo seleccionado:', tipo);
+                    console.log('[WizardManager]  Tipo seleccionado:', tipo);
                     
                     // Marcar botón como seleccionado
                     const tipoBtns = document.querySelectorAll('.wizard-tipo-talla-btn');
@@ -1097,7 +1097,7 @@ window.WizardManager = (function() {
 
                 // Evento click
                 btn.addEventListener('click', () => {
-                    console.log('[WizardManager] 🎯 Tipo seleccionado:', tipo);
+                    console.log('[WizardManager]  Tipo seleccionado:', tipo);
 
                     // Marcar botón como seleccionado
                     const tipoBtns = document.querySelectorAll('.wizard-tipo-talla-btn');
@@ -1138,7 +1138,7 @@ window.WizardManager = (function() {
             }
             
             try {
-                // 🔴 FIX: No borrar todo el contenedor (destruiría los botones Letra/Número).
+                //  FIX: No borrar todo el contenedor (destruiría los botones Letra/Número).
                 //    Solo borrar/reemplazar el sub-contenedor de tallas.
                 let tallasSubContainer = document.getElementById('wizard-tallas-sub-contenedor');
                 if (tallasSubContainer) {

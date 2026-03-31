@@ -361,7 +361,7 @@ include('test-factura-performance.php')
 
 ---
 
-## 📝 Próximos Pasos
+##  Próximos Pasos
 
 1. **Medir estado actual:**
    ```bash

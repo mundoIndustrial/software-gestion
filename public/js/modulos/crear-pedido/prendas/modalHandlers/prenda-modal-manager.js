@@ -1,5 +1,5 @@
 /**
- * 🎯 Módulo de Manejo del Modal
+ *  Módulo de Manejo del Modal
  * Responsabilidad: Abrir, cerrar, limpiar y gestionar el modal
  */
 

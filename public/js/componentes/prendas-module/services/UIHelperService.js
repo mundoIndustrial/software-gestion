@@ -249,7 +249,7 @@ class UIHelperService {
     static limpiarEventListeners(element) {
         const newElement = element.cloneNode(true);
         
-        // 🔴 CRÍTICO: Verificar si el elemento tiene padre antes de reemplazar
+        //  CRÍTICO: Verificar si el elemento tiene padre antes de reemplazar
         if (element.parentNode) {
             element.parentNode.replaceChild(newElement, element);
         } else {

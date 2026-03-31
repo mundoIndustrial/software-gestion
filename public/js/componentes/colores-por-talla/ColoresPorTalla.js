@@ -616,7 +616,7 @@ window.ColoresPorTalla = (function() {
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asignacionesArray = Object.entries(asignaciones);
         
-        // 🔴 FIX: Si ya no hay asignaciones wizard, limpiar telas que fueron agregadas
+        //  FIX: Si ya no hay asignaciones wizard, limpiar telas que fueron agregadas
         // automáticamente por el wizard (no tienen color/referencia/imágenes propias)
         if (asignacionesArray.length === 0 && window.telasCreacion && window.telasCreacion.length > 0) {
             // Filtrar: solo mantener telas que tienen datos propios (color, referencia o imágenes)
@@ -628,7 +628,7 @@ window.ColoresPorTalla = (function() {
                 return tieneColor || tieneRef || tieneImgs || tieneObs;
             });
             if (telasConDatos.length < window.telasCreacion.length) {
-                console.log('[ColoresPorTalla] 🧹 Limpiando', window.telasCreacion.length - telasConDatos.length, 'telas huérfanas del wizard');
+                console.log('[ColoresPorTalla]  Limpiando', window.telasCreacion.length - telasConDatos.length, 'telas huérfanas del wizard');
                 window.telasCreacion = telasConDatos;
             }
         }
@@ -682,13 +682,13 @@ window.ColoresPorTalla = (function() {
                 return `<span style="display:inline-block;background:#dbeafe;color:#1e40af;padding:0.15rem 0.5rem;border-radius:12px;font-size:0.73rem;font-weight:500;margin:0.1rem;white-space:nowrap;">${nombre} (${cant})</span>`;
             }).join('');
             
-            // 🔴 FIX: Buscar referencia en colores (para wizard con multi-refs) O en asignación (para cotización simple)
+            //  FIX: Buscar referencia en colores (para wizard con multi-refs) O en asignación (para cotización simple)
             const refsDesdoColores = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
             const refDesdeAsignacion = referencia ? [referencia] : [];
             const allRefs = [...new Set([...refsDesdoColores, ...refDesdeAsignacion])];
             const refHtml = allRefs.length > 0 ? allRefs.join(', ') : '-';
             
-            // 🔴 FIX: Buscar imágenes en colores (para wizard) O en asignación (para cotización)
+            //  FIX: Buscar imágenes en colores (para wizard) O en asignación (para cotización)
             let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             
             // Primero intentar con imagenes de asignación (cotización simple con múltiples colores)
@@ -788,7 +788,7 @@ window.ColoresPorTalla = (function() {
 
         // --- 2) Filas de telas simples (sin wizard) ---
         telasSimples.forEach((t, idx) => {
-            // 🔴 FIX: Buscar tanto 'tela' como 'nombre_tela' (compatibilidad cotización + prendas nuevas)
+            //  FIX: Buscar tanto 'tela' como 'nombre_tela' (compatibilidad cotización + prendas nuevas)
             const telaName = (t.nombre_tela || t.tela || '').toUpperCase();
             // Saltar si esta tela ya está representada por wizard
             if (telasEnWizard.has(telaName)) return;
@@ -810,7 +810,7 @@ window.ColoresPorTalla = (function() {
                         : '/storage/' + img;
                     imgHtml = '<img src="' + src + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'object' && img !== null) {
-                    // 🔴 FIX: Manejar objetos temporales del modal y objetos desde backend
+                    //  FIX: Manejar objetos temporales del modal y objetos desde backend
                     let rutaFinal = '';
                     if (img.file instanceof File) {
                         rutaFinal = URL.createObjectURL(img.file);
@@ -883,10 +883,10 @@ window.ColoresPorTalla = (function() {
                     delete asignaciones[clave];
                     window.StateManager.setAsignaciones(asignaciones);
                     
-                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                    //  FIX: Si no quedan más asignaciones, limpiar estado completo
                     const restantes = Object.keys(asignaciones);
                     if (restantes.length === 0) {
-                        console.log('[ColoresPorTalla] 🧹 Última asignación eliminada, limpiando estado...');
+                        console.log('[ColoresPorTalla]  Última asignación eliminada, limpiando estado...');
                         // Limpiar tallasRelacionales
                         if (window.tallasRelacionales) {
                             Object.keys(window.tallasRelacionales).forEach(g => {
@@ -1285,7 +1285,7 @@ window.ColoresPorTalla = (function() {
         const telaOriginal = (asignacionOriginal?.tela || '').trim().toUpperCase();
         const telaCambio = !!(telaOriginal && telaOriginal !== nTela);
         
-        // 🔴 FIX: Leer referencia común (si existe)
+        //  FIX: Leer referencia común (si existe)
         const refComun = modal.querySelector('#wz-edit-referencia-comun') 
             ? (modal.querySelector('#wz-edit-referencia-comun').value || '').trim().toUpperCase()
             : '';
@@ -1299,7 +1299,7 @@ window.ColoresPorTalla = (function() {
         cards.forEach((card, idx) => {
             const colorNombre = (card.querySelector('.wz-edit-color').value || '').trim().toUpperCase();
             const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
-            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  // 🔴 FIX: Usar referencia común
+            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  //  FIX: Usar referencia común
             const observaciones = ''; // (card.querySelector('.wz-edit-obs').value || '').trim();
             const colorOriginal = Array.isArray(asignacionOriginal?.colores) ? asignacionOriginal.colores[idx] : null;
 

@@ -152,7 +152,7 @@
     }
 
     function __renderBadge(pedidoId, count) {
-        console.log(`[DEBUG-BADGE] 🎨 __renderBadge INICIADO`);
+        console.log(`[DEBUG-BADGE] __renderBadge INICIADO`);
         console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - Count (unread): ${count}`);
 
@@ -290,7 +290,7 @@
             const map = (data && data.success && data.data) ? data.data : {};
             console.log(`[DEBUG] - Map de unread counts:`, map);
 
-            console.log(`[DEBUG] 🎨 Renderizando badges para cada pedido...`);
+            console.log(`[DEBUG] Renderizando badges para cada pedido...`);
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
                 console.log(`[DEBUG] - Pedido ${pedidoId} - unread: ${unread}`);
@@ -1097,7 +1097,7 @@
                 console.log(`[DEBUG-BADGE] - ¿Era visto recientemente antes del clic?: ${wasRecentlySeen}`);
                 
                 // Marcar como visto en localStorage inmediatamente
-                console.log(`[DEBUG-BADGE] 📝 Marcando como visto en localStorage...`);
+                console.log(`[DEBUG-BADGE]  Marcando como visto en localStorage...`);
                 setBadgeSeen(pedidoId);
                 console.log(`[DEBUG-BADGE]  Marcado como visto en localStorage`);
                 
@@ -1106,7 +1106,7 @@
                 marcarNotificacionesComoVistas(pedidoId);
                 console.log(`[DEBUG-BADGE]  Solicitado marcado como visto en backend`);
                 
-                console.log(`[DEBUG-BADGE] 🎯 Badge ${pedidoId} marcado como visto por clic del usuario`);
+                console.log(`[DEBUG-BADGE]  Badge ${pedidoId} marcado como visto por clic del usuario`);
                 console.log(`[DEBUG-BADGE]  El badge debería desaparecer ahora`);
             }
         });

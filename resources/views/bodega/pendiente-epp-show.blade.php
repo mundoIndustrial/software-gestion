@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    console.log(`📏 [DIAGNÓSTICO-EPP] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    console.log(` [DIAGNÓSTICO-EPP] Viewport: ${viewportWidth}x${viewportHeight}px`);
     
     // Verificar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');

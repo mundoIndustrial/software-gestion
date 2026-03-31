@@ -402,7 +402,7 @@ class EppItemManagerTabla {
 
             // Actualizar imágenes si existen
             if (datos.imagenes !== undefined) {
-                console.log('[EppItemManagerTabla] 🖼️ Procesando imágenes:', datos.imagenes.length);
+                console.log('[EppItemManagerTabla]  Procesando imágenes:', datos.imagenes.length);
 
                 // Buscar y actualizar la sección de galería existente
                 const galeriaSeccion = item.querySelector('div[style*="border-top: 1px solid #bfdbfe"]');

@@ -50,7 +50,7 @@ function integrarTransformadorEnCargarPrendas() {
                     
                     if (!existe) {
                         telasFormato.push(telaVariante);
-                        console.log('[transformarDatos] ➕ Agregada tela desde transformador:', telaVariante);
+                        console.log('[transformarDatos]  Agregada tela desde transformador:', telaVariante);
                     } else {
                         // Enriquecer si no tiene referencia
                         const indice = telasFormato.findIndex(t => 

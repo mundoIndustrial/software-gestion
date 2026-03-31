@@ -905,7 +905,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         last_updated_at: lastUpdatedAt,
     };
 
-    console.log('📝 DATOS A GUARDAR:', datosAGuardar);
+    console.log(' DATOS A GUARDAR:', datosAGuardar);
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;

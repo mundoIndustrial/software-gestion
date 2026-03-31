@@ -384,7 +384,7 @@ function connectWebSocket() {
         });
 
         // Escuchar eventos de pedidos en el canal público de despacho
-        console.log('🔧 Creando canal pedidos.general...');
+        console.log(' Creando canal pedidos.general...');
         const despachoChannel = socket.channel('pedidos.general');
         
         if (!despachoChannel) {
@@ -409,7 +409,7 @@ function connectWebSocket() {
             });
             
             // Mostrar notificación de que se recibió un evento
-            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
             // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
             if (event.nuevo_estado === 'Entregado') {

@@ -22,7 +22,7 @@
         }
 
         //  LIMPIAR COMPLETAMENTE el container ANTES de agregar nuevos elementos
-        console.log('[renderizador-cotizaciones] 🧹 Limpiando container...');
+        console.log('[renderizador-cotizaciones]  Limpiando container...');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }

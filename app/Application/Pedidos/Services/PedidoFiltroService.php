@@ -56,7 +56,7 @@ class PedidoFiltroService
         }
 
         if (!$tieneProcesoCosturaBodega) {
-            Log::warning('[PedidoFiltroService] 🔐 Bodeguero sin procesos costura-bodega', [
+            Log::warning('[PedidoFiltroService]  Bodeguero sin procesos costura-bodega', [
                 'pedido_id' => $pedidoId,
                 'usuario_id' => auth()?->id()
             ]);
@@ -98,7 +98,7 @@ class PedidoFiltroService
         ]);
 
         if (empty($prendasFiltradas)) {
-            Log::warning('[PedidoFiltroService] 🔐 Insumos sin prendas disponibles', [
+            Log::warning('[PedidoFiltroService]  Insumos sin prendas disponibles', [
                 'pedido_id' => $pedidoId,
                 'usuario_id' => auth()?->id()
             ]);

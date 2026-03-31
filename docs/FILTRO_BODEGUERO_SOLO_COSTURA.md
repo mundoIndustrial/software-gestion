@@ -1,4 +1,4 @@
-# 🔐 Filtro Bodeguero - Solo COSTURA-BODEGA
+#  Filtro Bodeguero - Solo COSTURA-BODEGA
 
 ## Descripción
 
@@ -60,12 +60,12 @@ Frontend renderiza modal con SOLO COSTURA-BODEGA
 El sistema registra logs cuando activa el filtro bodeguero:
 
 ```
-[2026-02-04] [PedidoController] 🔐 FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA
+[2026-02-04] [PedidoController]  FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA
   - pedido_id: 1
   - usuario_id: 5
   - total_prendas: 1
 
-[2026-02-04] [PedidoController] 🔐 Procesos filtrados para bodeguero
+[2026-02-04] [PedidoController]  Procesos filtrados para bodeguero
   - prenda_id: 1
   - procesos_antes: 7
   - procesos_despues: 1

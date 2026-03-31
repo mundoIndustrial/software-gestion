@@ -40,21 +40,21 @@ class RealtimeReciboListener {
      */
     initialize() {
         if (this.isInitialized) {
-            console.warn('[🔴 RealtimeReciboListener] Ya está inicializado');
+            console.warn('[ RealtimeReciboListener] Ya está inicializado');
             return;
         }
 
-        console.log('[🔴 RealtimeReciboListener] Inicializando listener en tiempo real...');
+        console.log('[ RealtimeReciboListener] Inicializando listener en tiempo real...');
 
         // Esperar a que Echo esté listo
         window.waitForEcho(() => {
             try {
-                console.log('[🔴 RealtimeReciboListener] Echo está listo, conectando al canal...');
+                console.log('[ RealtimeReciboListener] Echo está listo, conectando al canal...');
 
                 // Conectar al canal y escuchar el evento
                 this.channel = window.EchoInstance.channel('recibos-costura')
                     .listen('recibo.aprobado', (data) => {
-                        console.log('[🔴 RealtimeReciboListener] ¡Evento recibido en tiempo real!', data);
+                        console.log('[ RealtimeReciboListener] ¡Evento recibido en tiempo real!', data);
                         this._handleReciboAprobado(data);
                     });
 
@@ -150,7 +150,7 @@ class RealtimeReciboListener {
             .then(response => response.json())
             .then(result => {
                 if (result.recibos && result.recibos.html) {
-                    console.log('[🔴 RealtimeReciboListener] HTML recibido, actualizando tabla...');
+                    console.log('[ RealtimeReciboListener] HTML recibido, actualizando tabla...');
 
                     // Actualizar solo el tbody
                     const tbody = document.getElementById('tablaRecibosBody');
@@ -228,7 +228,7 @@ class RealtimeReciboListener {
         if (this.channel) {
             this.channel.stopListening('recibo.aprobado');
             this.isInitialized = false;
-            console.log('[🔴 RealtimeReciboListener] ⏸️ Listener detenido');
+            console.log('[ RealtimeReciboListener] ⏸️ Listener detenido');
         }
     }
 }

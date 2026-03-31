@@ -58,7 +58,7 @@ class AnalizarPedido45729Seeder extends Seeder
                 
                 // Fotos de Prenda
                 $fotosPrenda = PrendaFotoPedido::where('prenda_pedido_id', $prenda->id)->get();
-                echo "      📸 Fotos de Prenda: {$fotosPrenda->count()}\n";
+                echo "       Fotos de Prenda: {$fotosPrenda->count()}\n";
                 foreach ($fotosPrenda as $foto) {
                     echo "         - ID: {$foto->id}\n";
                     echo "         - ruta_original: {$foto->ruta_original}\n";
@@ -83,7 +83,7 @@ class AnalizarPedido45729Seeder extends Seeder
             foreach ($epps as $epp) {
                 echo "   EPP: {$epp->nombre} (ID: {$epp->id})\n";
                 $fotosEpp = PedidoEppImagen::where('pedido_epp_id', $epp->id)->get();
-                echo "      📸 Fotos: {$fotosEpp->count()}\n";
+                echo "       Fotos: {$fotosEpp->count()}\n";
                 foreach ($fotosEpp as $foto) {
                     echo "         - ID: {$foto->id}\n";
                     echo "         - ruta_original: {$foto->ruta_original}\n";

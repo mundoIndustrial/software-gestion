@@ -342,13 +342,13 @@ const ProcesoEditService = {
                                     if (typeof valor === 'number') {
                                         // SOBREMEDIDA como número: es para DAMA (género actual)
                                         window.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
-                                        console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (número) extraída:', valor);
                                     } else if (typeof valor === 'object' && valor !== null) {
                                         // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
                                         for (const [genero, cantidad] of Object.entries(valor)) {
                                             window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                         }
-                                        console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (objeto) extraída:', valor);
                                     }
                                 } else {
                                     // Otras tallas: copiar directamente
@@ -372,13 +372,13 @@ const ProcesoEditService = {
                                     if (typeof valor === 'number') {
                                         // SOBREMEDIDA como número: es para CABALLERO
                                         window.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
-                                        console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (número) extraída:', valor);
                                     } else if (typeof valor === 'object' && valor !== null) {
                                         // SOBREMEDIDA anidada: extraer por género
                                         for (const [genero, cantidad] of Object.entries(valor)) {
                                             window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                         }
-                                        console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
                                     }
                                 } else {
                                     window.tallasCantidadesProceso.caballero[talla] = valor;

@@ -28,7 +28,7 @@ function abrirEditarPrendas() {
     let htmlListaPrendas = '<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">';
     
     if (prendas.length === 0) {
-        // 🔴 NUEVO: NO mostrar contenedor vacío en modo edición
+        //  NUEVO: NO mostrar contenedor vacío en modo edición
         // El contenedor vacío solo debe aparecer en modo creación (cuando se abre el modal de agregar prenda nueva)
         // En modo edición, este modal se usa para seleccionar qué prenda editar, así que si no hay prendas, 
         // es un error de lógica que no debería ocurrir
@@ -764,7 +764,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // IMPORTANTE: Capturar TODAS las imágenes, tanto ruta_webp como ruta_original
         // La API devuelve las imágenes en la propiedad 'fotos', no 'imagenes'
         const prendaImagenesRaw = prendaCompleta.fotos || prendaCompleta.imagenes || [];
-        console.log('🖼️ [EDITAR-PRENDA-IMAGENES-RAW] Imágenes RAW recibidas de la API (property: fotos/imagenes):', {
+        console.log(' [EDITAR-PRENDA-IMAGENES-RAW] Imágenes RAW recibidas de la API (property: fotos/imagenes):', {
             cantidad: prendaImagenesRaw.length,
             datos: prendaImagenesRaw,
             hayFotos: !!prendaCompleta.fotos,
@@ -773,7 +773,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         //  LOG CRÍTICO: Ver EXACTAMENTE qué hay en la primera imagen RAW
         if (prendaImagenesRaw.length > 0) {
-            console.log('🖼️ [EDITAR-PRENDA-RAW-DETAIL] ESTRUCTURA DE PRIMERA IMAGEN RAW:', {
+            console.log(' [EDITAR-PRENDA-RAW-DETAIL] ESTRUCTURA DE PRIMERA IMAGEN RAW:', {
                 primerImg: prendaImagenesRaw[0],
                 claves: Object.keys(prendaImagenesRaw[0]),
                 tiene_id: prendaImagenesRaw[0].id !== undefined,
@@ -836,7 +836,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         //  LOG CRÍTICO: Comparar ANTES vs DESPUÉS del mapeo
         if (prendaImagenesMapeadas.length > 0 && prendaImagenesRaw.length > 0) {
-            console.log('🖼️ [EDITAR-PRENDA-MAPEO-COMPARACION] ANTES vs DESPUÉS:', {
+            console.log(' [EDITAR-PRENDA-MAPEO-COMPARACION] ANTES vs DESPUÉS:', {
                 raw_tiene_id: prendaImagenesRaw[0].id !== undefined,
                 mapeada_tiene_id: prendaImagenesMapeadas[0].id !== undefined,
                 raw_id: prendaImagenesRaw[0].id,
@@ -940,7 +940,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                             url = img.ruta_webp || img.ruta_original || img.url || img.ruta || '';
                         }
                         
-                        console.log('  📸 Imagen transformada:', {
+                        console.log('   Imagen transformada:', {
                             original: img,
                             urlExtraida: url,
                             urlConStorage: agregarStorage(url)
@@ -963,7 +963,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         console.log(' [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
         console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
-        console.log('🖼️ [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
+        console.log(' [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
         console.log(' [EDITAR-PRENDA] Datos de prendaCompleta:', {
             nombre: prendaCompleta.nombre,
             nombre_prenda: prendaCompleta.nombre_prenda,
@@ -1588,7 +1588,7 @@ function cargarPrendaEnFormularioModal(prendaData) {
         }
     }
     
-    // 🔴 NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
+    //  NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
     const tieneGenerico = prendaData.generosConTallas && 
                          Object.keys(prendaData.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
     const tieneGenericoEnCantidadTalla = prendaData.cantidad_talla && 
@@ -1604,7 +1604,7 @@ function cargarPrendaEnFormularioModal(prendaData) {
             console.log('[cargarPrendaEnFormularioModal]   ✓ Tarjetas de géneros limpiadas');
         }
         
-        // 🔴 NUEVO: Remover específicamente tarjeta de GENERICO si existe (por cualquier razón)
+        //  NUEVO: Remover específicamente tarjeta de GENERICO si existe (por cualquier razón)
         const tarjetaGenerico = document.querySelector('[data-genero="GENERICO"]');
         if (tarjetaGenerico) {
             tarjetaGenerico.remove();
@@ -1805,7 +1805,7 @@ function configurarListenersModalPrenda() {
         return;
     }
     
-    // console.log('🔧 [Modal] Configurando listeners...');
+    // console.log(' [Modal] Configurando listeners...');
     
     // LISTENER DEL BOTÓN CERRAR
     btnCerrar.onclick = function(e) {

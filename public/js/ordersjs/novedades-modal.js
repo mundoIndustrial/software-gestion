@@ -79,7 +79,7 @@ function cargarNovedadesPedido(ordenId) {
                 // Si no hay novedades
                 historialDiv.innerHTML = `
                     <div class="flex justify-center items-center py-8">
-                        <span class="text-slate-500">📝 No hay novedades registradas</span>
+                        <span class="text-slate-500"> No hay novedades registradas</span>
                     </div>
                 `;
             }
@@ -112,7 +112,7 @@ function cargarNovedadesPedido(ordenId) {
             // Si no hay novedades o hay error
             historialDiv.innerHTML = `
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">📝 No hay novedades registradas</span>
+                    <span class="text-slate-500"> No hay novedades registradas</span>
                 </div>
             `;
         });
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
     try {
-        console.log(`[saveNovedadesRecibo] 📝 Guardando novedades para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+        console.log(`[saveNovedadesRecibo]  Guardando novedades para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
         
         const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`, {
             method: 'POST',

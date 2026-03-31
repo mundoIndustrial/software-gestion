@@ -435,7 +435,7 @@ class EppItemManagerTarjeta {
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // 🔴 Obtener datos de la tarjeta ANTES de eliminar del DOM
+                        //  Obtener datos de la tarjeta ANTES de eliminar del DOM
                         const card = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${itemId}"]`);
                         const eppOriginalId = card ? card.getAttribute('data-epp-original-id') : null;
                         

@@ -59,8 +59,8 @@ class LoggerApp {
             PrendaDataBuilder:      '',
             ValidadorPrenda:        '✔️',
             Modal:                  '',
-            ModalCleanup:           '🧹',
-            Gestor:                 '⚙️',
+            ModalCleanup:           '',
+            Gestor:                 '',
             StorageGuard:           '🛡️'
         }
     };

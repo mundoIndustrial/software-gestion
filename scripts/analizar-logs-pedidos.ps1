@@ -132,7 +132,7 @@ if ($Operacion -eq "creacion-pedido" -or $Operacion -eq "todas") {
 
 # ANÁLISIS: PROCESAMIENTO DE IMÁGENES
 if ($Operacion -eq "imagenes" -or $Operacion -eq "todas") {
-    Write-Host "`n┌─ 🖼️  PROCESAMIENTO DE IMÁGENES" -ForegroundColor Magenta
+    Write-Host "`n┌─   PROCESAMIENTO DE IMÁGENES" -ForegroundColor Magenta
     Write-Host "└─" -ForegroundColor Magenta
     
     $imagenes = $lineas | Select-String 'RESOLVER-IMAGENES|IMAGE-UPLOAD|MAPEO-IMAGENES'

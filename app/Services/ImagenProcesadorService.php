@@ -7,7 +7,6 @@ use Intervention\Image\ImageManager;
 
 /**
  * Servicio para procesar imágenes (Base64 -> WebP)
- * 
  * Responsabilidades:
  * - Convertir Base64 a imagen WebP
  * - Guardar en storage/cotizaciones
@@ -25,7 +24,6 @@ class ImagenProcesadorService
     
     /**
      * Procesar imagen Base64 y guardarla como WebP
-     * 
      * @param array $imagenData Array con 'nombre', 'base64', 'tipo', 'size'
      * @param string $tipo 'prenda' o 'tela'
      * @param int $prendaId ID de la prenda
@@ -34,7 +32,7 @@ class ImagenProcesadorService
     public function procesarImagenBase64(array $imagenData, string $tipo, int $prendaId): string
     {
         try {
-            \Log::info('📸 Procesando imagen Base64', [
+            \Log::info(' Procesando imagen Base64', [
                 'nombre' => $imagenData['nombre'] ?? 'unknown',
                 'tipo' => $tipo,
                 'prenda_id' => $prendaId,
@@ -123,7 +121,6 @@ class ImagenProcesadorService
     
     /**
      * Procesar múltiples imágenes Base64
-     * 
      * @param array $imagenesData Array de imágenes
      * @param string $tipo 'prenda' o 'tela'
      * @param int $prendaId ID de la prenda

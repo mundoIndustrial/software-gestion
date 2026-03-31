@@ -211,7 +211,7 @@ class InvoiceLazyLoader {
     inicializarOrquestador() {
         if (typeof InvoiceFromListOrchestrator !== 'undefined' && !window.invoiceFromListOrchestrator) {
             window.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
-            console.log('[InvoiceLazyLoader] 🎯 Orquestador inicializado');
+            console.log('[InvoiceLazyLoader]  Orquestador inicializado');
         }
     }
 
@@ -268,7 +268,7 @@ class InvoiceLazyLoader {
         delete window.notificationManager;
         delete window.componentLoader;
         
-        console.log('[InvoiceLazyLoader] 🧹 Módulos limpiados');
+        console.log('[InvoiceLazyLoader]  Módulos limpiados');
     }
 
     /**

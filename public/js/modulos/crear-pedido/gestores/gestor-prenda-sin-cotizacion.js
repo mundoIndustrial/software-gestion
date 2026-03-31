@@ -105,7 +105,7 @@ class GestorPrendaSinCotizacion {
             this.prendaActual = null;
         } else {
             // Si no, crear una nueva desde cero
-            console.log('[GestorPrendaSinCotizacion] 🆕 Creando prenda desde cero');
+            console.log('[GestorPrendaSinCotizacion]  Creando prenda desde cero');
             nuevaPrenda = { ...this.crearPrendaBase(), ...datosOpcionales };
         }
         

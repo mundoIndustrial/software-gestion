@@ -87,9 +87,9 @@ Desglose de 8 pasos:
 ### Carga de Página
 ```
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  INICIANDO CARGA DE PÁGINA {"usuario_id":92}
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas {"cantidad":50,"tiempo_ms":45.23}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Tallas cargadas {"cantidad":50,"tiempo_ms":45.23}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 👥 Clientes cargados {"cantidad":500,"tiempo_ms":850.42}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Clientes cargados {"cantidad":500,"tiempo_ms":850.42}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA {
   "tiempo_total_ms": 1234.56,
   "resumen": "Tallas: 45.23ms | Pedidos: 120.56ms | Clientes: 850.42ms | View: 120.40ms | TOTAL: 1234.56ms"
@@ -180,7 +180,7 @@ Buscar en logs: `[RESOLVER-IMAGENES]  Extracción completada`
 
 ---
 
-## 📝 Archivos Documentación
+##  Archivos Documentación
 
 1. **LOGS_QUICK_START.md** - Guía rápida (5 min de lectura)
 2. **LOGS_DIAGNOSTICO_PEDIDOS.md** - Guía completa con interpretación

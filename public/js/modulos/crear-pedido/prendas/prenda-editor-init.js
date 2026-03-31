@@ -1,5 +1,5 @@
 /**
- * 🆕 PrendaEditor Global Initializer
+ *  PrendaEditor Global Initializer
  * 
  * Asegura que:
  * 1. PrendaEditor esté disponible globalmente (cargado de prenda-editor.js)

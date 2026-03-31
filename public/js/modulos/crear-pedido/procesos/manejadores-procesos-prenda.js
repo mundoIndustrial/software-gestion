@@ -12,7 +12,7 @@ var procesosSeleccionados = window.procesosSeleccionados && typeof window.proces
 // Exponer en window para acceso global
 window.procesosSeleccionados = procesosSeleccionados;
 
-// 🆕 ALMACENAJE PERSISTENTE: Guardar procesos aunque se limpie procesosSeleccionados
+//  ALMACENAJE PERSISTENTE: Guardar procesos aunque se limpie procesosSeleccionados
 // Estructura: { 'reflectivo': { tipo: 'reflectivo', datos: {...}, indiceResultado: 1 }, ... }
 window.procesosGuardados = window.procesosGuardados || {};
 

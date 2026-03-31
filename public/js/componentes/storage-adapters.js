@@ -46,7 +46,7 @@ window.imagenesPrendaStorage = {
         }
         
         const imagenes = window.universalImagenesStorage.obtenerImagenes('prendas', 'general');
-        console.log(`[PrendaStorageAdapter] 📸 Obteniendo ${imagenes.length} imágenes de prendas desde storage universal`);
+        console.log(`[PrendaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de prendas desde storage universal`);
         return imagenes;
     },
     
@@ -64,7 +64,7 @@ window.imagenesPrendaStorage = {
             }
             
             try {
-                // 🔴 CRÍTICO: Si es un File object, construir el objeto completo
+                //  CRÍTICO: Si es un File object, construir el objeto completo
                 let imagenCompleta;
                 if (imagen instanceof File) {
                     imagenCompleta = {
@@ -123,7 +123,7 @@ window.imagenesPrendaStorage = {
         }
         
         window.universalImagenesStorage.limpiarTipo('prendas');
-        console.log('[PrendaStorageAdapter] 🧹 Storage de prendas limpiado');
+        console.log('[PrendaStorageAdapter]  Storage de prendas limpiado');
     },
     
     /**
@@ -179,7 +179,7 @@ window.imagenesTelaStorage = {
         }
         
         const imagenes = window.universalImagenesStorage.obtenerImagenes('telas', 'general');
-        console.log(`[TelaStorageAdapter] 📸 Obteniendo ${imagenes.length} imágenes de telas desde storage universal`);
+        console.log(`[TelaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de telas desde storage universal`);
         return imagenes;
     },
     
@@ -197,7 +197,7 @@ window.imagenesTelaStorage = {
             }
             
             try {
-                // 🔴 CRÍTICO: Si es un File object, construir el objeto completo
+                //  CRÍTICO: Si es un File object, construir el objeto completo
                 let imagenCompleta;
                 if (imagen instanceof File) {
                     imagenCompleta = {
@@ -256,7 +256,7 @@ window.imagenesTelaStorage = {
         }
         
         window.universalImagenesStorage.limpiarTipo('telas');
-        console.log('[TelaStorageAdapter] 🧹 Storage de telas limpiado');
+        console.log('[TelaStorageAdapter]  Storage de telas limpiado');
     },
     
     /**

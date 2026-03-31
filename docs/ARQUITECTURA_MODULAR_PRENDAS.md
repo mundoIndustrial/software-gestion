@@ -1,6 +1,6 @@
 ##  Arquitectura Modular - Prendas Editor (REFACTORIZADO)
 
-### 🎯 Cambio Principal
+###  Cambio Principal
 
 **ANTES:**
 - 1 archivo gigante: `prenda-editor.js` (~850 líneas)
@@ -200,7 +200,7 @@ prenda-editor-refactorizado.js: 120 líneas ← SOLO ORQUESTA
 
 ---
 
-## 🎯 Próximos Pasos (Opcional)
+##  Próximos Pasos (Opcional)
 
 1. **Tests Unitarios**
    ```javascript

@@ -24,7 +24,7 @@ class PrendaEditorColores {
         if (!prenda.asignacionesColoresPorTalla || Object.keys(prenda.asignacionesColoresPorTalla).length === 0) {
             console.log(' [Colores] Sin asignaciones wizard para cargar');
             
-            // 🔴 FIX: Aún sin asignaciones wizard, puede haber telas simples en
+            //  FIX: Aún sin asignaciones wizard, puede haber telas simples en
             // window.telasCreacion (cargadas por PrendaEditorTelas). Delegar a
             // actualizarTablaResumen() que maneja AMBOS tipos de datos y gestiona
             // la visibilidad de seccion-resumen-asignaciones correctamente.

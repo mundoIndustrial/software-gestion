@@ -247,7 +247,7 @@
                             
                             // Ejecutar el manejador de imagen
                             if (typeof manejarImagenProcesoConIndice === 'function') {
-                                // 🔧 IMPORTANTE: Pasar cuadroVacio (índice del cuadro 1-3) Y window.procesoActualIndex (índice del proceso)
+                                //  IMPORTANTE: Pasar cuadroVacio (índice del cuadro 1-3) Y window.procesoActualIndex (índice del proceso)
                                 manejarImagenProcesoConIndice(input, cuadroVacio);
                             }
                         }

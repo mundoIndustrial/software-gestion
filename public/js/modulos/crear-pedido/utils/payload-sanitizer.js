@@ -301,7 +301,7 @@ class PayloadSanitizer {
 
             // Saltar propiedades prohibidas
             if (this.esProhibido(key)) {
-                console.debug(`🧹 Propiedad reactiva eliminada: "${key}"`);
+                console.debug(` Propiedad reactiva eliminada: "${key}"`);
                 continue;
             }
 

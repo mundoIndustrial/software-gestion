@@ -57,7 +57,7 @@ const RealtimeOrderHandler = {
                 dropdown.value = ordenData.estado;
                 dropdown.setAttribute('data-value', ordenData.estado);
 
-                // 🆕 Actualizar clase de color del dropdown
+                //  Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.estado);
 
             }
@@ -67,7 +67,7 @@ const RealtimeOrderHandler = {
                 dropdown.value = ordenData.area;
                 dropdown.setAttribute('data-value', ordenData.area);
 
-                // 🆕 Actualizar clase de color del dropdown
+                //  Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.area);
 
             }
@@ -78,7 +78,7 @@ const RealtimeOrderHandler = {
 
             }
         } else if (field === 'fecha_estimada_de_entrega') {
-            // 🆕 Actualizar fecha estimada en tiempo real
+            //  Actualizar fecha estimada en tiempo real
             // Buscar en supervisor-pedidos (clase: fecha-estimada)
             let fechaCell = row.querySelector('.fecha-estimada');
 
@@ -109,10 +109,10 @@ const RealtimeOrderHandler = {
 
             }
         } else if (field === 'novedades') {
-            // 🆕 Actualizar campo de novedades en tiempo real
+            //  Actualizar campo de novedades en tiempo real
             const btnEdit = row.querySelector('.btn-edit-novedades');
             if (btnEdit && ordenData.novedades !== undefined) {
-                // 🆕 Guardar el valor completo en data-full-novedades
+                //  Guardar el valor completo en data-full-novedades
                 btnEdit.setAttribute('data-full-novedades', ordenData.novedades || '');
 
                 const textSpan = btnEdit.querySelector('.novedades-text');

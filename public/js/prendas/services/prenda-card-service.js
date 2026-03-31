@@ -41,12 +41,12 @@ class PrendaCardService {
             }
 
             // 2. Obtener elementos visuales
-            console.log('[PrendaCardService.generar] 🖼️ OBTENIENDO ELEMENTOS VISUALES...');
+            console.log('[PrendaCardService.generar]  OBTENIENDO ELEMENTOS VISUALES...');
             const fotoPrincipal = PrendaDataTransformer.obtenerFotoPrincipal(prenda);
             const fotoTela = PrendaDataTransformer.obtenerFotoTela(prenda);
             const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
             
-            console.log('[PrendaCardService.generar] 📸 Foto principal:', fotoPrincipal);
+            console.log('[PrendaCardService.generar]  Foto principal:', fotoPrincipal);
             console.log('[PrendaCardService.generar] 🧵 Foto tela:', fotoTela);
             console.log('[PrendaCardService.generar]  Info tela:', infoTela);
 

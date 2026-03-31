@@ -549,7 +549,7 @@ window.llenarReciboCosturaMobile = function(data) {
     };
     
     /**
-     * 🎨 Transformar array de variantes a estructura compatible con renderizado
+     * Transformar array de variantes a estructura compatible con renderizado
      * Input: [{talla, genero, cantidad, ...}, ...]
      * Output: { DAMA: { TALLA: cantidad }, CABALLERO: { TALLA: cantidad }, UNISEX: { TALLA: cantidad } }
      */
@@ -632,7 +632,7 @@ window.llenarReciboCosturaMobile = function(data) {
     };
     
     /**
-     * 🎨 Transformar array de talla_colores a estructura compatible con renderizado
+     * Transformar array de talla_colores a estructura compatible con renderizado
      * Input: [{genero, talla, color_nombre, cantidad, ...}, ...]
      * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
      */
@@ -1413,7 +1413,7 @@ window.llenarReciboCosturaMobile = function(data) {
         if (!tallasExtraidas && todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
             const prendaRef = todasLasPrendas[0];
             
-            // 🎨 PRIORIZAR talla_colores si está disponible
+            // PRIORIZAR talla_colores si está disponible
             let tallasParaUsar = null;
             if (prendaRef.talla_colores && Array.isArray(prendaRef.talla_colores) && prendaRef.talla_colores.length > 0) {
                 console.log('📱 [FALLBACK] Usando talla_colores de la prenda:', prendaRef.talla_colores);
@@ -1697,7 +1697,7 @@ window.llenarReciboCosturaMobile = function(data) {
                 // se deben mostrar SOLO las tallas del anexo.
                 let tallasFuente = prenda.tallas;
                 
-                // 🎨 PRIORIZAR talla_colores si está disponible (como en recibos de costura)
+                // PRIORIZAR talla_colores si está disponible (como en recibos de costura)
                 // Si viene vacío pero las variantes tienen `colores_detalle`, derivarlo para agrupar por color.
                 const tallaColoresDerivada = (!prenda?.talla_colores || (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length === 0))
                     ? derivarTallaColoresDesdeVariantes(prenda?.variantes)
@@ -1962,7 +1962,7 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                         
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
-                        // 🎨 NEW: Enriquecer con talla_colores si disponibles
+                        // NEW: Enriquecer con talla_colores si disponibles
                         let tallasObj = proceso.tallas;
                         if (esReciboParcial) {
                             if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
@@ -1974,14 +1974,14 @@ window.llenarReciboCosturaMobile = function(data) {
                             }
                         }
                         
-                        // 🎨 Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
+                        // Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
                         if ((!tallasObj || Object.keys(tallasObj).length === 0) && proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
                             console.log('📱 [OPERARIO] Transformando talla_colores a estructura enriquecida:', proceso.talla_colores);
                             tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
                         } else if ((!tallasObj || Object.keys(tallasObj).length === 0) && !proceso.es_parcial) {
                             // Si no hay tallas en el proceso y NO es anexo, usar fallback de la prenda
                             // Para anexos solo deben mostrarse tallas del anexo.
-                            // 🎨 PRIORIZAR talla_colores de la prenda si está disponible
+                            // PRIORIZAR talla_colores de la prenda si está disponible
                             if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                 console.log('📱 [OPERARIO] Usando talla_colores de la prenda como fallback:', prenda.talla_colores);
                                 tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
@@ -1997,7 +1997,7 @@ window.llenarReciboCosturaMobile = function(data) {
                                     const tallasGenero = tallasObj[genero];
                                     const items = [];
                                     
-                                    // 🎨 Detectar si hay colores (datos son arrays de objetos)
+                                    // Detectar si hay colores (datos son arrays de objetos)
                                     const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
                                     
                                     if (tieneColores) {

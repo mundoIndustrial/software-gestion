@@ -1,5 +1,5 @@
 /**
- * 📏 Módulo de Tallas y Cantidades
+ *  Módulo de Tallas y Cantidades
  * Responsabilidad: Cargar tarjetas de género con inputs de tallas
  */
 
@@ -16,7 +16,7 @@ class PrendaEditorTallas {
      * Cargar tallas y cantidades
      */
     static cargar(prenda) {
-        console.log('📏 [Tallas] Cargando:', {
+        console.log(' [Tallas] Cargando:', {
             generos: Object.keys(prenda.cantidad_talla || {}),
             estructura: typeof prenda.cantidad_talla
         });
@@ -29,7 +29,7 @@ class PrendaEditorTallas {
         
         //  LIMPIAR TARJETAS ANTERIORES (importante en edición)
         container.innerHTML = '';
-        console.log('[Tallas] 🧹 Tarjetas limpias');
+        console.log('[Tallas]  Tarjetas limpias');
         
         const tallasData = prenda.tallasRelacionales || prenda.cantidad_talla;
         if (!tallasData) {
@@ -39,7 +39,7 @@ class PrendaEditorTallas {
         
         // Cargar por género
         Object.entries(tallasData).forEach(([genero, tallas]) => {
-            // 🔴 NUEVO: SALTAR GENERICO (se maneja como UNISEX)
+            //  NUEVO: SALTAR GENERICO (se maneja como UNISEX)
             if (genero.toUpperCase() === 'GENERICO') {
                 console.log('[Tallas] ⏭️ Saltando GENERICO (se renderiza como UNISEX via crearTarjetaUnisex)');
                 return;
@@ -125,7 +125,7 @@ class PrendaEditorTallas {
         const tallasAUsar = prenda.cantidad_talla || prenda.tallasRelacionales;
         if (tallasAUsar) {
             window.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
-            console.log('[Carga] 📏 Tallas replicadas en window.tallasRelacionales');
+            console.log('[Carga]  Tallas replicadas en window.tallasRelacionales');
         }
         
         console.log(' [Tallas] Completado');
@@ -177,7 +177,7 @@ class PrendaEditorTallas {
             btnEditar.style.background = 'transparent';
         };
         btnEditar.onclick = () => {
-            console.log(`[PrendaEditorTallas] 📝 Editando tallas de ${genero}`);
+            console.log(`[PrendaEditorTallas]  Editando tallas de ${genero}`);
             // Llamar a la función de edición si existe
             if (typeof abrirModalSeleccionarTallas === 'function') {
                 abrirModalSeleccionarTallas(genero);

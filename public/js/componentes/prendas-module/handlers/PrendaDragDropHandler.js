@@ -341,7 +341,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
         };
 
         const eliminarImagenActual = () => {
-            // 🔴 CORRECCIÓN: Detectar correctamente si estamos en modo edición o creación
+            //  CORRECCIÓN: Detectar correctamente si estamos en modo edición o creación
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             const modalVisible = modal && modal.style.display !== 'none';
             
@@ -386,7 +386,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                             totalMarcadas: window.imagenesAEliminar.length
                         });
 
-                        // 🔴 IMPORTANTE: sincronizar el STORAGE local eliminando la imagen
+                        //  IMPORTANTE: sincronizar el STORAGE local eliminando la imagen
                         // El preview y el collector leen desde imagenesPrendaStorage.
                         // Esto NO elimina del servidor; solo refleja el estado final antes de guardar.
                         try {
@@ -480,7 +480,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 if (typeof window.actualizarPreviewPrenda === 'function') {
                     window.actualizarPreviewPrenda();
                 } else if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
-                    // 🔴 ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
+                    //  ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
                     // Usar actualizarPreviewDespuesDeAgregar() en su lugar
                     PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                 }
@@ -601,7 +601,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log('PrendaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log('PrendaDragDropHandler', ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
                                 UIHelperService.log('PrendaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);

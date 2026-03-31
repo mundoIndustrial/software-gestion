@@ -76,7 +76,7 @@ class BaseDragDropHandler {
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log(`${this.constructor.name}`, `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log(`${this.constructor.name}`, ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
                                 UIHelperService.log(`${this.constructor.name}`, ` Blob obtenido: ${blob.size} bytes`);

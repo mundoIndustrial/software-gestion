@@ -97,7 +97,7 @@
             
             const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
             if (typeof PrendaEditorImagenes !== 'undefined') {
-                // 🔴 ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
+                //  ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
                 // Usar actualizarPreviewDespuesDeAgregar() en su lugar
                 PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                 // Reconfigurar click handler de galería
@@ -345,13 +345,18 @@
                 formData.append('variantes', JSON.stringify(datos.variantes));
             }
 
-            // Asignaciones de colores por talla
-            // 🔴 NUEVO: Enviar SIEMPRE si existe (incluso vacío {} para señalar "eliminar todo")
-            if (datos.asignacionesColoresPorTalla !== undefined && datos.asignacionesColoresPorTalla !== null) {
+            // Asignaciones de colores por talla - DEFENSIVO en edición
+            // Solo enviar si hay cambios o si fue creación nueva
+            // En edición sin cambios, NO enviar (null) para preservar datos en BD
+            const hayAsignacionesParaEnviar = datos.asignacionesColoresPorTalla !== undefined && 
+                                              datos.asignacionesColoresPorTalla !== null &&
+                                              Object.keys(datos.asignacionesColoresPorTalla).length > 0;
+            
+            if (hayAsignacionesParaEnviar) {
                 formData.append('asignaciones_colores', JSON.stringify(datos.asignacionesColoresPorTalla));
-                console.log('[PedidosAdapter] 🎨 asignaciones_colores enviado:', JSON.stringify(datos.asignacionesColoresPorTalla));
+                console.log('[PedidosAdapter] asignaciones_colores enviado (CON CAMBIOS):', JSON.stringify(datos.asignacionesColoresPorTalla).substring(0, 200) + '...');
 
-                // 🔴 NUEVO: Extraer File objects de imágenes de color desde _imageStore
+                //  NUEVO: Extraer File objects de imágenes de color desde _imageStore
                 // Las imágenes están en ColoresPorTalla._imageStore referenciadas por imagen_id
                 if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function') {
                     let colorImgIdx = 0;
@@ -368,7 +373,7 @@
                                             imagen_id: colorItem.imagen_id,
                                             imagen_nombre: imgData.nombre || imgData.file.name
                                         }));
-                                        console.log(`[PedidosAdapter] 📸 Imagen de color adjuntada: idx=${colorImgIdx}, clave=${clave}, color=${colorItem.nombre}, file=${imgData.nombre}`);
+                                        console.log(`[PedidosAdapter]  Imagen de color adjuntada: idx=${colorImgIdx}, clave=${clave}, color=${colorItem.nombre}, file=${imgData.nombre}`);
                                         colorImgIdx++;
                                     }
                                 }
@@ -376,13 +381,13 @@
                         }
                     });
                     if (colorImgIdx > 0) {
-                        console.log(`[PedidosAdapter] 📸 Total imágenes de color adjuntadas: ${colorImgIdx}`);
+                        console.log(`[PedidosAdapter]  Total imágenes de color adjuntadas: ${colorImgIdx}`);
                     }
                 }
             }
 
             // Telas (JSON) - usar telasAgregadas o telas
-            // 🔴 CRÍTICO: Enviar SIEMPRE (incluso vacío) para que el backend sepa si eliminar telas
+            //  CRÍTICO: Enviar SIEMPRE (incluso vacío) para que el backend sepa si eliminar telas
             const telas = datos.telasAgregadas || datos.colores_telas || datos.telas || [];
             const telasJSON = telas.map((t, idx) => {
                 const telaData = {
@@ -415,7 +420,7 @@
                 let procesosArray = [];
                 
                 if (!Array.isArray(procesosRaw) && typeof procesosRaw === 'object') {
-                    // 🔴 PASO 1: Extraer File images ANTES de transformar (se pierden en JSON.stringify)
+                    //  PASO 1: Extraer File images ANTES de transformar (se pierden en JSON.stringify)
                     const filesPorProceso = {};
                     const filesPorTalla = {}; // NUEVO: Para imágenes de tallas en datosExtendidos
                     
@@ -424,17 +429,17 @@
                         const imagenes = d.imagenes || [];
                         filesPorProceso[idx] = [];
                         
-                        // 🔴 PASO 1a: Usar imagenesFiles directamente si está disponible (desde modal por tallas)
+                        //  PASO 1a: Usar imagenesFiles directamente si está disponible (desde modal por tallas)
                         if (d.imagenesFiles && Array.isArray(d.imagenesFiles)) {
                             d.imagenesFiles.forEach(file => {
                                 if (file instanceof File) {
                                     filesPorProceso[idx].push(file);
-                                    console.log(`[PedidosAdapter] 📸 File encontrado en imagenesFiles para ${tipo}`);
+                                    console.log(`[PedidosAdapter]  File encontrado en imagenesFiles para ${tipo}`);
                                 }
                             });
                         }
                         
-                        // 🔴 PASO 1b: Extraer File objects de imagenes del proceso (fallback para compatibilidad)
+                        //  PASO 1b: Extraer File objects de imagenes del proceso (fallback para compatibilidad)
                         if (Array.isArray(imagenes)) {
                             imagenes.forEach(img => {
                                 if (img instanceof File) {
@@ -457,7 +462,7 @@
                                             tallaData.imagenesFiles.forEach(img => {
                                                 if (img instanceof File) {
                                                     filesPorTalla[keyTalla].push(img);
-                                                    console.log(`[PedidosAdapter] 📸 Imagen File encontrada para talla ${genero}/${talla}`);
+                                                    console.log(`[PedidosAdapter]  Imagen File encontrada para talla ${genero}/${talla}`);
                                                 }
                                             });
                                         }
@@ -467,7 +472,7 @@
                         }
                     });
                     
-                    // 🔴 PASO 2: Transformar a array con imagenes_existentes (URLs para el backend)
+                    //  PASO 2: Transformar a array con imagenes_existentes (URLs para el backend)
                     procesosArray = Object.entries(procesosRaw).map(([tipo, proc]) => {
                         const d = proc?.datos || proc || {};
                         
@@ -482,7 +487,7 @@
                         const imagenesExistentes = [];
                         const imagenesAEliminar = [];
                         
-                        // 🔴 PASO 1: Usar imagenes_existentes explícitamente si está disponible (desde modal por tallas/general)
+                        //  PASO 1: Usar imagenes_existentes explícitamente si está disponible (desde modal por tallas/general)
                         if (d.imagenes_existentes && Array.isArray(d.imagenes_existentes)) {
                             console.log(`[PedidosAdapter]  Usando imagenes_existentes explícitas para ${tipo}:`, d.imagenes_existentes.length, 'imágenes');
                             d.imagenes_existentes.forEach(img => {
@@ -493,7 +498,7 @@
                                 }
                             });
                         } else {
-                            // 🔴 PASO 2 (fallback): Procesar imágenes del array imagenes: separar existentes de eliminadas
+                            //  PASO 2 (fallback): Procesar imágenes del array imagenes: separar existentes de eliminadas
                             if (d.imagenes && Array.isArray(d.imagenes)) {
                                 d.imagenes.forEach(img => {
                                     if (img && !(img instanceof File) && !(img?.file instanceof File)) {
@@ -531,7 +536,7 @@
                             });
                         }
                         
-                        // 🔴 CRÍTICO: También incluir imágenes que fueron eliminadas (marcadas como null)
+                        //  CRÍTICO: También incluir imágenes que fueron eliminadas (marcadas como null)
                         if (d.imagenesEliminadas && Array.isArray(d.imagenesEliminadas)) {
                             console.log(`[PedidosAdapter]  DEBUGGING imagenesEliminadas para ${tipo}:`, {
                                 length: d.imagenesEliminadas.length,
@@ -546,7 +551,7 @@
                                 }))
                             });
                             d.imagenesEliminadas.forEach(img => {
-                                // 🔴 WICHTIG: Backend espera objeto completo con {id, ruta_original, ruta_webp}
+                                //  WICHTIG: Backend espera objeto completo con {id, ruta_original, ruta_webp}
                                 const tieneIdentificador = img && (img.id || img.ruta_original);
                                 if (tieneIdentificador) {
                                     const imagenAEliminar = {
@@ -585,12 +590,12 @@
                         return procesoEnvio;
                     });
                     
-                    // 🔴 PASO 3: Agregar File images al FormData
+                    //  PASO 3: Agregar File images al FormData
                     // Usar fotosProcesoNuevo_{procesoIdx}[] para soportar múltiples archivos por proceso
                     Object.entries(filesPorProceso).forEach(([idx, files]) => {
                         files.forEach((file, fileIdx) => {
                             formData.append(`fotosProcesoNuevo_${idx}[]`, file);
-                            console.log(`[PedidosAdapter] 📸 Foto proceso[${idx}][${fileIdx}]: ${file.name}`);
+                            console.log(`[PedidosAdapter]  Foto proceso[${idx}][${fileIdx}]: ${file.name}`);
                         });
                     });
                     
@@ -598,7 +603,7 @@
                     Object.entries(filesPorTalla).forEach(([keyTalla, files]) => {
                         files.forEach((file, fileIdx) => {
                             formData.append(`fotosProcesoTallasNuevo_${keyTalla}[]`, file);
-                            console.log(`[PedidosAdapter] 📸 Foto talla[${keyTalla}][${fileIdx}]: ${file.name}`);
+                            console.log(`[PedidosAdapter]  Foto talla[${keyTalla}][${fileIdx}]: ${file.name}`);
                         });
                     });
                 } else if (Array.isArray(procesosRaw)) {
@@ -624,7 +629,7 @@
                 }
                 
                 formData.append('procesos', JSON.stringify(procesosArray));
-                console.log('[PedidosAdapter] 🔧 Procesos enviados:', procesosArray.length, 'procesos');
+                console.log('[PedidosAdapter]  Procesos enviados:', procesosArray.length, 'procesos');
             }
 
             // Imágenes de prenda - separar nuevas (File) de existentes (BD)
@@ -641,7 +646,7 @@
             });
             
             imgs.forEach((img, index) => {
-                console.log(`[PedidosAdapter] 🖼️ Procesando imagen ${index}:`, {
+                console.log(`[PedidosAdapter]  Procesando imagen ${index}:`, {
                     'img': img,
                     'type': typeof img,
                     'isFile': img instanceof File,
@@ -670,13 +675,13 @@
             imagenesNuevas.forEach((file) => formData.append('imagenes[]', file));
             formData.append('imagenes_existentes', JSON.stringify(imagenesExistentes));
             
-            // 🔴 NUEVO: Agregar imágenes marcadas para eliminación
+            //  NUEVO: Agregar imágenes marcadas para eliminación
             if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
                 formData.append('imagenes_a_eliminar', JSON.stringify(window.imagenesAEliminar));
                 console.log('[PedidosAdapter]  Imágenes marcadas para eliminación:', window.imagenesAEliminar);
             }
             
-            // 🔴 NUEVO: Agregar procesos marcados para eliminación
+            //  NUEVO: Agregar procesos marcados para eliminación
             if (window.procesosParaEliminarIds && window.procesosParaEliminarIds.size > 0) {
                 const procesosAEliminar = Array.from(window.procesosParaEliminarIds);
                 formData.append('procesos_a_eliminar', JSON.stringify(procesosAEliminar));
@@ -924,7 +929,7 @@
                 window.prendaActual = prendaCompleta;
                 await editor.cargarPrendaEnModal(prendaCompleta, prendaIndex);
                 
-                // 🔴 NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
+                //  NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
                 if (typeof window.cargarPrendaEnFormularioModal === 'function') {
                     console.log('[PedidosAdapter]  Llamando cargarPrendaEnFormularioModal para detectar UNISEX...');
                     window.cargarPrendaEnFormularioModal(prendaCompleta);
@@ -995,7 +1000,7 @@
                 tallas_caballero: 'CABALLERO',
                 tallas_unisex: 'UNISEX',
                 tallas_sobremedida: 'SOBREMEDIDA',
-                tallas_generico: 'GENERICO'  // 🔴 NUEVO: Para UNISEX (antes SOLO CANTIDAD)
+                tallas_generico: 'GENERICO'  //  NUEVO: Para UNISEX (antes SOLO CANTIDAD)
             };
 
             Object.entries(generosMap).forEach(([prop, genero]) => {
@@ -1009,11 +1014,11 @@
 
             prenda.cantidad_talla = cantidadTalla;
             prenda.tallasRelacionales = cantidadTalla;
-            console.log('[PedidosAdapter] 📏 Tallas normalizadas:', cantidadTalla);
+            console.log('[PedidosAdapter]  Tallas normalizadas:', cantidadTalla);
         }
         // ---- 1a. UNISEX: Si cantidad_talla viene como objeto desde BD (sin tallas_dama/caballero/etc) ----
         else if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
-            console.log('[PedidosAdapter] 📏 cantidad_talla ya normalizada (UNISEX desde BD):', prenda.cantidad_talla);
+            console.log('[PedidosAdapter]  cantidad_talla ya normalizada (UNISEX desde BD):', prenda.cantidad_talla);
             // La BD ya tiene la estructura correcta {GENERICO: {SIN_ESPECIFICAR: qty}}
             // No hacer nada, preservarla tal como está
         }
@@ -1034,11 +1039,11 @@
                     tallas: Object.values(prenda.cantidad_talla[genero] || {}) 
                 };
             });
-            console.log('[PedidosAdapter] 📏 generosConTallas construido para detección UNISEX:', Object.keys(prenda.generosConTallas));
+            console.log('[PedidosAdapter]  generosConTallas construido para detección UNISEX:', Object.keys(prenda.generosConTallas));
         }
 
         // ---- 1b. COLORES POR TALLA (prenda_pedido_talla_colores) → asignaciones ----
-        console.log('[PedidosAdapter] 🐛 DEBUG: Verificando talla_colores ANTES de procesar', {
+        console.log('[PedidosAdapter] DEBUG: Verificando talla_colores ANTES de procesar', {
             'existe': 'talla_colores' in prenda,
             'es_array': Array.isArray(prenda.talla_colores),
             'longitud': prenda.talla_colores?.length || 0,
@@ -1046,7 +1051,7 @@
         });
         
         if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
-            console.log('[PedidosAdapter] 🎨 Construyendo asignaciones desde talla_colores:', prenda.talla_colores.length, 'registros');
+            console.log('[PedidosAdapter] Construyendo asignaciones desde talla_colores:', prenda.talla_colores.length, 'registros');
 
             // Construir asignaciones (array plano para la tabla resumen)
             prenda.asignaciones = prenda.talla_colores.map(tc => ({
@@ -1088,14 +1093,14 @@
             });
 
             prenda.asignacionesColoresPorTalla = coloresPorTalla;
-            console.log('[PedidosAdapter] 🎨 Asignaciones construidas:', prenda.asignaciones.length, 'filas');
-            console.log('[PedidosAdapter] 🎨 ColoresPorTalla:', Object.keys(coloresPorTalla).length, 'grupos');
+            console.log('[PedidosAdapter] Asignaciones construidas:', prenda.asignaciones.length, 'filas');
+            console.log('[PedidosAdapter] ColoresPorTalla:', Object.keys(coloresPorTalla).length, 'grupos');
         } else {
             console.log('[PedidosAdapter]  talla_colores está vacío o no es array');
         }
         
         // DEBUG: Verificar estado FINAL de talla_colores
-        console.log('[PedidosAdapter] 🐛 DEBUG: Estado FINAL de talla_colores', {
+        console.log('[PedidosAdapter] DEBUG: Estado FINAL de talla_colores', {
             'existe': 'talla_colores' in prenda,
             'es_array': Array.isArray(prenda.talla_colores),
             'longitud': prenda.talla_colores?.length || 0,
@@ -1118,7 +1123,7 @@
                 tiene_bolsillos: v.tiene_bolsillos || false,
                 obs_bolsillos: v.bolsillos_obs || ''
             };
-            console.log('[PedidosAdapter] ⚙️ Variantes normalizadas:', prenda.variantes);
+            console.log('[PedidosAdapter]  Variantes normalizadas:', prenda.variantes);
         } else if (Array.isArray(prenda.variantes) && prenda.variantes.length === 0) {
             prenda.variantes = {};
         }
@@ -1229,8 +1234,8 @@
                 
                 return img;
             });
-            console.log('[PedidosAdapter] 🖼️ Imágenes de prenda normalizadas:', prenda.imagenes.length);
-            console.log('[PedidosAdapter] 🖼️ Detalle imágenes:', prenda.imagenes);
+            console.log('[PedidosAdapter]  Imágenes de prenda normalizadas:', prenda.imagenes.length);
+            console.log('[PedidosAdapter]  Detalle imágenes:', prenda.imagenes);
         }
 
         // ---- 5. NOMBRE: asegurar consistencia ----

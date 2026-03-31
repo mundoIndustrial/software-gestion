@@ -1,5 +1,5 @@
 /**
- * 🆕 Agregar Prenda Nueva a Pedido Existente
+ *  Agregar Prenda Nueva a Pedido Existente
  * 
  * Módulo independiente que permite agregar prendas nuevas a un pedido
  * ya creado, reutilizando el modal de creación de prendas (modal-agregar-prenda-nueva).
@@ -249,7 +249,7 @@
             return;
         }
 
-        console.log('[PrendaAgregarPedido] 🆕 Abriendo modal para AGREGAR nueva prenda al pedido:', pedidoId);
+        console.log('[PrendaAgregarPedido]  Abriendo modal para AGREGAR nueva prenda al pedido:', pedidoId);
 
         // Marcar contexto como "agregar nueva prenda" (sin prendaId)
         window._editandoPrendaDePedido = {
@@ -343,7 +343,7 @@
                 tituloModal.textContent = 'Agregar Prenda Nueva';
             }
 
-            console.log('[PrendaAgregarPedido] 🆕 Modal abierto en modo AGREGAR para pedido:', pedidoId);
+            console.log('[PrendaAgregarPedido]  Modal abierto en modo AGREGAR para pedido:', pedidoId);
 
             // Inicializar drag & drop (prenda, telas, procesos) para que funcione arrastrar y Ctrl+V
             _inicializarDragDropEnModal();
@@ -627,7 +627,7 @@
 
             // Si estamos en modo AGREGAR, redirigir a nuestro flujo
             if (editContext && editContext.modoAgregar) {
-                console.log('[PrendaAgregarPedido] 🆕 Interceptado → guardando NUEVA prenda para pedido:', editContext.pedidoId);
+                console.log('[PrendaAgregarPedido]  Interceptado → guardando NUEVA prenda para pedido:', editContext.pedidoId);
                 _enviarNuevaPrendaAPI(editContext.pedidoId);
                 return;
             }

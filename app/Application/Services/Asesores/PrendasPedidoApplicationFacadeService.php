@@ -125,7 +125,8 @@ final class PrendasPedidoApplicationFacadeService
             $pedidoId,
             $prenda->id,
             $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA',
-            'prenda completa'
+            'prenda completa',
+            null
         );
 
         return $prenda;

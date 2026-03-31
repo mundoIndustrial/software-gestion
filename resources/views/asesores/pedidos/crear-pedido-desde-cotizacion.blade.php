@@ -218,10 +218,10 @@
 @include('asesores.pedidos.modals.modal-editar-epp')
 
 @push('scripts')
-    <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
+    <!--  Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
     <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
 
-    <!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS -->
+    <!--  SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS -->
     <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
@@ -309,7 +309,7 @@
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
@@ -342,7 +342,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
-    <!-- 🆕 PrendaEditor sin legacy -->
+    <!--  PrendaEditor sin legacy -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>

@@ -525,8 +525,8 @@
                             <div class="prenda-suggestions">
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' CAMISETA', this)"> CAMISETA</div>
-                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda('🎽 POLO', this)">🎽 POLO</div>
-                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👖 PANTALÓN', this)">👖 PANTALÓN</div>
+                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' POLO', this)"> POLO</div>
+                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' PANTALÓN', this)"> PANTALÓN</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' FALDA', this)"> FALDA</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('🧥 CHAQUETA', this)">🧥 CHAQUETA</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('🧢 SUDADERA', this)">🧢 SUDADERA</div>

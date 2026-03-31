@@ -7,7 +7,7 @@
 
 ---
 
-## 🔴 PROBLEMAS ENCONTRADOS
+##  PROBLEMAS ENCONTRADOS
 
 ### ❌ 1. Single Responsibility Principle VIOLADO
 
@@ -269,7 +269,7 @@ Array para BD
 
 ---
 
-## 📝 EJEMPLOS DE USO
+##  EJEMPLOS DE USO
 
 ### Opción 1: Usar ImagenesService (RECOMENDADO)
 ```php

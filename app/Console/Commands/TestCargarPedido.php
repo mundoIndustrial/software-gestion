@@ -87,14 +87,14 @@ class TestCargarPedido extends Command
                 $this->line("\n🧵 TELAS: " . $prenda->fotosTelas->count());
                 if ($prenda->fotosTelas->count() > 0) {
                     foreach ($prenda->fotosTelas as $tela) {
-                        $this->line("  ✓ Ruta: " . $tela->ruta_webp);
+                        $this->line("Ruta: " . $tela->ruta_webp);
                     }
                 } else {
                     $this->warn("    Sin telas");
                 }
                 
                 // Fotos de prenda
-                $this->line("\n📸 FOTOS DE PRENDA: " . $prenda->fotos->count());
+                $this->line("\n FOTOS DE PRENDA: " . $prenda->fotos->count());
                 if ($prenda->fotos->count() > 0) {
                     foreach ($prenda->fotos as $foto) {
                         $this->line("  ✓ Ruta: " . $foto->ruta_foto);

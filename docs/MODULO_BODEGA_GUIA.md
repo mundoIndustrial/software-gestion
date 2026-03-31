@@ -4,7 +4,7 @@
 
 Sistema completo de gestión de pedidos para el rol de Bodeguero en el ERP textil. Permite visualizar, filtrar, buscar y actualizar el estado de pedidos con interfaz moderna y responsive.
 
-## 🎯 Características Principales
+##  Características Principales
 
 -  Vista de pedidos agrupados por número de pedido
 -  Filtros por asesor y estado
@@ -260,7 +260,7 @@ Para mobile, considera crear una vista alternativa:
 @endif
 ```
 
-## 🐛 Debugging
+## Debugging
 
 ### Ver Registros de Auditoría
 
@@ -330,7 +330,7 @@ Para reportar issues o sugerir mejoras, considera:
 3. Asegurar que el usuario tenga los permisos necesarios
 4. Testear primero en un endpoint sin autenticación para aislar problemas
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 - El módulo requiere Laravel 9+
 - Compatible con Spatie Laravel Permission

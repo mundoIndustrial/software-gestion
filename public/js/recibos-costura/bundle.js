@@ -1035,7 +1035,7 @@ function openOrderTrackingDirect(pedidoId, prendaId) {
  * Abrir modal de novedades
  */
 function openNovedadesModal(pedidoId, tipoRecibo) {
-    console.log('📝 Abriendo novedades para pedido:', pedidoId);
+    console.log(' Abriendo novedades para pedido:', pedidoId);
     
     if (typeof openNovedadesEditModal === 'function') {
         openNovedadesEditModal(pedidoId, tipoRecibo);
@@ -1059,7 +1059,7 @@ function openOrderDetailModal(datos) {
     const pedidoId = datos.pedido_id;
     const prendaId = datos.prenda_id;
 
-    console.log(`🔐 Cargando datos para abrir recibo - Pedido: ${pedidoId}, Prenda: ${prendaId}`);
+    console.log(` Cargando datos para abrir recibo - Pedido: ${pedidoId}, Prenda: ${prendaId}`);
 
     // Hacer fetch de los datos del recibo
     fetch(`/registros/${pedidoId}/recibos-datos`)

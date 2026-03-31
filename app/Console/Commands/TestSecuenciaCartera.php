@@ -23,7 +23,7 @@ class TestSecuenciaCartera extends Command
         
         try {
             // Crear pedidos en estado pendiente_cartera
-            $this->line("\n📝 Creando {$numeroPedidos} pedidos pendientes...");
+            $this->line("\n Creando {$numeroPedidos} pedidos pendientes...");
             $pedidosCreados = [];
             
             for ($i = 0; $i < $numeroPedidos; $i++) {

@@ -37,7 +37,7 @@ FILAS DE ARTÍCULOS
 └─ Si está entregado: fondo azul claro
 ```
 
-## 🎯 Estados Visuales
+##  Estados Visuales
 
 | Estado | Badge | Color | Botón |
 |--------|-------|-------|-------|
@@ -184,7 +184,7 @@ body {
 }
 ```
 
-## 🔐 Seguridad
+##  Seguridad
 
  **CSRF Protection** - Todos los POST llevan token
  **Autorización** - Requiere rol `bodeguero`
@@ -234,7 +234,7 @@ Se actualizan al filtrar o cambiar estados.
 ### Detección Automática de Retrasados
 Si fecha < hoy, automáticamente marca como "RETRASADO".
 
-## 🐛 Solución de Problemas
+## Solución de Problemas
 
 ### "Meta CSRF token not found"
 En `layouts/app.blade.php`, dentro de `<head>`:
@@ -261,7 +261,7 @@ Cargar datos de prueba:
 php artisan db:seed ReciboPrendaSeeder
 ```
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 1. **No usa sombras** - Solo bordes. Más industrial.
 2. **Tipografía pesada** - Font-black, uppercase, tracking-widest

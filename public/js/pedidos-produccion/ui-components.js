@@ -102,7 +102,7 @@ const UIComponents = {
                             </table>
                             <button class="btn btn-sm btn-success" 
                                     data-action="add-variante" data-prenda-id="${prenda._id}">
-                                ➕ Agregar variante
+                                 Agregar variante
                             </button>
                         </div>
 
@@ -110,7 +110,7 @@ const UIComponents = {
                         <div class="tab-pane fade" id="fotos-${prenda._id}" role="tabpanel">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6>📸 Fotos de prenda</h6>
+                                    <h6> Fotos de prenda</h6>
                                     <div class="foto-gallery mb-3">
                                         ${prenda.fotos_prenda && prenda.fotos_prenda.length > 0
                                             ? prenda.fotos_prenda.map(f => this.renderFotoThumb(f, prenda._id, 'prenda')).join('')
@@ -146,7 +146,7 @@ const UIComponents = {
                             </div>
                             <button class="btn btn-sm btn-info" 
                                     data-action="add-proceso" data-prenda-id="${prenda._id}">
-                                ➕ Agregar proceso
+                                 Agregar proceso
                             </button>
                         </div>
                     </div>

@@ -147,7 +147,7 @@ class DragDropManager {
                                 e.stopPropagation();
                                 const file = items[i].getAsFile();
                                 if (file) {
-                                    UIHelperService.log('DragDropManager', `🎯 Paste redirigido a sub-modal #${modalId}`);
+                                    UIHelperService.log('DragDropManager', ` Paste redirigido a sub-modal #${modalId}`);
                                     handler(file);
                                 }
                                 return;
@@ -173,7 +173,7 @@ class DragDropManager {
                 elementoActivo.contentEditable === 'true'
             );
 
-            // 🔴 FIX: ANTES de permitir pegado normal en campos de texto,
+            //  FIX: ANTES de permitir pegado normal en campos de texto,
             // verificar si estamos dentro del wizard de colores y hay una imagen en el clipboard.
             // En ese caso, redirigir la imagen al dropZone de la fila, no pegarla como texto.
             const wizardColoresContainer = document.getElementById('lista-colores-checkboxes');
@@ -283,11 +283,11 @@ class DragDropManager {
 
             // Si es un campo de texto (fuera del wizard colores), permitir el comportamiento normal
             if (esCampoTexto) {
-                UIHelperService.log('DragDropManager', `📝 Campo de texto detectado (${elementoActivo.tagName}${elementoActivo.type ? ':' + elementoActivo.type : ''}), permitiendo pegado normal`);
+                UIHelperService.log('DragDropManager', ` Campo de texto detectado (${elementoActivo.tagName}${elementoActivo.type ? ':' + elementoActivo.type : ''}), permitiendo pegado normal`);
                 return;
             }
 
-            // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP
+            //  CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP
             // Verificar TODOS los modales disponibles y sus visibilidad
             let contenedorEPP = document.getElementById('contenedorFotosEPP');
             let modalEPP = document.getElementById('modalAgregarEPP');
@@ -425,7 +425,7 @@ class DragDropManager {
             
             // Si no hay imágenes, permitir el comportamiento normal
             if (!foundImage) {
-                UIHelperService.log('DragDropManager', '📝 No hay imágenes en el portapapeles, permitiendo pegado normal de texto');
+                UIHelperService.log('DragDropManager', ' No hay imágenes en el portapapeles, permitiendo pegado normal de texto');
                 return;
             }
             
@@ -454,7 +454,7 @@ class DragDropManager {
                         let handlerCorrecto = null;
                         let funcionManejo = null;
                         
-                        UIHelperService.log('DragDropManager', `🎯 Elemento activo: ${elementoActivo?.id || elementoActivo?.tagName || 'desconocido'}`);
+                        UIHelperService.log('DragDropManager', ` Elemento activo: ${elementoActivo?.id || elementoActivo?.tagName || 'desconocido'}`);
                         
                         // Intentar obtener el elemento bajo el cursor (usar posición rastreada del mouse)
                         try {
@@ -464,7 +464,7 @@ class DragDropManager {
                             
                             if (clientX && clientY && isFinite(clientX) && isFinite(clientY)) {
                                 elementoCursor = document.elementFromPoint(clientX, clientY);
-                                UIHelperService.log('DragDropManager', `🎯 Elemento bajo cursor: ${elementoCursor?.id || elementoCursor?.tagName || 'desconocido'} (${clientX}, ${clientY})`);
+                                UIHelperService.log('DragDropManager', ` Elemento bajo cursor: ${elementoCursor?.id || elementoCursor?.tagName || 'desconocido'} (${clientX}, ${clientY})`);
                             } else {
                                 UIHelperService.log('DragDropManager', ` Posición del mouse no disponible, usando solo elemento activo`);
                             }
@@ -477,7 +477,7 @@ class DragDropManager {
                         let modalSeleccionado = modalesVisibles[0];
                         
                         if (modalSeleccionado) {
-                            UIHelperService.log('DragDropManager', `🎯 Procesando para modal: ${modalSeleccionado.tipo}`);
+                            UIHelperService.log('DragDropManager', ` Procesando para modal: ${modalSeleccionado.tipo}`);
                             
                             // Según el tipo de modal, determinar el handler
                             switch (modalSeleccionado.tipo) {
@@ -500,13 +500,13 @@ class DragDropManager {
                                                     window.renderizarTablaEPPAgregados();
                                                 }
                                             };
-                                            UIHelperService.log('DragDropManager', `🎯 Usando handler para EPP tabla (zona activa: ${window.zonaFotosActivaId}, eppId: ${eppIdTabla})`);
+                                            UIHelperService.log('DragDropManager', ` Usando handler para EPP tabla (zona activa: ${window.zonaFotosActivaId}, eppId: ${eppIdTabla})`);
                                             break;
                                         }
                                     }
                                     handlerCorrecto = 'EPP';
                                     funcionManejo = window.manejarSubidaFotosEPP;
-                                    UIHelperService.log('DragDropManager', '🎯 Usando handler para EPP');
+                                    UIHelperService.log('DragDropManager', ' Usando handler para EPP');
                                     break;
                                     
                                 case 'proceso-generico':
@@ -515,7 +515,7 @@ class DragDropManager {
                                     if (numeroProceso) {
                                         handlerCorrecto = `proceso-${numeroProceso}`;
                                         funcionManejo = (input) => window.manejarImagenProceso(input, numeroProceso);
-                                        UIHelperService.log('DragDropManager', `🎯 Usando handler para proceso ${numeroProceso}`);
+                                        UIHelperService.log('DragDropManager', ` Usando handler para proceso ${numeroProceso}`);
                                     }
                                     break;
                                     
@@ -526,11 +526,11 @@ class DragDropManager {
                                     if (this._estaEnAreaTelas(elementoActivo, elementoCursor)) {
                                         handlerCorrecto = 'telas';
                                         funcionManejo = window.manejarImagenTela;
-                                        UIHelperService.log('DragDropManager', '🎯 Usando handler para telas (prendas)');
+                                        UIHelperService.log('DragDropManager', ' Usando handler para telas (prendas)');
                                     } else {
                                         handlerCorrecto = 'prendas';
                                         funcionManejo = window.manejarImagenesPrenda;
-                                        UIHelperService.log('DragDropManager', '🎯 Usando handler para fotos de prenda');
+                                        UIHelperService.log('DragDropManager', ' Usando handler para fotos de prenda');
                                     }
                                     break;
                             }
@@ -943,7 +943,7 @@ window.setupGlobalPasteListener = () => {
 };
 
 window.setupDragAndDrop = (previewElement) => {
-    // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
+    //  CRÍTICO: Asegurar que DragDropManager esté inicializado
     if (!window.DragDropManager || !window.DragDropManager.inicializado) {
         console.warn('[setupDragAndDrop]  DragDropManager no inicializado, inicializando...');
         if (!window.DragDropManager) {
@@ -961,7 +961,7 @@ window.setupDragAndDrop = (previewElement) => {
 };
 
 window.setupDragAndDropConImagen = (previewElement, imagenesActuales) => {
-    // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
+    //  CRÍTICO: Asegurar que DragDropManager esté inicializado
     if (!window.DragDropManager || !window.DragDropManager.inicializado) {
         console.warn('[setupDragAndDropConImagen]  DragDropManager no inicializado, inicializando...');
         if (!window.DragDropManager) {

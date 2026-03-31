@@ -305,7 +305,7 @@ class GestorDatosPedidoJSON {
                             asignacion.colores.forEach((colorItem) => {
                                 if (colorItem.imagen_id) {
                                     const imgData = window.ColoresPorTalla.getImage(colorItem.imagen_id);
-                                    console.log('[GestorDatosPedidoJSON] 📸 Intentando obtener imagen:', {
+                                    console.log('[GestorDatosPedidoJSON]  Intentando obtener imagen:', {
                                         imagen_id: colorItem.imagen_id,
                                         color: colorItem.nombre,
                                         imgDataExists: !!imgData,

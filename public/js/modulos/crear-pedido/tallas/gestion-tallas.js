@@ -39,7 +39,7 @@ window.sincronizarTallasConModalProceso = function() {
         // Solo sincronizar si el modal del proceso está visible
         const modalProceso = document.getElementById('modal-proceso-generico');
         if (!modalProceso || modalProceso.style.display === 'none') {
-            console.log('[sincronizarTallasConModalProceso] ℹ️ Modal de proceso no visible, sincronización saltada');
+            console.log('[sincronizarTallasConModalProceso]  Modal de proceso no visible, sincronización saltada');
             return;
         }
         
@@ -640,7 +640,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
     
-    // 🔴 NUEVO: Si es "GENERICO" (UNISEX), no crear tarjeta visual
+    //  NUEVO: Si es "GENERICO" (UNISEX), no crear tarjeta visual
     // La tarjeta de unisex se muestra en su propio contenedor via crearTarjetaUnisex()
     if (genero === 'GENERICO') {
         console.log('[crearTarjetaGenero]  GENERICO detectado - No creando tarjeta visual (se muestra via crearTarjetaUnisex)');
@@ -736,7 +736,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
                 abrirModalSobremedida();
             } else {
                 //  SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)
-                console.log(`[crearTarjetaGenero] 📏 Tallas normales en ${genero}, abriendo selector`);
+                console.log(`[crearTarjetaGenero]  Tallas normales en ${genero}, abriendo selector`);
                 abrirModalSeleccionarTallas(genero);
             }
         };

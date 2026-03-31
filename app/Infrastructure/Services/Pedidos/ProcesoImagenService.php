@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Services\Pedidos;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -203,6 +204,176 @@ class ProcesoImagenService
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Procesar imágenes de procesos por talla (modo específico).
+     *
+     * Lee archivos desde FormData en:
+     * prendas.{prendaIdx}.procesos.{procesoKey}.datosExtendidos.{genero}.{talla}.imagenes.{imgIdx}
+     * y los guarda en pedidos_procesos_imagenes con proceso_prenda_talla_id.
+     */
+    public function procesarImagenesPorTalla(Request $request, int $pedidoId, int $prendaIdx, int $procesoNumerico, $procesoKey, array $datosExtendidos): int
+    {
+        $procesoDetalleId = $this->resolverProcesoDetalleId($pedidoId, $prendaIdx, $procesoNumerico, $procesoKey);
+        if (!$procesoDetalleId) {
+            Log::warning('[ProcesoImagenService] No se pudo resolver proceso_detalle_id para modo por talla', [
+                'pedido_id' => $pedidoId,
+                'prenda_idx' => $prendaIdx,
+                'proceso_numerico' => $procesoNumerico,
+                'proceso_key' => $procesoKey,
+            ]);
+            return 0;
+        }
+
+        $procesadas = $this->procesarImagenesExtendidasPorTalla(
+            $request,
+            $pedidoId,
+            $prendaIdx,
+            (string) $procesoKey,
+            $procesoDetalleId,
+            $datosExtendidos
+        );
+
+        Log::info('[ProcesoImagenService] Imágenes por talla procesadas', [
+            'pedido_id' => $pedidoId,
+            'prenda_idx' => $prendaIdx,
+            'proceso_key' => $procesoKey,
+            'proceso_detalle_id' => $procesoDetalleId,
+            'total_procesadas' => $procesadas,
+        ]);
+
+        return $procesadas;
+    }
+
+    private function procesarImagenesExtendidasPorTalla(
+        Request $request,
+        int $pedidoId,
+        int $prendaIdx,
+        string $procesoKey,
+        int $procesoDetalleId,
+        array $datosExtendidos
+    ): int {
+        $procesadas = 0;
+
+        foreach ($datosExtendidos as $generoKey => $tallasDatos) {
+            if (!is_array($tallasDatos)) {
+                continue;
+            }
+
+            foreach ($tallasDatos as $tallaKey => $tallaData) {
+                if (!is_array($tallaData)) {
+                    continue;
+                }
+
+                $tallaId = $this->resolverProcesoPrendaTallaId($procesoDetalleId, (string) $generoKey, (string) $tallaKey);
+                if (!$tallaId) {
+                    continue;
+                }
+
+                $procesadas += $this->guardarArchivosPorTallaDesdeRequest(
+                    $request,
+                    $pedidoId,
+                    $prendaIdx,
+                    $procesoKey,
+                    (string) $generoKey,
+                    (string) $tallaKey,
+                    $procesoDetalleId,
+                    $tallaId
+                );
+            }
+        }
+
+        return $procesadas;
+    }
+
+    private function guardarArchivosPorTallaDesdeRequest(
+        Request $request,
+        int $pedidoId,
+        int $prendaIdx,
+        string $procesoKey,
+        string $generoKey,
+        string $tallaKey,
+        int $procesoDetalleId,
+        int $tallaId
+    ): int {
+        $procesadas = 0;
+        $imgIdx = 0;
+
+        while (true) {
+            $dotKey = "prendas.{$prendaIdx}.procesos.{$procesoKey}.datosExtendidos.{$generoKey}.{$tallaKey}.imagenes.{$imgIdx}";
+            if (!$request->hasFile($dotKey)) {
+                break;
+            }
+
+            $archivo = $request->file($dotKey);
+            $this->guardarImagenProceso($procesoDetalleId, $pedidoId, $archivo, $imgIdx, $tallaId);
+            $procesadas++;
+            $imgIdx++;
+        }
+
+        return $procesadas;
+    }
+
+    private function resolverProcesoDetalleId(int $pedidoId, int $prendaIdx, int $_procesoNumerico, mixed $procesoKey): ?int
+    {
+        $prenda = DB::table('prendas_pedido')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->orderBy('id')
+            ->offset($prendaIdx)
+            ->first();
+
+        if (!$prenda) {
+            return null;
+        }
+
+        // Resolución estricta por nombre/slug del proceso (sin fallback por índice)
+        if (!is_string($procesoKey) || $procesoKey === '') {
+            return null;
+        }
+
+        $detalleByNombre = DB::table('pedidos_procesos_prenda_detalles as ppd')
+            ->join('tipos_procesos as tp', 'tp.id', '=', 'ppd.tipo_proceso_id')
+            ->where('ppd.prenda_pedido_id', $prenda->id)
+            ->where(function ($q) use ($procesoKey) {
+                $q->where('tp.slug', 'LIKE', $procesoKey)
+                    ->orWhere('tp.nombre', 'LIKE', $procesoKey);
+            })
+            ->orderBy('ppd.id')
+            ->select('ppd.id')
+            ->first();
+
+        return $detalleByNombre ? (int) $detalleByNombre->id : null;
+    }
+
+    private function resolverProcesoPrendaTallaId(int $procesoDetalleId, string $generoKey, string $tallaKey): ?int
+    {
+        $genero = strtoupper($generoKey);
+
+        // Caso especial sobremedida: datosExtendidos.sobremedida.{genero}
+        if ($genero === 'SOBREMEDIDA') {
+            $generoSobremedida = strtoupper($tallaKey);
+            $row = DB::table('pedidos_procesos_prenda_tallas')
+                ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                ->where('genero', $generoSobremedida)
+                ->where('es_sobremedida', 1)
+                ->orderBy('id')
+                ->first();
+
+            return $row ? (int) $row->id : null;
+        }
+
+        // En llaves con color: "M__NEGRO" => talla real "M"
+        $tallaReal = explode('__', $tallaKey)[0] ?? $tallaKey;
+
+        $row = DB::table('pedidos_procesos_prenda_tallas')
+            ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+            ->where('genero', $genero)
+            ->where('talla', $tallaReal)
+            ->orderBy('id')
+            ->first();
+
+        return $row ? (int) $row->id : null;
     }
 }
 

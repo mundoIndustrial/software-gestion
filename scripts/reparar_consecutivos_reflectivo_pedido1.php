@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-echo "=======================================================\n";
 echo "REPARAR CONSECUTIVOS REFLECTIVO FALTANTES - PEDIDO #1\n";
 echo "=======================================================\n\n";
 
@@ -55,7 +54,7 @@ if (empty($prendasSinConsecutivo)) {
     exit(0);
 }
 
-echo "📝 Se encontraron " . count($prendasSinConsecutivo) . " prendas sin consecutivo REFLECTIVO.\n\n";
+echo " Se encontraron " . count($prendasSinConsecutivo) . " prendas sin consecutivo REFLECTIVO.\n\n";
 
 // 2. Obtener el consecutivo global actual de REFLECTIVO
 echo " PASO 2: Obteniendo consecutivo global de REFLECTIVO...\n";

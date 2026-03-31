@@ -28,7 +28,7 @@ window.diagnosticarRutasTelas = async function() {
         // Verificar cada imagen
         for (let j = 0; j < tela.imagenes.length; j++) {
             const img = tela.imagenes[j];
-            console.log(`[DIAGNÓSTICO-RUTAS]   📸 Imagen ${j}:`, {
+            console.log(`[DIAGNÓSTICO-RUTAS]    Imagen ${j}:`, {
                 ruta: img.ruta || 'NULL',
                 ruta_webp: img.ruta_webp || 'NULL',
                 previewUrl: img.previewUrl || 'NULL',

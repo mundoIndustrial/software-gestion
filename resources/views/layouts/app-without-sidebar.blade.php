@@ -17,7 +17,7 @@
                     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
                 </div>
                 
-                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes, bodega y cotizaciones pendientes) -->
+                <!--  Barra de búsqueda (solo en vista de órdenes, bodega y cotizaciones pendientes) -->
                 @php
                     $currentRoute = Route::currentRouteName();
                     $isCotizacionesPendientes = $currentRoute === 'cotizaciones.pendientes';

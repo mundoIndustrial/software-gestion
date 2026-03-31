@@ -7,7 +7,7 @@
 
 ---
 
-## 🔴 PROBLEMAS ENCONTRADOS
+##  PROBLEMAS ENCONTRADOS
 
 ### ❌ 1. VIOLACIÓN SRP (Single Responsibility Principle)
 
@@ -246,7 +246,7 @@ JSON Response
 
 ---
 
-## 🎯 PRINCIPIOS APLICADOS
+##  PRINCIPIOS APLICADOS
 
 | Principio | Antes | Después |
 |-----------|-------|---------|
@@ -680,7 +680,7 @@ class ObtenerEppItemsController extends Controller
 
 ---
 
-## 📝 RUTAS (routes/asesores.php)
+##  RUTAS (routes/asesores.php)
 
 ```php
 Route::middleware(['auth', 'role:asesor'])->group(function () {
@@ -828,7 +828,7 @@ app/
 
 ---
 
-## 🎯 RESUMEN EJECUTIVO DE CAMBIOS
+##  RESUMEN EJECUTIVO DE CAMBIOS
 
 | Item | Estado | Acción |
 |------|--------|--------|

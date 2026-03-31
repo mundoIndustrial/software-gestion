@@ -14,7 +14,7 @@ class PrendaEditorTelas {
         });
         
         // 🔥 Replicar a global para que sea editable (ANTES de verificar DOM)
-        // 🔴 NO usar JSON.parse/stringify - destruye File objects y blob URLs
+        //  NO usar JSON.parse/stringify - destruye File objects y blob URLs
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
             window.telasCreacion = prenda.telasAgregadas.map(tela => ({
                 ...tela,
@@ -80,7 +80,7 @@ class PrendaEditorTelas {
     /**
      * Crear fila de tela para la tabla
      * @private
-     * 🔴 IMPORTANTE: Usa DOM API (createElement) en vez de innerHTML para la imagen.
+     *  IMPORTANTE: Usa DOM API (createElement) en vez de innerHTML para la imagen.
      * Esto evita problemas con blob: URLs y onerror roto por parsing HTML.
      */
     static _crearFilaTela(tela, idx) {
@@ -139,7 +139,7 @@ class PrendaEditorTelas {
             </td>
         `;
         
-        // 🔴 CONSTRUIR IMAGEN VÍA DOM API (evita problemas de innerHTML + blob: + onerror)
+        //  CONSTRUIR IMAGEN VÍA DOM API (evita problemas de innerHTML + blob: + onerror)
         const tdImagen = fila.querySelector('.td-imagen-tela');
         if (imgSrc && tdImagen) {
             const img = document.createElement('img');
@@ -177,7 +177,7 @@ class PrendaEditorTelas {
                 console.log(`[Telas]  Imagen tela ${idx} cargada exitosamente`);
             };
             
-            // 🔴 Asignar src DESPUÉS de configurar onerror/onload
+            //  Asignar src DESPUÉS de configurar onerror/onload
             img.src = imgSrc;
             tdImagen.appendChild(img);
         } else if (tdImagen) {
@@ -206,7 +206,7 @@ class PrendaEditorTelas {
     }
 }
 
-// 🔴 NUEVO: Función global para eliminar tela en modal de edición
+//  NUEVO: Función global para eliminar tela en modal de edición
 window.eliminarTela = function(index, event) {
     console.log('[eliminarTela]  Iniciando eliminación de tela:', index);
     
@@ -227,7 +227,7 @@ window.eliminarTela = function(index, event) {
         
         // 🚨 IMPORTANTE: Eliminar tallas asociadas a esta tela
         if (window.tallasRelacionales && typeof window.tallasRelacionales === 'object') {
-            console.log('[eliminarTela] 🧹 Eliminando tallas asociadas a la tela:', telaAEliminar.tela);
+            console.log('[eliminarTela]  Eliminando tallas asociadas a la tela:', telaAEliminar.tela);
             
             let tallasEliminadas = 0;
             for (const genero in window.tallasRelacionales) {
@@ -264,7 +264,7 @@ window.eliminarTela = function(index, event) {
         
         // 🚨 IMPORTANTE: Limpiar asignaciones de colores asociadas
         if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
-            console.log('[eliminarTela] 🎨 Limpiando asignaciones de colores');
+            console.log('[eliminarTela] Limpiando asignaciones de colores');
             window.StateManager.limpiarAsignaciones();
         }
         
@@ -279,9 +279,9 @@ window.eliminarTela = function(index, event) {
     }
 };
 
-// 🔴 NUEVO: Función global para agregar tela en modal de edición
+//  NUEVO: Función global para agregar tela en modal de edición
 window.agregarTelaNueva = function() {
-    console.log('[agregarTelaNueva] 🟦 CLICK DETECTADO EN BOTÓN AGREGAR TELA');
+    console.log('[agregarTelaNueva]  CLICK DETECTADO EN BOTÓN AGREGAR TELA');
     
     try {
         // Obtener elementos del DOM
@@ -299,9 +299,9 @@ window.agregarTelaNueva = function() {
         const tela = telaElement.value.trim().toUpperCase();
         const referencia = referenciaElement.value.trim().toUpperCase();
         
-        console.log('[agregarTelaNueva] 📝 VALORES CAPTURADOS:', { color, tela, referencia });
+        console.log('[agregarTelaNueva]  VALORES CAPTURADOS:', { color, tela, referencia });
         
-        // 🔴 NUEVO: Validar solo tela (color y referencia son opcionales)
+        //  NUEVO: Validar solo tela (color y referencia son opcionales)
         if (!tela) {
             console.warn('[agregarTelaNueva]  Validación fallida: tela es requerida');
             alert('Por favor completa la Tela');
@@ -332,7 +332,7 @@ window.agregarTelaNueva = function() {
             fechaCreacion: new Date().toISOString()
         };
         
-        console.log('[agregarTelaNueva] 🆕 OBJETO TELA CREADO:', nuevaTela);
+        console.log('[agregarTelaNueva]  OBJETO TELA CREADO:', nuevaTela);
         
         // Agregar al array
         window.telasCreacion.push(nuevaTela);
@@ -365,7 +365,7 @@ window.agregarTelaNueva = function() {
     }
 };
 
-// 🔴 NUEVO: Función de prueba para verificar APIs
+//  NUEVO: Función de prueba para verificar APIs
 window.probarApisTelasColores = async function() {
     console.log('[probarApisTelasColores]  Iniciando prueba de APIs...');
     
@@ -399,7 +399,7 @@ window.probarApisTelasColores = async function() {
     }
 };
 
-// 🔴 NUEVO: Función para cargar datalist de telas y colores
+//  NUEVO: Función para cargar datalist de telas y colores
 window.cargarDatalistTelasColores = async function() {
     console.log('[cargarDatalistTelasColores]  Iniciando carga de datalist');
     
@@ -414,7 +414,7 @@ window.cargarDatalistTelasColores = async function() {
             console.log('[cargarDatalistTelasColores]  Datos telas recibidos:', resultTelas);
             // Extraer el array de datos de la respuesta
             let telas = resultTelas.data || resultTelas;
-            // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
+            //  NUEVO: Manejar caso donde API devuelve objeto en lugar de array
             if (telas && typeof telas === 'object' && !Array.isArray(telas)) {
                 telas = Object.values(telas);
             }
@@ -449,7 +449,7 @@ window.cargarDatalistTelasColores = async function() {
             console.log('[cargarDatalistTelasColores]  Datos colores recibidos:', resultColores);
             // Extraer el array de datos de la respuesta
             let colores = resultColores.data || resultColores;
-            // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
+            //  NUEVO: Manejar caso donde API devuelve objeto en lugar de array
             if (colores && typeof colores === 'object' && !Array.isArray(colores)) {
                 colores = Object.values(colores);
             }
@@ -478,7 +478,7 @@ window.cargarDatalistTelasColores = async function() {
     }
 };
 
-// 🔴 NUEVO: Función para configurar drag & drop y paste en drop zones de tela
+//  NUEVO: Función para configurar drag & drop y paste en drop zones de tela
 window.configurarDragDropTela = function() {
     console.log('[configurarDragDropTela]  Configurando drag & drop para telas');
     
@@ -549,7 +549,7 @@ window.configurarDragDropTela = function() {
     console.log('[configurarDragDropTela]  Drag & drop configurado para telas');
 };
 
-// 🔴 NUEVO: Función para configurar drag & drop en previews de procesos
+//  NUEVO: Función para configurar drag & drop en previews de procesos
 window.configurarDragDropProcesos = function() {
     console.log('[configurarDragDropProcesos]  INICIO - Configurando drag & drop para procesos');
     console.log('[configurarDragDropProcesos]Timestamp:', new Date().toISOString());
@@ -563,10 +563,10 @@ window.configurarDragDropProcesos = function() {
             continue;
         }
         
-        console.log(`[configurarDragDropProcesos] 🎯 Procesando preview ${i}`);
-        console.log(`[configurarDragDropProcesos] 📸 Preview ${i} encontrado:`, preview);
+        console.log(`[configurarDragDropProcesos]  Procesando preview ${i}`);
+        console.log(`[configurarDragDropProcesos]  Preview ${i} encontrado:`, preview);
         
-        // 🔧 SOLUCIÓN: Eliminar listeners previos clonando el nodo
+        //  SOLUCIÓN: Eliminar listeners previos clonando el nodo
         // Esto evita la duplicación de listeners que causa doble apertura del input
         console.log(`[configurarDragDropProcesos]  Clonando preview ${i} para eliminar listeners previos`);
         const newPreview = preview.cloneNode(true);
@@ -596,12 +596,12 @@ window.configurarDragDropProcesos = function() {
                     disabled: fileInput.disabled
                 });
                 
-                // 🔴 BANDERA ANTI-DUPLICACIÓN
+                //  BANDERA ANTI-DUPLICACIÓN
                 if (!fileInput._abiendoAhora) {
                     console.log(`[configurarDragDropProcesos]  Input ${i} no está siendo abierto, procediendo`);
                     fileInput._abiendoAhora = true;
                     fileInput.click();
-                    console.log(`[configurarDragDropProcesos] 🎯 Click ejecutado en input ${i}`);
+                    console.log(`[configurarDragDropProcesos]  Click ejecutado en input ${i}`);
                     
                     setTimeout(() => {
                         fileInput._abiendoAhora = false;
@@ -619,7 +619,7 @@ window.configurarDragDropProcesos = function() {
         
         // Drag over
         newPreview.addEventListener('dragover', (e) => {
-            console.log(`[configurarDragDropProcesos] 🎯 DRAGOVER en preview ${i}`);
+            console.log(`[configurarDragDropProcesos]  DRAGOVER en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
             newPreview.style.background = '#e0f2fe';
@@ -628,7 +628,7 @@ window.configurarDragDropProcesos = function() {
         
         // Drag leave
         newPreview.addEventListener('dragleave', (e) => {
-            console.log(`[configurarDragDropProcesos] 🎯 DRAGLEAVE en preview ${i}`);
+            console.log(`[configurarDragDropProcesos]  DRAGLEAVE en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
             newPreview.style.background = '#f9fafb';
@@ -637,7 +637,7 @@ window.configurarDragDropProcesos = function() {
         
         // Drop
         newPreview.addEventListener('drop', (e) => {
-            console.log(`[configurarDragDropProcesos] 🎯 DROP en preview ${i}`);
+            console.log(`[configurarDragDropProcesos]  DROP en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
             newPreview.style.background = '#f9fafb';
@@ -660,7 +660,7 @@ window.configurarDragDropProcesos = function() {
         
         // Paste
         newPreview.addEventListener('paste', (e) => {
-            console.log(`[configurarDragDropProcesos] 🎯 PASTE en preview ${i}`);
+            console.log(`[configurarDragDropProcesos]  PASTE en preview ${i}`);
             e.preventDefault();
             const items = e.clipboardData.items;
             console.log(`[configurarDragDropProcesos]  Items en clipboard:`, items.length);
@@ -668,7 +668,7 @@ window.configurarDragDropProcesos = function() {
             for (let item of items) {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     const file = item.getAsFile();
-                    console.log(`[configurarDragDropProcesos] 📸 Imagen pegada en preview ${i}:`, file.name);
+                    console.log(`[configurarDragDropProcesos]  Imagen pegada en preview ${i}:`, file.name);
                     const fileInput = document.getElementById(`proceso-foto-input-${i}`);
                     if (fileInput) {
                         const dataTransfer = new DataTransfer();

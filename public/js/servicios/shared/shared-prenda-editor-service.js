@@ -35,7 +35,7 @@ class SharedPrendaEditorService {
     }
 
     /**
-     * 🎯 MÉTODO PRINCIPAL - Abrir editor
+     *  MÉTODO PRINCIPAL - Abrir editor
      * 
      * NOTA: Este método IGNORA cotizaciones completamente
      * Si necesitas lógica de cotización, usa CotizacionEditorService en su lugar

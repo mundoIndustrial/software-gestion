@@ -129,7 +129,7 @@ class BodegaRealtimeRefresh {
             // Suscribirse a evento .nota.guardada
             try {
                 ws.subscribe(channelName, '.nota.guardada', (event) => {
-                    if (this.debug) console.log('[BodegaRealtime] 📝 Nota guardada:', event);
+                    if (this.debug) console.log('[BodegaRealtime]  Nota guardada:', event);
                     this.handleNotaGuardada(event, numeroPedido, talla);
                 });
                 if (this.debug) console.log(`[BodegaRealtime]  Suscrito a ${channelName}/.nota.guardada`);
@@ -250,7 +250,7 @@ class BodegaRealtimeRefresh {
         }
         
         if (this.debug) {
-            console.log(`[BodegaRealtime] 📝 Nota recargada para ${numeroPedido}-${talla}`);
+            console.log(`[BodegaRealtime]  Nota recargada para ${numeroPedido}-${talla}`);
         }
     }
 
@@ -277,7 +277,7 @@ class BodegaRealtimeRefresh {
             if (this.debug) console.log(`🔌 [BodegaRealtime] Abandonado canal local: ${channelName}`);
         });
         this.channels.clear();
-        if (this.debug) console.log('[BodegaRealtime] 🧹 Todos los canales limpiados');
+        if (this.debug) console.log('[BodegaRealtime]  Todos los canales limpiados');
     }
 }
 

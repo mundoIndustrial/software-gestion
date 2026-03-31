@@ -1,5 +1,5 @@
 /**
- * ⚙️ Módulo de Procesos
+ *  Módulo de Procesos
  * Responsabilidad: Cargar y mostrar procesos (reflectivo, bordado, etc.)
  */
 
@@ -8,12 +8,12 @@ class PrendaEditorProcesos {
      * Cargar procesos en el modal
      */
     static cargar(prenda) {
-        console.log('⚙️ [PROCESOS-LOADER] ===== INICIO CARGA =====');
-        console.log('⚙️ [PROCESOS-LOADER] prenda.id:', prenda.id);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos EXISTS:', !!prenda.procesos);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos type:', typeof prenda.procesos);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos isArray:', Array.isArray(prenda.procesos));
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos CONTENIDO COMPLETO:');
+        console.log(' [PROCESOS-LOADER] ===== INICIO CARGA =====');
+        console.log(' [PROCESOS-LOADER] prenda.id:', prenda.id);
+        console.log(' [PROCESOS-LOADER] prenda.procesos EXISTS:', !!prenda.procesos);
+        console.log(' [PROCESOS-LOADER] prenda.procesos type:', typeof prenda.procesos);
+        console.log(' [PROCESOS-LOADER] prenda.procesos isArray:', Array.isArray(prenda.procesos));
+        console.log(' [PROCESOS-LOADER] prenda.procesos CONTENIDO COMPLETO:');
         console.log(prenda.procesos);
         
         if (!prenda.procesos) {
@@ -26,7 +26,7 @@ class PrendaEditorProcesos {
             console.log(' [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
         }
         
-        console.log('⚙️ [Procesos] Cargando:', {
+        console.log(' [Procesos] Cargando:', {
             cantidad: prenda.procesos?.length || Object.keys(prenda.procesos || {}).length || 0,
             tipo: Array.isArray(prenda.procesos) ? 'array' : typeof prenda.procesos,
             procesos: prenda.procesos
@@ -40,20 +40,20 @@ class PrendaEditorProcesos {
             if (Array.isArray(prenda.procesos)) {
                 // Si es array, convertir a objeto con keys
                 prenda.procesos.forEach((proceso, idx) => {
-                    // 🔴 CRÍTICO: Extraer nombre del tipo de proceso - puede venir en diferentes formatos
+                    //  CRÍTICO: Extraer nombre del tipo de proceso - puede venir en diferentes formatos
                     let tipoOriginal = proceso.tipo 
                         || proceso.nombre 
                         || proceso.tipo_proceso
                         || (proceso.tipoProceso && proceso.tipoProceso.nombre)  // ← Nombre desde relación anidada (servidor)
                         || `proceso_${idx}`;
                     
-                    // 🔴 Normalizar a slug lowercase para que matchee iconos/nombres del renderizador
+                    //  Normalizar a slug lowercase para que matchee iconos/nombres del renderizador
                     const tipo = String(tipoOriginal)
                         .toLowerCase()
                         .trim()
                         .replace(/\s+/g, '-');
                     
-                    // 🔴 Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
+                    //  Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
                     const datosNormalizados = {
                         ...proceso,
                         tipo: tipo,
@@ -61,7 +61,7 @@ class PrendaEditorProcesos {
                     };
                     delete datosNormalizados.modoTallas;
                     if (datosNormalizados.imagenes && Array.isArray(datosNormalizados.imagenes)) {
-                        console.log(`[PROCESOS-LOADER] 🖼️ Imágenes recibidas para ${tipo}:`, {
+                        console.log(`[PROCESOS-LOADER]  Imágenes recibidas para ${tipo}:`, {
                             cantidad: datosNormalizados.imagenes.length,
                             primeraprimera: datosNormalizados.imagenes[0],
                             tipo_primera: typeof datosNormalizados.imagenes[0],
@@ -87,8 +87,8 @@ class PrendaEditorProcesos {
                         datos: datosNormalizados
                     };
                     
-                    // 🔴 CRÍTICO: Verificar que modo_tallas existe y se propagó correctamente
-                    console.log(`[PROCESOS-LOADER] 🎯 Proceso "${tipo}" cargado:`, {
+                    //  CRÍTICO: Verificar que modo_tallas existe y se propagó correctamente
+                    console.log(`[PROCESOS-LOADER]  Proceso "${tipo}" cargado:`, {
                         tipo: tipo,
                         procesoId: datosNormalizados.id,
                         modo_tallas_desde_servidor: datosNormalizados.modo_tallas,
@@ -160,19 +160,19 @@ class PrendaEditorProcesos {
                 });
             }
             
-            console.log('[Carga] ⚙️ Procesos replicados en window.procesosSeleccionados:', {
+            console.log('[Carga]  Procesos replicados en window.procesosSeleccionados:', {
                 keys: Object.keys(window.procesosSeleccionados),
                 count: Object.keys(window.procesosSeleccionados).length,
                 contenido: window.procesosSeleccionados
             });
             
-            // 🔴 CRÍTICO: Para procesos desde cotización, auto-aplicar "todas las tallas" si están vacías
+            //  CRÍTICO: Para procesos desde cotización, auto-aplicar "todas las tallas" si están vacías
             // Los procesos de cotización vienen con talla_cantidad vacío - por defecto aplican a TODAS las tallas
             const tallasRelacionales = window.tallasRelacionales || {};
             const hayTallasEnPrenda = Object.keys(tallasRelacionales).length > 0;
             
             if (hayTallasEnPrenda && prenda.tipo === 'cotizacion') {
-                console.log('[Procesos] 🎯 Cotización detectada - auto-aplicando tallas a procesos sin tallas');
+                console.log('[Procesos]  Cotización detectada - auto-aplicando tallas a procesos sin tallas');
                 
                 // Construir objeto de tallas en formato proceso (lowercase keys)
                 const tallasParaProceso = {
@@ -201,7 +201,7 @@ class PrendaEditorProcesos {
             }
         }
         
-        // 🎨 CRÍTICO: Usar el nuevo renderizador de tarjetas
+        // CRÍTICO: Usar el nuevo renderizador de tarjetas
         if (window.renderizarTarjetasProcesos) {
             console.log(' [Procesos] Función renderizarTarjetasProcesos() disponible');
             console.log('[Procesos]  window.procesosSeleccionados actual:', window.procesosSeleccionados);
@@ -220,10 +220,10 @@ class PrendaEditorProcesos {
             if (exito) {
                 console.log(' [Procesos] Completado - Tarjetas renderizadas correctamente');
                 
-                // 🔴 CRÍTICO: Marcar los checkboxes de procesos correspondientes
+                //  CRÍTICO: Marcar los checkboxes de procesos correspondientes
                 this._marcarCheckboxesProcesos(window.procesosSeleccionados);
                 
-                // 🔴 NUEVO: Configurar drag & drop para procesos
+                //  NUEVO: Configurar drag & drop para procesos
                 // El renderizador debe llamar a esto después de renderizar
                 console.log('[PROCESOS-LOADER]  Verificando configurarDragDropProcesos');
                 console.log('[PROCESOS-LOADER]Timestamp:', new Date().toISOString());
@@ -272,7 +272,7 @@ class PrendaEditorProcesos {
         const procesosArray = this._convertirAArray(prenda.procesos);
         
         if (!procesosArray || procesosArray.length === 0) {
-            console.log('ℹ️ [Procesos] Sin procesos para cargar');
+            console.log(' [Procesos] Sin procesos para cargar');
             container.innerHTML = '';
             container.style.display = 'none';
             return;
@@ -387,7 +387,7 @@ class PrendaEditorProcesos {
                     console.log(` [Procesos] Checkbox '${checkboxId}' marcado para proceso '${tipoProceso}'`);
                 }
             } else {
-                console.log(`ℹ️ [Procesos] No hay checkbox mapeado para proceso '${tipoProceso}' (tipo: '${tipoLower}')`);
+                console.log(` [Procesos] No hay checkbox mapeado para proceso '${tipoProceso}' (tipo: '${tipoLower}')`);
             }
         });
     }
@@ -398,7 +398,7 @@ class PrendaEditorProcesos {
      * NO tocar el .procesos-container (que contiene los checkboxes)
      */
     static limpiar() {
-        // 🔴 SOLO limpiar contenedor de tarjetas renderizadas
+        //  SOLO limpiar contenedor de tarjetas renderizadas
         // NO limpiar procesos-container (tiene los checkboxes para seleccionar procesos)
         const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
         if (contenedorTarjetas) {

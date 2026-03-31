@@ -219,7 +219,7 @@ async function validateAll() {
     console.log('╚════════════════════════════════════════════════════════╝');
     
     console.log('\n LA ARQUITECTURA ESTÁ CORRECTAMENTE INTEGRADA');
-    console.log('\n🎯 PRÓXIMOS PASOS:');
+    console.log('\n PRÓXIMOS PASOS:');
     console.log('  1. Abrir la modal de "Agregar Prenda Nueva"');
     console.log('  2. Hacer clic en "Asignar Colores"');
     console.log('  3. Interactuar con el wizard normalmente');
@@ -243,4 +243,4 @@ window.WizardValidation = {
 };
 
 console.log(' Archivo de validación cargado');
-console.log('📝 Ejecutar: window.WizardValidation.validateAll()');
+console.log(' Ejecutar: window.WizardValidation.validateAll()');

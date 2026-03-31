@@ -152,7 +152,7 @@ encargado.getAvatarUrl();  // URL con color automático
 
 ---
 
-## 🎯 State Manager
+##  State Manager
 
 ### Acceder al estado (Singleton)
 ```javascript
@@ -235,7 +235,7 @@ const controller = module.tableController;
 
 ---
 
-## 🔗 API Endpoints (Backend)
+##  API Endpoints (Backend)
 
 ### GET /api/recibos-costura
 Retorna lista de recibos con paginación y filtros
@@ -351,7 +351,7 @@ await window.recibosCostruaModule.tableController.aplicarFiltros({
 
 ---
 
-## 📝 Mejores Prácticas
+##  Mejores Prácticas
 
 ###  DO's
 - Usar Value Objects para lógica de dominio

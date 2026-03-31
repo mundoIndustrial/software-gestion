@@ -22,7 +22,7 @@
 └── 📁 telas-module/                 #  Módulo completo
     ├──  estado-validacion.js      #  Estado y validaciones (5KB)
     ├──  gestion-telas.js          #  CRUD de telas (10KB)
-    ├──  manejo-imagenes.js        # 🖼️ Galería y preview (12KB)
+    ├──  manejo-imagenes.js        #  Galería y preview (12KB)
     ├──  ui-renderizado.js          #  UI y renderizado (9KB)
     ├──  storage-datos.js          #  Storage y datos (8KB)
     ├──  telas-module-main.js       #  Loader del módulo (5KB)
@@ -38,7 +38,7 @@
 - **Componentes**: 0 → 5 (arquitectura modular)
 - **Documentación**: 0 → 10KB (completa)
 
-### 🎯 Mejoras Cualitativas
+###  Mejoras Cualitativas
 - **Organización**: Monolítico → Modular
 - **Mantenibilidad**: Difícil → Fácil
 - **Escalabilidad**: Limitada → Ilimitada
@@ -110,7 +110,7 @@
 4. **ui-renderizado** - UI y renderizado
 5. **storage-datos** - Storage y datos
 
-## 🎯 Beneficios del Refactor
+##  Beneficios del Refactor
 
 ###  Mejoras Técnicas
 - **Modularidad**: Cada componente tiene una responsabilidad clara

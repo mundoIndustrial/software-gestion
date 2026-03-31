@@ -31,7 +31,7 @@ class PedidoAuthorizationService
         $estado = strtolower($pedido->estado ?? '');
 
         if ($estado === 'pendiente_cartera' || $estado === 'rechazado_cartera') {
-            Log::warning('[PedidoAuthorizationService] 🔐 Bodeguero bloqueado', [
+            Log::warning('[PedidoAuthorizationService]  Bodeguero bloqueado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'usuario_id' => Auth::id(),

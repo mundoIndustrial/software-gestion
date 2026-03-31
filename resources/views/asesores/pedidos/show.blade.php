@@ -233,7 +233,7 @@
                 ->where('numero_pedido', $numeroPedido)
                 ->get();
             
-            \Log::info('📸 Vista show.blade: Consultando prendas', [
+            \Log::info(' Vista show.blade: Consultando prendas', [
                 'numero_pedido' => $numeroPedido,
                 'total_prendas' => $prendas->count(),
             ]);

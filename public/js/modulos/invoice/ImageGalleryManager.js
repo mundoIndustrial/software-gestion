@@ -362,7 +362,7 @@ class ImageGalleryManager {
         imagen.alt = titulo;
         
         imagen.onload = function() {
-            console.log('[GALERIA-DEBUG] 📸 Imagen cargada:', {
+            console.log('[GALERIA-DEBUG]  Imagen cargada:', {
                 src: this.src,
                 naturalWidth: this.naturalWidth,
                 naturalHeight: this.naturalHeight

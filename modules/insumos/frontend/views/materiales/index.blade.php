@@ -115,7 +115,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
 
 // Sistema genérico de notificaciones (funciona para cualquier rol)
 (function() {
-    console.log('[🎯 IIFE INICIO] Entrando en función autoejecutable');
+    console.log('[ IIFE INICIO] Entrando en función autoejecutable');
     
     const CONFIG = window.CAMPANA_CONFIG || {};
     const nombre = CONFIG.nombre || 'CAMPANA_GENERICA';
@@ -365,9 +365,9 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
         console.log('[ NOTIF] Notificación agregada');
     }
 
-    console.log('[🎯 IIFE] Llamando waitForDOM()');
+    console.log('[ IIFE] Llamando waitForDOM()');
     waitForDOM();
-    console.log('[🎯 IIFE] waitForDOM() llamado');
+    console.log('[ IIFE] waitForDOM() llamado');
 })();
 
 console.log('========== SCRIPT CAMPANA TERMINADO ==========');

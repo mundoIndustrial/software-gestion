@@ -1060,7 +1060,7 @@ function generarHTMLFactura(datos) {
         });
         
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            //  NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const generosEnTallas = Object.keys(prenda.tallas);
             console.log(` [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
             
@@ -1099,7 +1099,7 @@ function generarHTMLFactura(datos) {
                 // Convertir objeto de géneros a array de tallas con género y colores
                 let todasLasTallas = [];
                 Object.keys(prenda.tallas).forEach(genero => {
-                    // 🔴 NUEVO: Excluir GENERICO completamente
+                    //  NUEVO: Excluir GENERICO completamente
                     if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
                         return; // Saltar GENERICO
                     }
@@ -1190,7 +1190,7 @@ function generarHTMLFactura(datos) {
                         `;
                     }
                 } else {
-                    // 🔴 NUEVO: Si todasLasTallas está vacío (porque filtramos GENERICO), mostrar badge de cantidad
+                    //  NUEVO: Si todasLasTallas está vacío (porque filtramos GENERICO), mostrar badge de cantidad
                     // Esto es SOLO CANTIDAD disfrazado
                     let cantidadSOLO = 0;
                     const generericoObj = prenda.tallas.GENERICO;
@@ -1215,7 +1215,7 @@ function generarHTMLFactura(datos) {
                 }
             }
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // 🔴 NUEVO: Filtrar GENERICO de variantes también
+            //  NUEVO: Filtrar GENERICO de variantes también
             const variantesFiltradas = prenda.variantes.filter(v => {
                 return !v.genero || String(v.genero).toUpperCase().trim() !== 'GENERICO';
             });
@@ -1372,7 +1372,7 @@ function generarHTMLFactura(datos) {
             <div style="padding: 12px; space-y: 8px;">
                 ${datos.epps.map(epp => {
                     // Debug logging para EPPs
-                    console.log('🖼️ [BODEGA-FACTURA] EPP con imágenes:', {
+                    console.log(' [BODEGA-FACTURA] EPP con imágenes:', {
                         nombre: epp.nombre_completo || epp.nombre,
                         cantidad: epp.cantidad,
                         imagenes_existe: !!epp.imagenes,
@@ -1384,7 +1384,7 @@ function generarHTMLFactura(datos) {
                     // Generar HTML para imágenes si existen
                     const imagenesHTML = (epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) ? `
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes.length})</div>
+                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes.length})</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
                                 ${epp.imagenes.map((imagen, index) => {
                                     let imgUrl = '';

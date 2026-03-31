@@ -15,6 +15,9 @@ final class PrendaAsignacionesColoresUpdaterService
     public function actualizarAsignacionesColores(PrendaPedido $prenda, $asignacionesColores, ?array $fotosColorProcesadas = null): void
     {
         if (is_null($asignacionesColores)) {
+            \Log::info('[PrendaAsignacionesColoresUpdaterService] asignaciones_colores es NULL - NO se modifican asignaciones', [
+                'prenda_id' => $prenda->id,
+            ]);
             return;
         }
 
@@ -27,6 +30,10 @@ final class PrendaAsignacionesColoresUpdaterService
             || (is_object($asignacionesColores) && count((array) $asignacionesColores) === 0);
 
         if ($estaVacio) {
+            \Log::info('[PrendaAsignacionesColoresUpdaterService] asignaciones_colores vacío - ELIMINANDO TODAS asignaciones', [
+                'prenda_id' => $prenda->id,
+                'tipo_vacio' => is_array($asignacionesColores) ? 'array' : (is_object($asignacionesColores) ? 'object' : 'otro'),
+            ]);
             foreach ($tallasMap as $talla) {
                 \DB::table('prenda_pedido_talla_colores')
                     ->where('prenda_pedido_talla_id', $talla->id)
@@ -37,6 +44,14 @@ final class PrendaAsignacionesColoresUpdaterService
             ]);
             return;
         }
+
+        // CACHE DE ASIGNACIONES EXISTENTES: para preservar imagenes y datos al actualizar
+        $asignacionesExistentes = \DB::table('prenda_pedido_talla_colores')
+            ->whereIn('prenda_pedido_talla_id', $tallasMap->pluck('id')->toArray())
+            ->get()
+            ->keyBy(function ($c) {
+                return strtoupper($c->color_nombre ?? '') . '|' . strtoupper($c->tela_nombre ?? '');
+            });
 
         $asignacionesPlanas = [];
         $fotosColorIndex = [];
@@ -66,23 +81,30 @@ final class PrendaAsignacionesColoresUpdaterService
                         'cantidad' => (int) ($colorData['cantidad'] ?? 0),
                         'referencia' => $colorData['referencia'] ?? null,
                         'observaciones' => $colorData['observaciones'] ?? null,
-                        'imagen_ruta' => $fotosColorIndex[$fKey] ?? null,
+                        'imagen_ruta' => $fotosColorIndex[$fKey] ?? ($colorData['imagen_ruta'] ?? null),
                     ];
                 }
                 continue;
             }
 
+            // FLUJO ALTERNATIVO: asignación sin array colores (patrón simple)
+            // PRESERVAR imagen_ruta existente si no viene en el payload
+            $colorNombre = $asignacion['color'] ?? $asignacion['color_nombre'] ?? '';
+            $telaNombre = $asignacion['tela'] ?? $asignacion['tela_nombre'] ?? '';
+            $existenteCacheKey = strtoupper($colorNombre) . '|' . strtoupper($telaNombre);
+            $imagenExistente = $asignacionesExistentes[$existenteCacheKey]?->imagen_ruta ?? null;
+
             $asignacionesPlanas[] = [
                 'genero' => strtoupper($asignacion['genero'] ?? ''),
                 'talla' => $asignacion['talla'] ?? '',
-                'tela_nombre' => $asignacion['tela'] ?? $asignacion['tela_nombre'] ?? '',
+                'tela_nombre' => $telaNombre,
                 'tela_id' => $asignacion['tela_id'] ?? null,
-                'color_nombre' => $asignacion['color'] ?? $asignacion['color_nombre'] ?? '',
+                'color_nombre' => $colorNombre,
                 'color_id' => $asignacion['color_id'] ?? null,
                 'cantidad' => (int) ($asignacion['cantidad'] ?? 0),
                 'referencia' => $asignacion['referencia'] ?? null,
                 'observaciones' => $asignacion['observaciones'] ?? null,
-                'imagen_ruta' => null,
+                'imagen_ruta' => $asignacion['imagen_ruta'] ?? $imagenExistente,
             ];
         }
 
@@ -131,6 +153,15 @@ final class PrendaAsignacionesColoresUpdaterService
                 'imagen_ruta' => $asig['imagen_ruta'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
+            ]);
+
+            \Log::debug('[PrendaAsignacionesColoresUpdaterService] INSERT - Asignación guardada', [
+                'prenda_id' => $prenda->id,
+                'talla_key' => $tallaKey,
+                'color' => $asig['color_nombre'],
+                'tela' => $asig['tela_nombre'],
+                'cantidad' => $asig['cantidad'],
+                'imagen_ruta_guardada' => $asig['imagen_ruta'] ?? null,
             ]);
 
             $insertados++;

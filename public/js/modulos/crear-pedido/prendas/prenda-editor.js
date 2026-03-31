@@ -1,5 +1,5 @@
 /**
- * 🎯 ORQUESTADOR - PrendaEditor (Simplificado)
+ *  ORQUESTADOR - PrendaEditor (Simplificado)
  * 
  * Responsabilidad: Coordinar flujos de edición
  * - Abrición/cierre de modal
@@ -146,7 +146,7 @@ class PrendaEditor {
             PrendaEditorTelas.cargar(prenda);
             // Replicar a global para edicion
             if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-                // 🔴 CRÍTICO: NO usar JSON.stringify/parse - DESTRUYE File objects y blob URLs
+                //  CRÍTICO: NO usar JSON.stringify/parse - DESTRUYE File objects y blob URLs
                 // Hacer copia profunda que preserve todos los objetos
                 window.telasCreacion = prenda.telasAgregadas.map(tela => ({
                     ...tela,
@@ -193,16 +193,16 @@ class PrendaEditor {
 
         console.log(' [ Carga] Datos cargados en formulario');
         
-        // 🔴 CRÍTICO: Actualizar tabla de resumen DESPUÉS de cargar telas y colores
+        //  CRÍTICO: Actualizar tabla de resumen DESPUÉS de cargar telas y colores
         // Esto garantiza que la tabla se muestre aunque sea solo con telas simples
         if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
             setTimeout(() => {
                 window.ColoresPorTalla.actualizarTablaResumen();
-                console.log('[prenda-editor] 🎯 actualizarTablaResumen() ejecutado post-carga');
+                console.log('[prenda-editor]  actualizarTablaResumen() ejecutado post-carga');
             }, 50);
         }
         
-        // 🔴 NUEVO: Cargar sección UNISEX (antes SOLO CANTIDAD) si existe DIRECTAMENTE aquí
+        //  NUEVO: Cargar sección UNISEX (antes SOLO CANTIDAD) si existe DIRECTAMENTE aquí
         const tieneGenerico = prenda.generosConTallas && 
                              Object.keys(prenda.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
         const tieneGenericoEnCantidadTalla = prenda.cantidad_talla && 
@@ -275,12 +275,12 @@ class PrendaEditor {
             }
         }
         
-        // 🔴 CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
+        //  CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
         this._configurarDragDropEnEdicion();
     }
     
     /**
-     * 🔴 NUEVO: Configurar drag & drop en modo edición
+     *  NUEVO: Configurar drag & drop en modo edición
      * @private
      */
     _configurarDragDropEnEdicion() {

@@ -72,7 +72,7 @@
                 <div style="text-align: center; padding: 2rem;">
                     <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas. Haz clic en el botón de abajo para agregar.</p>
                     <button type="button" onclick="agregarPrendaSinCotizacionConGestor()" class="btn btn-primary" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                        ➕ Agregar Prenda
+                         Agregar Prenda
                     </button>
                 </div>
             `;
@@ -145,7 +145,7 @@
         prendasContainer.innerHTML = html + `
             <div style="text-align: center; margin-top: 2rem;">
                 <button type="button" onclick="agregarPrendaSinCotizacionConGestor()" class="btn btn-primary" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    ➕ Agregar Otra Prenda
+                     Agregar Otra Prenda
                 </button>
             </div>
         `;

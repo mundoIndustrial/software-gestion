@@ -22,7 +22,7 @@ class VistasController extends Controller
             
             // Si intenta acceder a otra vista que no sea bodega, redirigir
             if ($tipo !== 'bodega') {
-                \Log::warning('🔐 [VistasController] Intento de acceso bloqueado para bodeguero', [
+                \Log::warning(' [VistasController] Intento de acceso bloqueado para bodeguero', [
                     'user_id' => auth()->id(),
                     'tipo_solicitado' => $tipo,
                     'mensaje' => 'Bodeguero intentó acceder a: ' . $tipo

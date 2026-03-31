@@ -12,7 +12,7 @@ class VerUsuarioActual extends Command
 
     public function handle()
     {
-        $this->info('👥 USUARIOS EN LA BASE DE DATOS:');
+        $this->info(' USUARIOS EN LA BASE DE DATOS:');
         $this->line('');
 
         $usuarios = User::select('id', 'name', 'email', 'role_id', 'created_at')->get();

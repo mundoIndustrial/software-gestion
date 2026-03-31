@@ -6,10 +6,10 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     console.log(`[setupDragAndDropProceso]Timestamp:`, new Date().toISOString());
     console.log(`[setupDragAndDropProceso]  Stack trace:`, new Error().stack);
     
-    // 🔴 IMPORTANTE: NO clonar el elemento para evitar acumular listeners
+    //  IMPORTANTE: NO clonar el elemento para evitar acumular listeners
     // En su lugar, remover listeners anteriores y agregar nuevos
     const preview = previewElement;
-    console.log(`[setupDragAndDropProceso] 📸 Preview original:`, preview);
+    console.log(`[setupDragAndDropProceso]  Preview original:`, preview);
     
     // Remover todos los listeners anteriores clonando y reemplazando
     console.log(`[setupDragAndDropProceso]  Clonando preview ${procesoIndex} para eliminar listeners`);
@@ -31,7 +31,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     
     // Evento dragover con feedback visual
     newPreview.addEventListener('dragover', (e) => {
-        console.log(`[setupDragAndDropProceso] 🎯 DRAGOVER en preview ${procesoIndex}`);
+        console.log(`[setupDragAndDropProceso]  DRAGOVER en preview ${procesoIndex}`);
         e.preventDefault();
         newPreview.style.background = '#eff6ff';
         newPreview.style.border = '2px dashed #3b82f6';
@@ -40,7 +40,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     
     // Evento dragleave para restaurar estilos
     newPreview.addEventListener('dragleave', (e) => {
-        console.log(`[setupDragAndDropProceso] 🎯 DRAGLEAVE en preview ${procesoIndex}`);
+        console.log(`[setupDragAndDropProceso]  DRAGLEAVE en preview ${procesoIndex}`);
         e.preventDefault();
         newPreview.style.background = '';
         newPreview.style.border = '';
@@ -49,7 +49,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     
     // Evento drop - manejar archivos arrastrados
     newPreview.addEventListener('drop', (e) => {
-        console.log(`[setupDragAndDropProceso] 🎯 DROP en preview ${procesoIndex}`);
+        console.log(`[setupDragAndDropProceso]  DROP en preview ${procesoIndex}`);
         e.preventDefault();
         e.stopPropagation();
         
@@ -91,17 +91,17 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         }
     }, false);
     
-    // 🔴 NUEVO: Usar event delegation a nivel del contenedor padre para evitar múltiples listeners
+    //  NUEVO: Usar event delegation a nivel del contenedor padre para evitar múltiples listeners
     // Esto se ejecuta UNA sola vez por contenedor, no por cada preview
     const fotoPanelContainer = newPreview.closest('.foto-panel');
     console.log(`[setupDragAndDropProceso]  Foto panel container:`, fotoPanelContainer);
     
-    // 🔴 DESACTIVADO: Event delegation causa conflicto con configurarDragDropProcesos
+    //  DESACTIVADO: Event delegation causa conflicto con configurarDragDropProcesos
     // Ya no necesitamos event delegation porque configurarDragDropProcesos maneja los listeners directamente
     console.log(`[setupDragAndDropProceso]  Event delegation DESACTIVADO para evitar conflicto`);
     
     if (false && fotoPanelContainer && !fotoPanelContainer._dragDropConfigured) { // DESACTIVADO
-        console.log(`[setupDragAndDropProceso] 🔧 Configurando event delegation en contenedor`);
+        console.log(`[setupDragAndDropProceso]  Configurando event delegation en contenedor`);
         fotoPanelContainer._dragDropConfigured = true;
         
         fotoPanelContainer.addEventListener('click', (e) => {
@@ -115,7 +115,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                 return;
             }
             
-            console.log(`[setupDragAndDropProceso] 📸 Preview detectado:`, preview.id);
+            console.log(`[setupDragAndDropProceso]  Preview detectado:`, preview.id);
             
             // NO interceptar clicks en el botón eliminar
             if (e.target.closest('.btn-eliminar-imagen-proceso')) {
@@ -153,12 +153,12 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                     _abiendoAhora: inputProceso._abiendoAhora
                 });
                 
-                // 🔴 Flag para evitar doble apertura
+                //  Flag para evitar doble apertura
                 if (!inputProceso._abiendoAhora) {
                     console.log(`[setupDragAndDropProceso]  Input ${index} no está siendo abierto, procediendo`);
                     inputProceso._abiendoAhora = true;
                     inputProceso.click();
-                    console.log(`[setupDragAndDropProceso] 🎯 Click ejecutado en input ${index}`);
+                    console.log(`[setupDragAndDropProceso]  Click ejecutado en input ${index}`);
                     
                     setTimeout(() => {
                         inputProceso._abiendoAhora = false;

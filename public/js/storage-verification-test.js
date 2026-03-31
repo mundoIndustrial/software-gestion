@@ -71,7 +71,7 @@
         warn('ExtensionStorageAPI NO disponible', 'Opcional - solo si usas Chrome Extension');
     }
     
-    console.log('\n📝 VERIFICANDO FUNCIONALIDADES...\n');
+    console.log('\n VERIFICANDO FUNCIONALIDADES...\n');
     
     // 5. Test localStorage.setItem
     try {

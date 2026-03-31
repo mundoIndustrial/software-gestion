@@ -184,7 +184,7 @@ function agregarImagenesGenerales(files) {
     const validos = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (validos.length === 0) return;
 
-    console.log('[agregarImagenesGenerales] 📸 Intentando agregar', validos.length, 'imágenes');
+    console.log('[agregarImagenesGenerales]  Intentando agregar', validos.length, 'imágenes');
     
     // Procesar cada archivo y calcular su hash para detectar duplicados
     validos.forEach((file, idx) => {
@@ -382,7 +382,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             const dataTalla = fila.querySelector('[data-field="talla"]')?.textContent?.trim().toUpperCase();
             const dataCantidadTotal = parseInt(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
             
-            // 🎨 EXTRAER COLORES Y CANTIDADES de la celda [data-field="color"]
+            // EXTRAER COLORES Y CANTIDADES de la celda [data-field="color"]
             // Estructura: <span>AQUA (1)</span><span>AMATISTA (1)</span> etc.
             const colorCell = fila.querySelector('[data-field="color"]');
             const coloresConCantidad = []; // Array de {color: 'AQUA', cantidad: 1}
@@ -551,8 +551,8 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 caballero: new Set(Object.keys(cabObj).map(extraerTallaBase))
             };
             
-            console.log('[por-tallas] 📝 Tallas base guardadas (DAMA):', Array.from(tallasBaseGuardadas.dama));
-            console.log('[por-tallas] 📝 Tallas base guardadas (CABALLERO):', Array.from(tallasBaseGuardadas.caballero));
+            console.log('[por-tallas]  Tallas base guardadas (DAMA):', Array.from(tallasBaseGuardadas.dama));
+            console.log('[por-tallas]  Tallas base guardadas (CABALLERO):', Array.from(tallasBaseGuardadas.caballero));
             
             // Agregar tallas nuevas SOLO si su nombre base no existe en guardadas
             Object.entries(tallasPrenda.dama || {}).forEach(([key, val]) => {
@@ -698,7 +698,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     //  RESTAURAR FILES TEMPORALES: Si hay imagenesFiles (archivos que aún no se subieron al servidor),
     // recrear los blobs para visualización
     if (datosGenerales?.imagenesFiles && Array.isArray(datosGenerales.imagenesFiles) && datosGenerales.imagenesFiles.length > 0) {
-        console.log('[por-tallas] 📸 Restaurando Files temporales:', datosGenerales.imagenesFiles.length);
+        console.log('[por-tallas]  Restaurando Files temporales:', datosGenerales.imagenesFiles.length);
         
         datosGenerales.imagenesFiles.forEach(file => {
             if (file instanceof File) {
@@ -802,7 +802,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             
             //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
             if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
-                console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
+                console.log(`[por-tallas]  Restaurando Files para ${key}:`, existente.imagenesFiles.length);
                 existente.imagenesFiles.forEach(file => {
                     if (file instanceof File) {
                         const blobUrl = URL.createObjectURL(file);
@@ -869,7 +869,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             
             //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
             if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
-                console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
+                console.log(`[por-tallas]  Restaurando Files para ${key}:`, existente.imagenesFiles.length);
                 existente.imagenesFiles.forEach(file => {
                     if (file instanceof File) {
                         const blobUrl = URL.createObjectURL(file);
@@ -1200,7 +1200,7 @@ function handlePasteGlobalPorTallas(e) {
         }
     }
     
-    console.log('[handlePasteGlobalPorTallas] 📸 Archivos detectados:', files.length);
+    console.log('[handlePasteGlobalPorTallas]  Archivos detectados:', files.length);
     if (files.length === 0) return;
 
     e.preventDefault();
@@ -1217,7 +1217,7 @@ function handlePasteGlobalPorTallas(e) {
         
         // ─── Manejo para FOTOS GENERALES ───
         if (tallaActivaParaPaste === 'GENERAL' || targetIsInGeneral) {
-            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a GENERAL', {
+            console.log('[handlePasteGlobalPorTallas]  Agregando a GENERAL', {
                 porVariable: tallaActivaParaPaste === 'GENERAL',
                 porTarget: targetIsInGeneral
             });
@@ -1241,7 +1241,7 @@ function handlePasteGlobalPorTallas(e) {
         }
 
         if (targetKey && datosPorTallaTemp[targetKey]) {
-            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a talla:', targetKey);
+            console.log('[handlePasteGlobalPorTallas]  Agregando a talla:', targetKey);
             agregarImagenesATalla(targetKey, files);
             const safeKey = convertirAKeySegura(targetKey);
             const gal = document.getElementById(`prt-galeria-${safeKey}`);
@@ -1501,7 +1501,7 @@ window.guardarProcesoPorTallas = function() {
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
-        // 🔧 FIX: Copiar File objects de imagenesFiles a imagenes para que FormData los encuentre
+        //  FIX: Copiar File objects de imagenesFiles a imagenes para que FormData los encuentre
         imagenes: modoModalPorTallasActual === 'general' ? fotosGeneralesFilesTemp : [],
         imagenesFiles: fotosGeneralesFilesTemp, // File objects para las nuevas imágenes
         fotosGeneralesFiles: fotosGeneralesFilesTemp, // Alias para compatibilidad con renderizador
@@ -1754,7 +1754,7 @@ function configurarDragDropPasteGeneral() {
     // ─── Click: También marcar para paste por si el usuario hace click sin mover el mouse ───
     const manejadorClick = () => {
         tallaActivaParaPaste = 'GENERAL';
-        console.log('[configurarDragDropPasteGeneral] 🎯 Área general activada para paste');
+        console.log('[configurarDragDropPasteGeneral]  Área general activada para paste');
     };
     galeria.addEventListener('click', manejadorClick);
 

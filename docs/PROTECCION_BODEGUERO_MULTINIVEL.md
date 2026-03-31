@@ -1,4 +1,4 @@
-# 🔐 Protección de Acceso - Rol Bodeguero
+#  Protección de Acceso - Rol Bodeguero
 
 ## Resumen
 
@@ -39,7 +39,7 @@ GET /vistas?origen=bodega      BLOQUEADO (sin tipo=bodega)
 
 **Logs**:
 ```
-🔐 [VistasController] Intento de acceso bloqueado para bodeguero
+ [VistasController] Intento de acceso bloqueado para bodeguero
   - user_id: 5
   - tipo_solicitado: corte
   - mensaje: Bodeguero intentó acceder a: corte
@@ -230,11 +230,11 @@ GET /pedidos-public/1/recibos-datos
   - user_id: 5
   - destino: /vistas?tipo=bodega
 
-[2026-02-04] INFO: 🔐 Bodeguero accediendo a recibos-datos
+[2026-02-04] INFO:  Bodeguero accediendo a recibos-datos
   - user_id: 5
   - path: /pedidos-public/1/recibos-datos
 
-[2026-02-04] INFO: 🔐 FILTRO BODEGUERO: Filtrando procesos
+[2026-02-04] INFO:  FILTRO BODEGUERO: Filtrando procesos
   - procesos_antes: 7
   - procesos_despues: 1
 ```

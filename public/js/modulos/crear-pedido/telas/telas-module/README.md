@@ -17,7 +17,7 @@ Sistema modular desacoplado para el manejo de telas, colores, referencias e imá
 ├──  README.md                     # Documentación completa
 ```
 
-## 🎯 Componentes del Módulo
+##  Componentes del Módulo
 
 ### 1. **Estado y Validación** (`estado-validacion.js`)
 - **Propósito**: Manejo del estado global y validaciones de campos
@@ -103,7 +103,7 @@ window.addEventListener('telasModuleLoaded', (e) => {
 });
 ```
 
-## 🎯 Funciones Disponibles
+##  Funciones Disponibles
 
 ### Estado y Validación
 - `limpiarErrorTela(campo)`
@@ -152,7 +152,7 @@ window.addEventListener('telasModuleLoaded', (e) => {
 - `serializarDatosTelas()`
 - `restaurarDatosTelas(datosSerializados)`
 
-## 🎯 Características
+##  Características
 
 ###  Ventajas de la Arquitectura Modular
 - **Organización**: Código separado por responsabilidades
@@ -227,9 +227,9 @@ console.log(window.TelasModule);
 - [ ] Internacionalización por componente
 - [ **Performance profiling** por componente
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
-### 🎯 Propósito del Módulo
+###  Propósito del Módulo
 - **Claridad**: Saber exactamente qué pertene a cada archivo
 - **Organización**: Estructura lógica y mantenible
 - **Escalabilidad**: Fácil agregar nuevos componentes

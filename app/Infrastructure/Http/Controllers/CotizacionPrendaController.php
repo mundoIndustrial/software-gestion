@@ -371,7 +371,7 @@ class CotizacionPrendaController extends Controller
 
             // 1. Procesar fotos de PRENDA: prendas[{index}][fotos][]
             if (isset($prendaFiles['fotos']) && is_array($prendaFiles['fotos'])) {
-                \Log::info('📸 Encontrado grupo de fotos de PRENDA', [
+                \Log::info(' Encontrado grupo de fotos de PRENDA', [
                     'prenda_index' => $prendaIndex,
                     'cantidad_archivos' => count($prendaFiles['fotos']),
                 ]);

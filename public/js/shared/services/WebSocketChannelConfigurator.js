@@ -62,7 +62,7 @@ class WebSocketChannelConfigurator {
             });
 
             this.ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] ➕ Pedido creado:', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Pedido creado:', event?.pedido?.id);
                 this.onUpdate('pedido.creado', event?.pedido);
             });
 
@@ -82,7 +82,7 @@ class WebSocketChannelConfigurator {
         try {
             // Nuevos pedidos
             this.ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] ➕ Nuevo pedido (cartera):', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Nuevo pedido (cartera):', event?.pedido?.id);
                 this.onUpdate('pedido.creado', event?.pedido);
             });
 
@@ -134,7 +134,7 @@ class WebSocketChannelConfigurator {
             });
 
             this.ws.subscribe(`pedidos.${userId}`, '.PedidoCreado', (event) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] ➕ Creado privado:', event?.pedido?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  Creado privado:', event?.pedido?.id);
                 this.onUpdate('pedido.creado', event?.pedido);
             });
 

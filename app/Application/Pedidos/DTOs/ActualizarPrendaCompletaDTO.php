@@ -188,7 +188,7 @@ final class ActualizarPrendaCompletaDTO
         }
 
         // Parsear asignaciones_colores si viene como JSON string
-        // 🔴 NUEVO: Usar array_key_exists para distinguir "no enviado" (null) de "enviado vacío" ([])
+        //  NUEVO: Usar array_key_exists para distinguir "no enviado" (null) de "enviado vacío" ([])
         $asignacionesColores = null;
         if (array_key_exists('asignaciones_colores', $data)) {
             $raw = $data['asignaciones_colores'];

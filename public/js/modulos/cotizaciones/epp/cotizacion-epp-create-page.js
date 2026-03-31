@@ -1287,9 +1287,9 @@
             const archivos = input.files;
             const pedidoId = window.__EPP_COTIZACION_ID__ || 31;
             
-            console.log(`📸 [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
-            console.log(`📸 [manejarSubidaFotosEPP] Estado de window.eppStateManager:`, !!window.eppStateManager);
-            console.log(`📸 [manejarSubidaFotosEPP] Estado de window.fotosEPP:`, !!window.fotosEPP);
+            console.log(` [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
+            console.log(` [manejarSubidaFotosEPP] Estado de window.eppStateManager:`, !!window.eppStateManager);
+            console.log(` [manejarSubidaFotosEPP] Estado de window.fotosEPP:`, !!window.fotosEPP);
             
             Array.from(archivos).forEach((archivo, index) => {
                 const nombreArchivo = archivo.name;
@@ -1318,28 +1318,28 @@
                     orden: 0
                 };
                 
-                console.log(`📸 [manejarSubidaFotosEPP] Procesando imagen:`, {
+                console.log(` [manejarSubidaFotosEPP] Procesando imagen:`, {
                     id: imagen.id,
                     nombre: imagen.nombre
                 });
                 
                 // Agregar al stateManager si existe, sino a array temporal
                 if (window.eppStateManager && typeof window.eppStateManager.agregarImagen === 'function') {
-                    console.log(`📸 [manejarSubidaFotosEPP] Usando stateManager.agregarImagen`);
+                    console.log(` [manejarSubidaFotosEPP] Usando stateManager.agregarImagen`);
                     window.eppStateManager.agregarImagen(imagen);
-                    console.log(`📸 [manejarSubidaFotosEPP] Imágenes en stateManager después de agregar:`, window.eppStateManager.getImagenesSubidas()?.length || 0);
+                    console.log(` [manejarSubidaFotosEPP] Imágenes en stateManager después de agregar:`, window.eppStateManager.getImagenesSubidas()?.length || 0);
                 } else {
                     // Array temporal como fallback
-                    console.log(`📸 [manejarSubidaFotosEPP] Usando array temporal window.fotosEPP`);
+                    console.log(` [manejarSubidaFotosEPP] Usando array temporal window.fotosEPP`);
                     if (!window.fotosEPP) window.fotosEPP = [];
                     window.fotosEPP.push(imagen);
-                    console.log(`📸 [manejarSubidaFotosEPP] Imágenes en array temporal después de agregar:`, window.fotosEPP.length);
+                    console.log(` [manejarSubidaFotosEPP] Imágenes en array temporal después de agregar:`, window.fotosEPP.length);
                 }
                 
                 // Mostrar vista previa
                 mostrarVistaPreviaFotoEPP(imagen);
                 
-                console.log(`📸 [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
+                console.log(` [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
             });
             
             // Limpiar input para permitir seleccionar el mismo archivo nuevamente

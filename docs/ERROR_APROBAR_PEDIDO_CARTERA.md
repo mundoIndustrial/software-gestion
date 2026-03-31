@@ -163,7 +163,7 @@ catch (\Exception $e) {
 }
 ```
 
-## 🔧 Configuración Adicional Recomendada
+##  Configuración Adicional Recomendada
 
 ### 1. **Timeout de Broadcasting**
 En `config/broadcasting.php`:
@@ -240,7 +240,7 @@ POST /api/cartera/pedidos/125/aprobar
 # Esperar: 200 OK (aprobación exitosa, broadcast falló pero no crítico)
 ```
 
-## 🎯 Conclusión
+##  Conclusión
 
 El error 500 estaba causado principalmente por el **timeout de broadcasting de WebSockets** que bloqueaba la aprobación de pedidos. La solución implementada:
 

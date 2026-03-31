@@ -12,7 +12,7 @@ class AnalizarImagenesEppSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🖼️  ANÁLISIS: Imágenes de EPP #45725\n";
+        echo "  ANÁLISIS: Imágenes de EPP #45725\n";
         echo "========================================\n\n";
 
         try {

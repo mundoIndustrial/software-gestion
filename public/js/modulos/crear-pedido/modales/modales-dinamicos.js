@@ -33,7 +33,7 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
     const actualizarImagen = () => {
         const imagenesActuales = window.imagenesPrendaStorage.obtenerImagenes();
         if (imagenesActuales.length > 0 && indiceActual < imagenesActuales.length) {
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
                 console.error('[ModalDinamico]  previewUrl inválido:', imagenActual.previewUrl);
@@ -64,7 +64,7 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
         if (imagenesActuales.length > 0) {
             indiceActual = (indiceActual - 1 + imagenesActuales.length) % imagenesActuales.length;
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
                 console.error('[ModalDinamico]  previewUrl inválido en anterior:', imagenActual.previewUrl);
@@ -111,7 +111,7 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
         if (imagenesActuales.length > 0) {
             indiceActual = (indiceActual + 1) % imagenesActuales.length;
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
                 console.error('[ModalDinamico]  previewUrl inválido en siguiente:', imagenActual.previewUrl);

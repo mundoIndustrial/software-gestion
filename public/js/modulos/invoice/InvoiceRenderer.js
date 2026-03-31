@@ -155,7 +155,7 @@ class InvoiceRenderer {
     }
 
     renderizarTela(prenda) {
-        // 🔴 NUEVO: Verificar si hay colores asignados por talla (múltiples fuentes)
+        //  NUEVO: Verificar si hay colores asignados por talla (múltiples fuentes)
         const hayColorPorTalla = (
             (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) ||
             (prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) ||
@@ -199,7 +199,7 @@ class InvoiceRenderer {
     }
 
     renderizarTallas(prenda) {
-        // 🔴 NUEVO: Primero intentar con cantidad_talla (estructura del editor)
+        //  NUEVO: Primero intentar con cantidad_talla (estructura del editor)
         if (prenda.cantidad_talla && prenda.cantidad_talla.GENERICO) {
             let cantidad = 0;
             const generericoObj = prenda.cantidad_talla.GENERICO;
@@ -240,7 +240,7 @@ class InvoiceRenderer {
                 typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
             );
 
-            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            //  NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const tieneGenerico = generosConTallas.some(([gen]) => gen.toUpperCase() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosConTallas.length === 1;
 
@@ -248,7 +248,7 @@ class InvoiceRenderer {
             if (soloGenerico) {
                 const [genero, tallasObj] = generosConTallas[0];
 
-                // 🔴 FIX: Extraer cantidad de forma robusta
+                //  FIX: Extraer cantidad de forma robusta
                 let cantidad = 0;
                 const valores = Object.values(tallasObj);
 
@@ -295,7 +295,7 @@ class InvoiceRenderer {
             });
 
             if (generosParaMostrar.length > 0) {
-                // 🔴 REFUERZO: Filtrar GENERICO nuevamente como precaución extra
+                //  REFUERZO: Filtrar GENERICO nuevamente como precaución extra
                 const generosFiltrados = generosParaMostrar.filter(([gen]) => {
                     return gen && String(gen).toUpperCase().trim() !== 'GENERICO';
                 });
@@ -841,7 +841,7 @@ class InvoiceRenderer {
                             <!-- Imágenes del EPP -->
                             ${imagenesHTML ? `
                                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
                                     ${imagenesHTML}
                                 </div>
                             ` : ''}

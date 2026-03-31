@@ -1156,11 +1156,11 @@
         
         // Extraer fotos solo de las prendas visibles
         prendasVisibles.forEach(prenda => {
-            console.log('🖼️ [EXTRAYENDO FOTOS] Prenda:', prenda.nombre_prenda || prenda.nombre, 'ID:', prenda.id);
+            console.log(' [EXTRAYENDO FOTOS] Prenda:', prenda.nombre_prenda || prenda.nombre, 'ID:', prenda.id);
             
             // Fotos directas de la prenda
             if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-                console.log('  📸 Fotos de prenda encontradas:', prenda.imagenes.length);
+                console.log('   Fotos de prenda encontradas:', prenda.imagenes.length);
                 prenda.imagenes.forEach(img => {
                     if (img.ruta_webp || img.url) {
                         fotosActuales.push(img.ruta_webp || img.url);
@@ -1190,7 +1190,7 @@
             
             // Fotos de procesos
             if (prenda.procesos && Array.isArray(prenda.procesos)) {
-                console.log('  ⚙️ Procesos encontrados:', prenda.procesos.length);
+                console.log('   Procesos encontrados:', prenda.procesos.length);
                 prenda.procesos.forEach((proceso, procIdx) => {
                     console.log('    Proceso ' + procIdx + ':', proceso.tipo_proceso || 'N/A');
                     if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
@@ -1210,7 +1210,7 @@
         
         // Eliminar duplicados
         const fotosUnicas = Array.from(new Set(fotosActuales));
-        console.log('📸 [FOTOS POR PRENDA] Prenda idx:', prendaIdx, 'Total extraídas:', fotosActuales.length, 'Únicas:', fotosUnicas.length);
+        console.log(' [FOTOS POR PRENDA] Prenda idx:', prendaIdx, 'Total extraídas:', fotosActuales.length, 'Únicas:', fotosUnicas.length);
         llenarFotos(fotosUnicas);
     }
     
@@ -1302,7 +1302,7 @@
                 // Si no existe, buscar el texto y reemplazarlo
                 tabFotosBtn.innerHTML = tabFotosBtn.innerHTML.replace(/FOTOS \(\d+\)/, `FOTOS (${fotos.length})`);
             }
-            console.log('📸 [CONTADOR ACTUALIZADO]', fotos.length, 'fotos');
+            console.log(' [CONTADOR ACTUALIZADO]', fotos.length, 'fotos');
         }
         
         // Limpiar contenido actual
@@ -1522,7 +1522,7 @@
         llenarDatosModal();
         const containerMobile = document.getElementById('factura-container-mobile');
         
-        console.log('🔎 Buscando containerMobile:', {
+        console.log(' Buscando containerMobile:', {
             existe: !!containerMobile,
             elemento: containerMobile,
             totalIds: document.querySelectorAll('[id]').length

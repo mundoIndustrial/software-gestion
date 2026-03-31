@@ -353,7 +353,7 @@ export class ReceiptRenderer {
 
         // Enriquecer recibo con colores por talla si disponibles
         if (prendaData.talla_colores && Array.isArray(prendaData.talla_colores) && prendaData.talla_colores.length > 0) {
-            console.log('[ReceiptRenderer._llenarDescripcion] 🎨 Enriqueciendo recibo con colores por talla');
+            console.log('[ReceiptRenderer._llenarDescripcion] Enriqueciendo recibo con colores por talla');
             recibo.talla_colores = prendaData.talla_colores;
         }
 

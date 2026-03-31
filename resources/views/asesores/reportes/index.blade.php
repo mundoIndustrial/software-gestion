@@ -137,7 +137,7 @@
                                 🏭 Producción
                                 @break
                             @case('clientes')
-                                👥 Clientes
+                                 Clientes
                                 @break
                             @default
                                  General
@@ -215,7 +215,7 @@
                     <option value="">Seleccionar tipo</option>
                     <option value="ventas">📈 Ventas</option>
                     <option value="produccion">🏭 Producción</option>
-                    <option value="clientes">👥 Clientes</option>
+                    <option value="clientes"> Clientes</option>
                     <option value="general"> General</option>
                 </select>
             </div>

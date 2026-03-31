@@ -197,7 +197,7 @@ function updateItemCardInteractions() {
   
   // Verificar estructura de cada wrapper
   menuWrappers.forEach((wrapper, idx) => {
-    console.log(`🔎 [UPDATE-ITEM-CARD] Wrapper ${idx}:`, {
+    console.log(` [UPDATE-ITEM-CARD] Wrapper ${idx}:`, {
       hasButton: !!wrapper.querySelector('.btn-menu-expandible'),
       hasDropdown: !!wrapper.querySelector('.menu-dropdown'),
       innerHTML: wrapper.innerHTML.substring(0, 150)

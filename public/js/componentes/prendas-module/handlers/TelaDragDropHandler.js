@@ -327,7 +327,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log('TelaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log('TelaDragDropHandler', ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
                                 UIHelperService.log('TelaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);

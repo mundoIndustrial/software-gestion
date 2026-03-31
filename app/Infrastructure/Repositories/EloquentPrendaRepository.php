@@ -47,7 +47,8 @@ class EloquentPrendaRepository implements PrendaRepositoryInterface
     public function obtenerTiposManga(): array
     {
         try {
-            return TipoManga::select('id', 'nombre', 'descripcion')
+            return TipoManga::select('id', 'nombre')
+                ->where('activo', true)
                 ->orderBy('nombre')
                 ->get()
                 ->toArray();

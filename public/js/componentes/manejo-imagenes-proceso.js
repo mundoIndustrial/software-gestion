@@ -157,7 +157,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
     
     console.log('[eliminarImagenProceso]  INICIANDO - previewIndex:', previewIndex, 'procesoIndex:', procesoIndex);
     
-    // 🔴 Mostrar modal de confirmación en lugar de eliminar directamente
+    //  Mostrar modal de confirmación en lugar de eliminar directamente
     window._imagenAEliminarIndice = previewIndex;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');

@@ -622,7 +622,7 @@ window.PrendaCardService = {
         } else {
             // Flujo normal: iterar sobre géneros pero saltar GENERICO
             Object.keys(tallasByGeneroMap).forEach((genero, idx) => {
-                // 🔴 NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
+                //  NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
                 if (genero.toUpperCase() === 'GENERICO') return;
                 
                 const tallasList = tallasByGeneroMap[genero] || [];
@@ -960,7 +960,7 @@ window.PrendaCardService = {
         } else {
             // Flujo normal: iterar sobre géneros pero saltar GENERICO
             Object.keys(tallasByGeneroMap).forEach(genero => {
-                // 🔴 NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
+                //  NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
                 if (genero.toUpperCase() === 'GENERICO') return;
                 
                 const tallasList = tallasByGeneroMap[genero] || [];
@@ -1130,7 +1130,7 @@ window.PrendaCardService = {
                         `;
                     }
 
-                    // 🔴 PRIORIDAD: Combinar fotosGenerales (URLs) con fotosGeneralesFiles (Files temporales)
+                    //  PRIORIDAD: Combinar fotosGenerales (URLs) con fotosGeneralesFiles (Files temporales)
                     let fotosDisplay = [];
                     
                     // 1. Agregar fotos existentes del servidor
@@ -1403,7 +1403,7 @@ window.PrendaCardService = {
                         let src = '';
                         if (img instanceof File) {
                             src = URL.createObjectURL(img);
-                            console.log(`[PrendaCardService-ReadonlyProceso] 📸 File ${idx} convertido a blob: ${src.substring(0, 50)}...`);
+                            console.log(`[PrendaCardService-ReadonlyProceso]  File ${idx} convertido a blob: ${src.substring(0, 50)}...`);
                         } else if (typeof img === 'object' && img !== null) {
                             src = img.previewUrl || img.dataURL || img.src || img.url || img.blobUrl || img.ruta_webp || img.ruta_original || img.ruta || '';
                         } else if (typeof img === 'string') {
@@ -1758,7 +1758,7 @@ window.PrendaCardService = {
                                 src="${telaFoto}" 
                                 alt="Tela ${telaIndex}" 
                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;"
-                                onload="console.log('📸 Imagen de tela ${telaIndex} cargada:', '${telaFoto.substring(0, 50)}')"
+                                onload="console.log(' Imagen de tela ${telaIndex} cargada:', '${telaFoto.substring(0, 50)}')"
                                 onerror="console.error(' Error cargando imagen de tela ${telaIndex}:', '${telaFoto.substring(0, 50)}')"
                                 onmouseover="this.style.boxShadow='0 2px 8px rgba(14,165,233,0.3)'; this.style.borderColor='#0ea5e9';"
                                 onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb';"

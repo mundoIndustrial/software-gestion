@@ -1,5 +1,5 @@
 /**
- * 🖼️ Módulo de Imágenes
+ *  Módulo de Imágenes
  * Responsabilidad: Cargar y mostrar imágenes en el modal
  */
 
@@ -8,7 +8,7 @@ class PrendaEditorImagenes {
      * Cargar imágenes en modal
      */
     static cargar(prenda) {
-        console.log('🖼️ [Imagenes] Cargando:', {
+        console.log(' [Imagenes] Cargando:', {
             cantidad: prenda.imagenes?.length || 0,
             tipo: typeof prenda.imagenes
         });
@@ -25,7 +25,7 @@ class PrendaEditorImagenes {
         // Limpiar preview
         preview.innerHTML = '';
         
-        // 🔴 CRÍTICO: Renderizar EXACTAMENTE igual a creación
+        //  CRÍTICO: Renderizar EXACTAMENTE igual a creación
         if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
             // Procesar imágenes
             const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
@@ -74,7 +74,7 @@ class PrendaEditorImagenes {
             
             const img = document.createElement('img');
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             if (!imagenesConBlobUrl[0].previewUrl || imagenesConBlobUrl[0].previewUrl === 'undefined' || imagenesConBlobUrl[0].previewUrl === undefined) {
                 console.error('[Imagenes]  previewUrl inválido en carga:', imagenesConBlobUrl[0].previewUrl);
                 img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
@@ -105,7 +105,7 @@ class PrendaEditorImagenes {
             // Configurar drag & drop (igual a creación)
             setupDragAndDropConImagen(preview, imagenesConBlobUrl);
             
-            // 🔴 NUEVO: Agregar listener de paste usando la función centralizada
+            //  NUEVO: Agregar listener de paste usando la función centralizada
             this._agregarListenerPaste(preview);
             console.log('[PrendaEditorImagenes]  Listener de paste configurado en preview (cargar)');
             
@@ -113,7 +113,7 @@ class PrendaEditorImagenes {
         } else {
             // Sin imágenes - siempre limpiar el storage para evitar fotos de otra prenda
             if (window.imagenesPrendaStorage) {
-                console.log('🖼️ [Imagenes]  Prenda sin imágenes, limpiando storage');
+                console.log(' [Imagenes]  Prenda sin imágenes, limpiando storage');
                 window.imagenesPrendaStorage.establecerImagenes([]);
             }
             
@@ -144,7 +144,7 @@ class PrendaEditorImagenes {
         }
         
         const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
-        console.log('[PrendaEditorImagenes] 📸 Imágenes en storage:', imagenes.length);
+        console.log('[PrendaEditorImagenes]  Imágenes en storage:', imagenes.length);
         
         // Limpiar preview
         preview.innerHTML = '';
@@ -156,7 +156,7 @@ class PrendaEditorImagenes {
             
             const img = document.createElement('img');
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             if (!imagenes[0].previewUrl || imagenes[0].previewUrl === 'undefined' || imagenes[0].previewUrl === undefined) {
                 console.error('[Imagenes]  previewUrl inválido en actualización:', imagenes[0].previewUrl);
                 img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
@@ -190,7 +190,7 @@ class PrendaEditorImagenes {
             btn.style.display = imagenes.length < 3 ? 'block' : 'none';
         }
         
-        // 🔴 CRÍTICO: Re-agregar listener de paste después de actualizar preview
+        //  CRÍTICO: Re-agregar listener de paste después de actualizar preview
         this._agregarListenerPaste(preview);
     }
     
@@ -207,7 +207,7 @@ class PrendaEditorImagenes {
             return;
         }
         
-        // 🔴 CRÍTICO: Hacer el preview contenteditable para que pueda recibir foco
+        //  CRÍTICO: Hacer el preview contenteditable para que pueda recibir foco
         preview.contentEditable = 'true';
         preview.style.outline = 'none';
         
@@ -228,10 +228,10 @@ class PrendaEditorImagenes {
         }
         
         if (typeof img === 'object') {
-            // 🔴 FIX CRÍTICO: Si el objeto tiene un File object en .file,
+            //  FIX CRÍTICO: Si el objeto tiene un File object en .file,
             // crear un blob URL desde ese File (aunque previewUrl esté revocado)
             if (img.file instanceof File) {
-                console.log('[prenda-editor-imagenes] 🔴 DETECTADO File object en img.file - creando blob URL');
+                console.log('[prenda-editor-imagenes]  DETECTADO File object en img.file - creando blob URL');
                 return URL.createObjectURL(img.file);
             }
             
@@ -318,7 +318,7 @@ class PrendaEditorImagenes {
                     const imagenActual = currentImages[idx];
                     const imagenId = imagenActual?.id;
                     
-                    // 🔴 IMPORTANTE: NO eliminar del servidor aquí
+                    //  IMPORTANTE: NO eliminar del servidor aquí
                     // Solo marcar para eliminación cuando se guarden los cambios
                     // Esto permite al usuario cancelar la edición sin perder la imagen
                     
@@ -329,7 +329,7 @@ class PrendaEditorImagenes {
                         }
                         if (!window.imagenesAEliminar.includes(imagenId)) {
                             window.imagenesAEliminar.push(imagenId);
-                            console.log('[prenda-editor-imagenes] 📝 Imagen marcada para eliminación al guardar', {
+                            console.log('[prenda-editor-imagenes]  Imagen marcada para eliminación al guardar', {
                                 id: imagenId,
                                 totalMarcadas: window.imagenesAEliminar.length
                             });
@@ -347,7 +347,7 @@ class PrendaEditorImagenes {
                         });
                     }
                     
-                    // 🔴 CRÍTICO: Actualizar preview correctamente sin apilar
+                    //  CRÍTICO: Actualizar preview correctamente sin apilar
                     // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
                     if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
                         PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
@@ -457,13 +457,13 @@ class PrendaEditorImagenes {
     }
     
     /**
-     * 🔴 ELIMINADO: _actualizarPreviewDOM()
+     *  ELIMINADO: _actualizarPreviewDOM()
      * Esta función causaba que se apilaran todas las imágenes.
      * Usar siempre PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar() en su lugar.
      */
 
     /**
-     * 🔴 NUEVO: Agregar controles de navegación para múltiples imágenes
+     *  NUEVO: Agregar controles de navegación para múltiples imágenes
      * @private
      */
     static _agregarControlesNavegacion(preview, imagenes) {

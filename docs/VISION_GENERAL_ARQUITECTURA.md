@@ -52,7 +52,7 @@ docs/
 
 ---
 
-## 🎯 Cómo Funciona Ahora
+##  Cómo Funciona Ahora
 
 ### Flujo Automático (Sin cambios en código usuario)
 
@@ -217,7 +217,7 @@ await lifecycle.dispose();  // Limpia:
 
 ---
 
-## 🎯 Casos de Uso Soportados Ahora
+##  Casos de Uso Soportados Ahora
 
 ###  Caso 1: Abrimiento/Cierre Simple
 ```javascript
@@ -355,7 +355,7 @@ Si todo pasa, **la implementación está completa y lista para usar**.
 
 ---
 
-## 📝 Notas Finales
+##  Notas Finales
 
 ### Para el Equipo
 - La nueva arquitectura es **transparente** para el usuario

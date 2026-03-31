@@ -79,7 +79,7 @@ class TestConcurrenciaPedidos extends Command
             $numeroUsuarios = $usuarios->count();
         }
         
-        $this->line("   👥 Creando {$numeroUsuarios} pedidos...");
+        $this->line("    Creando {$numeroUsuarios} pedidos...");
         
         // Crear pedidos en secuencia rápida (simula concurrencia)
         foreach ($usuarios as $index => $usuario) {

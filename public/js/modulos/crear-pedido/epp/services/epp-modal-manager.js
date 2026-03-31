@@ -213,7 +213,7 @@ class EppModalManager {
 
         // Habilitar área de imágenes
         const areaImagenes = document.getElementById('areaCargarImagenes');
-        console.log('🖼️ [ModalManager] Buscando areaCargarImagenes, encontrada:', !!areaImagenes);
+        console.log(' [ModalManager] Buscando areaCargarImagenes, encontrada:', !!areaImagenes);
         if (areaImagenes) {
             areaImagenes.setAttribute('style', `
                 display: block; 
@@ -325,7 +325,7 @@ class EppModalManager {
         contenedor.innerHTML = '';
 
         if (imagenes && imagenes.length > 0) {
-            console.log(`📸 [ModalManager] mostrarImagenes: ${imagenes.length} imagen(es) para mostrar`);
+            console.log(` [ModalManager] mostrarImagenes: ${imagenes.length} imagen(es) para mostrar`);
             listaImagenes.style.display = 'block';
             imagenes.forEach((img, idx) => {
                 try {
@@ -344,7 +344,7 @@ class EppModalManager {
             // IMPORTANTE: No ocultar el contenedor cuando está vacío
             // para permitir agregar nuevas imágenes después
             // Solo ocultar si explícitamente se llama a limpiarImagenes()
-            console.log('📸 [ModalManager] mostrarImagenes: sin imágenes, preparando contenedor');
+            console.log(' [ModalManager] mostrarImagenes: sin imágenes, preparando contenedor');
             // listaImagenes.style.display = 'none'; // ELIMINADO - esto bloqueaba agregar nuevas
         }
     }
@@ -353,7 +353,7 @@ class EppModalManager {
      * Agregar imagen a la UI
      */
     agregarImagenUI(imagen) {
-        console.log('📸 [ModalManager] agregarImagenUI() llamado con imagen:', imagen.id);
+        console.log(' [ModalManager] agregarImagenUI() llamado con imagen:', imagen.id);
         
         const contenedor = document.getElementById('contenedorImagenesSubidas');
         const listaImagenes = document.getElementById('listaImagenesSubidas');
@@ -365,33 +365,33 @@ class EppModalManager {
         
         const card = this._crearCardImagen(imagen);
         contenedor.appendChild(card);
-        console.log('📸 [ModalManager] Carta agregada al contenedor');
+        console.log(' [ModalManager] Carta agregada al contenedor');
 
         // IMPORTANTE: Asegurar que el contenedor sea visible
         listaImagenes.style.display = 'block';
-        console.log('📸 [ModalManager] listaImagenesSubidas hecha visible');
+        console.log(' [ModalManager] listaImagenesSubidas hecha visible');
     }
 
     /**
      * Eliminar imagen de la UI
      */
     eliminarImagenUI(imagenId) {
-        console.log('🖼️ [ModalManager] eliminarImagenUI() buscando imagen con ID:', imagenId);
+        console.log(' [ModalManager] eliminarImagenUI() buscando imagen con ID:', imagenId);
         
         // Intentar búsqueda con prefijo "imagen-"
         let card = document.getElementById(`imagen-${imagenId}`);
-        console.log('🖼️ [ModalManager] Búsqueda 1 (imagen-${imagenId}):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+        console.log(' [ModalManager] Búsqueda 1 (imagen-${imagenId}):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
         
         // Si no encuentra, intentar búsqueda sin prefijo
         if (!card) {
             card = document.getElementById(imagenId);
-            console.log('🖼️ [ModalManager] Búsqueda 2 (solo imagenId):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+            console.log(' [ModalManager] Búsqueda 2 (solo imagenId):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
         }
         
         // Si no encuentra, intentar buscar por atributo data-imagen-id
         if (!card) {
             card = document.querySelector(`[data-imagen-id="${imagenId}"]`);
-            console.log('🖼️ [ModalManager] Búsqueda 3 (data-imagen-id):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+            console.log(' [ModalManager] Búsqueda 3 (data-imagen-id):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
         }
         
         // Si aún no encuentra, buscar todos los elementos del contenedor
@@ -399,12 +399,12 @@ class EppModalManager {
             const contenedor = document.getElementById('contenedorImagenesSubidas');
             if (contenedor) {
                 const todasLasCartas = contenedor.querySelectorAll('div[id^="imagen-"]');
-                console.log('🖼️ [ModalManager] Total de cartas en contenedor:', todasLasCartas.length);
+                console.log(' [ModalManager] Total de cartas en contenedor:', todasLasCartas.length);
                 todasLasCartas.forEach((carta, idx) => {
                     console.log(`   Carta ${idx}: ID=${carta.id}`);
                     if (carta.id.includes(imagenId) || carta.id.endsWith(imagenId)) {
                         card = carta;
-                        console.log('🖼️ [ModalManager] Búsqueda 4: ENCONTRADO por coincidencia parcial:', card.id);
+                        console.log(' [ModalManager] Búsqueda 4: ENCONTRADO por coincidencia parcial:', card.id);
                     }
                 });
             }

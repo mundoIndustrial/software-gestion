@@ -1132,7 +1132,7 @@
         let htmlContenido = '';
 
         bloques.forEach((bloque) => {
-            if (bloque.startsWith('📝')) {
+            if (bloque.startsWith('')) {
                 // Extraer información del registro [Usuario - Rol - Fecha]
                 let lineas = bloque.split('\n').filter(l => l.trim());
                 let primerLinea = lineas[0];

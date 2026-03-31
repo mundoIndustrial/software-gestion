@@ -191,7 +191,7 @@ class MigrarDatosCompleto extends Command
             $this->limpiarDatos($dryRun, $force);
 
             // PASO 1: Migrar Usuarios (Asesoras)
-            $this->info("👥 PASO 1: Migrando Usuarios (Asesoras)...\n");
+            $this->info(" PASO 1: Migrando Usuarios (Asesoras)...\n");
             $this->migrarUsuarios($dryRun);
 
             // PASO 2: Migrar Clientes

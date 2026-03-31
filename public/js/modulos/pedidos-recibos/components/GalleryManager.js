@@ -63,7 +63,7 @@ export class GalleryManager {
             const state = modalManager.getState();
             const { imagenesActuales, prendaPedidoId, prendaData, pedidoId, procesoPrendaDetalleId } = state;
             
-            console.log('[GalleryManager.abrirGaleria] 🖼️ ABRIENDO GALERÍA');
+            console.log('[GalleryManager.abrirGaleria]  ABRIENDO GALERÍA');
             console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
 
             

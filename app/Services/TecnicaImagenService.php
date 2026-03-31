@@ -34,7 +34,7 @@ class TecnicaImagenService
     public function guardarImagen(UploadedFile $file, int $cotizacionId, string $tipoLogoNombre, ?int $grupoCombinado = null)
     {
         try {
-            \Log::info('📸 Guardando imagen de técnica', [
+            \Log::info(' Guardando imagen de técnica', [
                 'cotizacion_id' => $cotizacionId,
                 'tipo_logo' => $tipoLogoNombre,
                 'grupo_combinado' => $grupoCombinado,

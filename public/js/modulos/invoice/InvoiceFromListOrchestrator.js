@@ -286,7 +286,7 @@ class InvoiceFromListOrchestrator {
         });
         
         // Verificar orquestador
-        console.log('\n🎯 Orquestador:');
+        console.log('\n Orquestador:');
         console.log(`  InvoiceFromListOrchestrator: ${typeof window.InvoiceFromListOrchestrator !== 'undefined' ? '' : ''}`);
         console.log(`  invoiceFromListOrchestrator: ${!!window.invoiceFromListOrchestrator ? '' : ''}`);
         

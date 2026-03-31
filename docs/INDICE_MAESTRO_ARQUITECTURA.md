@@ -50,7 +50,7 @@ Ubicación: `/docs/`
 
 ---
 
-## 📝 ARCHIVO MODIFICADO
+##  ARCHIVO MODIFICADO
 
 ### `/resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php`
 
@@ -80,7 +80,7 @@ Ubicación: `/docs/`
 
 ---
 
-## 🎯 CÓMO USAR CADA ARCHIVO
+##  CÓMO USAR CADA ARCHIVO
 
 ### Uso Automático (Sin Intervención)
 ```

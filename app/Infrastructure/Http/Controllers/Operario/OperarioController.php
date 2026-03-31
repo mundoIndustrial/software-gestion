@@ -886,7 +886,7 @@ class OperarioController extends Controller
             if ($esBodyguero) {
                 $estadoPedido = strtolower($pedido->estado ?? '');
                 if ($estadoPedido === 'pendiente_cartera' || $estadoPedido === 'rechazado_cartera') {
-                    \Log::warning('[OperarioController.getPedidoData] 🔐 Bodeguero bloqueado - Pedido en estado: ' . $pedido->estado, [
+                    \Log::warning('[OperarioController.getPedidoData]  Bodeguero bloqueado - Pedido en estado: ' . $pedido->estado, [
                         'numero_pedido' => $numeroPedido,
                         'usuario_id' => auth()->id(),
                         'estado' => $pedido->estado
@@ -909,7 +909,7 @@ class OperarioController extends Controller
                     ->where('activo', 1)
                     ->exists();
                 
-                \Log::info('[OperarioController.getPedidoData] 🔐 VERIFICANDO RECIBO COSTURA-BODEGA', [
+                \Log::info('[OperarioController.getPedidoData]  VERIFICANDO RECIBO COSTURA-BODEGA', [
                     'numero_pedido' => $numeroPedido,
                     'pedido_id' => $pedidoId,
                     'usuario_id' => auth()->id(),
@@ -917,7 +917,7 @@ class OperarioController extends Controller
                 ]);
                 
                 if (!$tieneCosturaBodega) {
-                    \Log::warning('[OperarioController.getPedidoData] 🔐 Bodeguero intenta ver pedido sin recibo COSTURA-BODEGA', [
+                    \Log::warning('[OperarioController.getPedidoData]  Bodeguero intenta ver pedido sin recibo COSTURA-BODEGA', [
                         'numero_pedido' => $numeroPedido,
                         'pedido_id' => $pedidoId,
                         'usuario_id' => auth()->id()
@@ -1123,7 +1123,7 @@ class OperarioController extends Controller
 
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
-                \Log::info('[OperarioController.getPedidoData] 🔐 FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA', [
+                \Log::info('[OperarioController.getPedidoData]  FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA', [
                     'numero_pedido' => $numeroPedido,
                     'usuario_id' => auth()->id()
                 ]);

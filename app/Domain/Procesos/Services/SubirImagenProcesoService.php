@@ -3,9 +3,9 @@
 namespace App\Domain\Procesos\Services;
 
 use App\Domain\Procesos\Entities\ProcesoPrendaImagen;
+use App\Domain\Procesos\Exceptions\SubirImagenProcesoException;
 use App\Domain\Procesos\Repositories\ProcesoPrendaDetalleRepository;
 use App\Domain\Procesos\Repositories\ProcesoPrendaImagenRepository;
-use Exception;
 
 class SubirImagenProcesoService
 {
@@ -22,17 +22,13 @@ class SubirImagenProcesoService
 
     /**
      * Subir imagen a un proceso existente
-     * 
-     * @throws Exception
+     * @throws SubirImagenProcesoException
      */
     public function ejecutar(
         int $procesoPrendaDetalleId,
         string $rutaArchivo,
         string $nombreOriginal,
         string $tipoMime,
-        int $tamano,
-        int $ancho,
-        int $alto,
         string $hashMd5,
         string $descripcion = null,
         bool $esPrincipal = false
@@ -40,13 +36,13 @@ class SubirImagenProcesoService
         // Validar que el proceso existe
         $proceso = $this->procesoRepository->obtenerPorId($procesoPrendaDetalleId);
         if (!$proceso) {
-            throw new Exception("El proceso no existe");
+            throw SubirImagenProcesoException::procesoNoExiste($procesoPrendaDetalleId);
         }
 
         // Validar que no exista una imagen con el mismo hash (duplicado)
         $imagenDuplicada = $this->imagenRepository->obtenerPorHash($hashMd5);
         if ($imagenDuplicada) {
-            throw new Exception("Esta imagen ya fue subida anteriormente");
+            throw SubirImagenProcesoException::imagenDuplicada();
         }
 
         // Obtener el siguiente orden
@@ -64,10 +60,6 @@ class SubirImagenProcesoService
             ruta: $rutaArchivo,
             nombreOriginal: $nombreOriginal,
             tipoMime: $tipoMime,
-            tamano: $tamano,
-            ancho: $ancho,
-            alto: $alto,
-            hashMd5: $hashMd5,
             orden: $orden,
             esPrincipal: $esPrincipal,
             descripcion: $descripcion

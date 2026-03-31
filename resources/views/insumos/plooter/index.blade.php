@@ -174,7 +174,7 @@
 
     @if($recibosPlooter->isEmpty())
     <div class="no-records">
-        <i style="font-size: 48px; color: #ccc;">ℹ️</i>
+        <i style="font-size: 48px; color: #ccc;"></i>
         <p style="margin-top: 15px; font-size: 16px;">No hay registros de plooter en este momento.</p>
     </div>
     @else

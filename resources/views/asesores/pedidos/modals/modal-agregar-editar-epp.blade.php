@@ -1098,7 +1098,7 @@ function abrirModalAgregarEPP() {
             }
             
             // Caso C: No hay EPPs, guardar temporalmente
-            console.log('[Paste Handler EPP] ℹ️ No hay EPPs en tabla, guardando en buffer temporal');
+            console.log('[Paste Handler EPP]  No hay EPPs en tabla, guardando en buffer temporal');
             if (!window.fotosEPP) window.fotosEPP = [];
             window.fotosEPP.push({
                 file: file,
@@ -1740,7 +1740,7 @@ function agregarEPPALista() {
 }
 
 function limpiarFotosEPP() {
-    console.log('🧹 [limpiarFotosEPP] Limpiando fotos del contenedor EPP');
+    console.log(' [limpiarFotosEPP] Limpiando fotos del contenedor EPP');
     
     // NO liberar URLs blob si están asociadas a EPPs agregados
     // Las URLs blob se mantendrán para mostrar en las tarjetas
@@ -2643,7 +2643,7 @@ function manejarSubidaFotosEPP(input) {
     const archivos = input.files;
     const pedidoId = window.pedidoIdActual || 31; // ID del pedido actual
     
-    console.log(`📸 [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
+    console.log(` [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
     
     Array.from(archivos).forEach((archivo, index) => {
         const nombreArchivo = archivo.name;
@@ -2681,7 +2681,7 @@ function manejarSubidaFotosEPP(input) {
         // Mostrar vista previa
         mostrarVistaPreviaFoto(imagen);
         
-        console.log(`📸 [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
+        console.log(` [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
     });
     
     // Actualizar contador de fotos
@@ -2834,7 +2834,7 @@ function handleDropEPP(event) {
     const archivos = event.dataTransfer.files;
     const pedidoId = window.pedidoIdActual || 31;
     
-    console.log(`📸 [handleDropEPP] Se arrastraron ${archivos.length} archivos para el pedido ${pedidoId}`);
+    console.log(` [handleDropEPP] Se arrastraron ${archivos.length} archivos para el pedido ${pedidoId}`);
     
     // Ocultar mensaje inicial
     const mensajeDragDrop = document.getElementById('mensajeDragDrop');
@@ -3243,9 +3243,9 @@ function finalizarAgregarPrenda() {
     const prendaEnEdicion = enModoEdicion ? window.eppEnEdicion : null;
     
     if (enModoEdicion) {
-        console.log('[finalizarAgregarPrenda] 📝 MODO EDICIÓN detectado:', prendaEnEdicion);
+        console.log('[finalizarAgregarPrenda]  MODO EDICIÓN detectado:', prendaEnEdicion);
     } else {
-        console.log('[finalizarAgregarPrenda] ➕ MODO CREACIÓN');
+        console.log('[finalizarAgregarPrenda]  MODO CREACIÓN');
     }
     
     const descripcion = document.getElementById('descripcionPrenda').value.trim();
@@ -3342,7 +3342,7 @@ function finalizarAgregarPrenda() {
     if (window.eppItemManagerTabla && typeof window.eppItemManagerTabla.crearItem === 'function') {
         if (enModoEdicion) {
             // MODO EDICIÓN: Actualizar item existente
-            console.log('[finalizarAgregarPrenda] 📝 ACTUALIZANDO prenda en tabla principal');
+            console.log('[finalizarAgregarPrenda]  ACTUALIZANDO prenda en tabla principal');
             const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
             
             if (typeof window.eppItemManagerTabla.actualizarItem === 'function') {
@@ -3364,7 +3364,7 @@ function finalizarAgregarPrenda() {
             }
         } else {
             // MODO CREACIÓN: Crear nuevo item
-            console.log('[finalizarAgregarPrenda] ➕ Creando nueva prenda en tabla principal');
+            console.log('[finalizarAgregarPrenda]  Creando nueva prenda en tabla principal');
             window.eppItemManagerTabla.crearItem(
                 prenda.id,                // id
                 descripcion,               // nombre

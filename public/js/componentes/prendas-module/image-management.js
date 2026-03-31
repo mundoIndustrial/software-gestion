@@ -26,7 +26,7 @@ window.manejarImagenesPrenda = function(input) {
         
         window.imagenesPrendaStorage.agregarImagen(input.files[0])
             .then(() => {
-                // 🔴 CRÍTICO: Detectar si estamos en creación o edición
+                //  CRÍTICO: Detectar si estamos en creación o edición
                 const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
                 const modalEdicion = document.querySelector('[id*="modal-editar"]') || document.querySelector('[class*="editar"]');
                 
@@ -106,8 +106,8 @@ window.actualizarPreviewPrenda = function() {
             return;
         }
         
-        // 🔴 CRÍTICO: Mostrar SOLO UNA imagen a la vez con navegación
-        console.log('[actualizarPreviewPrenda] 🖼️ Mostrando primera imagen de ' + imagenes.length);
+        //  CRÍTICO: Mostrar SOLO UNA imagen a la vez con navegación
+        console.log('[actualizarPreviewPrenda]  Mostrando primera imagen de ' + imagenes.length);
         preview.innerHTML = '';
         preview.style.cursor = 'pointer';
         
@@ -121,7 +121,7 @@ window.actualizarPreviewPrenda = function() {
         
         const img = document.createElement('img');
         
-        // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+        //  CRÍTICO: Validar previewUrl antes de asignar
         if (!imagenes[0].previewUrl || imagenes[0].previewUrl === 'undefined' || imagenes[0].previewUrl === undefined) {
             console.error('[actualizarPreviewPrenda]  previewUrl inválido:', imagenes[0].previewUrl);
             console.log('[actualizarPreviewPrenda]  Datos de imagen:', imagenes[0]);
@@ -140,7 +140,7 @@ window.actualizarPreviewPrenda = function() {
         preview.appendChild(container);
         console.log('[actualizarPreviewPrenda]  Imagen agregada al preview');
         
-        // 🔴 NOTA: NO agregar controles de navegación en preview
+        //  NOTA: NO agregar controles de navegación en preview
         // El usuario solo quiere ver la primera imagen, navegación en el modal
         
         // Configurar drag & drop también cuando hay imágenes (para reemplazar)
@@ -247,7 +247,7 @@ window.actualizarPreviewTela = function() {
 }
 
 /**
- * 🔴 NUEVO: Agregar controles de navegación para múltiples imágenes de prenda
+ *  NUEVO: Agregar controles de navegación para múltiples imágenes de prenda
  * @param {HTMLElement} preview - Elemento preview
  * @param {Array} imagenes - Array de imágenes
  */

@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * PrendaProcesoService
- * 
  * Responsabilidad: Guardar procesos de prendas en la BD
  * Maneja la creación de procesos y sus detalles
  */
@@ -23,8 +22,7 @@ class PrendaProcesoService
 
     /**
      * Guardar procesos de prenda
-     * 
-     * Estructura esperada:
+     *Estructura esperada:
      * {
      *   "tipo_proceso_id": 1,  // O "tipo": "reflectivo"
      *   "observaciones": "...",
@@ -137,7 +135,7 @@ class PrendaProcesoService
                                 continue;
                             }
 
-                            // 🔧 FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
+                            //  FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
                             $tallasAgrupadas = [];
                             $coloresPorTalla = [];
 

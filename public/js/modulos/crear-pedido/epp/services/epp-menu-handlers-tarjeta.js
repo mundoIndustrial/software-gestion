@@ -31,7 +31,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
             if (e.target.classList.contains('btn-menu-epp-nuevo')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[EppMenuHandlerTarjeta] 🎯 Click en botón menú EPP detectado');
+                console.log('[EppMenuHandlerTarjeta]  Click en botón menú EPP detectado');
                 this.toggleMenu(e.target);
             }
 

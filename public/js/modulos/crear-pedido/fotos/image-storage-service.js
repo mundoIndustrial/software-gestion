@@ -59,7 +59,7 @@ class ImageStorageService {
     establecerImagenes(nuevasImagenes) {
         //  DIAGNÓSTICO: Capturar stack trace para identificar quién llama con array vacío
         if (Array.isArray(nuevasImagenes) && nuevasImagenes.length === 0) {
-            console.warn('🔴 [ImageStorageService] LLAMADA CON ARRAY VACÍO - Stack trace:', {
+            console.warn(' [ImageStorageService] LLAMADA CON ARRAY VACÍO - Stack trace:', {
                 caller: new Error().stack?.split('\n')[1]?.trim(),
                 stack: new Error().stack
             });
@@ -76,7 +76,7 @@ class ImageStorageService {
         // NO sobrescribirlo - preservar el snapshot con IDs
         if (this.snapshotOriginal === null && nuevasImagenes.length > 0) {
             this.snapshotOriginal = JSON.parse(JSON.stringify(nuevasImagenes));
-            console.log(' [ImageStorageService] 📸 SNAPSHOT GUARDADO de', nuevasImagenes.length, 'imágenes originales');
+            console.log(' [ImageStorageService]  SNAPSHOT GUARDADO de', nuevasImagenes.length, 'imágenes originales');
         } else if (this.snapshotOriginal !== null) {
             console.log(' [ImageStorageService] ⏸️ SNAPSHOT YA EXISTE - PRESERVANDO SNAPSHOT EXISTENTE CON IDs', {
                 snapshotImagenes: this.snapshotOriginal.length,
@@ -86,7 +86,7 @@ class ImageStorageService {
         }
         
         // Limpiar URLs de imágenes que serán reemplazadas
-        // 🔴 CRÍTICO FIX: Solo revocar blob URLs de imágenes SIN File object
+        //  CRÍTICO FIX: Solo revocar blob URLs de imágenes SIN File object
         // Las imágenes nuevas (con File object) necesitan mantener su blob URL
         this.images.forEach(img => {
             if (img.previewUrl && img.previewUrl.startsWith('blob:')) {

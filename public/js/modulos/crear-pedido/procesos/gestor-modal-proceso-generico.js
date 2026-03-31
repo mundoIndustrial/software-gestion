@@ -63,7 +63,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         return;
     }
     
-    // 🔴 CRÍTICO: Resetear storage de imágenes eliminadas cuando se abre un nuevo modal
+    //  CRÍTICO: Resetear storage de imágenes eliminadas cuando se abre un nuevo modal
     window.imagenesEliminadasProcesoStorage = [];
     console.log('[abrirModalProcesoGenerico]  Storage de imágenes eliminadas reseteado');
     
@@ -71,7 +71,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     // NUEVO: Establecer el modo (crear o editar)
     modoActual = esEdicion ? 'editar' : 'crear';
     
-    // 🔧 FIX CRÍTICO: Establecer procesoActualIndex basándose en el orden de creación
+    //  FIX CRÍTICO: Establecer procesoActualIndex basándose en el orden de creación
     // Los índices 1, 2, 3 en window.procesosImagenesStorage corresponden al ORDEN de creación de procesos
     if (esEdicion && window.procesosSeleccionados?.[tipoProceso]?.indiceResultado !== undefined) {
         // En EDICIÓN: Usar el índice ya asignado
@@ -98,10 +98,10 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         console.log(`🔢 [abrirModalProcesoGenerico] CREACIÓN: Índices usados=${[...indicesUsados]}, index asignado=${window.procesoActualIndex} para ${tipoProceso}`);
     }
     
-    // 🔴 CORRECCIÓN CRÍTICA: Siempre limpiar el storage en CREACIÓN de proceso nuevo
+    //  CORRECCIÓN CRÍTICA: Siempre limpiar el storage en CREACIÓN de proceso nuevo
     // Esto evita contaminación de imágenes de procesos anteriores
     if (window.universalImagenesStorage && !esEdicion && window.procesoActualIndex !== undefined) {
-        console.log(`[abrirModalProcesoGenerico] 🧹 LIMPIEZA FORZADA: Storage de PROCESOS[${window.procesoActualIndex}] para nuevo proceso`);
+        console.log(`[abrirModalProcesoGenerico]  LIMPIEZA FORZADA: Storage de PROCESOS[${window.procesoActualIndex}] para nuevo proceso`);
         window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
     }
     const config = procesosConfig[tipoProceso];
@@ -137,16 +137,16 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
             window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
             
-            // 🔴 CRÍTICO: Limpiar también window.imagenesProcesoActual para evitar contaminación
+            //  CRÍTICO: Limpiar también window.imagenesProcesoActual para evitar contaminación
             if (window.imagenesProcesoActual) {
                 window.imagenesProcesoActual = [null, null, null];
-                console.log('[abrirModalProcesoGenerico] 🧹 window.imagenesProcesoActual limpiado para nuevo proceso');
+                console.log('[abrirModalProcesoGenerico]  window.imagenesProcesoActual limpiado para nuevo proceso');
             }
             
-            // 🔴 CRÍTICO: Limpiar window.imagenesProcesoExistentes también
+            //  CRÍTICO: Limpiar window.imagenesProcesoExistentes también
             if (window.imagenesProcesoExistentes) {
                 window.imagenesProcesoExistentes = [];
-                console.log('[abrirModalProcesoGenerico] 🧹 window.imagenesProcesoExistentes limpiado para nuevo proceso');
+                console.log('[abrirModalProcesoGenerico]  window.imagenesProcesoExistentes limpiado para nuevo proceso');
             }
             
             // Limpiar resumen
@@ -205,7 +205,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         modal.style.zIndex = '999999999';
         console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
         
-        // 🔴 NUEVO: Remover aria-hidden para que los elementos dentro sean accesibles
+        //  NUEVO: Remover aria-hidden para que los elementos dentro sean accesibles
         // Esto evita el warning "Blocked aria-hidden on an element because its descendant retained focus"
         modal.removeAttribute('aria-hidden');
         
@@ -219,7 +219,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         }
         console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
 
-        // 🎯 NUEVO: Aplicar automáticamente todas las tallas cuando se crea un proceso nuevo
+        //  NUEVO: Aplicar automáticamente todas las tallas cuando se crea un proceso nuevo
         // En CREACIÓN (no edición): después de mostrar el modal, aplicar tallas automáticamente
         if (!esEdicion) {
             window.aplicarProcesoParaTodasTallas();
@@ -279,7 +279,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
     }
     
-    // 🔧 NO limpiar storage de imágenes inmediatamente después de guardar
+    //  NO limpiar storage de imágenes inmediatamente después de guardar
     // Las imágenes se necesitan para renderizar las tarjetas
     // Se limpiarán en el próximo proceso nuevo o al recargar la página
     if (false && modoActual === 'crear' && procesoGuardado && window.procesoActualIndex !== undefined) {
@@ -287,7 +287,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         console.log(`[cerrarModalProcesoGenerico] 🚫 NO se limpia storage - imágenes necesarias para tarjetas`);
         
         // Limpiar el storage de imágenes del índice usado para este proceso
-        console.log(`[cerrarModalProcesoGenerico] 🧹 Limpiando storage UNIVERSAL de PROCESOS del índice ${window.procesoActualIndex}`);
+        console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${window.procesoActualIndex}`);
         if (window.universalImagenesStorage && typeof window.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
             window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
             console.log(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para índice ${window.procesoActualIndex}`);
@@ -300,7 +300,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
         console.log('[cerrarModalProcesoGenerico]  Arrays locales de imágenes limpiados');
     } else {
-        console.log(`[cerrarModalProcesoGenerico] 📸 Storage conservado - imágenes necesarias para renderizado`);
+        console.log(`[cerrarModalProcesoGenerico]  Storage conservado - imágenes necesarias para renderizado`);
     }
     
     // NUEVO: Reset de variables después de cerrar
@@ -336,7 +336,7 @@ window.manejarImagenProceso = function(input, indice) {
             type: file.type
         });
         
-        // 🔴 NUEVO: Guardar en storage universal de PROCESOS
+        //  NUEVO: Guardar en storage universal de PROCESOS
         if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
             console.log(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${window.procesoActualIndex}`);
             const imagenData = {
@@ -370,7 +370,7 @@ window.manejarImagenProceso = function(input, indice) {
                 <img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
             `;
             
-            // 🔴 Crear botón eliminar con data-indice (event delegation global lo detectará)
+            //  Crear botón eliminar con data-indice (event delegation global lo detectará)
             let deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
             if (deleteBtn) deleteBtn.remove();
             deleteBtn = document.createElement('button');
@@ -391,10 +391,10 @@ window.manejarImagenProceso = function(input, indice) {
     }
 };
 
-// 🔴 NUEVO: Variable global para rastrear qué imagen se está eliminando
+//  NUEVO: Variable global para rastrear qué imagen se está eliminando
 window._imagenAEliminarIndice = null;
 
-// 🔴 EVENT DELEGATION GLOBAL: Detectar clicks en botones .btn-eliminar-imagen-proceso
+//  EVENT DELEGATION GLOBAL: Detectar clicks en botones .btn-eliminar-imagen-proceso
 // Esto funciona incluso después de que setupDragAndDropProceso clone el preview con cloneNode(true)
 // porque cloneNode NO copia event listeners, pero event delegation en document SÍ los detecta
 (function() {
@@ -487,7 +487,7 @@ window.confirmarEliminarImagenProceso = function() {
         window.imagenesProcesoActual[indice - 1] = null;
     }
     
-    // 🔴 CRÍTICO: Guardar la imagen ANTES de marcarla como null
+    //  CRÍTICO: Guardar la imagen ANTES de marcarla como null
     if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
         const imagenAeliminarObj = window.imagenesProcesoExistentes[indice - 1];
         
@@ -621,20 +621,20 @@ function limpiarImagenesProceso() {
     // Limpiar array local
     imagenesProcesoActual = [null, null, null];
     
-    // 🔴 CRÍTICO: Limpiar arrays globales para evitar contaminación
+    //  CRÍTICO: Limpiar arrays globales para evitar contaminación
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual = [null, null, null];
-        console.log('[limpiarImagenesProceso] 🧹 window.imagenesProcesoActual limpiado');
+        console.log('[limpiarImagenesProceso]  window.imagenesProcesoActual limpiado');
     }
     
     if (window.imagenesProcesoExistentes) {
         window.imagenesProcesoExistentes = [];
-        console.log('[limpiarImagenesProceso] 🧹 window.imagenesProcesoExistentes limpiado');
+        console.log('[limpiarImagenesProceso]  window.imagenesProcesoExistentes limpiado');
     }
     
-    // 🔴 NUEVO: Limpiar también el storage universal si hay un índice activo
+    //  NUEVO: Limpiar también el storage universal si hay un índice activo
     if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
-        console.log(`[limpiarImagenesProceso] 🧹 Limpiando storage universal de PROCESOS[${window.procesoActualIndex}]`);
+        console.log(`[limpiarImagenesProceso]  Limpiando storage universal de PROCESOS[${window.procesoActualIndex}]`);
         window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
     }
     
@@ -849,7 +849,7 @@ function obtenerTallasDeLaPrenda() {
     //
     // ════════════════════════════════════════════════════════════════════════════════════
     
-    console.log('[obtenerTallasDeLaPrenda] 🎯 INICIANDO - buscando FUENTE DE VERDAD');
+    console.log('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
     
     const normalizarGenero = (generoRaw) => {
         const g = String(generoRaw || '').trim().toLowerCase();
@@ -1765,7 +1765,7 @@ window.actualizarResumenTallasProceso = function() {
         console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', window.tallasSeleccionadasProceso.dama);
         const tallasDamaHTML = window.tallasSeleccionadasProceso.dama.map(t => {
             const cantidad = tallasProceso.dama?.[t] || 0;
-            console.log(`[actualizarResumenTallasProceso] 📏 DAMA ${t}: cantidad=${cantidad}`);
+            console.log(`[actualizarResumenTallasProceso]  DAMA ${t}: cantidad=${cantidad}`);
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${formatearTallaKey(t)}
                 <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1788,7 +1788,7 @@ window.actualizarResumenTallasProceso = function() {
         console.log('[actualizarResumenTallasProceso] 👨 Renderizando CABALLERO:', window.tallasSeleccionadasProceso.caballero);
         const tallasCaballeroHTML = window.tallasSeleccionadasProceso.caballero.map(t => {
             const cantidad = tallasProceso.caballero?.[t] || 0;
-            console.log(`[actualizarResumenTallasProceso] 📏 CABALLERO ${t}: cantidad=${cantidad}`);
+            console.log(`[actualizarResumenTallasProceso]  CABALLERO ${t}: cantidad=${cantidad}`);
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${formatearTallaKey(t)}
                 <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1844,7 +1844,7 @@ window.actualizarResumenTallasProceso = function() {
     
     resumen.innerHTML = html;
     console.log('[actualizarResumenTallasProceso]  HTML inyectado en DOM');
-    console.log('[actualizarResumenTallasProceso] 📝 innerHTML actual:', resumen.innerHTML.substring(0, 200));
+    console.log('[actualizarResumenTallasProceso]  innerHTML actual:', resumen.innerHTML.substring(0, 200));
 };
 
 // Agregar proceso al pedido
@@ -1855,14 +1855,14 @@ window.agregarProcesoAlPedido = function() {
     }
     
     try {
-        // 🔧 FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
+        //  FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
         // Las imágenes se guardan por índice numérico (1, 2, 3), NO por nombre de proceso
-        console.log('[agregarProcesoAlPedido] 📸 Buscando imágenes en window.procesosImagenesStorage...');
+        console.log('[agregarProcesoAlPedido]  Buscando imágenes en window.procesosImagenesStorage...');
         console.log('[agregarProcesoAlPedido] 📌 procesoActual:', procesoActual);
         console.log('[agregarProcesoAlPedido] 📌 procesoActualIndex:', window.procesoActualIndex);
         console.log('[agregarProcesoAlPedido] 📌 window.procesosImagenesStorage.obtenerImagenes:', typeof window.procesosImagenesStorage?.obtenerImagenes);
         
-        // 🔴 CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
+        //  CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
         // PERO TAMBIÉN capturar imágenes NUEVAS de imagenesProcesoActual (agregadas después de eliminar)
         const imagenesExistentes = (window.imagenesProcesoExistentes || []).filter(img => img !== null);
         
@@ -1871,7 +1871,7 @@ window.agregarProcesoAlPedido = function() {
         
         // Solo obtener del storage si NO estamos en edición (creación de nuevo proceso)
         if (modoActual !== 'editar') {
-            console.log('[agregarProcesoAlPedido] 🔧 Modo CREACIÓN: Buscando imágenes en storage UNIVERSAL de PROCESOS...');
+            console.log('[agregarProcesoAlPedido]  Modo CREACIÓN: Buscando imágenes en storage UNIVERSAL de PROCESOS...');
             
             //  CORRECCIÓN: Usar storage universal separado por tipo
             if (window.universalImagenesStorage && typeof window.universalImagenesStorage.obtenerImagenes === 'function') {
@@ -1899,7 +1899,7 @@ window.agregarProcesoAlPedido = function() {
             
             // Fallback: Imágenes locales del array imagenesProcesoActual
             if (imagenesDelStorage.length === 0) {
-                // 🔴 CORRECCIÓN: Usar window.imagenesProcesoActual en lugar de la variable local
+                //  CORRECCIÓN: Usar window.imagenesProcesoActual en lugar de la variable local
                 const imagenesNuevas = (window.imagenesProcesoActual || []).filter(img => img !== null);
                 if (imagenesNuevas.length > 0) {
                     imagenesDelStorage = imagenesNuevas;
@@ -1907,19 +1907,19 @@ window.agregarProcesoAlPedido = function() {
                 }
             }
         } else {
-            console.log('[agregarProcesoAlPedido] 🔧 Modo EDICIÓN: Usando imagenesExistentes + imágenes NUEVAS agregadas');
-            // 🔴 NUEVO: En modo EDICIÓN, también capturar imágenes NUEVAS de imagenesProcesoActual
+            console.log('[agregarProcesoAlPedido]  Modo EDICIÓN: Usando imagenesExistentes + imágenes NUEVAS agregadas');
+            //  NUEVO: En modo EDICIÓN, también capturar imágenes NUEVAS de imagenesProcesoActual
             // Esto permite agregar imágenes después de eliminar
             imagenesNuevasAgregadas = (window.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
-            console.log('[agregarProcesoAlPedido] 📸 Imágenes nuevas agregadas en edición:', imagenesNuevasAgregadas.length);
+            console.log('[agregarProcesoAlPedido]  Imágenes nuevas agregadas en edición:', imagenesNuevasAgregadas.length);
         }
         
-        // 🔴 CORRECCIÓN CRÍTICA: Solo usar imágenes del proceso actual
+        //  CORRECCIÓN CRÍTICA: Solo usar imágenes del proceso actual
         // No mezclar imágenes de diferentes procesos
         let imagenesFinales = [];
         
         if (modoActual === 'editar') {
-            // 🔴 CORRECCIÓN: En modo edición, usar el estado ACTUAL del modal
+            //  CORRECCIÓN: En modo edición, usar el estado ACTUAL del modal
             // que refleja las eliminaciones hechas por el usuario
             console.log('[agregarProcesoAlPedido]  DEBUG EDICIÓN - Estado de variables:', {
                 'window.imagenesProcesoExistentes': window.imagenesProcesoExistentes,
@@ -1936,8 +1936,8 @@ window.agregarProcesoAlPedido = function() {
             if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > 0) {
                 // Usar imágenes del estado actual del modal (con eliminaciones aplicadas)
                 imagenesFinales = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined);
-                console.log('[agregarProcesoAlPedido] 🔧 MODO EDICIÓN: Usando imágenes del estado actual del modal:', imagenesFinales.length);
-                console.log('[agregarProcesoAlPedido] 📸 Imágenes filtradas (no null):', imagenesFinales.map((img, idx) => ({
+                console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes del estado actual del modal:', imagenesFinales.length);
+                console.log('[agregarProcesoAlPedido]  Imágenes filtradas (no null):', imagenesFinales.map((img, idx) => ({
                     idx,
                     nombre: img?.name || img?.nombre || 'sin-nombre',
                     tipo: typeof img
@@ -1948,15 +1948,15 @@ window.agregarProcesoAlPedido = function() {
                 console.log('[agregarProcesoAlPedido]  DEBUG - procesoGuardado:', procesoGuardado);
                 if (procesoGuardado?.imagenes && procesoGuardado.imagenes.length > 0) {
                     imagenesFinales = procesoGuardado.imagenes.filter(img => img !== null && img !== undefined);
-                    console.log('[agregarProcesoAlPedido] 🔧 MODO EDICIÓN: Usando imágenes del proceso guardado (fallback):', imagenesFinales.length);
+                    console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes del proceso guardado (fallback):', imagenesFinales.length);
                 } else {
                     // Último fallback: usar imagenesExistentes
                     imagenesFinales = imagenesExistentes;
-                    console.log('[agregarProcesoAlPedido] 🔧 MODO EDICIÓN: Usando imágenes existentes (último fallback):', imagenesFinales.length);
+                    console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes existentes (último fallback):', imagenesFinales.length);
                 }
             }
             
-            // 🔴 CORRECCIÓN: Solo agregar imágenes NUEVAS que no estén ya en imagenesFinales
+            //  CORRECCIÓN: Solo agregar imágenes NUEVAS que no estén ya en imagenesFinales
             // Evitar duplicación de imágenes existentes
             if (imagenesNuevasAgregadas.length > 0) {
                 // Filtrar solo imágenes realmente nuevas (File objects que no estén en imagenesFinales)
@@ -1968,16 +1968,16 @@ window.agregarProcesoAlPedido = function() {
                 
                 if (imagenesUnicasNuevas.length > 0) {
                     imagenesFinales = [...imagenesFinales, ...imagenesUnicasNuevas];
-                    console.log('[agregarProcesoAlPedido] 📸 Agregando imágenes realmente nuevas en edición:', imagenesUnicasNuevas.length);
+                    console.log('[agregarProcesoAlPedido]  Agregando imágenes realmente nuevas en edición:', imagenesUnicasNuevas.length);
                 } else {
-                    console.log('[agregarProcesoAlPedido] 📸 No hay imágenes nuevas únicas para agregar (todas ya existen)');
+                    console.log('[agregarProcesoAlPedido]  No hay imágenes nuevas únicas para agregar (todas ya existen)');
                 }
             }
         } else {
             // En modo creación: SOLO usar imágenes del storage del proceso actual
             if (window.procesoActualIndex !== undefined && window.procesoActualIndex > 0) {
                 imagenesFinales = imagenesDelStorage;
-                console.log(`[agregarProcesoAlPedido] 🔧 MODO CREACIÓN: Usando imágenes del storage índice ${window.procesoActualIndex}:`, imagenesFinales.length);
+                console.log(`[agregarProcesoAlPedido]  MODO CREACIÓN: Usando imágenes del storage índice ${window.procesoActualIndex}:`, imagenesFinales.length);
             } else {
                 console.warn('[agregarProcesoAlPedido]  Sin índice de proceso definido, no se usarán imágenes');
                 imagenesFinales = [];
@@ -1987,7 +1987,7 @@ window.agregarProcesoAlPedido = function() {
         // Filtrar válidas (eliminadas marcadas como null)
         const imagenesValidas = imagenesFinales.filter(img => img !== null && img !== undefined && img !== '');
         
-        console.log('[agregarProcesoAlPedido] 🖼️ IMÁGENES CAPTURADAS:', {
+        console.log('[agregarProcesoAlPedido]  IMÁGENES CAPTURADAS:', {
             modoActual: modoActual,
             procesoActualIndex: window.procesoActualIndex,
             imagenesFinales: imagenesFinales.length,
@@ -2015,7 +2015,7 @@ window.agregarProcesoAlPedido = function() {
         // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
         const cantidadOriginales = (window.imagenesProcesoExistentes || []).length;
         
-        // 🔴 CRÍTICO: Usar storage de eliminadas, no nulls
+        //  CRÍTICO: Usar storage de eliminadas, no nulls
         const imagenesEliminadasArray = window.imagenesEliminadasProcesoStorage || [];
         
         const ubicacionesClonadas = (window.ubicacionesProcesoSeleccionadas || []).map(u => {
@@ -2036,7 +2036,7 @@ window.agregarProcesoAlPedido = function() {
                 sobremedida: { ...window.tallasCantidadesProceso?.sobremedida } || {}
             },
             imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
-            // 🔴 CRÍTICO: imagenesEliminadas debe contener IDs de imágenes a eliminar
+            //  CRÍTICO: imagenesEliminadas debe contener IDs de imágenes a eliminar
             imagenesEliminadas: imagenesEliminadasArray
                 .map(img => {
                     // Ya están filtradas en el storage, solo mapear
@@ -2097,7 +2097,7 @@ window.agregarProcesoAlPedido = function() {
             if (!window.procesosSeleccionados[procesoActual]) {
                 window.procesosSeleccionados[procesoActual] = {
                     tipo: procesoActual,
-                    indiceResultado: window.procesoActualIndex, // 🔧 Guardar el índice para futuras ediciones
+                    indiceResultado: window.procesoActualIndex, //  Guardar el índice para futuras ediciones
                     datos: null
                 };
             }
@@ -2123,7 +2123,7 @@ window.agregarProcesoAlPedido = function() {
                 window.procesosSeleccionados = {};
             }
             
-            // 🔴 NUEVO: Preservar el ID del proceso existente en BD
+            //  NUEVO: Preservar el ID del proceso existente en BD
             const procesoExistente = window.procesosSeleccionados[procesoActual];
             const idExistente = procesoExistente?.datos?.id;
             const tipoProcesoId = procesoExistente?.datos?.tipo_proceso_id;
@@ -2165,11 +2165,11 @@ window.agregarProcesoAlPedido = function() {
             cambiosProceso = datos;
         }
         
-        // 🔴 NUEVO: Capturar modo ANTES de cerrar el modal (cerrar resetea modoActual a 'crear')
+        //  NUEVO: Capturar modo ANTES de cerrar el modal (cerrar resetea modoActual a 'crear')
         const modoAntesDeCerrar = modoActual;
         console.log('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
         
-        // 🔴 CRÍTICO: Resetear storage de eliminadas después de guardar
+        //  CRÍTICO: Resetear storage de eliminadas después de guardar
         window.imagenesEliminadasProcesoStorage = [];
         console.log('[agregarProcesoAlPedido]  Storage de eliminadas reseteado después de guardar');
         

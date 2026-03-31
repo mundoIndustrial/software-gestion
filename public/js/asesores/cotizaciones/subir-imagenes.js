@@ -18,7 +18,7 @@
  * @returns {Promise<{success: boolean, ruta: string}>}
  */
 async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
-    console.log('📸 Subiendo imagen a cotización', {
+    console.log(' Subiendo imagen a cotización', {
         archivo: archivo.name,
         cotizacion_id: cotizacionId,
         prenda_id: prendaId,

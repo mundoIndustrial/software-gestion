@@ -110,21 +110,21 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
         const titulo = modal.querySelector('.bg-slate-900 h2');
         if (titulo) {
             titulo.innerHTML = `💬 Novedades - Pedido <span id="modalNovedadesNumeroPedido">#${pedidoId}</span> - Recibo ${numeroRecibo}`;
-            console.log('[abrirModalNovedadesRecibo] 📝 Título configurado');
+            console.log('[abrirModalNovedadesRecibo]  Título configurado');
         }
 
         // Limpiar textarea de nueva novedad
         const nuevaContent = document.getElementById('novedadesNuevaContent');
         if (nuevaContent) {
             nuevaContent.value = '';
-            console.log('[abrirModalNovedadesRecibo] 🧹 Textarea limpiado');
+            console.log('[abrirModalNovedadesRecibo]  Textarea limpiado');
         }
 
         // Mostrar el modal
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.style.display = 'flex';
-        console.log('[abrirModalNovedadesRecibo] 🎭 Modal mostrado');
+        console.log('[abrirModalNovedadesRecibo]  Modal mostrado');
 
         // Cargar novedades existentes
         console.log('[abrirModalNovedadesRecibo] 📥 Cargando novedades...');
@@ -134,7 +134,7 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
         setTimeout(() => {
             if (nuevaContent) {
                 nuevaContent.focus();
-                console.log('[abrirModalNovedadesRecibo] 🎯 Textarea enfocado');
+                console.log('[abrirModalNovedadesRecibo]  Textarea enfocado');
             }
         }, 100);
 
@@ -239,7 +239,7 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
             }).join('');
             
             historial.innerHTML = novedadesHTML || '<div class="text-center text-gray-500 py-8">Sin novedades registradas</div>';
-            console.log('[cargarNovedadesRecibo] 🎨 HTML renderizado');
+            console.log('[cargarNovedadesRecibo] HTML renderizado');
         } else {
             console.log('[cargarNovedadesRecibo]  Sin novedades encontradas');
             historial.innerHTML = '<div class="text-center text-gray-500 py-8">Sin novedades registradas</div>';
@@ -291,7 +291,7 @@ async function guardarNovedad() {
         }
 
         const nuevaNovedadTexto = nuevaContent.value.trim();
-        console.log('[guardarNovedad] 📝 Texto a guardar:', nuevaNovedadTexto);
+        console.log('[guardarNovedad]  Texto a guardar:', nuevaNovedadTexto);
         
         if (!nuevaNovedadTexto) {
             console.warn('[guardarNovedad]  Texto vacío');
@@ -330,7 +330,7 @@ async function guardarNovedad() {
             
             // Limpiar textarea
             nuevaContent.value = '';
-            console.log('[guardarNovedad] 🧹 Textarea limpiado');
+            console.log('[guardarNovedad]  Textarea limpiado');
             
             // Recargar novedades en tiempo real
             console.log('[guardarNovedad] 📥 Recargando novedades...');
@@ -368,7 +368,7 @@ async function eliminarNovedad(novedadId) {
         // Limpiar cualquier modal existente primero
         const modalExistente = document.getElementById('modalConfirmarEliminar');
         if (modalExistente) {
-            console.log('[eliminarNovedad] 🧹 Limpiando modal existente');
+            console.log('[eliminarNovedad]  Limpiando modal existente');
             modalExistente.remove();
         }
         
@@ -416,12 +416,12 @@ async function eliminarNovedad(novedadId) {
         console.log('[eliminarNovedad]   - btnCerrar:', !!btnCerrar);
         
         if (btnConfirmar) {
-            console.log('[eliminarNovedad] 🎯 Adjuntando evento onclick a btnConfirmar');
+            console.log('[eliminarNovedad]  Adjuntando evento onclick a btnConfirmar');
             
             // Adjuntar evento directamente sin timeout
             btnConfirmar.onclick = async function(event) {
                 console.log('[eliminarNovedad] 🖱️ Botón confirmar clickeado!', event);
-                console.log('[eliminarNovedad] 🎯 Event target:', event.target);
+                console.log('[eliminarNovedad]  Event target:', event.target);
                 
                 // Prevenir comportamiento por defecto
                 event.preventDefault();

@@ -2,8 +2,8 @@
 
 /**
  * Script de Análisis: Consecutivos por Proceso y Prenda - Pedido ID 1
- * 
- * Propósito: Diagnosticar si TODOS los procesos generan consecutivos 
+ *
+ * Propósito: Diagnosticar si TODOS los procesos generan consecutivos
  * por cada prenda que tiene el proceso
  */
 
@@ -107,7 +107,7 @@ foreach ($prendas as $index => $prenda) {
                     echo " - NO genera consecutivo (de_bodega=false)\n";
                     // Remover si no es de bodega
                     $prendasPorProceso['REFLECTIVO'] = array_diff(
-                        $prendasPorProceso['REFLECTIVO'], 
+                        $prendasPorProceso['REFLECTIVO'],
                         [$prenda->id]
                     );
                 }
@@ -205,7 +205,7 @@ foreach ($prendasPorProceso as $proceso => $prendasIds) {
 }
 
 if ($problemasEncontrados) {
-    echo "\n  📝 CAUSA RAÍZ:\n";
+    echo "\n   CAUSA RAÍZ:\n";
     echo "  En ConsecutivosRecibosService.php, los procesos BORDADO, ESTAMPADO,\n";
     echo "  DTF, SUBLIMADO y REFLECTIVO usan la condición:\n";
     echo "  if (!isset(\$procesosPorPedido['TIPO']))\n\n";

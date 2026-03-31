@@ -1705,7 +1705,7 @@ if (document.readyState === 'loading') {
         setupCosturaNotifications();
         setInterval(cargarConteoRecibosCorte, 30000);
         
-        // 🔴 LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
+        //  LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
         initializeReciboAprobadoListener();
     });
 } else {
@@ -1713,26 +1713,26 @@ if (document.readyState === 'loading') {
     setupCosturaNotifications();
     setInterval(cargarConteoRecibosCorte, 30000);
     
-    // 🔴 LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
+    //  LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
     initializeReciboAprobadoListener();
 }
 
 /**
- * 🔴 LISTENER EN TIEMPO REAL - Escucha cuando se aprueban insumos
+ *  LISTENER EN TIEMPO REAL - Escucha cuando se aprueban insumos
  * Se conecta al evento 'recibo.aprobado' del canal 'recibos-costura'
  */
 function initializeReciboAprobadoListener() {
-    console.log('🔴 [ReciboAprobado] Inicializando listener en tiempo real...');
+    console.log(' [ReciboAprobado] Inicializando listener en tiempo real...');
     
     // Esperar a que Echo esté listo
     window.waitForEcho(function() {
         try {
-            console.log('🔴 [ReciboAprobado] Echo está listo, conectando al canal...');
+            console.log(' [ReciboAprobado] Echo está listo, conectando al canal...');
             
             // Conectar al canal y escuchar el evento
             window.EchoInstance.channel('recibos-costura')
                 .listen('recibo.aprobado', function(data) {
-                    console.log('🔴 [ReciboAprobado] ¡Evento recibido en tiempo real!', data);
+                    console.log(' [ReciboAprobado] ¡Evento recibido en tiempo real!', data);
                     
                     // Mostrar notificación visual
                     showRecibAprobadoNotification(data);
@@ -1753,7 +1753,7 @@ function initializeReciboAprobadoListener() {
 }
 
 /**
- * 🔴 Mostrar notificación visual cuando se aprueba un recibo
+ *  Mostrar notificación visual cuando se aprueba un recibo
  */
 function showRecibAprobadoNotification(data) {
     const notification = document.createElement('div');
@@ -1817,7 +1817,7 @@ function showRecibAprobadoNotification(data) {
 }
 
 /**
- * 🔴 Recargar la tabla dinámicamente cuando se aprueba un recibo
+ *  Recargar la tabla dinámicamente cuando se aprueba un recibo
  */
 function recargarTablaRecibosEnTiempoReal(data) {
 
@@ -1833,7 +1833,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
         .then(response => response.json())
         .then(result => {
             if (result.recibos && result.recibos.html) {
-                console.log('🔴 [ReciboAprobado] HTML recibido, actualizando tabla...');
+                console.log(' [ReciboAprobado] HTML recibido, actualizando tabla...');
                 
                 // Actualizar solo el tbody
                 const tbody = document.getElementById('tablaRecibosBody');
@@ -1861,7 +1861,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
 }
 
 /**
- * 🔴 Reproducir sonido de notificación (opcional)
+ *  Reproducir sonido de notificación (opcional)
  */
 function playNotificationSound() {
     try {

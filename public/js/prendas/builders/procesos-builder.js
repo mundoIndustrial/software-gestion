@@ -536,7 +536,7 @@ class ProcesosBuilder {
                     }
                 }
                 
-                console.log(`[ProcesosBuilder] 🖼️ Procesando imagen ${idx}:`, {tipo: typeof img, tieneUrl: !!url, urlPreview: url ? url.substring(0, 50) : 'null'});
+                console.log(`[ProcesosBuilder]  Procesando imagen ${idx}:`, {tipo: typeof img, tieneUrl: !!url, urlPreview: url ? url.substring(0, 50) : 'null'});
                 
                 return url ? `<img src="${url}" alt="Proceso ${idx}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 2px solid #e5e7eb; cursor: pointer;" />` : '';
             })

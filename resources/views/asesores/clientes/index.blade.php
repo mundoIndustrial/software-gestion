@@ -7,7 +7,7 @@
 <div class="container-fluid">
     <!-- HEADER -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="margin: 0; font-size: 2rem; color: #333;">👥 Clientes</h1>
+        <h1 style="margin: 0; font-size: 2rem; color: #333;"> Clientes</h1>
         <button onclick="abrirModalCliente()" class="btn btn-primary" style="background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer;">
             <i class="fas fa-plus"></i> Nuevo Cliente
         </button>

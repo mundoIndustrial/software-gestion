@@ -255,7 +255,7 @@ async function cargarNovedadesAdvanced(pedidoId) {
             container.innerHTML = `
                 <div class="flex justify-center items-center py-8">
                     <div class="text-center">
-                        <span class="text-slate-500 text-lg">📝 No hay novedades registradas</span>
+                        <span class="text-slate-500 text-lg"> No hay novedades registradas</span>
                         <p class="text-slate-400 text-sm mt-2">Haz clic en "Agregar Novedad" para comenzar</p>
                     </div>
                 </div>
@@ -323,7 +323,7 @@ function renderizarNovedades() {
         container.innerHTML = `
             <div class="flex justify-center items-center py-8">
                 <div class="text-center">
-                    <span class="text-slate-500 text-lg">📝 No hay novedades registradas</span>
+                    <span class="text-slate-500 text-lg"> No hay novedades registradas</span>
                     <p class="text-slate-400 text-sm mt-2">Haz clic en "Agregar Novedad" para comenzar</p>
                 </div>
             </div>

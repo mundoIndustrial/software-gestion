@@ -1256,7 +1256,7 @@ function connectWebSocket() {
         socket = window.EchoInstance;
         
         console.log(' Usando EchoInstance existente');
-        console.log('🔧 Creando canal pedidos.general...');
+        console.log(' Creando canal pedidos.general...');
         
         // Escuchar eventos de pedidos en el canal público de despacho
         const despachoChannel = socket.channel('pedidos.general');
@@ -1283,7 +1283,7 @@ function connectWebSocket() {
             });
             
             // Mostrar notificación de que se recibió un evento
-            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
             // Si hay cambios relevantes, recargar la lista
             if (event.changedFields && Object.keys(event.changedFields).length > 0) {

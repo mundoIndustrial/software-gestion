@@ -1,10 +1,10 @@
 #  Documentación: Sistema de Procesos con Datos Extendidos por Talla
 
-## 🎯 Descripción General
+##  Descripción General
 
 Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflectivo, Bordado, Estampado, DTF, Sublimado) que ahora permite especificar datos detallados **por cada talla** en el editor de tallas específicas.
 
-## 🆕 Nuevas Funcionalidades
+##  Nuevas Funcionalidades
 
 ### En el Editor de Tallas Específicas, cada talla ahora tiene:
 
@@ -127,7 +127,7 @@ Se cierra el editor y se actualiza el resumen
 }
 ```
 
-## 🔧 Funciones Principales
+##  Funciones Principales
 
 ### `extension-editor-tallas-multiproducto.js`
 
@@ -167,7 +167,7 @@ window.obtenerDatosExtendidosTalla(proceso, genero, talla)
 window.restaurarDatosExtendidosTallasProceso(proceso)
 ```
 
-## 🎨 Estilos en las Tarjetas
+## Estilos en las Tarjetas
 
 Cada tarjeta de talla tiene un color distintivo:
 - **DAMA**: Rosa (#be185d) para las de color, azul (#1d4ed8) para las estándar
@@ -186,7 +186,7 @@ Los campos están organizados verticalmente para mejor legibilidad:
 - En pantallas medianas: 2-3 tarjetas por fila
 - En pantallas grandes: 3+ tarjetas por fila
 
-## 🔐 Persistencia de Datos
+##  Persistencia de Datos
 
 Los datos se guardan automáticamente en:
 1. **En memoria**: `window.procesosSeleccionados` (mientras está en el navegador)
@@ -213,7 +213,7 @@ Para probar la funcionalidad:
 7. Haz click en "Guardar Tallas"
 8. Los datos se guardarán automáticamente
 
-## 📝 Notas para Desarrolladores
+##  Notas para Desarrolladores
 
 - Las funciones originales se guardan con el sufijo "Original" antes de reemplazarlas
 - Se usa `event delegation` para manejar clicks en elementos dinámicos

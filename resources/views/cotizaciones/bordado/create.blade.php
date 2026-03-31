@@ -1295,7 +1295,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                         });
                     }
                     
-                    // 🆕 PROCESAR ARCHIVOS DE TELAS DE ESTA PRENDA
+                    //  PROCESAR ARCHIVOS DE TELAS DE ESTA PRENDA
                     if (prenda.telas && Array.isArray(prenda.telas)) {
                         prenda.telas.forEach((tela, telaIdx) => {
                             if (tela.archivo && tela.archivo instanceof File) {

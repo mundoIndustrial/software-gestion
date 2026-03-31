@@ -1,5 +1,5 @@
 /**
- * ⚙️ Módulo de Variaciones (Manga, Bolsillos, Broche)
+ *  Módulo de Variaciones (Manga, Bolsillos, Broche)
  * Responsabilidad: Cargar variaciones específicas en el modal
  */
 
@@ -8,17 +8,17 @@ class PrendaEditorVariaciones {
      * Cargar variaciones específicas (manga, bolsillos, broche)
      */
     static cargar(prenda) {
-        console.log('⚙️ [Variaciones] Cargando manga, bolsillos, broche');
-        console.log('⚙️ [Variaciones] Objeto prenda recibido:', prenda);
-        console.log('⚙️ [Variaciones] prenda.variantes (tipo):', typeof prenda?.variantes);
-        console.log('⚙️ [Variaciones] prenda.variantes (es array?):', Array.isArray(prenda?.variantes));
-        console.log('⚙️ [Variaciones] prenda.variantes (contenido):', prenda?.variantes);
+        console.log(' [Variaciones] Cargando manga, bolsillos, broche');
+        console.log(' [Variaciones] Objeto prenda recibido:', prenda);
+        console.log(' [Variaciones] prenda.variantes (tipo):', typeof prenda?.variantes);
+        console.log(' [Variaciones] prenda.variantes (es array?):', Array.isArray(prenda?.variantes));
+        console.log(' [Variaciones] prenda.variantes (contenido):', prenda?.variantes);
         
-        // 🔴 FIX: El backend devuelve variantes como ARRAY, no como objeto
+        //  FIX: El backend devuelve variantes como ARRAY, no como objeto
         // Usar la primera variante si es array
         let varianteObj = prenda?.variantes;
         if (Array.isArray(varianteObj) && varianteObj.length > 0) {
-            console.log('⚙️ [Variaciones] Detectado array de variantes, usando primera:', varianteObj[0]);
+            console.log(' [Variaciones] Detectado array de variantes, usando primera:', varianteObj[0]);
             varianteObj = varianteObj[0];
         }
         
@@ -87,7 +87,7 @@ class PrendaEditorVariaciones {
             
             console.log(' [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Manga] Sin manga para cargar');
+            console.log(' [Manga] Sin manga para cargar');
         }
     }
 
@@ -138,7 +138,7 @@ class PrendaEditorVariaciones {
             
             console.log(' [Bolsillos] Cargado - Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Bolsillos] Sin bolsillos para cargar');
+            console.log(' [Bolsillos] Sin bolsillos para cargar');
         }
     }
 
@@ -184,7 +184,7 @@ class PrendaEditorVariaciones {
             obs.disabled = false;
             
             // Llenar valores
-            // 🔴 El <select> tiene values "boton"/"broche" (lowercase, sin acento)
+            //  El <select> tiene values "boton"/"broche" (lowercase, sin acento)
             // pero la BD retorna "Botón"/"Broche" (con mayúscula y acento)
             // Normalizar para que matchee las options del select
             if (broche) {
@@ -217,7 +217,7 @@ class PrendaEditorVariaciones {
             
             console.log(' [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Broche] Sin broche para cargar');
+            console.log(' [Broche] Sin broche para cargar');
         }
     }
 

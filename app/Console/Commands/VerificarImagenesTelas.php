@@ -107,7 +107,7 @@ class VerificarImagenesTelas extends Command
         ");
 
         $this->line(" Total de telas (color-tela): {$totalTelas}");
-        $this->line("📸 Total de imágenes en BD: {$totalImagenes}");
+        $this->line(" Total de imágenes en BD: {$totalImagenes}");
         $this->line(" Total de imágenes en disco: {$imagenesEnDisco}");
 
         if ($totalImagenes === $imagenesEnDisco) {
@@ -145,7 +145,7 @@ class VerificarImagenesTelas extends Command
         ");
 
         $query = "
-        SELECT 
+        SELECT
             pp.id as prenda_id,
             pp.nombre_prenda,
             pct.id as color_tela_id,

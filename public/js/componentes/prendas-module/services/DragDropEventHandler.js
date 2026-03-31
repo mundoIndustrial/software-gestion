@@ -182,12 +182,12 @@ class DragDropEventHandler {
             
             // Si no hay imágenes, permitir el comportamiento normal del navegador
             if (!foundImage) {
-                UIHelperService.log('DragDropEventHandler', '📝 No hay imágenes en el portapapeles local, permitiendo pegado normal de texto');
+                UIHelperService.log('DragDropEventHandler', ' No hay imágenes en el portapapeles local, permitiendo pegado normal de texto');
                 return; // No interceptar, dejar que el navegador maneje el pegado
             }
             
             // Si hay imágenes, interceptar el evento para procesarlas
-            UIHelperService.log('DragDropEventHandler', '🖼️ Imágenes detectadas en portapapeles local, interceptando para procesar');
+            UIHelperService.log('DragDropEventHandler', ' Imágenes detectadas en portapapeles local, interceptando para procesar');
             e.preventDefault();
             e.stopPropagation();
             

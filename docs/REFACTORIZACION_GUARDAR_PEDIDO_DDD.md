@@ -15,7 +15,7 @@ Refactorización completa siguiendo Clean Architecture y DDD con:
 
 ---
 
-## 🔴 VIOLACIONES ENCONTRADAS EN EL CÓDIGO ORIGINAL
+##  VIOLACIONES ENCONTRADAS EN EL CÓDIGO ORIGINAL
 
 ### 1. **Request HTTP en UseCase (Mayor violación)**
 ```php
@@ -413,7 +413,7 @@ public function testGuardarPedido() {
 
 ---
 
-## 📝 CHECKLIST - CLEAN ARCHITECTURE & DDD
+##  CHECKLIST - CLEAN ARCHITECTURE & DDD
 
 -  UseCase NO depende de HTTP
 -  UseCase recibe DTOs (no arrays/requests)

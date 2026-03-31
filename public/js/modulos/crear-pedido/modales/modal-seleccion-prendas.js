@@ -513,7 +513,7 @@ function renderizarItemsCotizacionEnDOM() {
                 htmlVariaciones += `<li style="color: #374151;"> Bolsillos: ${variaciones.obs_bolsillos}</li>`;
             }
             if (variaciones.aplica_broche && variaciones.obs_broche) {
-                htmlVariaciones += `<li style="color: #374151;">🔗 Broche: ${variaciones.obs_broche}</li>`;
+                htmlVariaciones += `<li style="color: #374151;"> Broche: ${variaciones.obs_broche}</li>`;
             }
             if (variaciones.tiene_reflectivo && variaciones.obs_reflectivo) {
                 htmlVariaciones += `<li style="color: #374151;">✨ Reflectivo: ${variaciones.obs_reflectivo}</li>`;

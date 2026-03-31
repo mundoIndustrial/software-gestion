@@ -84,7 +84,7 @@ window.universalImagenesStorage = {
         
         const cantidad = this._storage[tipo][indice]?.length || 0;
         this._storage[tipo][indice] = [];
-        console.log(`[UniversalStorage] 🧹 Todas las imágenes eliminadas: ${tipo}[${indice}] - (${cantidad} imágenes)`);
+        console.log(`[UniversalStorage]  Todas las imágenes eliminadas: ${tipo}[${indice}] - (${cantidad} imágenes)`);
     },
     
     /**
@@ -100,7 +100,7 @@ window.universalImagenesStorage = {
         }
         
         const imagenes = this._storage[tipo][indice] || [];
-        console.log(`[UniversalStorage] 📸 Obteniendo imágenes: ${tipo}[${indice}] - ${imagenes.length} imágenes`);
+        console.log(`[UniversalStorage]  Obteniendo imágenes: ${tipo}[${indice}] - ${imagenes.length} imágenes`);
         return imagenes;
     },
     
@@ -136,7 +136,7 @@ window.universalImagenesStorage = {
         
         const totalImagenes = Object.values(this._storage[tipo]).reduce((total, arr) => total + arr.length, 0);
         this._storage[tipo] = {};
-        console.log(`[UniversalStorage] 🧹 Tipo '${tipo}' limpiado - ${totalImagenes} imágenes eliminadas`);
+        console.log(`[UniversalStorage]  Tipo '${tipo}' limpiado - ${totalImagenes} imágenes eliminadas`);
     },
     
     /**
@@ -154,7 +154,7 @@ window.universalImagenesStorage = {
             procesos: {}
         };
         
-        console.log(`[UniversalStorage] 🧹 Todo el storage limpiado:`, totalPorTipo);
+        console.log(`[UniversalStorage]  Todo el storage limpiado:`, totalPorTipo);
     },
     
     /**

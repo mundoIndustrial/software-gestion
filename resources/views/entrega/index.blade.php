@@ -54,7 +54,7 @@
                     <div class="stat-label">Prendas Diferentes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="costura-costureros">0</div>
                     <div class="stat-label">Costureros Activos</div>
                 </div>

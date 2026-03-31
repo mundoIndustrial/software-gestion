@@ -277,7 +277,7 @@ const state = app.getState();
 
 ---
 
-## 🔗 Relaciones entre Módulos
+##  Relaciones entre Módulos
 
 ```
 ┌─────────────────────────────────────────────────────┐

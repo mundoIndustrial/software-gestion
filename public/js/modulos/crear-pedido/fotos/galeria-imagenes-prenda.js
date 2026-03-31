@@ -10,11 +10,11 @@
  * @param {number} indiceInicial - Índice inicial a mostrar
  */
 window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
-    console.log('🖼️ [galeria-imagenes-prenda] ABRIENDO GALERÍA...');
+    console.log(' [galeria-imagenes-prenda] ABRIENDO GALERÍA...');
     console.log('   - imagenes recibidas:', imagenes?.length || 0);
     console.log('   - prendaIndex:', prendaIndex);
     console.log('   - indiceInicial:', indiceInicial);
-    console.log('🖼️ [galeria-imagenes-prenda] Dimensiones de pantalla:', {
+    console.log(' [galeria-imagenes-prenda] Dimensiones de pantalla:', {
         vw: window.innerWidth,
         vh: window.innerHeight,
         '98vw': window.innerWidth * 0.98,
@@ -175,20 +175,20 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     imgModal.src = imagenesConBlobUrl[indiceActual].blobUrl;
     imgModal.style.cssText = 'width: 98vw; height: 90vh; max-width: 98vw; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
     
-    console.log('🖼️ [galeria-imagenes-prenda] CSS aplicado a imgModal:', imgModal.style.cssText);
-    console.log('🖼️ [galeria-imagenes-prenda] tamano calculado:', {
+    console.log(' [galeria-imagenes-prenda] CSS aplicado a imgModal:', imgModal.style.cssText);
+    console.log(' [galeria-imagenes-prenda] tamano calculado:', {
         'width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
         'height': '90vh = ' + (window.innerHeight * 0.90) + 'px',
         'max-width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
         'max-height': '90vh = ' + (window.innerHeight * 0.90) + 'px'
     });
-    console.log('🖼️ [galeria-imagenes-prenda] Image src:', imgModal.src);
+    console.log(' [galeria-imagenes-prenda] Image src:', imgModal.src);
     
     imgContainer.appendChild(imgModal);
     
     // Agregar evento load para verificar dimensiones reales
     imgModal.onload = function() {
-        console.log('🖼️ [galeria-imagenes-prenda] Imagen cargada - Dimensiones reales:', {
+        console.log(' [galeria-imagenes-prenda] Imagen cargada - Dimensiones reales:', {
             naturalWidth: this.naturalWidth,
             naturalHeight: this.naturalHeight,
             displayWidth: this.offsetWidth,
@@ -201,7 +201,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     imgModal.onerror = function() {
         // Solo reportar error si hay una URL real (no vacía o la URL de la página)
         if (this.src && !this.src.includes('/crear-nuevo') && !this.src.endsWith('/')) {
-            console.error('🖼️ [galeria-imagenes-prenda] Error al cargar imagen:', this.src);
+            console.error(' [galeria-imagenes-prenda] Error al cargar imagen:', this.src);
         }
     };
     
@@ -349,7 +349,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                     console.log('🔒 [galeria] Imagen marcada para eliminación del pedido (cotización protegida):', imagenEliminadaDatos);
                 } else {
                     // Prenda normal: eliminar directamente
-                    // 🔴 IMPORTANTE: marcar para eliminación diferida al guardar
+                    //  IMPORTANTE: marcar para eliminación diferida al guardar
                     // (el backend elimina desde imagenes_a_eliminar)
                     const imagenId = imagenEliminadaDatos?.id || null;
                     if (imagenId) {
@@ -365,9 +365,9 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                         };
 
                         window.imagenesAEliminar.push(payload);
-                        console.log('📝 [galeria] Imagen marcada para eliminación al guardar (prenda):', payload);
+                        console.log(' [galeria] Imagen marcada para eliminación al guardar (prenda):', payload);
                     } else {
-                        console.warn('📝 [galeria] Imagen eliminada sin id (no se puede eliminar en BD al guardar):', imagenEliminadaDatos);
+                        console.warn(' [galeria] Imagen eliminada sin id (no se puede eliminar en BD al guardar):', imagenEliminadaDatos);
                     }
 
                     prenda.imagenes.splice(indiceActual, 1);
@@ -442,7 +442,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
             imgModal.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // imagen transparente 1x1
             imgContainer.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 2rem;">
-                    <div style="font-size: 4rem; color: rgba(255,255,255,0.3);">📸</div>
+                    <div style="font-size: 4rem; color: rgba(255,255,255,0.3);"></div>
                     <div style="text-align: center;">
                         <div style="color: white; font-size: 1.2rem; font-weight: 500;">Sin imágenes</div>
                         <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 0.5rem;">Todas las imágenes han sido eliminadas</div>

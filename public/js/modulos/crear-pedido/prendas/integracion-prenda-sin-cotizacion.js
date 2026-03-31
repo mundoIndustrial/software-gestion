@@ -212,7 +212,7 @@ window.obtenerResumenPrendasTipoPrendaSinCotizacion = function() {
                 <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
                     <div> Tallas: ${tallas}</div>
                     <div> Telas: ${telas}</div>
-                    <div>📸 Fotos: ${fotos}</div>
+                    <div> Fotos: ${fotos}</div>
                 </div>
             </div>
         `;

@@ -77,7 +77,7 @@ window.diagnosticarSistema = function() {
 
 // Función para probar el toggle
 window.pruebaToggle = function() {
-    console.log('\n%c🎯 PRUEBA DE TOGGLE MANUAL:', 'color: #fc6500; font-weight: bold; font-size: 12px;');
+    console.log('\n%c PRUEBA DE TOGGLE MANUAL:', 'color: #fc6500; font-weight: bold; font-size: 12px;');
     
     const vistaTablaTelas = document.getElementById('vista-tabla-telas');
     const vistaAsignacion = document.getElementById('vista-asignacion-colores');
@@ -106,7 +106,7 @@ window.pruebaToggle = function() {
 
 // Función para hacer toggle manual directo
 window.hacerToggleManual = function() {
-    console.log('\n%c🎯 TOGGLE MANUAL DIRECTO:', 'color: #fc6500; font-weight: bold;');
+    console.log('\n%c TOGGLE MANUAL DIRECTO:', 'color: #fc6500; font-weight: bold;');
     
     const vistaTablaTelas = document.getElementById('vista-tabla-telas');
     const vistaAsignacion = document.getElementById('vista-asignacion-colores');

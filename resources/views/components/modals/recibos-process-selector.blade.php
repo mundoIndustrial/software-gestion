@@ -383,7 +383,7 @@
     };
     
     // DEBUG: Mostrar roles en consola
-    console.log('🔐 User Roles:', window.selectorRecibosState.usuarioRoles);
+    console.log(' User Roles:', window.selectorRecibosState.usuarioRoles);
     window.activarReciboCosturaBase = async function(prendaId) {
         try {
             const pedidoId = window.selectorRecibosState?.pedidoId;
@@ -433,7 +433,7 @@
         }
     };
 
-    console.log('🔐 esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
+    console.log(' esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
     
     // Contadores de clics para debugging
     let prendaAccordionClickCount = 0;

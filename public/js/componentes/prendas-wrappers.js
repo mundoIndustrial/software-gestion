@@ -69,7 +69,7 @@ window.cerrarModalPrendaNueva = function() {
 
 window.manejarImagenesPrenda = function(input) {
     if (input.files && input.files.length > 0) {
-        console.log('📸 Archivo recibido:', input.files[0].name);
+        console.log(' Archivo recibido:', input.files[0].name);
         // Lógica básica de manejo de imágenes
         const preview = document.getElementById('nueva-prenda-foto-preview');
         if (preview) {

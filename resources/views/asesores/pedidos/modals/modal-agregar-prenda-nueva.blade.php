@@ -56,7 +56,7 @@
                     <!-- COLUMNA DERECHA: Fotos de la Prenda -->
                     <div class="foto-panel" id="panel-fotos-prenda" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1rem; background: #f0f7ff;">
                         <label for="nueva-prenda-foto-input" class="foto-panel-label" style="color: #0066cc;">
-                            <span class="material-symbols-rounded">photo_camera</span>📸 FOTOS DE PRENDA
+                            <span class="material-symbols-rounded">photo_camera</span> FOTOS DE PRENDA
                         </label>
                         
                         <!-- Imagen principal preview -->
@@ -1103,7 +1103,7 @@ document.addEventListener('paste', function(event) {
             const refInput = document.getElementById('simple-referencia-input');
             // const obsInput = document.getElementById('simple-observaciones-input');
 
-            // 🔴 FIX: Buscar 'nombre_tela' primero (desde cotización), luego 'tela' (desde creación nueva)
+            //  FIX: Buscar 'nombre_tela' primero (desde cotización), luego 'tela' (desde creación nueva)
             if (telaInput) telaInput.value = (t.nombre_tela || t.tela || '').toUpperCase();
             if (colorInput) colorInput.value = (t.color || t.color_nombre || '').toUpperCase();
             if (refInput) refInput.value = (t.referencia || '').toUpperCase();
@@ -1293,7 +1293,7 @@ document.addEventListener('paste', function(event) {
 
         if (isEdit) {
             // --- Modo Edición: actualizar registro existente ---
-            // 🔴 FIX: Guardar en AMBAS propiedades (tela y nombre_tela) para compatibilidad
+            //  FIX: Guardar en AMBAS propiedades (tela y nombre_tela) para compatibilidad
             window.telasCreacion[editIdx].tela = tela;
             window.telasCreacion[editIdx].nombre_tela = tela;
             window.telasCreacion[editIdx].color = color;
@@ -1412,13 +1412,13 @@ document.addEventListener('paste', function(event) {
                 if (btnLimpiarAsignaciones) {
                     btnLimpiarAsignaciones.addEventListener('click', function(e) {
                         e.preventDefault();
-                        // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                        //  NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
                         const asesorWrapper = document.querySelector('.asesores-wrapper');
                         if (asesorWrapper) {
                             asesorWrapper.removeAttribute('aria-hidden');
                         }
                         
-                        // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                        //  NUEVO: Remover cualquier overlay existente antes de abrir el modal
                         const overlayExistente = document.getElementById('overlay-confirmar-limpiar');
                         if (overlayExistente) {
                             overlayExistente.remove();
@@ -1452,14 +1452,14 @@ document.addEventListener('paste', function(event) {
                             const ov = document.getElementById('overlay-confirmar-limpiar');
                             if (ov) ov.remove();
                             
-                            // 🔴 NUEVO: Remover aria-hidden del modal cuando se cierre
+                            //  NUEVO: Remover aria-hidden del modal cuando se cierre
                             if (modalLimpiar) {
                                 modalLimpiar.removeAttribute('aria-hidden');
                             }
                         });
                     }
                     
-                    // 🔴 NUEVO: Listener para remover aria-hidden cuando se cierre el modal
+                    //  NUEVO: Listener para remover aria-hidden cuando se cierre el modal
                     jQuery('#modal-confirmar-limpiar').on('hidden.bs.modal', function() {
                         const asesorWrapper = document.querySelector('.asesores-wrapper');
                         if (asesorWrapper) {
@@ -1490,13 +1490,13 @@ document.addEventListener('paste', function(event) {
                                 detalleEl.textContent = `Color: ${colorNombre} — Clave: ${clave}`;
                             }
                             
-                            // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                            //  NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
                             const asesorWrapper = document.querySelector('.asesores-wrapper');
                             if (asesorWrapper) {
                                 asesorWrapper.removeAttribute('aria-hidden');
                             }
                             
-                            // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                            //  NUEVO: Remover cualquier overlay existente antes de abrir el modal
                             const overlayExistente = document.getElementById('overlay-confirmar-eliminar');
                             if (overlayExistente) {
                                 overlayExistente.remove();
@@ -1547,10 +1547,10 @@ document.addEventListener('paste', function(event) {
                                         console.warn('[TablaResumen] No se pudo sincronizar eliminación con servidor:', e);
                                     }
                                     
-                                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                                    //  FIX: Si no quedan más asignaciones, limpiar estado completo
                                     const asignacionesRestantes = Object.keys(asignaciones);
                                     if (asignacionesRestantes.length === 0) {
-                                        console.log('[TablaResumen] 🧹 No quedan asignaciones, limpiando estado...');
+                                        console.log('[TablaResumen]  No quedan asignaciones, limpiando estado...');
                                         
                                         // Limpiar tallasRelacionales para evitar que crearTarjetaGenero recree tarjetas
                                         if (window.tallasRelacionales) {

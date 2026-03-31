@@ -463,7 +463,7 @@ class GestionItemsUI {
                     this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
                 }
             } else {
-                // 🔴 CRÍTICO: RESETEAR window.telasCreacion para NUEVA PRENDA (modo creación)
+                //  CRÍTICO: RESETEAR window.telasCreacion para NUEVA PRENDA (modo creación)
                 // Esto evita que telas de prenda anterior contaminen la nueva prenda
                 console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando window.telasCreacion para NUEVA prenda');
                 console.log('[abrirModalAgregarPrendaNueva]   ANTES:', window.telasCreacion);
@@ -568,7 +568,7 @@ class GestionItemsUI {
         try {
             //  🎬 PUNTO DE PARTIDA: Registrar estado COMPLETO de storages al hacer click "Guardar Cambios"
             console.log('\n\n═══════════════════════════════════════════════════════════════');
-            console.log('🔴 [agregarPrendaNueva] ⏱️ CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
+            console.log(' [agregarPrendaNueva] ⏱️ CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
             console.log('═══════════════════════════════════════════════════════════════');
             
             // ESTADO DE STORAGES ANTES DE PROCESAR
@@ -593,7 +593,7 @@ class GestionItemsUI {
                 tela: estadoTelasCreacion[0].tela || estadoTelasCreacion[0].nombre_tela || '',
                 color: estadoTelasCreacion[0].color || estadoTelasCreacion[0].color_nombre || ''
             } : null);
-            console.log('[agregarPrendaNueva]   ⚙️ procesosSeleccionados types:', Object.keys(estadoProcesos));
+            console.log('[agregarPrendaNueva]    procesosSeleccionados types:', Object.keys(estadoProcesos));
             console.log('[agregarPrendaNueva]      procesosSeleccionados imagenes:', 
                 Object.entries(estadoProcesos).map(([tipo, proc]) => ({
                     tipo: tipo,
@@ -689,7 +689,7 @@ class GestionItemsUI {
             // Solo se eliminarán cuando se guarden los cambios
             if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
                 prendaData.imagenes_a_eliminar = window.imagenesAEliminar;
-                console.log('[agregarPrendaNueva] 📝 Imágenes marcadas para eliminación:', {
+                console.log('[agregarPrendaNueva]  Imágenes marcadas para eliminación:', {
                     cantidad: window.imagenesAEliminar.length,
                     ids: window.imagenesAEliminar
                 });
@@ -699,7 +699,7 @@ class GestionItemsUI {
             console.log('\n═══════════════════════════════════════════════════════════════');
             console.log('[agregarPrendaNueva]  DATOS RECOPILADOS POR prendaFormCollector:');
             console.log('═══════════════════════════════════════════════════════════════');
-            console.log('[agregarPrendaNueva]   📸 prendaData.imagenes:', prendaData?.imagenes?.length || 0);
+            console.log('[agregarPrendaNueva]    prendaData.imagenes:', prendaData?.imagenes?.length || 0);
             console.log('[agregarPrendaNueva]      Contenido:', prendaData?.imagenes?.map(img => ({
                 tipo: typeof img,
                 previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
@@ -718,7 +718,7 @@ class GestionItemsUI {
                 console.log('[agregarPrendaNueva]        - imagenes (debe ir vacio en fuente unica):', primeraTela.imagenes?.length || 0);
             }
             
-            console.log('[agregarPrendaNueva]   ⚙️ prendaData.procesos types:', Object.keys(prendaData?.procesos || {}));
+            console.log('[agregarPrendaNueva]    prendaData.procesos types:', Object.keys(prendaData?.procesos || {}));
             console.log('[agregarPrendaNueva]      procesos imagenes:', Object.entries(prendaData?.procesos || {}).map(([tipo, proc]) => ({
                 tipo: tipo,
                 tieneImagenes: proc?.imagenes?.length || 0
@@ -830,7 +830,7 @@ class GestionItemsUI {
             
             // Determinar si vamos a editar o crear nueva
             const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
-            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? ' EDITAR' : ' AGREGAR NUEVA');
+            console.log('[guardarPrenda]  ACCIÓN A EJECUTAR:', vamosAEditar ? ' EDITAR' : ' AGREGAR NUEVA');
             
             if (vamosAEditar) {
 
@@ -1336,7 +1336,7 @@ class GestionItemsUI {
         console.log('[mostrarModalExito] ¿datosPedidoCreado?', this.datosPedidoCreado);
         
         // LIMPIAR asignaciones de colores tras crear el pedido
-        console.log('[mostrarModalExito] 🧹 LIMPIANDO asignaciones de colores tras creación exitosa...');
+        console.log('[mostrarModalExito]  LIMPIANDO asignaciones de colores tras creación exitosa...');
         if (typeof limpiarAsignacionesColores === 'function') {
             limpiarAsignacionesColores();
             console.log('[mostrarModalExito] ✓ Asignaciones limpiadas');
@@ -1363,7 +1363,7 @@ class GestionItemsUI {
         console.log('[mostrarModalExito] ¿btnVolverAPedidos encontrado?', !!btnVolverAPedidos);
         
         if (btnVolverAPedidos) {
-            console.log('[mostrarModalExito] 🔗 Asignando onclick');
+            console.log('[mostrarModalExito]  Asignando onclick');
             btnVolverAPedidos.onclick = () => {
                 console.log('[mostrarModalExito] 👉 Botón presionado, redirigiendo...');
                 window.location.href = '/asesores/pedidos';

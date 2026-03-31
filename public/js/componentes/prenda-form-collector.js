@@ -53,7 +53,7 @@ class PrendaFormCollector {
             // ============================================
             const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
-            console.log('[prenda-form-collector] 🖼️ PROCESANDO IMÁGENES DE PRENDA:', {
+            console.log('[prenda-form-collector]  PROCESANDO IMÁGENES DE PRENDA:', {
                 imagenesTemporales_length: imagenesTemporales.length,
                 imagenesTemporales_type: Array.isArray(imagenesTemporales) ? 'array' : typeof imagenesTemporales,
                 primeraprimeraDiagnostico: imagenesTemporales[0] ? {
@@ -67,7 +67,7 @@ class PrendaFormCollector {
             // Procesar imágenes: nuevas File objects + rutas de BD (NUNCA blob URLs que se revocaran)
             const imagenesCopia = imagenesTemporales.map((img, imgIdx) => {
                 console.log(`[prenda-form-collector]  PROCESANDO IMAGEN ${imgIdx}:`);
-                console.log(`[prenda-form-collector]   🔴 CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
+                console.log(`[prenda-form-collector]    CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
                     previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
                     url: img?.url?.substring ? img.url.substring(0, 80) : img?.url,
                     nombre: img?.nombre,
@@ -90,7 +90,7 @@ class PrendaFormCollector {
                 // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                 if (img && img.file instanceof File) {
                     console.log(`[prenda-form-collector]    DECISIÓN: Tiene .file que es File object, RETORNANDO`);
-                    // 🔴 CRÍTICO: Guardar el File object CON el metadata, no solo el File
+                    //  CRÍTICO: Guardar el File object CON el metadata, no solo el File
                     // Esto asegura que cuando se recupere la imagen, tenga toda la info
                     return {
                         file: img.file,                    // ← El File object real
@@ -179,7 +179,7 @@ class PrendaFormCollector {
                 console.log(`[prenda-form-collector]    DECISIÓN: Retornando tal cual`);
                 return img;
             }).filter((img, filterIdx) => {
-                // 🔴 CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
+                //  CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
                 // Una imagen válida DEBE tener una de estas:
                 // 1. Es un File object
                 // 2. Tiene previewUrl NO VACÍO
@@ -216,7 +216,7 @@ class PrendaFormCollector {
                 return esValido;
             });
             
-            console.log('[prenda-form-collector] 🖼️ IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
+            console.log('[prenda-form-collector]  IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
                 cantidad: imagenesCopia.length,
                 detalles: imagenesCopia.map(img => ({
                     tipo: img instanceof File ? 'File' : typeof img,
@@ -263,14 +263,14 @@ class PrendaFormCollector {
                                 ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
                                 tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
                                 imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
-                                // 🔴 CRÍTICO: Preservar Files de fotos generales (modo general)
+                                //  CRÍTICO: Preservar Files de fotos generales (modo general)
                                 fotosGeneralesFiles: Array.isArray(proceso.datos.fotosGeneralesFiles) ? [...proceso.datos.fotosGeneralesFiles] : [],
                                 imagenesFiles: Array.isArray(proceso.datos.imagenesFiles) ? [...proceso.datos.imagenesFiles] : [],
-                                // 🔴 CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
+                                //  CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
                                 datosExtendidos: proceso.datos.datosExtendidos ? JSON.parse(JSON.stringify(proceso.datos.datosExtendidos)) : {}
                             };
                             
-                            // 🔴 Restaurar imagenesFiles arrays que se pierden en JSON.stringify
+                            //  Restaurar imagenesFiles arrays que se pierden en JSON.stringify
                             // JSON.stringify pierde referencias a File objects, pero imagenesFiles debería estar
                             // Copiar arrays de Files directamente (NO mediante JSON)
                             if (proceso.datos.datosExtendidos && typeof proceso.datos.datosExtendidos === 'object') {
@@ -364,8 +364,8 @@ class PrendaFormCollector {
                 variantes: {}
             };
             
-            // 🔴 LOG CRÍTICO INMEDIATO: Verificar que prendaData.imagenes se asignó correctamente
-            console.log('[prenda-form-collector] 🔴 CRÍTICO - prendaData.imagenes asignado JUSTO DESPUÉS DE CREAR prendaData:', {
+            //  LOG CRÍTICO INMEDIATO: Verificar que prendaData.imagenes se asignó correctamente
+            console.log('[prenda-form-collector]  CRÍTICO - prendaData.imagenes asignado JUSTO DESPUÉS DE CREAR prendaData:', {
                 imagenesCopia_length: imagenesCopia.length,
                 prendaData_imagenes_length: prendaData.imagenes?.length || 0,
                 sonLaMismaReferencia: prendaData.imagenes === imagenesCopia,

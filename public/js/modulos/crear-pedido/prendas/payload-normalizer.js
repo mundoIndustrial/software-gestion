@@ -320,7 +320,7 @@
             if (pedidoNormalizado && Array.isArray(pedidoNormalizado.prendas)) {
                 pedidoNormalizado.prendas.forEach(function(prenda, prendaIdx) {
                     if (prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
-                        console.log('[PayloadNormalizer] 📸 Encontradas asignaciones de colores para prenda ' + prendaIdx, {
+                        console.log('[PayloadNormalizer]  Encontradas asignaciones de colores para prenda ' + prendaIdx, {
                             asignaciones_count: Object.keys(prenda.asignacionesColoresPorTalla).length,
                             coloresPorTallaExists: !!window.ColoresPorTalla,
                             hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function'

@@ -9,7 +9,7 @@ export class Formatters {
      * Formato especializado para recibos de costura
      */
     static construirDescripcionCostura(prenda) {
-        console.log('[Formatters.construirDescripcionCostura] 🎯 INPUT recibido:', prenda);
+        console.log('[Formatters.construirDescripcionCostura]  INPUT recibido:', prenda);
         console.log('[Formatters.construirDescripcionCostura] nombre:', prenda?.nombre);
         console.log('[Formatters.construirDescripcionCostura] tela:', prenda?.tela);
         console.log('[Formatters.construirDescripcionCostura] color:', prenda?.color);
@@ -33,7 +33,7 @@ export class Formatters {
                 console.log(`[Formatters]  Variante ${idx} - broche_obs:`, v.broche_obs);
                 console.log(`[Formatters]  Variante ${idx} - broche:`, v.broche);
                 console.log(`[Formatters]  Variante ${idx} - boton_obs:`, v.boton_obs);
-                // 🎯 DEBUG: Mostrar todos los campos disponibles
+                //  DEBUG: Mostrar todos los campos disponibles
                 console.log(`[Formatters] 🔑 Todas las claves en Variante ${idx}:`, Object.keys(v));
             });
         }
@@ -239,7 +239,7 @@ export class Formatters {
             // Render normal de tallas (flujo anterior)
             console.log('[Formatters]  No hay sobremedida. Render normal de tallas...');
             console.log('[Formatters]  Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
-            console.log('[Formatters]  🎨 talla_colores disponible:', !!prenda.talla_colores, 'es array:', Array.isArray(prenda.talla_colores));
+            console.log('[Formatters]  talla_colores disponible:', !!prenda.talla_colores, 'es array:', Array.isArray(prenda.talla_colores));
 
             // Determinar qué estructura de tallas usar (prioridad: talla_colores > tallas)
             let tallasParaRenderizar = null;
@@ -298,7 +298,7 @@ export class Formatters {
             
             const procesoReflectivo = prenda.procesos.find(p => {
                 const nombreProceso = (p.tipo_proceso || '').toLowerCase();
-                console.log('[Formatters] 🔎 Analizando proceso:', {
+                console.log('[Formatters]  Analizando proceso:', {
                     tipo_proceso: p.tipo_proceso,
                     nombreProceso,
                     esReflectivo: nombreProceso === 'reflectivo'
@@ -382,12 +382,12 @@ export class Formatters {
                     if (esCasoEspecifico) {
                         // Comparación simplificada para el caso específico
                         tallasIguales = this._comparacionSimpleTallas(tallasAMostrar, prenda.tallas);
-                        console.log('[Formatters] 🎯 Usando comparación simplificada para caso específico');
+                        console.log('[Formatters]  Usando comparación simplificada para caso específico');
                     } else {
                         tallasIguales = this._sonTallasIguales(tallasAMostrar, prenda.tallas);
                     }
                     
-                    console.log('[Formatters] 🎯 Resultado comparación tallas:', {
+                    console.log('[Formatters]  Resultado comparación tallas:', {
                         sonIguales: tallasIguales,
                         mostrarTallas: !tallasIguales,
                         esCasoEspecifico
@@ -558,11 +558,11 @@ export class Formatters {
         // 5. Tallas - ENRIQUECIDAS CON COLORES si disponibles
         let tallasAMostrar = proceso.tallas || {};
         
-        // 🎨 NUEVO: Si el proceso tiene talla_colores (colores por talla), transformar la estructura
+        // NUEVO: Si el proceso tiene talla_colores (colores por talla), transformar la estructura
         if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
-            console.log('[Formatters.construirDescripcionProceso] 🎨 Transformando talla_colores a estructura enriquecida');
+            console.log('[Formatters.construirDescripcionProceso] Transformando talla_colores a estructura enriquecida');
             tallasAMostrar = this._transformarTallaColoresAEstructura(proceso.talla_colores);
-            console.log('[Formatters.construirDescripcionProceso] 🎨 Estructura enriquecida:', tallasAMostrar);
+            console.log('[Formatters.construirDescripcionProceso] Estructura enriquecida:', tallasAMostrar);
         }
         
         if (tallasAMostrar && Object.keys(tallasAMostrar).length > 0) {
@@ -858,7 +858,7 @@ export class Formatters {
      * Comparación simplificada de tallas (solo talla y cantidad, ignorar colores)
      */
     static _comparacionSimpleTallas(tallas1, tallas2) {
-        console.log('[Formatters._comparacionSimpleTallas] 🎯 Comparación simple:', { tallas1, tallas2 });
+        console.log('[Formatters._comparacionSimpleTallas]  Comparación simple:', { tallas1, tallas2 });
         
         const extraerTallasSimple = (tallas) => {
             const resultado = { dama: {}, caballero: {} };
@@ -1017,16 +1017,16 @@ export class Formatters {
      * Agregar tallas al formato de forma reutilizable
      */
     static _agregarTallasFormato(lineas, tallas, generoDefault = 'dama', prenda = null) {
-        console.log('[Formatters._agregarTallasFormato] 🎯 INPUT:', { tallas, generoDefault });
-        console.log('[Formatters._agregarTallasFormato] 🎯 Tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
+        console.log('[Formatters._agregarTallasFormato]  INPUT:', { tallas, generoDefault });
+        console.log('[Formatters._agregarTallasFormato]  Tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
         
         // Si tallas es un string JSON, parsearlo primero
         if (typeof tallas === 'string' && tallas.trim()) {
             try {
-                console.log('[Formatters._agregarTallasFormato] 🔧 Parseando tallas desde string JSON...');
+                console.log('[Formatters._agregarTallasFormato]  Parseando tallas desde string JSON...');
                 tallas = JSON.parse(tallas);
                 console.log('[Formatters._agregarTallasFormato]  Tallas parseadas:', tallas);
-                console.log('[Formatters._agregarTallasFormato] 🎯 Nuevo tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
+                console.log('[Formatters._agregarTallasFormato]  Nuevo tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
             } catch (error) {
                 console.error('[Formatters._agregarTallasFormato]  Error parseando tallas:', error);
                 tallas = {};
@@ -1326,7 +1326,7 @@ export class Formatters {
      * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
      */
     static _transformarTallaColoresAEstructura(tallasColoresArray) {
-        console.log('[Formatters._transformarTallaColoresAEstructura] 🎨 INPUT:', tallasColoresArray);
+        console.log('[Formatters._transformarTallaColoresAEstructura] INPUT:', tallasColoresArray);
         
         if (!Array.isArray(tallasColoresArray) || tallasColoresArray.length === 0) {
             console.warn('[Formatters._transformarTallaColoresAEstructura]  Array vacío o inválido');

@@ -165,7 +165,7 @@
                             <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-                            <button onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)" 
+                            <button onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)"
                                 style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
                                 onmouseover="this.style.background='#7c3aed'; this.style.transform='scale(1.05)';"
                                 onmouseout="this.style.background='#8b5cf6'; this.style.transform='scale(1)';">
@@ -192,7 +192,7 @@
                                 onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
                                 ＋ Agregar EPP
                             </button>
-                            <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 
+                            <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');"
                                 style="background: #ef4444; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0;"
                                 onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
                                 onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
@@ -308,9 +308,9 @@
         <div style="margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <label style="color: #374151; font-weight: 600;">Imágenes:</label>
-                <button type="button" onclick="abrirSelectorImagenesEPP()" 
+                <button type="button" onclick="abrirSelectorImagenesEPP()"
                         style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;"
-                        onmouseover="this.style.background='#2563eb'" 
+                        onmouseover="this.style.background='#2563eb'"
                         onmouseout="this.style.background='#3b82f6'">
                     📷 Agregar Imágenes
                 </button>
@@ -635,14 +635,14 @@
             
             // Procesar agregaciones de nuevas imágenes
             if (cambios.imagenesAAgregar && cambios.imagenesAAgregar.length > 0) {
-                console.log('📸 [Modal Novedad] Procesando agregación de imágenes:', cambios.imagenesAAgregar);
+                console.log(' [Modal Novedad] Procesando agregación de imágenes:', cambios.imagenesAAgregar);
                 
                 const formData = new FormData();
                 let archivosAgregados = 0;
                 
                 cambios.imagenesAAgregar.forEach((imagen, index) => {
                     if (imagen.file) {
-                        console.log(`📸 Agregando archivo ${index}:`, {
+                        console.log(` Agregando archivo ${index}:`, {
                             nombre: imagen.nombre,
                             size: imagen.size,
                             type: imagen.type,
@@ -664,7 +664,7 @@
                     }
                 });
                 
-                console.log('📸 FormData creado:', {
+                console.log(' FormData creado:', {
                     archivosCount: archivosAgregados,
                     formDataEntries: Array.from(formData.entries())
                 });
@@ -932,7 +932,7 @@
             }
         });
         
-        console.log('📸 [confirmarSeleccionImagenes] Imágenes para agregar:', imagenesAAgregar);
+        console.log(' [confirmarSeleccionImagenes] Imágenes para agregar:', imagenesAAgregar);
         actualizarGaleriaImagenes();
         cerrarModalSelectorImagenes();
     }

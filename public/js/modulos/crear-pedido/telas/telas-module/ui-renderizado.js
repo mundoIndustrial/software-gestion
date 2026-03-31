@@ -57,7 +57,7 @@ window.actualizarTablaTelas = function() {
     
     // Eliminar SOLO las filas de telas (las que tienen onclick="eliminarTela()")
     // NO eliminar la fila de inputs
-    console.log('[actualizarTablaTelas] 🧹 Eliminando filas antiguas de telas (NO inputs)...');
+    console.log('[actualizarTablaTelas]  Eliminando filas antiguas de telas (NO inputs)...');
     let filasEliminadas = 0;
     todasLasFilas.forEach((fila, idx) => {
         if (fila !== filaInputs) {
@@ -83,7 +83,7 @@ window.actualizarTablaTelas = function() {
         `;
         fragment.appendChild(tr);
     } else {
-        console.log('[actualizarTablaTelas] 🎨 Renderizando ' + telas.length + ' tela(s)...');
+        console.log('[actualizarTablaTelas] Renderizando ' + telas.length + ' tela(s)...');
         // Renderizar cada tela
         telas.forEach((tela, index) => {
             console.log(`[actualizarTablaTelas]   → Creando fila para tela ${index}: ${tela.color}/${tela.tela}`);
@@ -122,7 +122,7 @@ function crearFilaTela(tela, index) {
     // Procesar imágenes para mostrar en la tabla
     let imagenHTML = '';
     if (tela.imagenes && tela.imagenes.length > 0) {
-        console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Procesando ${tela.imagenes.length} imágenes`);
+        console.log(`[actualizarTablaTelas]  [Tela ${index}] Procesando ${tela.imagenes.length} imágenes`);
         
         // Usar directamente las URLs de preview que ya existen
         const imagenConBlobUrl = tela.imagenes.map(img => {
@@ -132,7 +132,7 @@ function crearFilaTela(tela, index) {
                 return { file: img, previewUrl: blobUrl, nombre: img.name };
             }
             
-            // 🔴 PRIORIDAD: Si tiene File object, SIEMPRE crear nueva blob URL
+            //  PRIORIDAD: Si tiene File object, SIEMPRE crear nueva blob URL
             // (la previewUrl puede ser una blob URL stale/revocada)
             if (img.file && img.file instanceof File) {
                 const blobUrl = URL.createObjectURL(img.file);
@@ -160,7 +160,7 @@ function crearFilaTela(tela, index) {
             return { ...img, previewUrl: null, invalida: true };
         }).filter(img => !img.invalida); // Filtrar imágenes inválidas
         
-        console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
+        console.log(`[actualizarTablaTelas]  [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
         
         if (imagenConBlobUrl.length === 0) {
             console.warn(`[actualizarTablaTelas]  No hay imágenes válidas para la tela ${index}`);
@@ -180,7 +180,7 @@ function crearFilaTela(tela, index) {
         imgElement.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[actualizarTablaTelas] 🖼️ Click en imagen de tela', { 
+            console.log('[actualizarTablaTelas]  Click en imagen de tela', { 
                 index: index, 
                 imagen: imagenConBlobUrl[0].name,
                 totalImagenes: imagenConBlobUrl.length

@@ -142,7 +142,7 @@ class ItemAPIService {
             // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
             if (typeof window.prepararDatosEppParaFormData === 'function') {
                 datosParaEnvio = window.prepararDatosEppParaFormData([pedidoData]);
-                console.debug('[validarPedido] 📸 Usando prepararDatosEppParaFormData para EPPs');
+                console.debug('[validarPedido]  Usando prepararDatosEppParaFormData para EPPs');
             } else {
                 // Fallback para prendas (sin imágenes)
                 datosParaEnvio = {
@@ -730,7 +730,7 @@ class ItemAPIService {
                 // 1. IMÁGENES DE PRENDA
                 // ==========================================
                 if (Array.isArray(item.imagenes)) {
-                    console.log(`[extraerFiles] 📸 Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
+                    console.log(`[extraerFiles]  Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
                         tiene_ruta: !!img.ruta,
                         ruta: img.ruta,
                         uid: img.uid,
@@ -918,7 +918,7 @@ class ItemAPIService {
                                     uid: file.uid || null
                                 });
                                 estructura.archivosMap[formdataKey] = file;
-                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].fotosGeneralesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].fotosGeneralesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
                                 imagenIndex++;
                             }
                         });
@@ -947,7 +947,7 @@ class ItemAPIService {
                                     uid: file.uid || null
                                 });
                                 estructura.archivosMap[formdataKey] = file;
-                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].imagenesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].imagenesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
                                 imagenIndex++;
                             }
                         });
@@ -1442,7 +1442,7 @@ class ItemAPIService {
     limpiarFileRegistry() {
         const cantidadAntes = this.fileRegistry.size;
         this.fileRegistry.clear();
-        console.log(`[limpiarFileRegistry] 🧹 Registry limpiado: ${cantidadAntes} archivos liberados`);
+        console.log(`[limpiarFileRegistry]  Registry limpiado: ${cantidadAntes} archivos liberados`);
     }
 }
 

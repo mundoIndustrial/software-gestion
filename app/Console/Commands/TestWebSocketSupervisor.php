@@ -61,7 +61,7 @@ class TestWebSocketSupervisor extends Command
             ]);
             
             $this->info(' Evento OrdenUpdated disparado correctamente');
-            $this->info('📝 Revisa la consola del navegador en supervisor-pedidos');
+            $this->info(' Revisa la consola del navegador en supervisor-pedidos');
             $this->info('🌐 Abre /websocket-test-supervisor.html para verificar recepción');
             
         } catch (\Exception $e) {

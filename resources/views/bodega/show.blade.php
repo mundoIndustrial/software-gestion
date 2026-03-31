@@ -1027,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    console.log(`📏 [DIAGNÓSTICO] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    console.log(` [DIAGNÓSTICO] Viewport: ${viewportWidth}x${viewportHeight}px`);
     
     // Verificar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
@@ -1104,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Monitorear cambios de tamano
     window.addEventListener('resize', () => {
-        console.log(`📏 [DIAGNÓSTICO] Resize - Nuevo viewport: ${window.innerWidth}x${window.innerHeight}px`);
+        console.log(` [DIAGNÓSTICO] Resize - Nuevo viewport: ${window.innerWidth}x${window.innerHeight}px`);
     });
 });
 

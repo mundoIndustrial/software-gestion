@@ -1180,7 +1180,7 @@ class CotizacionBordadoController extends Controller
                     
                     $archivosAgrupados[$tecnicaIdx][$prendaIdx][$imgIdx] = $archivo;
                     
-                    Log::info('📸 Archivo encontrado', [
+                    Log::info(' Archivo encontrado', [
                         'fieldName' => $fieldName,
                         'tecnica_idx' => $tecnicaIdx,
                         'prenda_idx' => $prendaIdx,
@@ -1358,7 +1358,7 @@ class CotizacionBordadoController extends Controller
                         $fakeRequest->files->set($fieldName, $archivo);
                         $archivosCopiados++;
                         
-                        Log::info("📸 Archivo asignado al Request", [
+                        Log::info(" Archivo asignado al Request", [
                             'fieldName' => $fieldName,
                             'nombre' => $archivo->getClientOriginalName()
                         ]);
@@ -1424,7 +1424,7 @@ class CotizacionBordadoController extends Controller
                 'logo_cotizacion_id' => $logoCotizacionId
             ]);
 
-            // 🆕 NUEVA ESTRATEGIA: Procesar telas desde la estructura de TÉCNICAS en el JSON
+            //  NUEVA ESTRATEGIA: Procesar telas desde la estructura de TÉCNICAS en el JSON
             // Obtener técnicas del request (es lo que se envió desde el formulario)
             $tecnicasJson = $request->input('tecnicas', '[]');
             if (is_string($tecnicasJson)) {
@@ -1515,7 +1515,7 @@ class CotizacionBordadoController extends Controller
 
                         // Si hay al menos un dato, verificar y guardar
                         if ($color || $nombreTela || $referencia) {
-                            // 🆕 VERIFICAR SI YA EXISTE PARA EVITAR DUPLICADOS
+                            //  VERIFICAR SI YA EXISTE PARA EVITAR DUPLICADOS
                             // Hacer esto ANTES de procesar la imagen
                             // Mismo prenda_cot_id + misma tela + mismo color = DUPLICADO
                             $yaExiste = \App\Models\LogoCotizacionTelasPrenda::where([
@@ -1610,7 +1610,6 @@ class CotizacionBordadoController extends Controller
 
     /**
      * Guardar información de Tela, Color y Referencia de una Prenda en Cotización de Logo
-     * 
      * Esperado: POST /cotizaciones/{cotizacion_id}/logo/telas-prenda
      * Con: logo_cotizacion_id, prenda_cot_id, tela, color, ref, imagen (archivo)
      */
@@ -1661,7 +1660,7 @@ class CotizacionBordadoController extends Controller
                     // Convertir a URL completa para usarla en el frontend
                     $rutaImagen = Storage::url($rutaImagen);
 
-                    Log::info('🖼️ Imagen de tela almacenada', [
+                    Log::info(' Imagen de tela almacenada', [
                         'ruta' => $rutaImagen,
                         'tamano' => $archivo->getSize(),
                     ]);

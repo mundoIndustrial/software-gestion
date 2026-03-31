@@ -145,13 +145,13 @@ window.PrendaCardHandlers = {
                         console.log('[PrendaCardHandlers]  Computed style height:', computedStyle.getPropertyValue('height'));
                         
                         // Medición inicial
-                        console.log('[PrendaCardHandlers] 📏 Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                        console.log('[PrendaCardHandlers]  Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                         
                         // Si scrollHeight es 0, hacer una segunda medición después de más tiempo
                         if (content.scrollHeight === 0 && isActive) {
                             console.log('[PrendaCardHandlers]  scrollHeight es 0, haciendo segunda medición...');
                             setTimeout(() => {
-                                console.log('[PrendaCardHandlers] 📏 Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                console.log('[PrendaCardHandlers]  Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                                 
                                 // Forzar un reflow si es necesario
                                 if (content.scrollHeight === 0) {
@@ -162,7 +162,7 @@ window.PrendaCardHandlers = {
                                     content.offsetHeight; // Forzar reflow again
                                     
                                     setTimeout(() => {
-                                        console.log('[PrendaCardHandlers] 📏 Medición después de reflow - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                        console.log('[PrendaCardHandlers]  Medición después de reflow - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                                     }, 50);
                                 }
                             }, 200);
@@ -322,7 +322,7 @@ window.PrendaCardHandlers = {
                     if (esCrearNuevo && window.gestionItemsUI) {
 
                         window.gestionItemsUI.prendaEditIndex = prendaIndex;
-                        // 🔴 abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
+                        //  abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
                         // y llama a cargarPrendaEnModal() internamente (línea 373 de gestion-items-pedido.js).
                         // NO hacer segunda llamada con setTimeout — causaba doble carga de la prenda.
                         window.gestionItemsUI.abrirModalAgregarPrendaNueva();

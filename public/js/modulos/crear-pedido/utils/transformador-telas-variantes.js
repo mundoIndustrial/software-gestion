@@ -148,7 +148,7 @@ function asignarTelasAgregadas(prenda, telasAgregadas) {
     // Asignar al window para uso global
     window.telasAgregadas = [...telasAgregadas];
     
-    console.log('🔗 [asignarTelasAgregadas] Telas asignadas:');
+    console.log(' [asignarTelasAgregadas] Telas asignadas:');
     console.log('  - prenda.telasAgregadas:', prenda.telasAgregadas.length);
     console.log('  - window.telasAgregadas:', window.telasAgregadas.length);
     

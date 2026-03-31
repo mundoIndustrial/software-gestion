@@ -1,5 +1,5 @@
 /**
- * 📝 Módulo de Campos Básicos
+ *  Módulo de Campos Básicos
  * Responsabilidad: Cargar nombre, origen, descripción en el modal
  */
 
@@ -8,7 +8,7 @@ class PrendaEditorBasicos {
      * Cargar campos básicos en modal
      */
     static cargar(prenda) {
-        console.log('[📝 Basicos] Cargando nombre, origen, descripción');
+        console.log('[ Basicos] Cargando nombre, origen, descripción');
         
         // Nombre
         const nombreInput = document.getElementById('nueva-prenda-nombre');
@@ -24,14 +24,14 @@ class PrendaEditorBasicos {
             // Si no hay origen directo, intentar mapear desde prenda_bodega
             if (!origen && prenda.prenda_bodega !== undefined && prenda.prenda_bodega !== null) {
                 origen = (prenda.prenda_bodega === 1 || prenda.prenda_bodega === true) ? 'bodega' : 'confeccion';
-                console.log('[📝 Basicos]  Mapeado origen desde prenda_bodega:', {
+                console.log('[ Basicos]  Mapeado origen desde prenda_bodega:', {
                     prenda_bodega: prenda.prenda_bodega,
                     origen_resultante: origen
                 });
             }
             
             origenSelect.value = origen || 'confeccion';
-            console.log('[📝 Basicos] Origen establecido:', origenSelect.value);
+            console.log('[ Basicos] Origen establecido:', origenSelect.value);
         }
         
         // Descripción

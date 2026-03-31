@@ -114,7 +114,7 @@
             }
         });
 
-        console.group('🔧 Funciones Globales');
+        console.group(' Funciones Globales');
         Object.entries(functionResults).forEach(([name, result]) => {
             console.log(`${result.status} ${name}: ${result.available ? 'Disponible' : 'No disponible'}`);
         });
@@ -125,7 +125,7 @@
 
     // Verificar dependencias entre módulos
     function verifyDependencies() {
-        console.group('🔗 Verificando Dependencias');
+        console.group(' Verificando Dependencias');
         
         const dependencies = [
             {

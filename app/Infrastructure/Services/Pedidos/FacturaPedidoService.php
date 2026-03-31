@@ -145,13 +145,13 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
         // Obtener procesos
         $procesos = $this->procesarProcesosPrenda($prenda);
 
-        // 🔴 NUEVO: Construir variantes (manga, broche, bolsillos) desde prenda.variantes
+        //  NUEVO: Construir variantes (manga, broche, bolsillos) desde prenda.variantes
         $variantesArray = $this->construirVariantesArray($prenda);
         
-        // 🔴 NUEVO: Obtener colores asignados por talla desde BD
+        //  NUEVO: Obtener colores asignados por talla desde BD
         $tallaColores = $this->obtenerTallaColoresDesdeDB($prenda->id);
 
-        // 🔴 NUEVO: Construir asignacionesColoresPorTalla para compatibilidad con invoice renderer
+        //  NUEVO: Construir asignacionesColoresPorTalla para compatibilidad con invoice renderer
         $asignacionesColoresPorTalla = [];
         foreach ($tallaColores as $color) {
             // Determinar tipo de talla (IGUAL AL FRONTEND: "Letra" o "Número")
@@ -199,16 +199,16 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
             'colores_array' => $datosTelas['colores'],
             'referencias_array' => $datosTelas['referencias'],
             'tallas' => $this->construirTallasPorGenero($prenda),
-            'talla_colores' => $tallaColores,  // 🔴 NUEVO: Colores asignados por talla
-            'asignacionesColoresPorTalla' => $asignacionesColoresPorTalla,  // 🔴 NUEVO: Para invoice renderer
-            'variantes' => $variantesArray,  // 🔴 AHORA: Array de variantes (manga, broche, bolsillos)
+            'talla_colores' => $tallaColores,  //  NUEVO: Colores asignados por talla
+            'asignacionesColoresPorTalla' => $asignacionesColoresPorTalla,  //  NUEVO: Para invoice renderer
+            'variantes' => $variantesArray,  //  AHORA: Array de variantes (manga, broche, bolsillos)
             'procesos' => $procesos,
             'generosConTallas' => $this->construirGenerosConTallas($prenda),
         ];
     }
 
     /**
-     * 🔴 NUEVO: Obtener colores asignados por talla desde BD
+     *  NUEVO: Obtener colores asignados por talla desde BD
      */
     private function obtenerTallaColoresDesdeDB(int $prendaId): array
     {
@@ -355,7 +355,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
                     // Procesar fotos de esta combinación color-tela
                     $fotosColorTela = $this->procesarFotosColorTela($colorTela);
                     
-                    // 🔴 NUEVO: Obtener color o mostrar "Sin color"
+                    //  NUEVO: Obtener color o mostrar "Sin color"
                     $colorNombre = $colorTela->color ? ($colorTela->color->nombre ?? null) : null;
                     $colorCodigo = $colorTela->color ? ($colorTela->color->codigo ?? null) : null;
                     
@@ -798,7 +798,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
     }
 
     /**
-     * 🔴 NUEVO: Construir array de variantes (manga, broche, bolsillos) desde prenda.variantes
+     *  NUEVO: Construir array de variantes (manga, broche, bolsillos) desde prenda.variantes
      * 
      * Retorna un array con todas las variantes que contienen:
      * - tipo_manga (o manga)
@@ -921,7 +921,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
                         foreach ($coloresConDetalles as $color) {
                             $colorNombre = $color->color_nombre ?? 'Sin color';
                             
-                            // 🔧 FIX: SIEMPRE incluir el color en la clave si hay múltiples colores
+                            //  FIX: SIEMPRE incluir el color en la clave si hay múltiples colores
                             // Esto evita perder variantes cuando hay varios colores para la misma talla
                             
                             $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL PETROLEO

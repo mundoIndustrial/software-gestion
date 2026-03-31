@@ -21,7 +21,7 @@
 
 ---
 
-## 🎯 ¿QUÉ PROBLEMA RESUELVE?
+##  ¿QUÉ PROBLEMA RESUELVE?
 
 | Problema |  ANTES |  AHORA |
 |----------|----------|----------|

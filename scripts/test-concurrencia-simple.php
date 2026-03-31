@@ -23,7 +23,7 @@ try {
     $resultados = [];
     $startTime = microtime(true);
     
-    echo "👥 Creando {$numeroUsuarios} pedidos simultáneamente...\n";
+    echo " Creando {$numeroUsuarios} pedidos simultáneamente...\n";
     
     // Obtener usuarios
     $usuarios = User::take($numeroUsuarios)->get();

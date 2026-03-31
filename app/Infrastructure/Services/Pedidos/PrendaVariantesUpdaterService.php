@@ -4,6 +4,7 @@ namespace App\Infrastructure\Services\Pedidos;
 
 use App\Models\PrendaPedido;
 use App\Models\PrendaVariantePed;
+use App\Application\Services\ColorGeneroMangaBrocheService;
 
 final class PrendaVariantesUpdaterService
 {
@@ -29,6 +30,8 @@ final class PrendaVariantesUpdaterService
         if (is_array($variantes) && !empty($variantes) && !isset($variantes[0]) && !is_array(reset($variantes))) {
             $variantes = [[
                 'tipo_manga_id'        => $variantes['tipo_manga_id'] ?? null,
+                'tipo_manga'           => $variantes['tipo_manga'] ?? null,  // Nombre del tipo de manga a crear
+                'tipo_manga_crear'     => $variantes['tipo_manga_crear'] ?? false,  // Flag para crear
                 'tipo_broche_boton_id' => $variantes['tipo_broche_boton_id'] ?? $variantes['tipo_broche_id'] ?? null,
                 'manga_obs'            => $variantes['obs_manga'] ?? $variantes['manga_obs'] ?? null,
                 'broche_boton_obs'     => $variantes['obs_broche'] ?? $variantes['broche_boton_obs'] ?? null,
@@ -43,6 +46,7 @@ final class PrendaVariantesUpdaterService
         ]);
 
         $varianteExistente = $prenda->variantes()->first();
+        $colorGeneroService = new ColorGeneroMangaBrocheService();
 
         foreach ($variantes as $variante) {
             if (!is_array($variante)) {
@@ -50,7 +54,25 @@ final class PrendaVariantesUpdaterService
             }
 
             $upd = [];
-            if (array_key_exists('tipo_manga_id', $variante))        $upd['tipo_manga_id'] = $variante['tipo_manga_id'];
+            
+            // MANEJAR CREACIÓN DE TIPO DE MANGA SI ES NECESARIO
+            if (!empty($variante['tipo_manga_crear']) && !empty($variante['tipo_manga'])) {
+                \Log::info('[PrendaVariantesUpdaterService] Creando nuevo tipo de manga', [
+                    'tipo_manga' => $variante['tipo_manga'],
+                ]);
+                
+                $tipoManga = $colorGeneroService->obtenerOCrearManga($variante['tipo_manga']);
+                if ($tipoManga) {
+                    $upd['tipo_manga_id'] = $tipoManga->id;
+                    \Log::info('[PrendaVariantesUpdaterService] Tipo de manga creado/obtenido', [
+                        'tipo_manga_id' => $tipoManga->id,
+                        'tipo_manga_nombre' => $tipoManga->nombre,
+                    ]);
+                }
+            } elseif (array_key_exists('tipo_manga_id', $variante)) {
+                $upd['tipo_manga_id'] = $variante['tipo_manga_id'];
+            }
+            
             if (array_key_exists('tipo_broche_boton_id', $variante)) $upd['tipo_broche_boton_id'] = $variante['tipo_broche_boton_id'];
             if (array_key_exists('manga_obs', $variante))            $upd['manga_obs'] = $variante['manga_obs'];
             if (array_key_exists('broche_boton_obs', $variante))     $upd['broche_boton_obs'] = $variante['broche_boton_obs'];

@@ -667,7 +667,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 ? window.pedidosRecibosModule.getEstado()
                 : null;
 
-            console.log('[printReceiptModal] 🎯 ESTADO COMPLETO:', {
+            console.log('[printReceiptModal]  ESTADO COMPLETO:', {
                 estado,
                 'estado.datosCompletos': estado?.datosCompletos,
                 'estado.prendaData': estado?.prendaData,
@@ -1031,7 +1031,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     } else if (tipoProceso.toUpperCase() === 'COSTURA') {
                         // Para COSTURA: usar variantes si no hay tallas_detalle
                         const variantes = reciboActual?.variantes || prendaData?.variantes || [];
-                        console.log('[printReceiptModal] 🎯 COSTURA - Variantes encontradas:', variantes);
+                        console.log('[printReceiptModal]  COSTURA - Variantes encontradas:', variantes);
                         
                         if (variantes.length > 0) {
                             // Convertir variantes al formato tallas_detalle
@@ -1501,18 +1501,18 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             let mostrarTituloTallas = true;
             let contenidoTallasFinal = tallasResumen;
             
-            console.log('[printReceiptModal] 🐛 DEBUG tallasResumen original:', tallasResumen);
+            console.log('[printReceiptModal] DEBUG tallasResumen original:', tallasResumen);
             
             if (tallasResumen) {
                 if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
-                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_SIN_TALLAS');
+                    console.log('[printReceiptModal] Procesando SOBREMEDIDA_SIN_TALLAS');
                     const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
                     mostrarTituloTallas = false;
                     contenidoTallasFinal = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
                         partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
-                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                    console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
-                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_CON_TALLAS');
+                    console.log('[printReceiptModal] Procesando SOBREMEDIDA_CON_TALLAS');
                     const lineas = tallasResumen.split('\n');
                     contenidoTallasFinal = lineas.map(linea => {
                         if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
@@ -1522,14 +1522,14 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         }
                         return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
                     }).join('<br>');
-                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                    console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else {
-                    console.log('[printReceiptModal] 🐛 Tallas normales');
+                    console.log('[printReceiptModal] Tallas normales');
                     // Tallas normales sin sobremedida
                     contenidoTallasFinal = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
                 }
                 
-                console.log('[printReceiptModal] 🐛 Variables finales:', {
+                console.log('[printReceiptModal] Variables finales:', {
                     mostrarTituloTallas,
                     contenidoTallasFinal
                 });

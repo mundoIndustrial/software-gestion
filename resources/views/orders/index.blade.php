@@ -517,10 +517,10 @@
                     try {
                         // Intentar usar Formatters si está disponible
                         if (window.Formatters && typeof window.Formatters.construirDescripcionCostura === 'function') {
-                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando window.Formatters.construirDescripcionCostura`);
+                            console.log(`[abrirModalCeldaConFormato]  Usando window.Formatters.construirDescripcionCostura`);
                             prendaHtml = window.Formatters.construirDescripcionCostura(prendaData);
                         } else if (typeof Formatters !== 'undefined' && typeof Formatters.construirDescripcionCostura === 'function') {
-                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando Formatters.construirDescripcionCostura (module)`);
+                            console.log(`[abrirModalCeldaConFormato]  Usando Formatters.construirDescripcionCostura (module)`);
                             prendaHtml = Formatters.construirDescripcionCostura(prendaData);
                         } else {
                             // Fallback si Formatters no disponible - generar HTML simple
@@ -584,7 +584,7 @@
             
             // Descripción - Limpiar basura del inicio
             if (prenda.descripcion) {
-                console.log('[generarDescripcionSimple] 📝 Descripción RAW:', prenda.descripcion);
+                console.log('[generarDescripcionSimple]  Descripción RAW:', prenda.descripcion);
                 let desc = String(prenda.descripcion);
                 // Limpiar líneas de basura del inicio (DSFSDFS, etc)
                 desc = desc.split('\n').filter(linea => {
@@ -1120,7 +1120,7 @@
             if (target.textContent && target.textContent.includes('')) {
                 console.log(`[GLOBAL-CLICK]  BOTÓN DE FACTURA DETECTADO`);
             }
-            if (target.textContent && target.textContent.includes('🖼️')) {
+            if (target.textContent && target.textContent.includes('')) {
                 console.log(`[GLOBAL-CLICK]  BOTÓN DE GALERÍA DETECTADO`);
             }
             
