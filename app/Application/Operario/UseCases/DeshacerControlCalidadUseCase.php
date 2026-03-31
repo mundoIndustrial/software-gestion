@@ -6,6 +6,7 @@ use App\Application\Operario\DTOs\DeshacerControlCalidadCommandDTO;
 use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\DB;

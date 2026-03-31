@@ -211,7 +211,7 @@
                                 <!-- Total de días -->
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span>{{ $orden->calcularDiasHabiles() }}</span>
+                                        <span>{{ $totalDiasCalculados[$orden->numero_pedido] ?? 0 }}</span>
                                     </div>
                                 </td>
                                 

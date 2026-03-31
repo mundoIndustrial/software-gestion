@@ -30,6 +30,22 @@ Route::middleware('auth')->group(function () {
      */
     Route::get('/api/recibos-costura/filter-options', [RegistroOrdenController::class, 'getRecibosCosutraFilterOptions'])
         ->name('api.recibos-costura.filter-options');
+
+    /**
+     * API Route: Obtener distribucion de parciales de un recibo desde la vista de recibos-costura
+     * GET /api/recibos-costura/{idRecibo}/distribucion
+     */
+    Route::get('/api/recibos-costura/{idRecibo}/distribucion', [RegistroOrdenController::class, 'obtenerDistribucionRecibo'])
+        ->where('idRecibo', '[0-9]+')
+        ->name('api.recibos-costura.distribucion');
+
+    /**
+     * API Route: Obtener seguimiento de un parcial desde el modal de distribucion
+     * GET /api/recibos-costura/parciales/{parcialId}/seguimiento
+     */
+    Route::get('/api/recibos-costura/parciales/{parcialId}/seguimiento', [RegistroOrdenController::class, 'obtenerSeguimientoParcialRecibo'])
+        ->where('parcialId', '[0-9]+')
+        ->name('api.recibos-costura.parciales.seguimiento');
 });
 
 /**

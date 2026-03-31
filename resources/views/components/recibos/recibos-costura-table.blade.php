@@ -254,7 +254,10 @@
                                 data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                                 data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'COSTURA' }}"
                                 data-es-parcial="{{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}"
-                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}">
+                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}"
+                                data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                data-tiene-parciales="{{ !empty($recibo['tiene_parciales']) ? 'true' : 'false' }}"
+                                data-total-parciales="{{ $recibo['total_parciales'] ?? 0 }}">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>

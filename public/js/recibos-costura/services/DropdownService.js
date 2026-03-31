@@ -29,11 +29,14 @@ class DropdownService {
     extractButtonData(button) {
         return {
             menuId: button.getAttribute('data-menu-id'),
+            reciboId: button.getAttribute('data-recibo-id'),
             pedidoId: button.getAttribute('data-pedido-id'),
             prendaId: button.getAttribute('data-prenda-id'),
             tipoRecibo: button.getAttribute('data-tipo-recibo') || 'COSTURA',
             esParcial: String(button.getAttribute('data-es-parcial') || '').toLowerCase() === 'true',
-            parcialId: button.getAttribute('data-pedido-parcial-id')
+            parcialId: button.getAttribute('data-pedido-parcial-id'),
+            tieneParciales: String(button.getAttribute('data-tiene-parciales') || '').toLowerCase() === 'true',
+            totalParciales: parseInt(button.getAttribute('data-total-parciales') || '0', 10) || 0
         };
     }
 
@@ -43,16 +46,26 @@ class DropdownService {
      * @returns {string} HTML de botones
      */
     buildDropdownButtons(data) {
-        const { pedidoId, prendaId, tipoRecibo, esParcial, parcialId } = data;
+        const { reciboId, pedidoId, prendaId, tipoRecibo, esParcial, parcialId, tieneParciales, totalParciales } = data;
 
         const onClickDetalles = esParcial && parcialId
             ? `openOrderDetailModalWithParcial(${parcialId}, ${prendaId || 'null'}, '${tipoRecibo}', ${pedidoId}); DropdownService.getInstance().closeAll()`
             : `openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, '${tipoRecibo}'); DropdownService.getInstance().closeAll()`;
 
+        const botonDistribucion = !esParcial && tieneParciales && reciboId
+            ? `
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item-btn" onclick="openDistribucionReciboModal(${reciboId}, ${pedidoId || 'null'}, ${prendaId || 'null'}, ${totalParciales}); DropdownService.getInstance().closeAll()">
+                <i class="fas fa-share-alt"></i> Ver distribucion
+            </button>
+        `
+            : '';
+
         return `
             <button class="dropdown-item-btn" onclick="${onClickDetalles}">
                 <i class="fas fa-eye"></i> Ver Detalles
             </button>
+            ${botonDistribucion}
             <div class="dropdown-divider"></div>
             <button class="dropdown-item-btn" onclick="abrirModalSeguimiento(${pedidoId}, ${prendaId || 'null'}); DropdownService.getInstance().closeAll()">
                 <i class="fas fa-tasks"></i> Seguimiento

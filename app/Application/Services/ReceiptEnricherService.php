@@ -3,6 +3,7 @@
 namespace App\Application\Services;
 
 use App\Models\PedidoProduccion;
+use App\Models\ReciboPorPartes;
 
 /**
  * ReceiptEnricherService
@@ -25,20 +26,125 @@ class ReceiptEnricherService
      */
     public function enriquecer(array $recibos): array
     {
-        return array_map(function($recibo) {
+        $parcialesPorRecibo = $this->obtenerMapaParcialesPorRecibo($recibos);
+
+        return array_map(function($recibo) use ($parcialesPorRecibo) {
             $pedido = PedidoProduccion::with([
                 'prendas.coloresTelas.tela',
                 'prendas.coloresTelas.color',
                 'prendas.tallas'
             ])->find($recibo['pedido_produccion_id']);
 
+            $reciboKey = $this->buildReciboKey(
+                (int) ($recibo['pedido_produccion_id'] ?? 0),
+                (int) ($recibo['prenda_id'] ?? 0),
+                (string) ($recibo['tipo_recibo'] ?? ''),
+                $this->normalizeConsecutivo($recibo['consecutivo_actual'] ?? '')
+            );
+
+            $totalParciales = (int) ($parcialesPorRecibo[$reciboKey] ?? 0);
+
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
                 'dias_calculados' => $pedido ? $this->diaLaboralCalculator->calcular($pedido->created_at) : 0,
                 'cantidad_total' => $this->cantidadCalculator->calcular($recibo),
+                'tiene_parciales' => $totalParciales > 0,
+                'total_parciales' => $totalParciales,
             ]);
         }, $recibos);
+    }
+
+    /**
+     * Construye un mapa de cantidad de parciales por recibo original.
+     *
+     * @param array $recibos
+     * @return array<string, int>
+     */
+    private function obtenerMapaParcialesPorRecibo(array $recibos): array
+    {
+        $pedidoIds = [];
+        $prendaIds = [];
+        $tiposRecibo = [];
+        $consecutivos = [];
+
+        foreach ($recibos as $recibo) {
+            $pedidoId = (int) ($recibo['pedido_produccion_id'] ?? 0);
+            $prendaId = (int) ($recibo['prenda_id'] ?? 0);
+            $tipoRecibo = trim((string) ($recibo['tipo_recibo'] ?? ''));
+            $consecutivo = $this->normalizeConsecutivo($recibo['consecutivo_actual'] ?? '');
+
+            if ($pedidoId <= 0 || $prendaId <= 0 || $tipoRecibo === '' || $consecutivo === '') {
+                continue;
+            }
+
+            $pedidoIds[$pedidoId] = $pedidoId;
+            $prendaIds[$prendaId] = $prendaId;
+            $tiposRecibo[$tipoRecibo] = $tipoRecibo;
+            $consecutivos[$consecutivo] = $consecutivo;
+        }
+
+        if ($pedidoIds === [] || $prendaIds === [] || $tiposRecibo === [] || $consecutivos === []) {
+            return [];
+        }
+
+        return ReciboPorPartes::query()
+            ->select([
+                'pedido_produccion_id',
+                'prenda_pedido_id',
+                'tipo_recibo',
+                'consecutivo_original',
+            ])
+            ->whereIn('pedido_produccion_id', array_values($pedidoIds))
+            ->whereIn('prenda_pedido_id', array_values($prendaIds))
+            ->whereIn('tipo_recibo', array_values($tiposRecibo))
+            ->whereIn('consecutivo_original', array_values($consecutivos))
+            ->get()
+            ->reduce(function (array $carry, ReciboPorPartes $parcial) {
+                $key = $this->buildReciboKey(
+                    (int) $parcial->pedido_produccion_id,
+                    (int) $parcial->prenda_pedido_id,
+                    (string) $parcial->tipo_recibo,
+                    $this->normalizeConsecutivo($parcial->consecutivo_original)
+                );
+
+                $carry[$key] = (int) ($carry[$key] ?? 0) + 1;
+                return $carry;
+            }, []);
+    }
+
+    private function buildReciboKey(int $pedidoId, int $prendaId, string $tipoRecibo, string $consecutivo): string
+    {
+        return implode('|', [
+            $pedidoId,
+            $prendaId,
+            strtoupper(trim($tipoRecibo)),
+            $this->normalizeConsecutivo($consecutivo),
+        ]);
+    }
+
+    /**
+     * Normaliza consecutivos para comparar enteros y decimales equivalentes.
+     */
+    private function normalizeConsecutivo(mixed $consecutivo): string
+    {
+        $value = trim((string) $consecutivo);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (is_numeric($value)) {
+            $numeric = (float) $value;
+
+            if (floor($numeric) === $numeric) {
+                return (string) (int) $numeric;
+            }
+
+            return rtrim(rtrim(number_format($numeric, 2, '.', ''), '0'), '.');
+        }
+
+        return $value;
     }
 
     /**

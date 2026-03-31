@@ -3,6 +3,7 @@
 namespace App\Application\UseCases\Receipts;
 
 use App\Application\Services\WorkingDaysCalculator;
+use App\Models\ReciboPorPartes;
 use App\Repositories\ConsecutivoReciboPedidoRepository;
 
 /**
@@ -47,6 +48,13 @@ class GetReceiptJsonUseCase
             $nombrePrenda = $primeraPrenda->nombre_prenda ?? $primeraPrenda->nombre ?? 'Prenda';
         }
 
+        $totalParciales = ReciboPorPartes::query()
+            ->where('pedido_produccion_id', $recibo->pedido_produccion_id)
+            ->where('prenda_pedido_id', $recibo->prenda_id)
+            ->where('tipo_recibo', $recibo->tipo_recibo)
+            ->where('consecutivo_original', $recibo->consecutivo_actual)
+            ->count();
+
         return [
             'id'                   => $recibo->id,
             'consecutivo_actual'   => $recibo->consecutivo_actual,
@@ -63,6 +71,8 @@ class GetReceiptJsonUseCase
                                         ? $pedido->created_at->format('d/m/Y')
                                         : '-',
             'created_at'           => $recibo->created_at,
+            'tiene_parciales'      => $totalParciales > 0,
+            'total_parciales'      => $totalParciales,
         ];
     }
 }

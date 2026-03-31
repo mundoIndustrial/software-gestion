@@ -1359,7 +1359,11 @@ function createReciboRow(recibo) {
             <button class="btn-ver-dropdown" title="Ver Opciones"
                 data-menu-id="menu-recibo-${recibo.id}"
                 data-pedido-id="${recibo.pedido_produccion_id}"
-                data-prenda-id="${recibo.prenda_id || ''}">
+                data-prenda-id="${recibo.prenda_id || ''}"
+                data-recibo-id="${recibo.id}"
+                data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
+                data-total-parciales="${recibo.total_parciales || 0}">
                 <i class="fas fa-eye"></i>
             </button>
         </td>
@@ -1711,7 +1715,11 @@ document.addEventListener('click', function(e) {
                 <button class="btn-ver-dropdown" title="Ver Opciones"
                     data-menu-id="menu-recibo-${recibo.id}"
                     data-pedido-id="${recibo.pedido_produccion_id}"
-                    data-prenda-id="${recibo.prenda_id || ''}">
+                    data-prenda-id="${recibo.prenda_id || ''}"
+                    data-recibo-id="${recibo.id}"
+                    data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                    data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
+                    data-total-parciales="${recibo.total_parciales || 0}">
                     <i class="fas fa-eye"></i>
                 </button>
             </td>

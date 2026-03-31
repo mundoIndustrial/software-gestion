@@ -34,7 +34,9 @@ use App\Application\Pedidos\UseCases\Orders\GetAreaRecienteUseCase;
 use App\Application\UseCases\Receipts\GetReceiptJsonUseCase;
 use App\Application\UseCases\Receipts\ContarRecibosEjecutandoUseCase;
 use App\Application\UseCases\Receipts\MarcarReciboVistoUseCase;
+use App\Services\FestivosColombiaService;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class RegistroOrdenController extends Controller
 {
@@ -546,5 +548,378 @@ class RegistroOrdenController extends Controller
         }
     }
 
-}
+    /**
+     * Obtener distribucion de parciales de un recibo para la vista recibos-costura.
+     * GET /api/recibos-costura/{idRecibo}/distribucion
+     */
+    public function obtenerDistribucionRecibo(Request $request, $idRecibo)
+    {
+        try {
+            \Log::info('[RegistroOrdenController][DistribucionRecibo] Iniciando busqueda', [
+                'recibo_id' => $idRecibo,
+                'usuario_id' => auth()->id(),
+            ]);
 
+            $recibo = \App\Models\ConsecutivoReciboPedido::find($idRecibo);
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado',
+                ], 404);
+            }
+
+            $parciales = \App\Models\ReciboPorPartes::query()
+                ->where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                ->where('prenda_pedido_id', $recibo->prenda_id)
+                ->where('tipo_recibo', $recibo->tipo_recibo)
+                ->where('consecutivo_original', $recibo->consecutivo_actual)
+                ->with('tallas')
+                ->get();
+
+            $pedidoProduccion = \App\Models\PedidoProduccion::find($recibo->pedido_produccion_id);
+            $numeroPedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
+
+            if ($parciales->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'recibo' => [
+                        'id' => $recibo->id,
+                        'consecutivo' => $recibo->consecutivo_actual,
+                        'tipo_recibo' => $recibo->tipo_recibo,
+                        'area_actual' => $recibo->area,
+                        'numero_pedido' => $numeroPedido,
+                    ],
+                    'parciales' => [],
+                    'mensaje' => 'No hay parciales creados para este recibo',
+                    'total_parciales' => 0,
+                ]);
+            }
+
+            $parcialesInfo = $parciales->map(function ($parcial) use ($numeroPedido) {
+                $proceso = null;
+
+                if ($numeroPedido) {
+                    $proceso = \App\Models\ProcesoPrenda::query()
+                        ->where('numero_pedido', $numeroPedido)
+                        ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                        ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                        ->latest('created_at')
+                        ->first();
+                }
+
+                $estaCompletado = \DB::table('prenda_recibo_completado')
+                    ->where('id_parcial', $parcial->id)
+                    ->where('area', 'Costura')
+                    ->exists();
+
+                return [
+                    'id' => $parcial->id,
+                    'area' => $proceso->proceso ?? $parcial->area ?? 'SIN ASIGNAR',
+                    'encargado' => $proceso->encargado ?? $parcial->encargado ?? 'SIN ASIGNAR',
+                    'tipo_recibo' => $parcial->tipo_recibo,
+                    'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                    'consecutivo_original' => (float) $parcial->consecutivo_original,
+                    'proceso_estado' => $estaCompletado
+                        ? 'COMPLETADO'
+                        : (($proceso->estado_proceso ?? 'En Progreso') ?: 'En Progreso'),
+                    'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ?? null,
+                    'observaciones' => $proceso->observaciones ?? '',
+                    'pedido_produccion_id' => $parcial->pedido_produccion_id,
+                    'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                    'numero_pedido' => $numeroPedido,
+                    'tallas' => $parcial->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'color_nombre' => $talla->color_nombre,
+                        ];
+                    })->toArray(),
+                ];
+            })->sortBy('area')->values();
+
+            return response()->json([
+                'success' => true,
+                'recibo' => [
+                    'id' => $recibo->id,
+                    'consecutivo' => $recibo->consecutivo_actual,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'area_actual' => $recibo->area,
+                    'numero_pedido' => $numeroPedido,
+                ],
+                'parciales' => $parcialesInfo,
+                'total_parciales' => $parcialesInfo->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RegistroOrdenController][DistribucionRecibo] Error', [
+                'recibo_id' => $idRecibo,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener distribucion: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener timeline de seguimiento de un parcial para el modal de distribucion.
+     * GET /api/recibos-costura/parciales/{parcialId}/seguimiento
+     */
+    public function obtenerSeguimientoParcialRecibo(Request $request, $parcialId)
+    {
+        try {
+            \Log::info('[RegistroOrdenController][SeguimientoParcial] Iniciando busqueda', [
+                'parcial_id' => $parcialId,
+                'usuario_id' => auth()->id(),
+            ]);
+
+            $parcial = \App\Models\ReciboPorPartes::query()
+                ->with('tallas')
+                ->find($parcialId);
+
+            if (!$parcial) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parcial no encontrado',
+                ], 404);
+            }
+
+            $pedidoProduccion = \App\Models\PedidoProduccion::find($parcial->pedido_produccion_id);
+            $numeroPedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
+
+            $procesos = collect();
+
+            if ($numeroPedido) {
+                $procesos = \App\Models\ProcesoPrenda::query()
+                    ->where('numero_pedido', $numeroPedido)
+                    ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->orderByRaw('COALESCE(fecha_inicio, created_at) asc')
+                    ->orderBy('id')
+                    ->get();
+            }
+
+            $completadosRows = \DB::table('prenda_recibo_completado')
+                ->where('id_parcial', $parcial->id)
+                ->get(['area', 'nombre_operario', 'fecha_completado']);
+
+            $completadosMap = [];
+            foreach ($completadosRows as $row) {
+                $key = $this->normalizarAreaKey($row->area);
+                $completadosMap[$key] = $row;
+            }
+
+            // Precargar festivos solo para los años que realmente aparecen en el timeline (evita llamadas repetidas).
+            $yearsSet = [];
+            foreach ($procesos as $p) {
+                foreach (['fecha_inicio', 'created_at', 'fecha_fin'] as $field) {
+                    try {
+                        if (!empty($p->{$field})) {
+                            $yearsSet[Carbon::parse($p->{$field})->year] = true;
+                        }
+                    } catch (\Exception $e) {
+                        // Ignorar fechas invalidas
+                    }
+                }
+            }
+            foreach ($completadosRows as $row) {
+                try {
+                    if (!empty($row->fecha_completado)) {
+                        $yearsSet[Carbon::parse($row->fecha_completado)->year] = true;
+                    }
+                } catch (\Exception $e) {
+                    // Ignorar fechas invalidas
+                }
+            }
+
+            if (empty($yearsSet)) {
+                $yearsSet[now()->year] = true;
+                $yearsSet[now()->addYear()->year] = true;
+            }
+
+            $festivos = [];
+            foreach (array_keys($yearsSet) as $year) {
+                $festivos = array_merge($festivos, FestivosColombiaService::obtenerFestivos((int) $year));
+            }
+
+            $festivosSet = [];
+            foreach ($festivos as $f) {
+                try {
+                    $festivosSet[Carbon::parse($f)->format('Y-m-d')] = true;
+                } catch (\Exception $e) {
+                    // Ignorar fechas invalidas
+                }
+            }
+
+            $calcularDiasHabiles = function (?Carbon $inicio, ?Carbon $fin) use ($festivosSet): ?int {
+                if (!$inicio || !$fin) {
+                    return null;
+                }
+
+                if ($fin->lessThan($inicio)) {
+                    return 0;
+                }
+
+                $current = $inicio->copy()->addDay(); // no cuenta el dia de inicio
+                $totalDays = 0;
+                $maxIterations = 3660; // 10 años de margen
+                $iterations = 0;
+
+                while ($current <= $fin && $iterations < $maxIterations) {
+                    $dateString = $current->format('Y-m-d');
+                    $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                    $isFestivo = isset($festivosSet[$dateString]);
+
+                    if (!$isWeekend && !$isFestivo) {
+                        $totalDays++;
+                    }
+
+                    $current->addDay();
+                    $iterations++;
+                }
+
+                return max(0, $totalDays);
+            };
+
+            $timeline = $procesos->map(function ($proceso, $index) {
+                $fechaInicio = $proceso->fecha_inicio ? Carbon::parse($proceso->fecha_inicio) : null;
+                $fechaFin = $proceso->fecha_fin ? Carbon::parse($proceso->fecha_fin) : null;
+
+                return [
+                    'id' => $proceso->id,
+                    'orden' => $index + 1,
+                    'area' => $proceso->proceso ?: 'Sin area',
+                    'encargado' => $proceso->encargado ?: 'Sin asignar',
+                    'estado' => $proceso->estado_proceso ?: 'En progreso',
+                    'fecha_inicio' => $fechaInicio?->format('d/m/Y h:i A'),
+                    'fecha_fin' => $fechaFin?->format('d/m/Y h:i A'),
+                    'observaciones' => $proceso->observaciones ?: null,
+                ];
+            })->values();
+
+            // Marcar completados por area (prenda_recibo_completado) y calcular duracion en dias habiles.
+            $currentProcesoId = $procesos->last()?->id;
+
+            $timeline = $timeline->map(function ($step) use ($procesos, $completadosMap, $calcularDiasHabiles, $currentProcesoId) {
+                $areaKey = $this->normalizarAreaKey($step['area'] ?? '');
+                $completionRow = $completadosMap[$areaKey] ?? null;
+
+                if (!$completionRow) {
+                    $step['completado'] = false;
+                    $step['dias_habiles'] = null;
+
+                    // Solo el area actual (ultimo proceso) se calcula hasta hoy; si el proceso ya tiene fecha_fin, se usa esa.
+                    $procesoOriginal = $procesos->firstWhere('id', $step['id'] ?? null);
+                    $inicio = null;
+                    $fin = null;
+
+                    try {
+                        if (!empty($procesoOriginal?->fecha_inicio)) {
+                            $inicio = Carbon::parse($procesoOriginal->fecha_inicio);
+                        } elseif (!empty($procesoOriginal?->created_at)) {
+                            $inicio = Carbon::parse($procesoOriginal->created_at);
+                        }
+                    } catch (\Exception $e) {
+                        $inicio = null;
+                    }
+
+                    try {
+                        if (!empty($procesoOriginal?->fecha_fin)) {
+                            $fin = Carbon::parse($procesoOriginal->fecha_fin);
+                        } elseif (!empty($currentProcesoId) && (int) ($step['id'] ?? 0) === (int) $currentProcesoId) {
+                            $fin = Carbon::now();
+                        }
+                    } catch (\Exception $e) {
+                        $fin = null;
+                    }
+
+                    if ($inicio && $fin) {
+                        $step['dias_habiles'] = $calcularDiasHabiles($inicio, $fin);
+                    }
+
+                    return $step;
+                }
+
+                $fechaCompletado = null;
+                try {
+                    $fechaCompletado = Carbon::parse($completionRow->fecha_completado);
+                } catch (\Exception $e) {
+                    $fechaCompletado = null;
+                }
+
+                $step['completado'] = true;
+                $step['estado'] = 'COMPLETADO';
+                $step['fecha_fin'] = $fechaCompletado?->format('d/m/Y h:i A');
+                $step['completado_por'] = $completionRow->nombre_operario ?? null;
+
+                // Buscar el proceso original para obtener un inicio confiable.
+                $inicio = null;
+                $procesoOriginal = $procesos->firstWhere('id', $step['id'] ?? null);
+                try {
+                    if (!empty($procesoOriginal?->fecha_inicio)) {
+                        $inicio = Carbon::parse($procesoOriginal->fecha_inicio);
+                    } elseif (!empty($procesoOriginal?->created_at)) {
+                        $inicio = Carbon::parse($procesoOriginal->created_at);
+                    }
+                } catch (\Exception $e) {
+                    $inicio = null;
+                }
+
+                $step['dias_habiles'] = $calcularDiasHabiles($inicio, $fechaCompletado);
+                return $step;
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'parcial' => [
+                    'id' => $parcial->id,
+                    'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                    'consecutivo_original' => (float) $parcial->consecutivo_original,
+                    'numero_pedido' => $numeroPedido,
+                    'pedido_produccion_id' => $parcial->pedido_produccion_id,
+                    'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                    'encargado_actual' => $procesos->last()?->encargado ?? $parcial->encargado ?? 'Sin asignar',
+                    'area_actual' => $procesos->last()?->proceso ?? $parcial->area ?? 'Sin area',
+                    'tallas' => $parcial->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'color_nombre' => $talla->color_nombre,
+                        ];
+                    })->toArray(),
+                ],
+                'timeline' => $timeline,
+                'total_eventos' => $timeline->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RegistroOrdenController][SeguimientoParcial] Error', [
+                'parcial_id' => $parcialId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener seguimiento del parcial: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function normalizarAreaKey(?string $area): string
+    {
+        $area = trim((string) $area);
+        if ($area === '') {
+            return '';
+        }
+
+        // Normaliza tildes y espacios para poder comparar "Control de Calidad" vs "Control Calidad", etc.
+        $ascii = Str::ascii($area);
+        $ascii = mb_strtolower($ascii);
+        $ascii = preg_replace('/[^a-z0-9]+/i', '', $ascii) ?? $ascii;
+
+        return $ascii;
+    }
+
+}

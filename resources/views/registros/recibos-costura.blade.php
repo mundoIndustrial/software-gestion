@@ -22,6 +22,44 @@
     <x-orders-components.order-detail-modal />
 </div>
 
+<div id="recibo-distribution-modal" class="distribution-modal" aria-hidden="true">
+    <div class="distribution-modal__backdrop" data-distribution-close="true"></div>
+    <div class="distribution-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="distributionModalTitle">
+        <div class="distribution-modal__header">
+            <div class="distribution-modal__header-icon">
+                <i class="fas fa-share-alt"></i>
+            </div>
+            <div class="distribution-modal__header-copy">
+                <p class="distribution-modal__eyebrow">Distribución activa</p>
+                <h2 id="distributionModalTitle">Distribución del recibo</h2>
+            </div>
+            <button type="button" class="distribution-modal__close" data-distribution-close="true" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="distributionModalBody" class="distribution-modal__body"></div>
+    </div>
+</div>
+
+<div id="partial-tracking-modal" class="partial-tracking-modal" aria-hidden="true">
+    <div class="partial-tracking-modal__backdrop" data-partial-tracking-close="true"></div>
+    <div class="partial-tracking-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="partialTrackingModalTitle">
+        <div class="partial-tracking-modal__header">
+            <div class="partial-tracking-modal__header-icon">
+                <i class="fas fa-route"></i>
+            </div>
+            <div class="partial-tracking-modal__header-copy">
+                <p class="partial-tracking-modal__eyebrow">Seguimiento del parcial</p>
+                <h2 id="partialTrackingModalTitle">Recorrido del parcial</h2>
+            </div>
+            <button type="button" class="partial-tracking-modal__close" data-partial-tracking-close="true" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="partialTrackingModalBody" class="partial-tracking-modal__body"></div>
+    </div>
+</div>
+
 <!-- Modal de Seguimiento del Pedido -->
 <x-orders-components.order-tracking-modal />
 
