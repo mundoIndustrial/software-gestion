@@ -21,9 +21,4 @@ class ObtenerPrendasRecibosService
     {
         return $this->service->obtenerPrendasConRecibos($usuario);
     }
-
-    public function obtenerPrendasConRecibosTodosCostura(): Collection
-    {
-        return $this->service->obtenerPrendasConRecibosTodosCostura();
-    }
 }

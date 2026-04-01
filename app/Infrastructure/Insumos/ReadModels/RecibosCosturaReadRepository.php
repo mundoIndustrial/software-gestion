@@ -28,17 +28,15 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
             ->where(function ($q) {
-                $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')
-                    ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                    ->orWhere(function ($q2) {
-                        $q2->where('pedidos_produccion.area', 'LIKE', '%Corte%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                            ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion%orden%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                            ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion de orden%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
-                    });
-            });
+                // Mostrar recibos que estén en PENDIENTE_INSUMOS (estado del RECIBO, no del pedido)
+                $q->where('consecutivos_recibos_pedidos.estado', 'PENDIENTE_INSUMOS')
+                    // O también mostrar si el área del pedido contiene ciertos términos
+                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Corte%')
+                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion%orden%')
+                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion de orden%');
+            })
+            // Exclusión general: No mostrar si el pedido está en PENDIENTE_SUPERVISOR
+            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
     }
 
     public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '')

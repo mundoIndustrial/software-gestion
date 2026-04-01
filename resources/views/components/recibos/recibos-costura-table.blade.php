@@ -285,8 +285,8 @@
                         <!-- Área del Recibo (del proceso más reciente) -->
                         <td>
                             @php
-                                // Usar el área del proceso más reciente (pedido_info.area) en lugar del área del recibo
-                                $areaRecibo = $recibo['pedido_info']['area'] ?? $recibo['area'] ?? 'Insumos';
+                                // Usar el área del recibo guardada en la BD en lugar del área general del pedido
+                                $areaRecibo = $recibo['area'] ?? $recibo['pedido_info']['area'] ?? 'Insumos';
                                 $puedeAgregarProceso = stripos((string) $areaRecibo, 'Corte') !== false;
                                 $areaBadge = 'bg-secondary';
                                 if (strpos($areaRecibo, 'Corte') !== false) {
