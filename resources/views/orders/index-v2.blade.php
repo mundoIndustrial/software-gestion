@@ -98,7 +98,6 @@
                         <th class="col-cliente">Cliente</th>
                         <th class="col-estado">Estado</th>
                         <th class="col-entrega">Entrega</th>
-                        <th class="col-progreso">Progreso</th>
                         <th class="col-accion">Acción</th>
                     </tr>
                 </thead>
@@ -108,7 +107,6 @@
                             $estado = $orden->estado ?? 'pendiente';
                             $estadoClass = 'estado-' . str_replace(' ', '-', strtolower($estado));
                             $diaEntrega = $orden->dia_de_entrega ?? '-';
-                            $progreso = rand(10, 95); // Placeholder - obtener del backend si está disponible
                         @endphp
                         <tr class="table-row" data-orden-id="{{ $orden->id }}">
                             <td class="col-pedido">
@@ -132,12 +130,6 @@
                                 @else
                                     <span class="entrega-date">{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}</span>
                                 @endif
-                            </td>
-                            <td class="col-progreso">
-                                <div class="progress-container">
-                                    <div class="progress-bar" style="width: {{ $progreso }}%"></div>
-                                    <span class="progress-text">{{ $progreso }}%</span>
-                                </div>
                             </td>
                             <td class="col-accion">
                                 <button class="btn-menu-actions" data-orden-id="{{ $orden->id }}">
@@ -178,12 +170,12 @@
             </div>
             <div class="pagination-controls">
                 @if($ordenes->hasPages())
-                    <button class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                    <a href="{{ $ordenes->url(1) }}" class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
                         <i class="fas fa-chevron-left"></i> <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                    </a>
+                    <a href="{{ $ordenes->previousPageUrl() }}" class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
                         <i class="fas fa-chevron-left"></i>
-                    </button>
+                    </a>
                     
                     @php
                         $start = max(1, $ordenes->currentPage() - 2);
@@ -191,17 +183,17 @@
                     @endphp
                     
                     @for($i = $start; $i <= $end; $i++)
-                        <button class="page-btn {{ $i == $ordenes->currentPage() ? 'active' : '' }}">
+                        <a href="{{ $ordenes->url($i) }}" class="page-btn {{ $i == $ordenes->currentPage() ? 'active' : '' }}">
                             {{ $i }}
-                        </button>
+                        </a>
                     @endfor
                     
-                    <button class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                    <a href="{{ $ordenes->nextPageUrl() }}" class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
                         <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                    </a>
+                    <a href="{{ $ordenes->url($ordenes->lastPage()) }}" class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
                         <i class="fas fa-chevron-right"></i> <i class="fas fa-chevron-right"></i>
-                    </button>
+                    </a>
                 @endif
             </div>
             <div class="pagination-select">
