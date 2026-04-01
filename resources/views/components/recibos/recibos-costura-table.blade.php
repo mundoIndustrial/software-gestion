@@ -470,19 +470,24 @@
                                         $prendaId = isset($recibo['prenda_id']) ? (int) $recibo['prenda_id'] : null;
                                         $numeroRecibo = (int) $recibo['consecutivo_actual'];
 
-                                        $procesoMasReciente = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
-                                            ->whereNull('deleted_at')
-                                            ->where(function ($q) use ($prendaId, $numeroRecibo) {
-                                                if (!empty($prendaId)) {
-                                                    $q->where('prenda_pedido_id', $prendaId);
-                                                }
-                                                $q->orWhere('numero_recibo', $numeroRecibo);
-                                            })
+                                        // Construcción de la query más específica y ordenada
+                                        $query = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                                            ->where('numero_recibo', $numeroRecibo)
+                                            ->whereNull('deleted_at');
+
+                                        // Si tenemos prenda_id, añadir esa condición también
+                                        if (!empty($prendaId)) {
+                                            $query->where('prenda_pedido_id', $prendaId);
+                                        }
+
+                                        // Obtener el proceso más reciente: primero por fecha_fin DESC, luego por created_at DESC
+                                        $procesoMasReciente = $query
+                                            ->orderByDesc('fecha_fin')
                                             ->orderByDesc('created_at')
                                             ->first();
 
                                         if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
-                                            $encargadoProceso = htmlspecialchars($procesoMasReciente->encargado);
+                                            $encargadoProceso = htmlspecialchars(trim($procesoMasReciente->encargado));
                                         }
                                     } catch (\Exception $e) {
                                         \Log::error('[recibos-costura-table] Error obteniendo encargado por recibo: ' . $e->getMessage());
