@@ -193,8 +193,8 @@ function initializeActionMenus() {
         });
     });
     
-    // Manejar clicks en items del menú
-    document.querySelectorAll('.menu-item').forEach(item => {
+    // Manejar clicks en items del menú de acciones (solo dentro de .action-menu)
+    document.querySelectorAll('.action-menu .menu-item').forEach(item => {
         item.addEventListener('click', function(e) {
             console.log(' Click en item del menú:', this);
             e.preventDefault();

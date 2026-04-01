@@ -425,36 +425,55 @@
           </li>
         </ul>
       </li>
-      </ul>
-    </div>
-
-    <!-- Sección Insumos -->
-    <div class="menu-section">
-      <span class="menu-section-title">Insumos</span>
-      <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
-                aria-label="Gestionar Insumos">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-          <span class="menu-label">Insumos</span>
+        <button class="menu-link submenu-toggle {{ request()->routeIs('cartera.*', 'supervisor-pedidos.*') || request()->is('insumos*') ? 'active' : '' }}"
+                aria-label="Gestión de Pedidos">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Gestión Pedidos</span>
           <span class="material-symbols-rounded submenu-arrow">expand_more</span>
         </button>
         <ul class="submenu">
           <li class="submenu-item">
-            <a href="{{ route('insumos.materiales.index') }}"
-               class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
-               aria-label="Control de Insumos">
-              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-              <span class="menu-label">Control de Insumos</span>
+            <a href="{{ route('cartera.pedidos') }}"
+               class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
+               aria-label="Pendiente Cartera">
+              <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+              <span class="menu-label">Pendiente Cartera</span>
             </a>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('insumos.plooter.index') }}"
-               class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
-               aria-label="Gestión Plooter">
-              <span class="material-symbols-rounded" aria-hidden="true">description</span>
-              <span class="menu-label">Gestión Plooter</span>
+            <a href="{{ route('supervisor-pedidos.index') }}"
+               class="menu-link {{ request()->routeIs('supervisor-pedidos.index') ? 'active' : '' }}"
+               aria-label="Pendiente Aprobador">
+              <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+              <span class="menu-label">Pendiente Aprobador</span>
             </a>
+          </li>
+          <li class="submenu-item">
+            <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+                    aria-label="Gestionar Insumos">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+              <span class="menu-label">Insumos</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <a href="{{ route('insumos.materiales.index') }}"
+                   class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+                   aria-label="Control de Insumos">
+                  <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+                  <span class="menu-label">Control de Insumos</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('insumos.plooter.index') }}"
+                   class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+                   aria-label="Gestión Plooter">
+                  <span class="material-symbols-rounded" aria-hidden="true">description</span>
+                  <span class="menu-label">Gestión Plooter</span>
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </li>
@@ -689,23 +708,6 @@
             </a>
           </li>
         </ul>
-      </li>
-      </ul>
-    </div>
-    @endif
-
-    <!-- Sección Cartera -->
-    @if(auth()->user()->role && auth()->user()->role->name === 'admin')
-    <div class="menu-section">
-      <span class="menu-section-title">Cartera</span>
-      <ul class="menu-list" role="navigation">
-      <li class="menu-item">
-        <a href="{{ route('cartera.pedidos') }}"
-           class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
-           aria-label="Pedidos Pendientes Cartera">
-          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Pedidos Pendientes</span>
-        </a>
       </li>
       </ul>
     </div>
