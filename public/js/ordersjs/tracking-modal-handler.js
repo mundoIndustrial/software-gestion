@@ -941,8 +941,57 @@ function initTrackingModalListeners() {
       return;
     }
     
-    // Llamar a openReceiptModal para renderizar con formato costura
-    openReceiptModal(recibo.id, recibo.tipo_recibo, recibo.consecutivo);
+    // Obtener datos de la orden actual
+    const currentOrderData = globalThis.currentOrderData;
+    if (!currentOrderData) {
+      showError('Error: Datos de orden no disponibles');
+      return;
+    }
+
+    try {
+      // Cerrar el modal especial primero
+      specialReceiptsRenderer.closeModal();
+      
+      // Para recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO),
+      // abrir directamente en una nueva pestaña o ventana del visualizador-logo
+      const tiposEspeciales = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO', 'REFLECTIVO'];
+      const esRecibEspecial = tiposEspeciales.includes(recibo.tipo_recibo);
+      
+      if (esRecibEspecial) {
+        console.log('[abrirReciboEspecial] Recibo especial detectado, abriendo en visualizador-logo');
+        // Abrir en nueva ventana/pestaña para mejor visualización
+        const url = `/visualizador-logo/pedidos-logo?pedido=${currentOrderData.id}&recibo=${recibo.id}&tipo=${recibo.tipo_recibo}`;
+        window.open(url, '_blank', 'width=900,height=700,resizable=yes,scrollbars=yes');
+      } else {
+        // Para costura u otros tipos: usar el módulo existente
+        setTimeout(() => {
+          if (typeof window.openOrderDetailModalWithProcess === 'function') {
+            const prenda = currentOrderData.prendas && currentOrderData.prendas.length > 0 
+              ? currentOrderData.prendas[0] 
+              : null;
+            
+            if (!prenda || !prenda.id) {
+              showError('Error: No se encontró la prenda');
+              return;
+            }
+            
+            console.log('[abrirReciboEspecial] Llamando a openOrderDetailModalWithProcess con:', {
+              pedidoId: currentOrderData.id,
+              prendaId: prenda.id,
+              tipoRecibo: recibo.tipo_recibo
+            });
+            window.openOrderDetailModalWithProcess(currentOrderData.id, prenda.id, recibo.tipo_recibo);
+          } else {
+            console.warn('[abrirReciboEspecial] openOrderDetailModalWithProcess no disponible');
+            showError('Sistema de recibos no inicializado');
+          }
+        }, 200);
+      }
+      
+    } catch (error) {
+      console.error('[abrirReciboEspecial] Error:', error);
+      showError('Error al abrir recibo: ' + error.message);
+    }
   }
 
   function mostrarSelectorRecibosEspeciales(recibosEspeciales) {
@@ -979,33 +1028,15 @@ function initTrackingModalListeners() {
 
   /**
    * Abre modal con detalles del recibo especial
-   * Renderiza como lo hace el visualizador de costura
+   * NOTA: Ahora se abre a través de abrirReciboEspecial() -> openOrderDetailModalWithProcess()
+   * Esta función se mantiene por compatibilidad pero no se usa
    */
   globalThis.openReceiptModal = async function(receiptId, tipoRecibo, numeroRecibo) {
-    try {
-      // Obtener la orden actual del estado global
-      const currentOrderData = globalThis.currentOrderData;
-      if (!currentOrderData) {
-        console.error('[openReceiptModal] No hay datos de orden cargados');
-        showError('Error: Datos de orden no disponibles');
-        return;
-      }
-
-      // Disparar evento para que abra el modal con formato costura
-      // El evento load-order-detail es escuchado por order-detail-modal-manager.js
-      const event = new CustomEvent('load-order-detail', {
-        detail: currentOrderData
-      });
-      window.dispatchEvent(event);
-
-      console.log('[openReceiptModal] Modal abierto con formato costura para recibo:', {
-        tipoRecibo,
-        numeroRecibo
-      });
-
-    } catch (error) {
-      console.error('[openReceiptModal] Error:', error);
-      showError('Error al abrir recibo: ' + error.message);
+    console.warn('[openReceiptModal] Esta función está deprecada. Usar abrirReciboEspecial() en su lugar');
+    // Intentar usar la forma alternativa si está disponible
+    if (typeof window.openOrderDetailModalWithProcess === 'function') {
+      console.log('[openReceiptModal] Redirigiendo a openOrderDetailModalWithProcess');
+      window.openOrderDetailModalWithProcess(globalThis.currentOrderData?.id, receiptId, tipoRecibo);
     }
   };
 

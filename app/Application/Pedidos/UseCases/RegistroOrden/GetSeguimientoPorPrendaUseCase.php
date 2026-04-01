@@ -118,6 +118,23 @@ class GetSeguimientoPorPrendaUseCase
     {
         $consecutivos = $this->consecutivosRepository->obtenerTodosPorPrenda($prenda->id, $pedidoId);
 
+        // DEBUG: Log de consecutivos retornados
+        $consecutivosDebug = [];
+        foreach ($consecutivos as $c) {
+            $arrayData = is_array($c) ? $c : (array) $c;
+            $consecutivosDebug[] = [
+                'tipo_recibo' => $arrayData['tipo_recibo'] ?? null,
+                'activo' => $arrayData['activo'] ?? null,
+                'consecutivo_actual' => $arrayData['consecutivo_actual'] ?? null,
+            ];
+        }
+        \Log::info('[construirSeguimientoPrenda] Consecutivos obtenidos', [
+            'prenda_id' => $prenda->id,
+            'prenda_nombre' => $prenda->nombre_prenda,
+            'total_consecutivos' => count($consecutivosDebug),
+            'consecutivos' => $consecutivosDebug,
+        ]);
+
         $numeroReciboCostura = null;
         $reciboCosturaId = null;
         foreach ($consecutivos as $c) {
@@ -164,6 +181,16 @@ class GetSeguimientoPorPrendaUseCase
             ];
         }
 
+        $recibosEspeciales = $this->obtenerRecibosEspeciales($consecutivos, $prenda->id, $prenda->procesos);
+        
+        // DEBUG: Log de recibos especiales obtenidos
+        \Log::info('[construirSeguimientoPrenda] Recibos especiales obtenidos', [
+            'prenda_id' => $prenda->id,
+            'prenda_nombre' => $prenda->nombre_prenda,
+            'total_recibos_especiales' => count($recibosEspeciales),
+            'recibos_especiales' => $recibosEspeciales,
+        ]);
+
         return [
             'id' => $prenda->id,
             'nombre_prenda' => $prenda->nombre_prenda,
@@ -176,7 +203,7 @@ class GetSeguimientoPorPrendaUseCase
             'consecutivos' => $consecutivos->toArray(),
             'datos_activacion' => $datosActivacion,
             'area_mas_reciente' => $this->obtenerAreaMasReciente($consecutivos),
-            'recibos_especiales' => $this->obtenerRecibosEspeciales($consecutivos),
+            'recibos_especiales' => $recibosEspeciales,
         ];
     }
 
@@ -476,13 +503,47 @@ class GetSeguimientoPorPrendaUseCase
      * Obtener recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO)
      * para mostrar botones adicionales en la UI
      */
-    private function obtenerRecibosEspeciales($consecutivos): array
+    private function obtenerRecibosEspeciales($consecutivos, int $prendaId, $procesosPrenda = null): array
     {
         if (!$consecutivos || count($consecutivos) === 0) {
+            \Log::info('[obtenerRecibosEspeciales] SIN CONSECUTIVOS', ['prenda_id' => $prendaId]);
             return [];
         }
 
+        // DEBUG: Log iniciales
+        $consecutivosDebug = [];
+        foreach ($consecutivos as $c) {
+            $arrayData = is_array($c) ? $c : (array) $c;
+            $consecutivosDebug[] = [
+                'tipo_recibo' => $arrayData['tipo_recibo'] ?? null,
+                'activo' => $arrayData['activo'] ?? null,
+            ];
+        }
+        \Log::info('[obtenerRecibosEspeciales] Iniciando con consecutivos', [
+            'prenda_id' => $prendaId,
+            'total_consecutivos' => count($consecutivosDebug),
+            'consecutivos' => $consecutivosDebug,
+        ]);
+
         $tiposEspeciales = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO', 'REFLECTIVO'];
+        $mapeoTipoProcesoId = [
+            'BORDADO' => 2,
+            'ESTAMPADO' => 3,
+            'DTF' => 4,
+            'SUBLIMADO' => 5,
+        ];
+        
+        // Crear un mapa de tipo_proceso_id -> proceso_prenda_detalle_id
+        $procesoIdMap = [];
+        if ($procesosPrenda && is_iterable($procesosPrenda)) {
+            foreach ($procesosPrenda as $proceso) {
+                $tipoProcesoId = $proceso->tipo_proceso_id ?? null;
+                if ($tipoProcesoId) {
+                    $procesoIdMap[$tipoProcesoId] = $proceso->id;
+                }
+            }
+        }
+        
         $recibosEspeciales = [];
 
         foreach ($consecutivos as $consecutivo) {
@@ -491,11 +552,42 @@ class GetSeguimientoPorPrendaUseCase
             $tipoRecibo = strtoupper(trim($arrayData['tipo_recibo'] ?? ''));
             
             if (in_array($tipoRecibo, $tiposEspeciales)) {
+                // Iniciar con el área del consecutivo como fallback
+                $area = $arrayData['area'] ?? null;
+                
+                // Para BORDADO, ESTAMPADO, DTF, SUBLIMADO, intentar obtener área desde prenda_areas_logo_pedido
+                if (isset($mapeoTipoProcesoId[$tipoRecibo])) {
+                    $tipoProcesoId = $mapeoTipoProcesoId[$tipoRecibo];
+                    
+                    // Usar el ID del proceso desde el mapa si está disponible
+                    if (isset($procesoIdMap[$tipoProcesoId])) {
+                        $procesoPrendaDetalleId = $procesoIdMap[$tipoProcesoId];
+                        
+                        // Obtener el área más reciente de prenda_areas_logo_pedido
+                        $areaRegistro = \DB::table('prenda_areas_logo_pedido')
+                            ->where('prenda_pedido_id', $prendaId)
+                            ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
+                            ->orderByDesc('created_at')
+                            ->first();
+                        
+                        if ($areaRegistro && !empty($areaRegistro->area)) {
+                            $area = $areaRegistro->area;
+                        }
+                    }
+                }
+                
+                \Log::debug('[obtenerRecibosEspeciales] Recibo especial procesado', [
+                    'tipo_recibo' => $tipoRecibo,
+                    'prenda_id' => $prendaId,
+                    'area_final' => $area,
+                    'consecutivo' => $arrayData['consecutivo_actual'] ?? null,
+                ]);
+                
                 $recibosEspeciales[] = [
                     'id' => $arrayData['id'] ?? null,
                     'tipo_recibo' => $tipoRecibo,
                     'consecutivo' => $arrayData['consecutivo_actual'] ?? null,
-                    'area' => $arrayData['area'] ?? null,
+                    'area' => $area,
                     'estado' => $arrayData['estado'] ?? null,
                     'activo' => $arrayData['activo'] ?? 0,
                 ];

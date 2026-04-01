@@ -72,8 +72,12 @@
                                 ->where('activo', 1)
                                 ->count();
                             $progreso = $totalRecibos > 0 ? round(($recibosEntregados / $totalRecibos) * 100) : 0;
+                            
+                            // Verificar si la orden está vencida
+                            $hoy = \Carbon\Carbon::today();
+                            $esVencida = $orden->fecha_estimada_de_entrega && $orden->fecha_estimada_de_entrega < $hoy;
                         @endphp
-                        <tr class="table-row" data-orden-id="{{ $orden->id }}">
+                        <tr class="table-row" data-orden-id="{{ $orden->id }}" data-vencido="{{ $esVencida ? 'true' : 'false' }}">
                             <td class="col-accion">
                                 <button class="btn-menu-actions" data-orden-id="{{ $orden->id }}" data-numero-pedido="{{ $orden->numero_pedido }}">
                                     <i class="fas fa-eye"></i>

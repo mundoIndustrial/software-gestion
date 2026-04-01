@@ -44,10 +44,29 @@ export class PrendaTrackingRenderer {
 
   /**
    * Crear HTML de tabla con todas las prendas
+   * Ordena: primero prendas con consecutivo (menor a mayor), luego sin consecutivo
    * 
    * @private
    */
   createPrendasTable(prendas, svgIcons) {
+    // Ordenar prendas: con consecutivo primero (ascendente), luego sin consecutivo
+    const prendasOrdenadas = [...prendas].sort((a, b) => {
+      const consA = this.getConsecutivoCostura(a);
+      const consB = this.getConsecutivoCostura(b);
+      
+      // Si ambos tienen consecutivo, ordenar por número
+      if (consA && consB) {
+        return parseInt(consA) - parseInt(consB);
+      }
+      
+      // Con consecutivo va primero
+      if (consA && !consB) return -1;
+      if (!consA && consB) return 1;
+      
+      // Ambos sin consecutivo, mantener orden original
+      return 0;
+    });
+
     let tableHtml = `
       <div class="prendas-table-container">
         <table class="prendas-report-table">
@@ -65,7 +84,7 @@ export class PrendaTrackingRenderer {
           <tbody>
     `;
 
-    prendas.forEach((prenda, index) => {
+    prendasOrdenadas.forEach((prenda, index) => {
       const estadoBadge = this.getEstadoBadge(prenda);
       const areaBadge = this.getAreaBadge(prenda);
       const procesosCount = this.getProcesssCount(prenda);
@@ -179,10 +198,16 @@ export class PrendaTrackingRenderer {
   /**
    * Obtener badge de área actual
    * Muestra el área más reciente de la tabla consecutivos_recibos_pedidos
+   * O "Se saca de bodega" si la prenda es de bodega
    * 
    * @private
    */
   getAreaBadge(prenda) {
+    // Si la prenda es de bodega, mostrar mensaje específico
+    if (prenda.de_bodega) {
+      return `<span class="badge badge-bodega">Se saca de bodega</span>`;
+    }
+
     // Usar area_mas_reciente si está disponible
     if (prenda.area_mas_reciente) {
       return `<span class="badge badge-area">${prenda.area_mas_reciente}</span>`;

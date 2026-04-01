@@ -79,7 +79,6 @@ export class SpecialReceiptsRenderer {
             <th>Tipo de Recibo</th>
             <th>N° Recibo</th>
             <th>Área</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -101,15 +100,6 @@ export class SpecialReceiptsRenderer {
           </td>
           <td>
             <span class="receipt-area">${recibo.area || '-'}</span>
-          </td>
-          <td>
-            <button class="btn-view-receipt" onclick="globalThis.openReceiptModal && globalThis.openReceiptModal(${recibo.id}, '${recibo.tipo_recibo}', ${recibo.consecutivo})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              Ver Recibo
-            </button>
           </td>
         </tr>
       `;

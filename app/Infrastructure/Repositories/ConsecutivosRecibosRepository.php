@@ -53,13 +53,13 @@ class ConsecutivosRecibosRepository
     /**
      * Obtener todos los consecutivos de una prenda
      * IMPORTANTE: Ordenado por ID DESC para obtener el más reciente primero
+     * IMPORTANTE: Se traen TODOS incluyendo inactivos (activo=0)
      */
     public function obtenerTodosPorPrenda(int $prendaId, int $pedidoId)
     {
         return DB::table('consecutivos_recibos_pedidos')
             ->where('prenda_id', $prendaId)
             ->where('pedido_produccion_id', $pedidoId)
-            ->where('activo', 1)
             ->orderByDesc('id')
             ->get();
     }

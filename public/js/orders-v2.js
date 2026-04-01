@@ -48,6 +48,9 @@ function initializeFilters() {
             }
         });
     });
+    
+    // Trigger the "todos" filter on page load to show all rows
+    filterByStatus(null);
 }
 
 function filterByStatus(status) {
@@ -65,11 +68,7 @@ function filterByStatus(status) {
             
             if (status === 'vencidos') {
                 // Filtrar por fecha de entrega retrasada
-                const entregaCell = row.querySelector('.col-entrega');
-                if (entregaCell) {
-                    const badge = row.querySelector('.badge-warning');
-                    shouldShow = badge !== null && badge.textContent.includes('Retraso');
-                }
+                shouldShow = row.getAttribute('data-vencido') === 'true';
             } else if (status === 'entregados') {
                 // Filtrar por estado "Entregado"
                 const badge = row.querySelector('.badge');
