@@ -1,5 +1,7 @@
 @extends('layouts.asesores')
 
+@section('body-class', 'crear-pedido-view')
+
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">

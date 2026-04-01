@@ -15,7 +15,7 @@
  * @param {HTMLInputElement} input - Input de tipo file
  * @param {number} procesoIndex - Índice del proceso (1, 2, 3)
  */
-window.manejarImagenProceso = function(input, procesoIndex) {
+globalThis.manejarImagenProceso = function(input, procesoIndex) {
     if (!input.files || input.files.length === 0) {
         return;
     }
@@ -40,7 +40,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
         const objectUrl = URL.createObjectURL(file);
         
         // Determinar el índice del cuadro visual vs el índice de storage
-        const previewIndex = window._procesoQuadroIndex || procesoIndex;
+        const previewIndex = globalThis._procesoQuadroIndex || procesoIndex;
         
         // Actualizar el preview específico
         const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
@@ -63,11 +63,11 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             imgElement.onclick = () => {
                 const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
                 const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
-                const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
+                const galeriaFunction = globalThis[functionNamePascal] || globalThis[functionNameLower];
                 
                 if (typeof galeriaFunction === 'function') {
-                    const imagenes = window.procesosImagenesStorage ? 
-                        window.procesosImagenesStorage.obtenerImagenes(procesoIndex).map(img => img.previewUrl || (img.file ? URL.createObjectURL(img.file) : '')) : 
+                    const imagenes = globalThis.procesosImagenesStorage ? 
+                        globalThis.procesosImagenesStorage.obtenerImagenes(procesoIndex).map(img => img.previewUrl || (img.file ? URL.createObjectURL(img.file) : '')) : 
                         [objectUrl];
                     galeriaFunction(imagenes);
                 }
@@ -113,14 +113,14 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             previewElement.appendChild(btnEliminar);
             
             // Actualizar drag & drop si es necesario
-            if (typeof window.actualizarDragDropProceso === 'function') {
-                window.actualizarDragDropProceso(procesoIndex);
+            if (typeof globalThis.actualizarDragDropProceso === 'function') {
+                globalThis.actualizarDragDropProceso(procesoIndex);
             }
         }
         
         //  CAMBIO: Guardar File object en storage (NO base64)
-        if (window.procesosImagenesStorage) {
-            window.procesosImagenesStorage.agregarImagen(procesoIndex, {
+        if (globalThis.procesosImagenesStorage) {
+            globalThis.procesosImagenesStorage.agregarImagen(procesoIndex, {
                 file: file,
                 previewUrl: objectUrl,
                 name: file.name,
@@ -130,11 +130,11 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             });
         }
         
-        //  NUEVO: Sincronizar con window.imagenesProcesoActual (usado por agregarProcesoAlPedido)
-        if (!window.imagenesProcesoActual) {
-            window.imagenesProcesoActual = [null, null, null];
+        //  NUEVO: Sincronizar con globalThis.imagenesProcesoActual (usado por agregarProcesoAlPedido)
+        if (!globalThis.imagenesProcesoActual) {
+            globalThis.imagenesProcesoActual = [null, null, null];
         }
-        window.imagenesProcesoActual[procesoIndex - 1] = file;
+        globalThis.imagenesProcesoActual[procesoIndex - 1] = file;
         
     } catch (error) {
         mostrarModalError('Error al procesar la imagen');
@@ -149,7 +149,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
  * @param {number} previewIndex - Índice del preview HTML (1, 2, 3) - del cuadro en el modal
  * @param {number} procesoIndex - Índice del proceso en el storage (1, 2, 3)
  */
-window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
+globalThis.eliminarImagenProceso = function(previewIndex, procesoIndex) {
     // Soportar llamadas antiguas con un solo parámetro (backward compatibility)
     if (procesoIndex === undefined) {
         procesoIndex = previewIndex;
@@ -158,7 +158,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
     console.log('[eliminarImagenProceso]  INICIANDO - previewIndex:', previewIndex, 'procesoIndex:', procesoIndex);
     
     //  Mostrar modal de confirmación en lugar de eliminar directamente
-    window._imagenAEliminarIndice = previewIndex;
+    globalThis._imagenAEliminarIndice = previewIndex;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     console.log('[eliminarImagenProceso]  Modal confirmación encontrado?:', !!modal);
@@ -187,7 +187,7 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
  * @param {string} nombre - Nombre del archivo
  * @param {number} procesoIndex - Índice del proceso
  */
-window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
+globalThis.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
     // Crear modal
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -249,14 +249,14 @@ window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
 /**
  * Limpiar todas las imágenes de proceso
  */
-window.limpiarImagenesProcesos = function() {
+globalThis.limpiarImagenesProcesos = function() {
     for (let i = 1; i <= 3; i++) {
-        window.eliminarImagenProceso(i);
+        globalThis.eliminarImagenProceso(i);
     }
     
     // Limpiar storage si está disponible
-    if (window.procesosImagenesStorage) {
-        window.procesosImagenesStorage.limpiar();
+    if (globalThis.procesosImagenesStorage) {
+        globalThis.procesosImagenesStorage.limpiar();
     }
 };
 
@@ -264,7 +264,7 @@ window.limpiarImagenesProcesos = function() {
  * Obtener todas las imágenes de proceso
  * @returns {Array} Array con las imágenes de todos los procesos
  */
-window.obtenerImagenesProcesos = function() {
+globalThis.obtenerImagenesProcesos = function() {
     const imagenes = [];
     
     for (let i = 1; i <= 3; i++) {

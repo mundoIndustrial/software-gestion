@@ -169,7 +169,7 @@ $consecutivosActuales = DB::table('consecutivos_recibos_pedidos')
     ->where('tipo_recibo', 'REFLECTIVO')
     ->count();
 
-echo "📌 ACTUAL: $consecutivosActuales consecutivos REFLECTIVO\n";
+echo " ACTUAL: $consecutivosActuales consecutivos REFLECTIVO\n";
 
 if ($prendasConReflectivo->count() > $consecutivosActuales) {
     echo "\n PROBLEMA CONFIRMADO: Faltan " . ($prendasConReflectivo->count() - $consecutivosActuales) . " consecutivos!\n";

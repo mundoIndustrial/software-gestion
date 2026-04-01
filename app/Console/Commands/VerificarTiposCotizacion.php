@@ -42,7 +42,7 @@ class VerificarTiposCotizacion extends Command
         $this->newLine();
 
         // Información específica según tu comentario
-        $this->line('📌 INFORMACIÓN IMPORTANTE:');
+        $this->line(' INFORMACIÓN IMPORTANTE:');
         $p = $tipos->where('codigo', 'P')->first();
         $b = $tipos->where('codigo', 'B')->first();
         $pb = $tipos->where('codigo', 'PB')->first();

@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (table) {
         const tableRect = table.getBoundingClientRect();
         const tableStyle = window.getComputedStyle(table);
-        console.log(`📊 [DIAGNÓSTICO] Tabla:`, {
+        console.log(` [DIAGNÓSTICO] Tabla:`, {
             width: tableRect.width,
             height: tableRect.height,
             computedWidth: tableStyle.width,
@@ -1187,7 +1187,7 @@ function abrirModalHomologacionBodega(eppId) {
 
                     <!-- Cambios Realizados -->
                     <div class="border border-blue-300 bg-blue-50 rounded-lg p-4">
-                        <h3 class="font-bold text-blue-900 mb-3 text-lg">📊 Cambios Realizados</h3>
+                        <h3 class="font-bold text-blue-900 mb-3 text-lg"> Cambios Realizados</h3>
                         <div class="space-y-2 text-sm">
                             ${cambios.cantidad_cambio ? `
                             <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">

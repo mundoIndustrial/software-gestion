@@ -130,7 +130,7 @@ class InsumosController extends Controller
             $user = Auth::user();
             
             if (!$user) {
-                Log::error('❌ No hay usuario autenticado en materiales()');
+                Log::error(' No hay usuario autenticado en materiales()');
                 return redirect('/login');
             }
 
@@ -153,7 +153,7 @@ class InsumosController extends Controller
                 'search' => $request->get('search', ''),
             ]);
         } catch (\Exception $e) {
-            Log::error('❌ ERROR en InsumosController.materiales()', [
+            Log::error(' ERROR en InsumosController.materiales()', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'url' => $request->fullUrl(),

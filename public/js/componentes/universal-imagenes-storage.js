@@ -17,7 +17,7 @@
 /**
  * Storage universal completamente separado por tipo
  */
-window.universalImagenesStorage = {
+globalThis.universalImagenesStorage = {
     // Almacenamiento interno separado por tipo
     _storage: {
         prendas: {},

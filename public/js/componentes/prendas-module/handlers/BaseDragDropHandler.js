@@ -150,7 +150,7 @@ class BaseDragDropHandler {
      */
     _configurarHandlerBase(elemento, opcionesEspecificas = {}) {
         UIHelperService.log(`${this.constructor.name}`, ` _configurarHandlerBase llamado para ${this.tipo}...`);
-        UIHelperService.log(`${this.constructor.name}`, `📌 Elemento: ${elemento.id || elemento.tagName}`);
+        UIHelperService.log(`${this.constructor.name}`, ` Elemento: ${elemento.id || elemento.tagName}`);
         
         const opcionesComunes = {
             tieneMenuContextual: true,

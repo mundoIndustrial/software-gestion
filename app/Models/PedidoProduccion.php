@@ -94,6 +94,7 @@ class PedidoProduccion extends Model
 
     protected $casts = [
         'fecha_estimada_de_entrega' => 'datetime',
+        'aprobado_por_supervisor_en' => 'datetime',
         'estado' => 'string',
     ];
 
@@ -320,5 +321,19 @@ class PedidoProduccion extends Model
     public static function getEstadosDisplay(): array
     {
         return PedidoConstants::getEstadosDisplay();
+    }
+
+    /**
+     * Obtener el área/proceso actual del pedido
+     * 
+     * @return string El nombre del último proceso registrado
+     */
+    public function getAreaActual(): string
+    {
+        $ultimoProceso = ProcesoPrenda::where('numero_pedido', $this->numero_pedido)
+            ->orderBy('updated_at', 'desc')
+            ->first();
+
+        return $ultimoProceso?->proceso ?? 'Sin procesos';
     }
 }

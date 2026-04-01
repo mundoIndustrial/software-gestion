@@ -210,15 +210,22 @@ class ConsecutivoReciboPedidoRepository
                 'prenda.coloresTelas'
             ]);
 
-        // Aplicar filtro de estado
-        if (isset($filtros['estado']) && !empty($filtros['estado'])) {
-            $query->whereIn('estado', $filtros['estado']);
-        } elseif (empty($filtros)) {
-            // Si no hay filtros, excluir PENDIENTE_INSUMOS
-            $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+        // Filtros especiales para revisor_entregas
+        $user = auth()->user();
+        if ($user && $user->hasRole('revisor_entregas')) {
+            // Excluir áreas: corte, insumos, creacion orden
+            $query->whereNotIn(DB::raw('LOWER(TRIM(area))'), ['corte', 'insumos', 'creacion orden']);
+        } else {
+            // Aplicar filtro de estado para otros roles
+            if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+                $query->whereIn('estado', $filtros['estado']);
+            } elseif (empty($filtros)) {
+                // Si no hay filtros, excluir PENDIENTE_INSUMOS
+                $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+            }
         }
 
-        // Aplicar filtro de número de recibo
+        // Aplicar filtro de número de recibo (para todos)
         if (isset($filtros['numero_recibo']) && !empty($filtros['numero_recibo'])) {
             $query->where(function($q) use ($filtros) {
                 foreach ($filtros['numero_recibo'] as $numero) {

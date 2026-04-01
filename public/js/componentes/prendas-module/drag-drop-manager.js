@@ -48,7 +48,7 @@ class DragDropManager {
             return this;
         }
         this._subModalHandlers.set(modalId, handler);
-        UIHelperService.log('DragDropManager', `📌 Sub-modal registrado: #${modalId}`);
+        UIHelperService.log('DragDropManager', ` Sub-modal registrado: #${modalId}`);
         return this;
     }
 
@@ -377,7 +377,7 @@ class DragDropManager {
             // Filtrar solo modales visibles y ordenar por prioridad
             let modalesVisibles = modalesCandidatos.filter(m => m.visible).sort((a, b) => a.prioridad - b.prioridad);
             
-            UIHelperService.log('DragDropManager', `📊 Modales candidatos: ${modalesCandidatos.length}, visibles: ${modalesVisibles.length}`);
+            UIHelperService.log('DragDropManager', ` Modales candidatos: ${modalesCandidatos.length}, visibles: ${modalesVisibles.length}`);
             
             // Seleccionar el modal visible con mayor prioridad
             if (modalesVisibles.length > 0) {

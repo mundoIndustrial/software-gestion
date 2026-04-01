@@ -19,9 +19,9 @@ class ModalPrendaDinamico {
      */
     inicializarDependencias() {
         //  FALLBACK: manejarCheckboxProceso si no existe
-        if (!window.manejarCheckboxProceso) {
+        if (!globalThis.manejarCheckboxProceso) {
 
-            window.manejarCheckboxProceso = (tipoProceso, estaChecked) => {
+            globalThis.manejarCheckboxProceso = (tipoProceso, estaChecked) => {
 
                 // Fallback simple: solo registrar en consola
                 // El comportamiento real vendría de manejadores-procesos-prenda.js
@@ -30,10 +30,10 @@ class ModalPrendaDinamico {
 
         }
 
-        //  FALLBACK: window.imagenesTelaStorage si no existe
-        if (!window.imagenesTelaStorage) {
+        //  FALLBACK: globalThis.imagenesTelaStorage si no existe
+        if (!globalThis.imagenesTelaStorage) {
 
-            window.imagenesTelaStorage = {
+            globalThis.imagenesTelaStorage = {
                 obtenerImagenes: () => [],
                 agregarImagen: (file) => {
 
@@ -48,10 +48,10 @@ class ModalPrendaDinamico {
             };
         }
 
-        //  FALLBACK: window.pedidosAPI si no existe
-        if (!window.pedidosAPI) {
+        //  FALLBACK: globalThis.pedidosAPI si no existe
+        if (!globalThis.pedidosAPI) {
 
-            window.pedidosAPI = {
+            globalThis.pedidosAPI = {
                 obtenerItems: () => Promise.resolve({ items: [] }),
                 agregarItem: (data) => Promise.resolve({ success: true, items: [] })
             };
@@ -121,4 +121,4 @@ class ModalPrendaDinamico {
     }
 }
 
-window.modalPrendaDinamico = new ModalPrendaDinamico();
+globalThis.modalPrendaDinamico = new ModalPrendaDinamico();

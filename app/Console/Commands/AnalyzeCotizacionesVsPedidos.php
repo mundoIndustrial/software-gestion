@@ -92,7 +92,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
             if ($prendasCot === 0) {
                 $this->error(' NO hay prendas en prendas_cot para esta cotización');
                 $this->newLine();
-                $this->line('📌 CAUSA RAÍZ:');
+                $this->line(' CAUSA RAÍZ:');
                 $this->line('   El controlador está usando la estructura INCORRECTA');
                 $this->line('   para guardar COTIZACIONES.');
                 $this->newLine();

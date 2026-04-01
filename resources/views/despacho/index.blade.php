@@ -462,7 +462,7 @@ function connectWebSocket() {
                 // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
                 else if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
                     console.log(' Hay cambios en bodega, verificando si hay que recargar...');
-                    console.log('📊 Info de bodega:', event.changedFields);
+                    console.log(' Info de bodega:', event.changedFields);
                     
                     // Si hay items pendientes y el pedido no está en la lista, recargar
                     if (event.changedFields.bodega_pendientes_count > 0) {

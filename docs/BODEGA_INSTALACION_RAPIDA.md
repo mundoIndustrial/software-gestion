@@ -292,7 +292,7 @@ Si encuentras problemas:
 
 ---
 
-## ✨ ¡Listo!
+##  ¡Listo!
 
 Tu módulo de bodega debe estar funcional. Si no es así, revisa el checklist anterior.
 

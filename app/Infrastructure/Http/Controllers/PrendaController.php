@@ -96,7 +96,7 @@ class PrendaController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        \Log::info('📖 Obteniendo prenda', ['prenda_id' => $id]);
+        \Log::info(' Obteniendo prenda', ['prenda_id' => $id]);
 
         try {
             $prenda = $this->prendaService->obtenerPorId($id);

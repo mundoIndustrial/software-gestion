@@ -29,7 +29,7 @@ storage/logs/laravel.log
 
 **Log final:**
 ```
-[CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
+[CREAR-PEDIDO-NUEVO]  PÁGINA COMPLETADA
 {
   "tiempo_total_ms": 1234.56,
   "tiempo_tallas_ms": 50,
@@ -69,7 +69,7 @@ storage/logs/laravel.log
 
 **Log final con resumen:**
 ```
-[CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL
+[CREAR-PEDIDO]  TRANSACCIÓN EXITOSA - RESUMEN TOTAL
 {
   "tiempo_total_ms": 7500,
   "desglose_pasos": {
@@ -177,7 +177,7 @@ storage/logs/laravel.log
   "tiempo_resolver_ms": 2000
 }
 
-[MAPEO-IMAGENES] ✨ MAPEO COMPLETADO
+[MAPEO-IMAGENES]  MAPEO COMPLETADO
 {
   "tiempo_total_ms": 2150,
   "resumen": "Resolver: 2000ms | Registros BD: 150ms | TOTAL: 2150ms"
@@ -198,14 +198,14 @@ tail -f storage/logs/laravel.log | grep "CREAR-PEDIDO"
 tail -f storage/logs/laravel.log | grep "IMAGE-UPLOAD\|RESOLVER-IMAGENES\|MAPEO-IMAGENES"
 
 # Ver resumen rápido (sin debug)
-tail -100 storage/logs/laravel.log | grep "✨\|\|" | tail -20
+tail -100 storage/logs/laravel.log | grep "\|\|" | tail -20
 ```
 
 ###  Escenarios de Problemas Comunes
 
 #### 1. **Página tarda mucho en cargar inicialmente**
 ```
-Buscar: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
+Buscar: [CREAR-PEDIDO-NUEVO]  PÁGINA COMPLETADA
 Si tiempo_total_ms > 5000ms:
   → Si tiempo_cotizaciones_ms > 2000ms → Optimizar query de cotizaciones
   → Si tiempo_clientes_ms > 1000ms → Agregar índices en tabla clientes
@@ -214,7 +214,7 @@ Si tiempo_total_ms > 5000ms:
 
 #### 2. **Guardar pedido tarda mucho**
 ```
-Buscar: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA
+Buscar: [CREAR-PEDIDO]  TRANSACCIÓN EXITOSA
 Si tiempo_total_ms > 10000ms:
   → Si paso_7_imagenes_ms > 3000ms → Reducir tamano de imágenes
   → Si paso_7b_epps_ms > 1500ms → Revisar procesamiento de EPPs

@@ -1284,14 +1284,14 @@ function limpiarImagenesTemporales() {
 }
 
 function resetearModalAgregarEPP() {
-    console.log('📖 [resetearModalAgregarEPP] INICIANDO reset COMPLETO del modal');
+    console.log(' [resetearModalAgregarEPP] INICIANDO reset COMPLETO del modal');
     
     // Limpiar imágenes temporales
     limpiarImagenesTemporales();
     
     // Limpiar producto seleccionado
     productoSeleccionadoEPP = null;
-    console.log('📖 [resetearModalAgregarEPP] Producto seleccionado limpiado');
+    console.log(' [resetearModalAgregarEPP] Producto seleccionado limpiado');
     
     // ELEMENTOS PRINCIPALES - Ocultarlos todos
     const elementosOcultar = [
@@ -1307,7 +1307,7 @@ function resetearModalAgregarEPP() {
         const el = document.getElementById(id);
         if (el) {
             el.style.setProperty('display', 'none', 'important');
-            console.log(`📖 [resetearModalAgregarEPP] ${id} ocultado`);
+            console.log(` [resetearModalAgregarEPP] ${id} ocultado`);
         }
     });
     
@@ -1352,12 +1352,12 @@ function resetearModalAgregarEPP() {
         // Eliminar elementos de fotos pero mantener mensaje
         const fotosItems = contenedorFotosEPP.querySelectorAll('.foto-epp-item');
         fotosItems.forEach(item => item.remove());
-        console.log('📖 [resetearModalAgregarEPP] Fotos del contenedor limpiadas');
+        console.log(' [resetearModalAgregarEPP] Fotos del contenedor limpiadas');
     }
     
     if (mensajeDragDrop) {
         mensajeDragDrop.style.display = 'flex';
-        console.log('📖 [resetearModalAgregarEPP] Mensaje inicial de drag-drop restaurado');
+        console.log(' [resetearModalAgregarEPP] Mensaje inicial de drag-drop restaurado');
     }
     
     // BOTONES DEL FOOTER (con null checks para evitar crash en contexto de edición)
@@ -1368,7 +1368,7 @@ function resetearModalAgregarEPP() {
     if (btnFinalizar) { btnFinalizar.disabled = true; btnFinalizar.style.setProperty('display', 'flex', 'important'); }
     if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.style.setProperty('display', 'none', 'important'); }
     
-    console.log('📖 [resetearModalAgregarEPP] Botones reseteados');
+    console.log(' [resetearModalAgregarEPP] Botones reseteados');
     
     // Restaurar sección de "EPP Agregados" al resetear (SOLO si no estamos editando)
     const enEdicion = !!eppEnEdicion || !!window.eppEnEdicion;
@@ -1380,13 +1380,13 @@ function resetearModalAgregarEPP() {
             listaEPPAgregados.removeAttribute('style');
             listaEPPAgregados.style.setProperty('display', 'none', 'important');
             listaEPPAgregados.style.setProperty('visibility', 'hidden', 'important');
-            console.log('📖 [resetearModalAgregarEPP] Tabla ocultada (modo edición)');
+            console.log(' [resetearModalAgregarEPP] Tabla ocultada (modo edición)');
         } else {
             // Si estamos en modo agregar, mostrar la tabla
             listaEPPAgregados.removeAttribute('style');
             listaEPPAgregados.style.setProperty('display', 'block', 'important');
             listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
-            console.log('📖 [resetearModalAgregarEPP] Tabla restaurada (modo agregar)');
+            console.log(' [resetearModalAgregarEPP] Tabla restaurada (modo agregar)');
         }
     }
     
@@ -1408,7 +1408,7 @@ function resetearModalAgregarEPP() {
     const contadorFotosReset = document.getElementById('contadorFotosEPP');
     if (contadorFotosReset) contadorFotosReset.textContent = '0';
     
-    console.log('📖 [resetearModalAgregarEPP] COMPLETADO - Modal reseteado completamente');
+    console.log(' [resetearModalAgregarEPP] COMPLETADO - Modal reseteado completamente');
 }
 
 function filtrarEPPBuscador(valor) {
@@ -1775,7 +1775,7 @@ function renderizarTablaEPP() {
     tbody.innerHTML = '';
 
     eppAgregadosList.forEach((epp, idx) => {
-        console.log(`📌 [renderizarTablaEPP] Renderizando EPP ${idx + 1}:`, epp.nombre_completo);
+        console.log(` [renderizarTablaEPP] Renderizando EPP ${idx + 1}:`, epp.nombre_completo);
         const row = document.createElement('tr');
         row.className = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
         
@@ -2138,7 +2138,7 @@ function guardarEdicionEPP() {
     }
 
     // Limpiar referencia
-    console.log('📖 [cerrarModalAgregarEPP] Limpiando window.eppEnEdicion');
+    console.log(' [cerrarModalAgregarEPP] Limpiando window.eppEnEdicion');
     window.eppEnEdicion = null;
     
     // Restaurar botones a estado original
@@ -2298,7 +2298,7 @@ async function finalizarAgregarEPP() {
     
     // Convertir imágenes de todos los EPPs de forma asíncrona
     const promesasEPP = eppAgregadosList.map(async (epp) => {
-        console.log(`📌 [finalizarAgregarEPP] Procesando EPP: ${epp.nombre_completo}`);
+        console.log(` [finalizarAgregarEPP] Procesando EPP: ${epp.nombre_completo}`);
         
         // En modo edición O modo cotización, mantener blob URLs (NO convertir a base64)
         // Las referencias a los archivos se guardan globalmente para mantener las blob URLs válidas

@@ -42,7 +42,7 @@ class TestTransformacion extends Command
         if (isset($datos['pedido']) && isset($datos['pedido']->prendas)) {
             $this->info("\n Prendas transformadas:");
             foreach ($datos['pedido']->prendas as $prenda) {
-                $this->line("  📌 " . $prenda['nombre_prenda']);
+                $this->line("   " . $prenda['nombre_prenda']);
                 $this->line("     telaFotos: " . json_encode($prenda['telaFotos'] ?? []));
                 $this->line("     telasAgregadas: " . json_encode($prenda['telasAgregadas'] ?? []));
             }

@@ -1,0 +1,271 @@
+<!-- EJEMPLO DE ESTRUCTURA HTML MEJORADA PARA LA TABLA DE PRENDAS -->
+
+<!-- Este es un ejemplo de cómo debería verse la tabla de prendas generada dinámicamente -->
+
+<div class="prendas-table-container">
+  <table class="prendas-report-table">
+    <thead>
+      <tr>
+        <th>Prenda</th>
+        <th>Cantidad</th>
+        <th>Procesos</th>
+        <th>Área</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- EJEMPLO ROW 1: Prenda con múltiples áreas -->
+      <tr class="prendas-table-row">
+        <td class="prendas-name-cell">
+          <div class="prendas-name">JEAN REGULAR</div>
+          <span class="bodega-badge">Bodega</span>
+        </td>
+        <td>34</td>
+        <td class="procesos-cell">
+          <div class="procesos-info">
+            Corte → Costura → QC
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-info">+4 áreas</span>
+        </td>
+        <td>
+          <span class="estado-badge estado-pendiente">Pendiente</span>
+        </td>
+        <td class="acciones-cell">
+          <button class="btn-ver-prenda btn-sm btn-primary" 
+                  onclick="showPrendaTrackingFromTable(0)"
+                  type="button"
+                  aria-label="Ver detalles de prenda JEAN REGULAR">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            Ver
+          </button>
+        </td>
+      </tr>
+
+      <!-- EJEMPLO ROW 2: Prenda en ejecución -->
+      <tr class="prendas-table-row">
+        <td class="prendas-name-cell">
+          <div class="prendas-name">CAMISETA POLO</div>
+          <span class="confeciona-badge">Confecciona</span>
+        </td>
+        <td>50</td>
+        <td class="procesos-cell">
+          <div class="procesos-info">
+            Costura en progreso (3/5)
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-success">Costura</span>
+        </td>
+        <td>
+          <span class="estado-badge estado-en-ejecucion">En ejecución</span>
+        </td>
+        <td class="acciones-cell">
+          <button class="btn-ver-prenda btn-sm btn-primary" 
+                  onclick="showPrendaTrackingFromTable(1)"
+                  type="button"
+                  aria-label="Ver detalles de prenda CAMISETA POLO">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            Ver
+          </button>
+        </td>
+      </tr>
+
+      <!-- EJEMPLO ROW 3: Prenda completada -->
+      <tr class="prendas-table-row">
+        <td class="prendas-name-cell">
+          <div class="prendas-name">PANTALÓN DEPORTIVO</div>
+          <span class="badge" style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 10px; font-size: 9px; font-weight: 600;">Completada</span>
+        </td>
+        <td>25</td>
+        <td class="procesos-cell">
+          <div class="procesos-info">
+            Todos los procesos completados
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-success">Bodega</span>
+        </td>
+        <td>
+          <span class="estado-badge estado-completado">Completado</span>
+        </td>
+        <td class="acciones-cell">
+          <button class="btn-ver-prenda btn-sm btn-primary" 
+                  onclick="showPrendaTrackingFromTable(2)"
+                  type="button"
+                  aria-label="Ver detalles de prenda PANTALÓN DEPORTIVO">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            Ver
+          </button>
+        </td>
+      </tr>
+
+      <!-- EJEMPLO ROW 4: Prenda rechazada -->
+      <tr class="prendas-table-row">
+        <td class="prendas-name-cell">
+          <div class="prendas-name">JACKET IMPERMEABLE</div>
+          <span class="bodega-badge">Bodega</span>
+        </td>
+        <td>12</td>
+        <td class="procesos-cell">
+          <div class="procesos-info">
+            Control Calidad: Rechazado
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-danger">Control Calidad</span>
+        </td>
+        <td>
+          <span class="estado-badge estado-rechazado_cartera">Rechazado</span>
+        </td>
+        <td class="acciones-cell">
+          <button class="btn-ver-prenda btn-sm btn-primary" 
+                  onclick="showPrendaTrackingFromTable(3)"
+                  type="button"
+                  aria-label="Ver detalles de prenda JACKET IMPERMEABLE">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            Ver
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- =========================================== -->
+<!-- CLASES CSS Y ESTADOS DISPONIBLES -->
+<!-- =========================================== -->
+
+<!-- BADGES DE ESTADO (Columna "Estado") -->
+<!-- 
+  - estado-completado: Verde ✅
+  - estado-en-ejecucion: Azul 🔵
+  - estado-en-ejecución: Azul 🔵 (alternativo)
+  - estado-no-iniciado: Gris ⚪
+  - estado-pendiente: Amarillo ⚠️
+  - estado-pendiente_cartera: Amarillo ⚠️
+  - estado-rechazado_cartera: Rojo ❌
+  - estado-pendiente_insumos: Naranja 🟠
+  - estado-devuelto_a_asesora: Púrpura 🟣
+  - estado-pendiente_supervisor: Amarillo ⚠️
+  - estado-sin-procesos: Gris ⚪
+-->
+
+<!-- ÁREA/UBICACIÓN BADGES (Columna "Área") -->
+<!-- 
+  - badge-info: Azul claro
+  - badge-success: Verde
+  - badge-danger: Rojo
+  - badge-warning: Amarillo
+-->
+
+<!-- TIPOS DE PRENDAS BADGES (Primera columna) -->
+<!-- 
+  - bodega-badge: Amarillo/Naranja para prendas en bodega
+  - confeciona-badge: Verde para prendas en confección
+-->
+
+<!-- =========================================== -->
+<!-- NOTAS IMPORTANTES PARA GENERACIÓN DINÁMICA -->
+<!-- =========================================== -->
+
+<!--
+1. ACCESIBILIDAD:
+   - Siempre usar type="button" en botones
+   - Usar aria-label con descripción clara
+   - Mantener orden semántico correcto
+
+2. ESTILOS DINÁMICOS:
+   - Las clases de estado (estado-*) controlan el look
+   - Los badges heredan automáticamente los estilos
+   - Transiciones funcionan al cambiar clases
+
+3. RESPONSIVIDAD:
+   - La tabla es automáticamente scrollable en móviles
+   - Padding se ajusta según breakpoint
+   - Fuentes se escalan automáticamente
+
+4. COLORES Y GRADIENTES:
+   - Usar variables CSS: var(--color-primary), var(--color-success)
+   - No hardcodear colores
+   - Considerar dark mode prefers-color-scheme
+
+5. SVG ICONS:
+   - Mantener stroke-width="2"
+   - usar viewBox="0 0 24 24"
+   - Heredan color de texto automáticamente
+
+6. COMPATIBILIDAD:
+   - Testear en Chrome, Firefox, Safari
+   - Verificar en dispositivos reales (no solo DevTools)
+   - Wallets en iOS pueden necesitar ajustes adicionales
+-->
+
+<!-- =========================================== -->
+<!-- EJEMPLO DE JAVASCRIPT PARA GENERAR TABLA -->
+<!-- =========================================== -->
+
+<!--
+function generarTablaPrendas(prendas) {
+  const tbody = document.querySelector('.prendas-report-table tbody');
+  
+  return prendas.map((prenda, index) => `
+    <tr class="prendas-table-row">
+      <td class="prendas-name-cell">
+        <div class="prendas-name">${prenda.nombre}</div>
+        <span class="${prenda.ubicacion === 'bodega' ? 'bodega-badge' : 'confeciona-badge'}">
+          ${prenda.ubicacion.toUpperCase()}
+        </span>
+      </td>
+      <td>${prenda.cantidad}</td>
+      <td class="procesos-cell">
+        <div class="procesos-info">${prenda.procesos}</div>
+      </td>
+      <td><span class="badge badge-info">${prenda.area}</span></td>
+      <td>
+        <span class="estado-badge ${getEstadoClase(prenda.estado)}">
+          ${prenda.estado}
+        </span>
+      </td>
+      <td class="acciones-cell">
+        <button class="btn-ver-prenda btn-sm btn-primary" 
+                onclick="showPrendaTrackingFromTable(${index})"
+                type="button"
+                aria-label="Ver detalles de prenda ${prenda.nombre}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+          </svg>
+          Ver
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function getEstadoClase(estado) {
+  const estadoMap = {
+    'completado': 'estado-completado',
+    'en ejecución': 'estado-en-ejecucion',
+    'en ejecucion': 'estado-en-ejecucion',
+    'pendiente': 'estado-pendiente',
+    'rechazado': 'estado-rechazado_cartera',
+    'sin procesos': 'estado-sin-procesos',
+  };
+  return estadoMap[estado.toLowerCase()] || 'estado-no-iniciado';
+}
+-->

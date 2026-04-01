@@ -1,0 +1,168 @@
+    public function obtenerPrendasConRecibos(User $usuario): Collection
+    {
+        $tipoOperario = $this->obtenerTipoOperario($usuario);
+        $this->logTipoOperario($usuario, $tipoOperario);
+
+        $tiposRecibo = $this->determinarTiposRecibo($tipoOperario);
+        $query = $this->construirQueryRecibos($tipoOperario, $tiposRecibo);
+        $this->aplicarRestriccionesPorRol($query, $tipoOperario);
+
+        $recibos = $query->orderBy('created_at', 'desc')->get();
+        $recibos = $this->filtrarRecibosPorCortador($recibos, $tipoOperario, $usuario);
+        $recibos = $this->filtrarRecibosPorVisualizadorPlooter($recibos, $tipoOperario, $usuario);
+        $recibos = $this->agregarReflectivoAprobado($recibos, $tipoOperario, $usuario);
+        $recibos = $this->deduplicarRecibos($recibos);
+        $recibos = $this->aplicarFiltrosPorTipoOperario($recibos, $tipoOperario);
+
+        $this->logRecibosEncontrados($recibos, $tiposRecibo, $tipoOperario);
+
+        $prendasAgrupadas = $this->mapearRecibosAPrendas($recibos, $tipoOperario, $usuario);
+
+        if ($tipoOperario === 'vista-costura') {
+            return $prendasAgrupadas
+                ->sortByDesc(function ($item) {
+                    return $item['fecha_creacion'] ?? null;
+                })
+                ->values();
+        }
+
+        return $prendasAgrupadas
+            ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
+            ->sortByDesc(function ($item) {
+                return $item['fecha_creacion'] ?? null;
+            })
+            ->values();
+    }
+
+    private function logTipoOperario(User $usuario, string $tipoOperario): void
+    {
+        \Log::info(' [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [
+            'usuario' => $usuario->name,
+            'usuario_id' => $usuario->id,
+            'tipo_operario' => $tipoOperario,
+            'es_costura_reflectivo' => $tipoOperario === 'costura-reflectivo' ? 'SI' : 'NO',
+            'es_vista_costura' => $tipoOperario === 'vista-costura' ? 'SI' : 'NO'
+        ]);
+    }
+
+    private function determinarTiposRecibo(string $tipoOperario): array
+    {
+        $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
+
+        if ($tipoOperario === 'vista-costura') {
+            $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
+        }
+
+        if ($tipoOperario === 'costura-reflectivo') {
+            $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
+        }
+
+        if ($tipoOperario === 'visualizador_plooter') {
+            $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
+        }
+
+        return $tiposRecibo;
+    }
+
+    private function construirQueryRecibos(string $tipoOperario, array $tiposRecibo)
+    {
+        return ConsecutivoReciboPedido::where('activo', 1)
+            ->whereIn('tipo_recibo', $tiposRecibo)
+            ->whereIn('area', $tipoOperario === 'visualizador_plooter'
+                ? ['Corte']
+                : ($tipoOperario === 'vista-costura'
+                    ? ['Costura', 'Control de Calidad', 'Control Calidad']
+                    : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']))
+            ->with([
+                'prenda',
+                'prenda.pedidoProduccion',
+                'prenda.procesosPrenda',
+                'prenda.tallas',
+                'pedido',
+                'pedido.prendas',
+                'pedido.prendas.tallas',
+            ]);
+    }
+
+    private function aplicarRestriccionesPorRol($query, string $tipoOperario): void
+    {
+        if ($tipoOperario === 'cortador') {
+            $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+        }
+
+        if ($tipoOperario === 'cortador') {
+            $query->whereIn('area', ['Corte', 'Costura']);
+        }
+
+        if ($tipoOperario === 'costurero') {
+            $query->whereIn('area', ['Costura']);
+        }
+
+        if ($tipoOperario === 'confeccion-sobremedida') {
+            $query->whereIn('area', ['Costura']);
+        }
+    }
+    private function filtrarRecibosPorCortador(Collection $recibos, string $tipoOperario, User $usuario): Collection
+    {
+        if ($tipoOperario !== 'cortador') {
+            return $recibos;
+        }
+
+        $usuarioNombre = strtolower(trim($usuario->name));
+
+        $prendasDelCortador = ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+            ->pluck('prenda_pedido_id')
+            ->unique()
+            ->values();
+
+        return $recibos->filter(function ($recibo) use ($prendasDelCortador) {
+            $area = strtolower(trim((string) ($recibo->area ?? '')));
+
+            if ($area === 'costura') {
+                if (empty($recibo->prenda_id)) {
+                    return false;
+                }
+
+                if (!$prendasDelCortador->contains($recibo->prenda_id)) {
+                    return false;
+                }
+
+                $procesoCostura = ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                return !$procesoCostura || empty($procesoCostura->encargado);
+            }
+
+            return true;
+        })->values();
+    }
+
+    private function filtrarRecibosPorVisualizadorPlooter(Collection $recibos, string $tipoOperario, User $usuario): Collection
+    {
+        if ($tipoOperario !== 'visualizador_plooter') {
+            return $recibos;
+        }
+
+        $usuarioNombre = strtolower(trim($usuario->name));
+
+        return $recibos->filter(function ($recibo) use ($usuarioNombre) {
+            if (empty($recibo->prenda_id)) {
+                return false;
+            }
+
+            $procesoCostura = ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNull('deleted_at')
+                ->first();
+
+            if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                return false;
+            }
+
+            $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
+            return $encargadoNormalizado === $usuarioNombre;
+        })->values();
+    }

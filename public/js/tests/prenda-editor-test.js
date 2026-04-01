@@ -127,7 +127,7 @@ class PrendaEditorTest {
             }
 
             // IMPORTANTE: Cargar la prenda en modal para verificar que se renderiza con todos los datos
-            console.log('📂 Cargando prenda en modal...');
+            console.log(' Cargando prenda en modal...');
             
             if (!window.gestionItemsUI || !window.gestionItemsUI.prendaEditor) {
                 throw new Error('GestionItemsUI.prendaEditor no disponible');
@@ -172,7 +172,7 @@ class PrendaEditorTest {
                 });
             }
             
-            console.log('📊 Datos cargados en modal:', {
+            console.log(' Datos cargados en modal:', {
                 telasCargadas,
                 tallasCargadas,
                 procesosCargados,
@@ -287,7 +287,7 @@ class PrendaEditorTest {
 
         // Mostrar resumen
         console.log('\n' + '='.repeat(60));
-        console.log('📊 RESUMEN DE RESULTADOS');
+        console.log(' RESUMEN DE RESULTADOS');
         console.log('='.repeat(60));
         
         this.resultados.forEach((r, idx) => {

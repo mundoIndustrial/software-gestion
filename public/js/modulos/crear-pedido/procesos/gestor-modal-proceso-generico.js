@@ -260,7 +260,7 @@ function _cerrarModalProcesoGenerico_storage() {
     const storageDeshabilitado = false;
 
     if (storageDeshabilitado && modoActual === 'crear' && globalThis.procesoActualIndex !== undefined) {
-        console.log('[cerrarModalProcesoGenerico] 🚫 NO se limpia storage - imágenes necesarias para tarjetas');
+        console.log('[cerrarModalProcesoGenerico]  NO se limpia storage - imágenes necesarias para tarjetas');
         console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${globalThis.procesoActualIndex}`);
 
         if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
@@ -390,7 +390,7 @@ globalThis._imagenAEliminarIndice = null;
             e.stopImmediatePropagation();
             
             const indice = Number.parseInt(btn.dataset.indice, 10);
-            console.log('[EVENT-DELEGATION] 📌 Índice del botón:', indice);
+            console.log('[EVENT-DELEGATION]  Índice del botón:', indice);
             
             if (indice && typeof globalThis.eliminarImagenProceso === 'function') {
                 console.log('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
@@ -407,7 +407,7 @@ globalThis._imagenAEliminarIndice = null;
 globalThis.mostrarModalConfirmarEliminarImagen = function(indice) {
     console.log('[mostrarModalConfirmarEliminarImagen]  INICIANDO - Mostrando modal para imagen:', indice);
     globalThis._imagenAEliminarIndice = indice;
-    console.log('[mostrarModalConfirmarEliminarImagen] 📌 globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
+    console.log('[mostrarModalConfirmarEliminarImagen]  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     console.log('[mostrarModalConfirmarEliminarImagen]  Modal encontrado?:', !!modal);
@@ -1265,15 +1265,15 @@ globalThis.abrirEditorTallasEspecificas = function() {
     modalEditor.style.display = 'flex';
     
     //  DIAGNÓSTICO Z-INDEX
-    console.log('📌 [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
-    console.log('📌 [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
-    console.log('📌 [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
+    console.log(' [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
+    console.log(' [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
+    console.log(' [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Obtener z-index del modal principal
     const modalPrincipal = document.getElementById('modal-proceso-generico');
     if (modalPrincipal) {
-        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
-        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', globalThis.getComputedStyle(modalPrincipal).zIndex);
+        console.log(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
+        console.log(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', globalThis.getComputedStyle(modalPrincipal).zIndex);
     }
     
     // Forzar z-index aún más alto
@@ -1281,9 +1281,9 @@ globalThis.abrirEditorTallasEspecificas = function() {
     const zIndexPrincipalActual = parseInt(globalThis.getComputedStyle(modalPrincipal).zIndex) || 999999999;
     const nuevoZIndexEditor = zIndexPrincipalActual + 1;
     
-    console.log('📌 [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
-    console.log('📌 [EDITOR-TALLAS] Z-index PRINCIPAL actual:', zIndexPrincipalActual);
-    console.log('📌 [EDITOR-TALLAS] ASIGNANDO nuevo Z-index al editor:', nuevoZIndexEditor);
+    console.log(' [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
+    console.log(' [EDITOR-TALLAS] Z-index PRINCIPAL actual:', zIndexPrincipalActual);
+    console.log(' [EDITOR-TALLAS] ASIGNANDO nuevo Z-index al editor:', nuevoZIndexEditor);
     
     // Aplicar z-index forzado
     modalEditor.style.zIndex = nuevoZIndexEditor.toString();
@@ -1291,14 +1291,14 @@ globalThis.abrirEditorTallasEspecificas = function() {
     console.log(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Verificar contexto de apilamiento
-    console.log('📌 [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
+    console.log(' [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
     console.log('   - Modal Principal display:', globalThis.getComputedStyle(modalPrincipal).display);
     console.log('   - Modal Principal position:', globalThis.getComputedStyle(modalPrincipal).position);
     console.log('   - Editor display:', globalThis.getComputedStyle(modalEditor).display);
     console.log('   - Editor position:', globalThis.getComputedStyle(modalEditor).position);
     
     // Listar todos los elementos con z-index alto en la página
-    console.log('📌 [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
+    console.log(' [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
     document.querySelectorAll('[style*="z-index"], [class*="modal"], [class*="overlay"]').forEach((el, idx) => {
         const zIdx = globalThis.getComputedStyle(el).zIndex;
         if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100) {
@@ -1505,14 +1505,14 @@ globalThis.guardarTallasSeleccionadas = function() {
         console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!globalThis.procesosSeleccionados}`);
     }
 
-    console.log('📌 [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
+    console.log(' [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
     console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
     console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
     
-    console.log('📌 [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
+    console.log(' [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
     console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
     console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
@@ -1606,7 +1606,7 @@ globalThis.actualizarResumenTallasProceso = function() {
     
     // AGREGAR SOBREMEDIDA AL RESUMEN
     if (haySobremedida && globalThis.tallasCantidadesProceso.sobremedida) {
-        console.log('[actualizarResumenTallasProceso] 📐 Renderizando SOBREMEDIDA:', globalThis.tallasCantidadesProceso.sobremedida);
+        console.log('[actualizarResumenTallasProceso]  Renderizando SOBREMEDIDA:', globalThis.tallasCantidadesProceso.sobremedida);
         
         const sobremedidaHTML = Object.entries(globalThis.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
             console.log(`[actualizarResumenTallasProceso]  SOBREMEDIDA ${genero}: ${cantidad}`);
@@ -1655,9 +1655,9 @@ globalThis.agregarProcesoAlPedido = function() {
         //  FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
         // Las imágenes se guardan por índice numérico (1, 2, 3), NO por nombre de proceso
         console.log('[agregarProcesoAlPedido]  Buscando imágenes en globalThis.procesosImagenesStorage...');
-        console.log('[agregarProcesoAlPedido] 📌 procesoActual:', procesoActual);
-        console.log('[agregarProcesoAlPedido] 📌 procesoActualIndex:', globalThis.procesoActualIndex);
-        console.log('[agregarProcesoAlPedido] 📌 globalThis.procesosImagenesStorage.obtenerImagenes:', typeof globalThis.procesosImagenesStorage?.obtenerImagenes);
+        console.log('[agregarProcesoAlPedido]  procesoActual:', procesoActual);
+        console.log('[agregarProcesoAlPedido]  procesoActualIndex:', globalThis.procesoActualIndex);
+        console.log('[agregarProcesoAlPedido]  globalThis.procesosImagenesStorage.obtenerImagenes:', typeof globalThis.procesosImagenesStorage?.obtenerImagenes);
         
         //  CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
         // PERO TAMBIÉN capturar imágenes NUEVAS de imagenesProcesoActual (agregadas después de eliminar)

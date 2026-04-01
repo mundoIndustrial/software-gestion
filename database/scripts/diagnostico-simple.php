@@ -43,7 +43,7 @@ if (file_exists($logFile)) {
 echo "\n";
 
 // ===== 2. VERIFICAR DIRECTORIOS =====
-echo "📂 2. VERIFICANDO DIRECTORIOS\n";
+echo " 2. VERIFICANDO DIRECTORIOS\n";
 echo str_repeat("─", 70) . "\n";
 
 $carpetas = [
@@ -105,7 +105,7 @@ if (is_dir($pedidosDir)) {
                 }
             }
             
-            echo "   📌 Pedido $pedidoId:\n";
+            echo "    Pedido $pedidoId:\n";
             echo "      • Archivos: $count\n";
             echo "      • tamano: " . number_format($totalSize / 1024, 2) . " KB\n";
             

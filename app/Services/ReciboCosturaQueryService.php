@@ -8,6 +8,7 @@ use App\Models\PrendaPedido;
 use App\Repositories\ConsecutivoReciboPedidoRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ReciboCosturaQueryService
@@ -49,14 +50,21 @@ class ReciboCosturaQueryService
      */
     public function applyFilters(Builder $query, array $filters): Builder
     {
-        // Filtro por estado
-        if (!empty($filters['estado'])) {
-            $query->whereIn('estado', (array) $filters['estado']);
-        }
+        // Filtros especiales para revisor_entregas
+        $user = auth()->user();
+        if ($user && $user->hasRole('revisor_entregas')) {
+            // Excluir áreas: corte, insumos, creacion orden
+            $query->whereNotIn(DB::raw('LOWER(TRIM(area))'), ['corte', 'insumos', 'creacion orden']);
+        } else {
+            // Filtro por estado (solo para otros roles)
+            if (!empty($filters['estado'])) {
+                $query->whereIn('estado', (array) $filters['estado']);
+            }
 
-        // Filtro por área
-        if (!empty($filters['area'])) {
-            $query->whereIn('area', (array) $filters['area']);
+            // Filtro por área (solo para otros roles)
+            if (!empty($filters['area'])) {
+                $query->whereIn('area', (array) $filters['area']);
+            }
         }
 
         // Filtro por número de recibo
@@ -230,7 +238,6 @@ class ReciboCosturaQueryService
 
     /**
      * Calcular días transcurridos desde creación
-     * 
      * @param ConsecutivoReciboPedido $recibo
      * @return int
      */

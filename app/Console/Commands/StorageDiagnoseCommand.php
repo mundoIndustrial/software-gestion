@@ -240,7 +240,7 @@ class StorageDiagnoseCommand extends Command
 
         $this->newLine();
 
-        $this->line('📌 PRÓXIMOS PASOS:');
+        $this->line(' PRÓXIMOS PASOS:');
         $this->line('  1. Visita: http://localhost:8000/storage');
         $this->line('  2. Prueba: http://localhost:8000/storage/test-file.txt');
         $this->line('  3. Si ves 403: Ejecuta con --fix o revisa permisos manualmente');

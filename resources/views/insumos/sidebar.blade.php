@@ -24,46 +24,58 @@
   <div class="sidebar-content">
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
-      <!-- Control de Insumos -->
-      <li class="menu-item">
-        <a href="{{ route('insumos.materiales.index') }}"
-           class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
-           aria-label="Control de Insumos">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-          <span class="menu-label">Control de Insumos</span>
-        </a>
-      </li>
+      @if(auth()->user()->hasRole('visualizador_plooter'))
+        <!-- VISUALIZADOR PLOOTER: Solo puede ver Gestion Plooter -->
+        <li class="menu-item">
+          <a href="{{ route('insumos.plooter.index') }}"
+             class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+             aria-label="Gestion Plooter">
+            <span class="material-symbols-rounded" aria-hidden="true">description</span>
+            <span class="menu-label">Gestion Plooter</span>
+          </a>
+        </li>
+      @else
+        <!-- Control de Insumos -->
+        <li class="menu-item">
+          <a href="{{ route('insumos.materiales.index') }}"
+             class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+             aria-label="Control de Insumos">
+            <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+            <span class="menu-label">Control de Insumos</span>
+          </a>
+        </li>
 
-      <!-- Gestion Plooter -->
-      <li class="menu-item">
-        <a href="{{ route('insumos.plooter.index') }}"
-           class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
-           aria-label="Gestion Plooter">
-          <span class="material-symbols-rounded" aria-hidden="true">description</span>
-          <span class="menu-label">Gestion Plooter</span>
-        </a>
-      </li>
+        <!-- Gestion Plooter -->
+        <li class="menu-item">
+          <a href="{{ route('insumos.plooter.index') }}"
+             class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+             aria-label="Gestion Plooter">
+            <span class="material-symbols-rounded" aria-hidden="true">description</span>
+            <span class="menu-label">Gestion Plooter</span>
+          </a>
+        </li>
 
-      <!-- Inventario de Telas -->
-      <li class="menu-item">
-        <a href="{{ route('inventario-telas.index') }}"
-           class="menu-link {{ request()->routeIs('inventario-telas.*') || request()->is('inventario-telas*') ? 'active' : '' }}"
-           aria-label="Inventario de Telas">
-          <span class="material-symbols-rounded" aria-hidden="true">checkroom</span>
-          <span class="menu-label">Inventario de Telas</span>
-        </a>
-      </li>
+        <!-- Inventario de Telas -->
+        <li class="menu-item">
+          <a href="{{ route('inventario-telas.index') }}"
+             class="menu-link {{ request()->routeIs('inventario-telas.*') || request()->is('inventario-telas*') ? 'active' : '' }}"
+             aria-label="Inventario de Telas">
+            <span class="material-symbols-rounded" aria-hidden="true">checkroom</span>
+            <span class="menu-label">Inventario de Telas</span>
+          </a>
+        </li>
 
-      <!-- Volver al Dashboard Principal - Solo para supervisor_planta y admin -->
-      @if(auth()->user()->role && in_array(auth()->user()->role->name, ['supervisor_planta', 'admin']))
-      <li class="menu-item">
-        <a href="{{ route('dashboard') }}"
-           class="menu-link"
-           aria-label="Volver al dashboard principal">
-          <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-          <span class="menu-label">Volver</span>
-        </a>
-      </li>
+        <!-- Volver al Dashboard Principal - Solo para supervisor_planta y admin -->
+        @if(auth()->user()->role && in_array(auth()->user()->role->name, ['supervisor_planta', 'admin']))
+        <li class="menu-item">
+          <a href="{{ route('dashboard') }}"
+             class="menu-link"
+             aria-label="Volver al dashboard principal">
+            <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+            <span class="menu-label">Volver</span>
+          </a>
+        </li>
+        @endif
       @endif
     </ul>
   </div>

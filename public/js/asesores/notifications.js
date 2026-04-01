@@ -114,66 +114,63 @@ function renderNotifications(data) {
     
     const notifications = [];
     
+    function formatElapsedTime(dateInput) {
+        const fecha = new Date(dateInput);
+        if (isNaN(fecha.getTime())) {
+            return 'Hace un momento';
+        }
+        const diffMs = new Date() - fecha;
+        const horasTranscurridas = Math.floor(diffMs / (1000 * 60 * 60));
+        if (horasTranscurridas < 1) {
+            const minutosTranscurridos = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+            return `Hace ${minutosTranscurridos} min`;
+        }
+        if (horasTranscurridas < 24) {
+            return `Hace ${horasTranscurridas} hora${horasTranscurridas !== 1 ? 's' : ''}`;
+        }
+        const diasTranscurridos = Math.floor(horasTranscurridas / 24);
+        return `Hace ${diasTranscurridos} día${diasTranscurridos !== 1 ? 's' : ''}`;
+    }
+
     // ============================================
-    // NUEVA SECCIÓN: Fecha Estimada de Entrega
+    // Pedido devuelto a asesora
     // ============================================
-    if (data.notificaciones_fecha_estimada && data.notificaciones_fecha_estimada.length > 0) {
-        data.notificaciones_fecha_estimada.forEach(notif => {
-            const fecha = new Date(notif.created_at);
-            const horasTranscurridas = Math.floor((new Date() - fecha) / (1000 * 60 * 60));
-            let tiempoTranscurrido = '';
-            
-            if (horasTranscurridas < 1) {
-                const minutosTranscurridos = Math.floor((new Date() - fecha) / (1000 * 60));
-                tiempoTranscurrido = `${minutosTranscurridos} min`;
-            } else if (horasTranscurridas < 24) {
-                tiempoTranscurrido = `${horasTranscurridas} hora${horasTranscurridas !== 1 ? 's' : ''}`;
-            } else {
-                const diasTranscurridos = Math.floor(horasTranscurridas / 24);
-                tiempoTranscurrido = `${diasTranscurridos} día${diasTranscurridos !== 1 ? 's' : ''}`;
-            }
-            
+    if (data.pedidos_devueltos && data.pedidos_devueltos.length > 0) {
+        data.pedidos_devueltos.forEach(pedido => {
             notifications.push({
-                id: notif.id,
-                icon: 'fa-calendar-check',
-                color: '#3b82f6',
-                title: notif.titulo,
-                message: `${notif.numero_pedido} - ${notif.cliente} | Fecha: ${notif.fecha_estimada}`,
-                time: `Hace ${tiempoTranscurrido}`,
-                link: `#`,
-                tipo: 'fecha_estimada',
+                id: pedido.id,
+                icon: 'fa-rotate-left',
+                color: '#f59e0b',
+                title: `Pedido devuelto #${String(pedido.numero_pedido).padStart(5, '0')}`,
+                message: `${pedido.cliente || 'Cliente sin nombre'}${pedido.motivo_revision ? ' · ' + pedido.motivo_revision : ''}`,
+                time: formatElapsedTime(pedido.fecha_revision || pedido.updated_at),
+                link: '#',
+                tipo: 'pedido_devuelto',
                 isNew: true
             });
         });
     }
-    
+
     // ============================================
-    // NUEVO: Pedidos/Cotizaciones de OTROS asesores
+    // Recibo devuelto a asesora
     // ============================================
-    // Agregar notificaciones de otros asesores
-    if (data.pedidos_otros_asesores && data.pedidos_otros_asesores.length > 0) {
-        data.pedidos_otros_asesores.forEach(pedido => {
-            const fecha = new Date(pedido.created_at);
-            const horasTranscurridas = Math.floor((new Date() - fecha) / (1000 * 60 * 60));
-            let tiempoTranscurrido = '';
-            
-            if (horasTranscurridas < 1) {
-                const minutosTranscurridos = Math.floor((new Date() - fecha) / (1000 * 60));
-                tiempoTranscurrido = `${minutosTranscurridos} min`;
-            } else if (horasTranscurridas < 24) {
-                tiempoTranscurrido = `${horasTranscurridas} hora${horasTranscurridas !== 1 ? 's' : ''}`;
-            } else {
-                const diasTranscurridos = Math.floor(horasTranscurridas / 24);
-                tiempoTranscurrido = `${diasTranscurridos} día${diasTranscurridos !== 1 ? 's' : ''}`;
-            }
-            
+    if (data.recibos_devueltos && data.recibos_devueltos.length > 0) {
+        data.recibos_devueltos.forEach(recibo => {
+            const pedidoNumero = recibo.numero_pedido ? String(recibo.numero_pedido) : '--';
+            const reciboNumero = recibo.numero_recibo ? String(recibo.numero_recibo) : '--';
+            const prendaInfo = recibo.prenda_nombre ? ` · ${recibo.prenda_nombre}` : '';
+            const tipoInfo = recibo.tipo_recibo ? ` · ${recibo.tipo_recibo}` : '';
+            const motivoInfo = recibo.motivo ? ` · Motivo: ${recibo.motivo}` : '';
             notifications.push({
-                icon: 'fa-shopping-cart',
-                color: '#10b981',
-                title: `${pedido.asesor_nombre} - COT-${String(pedido.numero_cotizacion).padStart(5, '0')}`,
-                message: `PED-${String(pedido.numero_pedido).padStart(5, '0')} - ${pedido.cliente}`,
-                time: `Hace ${tiempoTranscurrido}`,
-                link: `#`
+                id: recibo.id,
+                icon: 'fa-undo',
+                color: '#ef4444',
+                title: `Pedido #${pedidoNumero} · Recibo #${reciboNumero}`,
+                message: `Prenda${prendaInfo}${tipoInfo}${motivoInfo}`,
+                time: formatElapsedTime(recibo.updated_at),
+                link: '#',
+                tipo: 'recibo_devuelto',
+                isNew: true
             });
         });
     }
@@ -184,7 +181,7 @@ function renderNotifications(data) {
         notificationList.innerHTML = `
             <div class="notification-empty">
                 <i class="fas fa-bell-slash"></i>
-                <p>Sin novedad en otros asesores</p>
+                <p>Sin notificaciones</p>
             </div>
         `;
     } else {

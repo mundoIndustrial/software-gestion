@@ -39,13 +39,13 @@ class RegistroOrdenExtendedQueryService
             ])
             ->whereNotNull('numero_pedido') //  Excluir pedidos sin número de pedido
             ->where('numero_pedido', '>', 0) //  Asegurar que el número sea válido
-            ->where(function (QueryBuilder $query) {
+            ->where(function (Builder $query) {
                 $query
                     ->whereIn('estado', [
                         'Entregado', self::ESTADO_EN_EJECUCION, 'No iniciado', 'Anulada',
                         'Pendiente', 'PENDIENTE_SUPERVISOR' //  Agregar estos estados
                     ])
-                    ->orWhere(function (QueryBuilder $q) {
+                    ->orWhere(function (Builder $q) {
                         $q->where('estado', 'PENDIENTE_INSUMOS')
                             ->whereHas('prendas', function (Builder $prendasQuery) {
                                 $prendasQuery->where('de_bodega', true);

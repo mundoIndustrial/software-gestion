@@ -84,7 +84,7 @@ Modal completamente relleno en ~500ms
 
 ---
 
-## ✨ Ventajas
+##  Ventajas
 
 ### 1. **Mantenibilidad**
 ```javascript

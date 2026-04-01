@@ -9,7 +9,7 @@
 
 ##  PROBLEMAS ENCONTRADOS
 
-### ❌ 1. Single Responsibility Principle VIOLADO
+###  1. Single Responsibility Principle VIOLADO
 
 El `ImagenMapperService` original hacía:
 
@@ -31,7 +31,7 @@ class ImagenMapperService {
 - Difícil de testear (necesita toda la estructura)
 - Cambios en un formato afectan a todo
 
-### ❌ 2. Duplicación de Lógica (Violación DRY)
+###  2. Duplicación de Lógica (Violación DRY)
 
 Ambos métodos contenían lógica similar pero no reutilizable:
 
@@ -51,7 +51,7 @@ elseif (is_string($imagen)) { ... }
 - Cambiar la lógica de imágenes requiere cambios en 2 lugares
 - Bug fixes en un lugar no se aplican al otro
 
-### ❌ 3. Lógica de Negocio Mezclada (Violación DDD)
+###  3. Lógica de Negocio Mezclada (Violación DDD)
 
 ```php
 // En mapearImagenesTelas()
@@ -64,7 +64,7 @@ La decisión "cómo procesar telas" es lógica de negocio del Domain, pero está
 Infrastructure Mapper + Domain Logic = Confusión de responsabilidades
 ```
 
-### ❌ 4. Falta de Tipos y Estructura
+###  4. Falta de Tipos y Estructura
 
 ```php
 public function mapearImagenesPrenda(array $item): array  // ← Qué estructura espera $item?
@@ -77,7 +77,7 @@ Imposible saber:
 
 **Impacto:** Errores en runtime, documentación fuera de sync.
 
-### ❌ 5. Sin Validación (Factory Method Falta)
+###  5. Sin Validación (Factory Method Falta)
 
 ```php
 foreach ($imagenes as $idx => $imagen) {
@@ -90,7 +90,7 @@ foreach ($imagenes as $idx => $imagen) {
 
 **Impacto:** Imágenes perdidas sin avisar al usuario.
 
-### ❌ 6. Testing Difícil
+###  6. Testing Difícil
 
 ```php
 // Para testear este servicio necesitarías:
@@ -231,7 +231,7 @@ class ImagenesService {
 
 ##  COMPARATIVA: ANTES vs DESPUÉS
 
-### ❌ ANTES (Monolítíco)
+###  ANTES (Monolítíco)
 ```
 Frontend Data
     ↓
@@ -323,7 +323,7 @@ $this->assertEquals('blob:...', $imagenVO->previewUrl);
 
 ##  VENTAJAS PARA TESTING
 
-### ❌ Antes (Difícil)
+###  Antes (Difícil)
 ```php
 public function testMapearPrenda() {
     $service = new ImagenMapperService(
@@ -385,11 +385,11 @@ public function testPrendaImagenesMapper() {
 
 | Principio | Antes | Después |
 |-----------|-------|---------|
-| S (Single Responsibility) | ❌ Múltiples |  Una cada clase |
-| O (Open/Closed) | ❌ Cerrado a cambios |  Abierto a extensión |
-| L (Liskov Substitution) | ❌ N/A |  Interfaces claras |
-| I (Interface Segregation) | ❌ Métodos gordos |  Métodos pequeños |
-| D (Dependency Inversion) | ❌ Acoplado a servicios |  Inyección de deps |
+| S (Single Responsibility) |  Múltiples |  Una cada clase |
+| O (Open/Closed) |  Cerrado a cambios |  Abierto a extensión |
+| L (Liskov Substitution) |  N/A |  Interfaces claras |
+| I (Interface Segregation) |  Métodos gordos |  Métodos pequeños |
+| D (Dependency Inversion) |  Acoplado a servicios |  Inyección de deps |
 
 ---
 
@@ -451,7 +451,7 @@ Esta refactorización sigue:
 
 ---
 
-## ✨ RESUMEN DE BENEFICIOS
+##  RESUMEN DE BENEFICIOS
 
 | Aspecto | Beneficio |
 |---------|-----------|

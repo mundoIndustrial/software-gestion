@@ -1,7 +1,7 @@
 // DRAG & DROP PARA PROCESOS - EXACTAMENTE COMO PRENDAS
 // Sin logs para una experiencia limpia
 
-window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
+globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     console.log(`[setupDragAndDropProceso]  INICIO - Configurando para preview ${procesoIndex}`);
     console.log(`[setupDragAndDropProceso]Timestamp:`, new Date().toISOString());
     console.log(`[setupDragAndDropProceso]  Stack trace:`, new Error().stack);
@@ -83,9 +83,9 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         tempInput.files = files;
         
         // Usar la función existente para manejar la imagen
-        if (typeof window.manejarImagenProceso === 'function') {
+        if (typeof globalThis.manejarImagenProceso === 'function') {
             console.log(`[setupDragAndDropProceso]  Llamando manejarImagenProceso desde drop ${procesoIndex}`);
-            window.manejarImagenProceso(tempInput, procesoIndex);
+            globalThis.manejarImagenProceso(tempInput, procesoIndex);
         } else {
             console.error(`[setupDragAndDropProceso]  manejarImagenProceso no disponible`);
         }
@@ -181,7 +181,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
 };
 
 // Configurar drag & drop para toda la sección
-window.setupDragAndDropSeccionCompleta = function() {
+globalThis.setupDragAndDropSeccionCompleta = function() {
     // Buscar la sección completa
     const secciones = document.querySelectorAll('.form-section');
     let seccionImagenes = null;
@@ -200,8 +200,8 @@ window.setupDragAndDropSeccionCompleta = function() {
     }
     
     // Variables globales para tracking
-    window.dragTarget = null;
-    window.dragIndex = null;
+    globalThis.dragTarget = null;
+    globalThis.dragIndex = null;
     
     // Evento dragover en toda la sección
     seccionImagenes.addEventListener('dragover', function(e) {
@@ -214,17 +214,17 @@ window.setupDragAndDropSeccionCompleta = function() {
             const index = preview.id.replace('proceso-foto-preview-', '');
             
             // Si es un preview diferente, actualizar
-            if (window.dragTarget !== preview) {
+            if (globalThis.dragTarget !== preview) {
                 // Restaurar el anterior
-                if (window.dragTarget) {
-                    window.dragTarget.style.background = '';
-                    window.dragTarget.style.border = '2px dashed #0066cc';
-                    window.dragTarget.style.opacity = '1';
+                if (globalThis.dragTarget) {
+                    globalThis.dragTarget.style.background = '';
+                    globalThis.dragTarget.style.border = '2px dashed #0066cc';
+                    globalThis.dragTarget.style.opacity = '1';
                 }
                 
                 // Resaltar el nuevo
-                window.dragTarget = preview;
-                window.dragIndex = index;
+                globalThis.dragTarget = preview;
+                globalThis.dragIndex = index;
                 preview.style.background = '#eff6ff';
                 preview.style.border = '2px dashed #3b82f6';
                 preview.style.opacity = '0.8';
@@ -239,12 +239,12 @@ window.setupDragAndDropSeccionCompleta = function() {
         
         // Restaurar si salimos de la sección
         if (!e.relatedTarget || !seccionImagenes.contains(e.relatedTarget)) {
-            if (window.dragTarget) {
-                window.dragTarget.style.background = '';
-                window.dragTarget.style.border = '2px dashed #0066cc';
-                window.dragTarget.style.opacity = '1';
-                window.dragTarget = null;
-                window.dragIndex = null;
+            if (globalThis.dragTarget) {
+                globalThis.dragTarget.style.background = '';
+                globalThis.dragTarget.style.border = '2px dashed #0066cc';
+                globalThis.dragTarget.style.opacity = '1';
+                globalThis.dragTarget = null;
+                globalThis.dragIndex = null;
             }
         }
     });
@@ -255,10 +255,10 @@ window.setupDragAndDropSeccionCompleta = function() {
         e.stopPropagation();
         
         // Restaurar estilos
-        if (window.dragTarget) {
-            window.dragTarget.style.background = '';
-            window.dragTarget.style.border = '2px dashed #0066cc';
-            window.dragTarget.style.opacity = '1';
+        if (globalThis.dragTarget) {
+            globalThis.dragTarget.style.background = '';
+            globalThis.dragTarget.style.border = '2px dashed #0066cc';
+            globalThis.dragTarget.style.opacity = '1';
         }
         
         const files = e.dataTransfer.files;
@@ -286,8 +286,8 @@ window.setupDragAndDropSeccionCompleta = function() {
         }
         
         // Si aún no detectamos, usar dragIndex (guardado en dragover)
-        if (!procesoIndex && window.dragIndex) {
-            procesoIndex = window.dragIndex;
+        if (!procesoIndex && globalThis.dragIndex) {
+            procesoIndex = globalThis.dragIndex;
             console.log(`[Drop Fallback] Usando dragIndex: ${procesoIndex}`);
         }
         
@@ -311,13 +311,13 @@ window.setupDragAndDropSeccionCompleta = function() {
         tempInput.files = files;
         
         // Usar la función existente
-        if (typeof window.manejarImagenProceso === 'function') {
-            window.manejarImagenProceso(tempInput, parseInt(procesoIndex));
+        if (typeof globalThis.manejarImagenProceso === 'function') {
+            globalThis.manejarImagenProceso(tempInput, parseInt(procesoIndex));
         }
         
         // Reset variables
-        window.dragTarget = null;
-        window.dragIndex = null;
+        globalThis.dragTarget = null;
+        globalThis.dragIndex = null;
     });
 };
 
@@ -330,7 +330,7 @@ for (let i = 1; i <= 3; i++) {
     console.log(`[drag-drop-procesos-estilo-prenda]  Buscando preview ${i}:`, !!preview);
     if (preview) {
         console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} encontrado, configurando setupDragAndDropProceso`);
-        window.setupDragAndDropProceso(preview, i);
+        globalThis.setupDragAndDropProceso(preview, i);
     } else {
         console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} NO encontrado`);
     }
@@ -340,4 +340,4 @@ console.log('[drag-drop-procesos-estilo-prenda]  FIN - Inicialización automáti
 
 // También configurar la sección completa
 console.log('[drag-drop-procesos-estilo-prenda]  Configurando sección completa');
-window.setupDragAndDropSeccionCompleta();
+globalThis.setupDragAndDropSeccionCompleta();

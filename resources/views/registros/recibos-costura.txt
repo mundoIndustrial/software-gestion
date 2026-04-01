@@ -702,7 +702,7 @@ function verDetallesRecibo(reciboId) {
         return;
     }
     
-    console.log(`[verDetallesRecibo] 📌 Fila encontrada para recibo ${reciboId}`);
+    console.log(`[verDetallesRecibo]  Fila encontrada para recibo ${reciboId}`);
     
     // Intentar obtener el enlace del pedido para extraer el pedido_produccion_id
     const enlacePedido = fila.querySelector('a[href*="/registros/"]');
@@ -937,7 +937,7 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
 
 // Función para abrir el modal de agregar proceso desde el badge del área
 window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, prendaId) {
-    console.log('[abrirModalAgregarProcesoDesdeArea] 📌 Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
+    console.log('[abrirModalAgregarProcesoDesdeArea]  Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
     
     // Cerrar cualquier dropdown abierto
     closeDropdownRecibos();

@@ -61,7 +61,7 @@ window.PrendaEditorLoader = (function() {
             '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js',
             '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js',
 
-            // 🚫 NOTA: prenda-editor.js ya se carga directamente en blade.php
+            //  NOTA: prenda-editor.js ya se carga directamente en blade.php
             // para evitar duplicación y SyntaxError de redeclaración
 
             // Módulos dependientes (manejadores de variaciones, etc.)

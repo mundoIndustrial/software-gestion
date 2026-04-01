@@ -75,7 +75,7 @@ class EppImagenesHelper
      */
     public static function logObtenerPorCategoria(string $categoria, int $total): void
     {
-        Log::debug('📂 [EPP-IMAGENES] Obteniendo EPPs por categoría sin tabla epp_imagenes', [
+        Log::debug(' [EPP-IMAGENES] Obteniendo EPPs por categoría sin tabla epp_imagenes', [
             'categoria' => $categoria,
             'total' => $total,
             'imagenes_source' => 'pedido_epp_imagenes (si aplica contexto de pedido)',

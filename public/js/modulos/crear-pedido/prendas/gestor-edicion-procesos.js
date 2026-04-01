@@ -30,7 +30,7 @@ class GestorEditacionProcesos {
 
         // Si hay un proceso en edición, guardarlo antes
         if (this.procesoEnEdicionActual && this.procesoEnEdicionActual.tipo !== tipo) {
-            console.log('📌 [GESTOR-EDICION] Hay otro proceso en edición, guardando cambios...');
+            console.log(' [GESTOR-EDICION] Hay otro proceso en edición, guardando cambios...');
             this.guardarCambiosActuales();
         }
 

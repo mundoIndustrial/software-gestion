@@ -8,7 +8,7 @@ Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflecti
 
 ### En el Editor de Tallas Específicas, cada talla ahora tiene:
 
-1. **📍 Ubicación(es) por Talla**
+1. ** Ubicación(es) por Talla**
    - Input para ingresar ubicaciones específicas
    - Botón para agregar múltiples ubicaciones
    - Tags removibles de ubicaciones agregadas

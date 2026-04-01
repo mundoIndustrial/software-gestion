@@ -59,7 +59,7 @@ export class PedidosRecibosModule {
         const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
         const esRegistros = window.location.pathname.includes('/registros');
         if ((esSupervisorPedidos || esRegistros) && tipoRecibo === 'costura-bodega') {
-            console.warn('🚫 [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
+            console.warn(' [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
             return;
         }
         

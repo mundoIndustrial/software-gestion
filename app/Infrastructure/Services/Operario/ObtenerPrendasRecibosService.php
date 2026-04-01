@@ -264,13 +264,19 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             // Para costura-reflectivo: mostrar COSTURA y REFLECTIVO
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
+        if ($tipoOperario === 'visualizador_plooter') {
+            // Para visualizador_plooter: mostrar COSTURA solo del área Corte
+            $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
+        }
 
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', $tipoOperario === 'vista-costura'
-                ? ['Costura', 'Control de Calidad', 'Control Calidad']
-                : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->whereIn('area', $tipoOperario === 'visualizador_plooter'
+                ? ['Corte']
+                : ($tipoOperario === 'vista-costura'
+                    ? ['Costura', 'Control de Calidad', 'Control Calidad']
+                    : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']))
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
@@ -329,6 +335,33 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 
                 // Área Corte: incluir siempre
                 return true;
+            })->values();
+        }
+
+        // Para visualizador_plooter: mostrar solo recibos donde el usuario es encargado
+        if ($tipoOperario === 'visualizador_plooter') {
+            $usuarioNombre = strtolower(trim($usuario->name));
+            
+            $recibos = $recibos->filter(function ($recibo) use ($usuarioNombre) {
+                // Validar que tenga prenda_id
+                if (empty($recibo->prenda_id)) {
+                    return false;
+                }
+                
+                // Obtener el proceso de Costura para esta prenda
+                $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                // Solo mostrar si hay un encargado asignado en el proceso de Costura
+                if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                    return false;
+                }
+
+                // Verificar si el encargado es el usuario actual
+                $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
+                return $encargadoNormalizado === $usuarioNombre;
             })->values();
         }
 
@@ -1170,6 +1203,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         if ($usuario->hasRole('lider-reflectivo')) {
             return 'costura-reflectivo'; // Mismo comportamiento que costura-reflectivo
+        }
+
+        if ($usuario->hasRole('visualizador_plooter')) {
+            return 'visualizador_plooter';
         }
 
         return 'desconocido';

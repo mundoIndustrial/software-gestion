@@ -28,7 +28,7 @@ class InspectImagePaths extends Command
         }
 
         foreach ($prendas as $prenda) {
-            $this->info("📌 Prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
+            $this->info(" Prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
             
             // Fotos de prenda
             $fotosPrenda = DB::table('prenda_fotos_pedido')

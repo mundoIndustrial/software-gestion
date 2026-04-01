@@ -272,7 +272,7 @@ class EppService {
                 );
             } else {
                 // Si no tiene pedidoEppId, es agregar (CREATE)
-                console.log('[EppService] ✨ MODO CREAR: Agregando nuevo EPP al pedido...');
+                console.log('[EppService]  MODO CREAR: Agregando nuevo EPP al pedido...');
                 resultado = await this.apiService.agregarEPPAlPedido(
                     pedidoId,
                     eppId,

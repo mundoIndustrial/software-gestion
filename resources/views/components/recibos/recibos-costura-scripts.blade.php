@@ -239,7 +239,7 @@ function generarDescripcionSimple(prenda) {
             if (!trimmed) return false;
             if (trimmed.match(/^[A-Z]{5,}[A-Z\s]{0,10}$/i) && 
                 !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE)/i)) {
-                console.log('[generarDescripcionSimple] 🚫 Línea basura filtrada:', trimmed);
+                console.log('[generarDescripcionSimple]  Línea basura filtrada:', trimmed);
                 return false;
             }
             return true;
@@ -1380,7 +1380,7 @@ function createReciboRow(recibo) {
         </td>
         <td>
             <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); console.log('[ONCLICK TABLE CELL] 📌 Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
+                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); console.log('[ONCLICK TABLE CELL]  Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                         <span class="descripcion-prenda-texto">${recibo.nombre_prenda || 'Sin prendas'}</span> <span style="color: #3b82f6; font-weight: 600;">...</span>
                     </span>

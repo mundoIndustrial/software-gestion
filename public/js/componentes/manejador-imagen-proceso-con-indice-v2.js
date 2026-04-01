@@ -6,7 +6,7 @@
  * Wrapper para manejar carga de imágenes en el modal genérico de procesos
  * Coordina dos índices:
  * - Índice del cuadro HTML (1, 2, 3) para actualizar el preview visual
- * - Índice del proceso en storage (dinámico, basado en window.procesoActualIndex)
+ * - Índice del proceso en storage (dinámico, basado en globalThis.procesoActualIndex)
  * 
  *  CAMBIOS v2:
  * - Agregado guard para prevenir doble disparo del file dialog
@@ -21,37 +21,37 @@ console.log(' Manejador de Imagen Proceso Con Índice (v2) cargado...');
 
 /**
  * Wrapper para manejar imagen de proceso
- * Recibe el cuadro que se completó (1, 2, 3) y usa window.procesoActualIndex para el storage
+ * Recibe el cuadro que se completó (1, 2, 3) y usa globalThis.procesoActualIndex para el storage
  * 
  * @param {HTMLInputElement} input - Input de tipo file
  * @param {number} cuadroIndex - Índice del cuadro en el modal (1, 2, 3)
  */
-window.manejarImagenProcesoConIndice = function(input, cuadroIndex) {
+globalThis.manejarImagenProcesoConIndice = function(input, cuadroIndex) {
     console.log(`[manejarImagenProcesoConIndice] Procesando imagen - cuadro ${cuadroIndex}`);
     
     if (!input.files || input.files.length === 0) {
         console.log(`[manejarImagenProcesoConIndice] No se seleccionaron archivos para cuadro ${cuadroIndex}`);
-        window._procesoQuadroIndex = undefined;
+        globalThis._procesoQuadroIndex = undefined;
         return;
     }
     
     const file = input.files[0];
-    const procesoIndex = window.procesoActualIndex;
+    const procesoIndex = globalThis.procesoActualIndex;
     
     if (!procesoIndex || procesoIndex <= 0) {
-        console.error('[manejarImagenProcesoConIndice] window.procesoActualIndex no está definido');
-        window._procesoQuadroIndex = undefined;
+        console.error('[manejarImagenProcesoConIndice] globalThis.procesoActualIndex no está definido');
+        globalThis._procesoQuadroIndex = undefined;
         return;
     }
     
     // Establecer el índice del cuadro para que manejarImagenProceso lo use
-    window._procesoQuadroIndex = cuadroIndex;
+    globalThis._procesoQuadroIndex = cuadroIndex;
     
     // Delegar a la función original
-    if (typeof window.manejarImagenProceso === 'function') {
-        window.manejarImagenProceso(input, procesoIndex);
+    if (typeof globalThis.manejarImagenProceso === 'function') {
+        globalThis.manejarImagenProceso(input, procesoIndex);
     } else {
-        console.error('[manejarImagenProcesoConIndice] window.manejarImagenProceso no está disponible');
+        console.error('[manejarImagenProcesoConIndice] globalThis.manejarImagenProceso no está disponible');
     }
 };
 
@@ -63,7 +63,7 @@ window.manejarImagenProcesoConIndice = function(input, cuadroIndex) {
  * 
  * @param {number} cuadroIndex - Índice del cuadro (1, 2, 3)
  */
-window.abrirSelectorImagenProceso = function(cuadroIndex) {
+globalThis.abrirSelectorImagenProceso = function(cuadroIndex) {
     const input = document.getElementById(`proceso-foto-input-${cuadroIndex}`);
     
     if (!input) {

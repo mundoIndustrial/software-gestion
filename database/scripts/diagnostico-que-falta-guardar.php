@@ -25,7 +25,7 @@ if (is_dir($pedidosDir)) {
         $ultimos = array_slice($carpetas, 0, 3);
         
         foreach ($ultimos as $idx => $pedidoId) {
-            echo "\n📌 PEDIDO $pedidoId (Carpeta más reciente #" . ($idx + 1) . ")\n";
+            echo "\n PEDIDO $pedidoId (Carpeta más reciente #" . ($idx + 1) . ")\n";
             echo str_repeat("─", 50) . "\n";
             
             $pedidoPath = $pedidosDir . '/' . $pedidoId;

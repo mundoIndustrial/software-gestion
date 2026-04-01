@@ -47,7 +47,7 @@ class TrackingModalController {
                 return;
             }
 
-            console.log(`[TrackingModalController] 📌 Fila encontrada para recibo ${reciboId}`);
+            console.log(`[TrackingModalController]  Fila encontrada para recibo ${reciboId}`);
 
             const pedidoId = this._extractPedidoId(fila, reciboId);
             

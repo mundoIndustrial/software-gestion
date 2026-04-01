@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const theadRow = thead.querySelector('tr');
             if (theadRow) {
                 const headers = theadRow.querySelectorAll('th');
-                console.log('📊 [DIAGNÓSTICO-TABLA] Headers encontrados:', headers.length);
+                console.log(' [DIAGNÓSTICO-TABLA] Headers encontrados:', headers.length);
                 headers.forEach((th, index) => {
                     const thStyle = window.getComputedStyle(th);
                     console.log(`  Header ${index + 1}:`, {
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (rows.length > 0) {
                 const firstRow = rows[0];
                 const cells = firstRow.querySelectorAll('td');
-                console.log('📊 [DIAGNÓSTICO-TABLA] Celdas en primera fila:', cells.length);
+                console.log(' [DIAGNÓSTICO-TABLA] Celdas en primera fila:', cells.length);
                 
                 cells.forEach((td, index) => {
                     const tdStyle = window.getComputedStyle(td);

@@ -403,7 +403,7 @@ async function eliminarNovedad(novedadId) {
         
         // Agregar modal al body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        console.log('[eliminarNovedad] 📌 Modal agregado al DOM');
+        console.log('[eliminarNovedad]  Modal agregado al DOM');
         
         // Obtener botones inmediatamente (sin timeout)
         const btnConfirmar = document.getElementById('btnConfirmarEliminar');

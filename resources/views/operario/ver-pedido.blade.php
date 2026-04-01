@@ -1639,13 +1639,13 @@
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
         const tipoRecibo = containerMobile.dataset.tipoRecibo || '';
-        console.log('📌 Número de pedido del dataset:', numeroPedido);
-        console.log('📌 Tipo de recibo del dataset:', tipoRecibo);
+        console.log(' Número de pedido del dataset:', numeroPedido);
+        console.log(' Tipo de recibo del dataset:', tipoRecibo);
         
         // Leer prenda_id de los query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const prendaIdParam = urlParams.get('prenda_id');
-        console.log('📌 Prenda ID desde URL:', prendaIdParam);
+        console.log(' Prenda ID desde URL:', prendaIdParam);
         
             if (!numeroPedido) {
                 console.error(' ERROR: numeroPedido no encontrado en dataset');
@@ -1820,7 +1820,7 @@
                 window.procesoCarouselIndex = 0;
                 if (tipoRecibo) {
                     // Se ajustará dinámicamente en order-detail-modal-mobile cuando se conozcan los procesos disponibles
-                    console.log('📌 [CAROUSEL] tipo_recibo detectado:', tipoRecibo, '- el índice se ajustará después');
+                    console.log(' [CAROUSEL] tipo_recibo detectado:', tipoRecibo, '- el índice se ajustará después');
                 }
                 window.prendaCarouselIndex = 0;
                 

@@ -606,7 +606,7 @@ function loadFiltersFromURL() {
  * Inicializar los botones de filtro (reutilizable)
  */
 function initializeFilterButtons() {
-    // 📂 Cargar filtros: primero desde URL, luego desde localStorage
+    //  Cargar filtros: primero desde URL, luego desde localStorage
     const hasURLFilters = loadFiltersFromURL();
     if (!hasURLFilters) {
         loadFiltersFromLocalStorage();

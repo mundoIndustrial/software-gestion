@@ -3,7 +3,7 @@
  * Similar a prenda-editor-pedidos-adapter.js pero para EPPs
  */
 
-window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
+globalThis.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
     const eppId = epp.id || epp.pedido_epp_id;
     const nombreEpp = epp.nombre || epp.epp?.nombre || 'EPP Sin nombre';
     const cantidad = epp.cantidad || 1;

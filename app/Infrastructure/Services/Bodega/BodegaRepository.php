@@ -11,6 +11,7 @@ use App\Models\EppBodegaDetalle;
 use App\Models\CosturaBodegaDetalle;
 use App\Models\BodegaNota;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class BodegaRepository implements BodegaRepositoryContract
 {
@@ -19,7 +20,8 @@ class BodegaRepository implements BodegaRepositoryContract
      */
     public function obtenerPedidosBase(array $estadosPermitidos): Collection
     {
-        return ReciboPrenda::with(['asesor'])
+        // Agrupar por numero_pedido primero para obtener uno de cada pedido
+        $numerosPedidos = ReciboPrenda::with(['asesor'])
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->where(function($q) use ($estadosPermitidos) {
@@ -27,10 +29,24 @@ class BodegaRepository implements BodegaRepositoryContract
                     $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
                 }
             })
-            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC')
-            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC')
-            ->orderBy('updated_at', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->distinct('numero_pedido')
+            ->pluck('numero_pedido');
+        
+        // Ordenar por la fecha más reciente: cambios en anexos O creación del pedido
+        // Si hay anexos recientes → salen de primero
+        // Si es un pedido nuevo sin anexos → también sale de primero
+        $latestAnexoSubquery = DB::table('pedido_anexos_historial')
+            ->select('pedido_produccion_id', DB::raw('MAX(created_at) as latest_anexo_at'))
+            ->groupBy('pedido_produccion_id');
+
+        return ReciboPrenda::with(['asesor'])
+            ->whereIn('numero_pedido', $numerosPedidos)
+            ->leftJoinSub($latestAnexoSubquery, 'pah_latest', function ($join) {
+                $join->on('pah_latest.pedido_produccion_id', '=', 'pedidos_produccion.id');
+            })
+            ->orderByRaw('COALESCE(pah_latest.latest_anexo_at, pedidos_produccion.created_at) DESC')
+            ->orderBy('pedidos_produccion.numero_pedido', 'desc')
+            ->select('pedidos_produccion.*')
             ->get();
     }
 

@@ -494,7 +494,7 @@ window.WizardManager = (function() {
                 // Mostrar el paso correcto
                 const pasoElement = document.getElementById(`wizard-paso-${numeroPaso}`);
                 if (pasoElement) {
-                    console.log(`[WizardManager] 👁️ Mostrando paso: wizard-paso-${numeroPaso}`);
+                    console.log(`[WizardManager]  Mostrando paso: wizard-paso-${numeroPaso}`);
                     pasoElement.style.display = 'block';
                 } else {
                     console.error(`[WizardManager] Elemento del paso ${numeroPaso} no encontrado!`);

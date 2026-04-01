@@ -381,4 +381,4 @@ Si todo pasa, **la implementación está completa y lista para usar**.
 
 La arquitectura del wizard está completamente implementada, documentada y lista para usar.
 
-✨ **Fin de la implementación** ✨
+ **Fin de la implementación** 

@@ -19,7 +19,7 @@ Refactorización completa siguiendo Clean Architecture y DDD con:
 
 ### 1. **Request HTTP en UseCase (Mayor violación)**
 ```php
-// ❌ ANTES - UseCase acoplado a HTTP
+//  ANTES - UseCase acoplado a HTTP
 public function ejecutar(array $validated, $request, string $productosKey)
 {
     $tipoCotizacion = $request->input('tipo_cotizacion');  // ← Acoplado a Laravel
@@ -46,7 +46,7 @@ public function ejecutar(GuardarPedidoInputDTO $input): GuardarPedidoOutputDTO
 
 ### 2. **Lógica de Decisión Fuera del Domain**
 ```php
-// ❌ ANTES - Lógica en Application
+//  ANTES - Lógica en Application
 if ($this->guardarPedidoLogoService->esLogoPedido($tipoCotizacion, $cotizacionId))
 ```
 
@@ -70,7 +70,7 @@ if ($input->tipoPedido->esLogo()) { ... }
 
 ### 3. **Responsabilidades Dispersas**
 ```php
-// ❌ ANTES - Demasiados servicios acoplados
+//  ANTES - Demasiados servicios acoplados
 public function __construct(
     CrearProduccionPedidoUseCase $crear,
     GuardarPedidoLogoService $logo,
@@ -99,7 +99,7 @@ public function __construct(
 
 ### 4. **Transacción Manual (Anti-pattern)**
 ```php
-// ❌ ANTES - Manual y propenso a errores
+//  ANTES - Manual y propenso a errores
 DB::beginTransaction();
 try {
     // lógica
@@ -128,7 +128,7 @@ return DB::transaction(function () use ($input): GuardarPedidoOutputDTO {
 
 ### 5. **DTOs Confusas**
 ```php
-// ❌ ANTES - Parámetros sin sentido
+//  ANTES - Parámetros sin sentido
 $dto = new CrearProduccionPedidoDTO(
     $validated['cliente'],      // ← ¿Qué es esto?
     $validated['cliente'],      // ← Repetido?
@@ -303,7 +303,7 @@ app/
 
 ##FLUJO DE DATOS (BEFORE vs AFTER)
 
-### ❌ ANTES (Acoplado)
+###  ANTES (Acoplado)
 ```
 HTTP Request
     ↓
@@ -341,7 +341,7 @@ Controller → Response JSON
 
 ##  TESTABILIDAD
 
-### ❌ ANTES (Difícil de testear)
+###  ANTES (Difícil de testear)
 ```php
 public function testGuardarPedido() {
     // Necesito crear un Request real (complicado)

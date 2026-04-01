@@ -268,7 +268,7 @@ window.AsignacionManager = (function() {
             
             // Primero intentar desde window.telasCreacion
             if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                console.log('[AsignacionManager] 📖 Leyendo desde window.telasCreacion:', window.telasCreacion);
+                console.log('[AsignacionManager]  Leyendo desde window.telasCreacion:', window.telasCreacion);
                 
                 window.telasCreacion.forEach((tela, idx) => {
                     const color = (tela.color || tela.color_nombre || '').trim().toUpperCase();
@@ -285,7 +285,7 @@ window.AsignacionManager = (function() {
             
             // Si no hay en telasCreacion, intentar desde window.telasAgregadas
             if (colores.length === 0 && window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                console.log('[AsignacionManager] 📖 Leyendo desde window.telasAgregadas:', window.telasAgregadas);
+                console.log('[AsignacionManager]  Leyendo desde window.telasAgregadas:', window.telasAgregadas);
                 
                 window.telasAgregadas.forEach((tela, idx) => {
                     const color = (tela.color || tela.color_nombre || '').trim().toUpperCase();

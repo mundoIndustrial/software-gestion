@@ -1,6 +1,7 @@
 @extends('layouts.base')
 
 @section('module', 'asesores')
+@section('notifications-ui', 'asesores')
 
 @section('body')
 <div class="asesores-wrapper">
@@ -30,4 +31,5 @@
 @push('scripts')
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer src="{{ asset('js/asesores/layout.js') }}"></script>
+    <script defer src="{{ asset('js/asesores/notifications.js') }}"></script>
 @endpush

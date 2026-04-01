@@ -159,7 +159,7 @@ class FileDialogStateManager {
 // ════════════════════════════════════════════════════════════════
 
 // Contenedor global para los managers de cada input
-window._fileDialogManagers = window._fileDialogManagers || {};
+globalThis._fileDialogManagers = globalThis._fileDialogManagers || {};
 
 /**
  * Inicializar todos los FileDialogStateManagers para los inputs de proceso
@@ -173,8 +173,8 @@ function inicializarFileDialogStateManagers() {
         
         try {
             // Crear manager solo si no existe ya
-            if (!window._fileDialogManagers[inputId]) {
-                window._fileDialogManagers[inputId] = new FileDialogStateManager(inputId);
+            if (!globalThis._fileDialogManagers[inputId]) {
+                globalThis._fileDialogManagers[inputId] = new FileDialogStateManager(inputId);
             }
         } catch (e) {
             console.error(

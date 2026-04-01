@@ -968,7 +968,7 @@ function openOrderDetailModalDirect(pedidoId, prendaId, tipoRecibo) {
  * Abrir modal de seguimiento directamente
  */
 function openOrderTrackingDirect(pedidoId, prendaId) {
-    console.log('📍 Abriendo seguimiento para pedido:', pedidoId, 'prenda:', prendaId);
+    console.log(' Abriendo seguimiento para pedido:', pedidoId, 'prenda:', prendaId);
     
     // Si existe la función global de seguimiento, usarla
     if (typeof abrirModalSeguimientoDirecto === 'function') {

@@ -133,7 +133,7 @@ export class Formatters {
                     if (!linea) return false;
                     // Si es solo DSFSDFS o similar (5+ letras sin espacios, sin palabras conocidas)
                     if (linea.match(/^[A-Z]{5,}$/) && !linea.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|BROCHE|CREMALLERA|DAMA|HOMBRE)/)) {
-                        console.log('[Formatters] 🚫 Filtrando línea basura:', linea);
+                        console.log('[Formatters]  Filtrando línea basura:', linea);
                         return false;
                     }
                     return true;

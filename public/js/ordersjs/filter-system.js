@@ -335,7 +335,7 @@ async function openFilterModal(column) {
         // Mostrar indicador de búsqueda activa
         const indicator = document.createElement('div');
         indicator.style.cssText = 'padding: 8px 12px; background: #fef3c7; border-left: 4px solid #f59e0b; margin-bottom: 12px; border-radius: 4px; font-size: 13px; color: #92400e;';
-        indicator.textContent = `📌 Búsqueda activa: "${currentSearch}"`;
+        indicator.textContent = ` Búsqueda activa: "${currentSearch}"`;
         filterOptions.parentElement.insertBefore(indicator, filterOptions);
     }
     
@@ -699,7 +699,7 @@ function renderFilteredTable(ordenes) {
             
             <!-- Descripción -->
             <td class="table-cell descripcion-cell">
-                <div class="cell-content" style="cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', ${JSON.stringify(orden.prendas || [])})">
+                <div class="cell-content" style="cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', ${JSON.stringify(orden.prendas || [])})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                         ${orden.descripcion ? orden.descripcion + ' <span style="color: #3b82f6; font-weight: 600;">...</span>' : '-'}
                     </span>

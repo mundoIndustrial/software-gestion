@@ -21,7 +21,7 @@ globalThis.__modalPrendaAbriendo = false;
 globalThis.abrirModalPrendaNueva = function() {
     // 🛡️ Guard: Evitar múltiples aperturas simultáneas
     if (globalThis.__modalPrendaAbriendo) {
-        console.debug('[abrirModalPrendaNueva] 🚫 Debounced - modal ya está abriéndose');
+        console.debug('[abrirModalPrendaNueva]  Debounced - modal ya está abriéndose');
         return;
     }
     

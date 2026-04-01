@@ -96,7 +96,7 @@ Ves:
 
 ---
 
-## ✨ LO MEJOR DE TODO
+##  LO MEJOR DE TODO
 
 1. **Sin breaking changes** - El código antiguo sigue funcionando
 2. **Transparente para el usuario** - Cambios internos, funcionalidad igual

@@ -267,7 +267,7 @@ class PrendaEditorTallas {
         });
         
         totalSpan.textContent = total;
-        console.log(`📊 [Tallas] Total actualizado: ${total}`);
+        console.log(` [Tallas] Total actualizado: ${total}`);
     }
 
     /**

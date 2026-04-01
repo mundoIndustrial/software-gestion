@@ -77,7 +77,7 @@
         try {
             const data = localStorage.getItem(BADGE_STORAGE_KEY);
             const seen = data ? JSON.parse(data) : {};
-            console.log(`[DEBUG-BADGE] 📖 getSeenBadges - badges vistos:`, seen);
+            console.log(`[DEBUG-BADGE]  getSeenBadges - badges vistos:`, seen);
             return seen;
         } catch (e) {
             console.warn('[DEBUG-BADGE] Error leyendo localStorage:', e);
@@ -255,7 +255,7 @@
             console.log(`[DEBUG] - IDs de pedidos extraídos:`, ids);
 
             if (ids.length === 0) {
-                console.log(`[DEBUG] 🚫 No hay IDs de pedidos, saliendo`);
+                console.log(`[DEBUG]  No hay IDs de pedidos, saliendo`);
                 return;
             }
 

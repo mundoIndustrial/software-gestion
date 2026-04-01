@@ -226,7 +226,8 @@
     {{ request()->routeIs('cotizaciones-prenda.create') ? 'cotizaciones-prenda-create' : '' }}
 " 
       data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}"
-      data-module="@yield('module', 'default')">
+      data-module="@yield('module', 'default')"
+      data-notifications-ui="@yield('notifications-ui', 'default')">
 
     <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
     <script>
@@ -358,7 +359,9 @@
 
     <!-- Notifications realtime system (loaded once) -->
     <!-- REQUIERE shared-core.js que ya está cargado arriba -->
-    <script defer src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
+    @if(trim($__env->yieldContent('notifications-ui', 'default')) !== 'asesores' && trim($__env->yieldContent('module', 'default')) !== 'asesores')
+        <script defer src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
+    @endif
     
     <!-- Scripts de Facturas (solo para vistas que lo necesiten) -->
     @if(request()->is(['cartera/pedidos', 'cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
@@ -385,4 +388,3 @@
 
 </body>
 </html>
-

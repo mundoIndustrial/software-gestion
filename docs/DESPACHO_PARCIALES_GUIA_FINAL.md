@@ -435,7 +435,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 
 ---
 
-## ✨ Características Principales
+##  Características Principales
 
 | Característica | Descripción |
 |---|---|

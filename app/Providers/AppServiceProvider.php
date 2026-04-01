@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\Models\ConsecutivoReciboPedido;
 use App\Models\TablaOriginalBodega;
 use App\Models\ProcesoPrenda;
 use App\Models\PedidoProduccion;
@@ -76,7 +79,6 @@ use App\Infrastructure\Services\Operario\PedidoFotosReadServiceImpl;
 use App\Infrastructure\Providers\AsesoresServiceProvider;
 use App\Infrastructure\Providers\PedidosLogoServiceProvider;
 use App\Infrastructure\Providers\PedidosProduccionServiceProvider;
-use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -309,6 +311,26 @@ class AppServiceProvider extends ServiceProvider
                 ->get();
             $view->with('cotizacionesAprobadas', $cotizacionesAprobadas);
             $view->with('cotizacionesRechazadas', $cotizacionesRechazadas);
+        });
+
+        View::composer(['layouts.sidebar', 'components.sidebars.sidebar-asesores'], function ($view) {
+            $badgeCount = 0;
+            $user = Auth::user();
+            if ($user && $user->hasRole('asesor')) {
+                $badgeCount = ConsecutivoReciboPedido::query()
+                    ->where('activo', 1)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                    ->whereRaw("UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)", [
+                        'DEVUELTO_ASESOR',
+                        'DEVUELTO_A_ASESOR',
+                    ])
+                    ->whereHas('pedido', static function ($pedidoQuery) use ($user) {
+                        $pedidoQuery->where('asesor_id', $user->id);
+                    })
+                    ->count();
+            }
+
+            $view->with('revisarPrendaBadgeCount', (int) $badgeCount);
         });
     }
 }

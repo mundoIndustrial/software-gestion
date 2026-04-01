@@ -399,7 +399,7 @@
                     </td>
                     <td>
                         <button class="btn-ver" onclick="verDetallePedido(${pedido.id})">
-                            👁️ Ver
+                             Ver
                         </button>
                     </td>
                 </tr>

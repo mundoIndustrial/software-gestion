@@ -1895,7 +1895,7 @@ function cargarBorrador(cotizacion) {
                     ${btnBorrar}
                 `;
                 
-                // 📌 IMPORTANTE: Agregar a window.imagenesEnMemoria.logo para que se envíe al hacer click en ENVIAR
+                //  IMPORTANTE: Agregar a window.imagenesEnMemoria.logo para que se envíe al hacer click en ENVIAR
                 if (fotoData.id && window.imagenesEnMemoria && window.imagenesEnMemoria.logo) {
                     // Crear un objeto Blob-like o File-like con la ruta
                     window.imagenesEnMemoria.logo.push({

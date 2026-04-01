@@ -90,7 +90,7 @@ Desglose de 8 pasos:
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Tallas cargadas {"cantidad":50,"tiempo_ms":45.23}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Clientes cargados {"cantidad":500,"tiempo_ms":850.42}
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA {
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  PÁGINA COMPLETADA {
   "tiempo_total_ms": 1234.56,
   "resumen": "Tallas: 45.23ms | Pedidos: 120.56ms | Clientes: 850.42ms | View: 120.40ms | TOTAL: 1234.56ms"
 }
@@ -106,7 +106,7 @@ Desglose de 8 pasos:
 [2026-01-29 21:36:01] local.INFO: [CREAR-PEDIDO]  PASO 6: Carpetas creadas {"tiempo_ms":100.45}
 [2026-01-29 21:36:05] local.INFO: [CREAR-PEDIDO]  PASO 7: Imágenes mapeadas {"tiempo_ms":5000.23}
 [2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO]  PASO 8: Cálculo de cantidades {"tiempo_ms":100.56}
-[2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
+[2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO]  TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
   "tiempo_total_ms": 7500.12,
   "desglose_pasos": {
     "paso_1_json_ms": 5.12,
@@ -164,12 +164,12 @@ docs/LOGS_QUICK_START.md             ← Guía rápida
 ##  Cucellos de Botella Típicos
 
 ### Si carga de página tarda > 3 segundos
-Buscar en logs: `[CREAR-DESDE-COTIZACION] ✨ PÁGINA COMPLETADA`
+Buscar en logs: `[CREAR-DESDE-COTIZACION]  PÁGINA COMPLETADA`
 - Si `tiempo_cotizaciones_ms > 2000` → Optimizar query (índices)
 - Si `tiempo_clientes_ms > 1000` → Tabla sin índices
 
 ### Si creación de pedido tarda > 6 segundos
-Buscar en logs: `[CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA`
+Buscar en logs: `[CREAR-PEDIDO]  TRANSACCIÓN EXITOSA`
 - Si `paso_7_imagenes_ms > 3000` → Imágenes muy grandes/procesamiento lento
 - Si `paso_5_pedido_base_ms > 500` → Problema en triggers/validación de BD
 

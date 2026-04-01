@@ -9,7 +9,7 @@
 
 ##  PROBLEMAS ENCONTRADOS
 
-### ❌ 1. VIOLACIÓN SRP (Single Responsibility Principle)
+###  1. VIOLACIÓN SRP (Single Responsibility Principle)
 
 El controller tiene **7 razones diferentes para cambiar:**
 
@@ -28,13 +28,13 @@ class CrearPedidoEditableController {
 
 **Impacto:** Cualquier cambio en una "razón" afecta todas las demás.
 
-### ❌ 2. INYECCIÓN EXCESIVA DE DEPENDENCIAS
+###  2. INYECCIÓN EXCESIVA DE DEPENDENCIAS
 
 **21 dependencias inyectadas:**
 
 ```
  Realmente usadas:     9  (CrearPedidoUseCase, ValidarPedidoUseCase, etc.)
-❌ Nunca usadas:         12 (ImageUploadService, ResolutorImagenes, etc.)
+ Nunca usadas:         12 (ImageUploadService, ResolutorImagenes, etc.)
 ```
 
 **Servicios no usados en el controller:**
@@ -56,10 +56,10 @@ class CrearPedidoEditableController {
 - Confusión sobre responsabilidades
 - Dead dependencies (posible eliminación de servicio)
 
-### ❌ 3. VIOLACIÓN DIP (Dependency Inversion Principle)
+###  3. VIOLACIÓN DIP (Dependency Inversion Principle)
 
 ```php
-// ❌ ACOPLADO A IMPLEMENTACIONES CONCRETAS:
+//  ACOPLADO A IMPLEMENTACIONES CONCRETAS:
 public function __construct(
     private imageUploadService $imageUploadService,      // ← Concreto
     private ColorTelaService $colorTelaService,         // ← Concreto
@@ -76,7 +76,7 @@ public function __construct(
 ) {}
 ```
 
-### ❌ 4. MEZCLA DE CAPAS (Violación Clean Architecture)
+###  4. MEZCLA DE CAPAS (Violación Clean Architecture)
 
 El controller hace trabajo que NO es HTTP:
 
@@ -108,7 +108,7 @@ return view('asesores.pedidos.crear-pedido-desde-cotizacion',
 );
 ```
 
-### ❌ 5. MÉTODOS HETEROGÉNEOS (No hay cohesión)
+###  5. MÉTODOS HETEROGÉNEOS (No hay cohesión)
 
 ```
 GET  /asesores/pedidos/crear-desde-cotizacion      ← Mostrar formulario
@@ -123,7 +123,7 @@ PUT  /asesores/pedidos/{id}/borrador               ← Actualizar borrador
 
 **Problema:** No están relacionadas por dominio.
 
-### ❌ 6. RESPONSABILIDADES MAL ASIGNADAS
+###  6. RESPONSABILIDADES MAL ASIGNADAS
 
 ```php
 // Esto NO debería estar en controller:
@@ -137,7 +137,7 @@ Log::info('[CREAR-DESDE-COTIZACION] Completado', [
 
 **Debería:** Usar Middleware o Aspect Oriented Programming (AOP), no hardcoded en controller.
 
-### ❌ 7. LÓGICA DE PRESENTACIÓN EN CONTROLLER
+###  7. LÓGICA DE PRESENTACIÓN EN CONTROLLER
 
 ```php
 $cotizaciones = Cotizacion::with([
@@ -164,7 +164,7 @@ $cotizaciones = Cotizacion::with([
 **Problema:** Query especificación está acoplada al controller.  
 **Debería:** Estar en Repository o UseCase.
 
-### ❌ 8. NO ES SOLO UN ADAPTADOR HTTP
+###  8. NO ES SOLO UN ADAPTADOR HTTP
 
 ```php
 //  CORRECTO (adaptador):
@@ -174,7 +174,7 @@ public function crearPedido(Request $request): JsonResponse {
     return response()->json($output->toArray());
 }
 
-// ❌ INCORRECTO (hace lógica):
+//  INCORRECTO (hace lógica):
 public function crearDesdeCotizacion(Request $request): View {
     $timerTotal = $this->timerService->iniciar('crearDesdeCotizacion-total');  // ← Lógica
     $user = Auth::user();
@@ -759,7 +759,7 @@ public function test_mostrar_formulario_crear_desde_cotizacion() {
 
 ---
 
-## ✨ BENEFICIOS LOGRADOS
+##  BENEFICIOS LOGRADOS
 
 | Aspecto | Antes | Después |
 |---------|-------|---------|
@@ -832,13 +832,13 @@ app/
 
 | Item | Estado | Acción |
 |------|--------|--------|
-| **Dependencias innecesarias** | ❌ Encontradas |  Eliminadas |
-| **Controllers monolítícos** | ❌ 1 grande |  5 especializados |
-| **Violaciones SOLID** | ❌ 5 encontradas |  Todas corregidas |
-| **UseCases nuevos** | ❌ Faltaban |  4 creados |
-| **Presenters** | ❌ No existían |  2 creados |
-| **Responsabilidades claras** | ❌ Confusas |  Explícitas |
-| **Testabilidad** | ❌ Difícil |  Fácil |
+| **Dependencias innecesarias** |  Encontradas |  Eliminadas |
+| **Controllers monolítícos** |  1 grande |  5 especializados |
+| **Violaciones SOLID** |  5 encontradas |  Todas corregidas |
+| **UseCases nuevos** |  Faltaban |  4 creados |
+| **Presenters** |  No existían |  2 creados |
+| **Responsabilidades claras** |  Confusas |  Explícitas |
+| **Testabilidad** |  Difícil |  Fácil |
 
 ---
 

@@ -44,7 +44,7 @@ function validateArchitecture() {
         }
     });
 
-    console.log(`\n📊 RESULTADO: ${passed}/${Object.keys(checks).length} módulos cargados`);
+    console.log(`\n RESULTADO: ${passed}/${Object.keys(checks).length} módulos cargados`);
 
     if (failed === 0) {
         console.log(' TODOS LOS MÓDULOS ESTÁN CARGADOS CORRECTAMENTE');
@@ -141,7 +141,7 @@ function validateMemoryCleanup() {
 
     const status = window.ColoresPorTallaV2.getWizardStatus();
 
-    console.log('\n📊 LISTENERS Y REFERENCIAS:');
+    console.log('\n LISTENERS Y REFERENCIAS:');
     console.log(`  Estado: ${status.state}`);
     
     if (status.state === 'IDLE') {
@@ -177,7 +177,7 @@ function validateBackwardCompatibility() {
         'limpiarAsignaciones'
     ];
 
-    console.log('\n📌 MÉTODOS DISPONIBLES EN WINDOW.COLORESPORTALLA:');
+    console.log('\n MÉTODOS DISPONIBLES EN WINDOW.COLORESPORTALLA:');
     
     let allPresent = true;
     methods.forEach(method => {

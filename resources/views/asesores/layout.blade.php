@@ -71,7 +71,7 @@
     @stack('styles')
     
 </head>
-<body 
+<body class="@yield('body-class')" data-notifications-ui="asesores"
     @if(auth()->check())
         data-user="{{ json_encode([
             'id' => auth()->user()->id,
@@ -201,6 +201,7 @@
     <!-- Scripts -->
     <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
     <script src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
+    <script src="{{ asset('js/asesores/layout.js') }}"></script>
     <script src="{{ asset('js/asesores/notifications.js') }}"></script>
     <script src="{{ asset('js/asesores/sidebar-responsive.js') }}"></script>
     @stack('scripts')

@@ -42,7 +42,7 @@ class AddProcessModalController {
      */
     async openFromBadge(areaSeleccionada, pedidoId, prendaId) {
         try {
-            console.log('[AddProcessModalController] 📌 Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
+            console.log('[AddProcessModalController]  Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
 
             // Cerrar cualquier dropdown abierto
             if (typeof closeDropdownRecibos === 'function') {

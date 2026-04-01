@@ -117,7 +117,7 @@ class AnalizarEstructuraTablas extends Command
 
             if ($count > 0) {
                 $primerRegistro = DB::table($tabla)->first();
-                $this->line("\n  📌 Primer registro:");
+                $this->line("\n   Primer registro:");
                 foreach ((array) $primerRegistro as $campo => $valor) {
                     $valor = is_null($valor) ? '(NULL)' : substr($valor, 0, 50);
                     $this->line("     - {$campo}: {$valor}");

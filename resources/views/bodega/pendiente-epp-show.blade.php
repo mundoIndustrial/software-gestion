@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (table) {
         const tableRect = table.getBoundingClientRect();
         const tableStyle = window.getComputedStyle(table);
-        console.log(`📊 [DIAGNÓSTICO-EPP] Tabla:`, {
+        console.log(` [DIAGNÓSTICO-EPP] Tabla:`, {
             width: tableRect.width,
             height: tableRect.height,
             computedWidth: tableStyle.width,

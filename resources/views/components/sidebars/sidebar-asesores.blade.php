@@ -143,6 +143,12 @@
                                aria-label="Revisar prendas devueltas a asesor">
                                 <span class="material-symbols-rounded">fact_check</span>
                                 <span class="menu-label">Revisar Prenda</span>
+                                @if(($revisarPrendaBadgeCount ?? 0) > 0)
+                                    <span class="badge-alert"
+                                        style="display:flex; background:#dc2626; color:#fff; border-radius:50%; width:22px; height:22px; align-items:center; justify-content:center; font-weight:700; font-size:0.75rem; min-width:22px; flex-shrink:0;">
+                                        {{ $revisarPrendaBadgeCount }}
+                                    </span>
+                                @endif
                             </a>
                         </li>
                         <li class="submenu-item">

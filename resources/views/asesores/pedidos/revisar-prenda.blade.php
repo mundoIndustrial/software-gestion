@@ -19,61 +19,106 @@
 <style>
     .revisar-toolbar {
         display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 1rem;
         flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
     }
-    .revisar-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    }
-    .revisar-table th,
-    .revisar-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 0.875rem;
-        text-align: left;
-    }
-    .revisar-table th {
-        background: #0f4aa0;
-        color: #fff;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .revisar-acciones {
+    .revisar-toolbar form {
         display: flex;
         gap: 0.5rem;
         align-items: center;
     }
-    .btn-revisar {
+    .revisar-toolbar input {
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        padding: 0.4rem 0.6rem;
+        min-width: 220px;
+    }
+    .revisar-toolbar button,
+    .revisar-toolbar a.btn-secondary {
+        border-radius: 6px;
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        min-width: 90px;
+    }
+    .revisar-meta {
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .revisar-table-wrapper {
+        margin-top: 0.75rem;
+        border-radius: 10px;
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+    }
+
+    .revisar-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    .revisar-table th,
+    .revisar-table td {
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+    .revisar-table th {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .revisar-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .revisar-acciones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+    .revisar-acciones button {
         border: none;
         border-radius: 6px;
-        padding: 0.4rem 0.65rem;
-        font-size: 0.8rem;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.78rem;
         font-weight: 600;
         cursor: pointer;
     }
-    .btn-revisar-ver {
-        background: #dbeafe;
+    .btn-revisar {
+        background: #e0e7ff;
         color: #1d4ed8;
     }
-    .btn-revisar-editar {
+    .btn-revisar-edit {
         background: #dcfce7;
-        color: #166534;
+        color: #15803d;
     }
+    .btn-revisar-approve {
+        background: #fef9c3;
+        color: #92400e;
+    }
+
     .revisar-empty {
-        padding: 2rem;
+        padding: 1.5rem;
         text-align: center;
-        color: #6b7280;
+        color: #475569;
         background: #fff;
         border-radius: 12px;
         border: 1px dashed #cbd5e1;
+        margin-top: 1rem;
     }
+
+    .revisar-footer {
+        margin-top: 0.5rem;
+        text-align: right;
+    }
+
     .modal-ver-recibo-overlay {
         position: fixed;
         inset: 0;
@@ -140,63 +185,97 @@
         border: 1px solid #d1d5db;
         background: #f3f4f6;
     }
+
+    .revisar-confirm-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.5);
+        z-index: 1200001;
+        padding: 1rem;
+    }
+    .revisar-confirm-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    }
+    .revisar-confirm-card h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        color: #0f172a;
+    }
+    .revisar-confirm-card p {
+        margin: 0 0 1rem 0;
+        color: #475569;
+        font-size: 0.9rem;
+    }
+    .revisar-confirm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
 </style>
 @endpush
 
 @section('content')
 <div class="revisar-toolbar">
-    <form method="GET" action="{{ route('asesores.pedidos.revisar-prenda') }}" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <input type="text" name="search" value="{{ $search }}" placeholder="Buscar por pedido, prenda o recibo"
-               style="padding:0.65rem 0.8rem;border:1px solid #d1d5db;border-radius:8px;min-width:260px;">
+    <form method="GET" action="{{ route('asesores.pedidos.revisar-prenda') }}">
+        <input type="text" name="search" value="{{ $search }}" placeholder="Buscar por pedido, prenda o recibo">
         <button type="submit" class="btn btn-primary">Buscar</button>
         @if($search !== '')
             <a href="{{ route('asesores.pedidos.revisar-prenda') }}" class="btn btn-secondary">Limpiar</a>
         @endif
     </form>
+    <span class="revisar-meta">Total: {{ $recibos->total() }} prendas</span>
 </div>
 
 @if($recibos->count() === 0)
     <div class="revisar-empty">
-        No hay prendas para revisar con recibo de costura en estado <strong>DEVUELTO ASESOR</strong>.
+        No hay prendas por revisar.
     </div>
 @else
-    <div style="overflow:auto;">
+    <div class="revisar-table-wrapper">
         <table class="revisar-table">
             <thead>
                 <tr>
                     <th>Acciones</th>
-                    <th>N° Pedido</th>
-                    <th>Prenda</th>
-                    <th>Recibo</th>
-                    <th>Estado</th>
+                    <th>Pedido</th>
+                    <th>Prenda / Recibo</th>
                     <th>Última actualización</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($recibos as $item)
+                    @php
+                        $actualizado = \Illuminate\Support\Carbon::make($item['updated_at']);
+                    @endphp
                     <tr>
                         <td>
                             <div class="revisar-acciones">
-                                <button type="button" class="btn-revisar btn-revisar-ver" onclick="abrirModalVerRecibo({{ $item['id'] }})">Ver</button>
-                                <button type="button" class="btn-revisar btn-revisar-editar"
+                                <button type="button" class="btn-revisar" onclick="abrirModalVerRecibo({{ $item['id'] }})">Ver</button>
+                                <button type="button" class="btn-revisar-edit"
                                         onclick="editarPrendaDesdeRevision({{ $item['pedido_produccion_id'] }}, {{ $item['prenda_id'] }}, @js($item['nombre_prenda']))">
                                     Editar
                                 </button>
-                                <button
-                                    type="button"
-                                    class="btn-revisar"
-                                    style="background:#fef3c7;color:#92400e;"
-                                    onclick="aprobarReciboParaInsumos({{ $item['id'] }})"
-                                >
+                                <button type="button" class="btn-revisar-approve"
+                                        onclick="aprobarReciboParaInsumos({{ $item['id'] }})">
                                     Aprobar
                                 </button>
                             </div>
                         </td>
                         <td>#{{ $item['numero_pedido'] }}</td>
-                        <td>{{ $item['nombre_prenda'] }}</td>
-                        <td>{{ $item['tipo_recibo'] }}-{{ $item['consecutivo_actual'] }}</td>
-                        <td>{{ $item['estado'] }}</td>
-                        <td>{{ $item['updated_at'] ?? '-' }}</td>
+                        <td>
+                            <div class="font-semibold">{{ $item['nombre_prenda'] }}</div>
+                            <div class="text-xs text-gray-500">
+                                {{ $item['tipo_recibo'] }} · {{ $item['consecutivo_actual'] }}
+                            </div>
+                        </td>
+                        <td>{{ $actualizado ? $actualizado->setTimezone('America/Bogota')->format('Y-m-d H:i') : '-' }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -222,6 +301,17 @@
                 <h4 style="margin:0 0 0.75rem 0;color:#1f2937;">Imágenes de la prenda</h4>
                 <div id="verReciboImagenes" class="ver-imagenes"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="revisarConfirmModal" class="revisar-confirm-overlay" onclick="cerrarConfirmAprobar()">
+    <div class="revisar-confirm-card" role="dialog" aria-modal="true" aria-labelledby="revisarConfirmTitle" onclick="event.stopPropagation()">
+        <h3 id="revisarConfirmTitle">Confirmar aprobación</h3>
+        <p>¿Estás seguro de aprobar esta prenda?</p>
+        <div class="revisar-confirm-actions">
+            <button type="button" class="btn btn-secondary" onclick="cerrarConfirmAprobar()">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="revisarConfirmAceptar">Sí, aprobar</button>
         </div>
     </div>
 </div>
@@ -289,14 +379,32 @@
         window.editarPrendaDePedido(prendaBase, 0, Number(pedidoId));
     }
 
-    async function aprobarReciboParaInsumos(reciboId) {
-        if (!confirm('¿Aprobar esta prenda y enviarla a PENDIENTE_INSUMOS?')) return;
+    function abrirConfirmAprobar(onConfirm) {
+        const modal = document.getElementById('revisarConfirmModal');
+        const aceptar = document.getElementById('revisarConfirmAceptar');
+        if (!modal || !aceptar) return;
 
+        const nuevoAceptar = aceptar.cloneNode(true);
+        aceptar.parentNode.replaceChild(nuevoAceptar, aceptar);
+        nuevoAceptar.addEventListener('click', () => {
+            cerrarConfirmAprobar();
+            onConfirm();
+        });
+
+        modal.style.display = 'flex';
+    }
+
+    function cerrarConfirmAprobar() {
+        const modal = document.getElementById('revisarConfirmModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function ejecutarAprobarRecibo(reciboId) {
         try {
             const res = await fetch(`{{ route('asesores.pedidos.revisar-prenda.aprobar-insumos', ['reciboId' => '__RID__']) }}`.replace('__RID__', String(reciboId)), {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.content || '',
                     'Accept': 'application/json'
                 }
             });
@@ -311,6 +419,11 @@
         } catch (e) {
             alert('Error de red al aprobar el recibo.');
         }
+    }
+
+    async function aprobarReciboParaInsumos(reciboId) {
+        abrirConfirmAprobar(() => ejecutarAprobarRecibo(reciboId));
+        return;
     }
 
     window.addEventListener('prendaActualizada', function () {

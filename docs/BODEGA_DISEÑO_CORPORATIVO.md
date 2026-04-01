@@ -4,7 +4,7 @@
 
 Sistema de gestión de pedidos para bodegueros con interfaz corporativa, industrial y profesional. Estructura jerárquica con agrupación por número de pedido.
 
-## ✨ Características del Diseño
+##  Características del Diseño
 
 ###  Visual Corporativo
 - **Colores Slate/Gris** para sensación industrial
@@ -129,7 +129,7 @@ En `resources/views/layouts/app.blade.php`:
 <meta name="csrf-token" content="{{ csrf_token() }}">
 ```
 
-## 📂 Archivos Generados
+##  Archivos Generados
 
 ```
 resources/views/bodega/

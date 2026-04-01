@@ -66,7 +66,7 @@ class CargarDatosCompartidosService implements CargarDatosCompartidosServiceInte
         
         $tiempoTotal = $timerTotal->obtenerMs();
         
-        Log::info('[CargarDatosCompartidosService] ✨ DATOS CARGADOS (Fase 13)', [
+        Log::info('[CargarDatosCompartidosService]  DATOS CARGADOS (Fase 13)', [
             'usuario_id' => $user->id,
             'tallas' => $tallas->count(),
             'pedidos' => $pedidos->count(),

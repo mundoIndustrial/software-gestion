@@ -732,7 +732,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
             // DETECTAR si es SOBREMEDIDA o tallas normales
             if (tallasDelGenero && typeof tallasDelGenero === 'object' && tallasDelGenero.SOBREMEDIDA) {
                 //  ES SOBREMEDIDA - Abrir modal especial de sobremedida
-                console.log(`[crearTarjetaGenero] 📐 Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
+                console.log(`[crearTarjetaGenero]  Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
                 abrirModalSobremedida();
             } else {
                 //  SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)

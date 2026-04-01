@@ -1048,7 +1048,7 @@ class GestionItemsUI {
         console.log('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
         if (resultado.success) {
             console.log('[gestion-items-pedido]  ENTRANDO AL IF - Pedido creado exitosamente');
-            console.log('[gestion-items-pedido] 📌 datosPedidoCreado:', {
+            console.log('[gestion-items-pedido]  datosPedidoCreado:', {
                 pedido_id: resultado.pedido_id,
                 numero_pedido: resultado.numero_pedido
             });

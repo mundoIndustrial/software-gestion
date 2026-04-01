@@ -31,7 +31,7 @@ class InsumosAccess
 
         // Primero verificar autenticación
         if (!Auth::check()) {
-            Log::warning('❌ InsumosAccess: Usuario NO AUTENTICADO', [
+            Log::warning(' InsumosAccess: Usuario NO AUTENTICADO', [
                 'url' => $url,
                 'redirect_to' => '/login'
             ]);
@@ -93,7 +93,7 @@ class InsumosAccess
         }
 
         // Si no tiene los roles requeridos, denegar acceso
-        Log::error('❌❌❌ InsumosAccess: ACCESO DENEGADO - ROL INSUFICIENTE', [
+        Log::error(' InsumosAccess: ACCESO DENEGADO - ROL INSUFICIENTE', [
             'user_id' => $user->id,
             'user_name' => $user->name,
             'roles_ids' => json_encode($user->roles_ids ?? []),

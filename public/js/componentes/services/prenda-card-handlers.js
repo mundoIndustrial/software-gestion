@@ -56,7 +56,7 @@ window.PrendaCardHandlers = {
                 // Prevenir doble click rápido
                 const header = e.target.closest('.seccion-expandible-header');
                 if (header.dataset.toggleDisabled === 'true') {
-                    console.log('[PrendaCardHandlers] 🚫 Toggle deshabilitado temporalmente');
+                    console.log('[PrendaCardHandlers]  Toggle deshabilitado temporalmente');
                     return;
                 }
                 

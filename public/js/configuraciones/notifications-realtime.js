@@ -10,8 +10,17 @@ let autoMarkOnCloseEnabled = true;
 
 console.log('[NOTIFICATIONS-REALTIME] Archivo cargado');
 
+function shouldDisableRealtimeUI() {
+    return document.body?.dataset?.notificationsUi === 'asesores' ||
+        document.body?.dataset?.module === 'asesores';
+}
+
 // Inicializar sistema de notificaciones en tiempo real
 document.addEventListener('DOMContentLoaded', function() {
+    if (shouldDisableRealtimeUI()) {
+        console.log('[NOTIFICATIONS-REALTIME] UI deshabilitado para asesores (usa asesores/notifications.js)');
+        return;
+    }
     console.log('[NOTIFICATIONS-REALTIME] Inicializando desde DOMContentLoaded');
     initializeRealtimeNotifications();
 });

@@ -407,8 +407,8 @@
     color: var(--primary);
 }
 
-/* Ocultar top nav */
-.top-nav {
+/* Ocultar top nav solo en vistas de crear/editar pedido */
+body.crear-pedido-view .top-nav {
     display: none !important;
 }
 

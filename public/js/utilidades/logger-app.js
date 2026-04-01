@@ -54,7 +54,7 @@ class LoggerApp {
             EventBus:               '',
             FormatDetector:         '',
             PrendasEditorHelper:    '',
-            GestionItemsUI:         '📌',
+            GestionItemsUI:         '',
             TelaProcessor:          '',
             PrendaDataBuilder:      '',
             ValidadorPrenda:        '✔️',

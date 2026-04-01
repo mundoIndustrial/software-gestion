@@ -62,7 +62,7 @@ window.cargarPedidos = async function() {
     }
     
     const data = await response.json();
-    console.log('📊 Datos recibidos:', data);
+    console.log(' Datos recibidos:', data);
     
     if (data.success) {
       // Corregir: los datos están en "data", no en "pedidos"

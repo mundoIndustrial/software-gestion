@@ -62,9 +62,8 @@
     @endphp
 
 </head>
-<body class="light-theme {{ $esVisualizador ? 'sin-sidebar' : '' }}">
+<body class="light-theme">
 
-    @if(!$esVisualizador)
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -82,6 +81,38 @@
         </div>
 
         <div class="sidebar-content">
+            @if($esVisualizador)
+                <!-- Menú simplificado para visualizador_plooter -->
+                <div class="menu-section">
+                    <span class="menu-section-title">Gestionar Órdenes</span>
+                    <nav aria-label="Menú de recibos">
+                        <ul class="menu-list">
+                            <li class="menu-item">
+                                <a href="{{ route('operario.dashboard') }}" 
+                                   class="menu-link {{ request()->routeIs('operario.dashboard') ? 'active' : '' }}">
+                                    <span class="material-symbols-rounded">receipt_long</span>
+                                    <span class="menu-label">Recibos Asignados</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="menu-section">
+                    <span class="menu-section-title">Insumos</span>
+                    <nav aria-label="Menú de plooter">
+                        <ul class="menu-list">
+                            <li class="menu-item">
+                                <a href="{{ route('insumos.plooter.index') }}" 
+                                   class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}">
+                                    <span class="material-symbols-rounded">description</span>
+                                    <span class="menu-label">Gestion Plooter</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            @else
+                <!-- Menú completo para otros usuarios -->
             <div class="menu-section">
                 <span class="menu-section-title">Principal</span>
                 <nav aria-label="Menú principal">
@@ -135,6 +166,7 @@
                 </nav>
             </div>
             @endif
+            @endif
         </div>
 
         <div class="sidebar-footer">
@@ -150,7 +182,6 @@
             </form>
         </div>
     </aside>
-    @endif
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">

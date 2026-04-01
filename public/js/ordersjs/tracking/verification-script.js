@@ -174,7 +174,7 @@
             // Probar cálculo de días hábiles
             const workingDays = window.calcularDiasHabilesSync ? 
                 calcularDiasHabilesSync(new Date(2024, 0, 1), new Date(2024, 0, 10)) : 'ERROR';
-            console.log('📊 calcularDiasHabilesSync test:', workingDays, 'días');
+            console.log(' calcularDiasHabilesSync test:', workingDays, 'días');
 
             // Probar duración humana
             const duration = window.formatDurationHuman ? 

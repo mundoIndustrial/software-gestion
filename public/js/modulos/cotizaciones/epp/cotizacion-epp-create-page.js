@@ -1093,7 +1093,7 @@
 
         // Función para abrir modal de agregar EPP
         window.abrirModalAgregarEPP = function() {
-            console.log('📖 [abrirModalAgregarEPP] Abriendo modal');
+            console.log(' [abrirModalAgregarEPP] Abriendo modal');
             const modal = document.getElementById('modalAgregarEPP');
             if (modal) {
                 modal.style.display = 'flex';
@@ -1103,21 +1103,21 @@
             // IMPORTANTE: Obtener EPPs ya agregados en el formulario para filtrarlos
             if (typeof obtenerEPPsYaAgregadosEnFormulario === 'function') {
                 obtenerEPPsYaAgregadosEnFormulario();
-                console.log('📖 [abrirModalAgregarEPP] EPPs en formulario a excluir:', eppYaAgregadosEnFormulario);
+                console.log(' [abrirModalAgregarEPP] EPPs en formulario a excluir:', eppYaAgregadosEnFormulario);
             }
 
             // Solo resetear si no estamos en modo edición
             if (!window.eppEnEdicion) {
-                console.log('📖 [abrirModalAgregarEPP] Modo normal - resetear modal');
+                console.log(' [abrirModalAgregarEPP] Modo normal - resetear modal');
                 resetearModalAgregarEPP();
             } else {
-                console.log('📖 [abrirModalAgregarEPP] Modo edición - NO resetear modal');
+                console.log(' [abrirModalAgregarEPP] Modo edición - NO resetear modal');
             }
         };
 
         // Función para cerrar modal de agregar EPP
         window.cerrarModalAgregarEPP = function() {
-            console.log('📖 [cerrarModalAgregarEPP] Cerrando modal');
+            console.log(' [cerrarModalAgregarEPP] Cerrando modal');
             const modal = document.getElementById('modalAgregarEPP');
             if (modal) {
                 modal.style.display = 'none';

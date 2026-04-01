@@ -52,11 +52,17 @@ class AuthApiController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::guard('web')->user();
 
+        // Determinar la redirección según el rol del usuario
+        $redirectTo = '/dashboard';
+        if ($user->hasRole('revisor_entregas')) {
+            $redirectTo = '/recibos-costura';
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Sesion iniciada correctamente',
             'data' => [
-                'redirect_to' => '/dashboard',
+                'redirect_to' => $redirectTo,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -85,11 +91,17 @@ class AuthApiController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
+        // Determinar la redirección según el rol del usuario
+        $redirectTo = '/dashboard';
+        if ($user->hasRole('revisor_entregas')) {
+            $redirectTo = '/recibos-costura';
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Cuenta creada correctamente',
             'data' => [
-                'redirect_to' => '/dashboard',
+                'redirect_to' => $redirectTo,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,

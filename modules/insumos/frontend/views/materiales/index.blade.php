@@ -203,9 +203,9 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
                 const data = await response.json();
                 const total = data.total || 0;
                 
-                console.log('[📊 ' + nombre + '] Respuesta API:', data);
-                console.log('[📊 ' + nombre + '] Total:', total);
-                console.log('[📊 ' + nombre + '] Debug:', data.debug);
+                console.log('[ ' + nombre + '] Respuesta API:', data);
+                console.log('[ ' + nombre + '] Total:', total);
+                console.log('[ ' + nombre + '] Debug:', data.debug);
                 
                 // Actualizar badge
                 badge.textContent = total;
