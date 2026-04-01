@@ -83,6 +83,11 @@
                 Sin encargado
                 <span class="badge-filtro-contador" id="badgeSinEncargadoCount">0</span>
             </button>
+            <button class="badge-filtro" data-encargado-filtro="control-calidad" onclick="filtrarControlCalidad()">
+                <span class="material-symbols-rounded">check_circle</span>
+                Control de calidad
+                <span class="badge-filtro-contador" id="badgeControlCalidadCount" data-contador-costura="{{ $conteoControlCalidadCostura ?? 0 }}" data-contador-reflectivo="{{ $conteoControlCalidadReflectivo ?? 0 }}" style="display: none;">{{ $conteoControlCalidadCostura ?? 0 }}</span>
+            </button>
         </div>
         @endif
         @endif
@@ -159,6 +164,7 @@
                         $reciboReflectivoFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                             return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
                         });
+                        $reciboCompletadoReflectivo = (bool) ($reciboReflectivoFiltroCard['completado_costura'] ?? false);
                         $reciboParaBusqueda = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                             return !empty($recibo['consecutivo_parcial']);
                         }) ?? $reciboPrincipalCard;
@@ -182,6 +188,8 @@
                          data-tipo-recibo="{{ $esReflectivo }}"
                          data-sin-encargado-costura="{{ $sinEncargadoCosturaCard ? '1' : '0' }}"
                          data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
+                         data-completado-costura="{{ $reciboCompletadoCostura ? '1' : '0' }}"
+                         data-completado-reflectivo="{{ $reciboCompletadoReflectivo ? '1' : '0' }}"
                          data-numero-recibo="{{ $numeroReciboBusqueda }}"
                          style="display: {{ $displayInicial }}">
                         
@@ -611,6 +619,21 @@
                                                     onclick="manejarPasarACostura(this)">
                                                 <span class="material-symbols-rounded">{{ $tieneEncargadoCosturaRef ? 'undo' : 'checkroom' }}</span>
                                                 {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                            </button>
+
+                                            <button class="btn-pasar-cc" 
+                                                    data-visible-filtro="reflectivo"
+                                                    id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="REFLECTIVO"
+                                                    data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                    data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
+                                                    data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
+                                                    onclick="pasarAControlCalidad(this)">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                                PASAR A C.C
                                             </button>
                                             @endif
                                         @endif

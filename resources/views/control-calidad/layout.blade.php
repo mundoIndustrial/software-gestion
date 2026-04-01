@@ -459,6 +459,31 @@
                 }
             };
         })();
+
+        // Manejo del menú de usuario
+        (function initUserMenu() {
+            const userBtn = document.getElementById('userBtn');
+            const userMenu = document.getElementById('userMenu');
+
+            if (!userBtn || !userMenu) {
+                return;
+            }
+
+            userBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userMenu.classList.toggle('active');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!userMenu.contains(event.target) && !userBtn.contains(event.target)) {
+                    userMenu.classList.remove('active');
+                }
+            });
+
+            userMenu.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        })();
     </script>
     @stack('scripts')
 </body>

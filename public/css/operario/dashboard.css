@@ -262,6 +262,8 @@ body[data-dashboard-theme="reflectivo"] .operario-dashboard.is-modern-dashboard 
     padding: 0;
     gap: 0.75rem;
     margin: 0 0 1rem;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro {
@@ -1194,6 +1196,19 @@ body[data-dashboard-theme="reflectivo"] .operario-dashboard.is-vista-costura .ba
     
     .operario-dashboard .orden-top-badges {
         gap: 0.25rem;
+    }
+
+    .operario-dashboard.is-vista-costura .filtros-badges-secundarios {
+        gap: 0.5rem;
+    }
+
+    .operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.78rem;
+    }
+
+    .operario-dashboard.is-vista-costura .filtros-badges-secundarios .badge-filtro.badge-filtro-active {
+        padding: 0.4rem 0.8rem;
     }
 
     .operario-dashboard .vista-resumen-card {

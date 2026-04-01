@@ -73,4 +73,15 @@ class ProcesoPrendaRepositoryImpl implements ProcesoPrendaRepository
     {
         $proceso->forceDelete();
     }
+
+    /**
+     * Obtiene todos los procesos de un tipo específico
+     * @return \Illuminate\Database\Eloquent\Collection<int, ProcesoPrenda>
+     */
+    public function findByProceso(string $proceso): \Illuminate\Database\Eloquent\Collection
+    {
+        return ProcesoPrenda::where('proceso', $proceso)
+            ->whereNull('deleted_at')
+            ->get();
+    }
 }

@@ -20,11 +20,14 @@ use App\Application\Operario\UseCases\ObtenerDatosRecibosOperarioUseCase;
 use App\Application\Operario\UseCases\GetPedidoDataOperarioUseCase;
 use App\Application\Operario\UseCases\ReportarPendienteOperarioUseCase;
 use App\Application\Operario\UseCases\ObtenerDistribucionReciboOperarioUseCase;
+use App\Application\Operario\UseCases\ObtenerRecibosControlCalidadUseCase;
+use App\Application\Operario\UseCases\ObtenerDistribucionControlCalidadUseCase;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\ProcesoPrenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +60,8 @@ class OperarioController extends Controller
         private GetPedidoDataOperarioUseCase $getPedidoDataOperarioUseCase,
         private ReportarPendienteOperarioUseCase $reportarPendienteOperarioUseCase,
         private ObtenerDistribucionReciboOperarioUseCase $obtenerDistribucionReciboOperarioUseCase,
+        private ObtenerRecibosControlCalidadUseCase $obtenerRecibosControlCalidadUseCase,
+        private ObtenerDistribucionControlCalidadUseCase $obtenerDistribucionControlCalidadUseCase,
     ) {
         $this->middleware('auth')->except(['getPedidoData']);
         $this->middleware('operario-access')->except(['getPedidoData']);
@@ -127,11 +132,34 @@ class OperarioController extends Controller
     {
         $dashboardData = $this->getOperarioDashboardUseCase->execute($request);
 
+        // Contar recibos en Control de Calidad desde procesos_prenda
+        $procesosCC = ProcesoPrenda::where('proceso', 'Control de Calidad')->get();
+        
+        $conteoControlCalidadCostura = 0;
+        $conteoControlCalidadReflectivo = 0;
+
+        foreach ($procesosCC as $proceso) {
+            // Obtener el tipo de recibo desde ConsecutivoReciboPedido
+            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $proceso->numero_pedido)
+                ->where('consecutivo_actual', $proceso->numero_recibo)
+                ->first();
+
+            if ($recibo) {
+                if (strtoupper($recibo->tipo_recibo) === 'COSTURA' || strtoupper($recibo->tipo_recibo) === 'COSTURA-BODEGA') {
+                    $conteoControlCalidadCostura++;
+                } elseif (strtoupper($recibo->tipo_recibo) === 'REFLECTIVO') {
+                    $conteoControlCalidadReflectivo++;
+                }
+            }
+        }
+
         return view('operario.dashboard', [
             'operario' => $dashboardData->operario,
             'prendasConRecibos' => $dashboardData->prendasConRecibos,
             'usuario' => $dashboardData->usuario,
             'tab' => $dashboardData->tab,
+            'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
+            'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
         ]);
     }
 
@@ -530,8 +558,28 @@ class OperarioController extends Controller
             ], 500);
         }
     }
+
     /**
-     * API: Obtener distribución de recibos por partes
+     * GET /operario/api/recibos/control-calidad/{tipoRecibo}
+     * Obtiene recibos en el área Control de Calidad filtrados por tipo
+     */
+    public function obtenerRecibosControlCalidad(Request $request, $tipoRecibo): JsonResponse
+    {
+        $resultado = $this->obtenerRecibosControlCalidadUseCase->execute($tipoRecibo);
+        return response()->json($resultado['payload'], $resultado['status']);
+    }
+
+    /**
+     * GET /operario/api/recibos/{idRecibo}/distribucion-control-calidad
+     * Obtiene solo los parciales en Control de Calidad
+     */
+    public function obtenerDistribucionControlCalidad(Request $request, $idRecibo): JsonResponse
+    {
+        $resultado = $this->obtenerDistribucionControlCalidadUseCase->execute((int) $idRecibo);
+        return response()->json($resultado['payload'], $resultado['status']);
+    }
+
+    /**
      * GET /operario/api/recibos/{idRecibo}/distribucion
      */
     public function obtenerDistribucionRecibo(Request $request, $idRecibo)
