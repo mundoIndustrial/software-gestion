@@ -414,6 +414,7 @@ class RecibosParcialesController extends Controller
                         'consecutivo_actual' => $nuevoConsecutivo,
                         'consecutivo_inicial' => $nuevoConsecutivo,
                         'activo' => 1,
+                        'fecha_activacion' => now(),
                         'updated_at' => now()
                     ]);
 

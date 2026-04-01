@@ -680,7 +680,10 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.innerHTML = recibos.data.map((recibo) => {
             let nombreCliente = recibo.cliente || '-';
             let numeroRecibo = recibo.numero_recibo || '-';
-            let fechaCreacion = recibo.created_at || null;
+            // Para parciales: si existe fecha_activacion, usarla; sino usar created_at
+            let fechaCreacion = (recibo.pedido_parcial_id && recibo.fecha_activacion) 
+                ? recibo.fecha_activacion 
+                : (recibo.created_at || null);
             let fechaEntrega = recibo.fecha_entrega || null;
             const area = recibo.area || 'PENDIENTE';
             const asesora = recibo.asesora || '';

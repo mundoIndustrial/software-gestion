@@ -7,11 +7,20 @@ use Illuminate\Support\Facades\DB;
 
 final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterface
 {
-    public function obtenerPorProceso(int $procesoPrendaDetalleId): ?array
+    public function obtenerPorProceso(int $procesoPrendaDetalleId, ?int $pedidoParcialId = null): ?array
     {
-        $row = DB::table('prenda_areas_logo_pedido')
-            ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
-            ->first();
+        $query = DB::table('prenda_areas_logo_pedido')
+            ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId);
+
+        // If pedido_parcial_id is provided, use it to filter the specific record
+        if ($pedidoParcialId !== null) {
+            $query->where('pedido_parcial_id', $pedidoParcialId);
+        } else {
+            // Otherwise, get the record without a pedido_parcial_id (non-partial)
+            $query->whereNull('pedido_parcial_id');
+        }
+
+        $row = $query->first();
 
         if (!$row) {
             return null;
@@ -23,26 +32,43 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
             'area' => $row->area,
             'novedades' => $row->novedades,
             'fechas_areas' => $row->fechas_areas,
+            'pedido_parcial_id' => $row->pedido_parcial_id,
         ];
     }
 
     public function upsertSeguimiento(int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp, ?int $pedidoParcialId = null): void
     {
-        $existente = DB::table('prenda_areas_logo_pedido')
-            ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
-            ->first();
+        // Build the where clause - search by both proceso and pedido_parcial_id
+        $query = DB::table('prenda_areas_logo_pedido')
+            ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId);
+        
+        if ($pedidoParcialId !== null) {
+            $query->where('pedido_parcial_id', $pedidoParcialId);
+        } else {
+            $query->whereNull('pedido_parcial_id');
+        }
+
+        $existente = $query->first();
 
         if ($existente) {
-            DB::table('prenda_areas_logo_pedido')
-                ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
-                ->update([
-                    'prenda_pedido_id' => $prendaPedidoId,
-                    'area' => $area,
-                    'novedades' => $novedades,
-                    'fechas_areas' => json_encode($fechasAreas),
-                    'pedido_parcial_id' => $pedidoParcialId,
-                    'updated_at' => $timestamp,
-                ]);
+            // Update the specific record with both criteria
+            $updateQuery = DB::table('prenda_areas_logo_pedido')
+                ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId);
+            
+            if ($pedidoParcialId !== null) {
+                $updateQuery->where('pedido_parcial_id', $pedidoParcialId);
+            } else {
+                $updateQuery->whereNull('pedido_parcial_id');
+            }
+
+            $updateQuery->update([
+                'prenda_pedido_id' => $prendaPedidoId,
+                'area' => $area,
+                'novedades' => $novedades,
+                'fechas_areas' => json_encode($fechasAreas),
+                'pedido_parcial_id' => $pedidoParcialId,
+                'updated_at' => $timestamp,
+            ]);
             return;
         }
 

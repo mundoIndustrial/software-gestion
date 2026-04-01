@@ -19,8 +19,6 @@ final class GuardarAreaNovedadPedidoLogoUseCase
 
     public function execute(array $payload): array
     {
-        \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Payload recibido:', $payload);
-        
         $validator = Validator::make($payload, [
             'proceso_prenda_detalle_id' => ['required', 'integer', 'min:1'],
             'area' => ['required', 'string'],
@@ -42,13 +40,6 @@ final class GuardarAreaNovedadPedidoLogoUseCase
             $novedades = isset($payload['novedades']) ? (string) $payload['novedades'] : null;
             $pedidoParcialId = isset($payload['pedido_parcial_id']) ? (int) $payload['pedido_parcial_id'] : null;
 
-            \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Datos extraídos:', [
-                'procesoId' => $procesoId,
-                'area' => $area,
-                'novedades' => $novedades,
-                'pedidoParcialId' => $pedidoParcialId,
-            ]);
-
             $validacion = $this->validarContextoProceso($procesoId, $area);
             if ($validacion['error'] !== null) {
                 $response = $validacion['error'];
@@ -57,16 +48,9 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                 $timestamp = now()->toDateTimeString();
 
                 $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $pedidoParcialId, $timestamp): void {
-                    $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
+                    $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId, $pedidoParcialId);
                     $fechasAreas = $this->extraerFechasAreas($existente);
                     $fechasAreas[$area] = $timestamp;
-
-                    \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Llamando upsertSeguimiento con:', [
-                        'procesoId' => $procesoId,
-                        'prendaPedidoId' => $prendaPedidoId,
-                        'area' => $area,
-                        'pedidoParcialId' => $pedidoParcialId,
-                    ]);
 
                     $this->seguimientoAreaRepository->upsertSeguimiento(
                         $procesoId,
@@ -79,7 +63,7 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                     );
                 });
 
-                $row = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
+                $row = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId, $pedidoParcialId);
                 $fechasAreas = $this->extraerFechasAreas($row);
 
                 $response = [

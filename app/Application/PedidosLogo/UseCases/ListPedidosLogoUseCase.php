@@ -100,6 +100,7 @@ final class ListPedidosLogoUseCase
                     'tipo_proceso_id' => $proceso->tipo_proceso_id,
                     'es_parcial' => (bool)($proceso->es_parcial ?? false),
                     'pedido_parcial_id' => $pedidoParcialId,
+                    'fecha_activacion' => $proceso->fecha_activacion ?? null,
                     'completado' => $completado,
                 ];
             }
@@ -122,6 +123,7 @@ final class ListPedidosLogoUseCase
                 'asesora' => $asesoraNombre,
                 'es_parcial' => (bool)($proceso->es_parcial ?? false),
                 'pedido_parcial_id' => $pedidoParcialId,
+                'fecha_activacion' => $proceso->fecha_activacion ?? null,
             ];
         });
 

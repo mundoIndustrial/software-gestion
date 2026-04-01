@@ -227,8 +227,26 @@ export class ReceiptRenderer {
                     reciboCompleto: recibo
                 });
 
-                if (recibo.activo === 1 && (recibo.fecha_aprobacion || recibo.created_at)) {
-                    // Recibo activo: usar fecha de aprobación SI existe, si no usar fecha de creación del recibo
+                // Para parciales: usar fecha_activacion si existe
+                const tieneFechaActivacion = recibo.fecha_activacion && String(recibo.fecha_activacion).trim() !== '';
+                
+                if (tieneFechaActivacion) {
+                    // Parcial con fecha_activacion: mostrar esa fecha
+                    const fecha = Formatters.parsearFecha(recibo.fecha_activacion);
+                    const { day, month, year } = Formatters.formatearFecha(fecha);
+                    
+                    dayBox.textContent = day;
+                    monthBox.textContent = month;
+                    yearBox.textContent = year;
+                    
+                    console.log('[ReceiptRenderer] Fecha de activación del parcial establecida:', { 
+                        day, 
+                        month, 
+                        year,
+                        fecha_activacion: recibo.fecha_activacion
+                    });
+                } else if (recibo.activo === 1 && (recibo.fecha_aprobacion || recibo.created_at)) {
+                    // Recibo activo sin fecha_activacion: usar fecha de aprobación SI existe, si no usar fecha de creación del recibo
                     const fechaAUsar = recibo.fecha_aprobacion || recibo.created_at;
                     const fecha = Formatters.parsearFecha(fechaAUsar);
                     const { day, month, year } = Formatters.formatearFecha(fecha);
@@ -246,14 +264,15 @@ export class ReceiptRenderer {
                         created_at: recibo.created_at
                     });
                 } else {
-                    // Recibo no activo: mostrar fecha vacía
+                    // Recibo no activo o sin fechas: mostrar fecha vacía
                     dayBox.textContent = '--';
                     monthBox.textContent = '--';
                     yearBox.textContent = '----';
                     
-                    console.log('[ReceiptRenderer] Recibo no activo - Fecha vacía:', {
-                        motivo: !recibo.activo ? 'activo es false/undefined' : 'created_at es false/undefined',
+                    console.log('[ReceiptRenderer] Recibo no activo o sin fecha_activacion - Fecha vacía:', {
+                        motivo: !recibo.activo ? 'activo es false/undefined' : tieneFechaActivacion ? 'fecha_activacion' : 'sin fechas',
                         activo: recibo.activo,
+                        fecha_activacion: recibo.fecha_activacion,
                         created_at: recibo.created_at
                     });
                 }

@@ -63,6 +63,21 @@ class ActivarReciboConConsecutivoUseCase
                         'aprobado_por' => $usuarioId
                     ]);
 
+                // Guardar fecha_activacion en pedidos_parciales si existe
+                $prenda = \DB::table('prendas_pedido')
+                    ->where('id', $proceso->prenda_pedido_id)
+                    ->first();
+                
+                if ($prenda) {
+                    \DB::table('pedidos_parciales')
+                        ->where('pedido_produccion_id', $prenda->pedido_produccion_id)
+                        ->where('prenda_pedido_id', $proceso->prenda_pedido_id)
+                        ->whereNull('fecha_activacion')
+                        ->update([
+                            'fecha_activacion' => now()
+                        ]);
+                }
+
                 // 3. Obtener tipo de proceso
                 $tipoProceso = \DB::table('tipos_procesos')
                     ->where('id', $proceso->tipo_proceso_id)

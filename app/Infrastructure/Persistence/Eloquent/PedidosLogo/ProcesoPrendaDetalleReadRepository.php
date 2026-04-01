@@ -40,11 +40,15 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.fechas_areas) as fechas_areas,
                 crp.consecutivo_actual as numero_recibo_consecutivo,
                 crp.created_at as fecha_creacion_recibo,
+                NULL as fecha_activacion,
                 0 as es_parcial,
                 NULL as pedido_parcial_id,
                 pp.pedido_produccion_id
             ")
-            ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
+            ->leftJoin('prenda_areas_logo_pedido as palp', function ($join) {
+                $join->on('palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
+                     ->whereNull('palp.pedido_parcial_id');
+            })
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'pedidos_procesos_prenda_detalles.prenda_pedido_id')
             ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
                 $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
@@ -88,6 +92,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.fechas_areas) as fechas_areas,
                 ppar.consecutivo_actual as numero_recibo_consecutivo,
                 ppar.created_at as fecha_creacion_recibo,
+                ppar.fecha_activacion,
                 1 as es_parcial,
                 ppar.id as pedido_parcial_id,
                 pp.pedido_produccion_id
@@ -97,7 +102,10 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 $join->on('pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'pp.id')
                     ->whereRaw("({$tipoReciboCase}) = ppar.tipo_recibo");
             })
-            ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
+            ->leftJoin('prenda_areas_logo_pedido as palp', function ($join) {
+                $join->on('palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
+                     ->on('palp.pedido_parcial_id', '=', 'ppar.id');
+            })
             ->where('ppar.estado', 'APROBADO')
             ->where('ppar.activo', 1)
             ->whereNull('ppar.deleted_at')

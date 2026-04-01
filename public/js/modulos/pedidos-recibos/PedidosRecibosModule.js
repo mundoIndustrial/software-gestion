@@ -493,6 +493,9 @@ export class PedidosRecibosModule {
             if (consecutivoAnexo) {
                 recibo.numero_recibo = consecutivoAnexo;
             }
+            
+            // Inyectar fecha_activacion del parcial (si existe)
+            recibo.fecha_activacion = parcialData?.fecha_activacion || null;
 
             // Inyectar detalles por talla (observaciones/ubicaciones) del anexo
             // para que Formatters pinte OBSERVACIONES/UBICACIONES POR TALLA solo de las tallas anexadas.
