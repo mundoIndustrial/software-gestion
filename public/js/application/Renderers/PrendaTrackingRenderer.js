@@ -130,10 +130,17 @@ export class PrendaTrackingRenderer {
 
   /**
    * Obtener badge de área actual
+   * Muestra el área más reciente de la tabla consecutivos_recibos_pedidos
    * 
    * @private
    */
   getAreaBadge(prenda) {
+    // Usar area_mas_reciente si está disponible
+    if (prenda.area_mas_reciente) {
+      return `<span class="badge badge-info">${prenda.area_mas_reciente}</span>`;
+    }
+
+    // Fallback: si no hay area_mas_reciente, usar seguimientos_por_area
     const areas = prenda.seguimientos_por_area || {};
     const areaNombres = Object.keys(areas);
 
@@ -151,20 +158,20 @@ export class PrendaTrackingRenderer {
 
   /**
    * Obtener cantidad de procesos
+   * Solo cuenta recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO)
+   * NO cuenta los procesos del seguimiento por área
    * 
    * @private
    */
   getProcesssCount(prenda) {
-    const areas = prenda.seguimientos_por_area || {};
-    let totalProcesos = 0;
+    // SOLO contar recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO)
+    const recibosEspeciales = prenda.recibos_especiales || [];
+    
+    if (Array.isArray(recibosEspeciales)) {
+      return recibosEspeciales.length;
+    }
 
-    Object.values(areas).forEach(area => {
-      if (area.procesos && Array.isArray(area.procesos)) {
-        totalProcesos += area.procesos.length;
-      }
-    });
-
-    return totalProcesos;
+    return 0;
   }
 
   /**

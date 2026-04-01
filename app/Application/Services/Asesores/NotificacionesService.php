@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * NotificacionesService
- * 
  * Servicio para gestionar notificaciones del asesor.
  * Encapsula la lógica de obtención y marcado de notificaciones.
  */

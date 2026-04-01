@@ -3,11 +3,11 @@
  * Gestiona la navegación y lógica del wizard de 3 pasos
  */
 
-window.WizardManager = (function() {
+globalThis.WizardManager = (function() {
     'use strict';
 
     // Verificar solo StateManager como dependencia
-    if (!window.StateManager) {
+    if (!globalThis.StateManager) {
         console.error('[WizardManager]  StateManager no está disponible');
         return {};
     }
@@ -80,10 +80,10 @@ window.WizardManager = (function() {
                     
                     try {
                         let resultado = false;
-                        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
-                            resultado = window.ColoresPorTalla.wizardGuardarAsignacion();
-                        } else if (window.ColoresPorTalla && typeof window.ColoresPorTalla.guardarAsignacion === 'function') {
-                            resultado = window.ColoresPorTalla.guardarAsignacion();
+                        if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
+                            resultado = globalThis.ColoresPorTalla.wizardGuardarAsignacion();
+                        } else if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.guardarAsignacion === 'function') {
+                            resultado = globalThis.ColoresPorTalla.guardarAsignacion();
                         }
                         
                         if (resultado) {
@@ -120,8 +120,8 @@ window.WizardManager = (function() {
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('[WizardManager] 🔘 CLICK DIRECTO en botón Cancelar');
-                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.cerrarWizard === 'function') {
-                        window.ColoresPorTalla.cerrarWizard();
+                    if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.cerrarWizard === 'function') {
+                        globalThis.ColoresPorTalla.cerrarWizard();
                     }
                 }
             };
@@ -528,7 +528,7 @@ window.WizardManager = (function() {
                         console.log('[WizardManager]  Cargando tallas para género...');
                         const generoSeleccionado = StateManager.getGeneroSeleccionado();
                         if (generoSeleccionado) {
-                            window.WizardManager.cargarTallasParaGenero(generoSeleccionado);
+                            globalThis.WizardManager.cargarTallasParaGenero(generoSeleccionado);
                         } else {
                             console.error('[WizardManager] No hay género seleccionado para cargar tallas');
                         }
@@ -566,7 +566,7 @@ window.WizardManager = (function() {
                 const contenedor = document.getElementById('wizard-telas-botones');
                 const inputTela = document.getElementById('wizard-tela-input');
                 
-                const telas = window.telasCreacion || [];
+                const telas = globalThis.telasCreacion || [];
                 console.log('[WizardManager] Cargando telas disponibles, total:', telas.length);
                 
                 // Si no hay telas existentes, ocultar sección de acceso rápido
@@ -810,7 +810,7 @@ window.WizardManager = (function() {
                 const genero = StateManager.getGeneroSeleccionado();
                 // Si el género es null (múltiples géneros), obtener de las asignaciones guardadas
                 if (!genero) {
-                    const asignaciones = window.AsignacionManager?.getAsignacionesPorTela() || [];
+                    const asignaciones = globalThis.AsignacionManager?.getAsignacionesPorTela() || [];
                     const generosUnicos = new Set();
                     Object.values(asignaciones).forEach(asign => {
                         if (asign && asign.genero) generosUnicos.add(asign.genero);
@@ -885,15 +885,15 @@ window.WizardManager = (function() {
                 if (tiposDisponibles.length === 1) {
                     const tipoUnico = tiposDisponibles[0];
                     console.log('[WizardManager] Un solo tipo de talla, mostrando:', tipoUnico);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipoUnico);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipoUnico);
                 } else if (tipoPrevio && tiposDisponibles.includes(tipoPrevio)) {
                     // Si había un tipo previamente seleccionado y sigue siendo válido, mostrar ese tipo
                     console.log('[WizardManager] Tipo previamente seleccionado encontrado:', tipoPrevio);
-                    window.WizardManager.mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoPrevio);
+                    globalThis.WizardManager.mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoPrevio);
                 } else {
                     // Si hay múltiples tipos y no hay uno previo, mostrar los botones de tipos
                     console.log('[WizardManager] Mostrando selector de tipos de talla');
-                    window.WizardManager.mostrarTiposTalla(genero, tiposDisponibles);
+                    globalThis.WizardManager.mostrarTiposTalla(genero, tiposDisponibles);
                 }
                 
                 // Actualizar etiqueta del género
@@ -919,7 +919,7 @@ window.WizardManager = (function() {
             console.log('[WizardManager]  Contenedor estado antes:', {
                 display: contenedor.style.display,
                 offsetHeight: contenedor.offsetHeight,
-                parentDisplay: window.getComputedStyle(contenedor.parentElement).display
+                parentDisplay: globalThis.getComputedStyle(contenedor.parentElement).display
             });
             
             contenedor.innerHTML = '';
@@ -999,7 +999,7 @@ window.WizardManager = (function() {
                     btn.style.fontWeight = '600';
                     
                     console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipo);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipo);
                 });
                 
                 btnContainer.appendChild(btn);
@@ -1116,7 +1116,7 @@ window.WizardManager = (function() {
                     btn.style.fontWeight = '600';
 
                     console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipo);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipo);
                 });
 
                 btnContainer.appendChild(btn);
@@ -1124,7 +1124,7 @@ window.WizardManager = (function() {
 
             // Automáticamente mostrar las tallas del tipo preseleccionado
             console.log('[WizardManager]  Cargando tallas para tipo preseleccionado:', tipoSeleccionado);
-            window.WizardManager.mostrarTallasPorTipo(genero, tipoSeleccionado);
+            globalThis.WizardManager.mostrarTallasPorTipo(genero, tipoSeleccionado);
         },
 
         /**
@@ -1356,8 +1356,8 @@ window.WizardManager = (function() {
                 
                 // Generar interfaz de colores por talla
                 console.log('[WizardManager]  Generando interfaz de colores...');
-                if (window.UIRenderer && typeof window.UIRenderer.generarInterfazColoresPorTalla === 'function') {
-                    window.UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
+                if (globalThis.UIRenderer && typeof globalThis.UIRenderer.generarInterfazColoresPorTalla === 'function') {
+                    globalThis.UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
                     console.log('[WizardManager]  Interfaz de colores generada exitosamente');
                 } else {
                     console.error('[WizardManager]  UIRenderer.generarInterfazColoresPorTalla no disponible');

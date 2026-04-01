@@ -1,6 +1,8 @@
 <!-- Overlay Selector de Prendas (fuera del modal) -->
 @once
     <link rel="stylesheet" href="{{ asset('css/order-tracking-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/tracking-prendas-selector.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/special-receipts-modal.css') }}">
 @endonce
 <div id="trackingPrendasSelectorOverlay" class="tracking-prendas-selector-overlay" style="display: none;" onclick="if(event.target === this) cerrarSelectorPrendas()">
     <div class="tracking-prendas-selector-content">
@@ -35,7 +37,7 @@
                     <span class="tracking-prendas-info-value" id="selectorOrderStatus">-</span>
                 </div>
                 <div class="tracking-prendas-info-item">
-                    <span class="tracking-prendas-info-label">Fecha de Inicio:</span>
+                    <span class="tracking-prendas-info-label">Fecha de Creación:</span>
                     <span class="tracking-prendas-info-value" id="selectorOrderStartDate">-</span>
                 </div>
                 <div class="tracking-prendas-info-item">
@@ -326,6 +328,43 @@
         <div class="add-proceso-footer">
             <button type="button" class="add-proceso-btn-secondary" onclick="cerrarModalAsignacionCorte()">Cancelar</button>
             <button type="button" id="btnConfirmarAsignacionCorte" class="add-proceso-btn-primary" onclick="confirmarAsignacionCorte()" disabled>Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Recibos Especiales -->
+<div id="specialReceiptsOverlay" class="special-receipts-overlay" style="display: none;">
+    <div class="special-receipts-modal">
+        <!-- Header -->
+        <div class="special-receipts-header">
+            <div class="special-receipts-header-left">
+                <div class="special-receipts-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12h6m-6 4h6M20.57 1.96a5 5 0 1 0 0 7.07 5 5 0 0 0 0-7.07zM10 4.07a4 4 0 0 1 5.66 5.66M3.02 12c1.82 1.99 4.23 3.15 6.98 3.15 3.79 0 7.06-2.28 8.61-5.58m-8.61 1.43c.33.63.75 1.21 1.25 1.71"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="special-receipts-title">Recibos Especiales</h2>
+                    <div class="special-receipts-subtitle">-</div>
+                </div>
+            </div>
+            <button class="special-receipts-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="special-receipts-body">
+            <div class="sr-table-container">
+                <!-- Tabla de recibos se renderizará aquí -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="special-receipts-footer">
+            <button type="button" class="btn-close-receipts">Cerrar</button>
         </div>
     </div>
 </div>

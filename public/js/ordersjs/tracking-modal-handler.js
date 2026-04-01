@@ -39,6 +39,7 @@ import {
   AreaCardRenderer,
   BadgeRenderer,
   UpdateRenderer,
+  SpecialReceiptsRenderer,
   createContainer,
   ProcessFormManager,
   ModalEventBinder,
@@ -128,14 +129,17 @@ const trackingTimelineController = new TrackingTimelineController({
   updateRenderer,
   formatDate: (value) => dateUtils.formatDate(value),
   showError,
-  closePrendasSelector: () => window.cerrarSelectorPrendas?.(),
+  closePrendasSelector: () => globalThis.cerrarSelectorPrendas?.(),
   setupBackButton
 });
+
+// Instancia del renderer de recibos especiales
+const specialReceiptsRenderer = new SpecialReceiptsRenderer();
 
 // Instancia del selector de días (será inicializada en setupDaysSelector)
 // Se expone globalmente para que otros módulos puedan acceder
 let daysSelector = null;
-window.trackingDaysSelector = null;
+globalThis.trackingDaysSelector = null;
 let trackingModalListenersInitialized = false;
 
 /**
@@ -154,7 +158,7 @@ function ensureDaysSelectorInitialized() {
       onSave: saveDiaEntregaSelection
     });
     daysSelector.initialize();
-    window.trackingDaysSelector = daysSelector;
+    globalThis.trackingDaysSelector = daysSelector;
     console.log('[ensureDaysSelectorInitialized]  Selector reiniciado');
     return;
   }
@@ -180,14 +184,14 @@ function updateDaysSelectorWithRetry(dias, intento = 0) {
   }
 
   // Try to ensure selector is initialized first
-  if (!window.trackingDaysSelector) {
+  if (!globalThis.trackingDaysSelector) {
     ensureDaysSelectorInitialized();
   }
 
-  if (window.trackingDaysSelector && typeof window.trackingDaysSelector.setValue === 'function') {
+  if (globalThis.trackingDaysSelector && typeof globalThis.trackingDaysSelector.setValue === 'function') {
     console.log('[updateDaysSelectorWithRetry] Selector disponible, actualizando con:', dias);
     try {
-      window.trackingDaysSelector.setValue(dias);
+      globalThis.trackingDaysSelector.setValue(dias);
       console.log('[updateDaysSelectorWithRetry]  Selector actualizado exitosamente');
     } catch (error) {
       console.error('[updateDaysSelectorWithRetry] Error al actualizar:', error);
@@ -240,9 +244,9 @@ function initTrackingModalListeners() {
     daysSelector.initialize();
     
     // Exponer globalmente para que UpdateRenderer pueda acceder
-    window.trackingDaysSelector = daysSelector;
+    globalThis.trackingDaysSelector = daysSelector;
     
-    console.log('[setupDaysSelector] DaysSelector inicializado y expuesto en window');
+    console.log('[setupDaysSelector] DaysSelector inicializado y expuesto en globalThis');
   }
 
   /**
@@ -422,21 +426,21 @@ function initTrackingModalListeners() {
   }
 
   // Exponer función de reintentos del selector de días para que otros módulos puedan usarla
-  window.updateDaysSelectorWithRetry = updateDaysSelectorWithRetry;
-  window.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
+  globalThis.updateDaysSelectorWithRetry = updateDaysSelectorWithRetry;
+  globalThis.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
 
   // Abrir selector de prendas (overlay)
-  window.openOrderTracking = async function(orderId, mostrarSelector = true) {
+  globalThis.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
       console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
       
       await orderLoaderService.loadCompleteOrder(orderId);
       
-      // Poblar window.currentOrderData con los datos cargados en orderState
+      // Poblar globalThis.currentOrderData con los datos cargados en orderState
       const snapshot = orderState.getSnapshot();
       const prendas = orderState.getPrendas(); // ← Obtener prendas directamente, no desde snapshot
       
-      window.currentOrderData = {
+      globalThis.currentOrderData = {
         id: snapshot.order?.id,
         numero_pedido: snapshot.order?.numero_pedido,
         cliente: snapshot.order?.cliente,
@@ -444,8 +448,8 @@ function initTrackingModalListeners() {
         prendas: prendas || []
       };
       
-      console.log('[openOrderTracking] window.currentOrderData poblado:', window.currentOrderData);
-      console.log('[openOrderTracking] Prendas copiadas a window.currentOrderData:', prendas.length);
+      console.log('[openOrderTracking] globalThis.currentOrderData poblado:', globalThis.currentOrderData);
+      console.log('[openOrderTracking] Prendas copiadas a globalThis.currentOrderData:', prendas.length);
       
       if (mostrarSelector) {
         showPrendasSelector();
@@ -460,7 +464,7 @@ function initTrackingModalListeners() {
   };
 
   // Compatibilidad con implementación vieja (tracking-modal-script.blade.php)
-  window.mostrarTrackingModal = function(pedidoData) {
+  globalThis.mostrarTrackingModal = function(pedidoData) {
     try {
       const orderId = pedidoData?.id || pedidoData?.pedido_id || pedidoData?.pedido?.id || null;
       if (!orderId) {
@@ -469,7 +473,7 @@ function initTrackingModalListeners() {
       }
 
       // El flujo nuevo carga datos desde /registros/{id}/... y abre el selector de prendas.
-      window.openOrderTracking(orderId, true);
+      globalThis.openOrderTracking(orderId, true);
     } catch (e) {
       console.error('[mostrarTrackingModal] Error:', e);
     }
@@ -502,14 +506,14 @@ function initTrackingModalListeners() {
   function showPrendasSelector() {
     ModalUtils.open('trackingPrendasSelectorOverlay');
   }
-  window.cerrarSelectorPrendas = function() {
+  globalThis.cerrarSelectorPrendas = function() {
     ModalUtils.close('trackingPrendasSelectorOverlay');
   };
 
 
 
   // Permite editar el área actual incluso si no existe proceso (creación rápida con prefill)
-  window.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
+  globalThis.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
     try {
       stopEventPropagation(event, true);
       resetFormButton();
@@ -532,7 +536,7 @@ function initTrackingModalListeners() {
 
 
 
-  window.showPrendaTrackingFromTable = async function(index) {
+  globalThis.showPrendaTrackingFromTable = async function(index) {
     try {
       console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
       
@@ -551,8 +555,42 @@ function initTrackingModalListeners() {
     }
   };
 
-  window.showPrendaTracking = async function(prenda) {
+  globalThis.showPrendaTracking = async function(prenda) {
     await trackingTimelineController.showPrendaTracking(prenda);
+  };
+
+  globalThis.handleVerProcesos = async function(index) {
+    try {
+      console.log('[handleVerProcesos] Mostrando recibos especiales para prenda en índice:', index);
+      
+      const prenda = orderState.getPrendas()[index];
+      if (!prenda) {
+        console.error('[handleVerProcesos] Prenda no encontrada en índice:', index);
+        return;
+      }
+      
+      // Contar recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO)
+      const recibosEspeciales = prenda.recibos_especiales || [];
+      const procesosCount = Array.isArray(recibosEspeciales) ? recibosEspeciales.length : 0;
+      
+      if (procesosCount === 0) {
+        console.log('[handleVerProcesos] No hay recibos especiales para esta prenda');
+        showError('No hay procesos registrados para esta prenda');
+        return;
+      }
+      
+      console.log('[handleVerProcesos] Abriendo modal con', procesosCount, 'recibos especiales');
+      
+      // Mostrar modal de recibos especiales
+      specialReceiptsRenderer.showReceipts(prenda);
+      
+      // Inicializar event listeners si no están inicializados
+      specialReceiptsRenderer.initializeEventListeners();
+      
+    } catch (error) {
+      console.error('[handleVerProcesos] Error:', error);
+      showError('Error al mostrar procesos: ' + error.message);
+    }
   };
 
   function renderPrendaTrackingTimeline(prenda) {
@@ -561,7 +599,7 @@ function initTrackingModalListeners() {
 
 
 
-  window.handleEliminarProceso = async function(procesoId, areaName, event) {
+  globalThis.handleEliminarProceso = async function(procesoId, areaName, event) {
     stopEventPropagation(event);
     showConfirmDeleteModal(procesoId, areaName);
   };
@@ -652,7 +690,7 @@ function initTrackingModalListeners() {
     try {
       console.log('[actualizarAreaEnTablaRecibos] Verificando si estamos en recibos-costura');
       
-      if (!window.location.pathname.includes('/recibos-costura')) {
+      if (!globalThis.location.pathname.includes('/recibos-costura')) {
         console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualización');
         return;
       }
@@ -662,7 +700,7 @@ function initTrackingModalListeners() {
       // Intentar obtener numeroRecibo desde múltiples fuentes
       const numeroRecibo = orderState.getConsecutivoCosturaData()?.consecutivo 
                           || orderState.getCurrentPrenda()?.numero_recibo_costura
-                          || window.currentOrderData?.prendas?.find(p => p.id === prendaId)?.numero_recibo_costura
+                          || globalThis.currentOrderData?.prendas?.find(p => p.id === prendaId)?.numero_recibo_costura
                           || null;
 
       if (!pedidoId || !prendaId || !numeroRecibo) {
@@ -726,7 +764,7 @@ function initTrackingModalListeners() {
   }
 
   // Manejar edición de proceso
-  window.handleEditarProceso = async function(procesoId, areaName, processData, event) {
+  globalThis.handleEditarProceso = async function(procesoId, areaName, processData, event) {
     stopEventPropagation(event);
     
     try {
@@ -748,7 +786,7 @@ function initTrackingModalListeners() {
     }
   };
 
-  window.handleActualizarProceso = async function(procesoId) {
+  globalThis.handleActualizarProceso = async function(procesoId) {
     const buttonMgr = new ButtonLoadingManager('btnConfirmAddProceso', {
       contentId: 'addProcesoButtonContent',
       loadingId: 'addProcesoButtonLoading'
@@ -831,8 +869,8 @@ function initTrackingModalListeners() {
   function showError(message) {
     console.error('[showError] ' + message);
     // Usar el sistema global de toasts
-    if (window.showToast) {
-      window.showToast(message, 'error');
+    if (globalThis.showToast) {
+      globalThis.showToast(message, 'error');
     }
   }
 
@@ -872,10 +910,113 @@ function initTrackingModalListeners() {
   }
 
   function showSuccess(message) {
-    if (window.showToast) {
-      window.showToast(message, 'success');
+    if (globalThis.showToast) {
+      globalThis.showToast(message, 'success');
     }
   }
+
+  // Manejar apertura de recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO)
+  globalThis.handleAbrirReciboEspecial = function(recibosEspeciales, event) {
+    stopEventPropagation(event);
+    
+    if (!recibosEspeciales || recibosEspeciales.length === 0) {
+      console.log('[handleAbrirReciboEspecial] No hay recibos especiales');
+      return;
+    }
+
+    if (recibosEspeciales.length === 1) {
+      // Si hay solo uno, abrirlo directamente
+      abrirReciboEspecial(recibosEspeciales[0]);
+    } else {
+      // Si hay múltiples, mostrar selector
+      mostrarSelectorRecibosEspeciales(recibosEspeciales);
+    }
+  };
+
+  function abrirReciboEspecial(recibo) {
+    console.log('[abrirReciboEspecial] Abriendo recibo:', recibo);
+    
+    if (!recibo || !recibo.id) {
+      showError('Error: Datos del recibo inválidos');
+      return;
+    }
+    
+    // Llamar a openReceiptModal para renderizar con formato costura
+    openReceiptModal(recibo.id, recibo.tipo_recibo, recibo.consecutivo);
+  }
+
+  function mostrarSelectorRecibosEspeciales(recibosEspeciales) {
+    console.log('[mostrarSelectorRecibosEspeciales] Mostrando selector con', recibosEspeciales.length, 'recibos');
+    
+    // Crear HTML do selector
+    const selectorHtml = `
+      <div class="recibos-especiales-selector-overlay">
+        <div class="recibos-especiales-selector-modal">
+          <div class="recibos-especiales-header">
+            <h3>Seleccionar Recibo</h3>
+            <button class="recibos-especiales-close" onclick="cerrarSelectorRecibosEspeciales()">&times;</button>
+          </div>
+          <div class="recibos-especiales-list">
+            ${recibosEspeciales.map((recibo, idx) => `
+              <button class="recibos-especiales-item" onclick="abrirReciboEspecial(${JSON.stringify(recibo).replace(/"/g, '&quot;')})">
+                <span class="recibos-especiales-tipo">${recibo.tipo_recibo}</span>
+                <span class="recibos-especiales-numero">#${recibo.consecutivo}</span>
+                <span class="recibos-especiales-area">${recibo.area || '-'}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Insertar en el DOM
+    const container = document.body;
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'recibosEspecialesSelector';
+    tempDiv.innerHTML = selectorHtml;
+    container.appendChild(tempDiv);
+  }
+
+  /**
+   * Abre modal con detalles del recibo especial
+   * Renderiza como lo hace el visualizador de costura
+   */
+  globalThis.openReceiptModal = async function(receiptId, tipoRecibo, numeroRecibo) {
+    try {
+      // Obtener la orden actual del estado global
+      const currentOrderData = globalThis.currentOrderData;
+      if (!currentOrderData) {
+        console.error('[openReceiptModal] No hay datos de orden cargados');
+        showError('Error: Datos de orden no disponibles');
+        return;
+      }
+
+      // Disparar evento para que abra el modal con formato costura
+      // El evento load-order-detail es escuchado por order-detail-modal-manager.js
+      const event = new CustomEvent('load-order-detail', {
+        detail: currentOrderData
+      });
+      window.dispatchEvent(event);
+
+      console.log('[openReceiptModal] Modal abierto con formato costura para recibo:', {
+        tipoRecibo,
+        numeroRecibo
+      });
+
+    } catch (error) {
+      console.error('[openReceiptModal] Error:', error);
+      showError('Error al abrir recibo: ' + error.message);
+    }
+  };
+
+  globalThis.cerrarSelectorRecibosEspeciales = function() {
+    const selector = document.getElementById('recibosEspecialesSelector');
+    if (selector) {
+      selector.remove();
+    }
+  };
+
+  globalThis.abrirReciboEspecial = abrirReciboEspecial;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initTrackingModalListeners, { once: true });

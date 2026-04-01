@@ -13,11 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * CargarDatosCompartidosService
- * 
  * PHASE 13 (Marzo 2026): Refactoring responsabilidades
- * 
  * Responsabilidad: Cargar y preparar datos compartidos entre vistas de creación de pedido
- * 
  * Antes: Lógica en controller (40+ líneas duplicadas)
  * Ahora: Servicio reutilizable, testeableIndependiente
  */
@@ -29,7 +26,7 @@ class CargarDatosCompartidosService implements CargarDatosCompartidosServiceInte
 
     /**
      * Ejecutar carga de datos compartidos
-     * 
+
      * @param User $user
      * @return array ['tallas' => Collection, 'formas_pago' => array, ...]
      */

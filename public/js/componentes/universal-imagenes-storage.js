@@ -140,7 +140,7 @@ globalThis.universalImagenesStorage = {
     },
     
     /**
-     * Limpiar TODO el storage (todos los tipos)
+     * Limpiar el storage (todos los tipos)
      */
     limpiarTodo: function() {
         const totalPorTipo = {};

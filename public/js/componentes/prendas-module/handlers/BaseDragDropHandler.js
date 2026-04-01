@@ -38,7 +38,7 @@ class BaseDragDropHandler {
         
         try {
             // Verificar si ClipboardService está disponible
-            if (!window.ClipboardService) {
+            if (!globalThis.ClipboardService) {
                 UIHelperService.log(`${this.constructor.name}`, ' ClipboardService no disponible', 'error');
                 throw new Error('ClipboardService no disponible');
             }
@@ -274,5 +274,5 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = BaseDragDropHandler;
 }
 
-// Asignar al window para uso global
-window.BaseDragDropHandler = BaseDragDropHandler;
+// Asignar al globalThis para uso global
+globalThis.BaseDragDropHandler = BaseDragDropHandler;

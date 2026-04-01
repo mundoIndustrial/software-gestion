@@ -66,7 +66,7 @@ class TrackingUIComponents {
         if (!totalDiasElement || !duracionAreaElement) return;
         
         // Obtener datos del proceso (desde data attributes o recalcular)
-        const processData = window.currentPrendaData?.seguimientos_por_area?.[area];
+        const processData = globalThis.currentPrendaData?.seguimientos_por_area?.[area];
         if (!processData) return;
         
         // Recalcular días dinámicamente
@@ -261,8 +261,8 @@ class TrackingUIComponents {
       console.log('[updateOrderInfo] Dias de entrega encontrados:', orderData.dia_de_entrega);
       
       // Usar la función de reintentos si existe
-      if (typeof window.updateDaysSelectorWithRetry === 'function') {
-        window.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
+      if (typeof globalThis.updateDaysSelectorWithRetry === 'function') {
+        globalThis.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
       } else {
         console.warn('[updateOrderInfo] updateDaysSelectorWithRetry no disponible');
       }
@@ -357,10 +357,10 @@ class TrackingUIComponents {
   // Actualizar fecha estimada de entrega del pedido
   updateEstimatedDeliveryDate() {
     const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
-    if (!fechaEstimadaElement || !window.currentOrderData) return;
+    if (!fechaEstimadaElement || !globalThis.currentOrderData) return;
     
     // Obtener fecha estimada del pedido (campo correcto)
-    let fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
+    let fechaEstimada = globalThis.currentOrderData.fecha_estimada_de_entrega;
     
     if (fechaEstimada) {
       // Formatear fecha datetime
@@ -447,32 +447,32 @@ class TrackingUIComponents {
   showError(message) {
     console.error('[showError] ' + message);
     // Usar el sistema global de toasts
-    if (window.showToast) {
-      window.showToast(message, 'error');
+    if (globalThis.showToast) {
+      globalThis.showToast(message, 'error');
     }
   }
 
   // Mostrar mensaje de éxito
   showSuccess(message) {
     // Usar el sistema global de toasts
-    if (window.showToast) {
-      window.showToast(message, 'success');
+    if (globalThis.showToast) {
+      globalThis.showToast(message, 'success');
     }
   }
 }
 
 // Exportar para uso global
-window.TrackingUIComponents = TrackingUIComponents;
-window.trackingUIComponents = new TrackingUIComponents();
+globalThis.TrackingUIComponents = TrackingUIComponents;
+globalThis.trackingUIComponents = new TrackingUIComponents();
 
 // Funciones globales para compatibilidad
-window.iniciarTimerContadores = () => window.trackingUIComponents.iniciarTimerContadores();
-window.detenerTimerContadores = () => window.trackingUIComponents.detenerTimerContadores();
-window.actualizarContadoresDinamicos = () => window.trackingUIComponents.actualizarContadoresDinamicos();
-window.updateOrderInfo = (orderData) => window.trackingUIComponents.updateOrderInfo(orderData);
-window.updateEstimatedDeliveryDate = () => window.trackingUIComponents.updateEstimatedDeliveryDate();
-window.showPrendasSelector = () => window.trackingUIComponents.showPrendasSelector();
-window.cerrarSelectorPrendas = () => window.trackingUIComponents.cerrarSelectorPrendas();
-window.showPrendasView = () => window.trackingUIComponents.showPrendasView();
-window.showError = (message) => window.trackingUIComponents.showError(message);
-window.showSuccess = (message) => window.trackingUIComponents.showSuccess(message);
+globalThis.iniciarTimerContadores = () => globalThis.trackingUIComponents.iniciarTimerContadores();
+globalThis.detenerTimerContadores = () => globalThis.trackingUIComponents.detenerTimerContadores();
+globalThis.actualizarContadoresDinamicos = () => globalThis.trackingUIComponents.actualizarContadoresDinamicos();
+globalThis.updateOrderInfo = (orderData) => globalThis.trackingUIComponents.updateOrderInfo(orderData);
+globalThis.updateEstimatedDeliveryDate = () => globalThis.trackingUIComponents.updateEstimatedDeliveryDate();
+globalThis.showPrendasSelector = () => globalThis.trackingUIComponents.showPrendasSelector();
+globalThis.cerrarSelectorPrendas = () => globalThis.trackingUIComponents.cerrarSelectorPrendas();
+globalThis.showPrendasView = () => globalThis.trackingUIComponents.showPrendasView();
+globalThis.showError = (message) => globalThis.trackingUIComponents.showError(message);
+globalThis.showSuccess = (message) => globalThis.trackingUIComponents.showSuccess(message);

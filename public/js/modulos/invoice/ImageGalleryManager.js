@@ -12,15 +12,15 @@ class ImageGalleryManager {
 
     init() {
         // Hacer métodos disponibles globalmente para compatibilidad
-        window._extraerURLImagen = this.extraerURLImagen.bind(this);
-        window._registrarGalería = this.registrarGalería.bind(this);
-        window._abrirGaleriaImagenesDesdeID = this.abrirGaleriaImagenesDesdeID.bind(this);
-        window._abrirGaleriaImagenes = this.abrirGaleriaImagenes.bind(this);
-        window._limpiarGalerias = this.limpiarGalerias.bind(this);
+        globalThis._extraerURLImagen = this.extraerURLImagen.bind(this);
+        globalThis._registrarGalería = this.registrarGalería.bind(this);
+        globalThis._abrirGaleriaImagenesDesdeID = this.abrirGaleriaImagenesDesdeID.bind(this);
+        globalThis._abrirGaleriaImagenes = this.abrirGaleriaImagenes.bind(this);
+        globalThis._limpiarGalerias = this.limpiarGalerias.bind(this);
         
         // Mantener compatibilidad con variables globales existentes
-        window._galeríasPreview = this.galerías;
-        window._idGaleriaPreview = 0;
+        globalThis._galeríasPreview = this.galerías;
+        globalThis._idGaleriaPreview = 0;
     }
 
     /**
@@ -79,8 +79,8 @@ class ImageGalleryManager {
         this.idGaleria = 0;
         
         // Sincronizar con variable global para compatibilidad
-        window._idGaleriaPreview = 0;
-        window._galeríasPreview = this.galerías;
+        globalThis._idGaleriaPreview = 0;
+        globalThis._galeríasPreview = this.galerías;
         
         console.log('[ImageGalleryManager] Galerías limpiadas');
     }
@@ -95,7 +95,7 @@ class ImageGalleryManager {
         this.galerías[id] = { imagenes, titulo };
         
         // Sincronizar con variable global para compatibilidad
-        window._idGaleriaPreview = this.idGaleria;
+        globalThis._idGaleriaPreview = this.idGaleria;
         
         return id;
     }
@@ -518,14 +518,14 @@ class ImageGalleryManager {
 
 // Inicializar el gestor cuando se cargue el script
 document.addEventListener('DOMContentLoaded', () => {
-    window.imageGalleryManager = new ImageGalleryManager();
+    globalThis.imageGalleryManager = new ImageGalleryManager();
 });
 
 // También permitir inicialización manual si DOMContentLoaded ya ocurrió
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.imageGalleryManager = new ImageGalleryManager();
+        globalThis.imageGalleryManager = new ImageGalleryManager();
     });
 } else {
-    window.imageGalleryManager = new ImageGalleryManager();
+    globalThis.imageGalleryManager = new ImageGalleryManager();
 }

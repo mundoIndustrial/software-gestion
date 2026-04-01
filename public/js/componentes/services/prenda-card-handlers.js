@@ -3,7 +3,7 @@
  * Maneja clicks en menús, botones, fotos y galerías
  */
 
-window.PrendaCardHandlers = {
+globalThis.PrendaCardHandlers = {
     inicializar(tarjeta, prenda, indice, callbacks = {}) {
 
         this._setupEventListeners();
@@ -94,14 +94,14 @@ window.PrendaCardHandlers = {
                         
                         // Forzar display:block inmediatamente si las clases CSS no funcionan
                         setTimeout(() => {
-                            const computedDisplay = window.getComputedStyle(content).display;
+                            const computedDisplay = globalThis.getComputedStyle(content).display;
                             if (computedDisplay === 'none') {
                                 console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:block con JavaScript');
                                 content.style.setProperty('display', 'block', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
-                                    const newDisplay = window.getComputedStyle(content).display;
+                                    const newDisplay = globalThis.getComputedStyle(content).display;
                                     console.log('[PrendaCardHandlers]  Después de forzar - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
@@ -116,14 +116,14 @@ window.PrendaCardHandlers = {
                         
                         // Forzar display:none inmediatamente si las clases CSS no funcionan
                         setTimeout(() => {
-                            const computedDisplay = window.getComputedStyle(content).display;
+                            const computedDisplay = globalThis.getComputedStyle(content).display;
                             if (computedDisplay !== 'none') {
                                 console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:none con JavaScript');
                                 content.style.setProperty('display', 'none', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
-                                    const newDisplay = window.getComputedStyle(content).display;
+                                    const newDisplay = globalThis.getComputedStyle(content).display;
                                     console.log('[PrendaCardHandlers]  Después de forzar cierre - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
@@ -136,7 +136,7 @@ window.PrendaCardHandlers = {
                     
                     // Verificar estilos computados con más tiempo para asegurar que se aplique
                     setTimeout(() => {
-                        const computedStyle = window.getComputedStyle(content);
+                        const computedStyle = globalThis.getComputedStyle(content);
                         const displayStyle = computedStyle.getPropertyValue('display');
                         const inlineStyle = content.getAttribute('style');
                         console.log('[PrendaCardHandlers]  Computed style display:', displayStyle);
@@ -169,7 +169,7 @@ window.PrendaCardHandlers = {
                         }
                         
                         // Verificar si hay otros estilos aplicados
-                        const allStyles = window.getComputedStyle(content, null);
+                        const allStyles = globalThis.getComputedStyle(content, null);
                         console.log('[PrendaCardHandlers]  Todos los estilos aplicados:', {
                             display: allStyles.display,
                             visibility: allStyles.visibility,
@@ -231,7 +231,7 @@ window.PrendaCardHandlers = {
                         let parent = content.parentElement;
                         let level = 0;
                         while (parent && level < 8) { // Aumenté a 8 niveles
-                            const parentStyle = window.getComputedStyle(parent);
+                            const parentStyle = globalThis.getComputedStyle(parent);
                             const parentRect = parent.getBoundingClientRect();
                             console.log(`[PrendaCardHandlers] 📁 Padre Nivel ${level}:`, {
                                 tagName: parent.tagName,
@@ -273,7 +273,7 @@ window.PrendaCardHandlers = {
                             right: rect.right,
                             width: rect.width,
                             height: rect.height,
-                            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth
+                            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= globalThis.innerHeight && rect.right <= globalThis.innerWidth
                         });
                     }, 50);
                 } else {
@@ -293,8 +293,8 @@ window.PrendaCardHandlers = {
                 let esCrearNuevo = false;
                 
                 // Prioridad 1: Obtener desde GestionItemsUI (crear-nuevo)
-                if (window.gestionItemsUI) {
-                    const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
+                if (globalThis.gestionItemsUI) {
+                    const itemsOrdenados = globalThis.gestionItemsUI.obtenerItemsOrdenados();
                     if (itemsOrdenados && itemsOrdenados[prendaIndex]) {
                         prenda = itemsOrdenados[prendaIndex];
                         esCrearNuevo = true;
@@ -303,14 +303,14 @@ window.PrendaCardHandlers = {
                 }
                 
                 // Prioridad 2: Obtener desde itemsPedido (fallback)
-                if (!prenda && window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                if (!prenda && globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
                 }
                 
                 // Prioridad 3: Obtener desde gestor (pedidos guardados)
-                if (!prenda && window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                if (!prenda && globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -319,16 +319,16 @@ window.PrendaCardHandlers = {
                 
                 if (prenda) {
                     // Si es crear-nuevo, abrir el modal de creación con datos precargados
-                    if (esCrearNuevo && window.gestionItemsUI) {
+                    if (esCrearNuevo && globalThis.gestionItemsUI) {
 
-                        window.gestionItemsUI.prendaEditIndex = prendaIndex;
+                        globalThis.gestionItemsUI.prendaEditIndex = prendaIndex;
                         //  abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
                         // y llama a cargarPrendaEnModal() internamente (línea 373 de gestion-items-pedido.js).
                         // NO hacer segunda llamada con setTimeout — causaba doble carga de la prenda.
-                        window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+                        globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva();
                     }
                     // Si es pedido guardado, abrir modal simple de edición
-                    else if (window.abrirEditarPrendaModal) {
+                    else if (globalThis.abrirEditarPrendaModal) {
                         // Obtener pedidoId de múltiples fuentes
                         let pedidoId = null;
                         
@@ -336,9 +336,9 @@ window.PrendaCardHandlers = {
                         if (document.body.dataset.pedidoIdEdicion) {
                             pedidoId = document.body.dataset.pedidoIdEdicion;
                         }
-                        // 2. Desde window global (editar-pedido.blade.php)
-                        else if (window.pedidoEdicionId) {
-                            pedidoId = window.pedidoEdicionId;
+                        // 2. Desde globalThis global (editar-pedido.blade.php)
+                        else if (globalThis.pedidoEdicionId) {
+                            pedidoId = globalThis.pedidoEdicionId;
                         }
                         // 3. Desde elemento con data-pedido-id
                         else {
@@ -351,7 +351,7 @@ window.PrendaCardHandlers = {
                             pedidoId
                         });
                         
-                        window.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
+                        globalThis.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
                     }
                 }
                 
@@ -367,13 +367,13 @@ window.PrendaCardHandlers = {
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
                 console.log(' [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
-                console.log(' [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
+                console.log(' [ELIMINAR-PRENDA] globalThis.gestionItemsUI existe:', !!globalThis.gestionItemsUI);
                 
                 // Usar el método eliminarItem de GestionItemsUI que maneja correctamente la lógica
                 // (incluyendo confirmación, re-indexación y renderización)
-                if (window.gestionItemsUI) {
+                if (globalThis.gestionItemsUI) {
                     console.log(' [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI.eliminarItem()');
-                    window.gestionItemsUI.eliminarItem(prendaIndex);
+                    globalThis.gestionItemsUI.eliminarItem(prendaIndex);
                 }
                 
                 const submenu = btn.closest('.submenu-prenda');
@@ -398,14 +398,14 @@ window.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = window.gestionItemsUI.prendas[prendaIndex];
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
+                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
 
-                } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
-                } else if (window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                } else if (globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -425,14 +425,14 @@ window.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = window.gestionItemsUI.prendas[prendaIndex];
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
+                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
 
-                } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
-                } else if (window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                } else if (globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -456,8 +456,8 @@ window.PrendaCardHandlers = {
         
         const fotosUrls = imagenes.map((img, idx) => {
             // Usar servicio centralizado para convertir imágenes
-            const url = window.ImageConverterService ? 
-                window.ImageConverterService.convertirAUrl(img) : 
+            const url = globalThis.ImageConverterService ? 
+                globalThis.ImageConverterService.convertirAUrl(img) : 
                 null;
             
             if (url) {
@@ -611,8 +611,8 @@ window.PrendaCardHandlers = {
             if (tela.imagenes && Array.isArray(tela.imagenes)) {
                 const fotosUrlsTela = tela.imagenes.map((img) => {
                     // Usar servicio centralizado para convertir imágenes
-                    const url = window.ImageConverterService ? 
-                        window.ImageConverterService.convertirAUrl(img) : 
+                    const url = globalThis.ImageConverterService ? 
+                        globalThis.ImageConverterService.convertirAUrl(img) : 
                         null;
                     
                     if (url) {

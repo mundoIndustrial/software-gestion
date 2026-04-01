@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class BodegaGuardadoService implements BodegaGuardadoServiceContract
 {
+    private const ERROR_AL_GUARDAR = 'Error al guardar: ';
+
     /**
      * Guardar una fila individual de bodega_detalles_talla (crear o actualizar)
      */
@@ -85,7 +87,7 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             $esNuevo = !$detalleAnterior;
             
             \Log::info('[GUARDAR FILA] Registro guardado', [
-                'detalle_id' => $detalleGuardado->id,
+                'detalle_id' => $detalleGuardado->getKey(),
                 'es_nuevo' => $esNuevo,
                 'prenda_id' => $detalleGuardado->prenda_id,
                 'talla_color_id' => $detalleGuardado->talla_color_id
@@ -108,7 +110,7 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             
             return [
                 'success' => false,
-                'message' => 'Error al guardar: ' . $e->getMessage()
+                'message' => self::ERROR_AL_GUARDAR . $e->getMessage()
             ];
         }
     }
@@ -128,7 +130,7 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             
             return [
                 'success' => false,
-                'message' => 'Error al guardar: ' . $e->getMessage()
+                'message' => self::ERROR_AL_GUARDAR . $e->getMessage()
             ];
         }
     }
@@ -142,42 +144,10 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
         array $camposAuditar
     ): array {
         try {
-            $usuario = auth()->user();
             $guardados = 0;
             
             foreach ($detalles as $detalle) {
-                \Log::info('[GUARDAR DETALLES] Datos recibidos:', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'detalle_completo' => $detalle,
-                    'prenda_id' => $detalle['prenda_id'] ?? 'null',
-                    'pedido_epp_id' => $detalle['pedido_epp_id'] ?? 'null',
-                    'prenda_nombre' => $detalle['prenda_nombre'] ?? 'null',
-                    'talla' => $detalle['talla'] ?? 'null',
-                    'cantidad' => $detalle['cantidad'] ?? 'null'
-                ]);
-                
-                $talla = $detalle['talla'];
-                $tallaColorId = $detalle['talla_color_id'] ?? null;
-                $nombrePrenda = $detalle['prenda_nombre'] ?? null;
-                $cantidad = $detalle['cantidad'] ?? 0;
-                
-                // Obtener registro anterior para auditoría
-                $detalleAnterior = BodegaDetalleTalla::where('pedido_produccion_id', $pedido->id)
-                    ->where('numero_pedido', $pedido->numero_pedido)
-                    ->where('talla', $talla)
-                    ->where('talla_color_id', $tallaColorId)
-                    ->where('prenda_nombre', $nombrePrenda)
-                    ->where('cantidad', $cantidad)
-                    ->first();
-
-                \Log::info('[GUARDAR DETALLES] Creación automática desactivada', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_nombre' => $nombrePrenda,
-                    'talla' => $talla,
-                    'cantidad' => $cantidad,
-                    'nota' => 'El registro solo se creará cuando el usuario lo ingrese manualmente'
-                ]);
-
+                $this->procesarDetalle($pedido, $detalle);
                 $guardados++;
             }
 
@@ -190,9 +160,37 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             
             return [
                 'success' => false,
-                'message' => 'Error al guardar: ' . $e->getMessage()
+                'message' => self::ERROR_AL_GUARDAR . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Procesar un detalle individual dentro del flujo de guardado múltiple
+     */
+    private function procesarDetalle(PedidoProduccion $pedido, array $detalle): void
+    {
+        \Log::info('[GUARDAR DETALLES] Datos recibidos:', [
+            'numero_pedido' => $pedido->numero_pedido,
+            'detalle_completo' => $detalle,
+            'prenda_id' => $detalle['prenda_id'] ?? 'null',
+            'pedido_epp_id' => $detalle['pedido_epp_id'] ?? 'null',
+            'prenda_nombre' => $detalle['prenda_nombre'] ?? 'null',
+            'talla' => $detalle['talla'] ?? 'null',
+            'cantidad' => $detalle['cantidad'] ?? 'null'
+        ]);
+        
+        $talla = $detalle['talla'];
+        $nombrePrenda = $detalle['prenda_nombre'] ?? null;
+        $cantidad = $detalle['cantidad'] ?? 0;
+
+        \Log::info('[GUARDAR DETALLES] Creación automática desactivada', [
+            'numero_pedido' => $pedido->numero_pedido,
+            'prenda_nombre' => $nombrePrenda,
+            'talla' => $talla,
+            'cantidad' => $cantidad,
+            'nota' => 'El registro solo se creará cuando el usuario lo ingrese manualmente'
+        ]);
     }
 
     /**
@@ -206,62 +204,109 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
         ?string $prendaNombre,
         Request $request
     ): void {
-        $usuario = auth()->user();
-
         if ($detalleAnterior) {
-            // Actualización - registrar solo los cambios
-            $camposAuditar = [
-                'asesor',
-                'empresa',
-                'cantidad',
-                'prenda_nombre',
-                'pendientes',
-                'fecha_pedido',
-                'fecha_entrega',
-                'area',
-                'estado_bodega',
-                'observaciones_bodega',
-            ];
-            
-            foreach ($camposAuditar as $campo) {
-                $valorAnterior = $detalleAnterior->{$campo};
-                $valorNuevo = $detalleGuardado->{$campo};
-                
-                $valorAnteriorDisplay = ($valorAnterior === null || $valorAnterior === '') ? '' : $valorAnterior;
-                $valorNuevoDisplay = ($valorNuevo === null || $valorNuevo === '') ? '' : $valorNuevo;
-                
-                if ($valorAnteriorDisplay !== $valorNuevoDisplay) {
-                    BodegaAuditoria::create([
-                        'bodega_detalles_talla_id' => $detalleGuardado->id,
-                        'numero_pedido' => $numeroPedido,
-                        'talla' => $talla,
-                        'campo_modificado' => $campo,
-                        'valor_anterior' => $valorAnteriorDisplay,
-                        'valor_nuevo' => $valorNuevoDisplay,
-                        'usuario_id' => $usuario->id,
-                        'usuario_nombre' => $usuario->name,
-                        'ip_address' => $request->ip(),
-                        'accion' => 'update',
-                        'descripcion' => ucfirst($campo) . ' cambió de "' . ($valorAnteriorDisplay ?: 'vacío') . '" a "' . ($valorNuevoDisplay ?: 'vacío') . '"',
-                    ]);
-                }
-            }
+            $this->registrarCambios($detalleAnterior, $detalleGuardado, $numeroPedido, $talla, $request);
         } else {
-            // Creación nueva - registrar como insert
+            $this->registrarCreacion($detalleGuardado, $numeroPedido, $talla, $prendaNombre, $request);
+        }
+    }
+
+    /**
+     * Registrar cambios en campos de auditoría (actualización)
+     */
+    private function registrarCambios(
+        BodegaDetalleTalla $detalleAnterior,
+        BodegaDetalleTalla $detalleGuardado,
+        string $numeroPedido,
+        string $talla,
+        Request $request
+    ): void {
+        $usuario = auth()->user();
+        $camposAuditar = [
+            'asesor',
+            'empresa',
+            'cantidad',
+            'prenda_nombre',
+            'pendientes',
+            'fecha_pedido',
+            'fecha_entrega',
+            'area',
+            'estado_bodega',
+            'observaciones_bodega',
+        ];
+        
+        foreach ($camposAuditar as $campo) {
+            $this->registrarCambioSiExiste(
+                $detalleAnterior,
+                $detalleGuardado,
+                $campo,
+                $numeroPedido,
+                $talla,
+                $usuario,
+                $request
+            );
+        }
+    }
+
+    /**
+     * Registrar un cambio individual de campo si existe
+     */
+    private function registrarCambioSiExiste(
+        BodegaDetalleTalla $detalleAnterior,
+        BodegaDetalleTalla $detalleGuardado,
+        string $campo,
+        string $numeroPedido,
+        string $talla,
+        $usuario,
+        Request $request
+    ): void {
+        $valorAnterior = $detalleAnterior->{$campo};
+        $valorNuevo = $detalleGuardado->{$campo};
+        
+        $valorAnteriorDisplay = ($valorAnterior === null || $valorAnterior === '') ? '' : $valorAnterior;
+        $valorNuevoDisplay = ($valorNuevo === null || $valorNuevo === '') ? '' : $valorNuevo;
+        
+        if ($valorAnteriorDisplay !== $valorNuevoDisplay) {
             BodegaAuditoria::create([
-                'bodega_detalles_talla_id' => $detalleGuardado->id,
+                'bodega_detalles_talla_id' => $detalleGuardado->getKey(),
                 'numero_pedido' => $numeroPedido,
                 'talla' => $talla,
-                'campo_modificado' => 'registro_completo',
-                'valor_anterior' => '',
-                'valor_nuevo' => 'Registro creado',
+                'campo_modificado' => $campo,
+                'valor_anterior' => $valorAnteriorDisplay,
+                'valor_nuevo' => $valorNuevoDisplay,
                 'usuario_id' => $usuario->id,
                 'usuario_nombre' => $usuario->name,
                 'ip_address' => $request->ip(),
-                'accion' => 'create',
-                'descripcion' => 'Registro de bodega creado: ' . $prendaNombre . ' - Talla: ' . $talla,
+                'accion' => 'update',
+                'descripcion' => ucfirst($campo) . ' cambió de "' . ($valorAnteriorDisplay ?: 'vacío') . '" a "' . ($valorNuevoDisplay ?: 'vacío') . '"',
             ]);
         }
+    }
+
+    /**
+     * Registrar creación de nuevo registro
+     */
+    private function registrarCreacion(
+        BodegaDetalleTalla $detalleGuardado,
+        string $numeroPedido,
+        string $talla,
+        ?string $prendaNombre,
+        Request $request
+    ): void {
+        $usuario = auth()->user();
+        BodegaAuditoria::create([
+            'bodega_detalles_talla_id' => $detalleGuardado->getKey(),
+            'numero_pedido' => $numeroPedido,
+            'talla' => $talla,
+            'campo_modificado' => 'registro_completo',
+            'valor_anterior' => '',
+            'valor_nuevo' => 'Registro creado',
+            'usuario_id' => $usuario->id,
+            'usuario_nombre' => $usuario->name,
+            'ip_address' => $request->ip(),
+            'accion' => 'create',
+            'descripcion' => 'Registro de bodega creado: ' . $prendaNombre . ' - Talla: ' . $talla,
+        ]);
     }
 
     public function call(string $method, array $arguments = []): mixed

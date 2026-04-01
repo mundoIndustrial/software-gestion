@@ -5,7 +5,7 @@
         return '';
     }
 
-    window.__despachoObsCtx = window.__despachoObsCtx || { pedidoId: null };
+    globalThis.__despachoObsCtx = globalThis.__despachoObsCtx || { pedidoId: null };
 
     // ==================== NOVEDADES BADGE (DESPACHO) ====================
     function __countNovedadesFromText(text) {
@@ -26,7 +26,7 @@
     }
 
     function __renderNovedadesBadge(pedidoId, count) {
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         if (!isDespachoPage) return;
         const btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
         if (!btn) return;
@@ -56,7 +56,7 @@
     }
 
     function refrescarBadgesNovedadesDespacho() {
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         if (!isDespachoPage) return;
         const previews = Array.from(document.querySelectorAll('textarea.despacho-novedades-preview[data-pedido-id]'));
         previews.forEach(el => {
@@ -156,7 +156,7 @@
         console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - Count (unread): ${count}`);
 
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
 
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
@@ -260,12 +260,12 @@
             }
 
             // Detectar si estamos en despacho o asesores
-            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const isDespachoPage = globalThis.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? '/despacho/observaciones/resumen'
                 : '/api/asesores/pedidos/observaciones-despacho/resumen';
                 
-            console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
+            console.log(`[DEBUG] - Página actual: ${globalThis.location.pathname}`);
             console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
             console.log(`[DEBUG] - URL a consultar: ${url}`);
 
@@ -315,7 +315,7 @@
         console.log(`[DEBUG-BADGE] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
         
         try {
-            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const isDespachoPage = globalThis.location.pathname.includes('/despacho');
             // DESPACHO: no persistimos visto ni limpiamos badge
             if (!isDespachoPage) {
                 setBadgeSeen(pedidoId);
@@ -363,7 +363,7 @@
 
     async function __fetchObservacionesDespacho(pedidoId) {
         // Detectar si estamos en despacho o asesores
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         const url = isDespachoPage 
             ? `/despacho/${pedidoId}/observaciones`
             : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho`;
@@ -407,7 +407,7 @@
     }
 
     async function cargarObservacionesDespachoIndex() {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         const historial = document.getElementById('observacionesDespachoIndexHistorial');
         if (!pedidoId || !historial) return;
 
@@ -431,7 +431,7 @@
             items.forEach(item => {
                 const source = (item.source || 'despacho');
                 const esEditable = source === 'despacho';
-                const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
+                const puedeEditar = esEditable && (String(item.usuario_id) === String(globalThis.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
                     <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar"></button>
                     <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
@@ -467,7 +467,7 @@
     async function abrirModalObservacionesDespachoIndex(pedidoId, numeroPedido) {
         console.log(`[DEBUG-BADGE] abrirModalObservacionesDespachoIndex llamado - pedidoId: ${pedidoId}, numeroPedido: ${numeroPedido}`);
         
-        window.__despachoObsCtx = { pedidoId };
+        globalThis.__despachoObsCtx = { pedidoId };
         const modal = document.getElementById('modalObservacionesDespachoIndex');
         const title = document.getElementById('modalObsDespachoTitle');
         if (title) title.textContent = `Observaciones - Pedido ${numeroPedido || ''}`;
@@ -499,7 +499,7 @@
     }
 
     async function guardarObservacionDespachoIndex() {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         const textarea = document.getElementById('observacionesDespachoIndexNueva');
         const contenido = (textarea?.value || '').trim();
@@ -536,7 +536,7 @@
     }
 
     function editarObservacionDespachoIndex(observacionId) {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         const card = document.querySelector(`#modalObservacionesDespachoIndex [data-obs-id="${observacionId}"]`);
         if (!card) return;
@@ -776,7 +776,7 @@
     }
 
     async function eliminarObservacionDespachoIndex(observacionId) {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         mostrarModalConfirmacion(
             'Eliminar observación',
@@ -805,25 +805,25 @@
         );
     }
 
-    window.abrirModalObservacionesDespachoIndex = abrirModalObservacionesDespachoIndex;
-    window.cerrarModalObservacionesDespachoIndex = cerrarModalObservacionesDespachoIndex;
-    window.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
-    window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
-    window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
+    globalThis.abrirModalObservacionesDespachoIndex = abrirModalObservacionesDespachoIndex;
+    globalThis.cerrarModalObservacionesDespachoIndex = cerrarModalObservacionesDespachoIndex;
+    globalThis.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
+    globalThis.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
+    globalThis.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
 
     // Si el listado /despacho ya no incluye el modal/columna de observaciones,
     // evita dejar funciones globales expuestas que solo generan warnings.
     document.addEventListener('DOMContentLoaded', function () {
-        const enDespachoIndex = window.location.pathname === '/despacho' || window.location.pathname === '/despacho/';
+        const enDespachoIndex = globalThis.location.pathname === '/despacho' || globalThis.location.pathname === '/despacho/';
         const modal = document.getElementById('modalObservacionesDespachoIndex');
         const tienePreview = !!document.querySelector('.despacho-observaciones-preview');
         if (enDespachoIndex && !modal && !tienePreview) {
             try {
-                delete window.abrirModalObservacionesDespachoIndex;
-                delete window.cerrarModalObservacionesDespachoIndex;
-                delete window.guardarObservacionDespachoIndex;
-                delete window.editarObservacionDespachoIndex;
-                delete window.eliminarObservacionDespachoIndex;
+                delete globalThis.abrirModalObservacionesDespachoIndex;
+                delete globalThis.cerrarModalObservacionesDespachoIndex;
+                delete globalThis.guardarObservacionDespachoIndex;
+                delete globalThis.editarObservacionDespachoIndex;
+                delete globalThis.eliminarObservacionDespachoIndex;
             } catch (e) {
                 // no-op
             }
@@ -831,9 +831,9 @@
     });
     
     // Hacer funciones de localStorage disponibles globalmente
-    window.getSeenBadges = getSeenBadges;
-    window.setBadgeSeen = setBadgeSeen;
-    window.isBadgeRecentlySeen = isBadgeRecentlySeen;
+    globalThis.getSeenBadges = getSeenBadges;
+    globalThis.setBadgeSeen = setBadgeSeen;
+    globalThis.isBadgeRecentlySeen = isBadgeRecentlySeen;
 
     // ==================== INSERTAR PEDIDO EN TIEMPO REAL ====================
     function getEstadoBadgeClass(estado) {
@@ -936,14 +936,14 @@
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtime() {
-        if (!window.EchoInstance) {
+        if (!globalThis.EchoInstance) {
             console.warn('[Despacho] EchoInstance no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtime, 2000);
             return;
         }
 
         // Escuchar canal general de despacho (observaciones)
-        window.EchoInstance.channel('despacho.observaciones')
+        globalThis.EchoInstance.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log(`[DEBUG-BADGE] 🚨 Evento WebSocket recibido en canal despacho.observaciones:`, e);
                 console.log(`[DEBUG-BADGE] Pedido ID: ${e?.pedido_id}, Action: ${e?.action}`);
@@ -959,7 +959,7 @@
                 __renderBadge(pedidoId, 1); // Mostrar al menos 1
 
                 // Si el modal está abierto para este pedido, recargar observaciones
-                const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                const currentPedidoId = globalThis.__despachoObsCtx?.pedidoId;
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     console.log(`[DEBUG-BADGE] Modal abierto para este pedido, recargando observaciones`);
                     cargarObservacionesDespachoIndex();
@@ -972,7 +972,7 @@
             });
 
         // Escuchar canal de ordenes para nuevos pedidos aprobados
-        window.EchoInstance.channel('ordenes')
+        globalThis.EchoInstance.channel('ordenes')
             .listen('.orden.updated', (e) => {
                 console.log('[Despacho] Evento orden.updated recibido:', e);
 
@@ -1002,7 +1002,7 @@
             });
 
         // Escuchar actualizaciones de pedido (incluye novedades) para actualizar badge en tiempo real
-        window.EchoInstance.channel('pedidos.general')
+        globalThis.EchoInstance.channel('pedidos.general')
             .listen('.pedido.actualizado', (e) => {
                 const pedidoId = e?.pedido_id || e?.pedido?.id;
                 if (!pedidoId) return;
@@ -1027,13 +1027,13 @@
             const pedidoId = row.getAttribute('data-pedido-id');
             if (!pedidoId) return;
 
-            window.EchoInstance.channel(`pedido.${pedidoId}`)
+            globalThis.EchoInstance.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
 
                     __renderBadge(pedidoId, 1);
 
-                    const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                    const currentPedidoId = globalThis.__despachoObsCtx?.pedidoId;
                     if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                         cargarObservacionesDespachoIndex();
                     }
@@ -1047,8 +1047,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         console.log(`[DEBUG]  DOMContentLoaded - Iniciando sistema de badges`);
-        console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
-        console.log(`[DEBUG] - URL completa: ${window.location.href}`);
+        console.log(`[DEBUG] - Página actual: ${globalThis.location.pathname}`);
+        console.log(`[DEBUG] - URL completa: ${globalThis.location.href}`);
         
         try {
             console.log(`[DEBUG]  Buscando filas con data-pedido-id...`);

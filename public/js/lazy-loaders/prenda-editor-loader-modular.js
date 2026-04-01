@@ -10,24 +10,24 @@
  * - Orquestador → Coordina los módulos
  */
 
-window.PrendaEditorLoader = (function() {
+globalThis.PrendaEditorLoader = (function() {
     let isLoading = false;
     let isLoaded = false;
     let loadError = null;
 
     function getScriptPath(src) {
         try {
-            return new URL(src, window.location.origin).pathname;
+            return new URL(src, globalThis.location.origin).pathname;
         } catch (error) {
             return String(src || '').split('?')[0];
         }
     }
 
     function getGlobalLoadedScriptsRegistry() {
-        if (!(window.__spLoadedScriptPaths instanceof Set)) {
-            window.__spLoadedScriptPaths = new Set();
+        if (!(globalThis.__spLoadedScriptPaths instanceof Set)) {
+            globalThis.__spLoadedScriptPaths = new Set();
         }
-        return window.__spLoadedScriptPaths;
+        return globalThis.__spLoadedScriptPaths;
     }
 
     /**
@@ -83,7 +83,7 @@ window.PrendaEditorLoader = (function() {
             .then(() => {
                 isLoaded = true;
                 isLoading = false;
-                window.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
+                globalThis.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
             })
             .catch(error => {
                 loadError = error;
@@ -162,8 +162,8 @@ window.PrendaEditorLoader = (function() {
  *  AUTO-LOAD EN DOCUMENTO LISTO
  */
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.PrendaEditorRefactoredLoader !== 'undefined') {
-        window.PrendaEditorRefactoredLoader.load()
+    if (typeof globalThis.PrendaEditorRefactoredLoader !== 'undefined') {
+        globalThis.PrendaEditorRefactoredLoader.load()
             .then(() => {
                 console.log(' [PrendaEditor] Sistema listo para editar prendas');
             })

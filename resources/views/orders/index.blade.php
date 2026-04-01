@@ -50,9 +50,6 @@
                 <thead>
                     <tr>
                         <th class="col-accion">Acción</th>
-                        <th class="col-checkbox">
-                            <input type="checkbox" class="checkbox-all">
-                        </th>
                         <th class="col-pedido">Pedido</th>
                         <th class="col-cliente">Cliente</th>
                         <th class="col-estado">Estado</th>
@@ -90,9 +87,6 @@
                                     </a>
 
                                 </div>
-                            </td>
-                            <td class="col-checkbox">
-                                <input type="checkbox" class="row-checkbox">
                             </td>
                             <td class="col-pedido">
                                 <strong>#{{ $orden->numero_pedido ?? $orden->id }}</strong>

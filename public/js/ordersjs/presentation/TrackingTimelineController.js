@@ -154,7 +154,7 @@ export class TrackingTimelineController {
         return;
       }
       
-      const areaCard = this.createAreaCard(area, data, prenda?.readonly || false);
+      const areaCard = this.createAreaCard(area, data, prenda?.readonly || false, prenda?.recibos_especiales || []);
       areasSection.appendChild(areaCard);
     });
   }
@@ -237,7 +237,7 @@ export class TrackingTimelineController {
     container.appendChild(card);
   }
 
-  createAreaCard(area, data, readonly = false) {
+  createAreaCard(area, data, readonly = false, recibosEspeciales = []) {
     const card = document.createElement('div');
     
     // Asegurar que data sea un objeto válido con defaul values
@@ -296,6 +296,21 @@ export class TrackingTimelineController {
       return duraciones?.total_dias || '---';
     })();
 
+    // Generar botones para recibos especiales si existen
+    const botonesRecibosEspeciales = recibosEspeciales && recibosEspeciales.length > 0
+      ? recibosEspeciales.map(recibo => {
+          const tipoLabel = recibo.tipo_recibo || 'Recibo';
+          const reciboData = JSON.stringify(recibo).replace(/"/g, '&quot;');
+          return `
+            <button class="tracking-special-recibo-btn" 
+                    onclick="handleAbrirReciboEspecial(${JSON.stringify(recibosEspeciales).replace(/"/g, '&quot;')}, event)" 
+                    title="${tipoLabel}">
+              ${tipoLabel}
+            </button>
+          `;
+        }).join('')
+      : '';
+
     const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
             <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
               ${this.svgIcons.edit()}
@@ -305,6 +320,7 @@ export class TrackingTimelineController {
               ${this.svgIcons.delete()}
             </button>
             ` : ''}
+            ${botonesRecibosEspeciales}
             ` : ''}`;
 
     card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;

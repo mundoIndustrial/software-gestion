@@ -7,7 +7,7 @@ let asesoresRealtimeNotificationsBound = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
-    if (typeof window.fetchAPI !== 'function') {
+    if (typeof globalThis.fetchAPI !== 'function') {
 
         setTimeout(initializeNotifications, 100);
         return;
@@ -32,7 +32,7 @@ function setupRealtimeNotifications() {
         return;
     }
 
-    if (!window.shared?.isReady || typeof window.waitForEcho !== 'function') {
+    if (!globalThis.shared?.isReady || typeof globalThis.waitForEcho !== 'function') {
         setTimeout(setupRealtimeNotifications, 300);
         return;
     }
@@ -46,9 +46,9 @@ function setupRealtimeNotifications() {
         loadNotifications();
     };
 
-    window.waitForEcho(() => {
+    globalThis.waitForEcho(() => {
         try {
-            const ws = window.shared?.websocket;
+            const ws = globalThis.shared?.websocket;
             if (!ws) {
                 setTimeout(setupRealtimeNotifications, 500);
                 return;
@@ -84,7 +84,7 @@ function setupRealtimeNotifications() {
 
 async function loadNotifications() {
     try {
-        const data = await window.fetchAPI('/api/asesores/notificaciones');
+        const data = await globalThis.fetchAPI('/api/asesores/notificaciones');
         updateNotificationBadge(data.total_notificaciones);
         renderNotifications(data);
     } catch (error) {
@@ -296,7 +296,7 @@ function createNotificationElement(notif) {
 
 async function markAllAsRead() {
     try {
-        await window.fetchAPI('/api/asesores/notificaciones/marcar-todas-leidas', {
+        await globalThis.fetchAPI('/api/asesores/notificaciones/marcar-todas-leidas', {
             method: 'POST'
         });
         
@@ -334,7 +334,7 @@ async function markAllAsRead() {
  */
 async function markNotificationAsRead(notificationId) {
     try {
-        await window.fetchAPI(`/api/asesores/notificaciones/${notificationId}/marcar-leida`, {
+        await globalThis.fetchAPI(`/api/asesores/notificaciones/${notificationId}/marcar-leida`, {
             method: 'POST'
         });
 

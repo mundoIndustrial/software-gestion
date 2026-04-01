@@ -121,7 +121,7 @@ Se ha rediseñado completamente el modal de selección de prendas con un enfoque
 
 ---
 
-## 📋 Archivos Modificados
+## Archivos Modificados
 
 ### 1. `/public/css/tracking-modal.css` (MEJORADO)
 **Cambios realizados:**

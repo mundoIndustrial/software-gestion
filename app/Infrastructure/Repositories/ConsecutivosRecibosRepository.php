@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * ConsecutivosRecibosRepository
- * 
  * Acceso a datos para consecutivos de recibos de pedidos
  * Cumple DDD: Infrastructure Layer - Repository Pattern
  */
@@ -53,6 +52,7 @@ class ConsecutivosRecibosRepository
 
     /**
      * Obtener todos los consecutivos de una prenda
+     * IMPORTANTE: Ordenado por ID DESC para obtener el más reciente primero
      */
     public function obtenerTodosPorPrenda(int $prendaId, int $pedidoId)
     {
@@ -60,6 +60,7 @@ class ConsecutivosRecibosRepository
             ->where('prenda_id', $prendaId)
             ->where('pedido_produccion_id', $pedidoId)
             ->where('activo', 1)
+            ->orderByDesc('id')
             ->get();
     }
 

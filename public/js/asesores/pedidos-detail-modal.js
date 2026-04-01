@@ -8,7 +8,7 @@
  * Abre el modal de detalle de la orden y carga los datos
  * @param {number} numeroPedido - Número del pedido
  */
-window.verFactura = async function verFactura(numeroPedido) {
+globalThis.verFactura = async function verFactura(numeroPedido) {
     // Limpiar el número del pedido (remover # si existe)
     const pedidoLimpio = numeroPedido.replace('#', '');
     
@@ -42,7 +42,7 @@ window.verFactura = async function verFactura(numeroPedido) {
         const loadEvent = new CustomEvent('load-order-detail', { 
             detail: order 
         });
-        window.dispatchEvent(loadEvent);
+        globalThis.dispatchEvent(loadEvent);
         
     } catch (error) {
 
@@ -54,7 +54,7 @@ window.verFactura = async function verFactura(numeroPedido) {
  * Abre el modal de seguimiento del pedido (ASESORAS - VERSIÓN SIMPLIFICADA)
  * @param {number} numeroPedido - Número del pedido
  */
-window.verSeguimiento = function verSeguimiento(numeroPedido) {
+globalThis.verSeguimiento = function verSeguimiento(numeroPedido) {
     
     console.log('[verSeguimiento] Abriendo seguimiento para:', numeroPedido);
     
@@ -88,7 +88,7 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
  * Abre el modal de detalle de LOGO/BORDADOS del pedido
  * @param {number} logoPedidoId - ID del LogoPedido (NO número de pedido)
  */
-window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
+globalThis.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
 
 
     
@@ -111,7 +111,7 @@ window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
             detail: order 
         });
 
-        window.dispatchEvent(loadEvent);
+        globalThis.dispatchEvent(loadEvent);
 
 
         
@@ -133,10 +133,10 @@ window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
 /**
  * Cierra el modal de detalle y el overlay
  */
-window.closeModalOverlay = function closeModalOverlay() {
+globalThis.closeModalOverlay = function closeModalOverlay() {
     // Si PedidosRecibosModule está disponible, delegar para limpiar estado correctamente
-    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
-        window.pedidosRecibosModule.cerrarRecibo();
+    if (globalThis.pedidosRecibosModule && typeof globalThis.pedidosRecibosModule.cerrarRecibo === 'function') {
+        globalThis.pedidosRecibosModule.cerrarRecibo();
     } else {
         const overlay = document.getElementById('modal-overlay');
         if (overlay) {
@@ -177,7 +177,7 @@ window.closeModalOverlay = function closeModalOverlay() {
     
     // Notificar que el modal se cerró (sin causar recursión)
     const closeEvent = new CustomEvent('modal-closed', { detail: 'order-detail' });
-    window.dispatchEvent(closeEvent);
+    globalThis.dispatchEvent(closeEvent);
 }
 
 // Cerrar modal al presionar Escape
@@ -185,7 +185,7 @@ document.addEventListener('keydown', function(keyEvent) {
     if (keyEvent.key === 'Escape') {
         const overlay = document.getElementById('modal-overlay');
         if (overlay && overlay.style.display === 'block') {
-            window.closeModalOverlay();
+            globalThis.closeModalOverlay();
         }
     }
 });
@@ -197,7 +197,7 @@ document.addEventListener('click', function(clickEvent) {
     
     // Si se hace clic en el overlay y no en el modal
     if (overlay && overlay.style.display === 'block' && clickEvent.target === overlay) {
-        window.closeModalOverlay();
+        globalThis.closeModalOverlay();
     }
 });
 
@@ -206,7 +206,7 @@ document.addEventListener('click', function(clickEvent) {
  * @param {number} pedidoId - ID del pedido a eliminar
  * @param {string} numeroPedido - Número del pedido (para mostrar)
  */
-window.confirmarEliminarPedido = function(pedidoId, numeroPedido) {
+globalThis.confirmarEliminarPedido = function(pedidoId, numeroPedido) {
     // Si se pasa solo un parámetro, asumir que es el ID
     if (typeof numeroPedido === 'undefined') {
         numeroPedido = pedidoId;
@@ -355,7 +355,7 @@ window.confirmarEliminarPedido = function(pedidoId, numeroPedido) {
  * Ejecutar la eliminación del pedido
  * @param {number} pedidoId - ID del pedido a eliminar
  */
-window.eliminarPedidoConfirmado = async function(pedidoId) {
+globalThis.eliminarPedidoConfirmado = async function(pedidoId) {
     const modal = document.getElementById('confirmDeleteModal');
     const button = modal.querySelector('button:last-child');
     
@@ -451,7 +451,7 @@ function showSuccessMessage(message) {
  * Eliminar pedido directamente sin modal (para dropdown)
  * @param {number} pedidoId - ID del pedido a eliminar
  */
-window.eliminarPedidoDirecto = async function(pedidoId) {
+globalThis.eliminarPedidoDirecto = async function(pedidoId) {
     try {
         const response = await fetch(`/api/asesores/pedidos-produccion/${pedidoId}`, {
             method: 'DELETE',

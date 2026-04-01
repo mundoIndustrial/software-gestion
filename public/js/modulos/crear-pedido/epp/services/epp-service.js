@@ -5,11 +5,11 @@
 
 class EppService {
     constructor() {
-        this.apiService = window.eppApiService;
-        this.stateManager = window.eppStateManager;
+        this.apiService = globalThis.eppApiService;
+        this.stateManager = globalThis.eppStateManager;
         this.modalManager = null;
         // Detectar cuál item manager está disponible (tabla o tarjeta)
-        this.itemManager = window.eppItemManagerTabla || window.eppItemManagerTarjeta || window.eppItemManager;
+        this.itemManager = globalThis.eppItemManagerTabla || globalThis.eppItemManagerTarjeta || globalThis.eppItemManager;
         this.imagenManager = null;
         
         // Debouncing y caché para búsqueda
@@ -26,8 +26,8 @@ class EppService {
         this.imagenManager = new EppImagenManager(this.apiService, this.stateManager, this.modalManager);
 
         // Exportar globalmente
-        window.eppModalManager = this.modalManager;
-        window.eppImagenManager = this.imagenManager;
+        globalThis.eppModalManager = this.modalManager;
+        globalThis.eppImagenManager = this.imagenManager;
 
 
     }
@@ -150,8 +150,8 @@ class EppService {
 
         // Asegurar que el modal existe en el DOM
         if (!document.getElementById('modal-agregar-epp')) {
-            if (typeof window.EppModalTemplate !== 'undefined') {
-                const modalHTML = window.EppModalTemplate.getHTML();
+            if (typeof globalThis.EppModalTemplate !== 'undefined') {
+                const modalHTML = globalThis.EppModalTemplate.getHTML();
                 document.body.insertAdjacentHTML('beforeend', modalHTML);
             }
         }
@@ -282,9 +282,9 @@ class EppService {
                 );
             }
 
-            if (window.eppNotificationService) {
+            if (globalThis.eppNotificationService) {
                 const mensaje = pedidoEppId ? 'EPP actualizado correctamente' : 'EPP agregado al pedido correctamente';
-                window.eppNotificationService.mostrarExitoModal(
+                globalThis.eppNotificationService.mostrarExitoModal(
                     ' ' + (pedidoEppId ? 'Actualizado' : 'Agregado'),
                     mensaje
                 );
@@ -297,8 +297,8 @@ class EppService {
         } catch (error) {
             console.error('[EppService]  Error al guardar EPP:', error);
 
-            if (window.eppNotificationService) {
-                window.eppNotificationService.mostrarErrorModal(
+            if (globalThis.eppNotificationService) {
+                globalThis.eppNotificationService.mostrarErrorModal(
                     ' Error al Guardar',
                     error.message
                 );
@@ -336,12 +336,12 @@ class EppService {
                         total: valores.total
                     });
 
-                    // Actualizar en window.itemsPedido si existe
-                    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-                        const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
+                    // Actualizar en globalThis.itemsPedido si existe
+                    if (globalThis.itemsPedido && Array.isArray(globalThis.itemsPedido)) {
+                        const index = globalThis.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
                         if (index !== -1) {
-                            window.itemsPedido[index] = {
-                                ...window.itemsPedido[index],
+                            globalThis.itemsPedido[index] = {
+                                ...globalThis.itemsPedido[index],
                                 cantidad: valores.cantidad,
                                 observaciones: valores.observaciones,
                                 imagenes: imagenes,
@@ -351,8 +351,8 @@ class EppService {
                         }
                     }
 
-                    if (window.eppNotificationService) {
-                        window.eppNotificationService.mostrarExito(
+                    if (globalThis.eppNotificationService) {
+                        globalThis.eppNotificationService.mostrarExito(
                             ' EPP Actualizado',
                             'Los cambios fueron guardados correctamente'
                         );
@@ -362,8 +362,8 @@ class EppService {
                     this.stateManager.finalizarEdicion();
                 }).catch(error => {
                     console.error('[EppService]  Error al actualizar pedido_epp:', error);
-                    if (window.eppNotificationService) {
-                        window.eppNotificationService.mostrarError(
+                    if (globalThis.eppNotificationService) {
+                        globalThis.eppNotificationService.mostrarError(
                             ' Error',
                             'No se pudo guardar los cambios'
                         );
@@ -406,26 +406,26 @@ class EppService {
             // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
             if (!eppId) {
                 console.log('[EppService] Agregando EPP nuevo a estado');
-                console.log('[EppService] ¿window.gestionItemsUI existe?', !!window.gestionItemsUI);
-                console.log('[EppService] ¿agregarEPPDesdeModal existe?', window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function');
+                console.log('[EppService] ¿globalThis.gestionItemsUI existe?', !!globalThis.gestionItemsUI);
+                console.log('[EppService] ¿agregarEPPDesdeModal existe?', globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function');
                 
                 // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
-                if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
+                if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function') {
                     console.log('[EppService]  USANDO GESTION ITEMS UI');
-                    window.gestionItemsUI.agregarEPPDesdeModal(eppData);
+                    globalThis.gestionItemsUI.agregarEPPDesdeModal(eppData);
                 } else {
-                    // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
-                    console.log('[EppService]  FALLBACK A window.itemsPedido (gestionItemsUI no disponible)');
-                    if (!window.itemsPedido) {
-                        window.itemsPedido = [];
+                    // Fallback: agregar a globalThis.itemsPedido si GestionItemsUI no está disponible
+                    console.log('[EppService]  FALLBACK A globalThis.itemsPedido (gestionItemsUI no disponible)');
+                    if (!globalThis.itemsPedido) {
+                        globalThis.itemsPedido = [];
                     }
-                    window.itemsPedido.push(eppData);
-                    console.log('[EppService]  EPP agregado a window.itemsPedido. Total:', window.itemsPedido.length);
+                    globalThis.itemsPedido.push(eppData);
+                    console.log('[EppService]  EPP agregado a globalThis.itemsPedido. Total:', globalThis.itemsPedido.length);
                     
                     //  TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
-                    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
+                    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPAlOrden === 'function') {
                         console.log('[EppService]  TAMBIÉN agregando a gestionItemsUI.agregarEPPAlOrden');
-                        window.gestionItemsUI.agregarEPPAlOrden(eppData);
+                        globalThis.gestionItemsUI.agregarEPPAlOrden(eppData);
                     }
                 }
             }
@@ -448,11 +448,11 @@ class EppService {
             () => {
                 this.itemManager.eliminarItem(eppId);
 
-                // Eliminar de window.itemsPedido
-                if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-                    const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
+                // Eliminar de globalThis.itemsPedido
+                if (globalThis.itemsPedido && Array.isArray(globalThis.itemsPedido)) {
+                    const index = globalThis.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
                     if (index !== -1) {
-                        window.itemsPedido.splice(index, 1);
+                        globalThis.itemsPedido.splice(index, 1);
                     }
                 }
             }
@@ -617,7 +617,7 @@ class EppService {
                 const imagen = epp.imagen ? `<img src="${epp.imagen}" alt="${nombre}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px; margin-right: 0.75rem;">` : '';
                 
                 return `
-                    <div onclick="if(window.mostrarProductoEPP) { window.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${nombre.replace(/'/g, "\\'")}', nombre: '${epp.nombre.replace(/'/g, "\\'")}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                    <div onclick="if(globalThis.mostrarProductoEPP) { globalThis.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${nombre.replace(/'/g, "\\'")}', nombre: '${epp.nombre.replace(/'/g, "\\'")}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; display: flex; align-items: flex-start; transition: background 0.2s ease;"
                          onmouseover="this.style.background = '#f9fafb';"
                          onmouseout="this.style.background = 'white';">
@@ -722,8 +722,8 @@ class EppService {
      * Mostrar validación
      */
     mostrarValidacion(titulo, mensaje) {
-        if (window.eppNotificationService) {
-            window.eppNotificationService.mostrarValidacion(titulo, mensaje);
+        if (globalThis.eppNotificationService) {
+            globalThis.eppNotificationService.mostrarValidacion(titulo, mensaje);
         } else {
             alert(titulo + '\n\n' + mensaje);
         }
@@ -733,8 +733,8 @@ class EppService {
      * Mostrar error
      */
     mostrarError(titulo, mensaje) {
-        if (window.eppNotificationService) {
-            window.eppNotificationService.mostrarErrorModal(titulo, mensaje);
+        if (globalThis.eppNotificationService) {
+            globalThis.eppNotificationService.mostrarErrorModal(titulo, mensaje);
         } else {
             alert('ERROR: ' + titulo + '\n\n' + mensaje);
         }
@@ -744,8 +744,8 @@ class EppService {
      * Mostrar éxito
      */
     mostrarExito(titulo, mensaje) {
-        if (window.eppNotificationService) {
-            window.eppNotificationService.mostrarExitoModal(titulo, mensaje);
+        if (globalThis.eppNotificationService) {
+            globalThis.eppNotificationService.mostrarExitoModal(titulo, mensaje);
         } else {
             alert('✓ ' + titulo + '\n\n' + mensaje);
         }
@@ -753,4 +753,4 @@ class EppService {
 }
 
 // Exportar instancia global
-window.eppService = new EppService();
+globalThis.eppService = new EppService();

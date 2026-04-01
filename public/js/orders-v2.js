@@ -298,13 +298,13 @@ function openDetailModal(ordenId, numeroPedido) {
     console.log(`🔍 Abriendo factura - Orden: ${ordenId}, Pedido: ${numeroPedido}`);
     
     // Abrir la factura usando InvoiceLazyLoader
-    if (typeof window.verFacturaDelPedido === 'function') {
+    if (typeof globalThis.verFacturaDelPedido === 'function') {
         console.log('✓ Cargando factura con verFacturaDelPedido');
-        window.verFacturaDelPedido(numeroPedido, ordenId);
+        globalThis.verFacturaDelPedido(numeroPedido, ordenId);
     } else {
         console.warn('⚠️ verFacturaDelPedido no disponible, usando fallback');
         // Fallback: abrir en nueva ventana
-        window.open(`/asesores/recibos/${ordenId}`, '_blank');
+        globalThis.open(`/asesores/recibos/${ordenId}`, '_blank');
     }
 }
 
@@ -378,8 +378,8 @@ function handleMenuAction(event, action, ordenId) {
             break;
         case 'seguimiento':
             console.log(' Abriendo seguimiento');
-            if (typeof window.openOrderTracking === 'function') {
-                window.openOrderTracking(ordenId, true);
+            if (typeof globalThis.openOrderTracking === 'function') {
+                globalThis.openOrderTracking(ordenId, true);
             } else {
                 console.error('openOrderTracking no disponible');
             }
@@ -388,7 +388,7 @@ function handleMenuAction(event, action, ordenId) {
 }
 
 // Exportar funciones globales
-window.filterByStatus = filterByStatus;
-window.performSearch = performSearch;
-window.openDetailModal = openDetailModal;
-window.handleMenuAction = handleMenuAction;
+globalThis.filterByStatus = filterByStatus;
+globalThis.performSearch = performSearch;
+globalThis.openDetailModal = openDetailModal;
+globalThis.handleMenuAction = handleMenuAction;

@@ -40,7 +40,7 @@ async function calcularDemora(materialId) {
         return;
     }
 
-    const calcularDemoraAsync = window.insumosHandlers?.utilities?.calcularDemoraAsync;
+    const calcularDemoraAsync = globalThis.insumosHandlers?.utilities?.calcularDemoraAsync;
     if (typeof calcularDemoraAsync !== 'function') return;
 
     const demora = await calcularDemoraAsync(fechaPedidoInput.value, fechaLlegadaInput.value);
@@ -359,7 +359,7 @@ function aplicarModoReadonly() {
 
 // ===== CERRAR DROPDOWNS CON SCROLL O CLIC FUERA =====
 
-window.addEventListener('scroll', function () {
+globalThis.addEventListener('scroll', function () {
     if (dropdownAbiertoButton)    cerrarDropdownAcciones();
     if (dropdownVerAbiertoButton) cerrarDropdownVerRecibo();
 }, { passive: true });
@@ -381,8 +381,8 @@ document.addEventListener('click', function (e) {
     }
 }, false);
 
-window.insumosHandlers = window.insumosHandlers || {};
-window.insumosHandlers.dropdownHandlers = {
+globalThis.insumosHandlers = globalThis.insumosHandlers || {};
+globalThis.insumosHandlers.dropdownHandlers = {
     calcularDemora,
     crearDropdownVerRecibo,
     cerrarDropdownVerRecibo,

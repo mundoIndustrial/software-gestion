@@ -309,7 +309,6 @@ class InsumosController extends Controller
 
     /**
      * Cambiar estado de un recibo individual (consecutivos_recibos_pedidos)
-     * Solo aprueba ese recibo específico, NO todo el pedido
      */
     public function cambiarEstadoRecibo(Request $request, $reciboId)
     {
@@ -363,7 +362,6 @@ class InsumosController extends Controller
      */
     /**
      * Obtener colores/telas disponibles para una prenda (detecta el flujo: normal, piezas o talla-color)
-     * 
      * Lógica:
      * 1. Si prenda_pedido_talla_colores tiene registros → MODO TALLA-COLOR (matriz)
      * 2. Else si prenda_pedido_colores_telas tiene registros → MODO PIEZAS (múltiples telas/colores)

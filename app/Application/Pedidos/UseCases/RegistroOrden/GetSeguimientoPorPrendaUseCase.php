@@ -175,6 +175,8 @@ class GetSeguimientoPorPrendaUseCase
             'procesos' => $procesosArray,
             'consecutivos' => $consecutivos->toArray(),
             'datos_activacion' => $datosActivacion,
+            'area_mas_reciente' => $this->obtenerAreaMasReciente($consecutivos),
+            'recibos_especiales' => $this->obtenerRecibosEspeciales($consecutivos),
         ];
     }
 
@@ -432,6 +434,75 @@ class GetSeguimientoPorPrendaUseCase
             }
         }
         return '-';
+    }
+
+    /**
+     * Obtener el área desde la tabla consecutivos_recibos_pedidos
+     * Retorna directamente el área del registro
+     */
+    private function obtenerAreaMasReciente($consecutivos): ?string
+    {
+        if (!$consecutivos || count($consecutivos) === 0) {
+            return null;
+        }
+
+        // IMPORTANTE: Tomar el área del recibo COSTURA (el que tiene consecutivo_actual)
+        // NO del primer consecutivo en general, porque puede haber múltiples tipos de recibos
+        // (COSTURA, ESTAMPADO, BORDADO, etc.) cada uno con su propia área
+        $reciboCostura = null;
+        foreach ($consecutivos as $c) {
+            $tipoRecibo = is_array($c) ? ($c['tipo_recibo'] ?? null) : ($c->tipo_recibo ?? null);
+            if ($tipoRecibo === 'COSTURA') {
+                $reciboCostura = $c;
+                break;
+            }
+        }
+
+        // Si no hay COSTURA, tomar el primer consecutivo disponible
+        $consecutivoParaArea = $reciboCostura ?? $consecutivos->first();
+        
+        if (!$consecutivoParaArea) {
+            return null;
+        }
+
+        // Convertir a array si es stdClass
+        $arrayData = is_array($consecutivoParaArea) ? $consecutivoParaArea : (array) $consecutivoParaArea;
+        $area = $arrayData['area'] ?? null;
+        
+        return !empty($area) ? trim($area) : null;
+    }
+
+    /**
+     * Obtener recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO)
+     * para mostrar botones adicionales en la UI
+     */
+    private function obtenerRecibosEspeciales($consecutivos): array
+    {
+        if (!$consecutivos || count($consecutivos) === 0) {
+            return [];
+        }
+
+        $tiposEspeciales = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO', 'REFLECTIVO'];
+        $recibosEspeciales = [];
+
+        foreach ($consecutivos as $consecutivo) {
+            // Convertir a array si es stdClass
+            $arrayData = is_array($consecutivo) ? $consecutivo : (array) $consecutivo;
+            $tipoRecibo = strtoupper(trim($arrayData['tipo_recibo'] ?? ''));
+            
+            if (in_array($tipoRecibo, $tiposEspeciales)) {
+                $recibosEspeciales[] = [
+                    'id' => $arrayData['id'] ?? null,
+                    'tipo_recibo' => $tipoRecibo,
+                    'consecutivo' => $arrayData['consecutivo_actual'] ?? null,
+                    'area' => $arrayData['area'] ?? null,
+                    'estado' => $arrayData['estado'] ?? null,
+                    'activo' => $arrayData['activo'] ?? 0,
+                ];
+            }
+        }
+
+        return $recibosEspeciales;
     }
 }
 

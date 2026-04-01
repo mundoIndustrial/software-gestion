@@ -81,8 +81,21 @@ class DateFormatter {
 
     // Caso 2: String ISO (formato estándar)
     if (typeof input === 'string') {
-      const date = new Date(input);
-      return isNaN(date.getTime()) ? null : date;
+      // Intenta primero como ISO
+      let date = new Date(input);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+
+      // Caso 2b: Formato DD/MM/YYYY (del backend formateado)
+      const ddmmyyyyMatch = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const [, day, month, year] = ddmmyyyyMatch;
+        date = new Date(year, parseInt(month) - 1, day);
+        return isNaN(date.getTime()) ? null : date;
+      }
+
+      return null;
     }
 
     // Caso 3: Objeto Laravel/Carbon con propiedad .date

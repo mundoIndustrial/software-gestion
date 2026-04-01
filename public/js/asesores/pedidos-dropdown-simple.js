@@ -4,10 +4,10 @@
  */
 
 function initPedidosDropdownSimple() {
-    if (window.__pedidosDropdownSimpleInitialized) {
+    if (globalThis.__pedidosDropdownSimpleInitialized) {
         return;
     }
-    window.__pedidosDropdownSimpleInitialized = true;
+    globalThis.__pedidosDropdownSimpleInitialized = true;
 
     const container = document.getElementById('dropdowns-container');
     const menuHeight = 150;
@@ -19,7 +19,7 @@ function initPedidosDropdownSimple() {
     }
     
     // Crear dropdown para botón Ver
-window.crearDropdownVer = function(button) {
+globalThis.crearDropdownVer = function(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
         const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion
@@ -37,8 +37,8 @@ window.crearDropdownVer = function(button) {
         const uniqueMenuId = `menu-ver-pedido-${pedidoId}-prenda-${prendaId || 'all'}`;
         
         // IMPORTANTE: Limpiar galerías anteriores para evitar conflictos entre pedidos
-        if (typeof window._limpiarGalerias === 'function') {
-            window._limpiarGalerias();
+        if (typeof globalThis._limpiarGalerias === 'function') {
+            globalThis._limpiarGalerias();
         }
         
         // Verificar si ya existe
@@ -67,7 +67,7 @@ window.crearDropdownVer = function(button) {
         let dropdownHTML = '';
         
         // Verificar si estamos en la ruta insumos/materiales
-        const esRutaInsumos = window.location.pathname.includes('insumos/materiales');
+        const esRutaInsumos = globalThis.location.pathname.includes('insumos/materiales');
         
         if (esRutaInsumos) {
             // Para insumos, abrir recibo normal o anexo según data-* del botón
@@ -79,9 +79,9 @@ window.crearDropdownVer = function(button) {
             let onclickRecibos;
             if (esParcialInsumos && parcialIdInsumos) {
                 // Importante: pasar pedidoId explícito porque insumos no usa selectorRecibosState
-                onclickRecibos = `(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithParcial(${parcialIdInsumos}, ${prendaIdInsumos}, '${tipoReciboInsumos}', ${pedidoId}); closeDropdown()`;
+                onclickRecibos = `(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); openOrderDetailModalWithParcial(${parcialIdInsumos}, ${prendaIdInsumos}, '${tipoReciboInsumos}', ${pedidoId}); closeDropdown()`;
             } else {
-                onclickRecibos = `(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithProcess(${pedidoId}, ${prendaIdInsumos}, '${tipoReciboInsumos}'); closeDropdown()`;
+                onclickRecibos = `(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); openOrderDetailModalWithProcess(${pedidoId}, ${prendaIdInsumos}, '${tipoReciboInsumos}'); closeDropdown()`;
             }
 
             dropdownHTML = `
@@ -106,7 +106,7 @@ window.crearDropdownVer = function(button) {
         } else if (tipoCotizacion === 'L') {
             // Solo Logo
             dropdownHTML = `
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
+                <button onclick="(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -127,7 +127,7 @@ window.crearDropdownVer = function(button) {
         } else if (tipoCotizacion === 'PL') {
             // Prenda + Logo (Combinada)
             dropdownHTML = `
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -145,7 +145,7 @@ window.crearDropdownVer = function(button) {
                     <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Pedido
                 </button>
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
+                <button onclick="(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -168,7 +168,7 @@ window.crearDropdownVer = function(button) {
             console.log('[crearDropdownVer] Creando dropdown para pedido', {pedido, pedidoId, menuId});
             console.log('[crearDropdownVer] Número de pedido a usar:', pedido);
             dropdownHTML = `
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); console.log('Dropdown click - pedido:', '${pedido}', 'pedidoId:', ${pedidoId}); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); console.log('Dropdown click - pedido:', '${pedido}', 'pedidoId:', ${pedidoId}); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -189,13 +189,13 @@ window.crearDropdownVer = function(button) {
         }
         
         // Verificar si estamos en la ruta supervisor-pedidos (mostrar "Ver Recibos" para supervisores)
-        const esRutaSupervisor = window.location.pathname.includes('supervisor-pedidos');
+        const esRutaSupervisor = globalThis.location.pathname.includes('supervisor-pedidos');
         
         // Mostrar "Ver Recibos" si es supervisor-pedidos
         if (esRutaSupervisor) {
             dropdownHTML += `
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                <button onclick="(globalThis.cerrarModalFactura && globalThis.cerrarModalFactura()); abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -413,7 +413,7 @@ window.crearDropdownVer = function(button) {
     // Posicionar dropdown
     function posicionarDropdown(button, dropdown) {
         const buttonRect = button.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
+        const viewportHeight = globalThis.innerHeight;
         const spaceBelow = viewportHeight - buttonRect.bottom;
         
         if (spaceBelow > menuHeight) {
@@ -446,8 +446,8 @@ window.crearDropdownVer = function(button) {
             e.stopPropagation();
             
             // IMPORTANTE: Marcar badge como visto cuando el usuario hace clic en el botón
-            if (pedidoId && typeof window.setBadgeSeen === 'function') {
-                window.setBadgeSeen(pedidoId);
+            if (pedidoId && typeof globalThis.setBadgeSeen === 'function') {
+                globalThis.setBadgeSeen(pedidoId);
                 console.log('[pedidos-dropdown] Badge marcado como visto para pedido:', pedidoId);
             }
             
@@ -461,9 +461,9 @@ window.crearDropdownVer = function(button) {
             const overlayFactura = document.getElementById('modal-factura-overlay');
             console.log('[pedidos-dropdown] Modal factura existe:', !!overlayFactura);
             
-            if (overlayFactura && typeof window.cerrarModalFactura === 'function') {
+            if (overlayFactura && typeof globalThis.cerrarModalFactura === 'function') {
                 console.log('[pedidos-dropdown] Cerrando modal factura...');
-                window.cerrarModalFactura();
+                globalThis.cerrarModalFactura();
             }
             
             // Crear dropdown si no existe
@@ -535,14 +535,14 @@ if (document.readyState === 'loading') {
 }
 
 // Función para cerrar el dropdown (usada en los botones del menú) - GLOBAL
-window.closeDropdown = function() {
+globalThis.closeDropdown = function() {
     document.querySelectorAll('.dropdown-menu').forEach(menu => {
         menu.style.display = 'none';
     });
 }
 
 // Función para abrir modal de detalles desde asesores (similar a registros)
-window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
+globalThis.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
     console.log(' [abrirModalDetallePedidoDesdeAsesores] Iniciando para pedido:', pedido);
     
     try {
@@ -583,8 +583,8 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
         console.log(' [abrirModalDetallePedidoDesdeAsesores] Datos recibidos:', datos);
         
         // Usar la misma función que en registros
-        if (typeof window.abrirModalDetallePedido === 'function') {
-            window.abrirModalDetallePedido(datos);
+        if (typeof globalThis.abrirModalDetallePedido === 'function') {
+            globalThis.abrirModalDetallePedido(datos);
         } else {
             console.error(' [abrirModalDetallePedidoDesdeAsesores] abrirModalDetallePedido no disponible');
             alert('Error: Sistema de modales no disponible');
@@ -605,7 +605,7 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
  * NUEVA FUNCIÓN: abrirModalDetallePedido
  * Abre el modal de detalle del pedido con los datos recibidos
  */
-window.abrirModalDetallePedido = function(datos) {
+globalThis.abrirModalDetallePedido = function(datos) {
     console.log(' [abrirModalDetallePedido] Abriendo modal con datos:', datos);
     
     // Crear o reutilizar modal

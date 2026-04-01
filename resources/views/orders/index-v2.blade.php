@@ -94,9 +94,6 @@
             <table class="orders-table">
                 <thead>
                     <tr>
-                        <th class="col-checkbox">
-                            <input type="checkbox" class="checkbox-all">
-                        </th>
                         <th class="col-pedido">Pedido</th>
                         <th class="col-cliente">Cliente</th>
                         <th class="col-estado">Estado</th>
@@ -114,9 +111,6 @@
                             $progreso = rand(10, 95); // Placeholder - obtener del backend si está disponible
                         @endphp
                         <tr class="table-row" data-orden-id="{{ $orden->id }}">
-                            <td class="col-checkbox">
-                                <input type="checkbox" class="row-checkbox">
-                            </td>
                             <td class="col-pedido">
                                 <strong>#{{ $orden->numero_pedido ?? $orden->id }}</strong>
                             </td>

@@ -448,8 +448,8 @@ function applyFilters() {
         });
     });
     
-    const newUrl = `${window.location.pathname}?${filterParams.toString()}`;
-    window.location.href = newUrl;
+    const newUrl = `${globalThis.location.pathname}?${filterParams.toString()}`;
+    globalThis.location.href = newUrl;
 }
 
 /**
@@ -464,7 +464,7 @@ function resetFilters() {
     closeFilterModal();
     
     // Redirigir sin filtros
-    window.location.href = window.location.pathname;
+    globalThis.location.href = globalThis.location.pathname;
 }
 
 /**
@@ -580,7 +580,7 @@ function applyTableFilters() {
  * Cargar filtros desde URL (query parameters)
  */
 function loadFiltersFromURL() {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.location.search);
     const urlFilters = {};
     
     // Procesar parámetros filter[columna][]
@@ -788,7 +788,7 @@ function clearAllFilters() {
     updateClearButtonVisibility();
     
     // Actualizar URL sin recargar la página
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     const params = new URLSearchParams();
     
     // Mantener solo los parámetros que no son filtros
@@ -800,7 +800,7 @@ function clearAllFilters() {
     });
     
     url.search = params.toString();
-    window.history.pushState({}, '', url.toString());
+    globalThis.history.pushState({}, '', url.toString());
 }
 
 /**
@@ -846,7 +846,7 @@ function applyFilters() {
     updateClearButtonVisibility();
     
     // Actualizar URL sin recargar la página
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     const params = new URLSearchParams();
     
     // Mantener parámetros que no son filtros (como page, tipo, etc)
@@ -865,7 +865,7 @@ function applyFilters() {
     });
     
     url.search = params.toString();
-    window.history.pushState({}, '', url.toString());
+    globalThis.history.pushState({}, '', url.toString());
 }
 
 /**
@@ -884,7 +884,7 @@ function resetFilters() {
     updateClearButtonVisibility();
     
     // Actualizar URL sin recargar la página
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     const params = new URLSearchParams();
     
     // Mantener parámetros que no son filtros
@@ -903,5 +903,5 @@ function resetFilters() {
     });
     
     url.search = params.toString();
-    window.history.pushState({}, '', url.toString());
+    globalThis.history.pushState({}, '', url.toString());
 }

@@ -2,10 +2,10 @@
  * Real-Time Table Refresh System - Laravel Echo + Reverb Integration
  * @version 2.0 (Phase 5: DDD WebSocket Abstraction)
  * 
- * Uses window.shared.websocket (EchoReverbWebSocketClient) abstraction instead of direct Echo access
- * Polling fallback uses window.shared.cache (SessionStorageCacheRepository) for centralized cache handling
+ * Uses globalThis.shared.websocket (EchoReverbWebSocketClient) abstraction instead of direct Echo access
+ * Polling fallback uses globalThis.shared.cache (SessionStorageCacheRepository) for centralized cache handling
  * 
- * Removed all direct window.Echo.channel() calls - replaced with ws.subscribe() pattern
+ * Removed all direct globalThis.Echo.channel() calls - replaced with ws.subscribe() pattern
  * Polling uses cache.getOrFetch() with TTL instead of raw fetch loops
  */
 
@@ -30,9 +30,9 @@ class PedidosRealtimeRefresh {
         this.pedidoMovido = false;
         
         // Detección de página
-        this.isCarteraPage = window.location.pathname.includes('/cartera/pedidos');
-        this.isAnyCarteraPage = window.location.pathname.includes('/cartera/');
-        this.isSupervisorPedidosPage = window.location.pathname.includes('/supervisor-pedidos');
+        this.isCarteraPage = globalThis.location.pathname.includes('/cartera/pedidos');
+        this.isAnyCarteraPage = globalThis.location.pathname.includes('/cartera/');
+        this.isSupervisorPedidosPage = globalThis.location.pathname.includes('/supervisor-pedidos');
         this.usingWebSockets = false;
 
         // No ejecutar realtime en páginas de cartera (excepto /cartera/pedidos)
@@ -42,8 +42,8 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        // Service injection from window.shared (DDD pattern)
-        // NOTA: No acceder a window.shared aquí, esperar a initializeServices()
+        // Service injection from globalThis.shared (DDD pattern)
+        // NOTA: No acceder a globalThis.shared aquí, esperar a initializeServices()
         this.uiUpdate = null;
         this.activityDetector = null;
         this.channelConfigurator = null;
@@ -52,9 +52,9 @@ class PedidosRealtimeRefresh {
     }
 
     init() {
-        // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
-        if (!window.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady en init...');
+        // CRÍTICO: Esperar a que globalThis.shared esté disponible (race condition fix)
+        if (!globalThis.shared?.isReady) {
+            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady en init...');
             setTimeout(() => this.init(), 50);
             return;
         }
@@ -65,7 +65,7 @@ class PedidosRealtimeRefresh {
         this.initializeServices();
         
         // Validar que Echo esté disponible
-        if (typeof window.waitForEcho !== 'function') {
+        if (typeof globalThis.waitForEcho !== 'function') {
             if (this.debug) console.log(' [PedidosRealtime] Esperando inicialización de Echo...');
             setTimeout(() => this.init(), 100);
             return;
@@ -83,22 +83,22 @@ class PedidosRealtimeRefresh {
      * Inicializar servicios inyectados
      */
     initializeServices() {
-        // Esperar a que window.shared esté disponible (CRÍTICO para evitar race condition)
-        if (!window.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady...');
+        // Esperar a que globalThis.shared esté disponible (CRÍTICO para evitar race condition)
+        if (!globalThis.shared?.isReady) {
+            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady...');
             setTimeout(() => this.initializeServices(), 50);
             return;
         }
         
         // UIUpdateService para UI updates
-        if (!this.uiUpdate && window.shared?.uiUpdate) {
-            this.uiUpdate = window.shared.uiUpdate;
+        if (!this.uiUpdate && globalThis.shared?.uiUpdate) {
+            this.uiUpdate = globalThis.shared.uiUpdate;
             if (this.debug) console.log(' UIUpdateService inyectado');
         }
         
         // ActivityDetectionService para detectar actividad
-        if (!this.activityDetector && window.shared?.activityDetector) {
-            this.activityDetector = window.shared.activityDetector;
+        if (!this.activityDetector && globalThis.shared?.activityDetector) {
+            this.activityDetector = globalThis.shared.activityDetector;
             // Configurar callbacks de actividad
             if (this.activityDetector && typeof this.activityDetector.setupActivityDetection === 'function') {
                 this.activityDetector.setupActivityDetection();
@@ -107,8 +107,8 @@ class PedidosRealtimeRefresh {
         }
         
         // WebSocketChannelConfigurator para mapeo de canales
-        if (!this.channelConfigurator && window.shared?.channelConfigurator) {
-            this.channelConfigurator = window.shared.channelConfigurator;
+        if (!this.channelConfigurator && globalThis.shared?.channelConfigurator) {
+            this.channelConfigurator = globalThis.shared.channelConfigurator;
             if (this.debug) console.log(' WebSocketChannelConfigurator inyectado');
         }
     }
@@ -117,22 +117,22 @@ class PedidosRealtimeRefresh {
      * Configurar WebSocket usando abstracción centralizada
      */
     setupWebSocket() {
-        // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
-        if (!window.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando window.shared.isReady en setupWebSocket...');
+        // CRÍTICO: Esperar a que globalThis.shared esté disponible (race condition fix)
+        if (!globalThis.shared?.isReady) {
+            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady en setupWebSocket...');
             setTimeout(() => this.setupWebSocket(), 50);
             return;
         }
         
-        if (typeof window.waitForEcho !== 'function') {
+        if (typeof globalThis.waitForEcho !== 'function') {
             console.warn('[PedidosRealtime] Echo initializer not available, retrying');
             setTimeout(() => this.setupWebSocket(), 100);
             return;
         }
 
-        window.waitForEcho(() => {
+        globalThis.waitForEcho(() => {
             try {
-                const ws = window.shared.websocket;
+                const ws = globalThis.shared.websocket;
                 if (!ws) {
                     throw new Error('WebSocket abstraction not available');
                 }
@@ -144,7 +144,7 @@ class PedidosRealtimeRefresh {
                     ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                         if (this.debug) console.log(' Pedido actualizado (supervisor)');
                         try {
-                            window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
+                            globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
                                 detail: { pedido: event?.pedido, source: 'pedidos.general' }
                             }));
                         } catch (e) {
@@ -155,7 +155,7 @@ class PedidosRealtimeRefresh {
                     ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
                         if (this.debug) console.log(' Pedido creado (supervisor)');
                         try {
-                            window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { 
+                            globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { 
                                 detail: { pedido: event?.pedido, source: 'pedidos.creados' }
                             }));
                         } catch (e) {
@@ -177,18 +177,18 @@ class PedidosRealtimeRefresh {
                         if (this.uiUpdate) {
                             this.uiUpdate.showRealtimeToast(`Nuevo pedido recibido`, 'success');
                         }
-                        if (typeof window.cargarPedidos === 'function') {
-                            window.cargarPedidos();
+                        if (typeof globalThis.cargarPedidos === 'function') {
+                            globalThis.cargarPedidos();
                         }
                     });
 
                     ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                         if (this.debug) console.log(' Pedido actualizado (cartera)');
                         this.moverPedidoAlInicio(event?.pedido?.id);
-                        if (typeof window.cargarPedidos === 'function') {
+                        if (typeof globalThis.cargarPedidos === 'function') {
                             setTimeout(() => {
                                 if (!this.pedidoMovido) {
-                                    window.cargarPedidos();
+                                    globalThis.cargarPedidos();
                                 }
                                 this.pedidoMovido = false;
                             }, 1000);
@@ -197,19 +197,19 @@ class PedidosRealtimeRefresh {
 
                     ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
                         if (this.debug) console.log('📨 OrdenUpdated (cartera)');
-                        if (typeof window.cargarPedidos === 'function') {
-                            window.cargarPedidos();
+                        if (typeof globalThis.cargarPedidos === 'function') {
+                            globalThis.cargarPedidos();
                         }
                     });
 
                     // Canal privado del usuario
-                    if (window.usuarioAutenticado?.id) {
-                        const userId = window.usuarioAutenticado.id;
+                    if (globalThis.usuarioAutenticado?.id) {
+                        const userId = globalThis.usuarioAutenticado.id;
                         try {
                             ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
                                 if (this.debug) console.log(' PedidoActualizado privado (cartera)');
-                                if (typeof window.cargarPedidos === 'function') {
-                                    window.cargarPedidos();
+                                if (typeof globalThis.cargarPedidos === 'function') {
+                                    globalThis.cargarPedidos();
                                 }
                             });
                         } catch (error) {
@@ -321,7 +321,7 @@ class PedidosRealtimeRefresh {
         this.isRunning = false;
         clearTimeout(this.userActivityTimeout);
         
-        // Note: Channel unsubscription is handled by the WebSocket abstraction (window.shared.websocket)
+        // Note: Channel unsubscription is handled by the WebSocket abstraction (globalThis.shared.websocket)
         // No direct cleanup needed here
     }
 
@@ -372,10 +372,10 @@ class PedidosRealtimeRefresh {
             this.lastChangeTime = new Date();
             if (this.debug) console.log(' Cambios detectados');
             
-            if (typeof window.cargarPedidos === 'function') {
-                await window.cargarPedidos();
-            } else if (this.isCarteraPage && typeof window.cargarPedidosCartera === 'function') {
-                await window.cargarPedidosCartera();
+            if (typeof globalThis.cargarPedidos === 'function') {
+                await globalThis.cargarPedidos();
+            } else if (this.isCarteraPage && typeof globalThis.cargarPedidosCartera === 'function') {
+                await globalThis.cargarPedidosCartera();
             }
         }
     }
@@ -568,19 +568,19 @@ class PedidosRealtimeRefresh {
 // Inicializar cuando el DOM esté listo con patrón singleton
 document.addEventListener('DOMContentLoaded', () => {
     const realtimeDebug = (
-        window.location.search.includes('realtimeDebug=1') ||
-        window.localStorage?.getItem('realtimeDebug') === '1'
+        globalThis.location.search.includes('realtimeDebug=1') ||
+        globalThis.localStorage?.getItem('realtimeDebug') === '1'
     );
 
     // Destruir instancia existente si la hay
-    if (window.pedidosRealtimeRefresh) {
-        window.pedidosRealtimeRefresh.destroy();
-        window.pedidosRealtimeRefresh = null;
+    if (globalThis.pedidosRealtimeRefresh) {
+        globalThis.pedidosRealtimeRefresh.destroy();
+        globalThis.pedidosRealtimeRefresh = null;
     }
     
     // Crear nueva instancia solo si no existe
-    if (!window.pedidosRealtimeRefresh) {
-        window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
+    if (!globalThis.pedidosRealtimeRefresh) {
+        globalThis.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
             checkInterval: 30000, // 30 segundos
             autoStart: true,
             debug: realtimeDebug // Activable por querystring/localStorage
@@ -592,22 +592,22 @@ document.addEventListener('DOMContentLoaded', () => {
 if (document.readyState === 'loading') {
     // DOM todavía cargando, esperar evento
 } else {
-    // DOM ya cargado, pero esperar a que window.shared esté disponible
+    // DOM ya cargado, pero esperar a que globalThis.shared esté disponible
     function initializePedidosRealtimeIfReady() {
-        if (!window.shared?.isReady) {
-            // window.shared aún no disponible, reintentar
+        if (!globalThis.shared?.isReady) {
+            // globalThis.shared aún no disponible, reintentar
             setTimeout(initializePedidosRealtimeIfReady, 50);
             return;
         }
         
         // Ahora sí, crear la instancia
-        if (!window.pedidosRealtimeRefresh) {
+        if (!globalThis.pedidosRealtimeRefresh) {
             const realtimeDebug = (
-                window.location.search.includes('realtimeDebug=1') ||
-                window.localStorage?.getItem('realtimeDebug') === '1'
+                globalThis.location.search.includes('realtimeDebug=1') ||
+                globalThis.localStorage?.getItem('realtimeDebug') === '1'
             );
 
-            window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
+            globalThis.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
                 checkInterval: 30000,
                 autoStart: true,
                 debug: realtimeDebug // Activable por querystring/localStorage
@@ -615,7 +615,7 @@ if (document.readyState === 'loading') {
         }
     }
     
-    // Ejecutar solo cuando window.shared esté listo
+    // Ejecutar solo cuando globalThis.shared esté listo
     initializePedidosRealtimeIfReady();
 }
 

@@ -10,9 +10,9 @@ class InvoiceModalManager {
 
     init() {
         // Hacer métodos disponibles globalmente para compatibilidad
-        window.crearModalFacturaDesdeListaPedidos = this.crearModalFactura.bind(this);
-        window.cerrarModalFactura = this.cerrarModalFactura.bind(this);
-        window.imprimirFacturaModal = this.imprimirFacturaModal.bind(this);
+        globalThis.crearModalFacturaDesdeListaPedidos = this.crearModalFactura.bind(this);
+        globalThis.cerrarModalFactura = this.cerrarModalFactura.bind(this);
+        globalThis.imprimirFacturaModal = this.imprimirFacturaModal.bind(this);
     }
 
     /**
@@ -210,10 +210,10 @@ class InvoiceModalManager {
      */
     generarHTMLFactura(datos) {
 
-        if (typeof window.generarHTMLFactura === 'function') {
+        if (typeof globalThis.generarHTMLFactura === 'function') {
             try {
                 const datosPedido = datos.data || datos;
-                const htmlFactura = window.generarHTMLFactura(datosPedido);
+                const htmlFactura = globalThis.generarHTMLFactura(datosPedido);
 
                 if (!htmlFactura || htmlFactura.trim().length === 0) {
                     throw new Error('HTML vacío generado');
@@ -486,8 +486,8 @@ class InvoiceModalManager {
         }
 
         // Ocultar loading si está activo
-        if (window.loadingManager) {
-            window.loadingManager.ocultarCargando();
+        if (globalThis.loadingManager) {
+            globalThis.loadingManager.ocultarCargando();
         }
     }
 
@@ -498,8 +498,8 @@ class InvoiceModalManager {
         // Diagnosticar CSS antes de imprimir
         this.diagnosticarCSSImpresion();
 
-        // Usar window.print() para imprimir el modal
-        window.print();
+        // Usar globalThis.print() para imprimir el modal
+        globalThis.print();
     }
 
     /**
@@ -520,7 +520,7 @@ class InvoiceModalManager {
         elementos.forEach(selector => {
             const elemento = selector === 'body' ? document.body : document.querySelector(selector);
             if (elemento) {
-                const estilos = window.getComputedStyle(elemento);
+                const estilos = globalThis.getComputedStyle(elemento);
             } else {
                 console.warn(`[CSS-DIAGNOSTIC]  Elemento no encontrado: ${selector}`);
             }
@@ -547,7 +547,7 @@ class InvoiceModalManager {
         // Verificar imágenes específicas
         const imagenes = document.querySelectorAll('#modal-factura-contenido img');
         imagenes.forEach((img, index) => {
-            const estilos = window.getComputedStyle(img);
+            const estilos = globalThis.getComputedStyle(img);
             console.log({
                 overflow: estilos.overflow,
                 'object-fit': estilos.objectFit,
@@ -584,14 +584,14 @@ class InvoiceModalManager {
 
 // Inicializar el gestor cuando se cargue el script
 document.addEventListener('DOMContentLoaded', () => {
-    window.invoiceModalManager = new InvoiceModalManager();
+    globalThis.invoiceModalManager = new InvoiceModalManager();
 });
 
 // También permitir inicialización manual
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.invoiceModalManager = new InvoiceModalManager();
+        globalThis.invoiceModalManager = new InvoiceModalManager();
     });
 } else {
-    window.invoiceModalManager = new InvoiceModalManager();
+    globalThis.invoiceModalManager = new InvoiceModalManager();
 }

@@ -474,7 +474,7 @@ class OrderApiService {
     if (error instanceof TypeError) {
       // Network error or fetch error
       message += ': Error de red. Verifica tu conexión.';
-    } else if (error instanceof AbortError || error.name === 'AbortError') {
+    } else if (error.name === 'AbortError') {
       // Timeout
       message += ': La solicitud tardó demasiado. Intenta nuevamente.';
     } else if (error.message) {

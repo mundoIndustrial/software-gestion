@@ -31,6 +31,7 @@ export { PrendaTrackingRenderer } from '../ordersjs/application/Renderers/Prenda
 export { AreaCardRenderer } from '../ordersjs/application/Renderers/AreaCardRenderer.js';
 export { BadgeRenderer } from '../ordersjs/application/Renderers/BadgeRenderer.js';
 export { UpdateRenderer } from '../ordersjs/application/Renderers/UpdateRenderer.js';
+export { SpecialReceiptsRenderer } from '../ordersjs/application/Renderers/SpecialReceiptsRenderer.js';
 
 // Dependency Injection
 export { DIContainer } from '../ordersjs/application/DIContainer.js';

@@ -232,7 +232,7 @@ function anularPedido(pedidoId, novedad, numeroPedido) {
                 }
             }).then(() => {
                 // Recargar la página para actualizar la lista
-                window.location.reload();
+                globalThis.location.reload();
             });
         } else {
             throw new Error(data.message || 'Error al anular el pedido');
@@ -399,7 +399,7 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
                 }
             }).then(() => {
                 // Recargar la página para actualizar la lista
-                window.location.reload();
+                globalThis.location.reload();
             });
         } else {
             throw new Error(data.message || 'Error al confirmar la corrección');

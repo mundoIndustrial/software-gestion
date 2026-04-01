@@ -46,6 +46,7 @@ class PrendasRenderer {
           <thead>
             <tr>
               <th>Prenda</th>
+              <th>N° Recibo</th>
               <th>Cantidad</th>
               <th>Procesos</th>
               <th>Área</th>
@@ -57,7 +58,7 @@ class PrendasRenderer {
     `;
     
     // Almacenar las prendas globalmente para acceso desde onclick
-    window.prendasData = prendas;
+    globalThis.prendasData = prendas;
     
     prendas.forEach((prenda, index) => {
       // Logging para depuración
@@ -72,27 +73,43 @@ class PrendasRenderer {
       const cantidad = prenda.cantidad || 0;
       const totalProcesos = prenda.total_procesos || 0;
       
-      // Extraer tipos de recibo que son procesos (ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO)
-      let procesosInfo = '-';
-      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
-        procesosInfo = prenda.tipos_recibo_procesos.map(p => {
-          const nombre = p.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
-      } else if (prenda.procesos && prenda.procesos.length > 0) {
-        // Fallback a procesos generales si no hay tipos de recibo
-        procesosInfo = prenda.procesos.map(p => {
-          const tipoProceso = p.tipo_proceso;
-          const nombre = tipoProceso?.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
+      // Obtener número de recibo (consecutivo_actual del recibo COSTURA)
+      let numeroRecibo = '-';
+      if (prenda.consecutivos && Array.isArray(prenda.consecutivos)) {
+        const reciboCostura = prenda.consecutivos.find(r => r.tipo_recibo === 'COSTURA');
+        if (reciboCostura) {
+          numeroRecibo = reciboCostura.consecutivo_actual || '-';
+        }
+      }
+      
+      // Contar recibos especiales para el badge de procesos
+      const recibosEspeciales = prenda.recibos_especiales || [];
+      const procesosCount = Array.isArray(recibosEspeciales) ? recibosEspeciales.length : 0;
+      
+      // Crear botón de procesos o texto según haya procesos
+      let procesosHtml = '';
+      if (procesosCount > 0) {
+        procesosHtml = `
+          <button class="btn-procesos-badge" onclick="globalThis.handleVerProcesos && globalThis.handleVerProcesos(${index})" title="Ver procesos especiales">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="19" cy="12" r="1"></circle>
+              <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+            <span class="procesos-badge">${procesosCount}</span>
+          </button>
+        `;
+      } else {
+        procesosHtml = `
+          <span class="procesos-sin-datos">Sin procesos</span>
+        `;
       }
       
       // Extraer área basada en el proceso más reciente
       let area = '-';
-      if (prenda.ultimo_proceso_area) {
+      if (prenda.area_mas_reciente) {
+        area = prenda.area_mas_reciente;
+      } else if (prenda.ultimo_proceso_area) {
         // Si ya viene el área del último proceso, usarla
         area = prenda.ultimo_proceso_area;
       } else if (prenda.area && prenda.area.trim() !== '') {
@@ -101,7 +118,7 @@ class PrendasRenderer {
       }
       
       // Usar el estado del pedido en lugar del estado calculado de procesos
-      const estadoPedido = window.currentOrderData?.estado || 'Sin estado';
+      const estadoPedido = globalThis.currentOrderData?.estado || 'Sin estado';
       const estadoFormateado = estadoPedido.replace(/_/g, ' ').toUpperCase();
       
       // Determinar si el botón debe estar desactivado (para prendas de bodega)
@@ -124,9 +141,12 @@ class PrendasRenderer {
             <div class="prendas-name">${nombrePrenda}</div>
             ${badgeHtml}
           </td>
+          <td class="prendas-table-cell">
+            <span class="receipt-number-badge">#${numeroRecibo}</span>
+          </td>
           <td class="prendas-table-cell">${cantidad}</td>
           <td class="prendas-table-cell procesos-cell">
-            <div class="procesos-info">${procesosInfo}</div>
+            ${procesosHtml}
           </td>
           <td class="prendas-table-cell">${area}</td>
           <td class="prendas-table-cell">
@@ -159,8 +179,14 @@ class PrendasRenderer {
     try {
       console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
       
-      // Obtener la prenda desde el array global
-      const prenda = window.prendasData[index];
+      // Obtener la prenda desde globalThis.currentOrderData.prendas (asignado por tracking-modal-handler.js)
+      const prendas = globalThis.currentOrderData?.prendas;
+      if (!prendas || !Array.isArray(prendas)) {
+        console.error('[showPrendaTrackingFromTable] No hay prendas disponibles en globalThis.currentOrderData.prendas');
+        return;
+      }
+      
+      const prenda = prendas[index];
       if (!prenda) {
         console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
         return;
@@ -188,9 +214,9 @@ class PrendasRenderer {
           (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
         );
 
-        if (!tieneSeguimiento && Array.isArray(window.prendasData) && window.prendasData.length > 0) {
+        if (!tieneSeguimiento && Array.isArray(globalThis.prendasData) && globalThis.prendasData.length > 0) {
           const prendaId = prenda?.id || prenda?.prenda_pedido_id;
-          const prendaEnriquecida = window.prendasData.find(p =>
+          const prendaEnriquecida = globalThis.prendasData.find(p =>
             String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
           );
 
@@ -203,7 +229,7 @@ class PrendasRenderer {
         console.warn('[showPrendaTracking] Error hidratando prenda desde prendasData:', e);
       }
       
-      window.currentPrendaData = prenda;
+      globalThis.currentPrendaData = prenda;
       
       // Cerrar overlay de prendas
       const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
@@ -250,7 +276,7 @@ class PrendasRenderer {
         // Debug visual - verificar estado del modal
         setTimeout(() => {
           const modalElement = document.getElementById('orderTrackingModal');
-          const computedStyle = window.getComputedStyle(modalElement);
+          const computedStyle = globalThis.getComputedStyle(modalElement);
           console.log('[showPrendaTracking] DEBUG - Estado del modal:', {
             display: computedStyle.display,
             visibility: computedStyle.visibility,
@@ -308,8 +334,8 @@ class PrendasRenderer {
           areaActual = prenda.ultimo_proceso_area;
         } else if (prenda.area && String(prenda.area).trim() !== '') {
           areaActual = prenda.area;
-        } else if (!window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
-          areaActual = window.currentOrderData.area;
+        } else if (!globalThis.location.pathname.includes('/recibos-costura') && globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '') {
+          areaActual = globalThis.currentOrderData.area;
         }
 
         // Usar ultimo_recibo_numero directamente (más confiable)
@@ -407,7 +433,7 @@ class PrendasRenderer {
       const fechasWrapper = document.createElement('div');
       fechasWrapper.className = 'tracking-info-row';
 
-      const fechaCreacionOrden = window.currentOrderData?.created_at || null;
+      const fechaCreacionOrden = globalThis.currentOrderData?.created_at || null;
 
       // Usar datos_activacion_recibo pre-calculados por el backend (más confiable)
       const datosActivacion = prenda?.datos_activacion_recibo || {};
@@ -596,20 +622,20 @@ class PrendasRenderer {
 
     // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
     // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
-    const prenda = window.currentPrendaData || {};
-    const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
+    const prenda = globalThis.currentPrendaData || {};
+    const esRecibosCostura = globalThis.location.pathname.includes('/recibos-costura');
 
-    const procesoIdFallback = window.currentConsecutivoCosturaData?.proceso_id || null;
+    const procesoIdFallback = globalThis.currentConsecutivoCosturaData?.proceso_id || null;
     const tieneProcesoReal = Boolean(prenda?.ultimo_proceso_id || procesoIdFallback);
 
     const areaActual = prenda?.ultimo_proceso_area
       || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
-      || (!esRecibosCostura && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
+      || (!esRecibosCostura && globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '' ? globalThis.currentOrderData.area : null)
       || null;
 
     // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
     const encargadoActual = prenda?.ultimo_proceso_encargado
-      || window.currentConsecutivoCosturaData?.encargado
+      || globalThis.currentConsecutivoCosturaData?.encargado
       || null;
 
     // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
@@ -617,8 +643,8 @@ class PrendasRenderer {
       const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
       const estaActivo = estadoUltimo !== 'Completado';
 
-      const fechaInicioFallback = window.currentConsecutivoCosturaData?.fecha_inicio || null;
-      const fechaFinFallback = window.currentConsecutivoCosturaData?.fecha_fin || null;
+      const fechaInicioFallback = globalThis.currentConsecutivoCosturaData?.fecha_inicio || null;
+      const fechaFinFallback = globalThis.currentConsecutivoCosturaData?.fecha_fin || null;
 
       const card = createAreaCard(areaActual, {
         id: prenda?.ultimo_proceso_id || procesoIdFallback,
@@ -639,11 +665,11 @@ class PrendasRenderer {
 }
 
 // Exportar para uso global
-window.PrendasRenderer = PrendasRenderer;
-window.prendasRenderer = new PrendasRenderer();
+globalThis.PrendasRenderer = PrendasRenderer;
+globalThis.prendasRenderer = new PrendasRenderer();
 
 // Funciones globales para compatibilidad
-window.renderPrendas = (prendas) => window.prendasRenderer.renderPrendas(prendas);
-window.showPrendaTrackingFromTable = (index) => window.prendasRenderer.showPrendaTrackingFromTable(index);
-window.showPrendaTracking = (prenda) => window.prendasRenderer.showPrendaTracking(prenda);
-window.renderPrendaTrackingTimeline = (prenda) => window.prendasRenderer.renderPrendaTrackingTimeline(prenda);
+globalThis.renderPrendas = (prendas) => globalThis.prendasRenderer.renderPrendas(prendas);
+globalThis.showPrendaTrackingFromTable = (index) => globalThis.prendasRenderer.showPrendaTrackingFromTable(index);
+globalThis.showPrendaTracking = (prenda) => globalThis.prendasRenderer.showPrendaTracking(prenda);
+globalThis.renderPrendaTrackingTimeline = (prenda) => globalThis.prendasRenderer.renderPrendaTrackingTimeline(prenda);

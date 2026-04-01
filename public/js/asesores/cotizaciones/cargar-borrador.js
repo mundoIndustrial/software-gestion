@@ -4,9 +4,9 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
     // Evitar cargar múltiples veces si el usuario navega entre pasos
     try {
         const id = cotizacion.id || 'sin-id';
-        window.__paso3Hidratado = window.__paso3Hidratado || {};
-        if (window.__paso3Hidratado[id]) return;
-        window.__paso3Hidratado[id] = true;
+        globalThis.__paso3Hidratado = globalThis.__paso3Hidratado || {};
+        if (globalThis.__paso3Hidratado[id]) return;
+        globalThis.__paso3Hidratado[id] = true;
     } catch (_) {
         // no-op
     }
@@ -177,7 +177,7 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
                 });
             });
 
-            window.tecnicasAgregadasPaso3 = Array.from(tecnicasMap.values());
+            globalThis.tecnicasAgregadasPaso3 = Array.from(tecnicasMap.values());
             setTimeout(() => {
                 if (typeof renderizarTecnicasAgregadasPaso3 === 'function') {
                     renderizarTecnicasAgregadasPaso3();
@@ -190,18 +190,18 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
 }
 
 function __engancharHidratacionPaso3() {
-    if (window.__paso3Hookeado) return;
-    window.__paso3Hookeado = true;
+    if (globalThis.__paso3Hookeado) return;
+    globalThis.__paso3Hookeado = true;
 
     // Hook a irAlPaso para ejecutar la hidratación del paso 3 solo cuando el usuario entra al paso 3
-    const original = window.irAlPaso;
+    const original = globalThis.irAlPaso;
     if (typeof original !== 'function') return;
 
-    window.irAlPaso = function(paso) {
+    globalThis.irAlPaso = function(paso) {
         const result = original.apply(this, arguments);
         try {
             if (String(paso) === '3') {
-                __hidratarPaso3DesdeBorrador(window.cotizacionData);
+                __hidratarPaso3DesdeBorrador(globalThis.cotizacionData);
             }
         } catch (e) {
             console.error('Error hidratando Paso 3 al navegar:', e);
@@ -216,28 +216,28 @@ function cargarBorrador(cotizacion) {
 
     
     //  GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
-    window.cotizacionData = cotizacion;
+    globalThis.cotizacionData = cotizacion;
 
     
     //  LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
-    if (window.fotosSeleccionadas) {
-        window.fotosSeleccionadas = {};
+    if (globalThis.fotosSeleccionadas) {
+        globalThis.fotosSeleccionadas = {};
 
     }
 
     // No hidratar Paso 3 aquí (estás en Paso 2). Se hidrata al navegar a Paso 3.
     __engancharHidratacionPaso3();
-    if (window.telasSeleccionadas) {
-        window.telasSeleccionadas = {};
+    if (globalThis.telasSeleccionadas) {
+        globalThis.telasSeleccionadas = {};
 
     }
-    if (window.fotosEliminadasServidor) {
-        window.fotosEliminadasServidor = { prendas: [], telas: [] };
+    if (globalThis.fotosEliminadasServidor) {
+        globalThis.fotosEliminadasServidor = { prendas: [], telas: [] };
 
     }
     
     // Guardar ID de cotización en variable global para usarlo en funciones de foto
-    window.cotizacionIdActual = cotizacion.id;
+    globalThis.cotizacionIdActual = cotizacion.id;
     
     // Cargar cliente
     if (cotizacion.cliente) {
@@ -276,7 +276,7 @@ function cargarBorrador(cotizacion) {
         }
         
         // Guardar especificaciones en variable global para acceso en el modal
-        window.especificacionesActuales = especificacionesDecodificadas;
+        globalThis.especificacionesActuales = especificacionesDecodificadas;
 
         
         // No cortar la hidratación completa del borrador: seguir con prendas (Paso 2) y demás pasos.
@@ -364,11 +364,11 @@ function cargarBorrador(cotizacion) {
                 }
             });
             
-            //  GUARDAR EN window.especificacionesSeleccionadas PARA REGUARDAR
+            //  GUARDAR EN globalThis.especificacionesSeleccionadas PARA REGUARDAR
             // Después de cargar todo en el DOM, cargar también en memoria
             setTimeout(() => {
 
-                window.especificacionesSeleccionadas = especificacionesDecodificadas || {};
+                globalThis.especificacionesSeleccionadas = especificacionesDecodificadas || {};
                 
                 // Actualizar color del botón enviar
                 if (typeof actualizarColorBotonEnviar === 'function') {
@@ -614,9 +614,9 @@ function cargarBorrador(cotizacion) {
 
                 // ====== REHIDRATAR TALLAS CON COLOR (FLUJO AVANZADO) ======
                 // Si existen tallas con color guardadas en BD, NO deben cargarse en el flujo normal.
-                // Deben rehidratarse en window.advancedVariationsByProductoId para que guardado.js las envíe como tallas_color.
+                // Deben rehidratarse en globalThis.advancedVariationsByProductoId para que guardado.js las envíe como tallas_color.
                 try {
-                    if (tallasConColor.length > 0 && typeof window.AdvancedSizeVariationManager !== 'undefined') {
+                    if (tallasConColor.length > 0 && typeof globalThis.AdvancedSizeVariationManager !== 'undefined') {
                         const productoId = productoActual?.dataset?.productoId;
 
                         if (productoId) {
@@ -681,9 +681,9 @@ function cargarBorrador(cotizacion) {
                                 return item;
                             });
 
-                            window.AdvancedSizeVariationManager.setVariationsByProductoId(productoId, variations);
-                            window.AdvancedSizeVariationManager.renderForProductoCard(productoActual);
-                            window.AdvancedSizeVariationManager.disableOriginalTallasFlow(productoActual);
+                            globalThis.AdvancedSizeVariationManager.setVariationsByProductoId(productoId, variations);
+                            globalThis.AdvancedSizeVariationManager.renderForProductoCard(productoActual);
+                            globalThis.AdvancedSizeVariationManager.disableOriginalTallasFlow(productoActual);
 
                             // Evitar que el flujo normal re-marque tallas (ya se maneja por el avanzado)
                             tallasValores = [];
@@ -801,8 +801,8 @@ function cargarBorrador(cotizacion) {
                     let variantes = prenda.variantes;
                     
                     // Inicializar array global de variaciones
-                    if (!window.variacionesGuardadas) {
-                        window.variacionesGuardadas = [];
+                    if (!globalThis.variacionesGuardadas) {
+                        globalThis.variacionesGuardadas = [];
                     }
                     
                     // Si variantes es un array, tomar el primer elemento
@@ -1221,7 +1221,7 @@ function cargarBorrador(cotizacion) {
                             obsReflectivo: variantes.obs_reflectivo || ''
                         };
                         
-                        window.variacionesGuardadas.push(variacionesObj);
+                        globalThis.variacionesGuardadas.push(variacionesObj);
 
                     } else {
 
@@ -1257,8 +1257,8 @@ function cargarBorrador(cotizacion) {
                                     
                                     fotosContainer.appendChild(fotoDiv);
                                     
-                                    if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
-                                        window.imagenesEnMemoria.prendaConIndice.push({
+                                    if (foto.id && globalThis.imagenesEnMemoria && globalThis.imagenesEnMemoria.prendaConIndice) {
+                                        globalThis.imagenesEnMemoria.prendaConIndice.push({
                                             prendaIndex: prendaIndexActual,
                                             file: urlFoto,  // Ruta de la imagen guardada
                                             esGuardada: true,
@@ -1329,8 +1329,8 @@ function cargarBorrador(cotizacion) {
                                         
                                         fotosContainer.appendChild(fotoDiv);
                                         
-                                        if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
-                                            window.imagenesEnMemoria.telaConIndice.push({
+                                        if (foto.id && globalThis.imagenesEnMemoria && globalThis.imagenesEnMemoria.telaConIndice) {
+                                            globalThis.imagenesEnMemoria.telaConIndice.push({
                                                 prendaIndex: prendaIndexActual,
                                                 telaIndex: filaIdx,
                                                 file: urlFoto,
@@ -1356,7 +1356,7 @@ function cargarBorrador(cotizacion) {
     
     // NOTA: En cotización combinada (PL), las técnicas/ubicaciones/imágenes del logo se manejan en PASO 3.
     // Evitar que se carguen en PASO 2.
-    const esCombinada = (window.tipoCotizacionGlobal === 'PL' || cotizacion.tipo === 'PL' || cotizacion.tipo_cotizacion_id === 1);
+    const esCombinada = (globalThis.tipoCotizacionGlobal === 'PL' || cotizacion.tipo === 'PL' || cotizacion.tipo_cotizacion_id === 1);
 
     if (!esCombinada) {
         // Cargar técnicas (legacy)
@@ -1458,22 +1458,22 @@ function cargarBorrador(cotizacion) {
         cotizacion.productos.forEach((prenda, prendaIdx) => {
 
             
-            // Cargar fotos de prenda en window.imagenesEnMemoria
+            // Cargar fotos de prenda en globalThis.imagenesEnMemoria
             if (prenda.fotos && Array.isArray(prenda.fotos)) {
 
                 prenda.fotos.forEach((foto, fotoIdx) => {
                     // Las fotos guardadas son objetos con ruta_original, ruta_webp, etc.
-                    // Agregar a window.imagenesEnMemoria como referencias (no File objects)
+                    // Agregar a globalThis.imagenesEnMemoria como referencias (no File objects)
                     if (foto.ruta_original || foto.ruta_webp) {
                         const rutaFoto = foto.ruta_original || foto.ruta_webp;
 
                         
-                        // Agregar a window.imagenesEnMemoria.prendaConIndice
-                        if (!window.imagenesEnMemoria.prendaConIndice) {
-                            window.imagenesEnMemoria.prendaConIndice = [];
+                        // Agregar a globalThis.imagenesEnMemoria.prendaConIndice
+                        if (!globalThis.imagenesEnMemoria.prendaConIndice) {
+                            globalThis.imagenesEnMemoria.prendaConIndice = [];
                         }
                         
-                        window.imagenesEnMemoria.prendaConIndice.push({
+                        globalThis.imagenesEnMemoria.prendaConIndice.push({
                             file: rutaFoto, // Guardar la ruta como string, no como File object
                             prendaIndex: prendaIdx,
                             esGuardada: true // Marcar como imagen guardada
@@ -1484,7 +1484,7 @@ function cargarBorrador(cotizacion) {
                 });
             }
             
-            // Cargar telas en window.imagenesEnMemoria
+            // Cargar telas en globalThis.imagenesEnMemoria
             if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos)) {
 
                 prenda.tela_fotos.forEach((tela, telaIdx) => {
@@ -1492,12 +1492,12 @@ function cargarBorrador(cotizacion) {
                         const rutaTela = tela.ruta_original || tela.ruta_webp;
 
                         
-                        // Agregar a window.imagenesEnMemoria.telaConIndice
-                        if (!window.imagenesEnMemoria.telaConIndice) {
-                            window.imagenesEnMemoria.telaConIndice = [];
+                        // Agregar a globalThis.imagenesEnMemoria.telaConIndice
+                        if (!globalThis.imagenesEnMemoria.telaConIndice) {
+                            globalThis.imagenesEnMemoria.telaConIndice = [];
                         }
                         
-                        window.imagenesEnMemoria.telaConIndice.push({
+                        globalThis.imagenesEnMemoria.telaConIndice.push({
                             file: rutaTela,
                             prendaIndex: prendaIdx,
                             esGuardada: true
@@ -1648,7 +1648,7 @@ function cargarBorrador(cotizacion) {
                                         img.title = 'Haz clic para eliminar';
                                         img.dataset.ruta = srcUrl;
                                         img.onclick = function() {
-                                            eliminarFotoLogoInmediatamente(srcUrl, window.cotizacionIdActual);
+                                            eliminarFotoLogoInmediatamente(srcUrl, globalThis.cotizacionIdActual);
                                         };
                                         fotosContainer.appendChild(img);
 
@@ -1699,8 +1699,8 @@ function cargarBorrador(cotizacion) {
             
             if (Array.isArray(tecnicas) && tecnicas.length > 0) {
                 // Guardar en variable global para Paso 4
-                window.tecnicasGuardadas = tecnicas;
-                window.obsTecnicasGuardadas = cotizacion.logo_cotizacion.observaciones_tecnicas || '';
+                globalThis.tecnicasGuardadas = tecnicas;
+                globalThis.obsTecnicasGuardadas = cotizacion.logo_cotizacion.observaciones_tecnicas || '';
 
                 
                 setTimeout(() => {
@@ -1749,16 +1749,16 @@ function cargarBorrador(cotizacion) {
             
             if (Array.isArray(ubicaciones) && ubicaciones.length > 0) {
                 // Guardar ubicaciones en variable global para Paso 4
-                window.ubicacionesGuardadas = ubicaciones;
+                globalThis.ubicacionesGuardadas = ubicaciones;
 
                 
                 setTimeout(() => {
 
                     // Cargar en seccionesSeleccionadasFriendly para que renderizarSeccionesFriendly() las dibuje
-                    if (typeof window.seccionesSeleccionadasFriendly !== 'undefined') {
-                        window.seccionesSeleccionadasFriendly = [];
+                    if (typeof globalThis.seccionesSeleccionadasFriendly !== 'undefined') {
+                        globalThis.seccionesSeleccionadasFriendly = [];
                         ubicaciones.forEach(ubicacion => {
-                            window.seccionesSeleccionadasFriendly.push({
+                            globalThis.seccionesSeleccionadasFriendly.push({
                                 ubicacion: ubicacion.seccion || ubicacion.ubicacion || ubicacion,
                                 opciones: ubicacion.ubicaciones_seleccionadas || ubicacion.opciones || [],
                                 observaciones: ubicacion.observaciones || '',
@@ -1895,10 +1895,10 @@ function cargarBorrador(cotizacion) {
                     ${btnBorrar}
                 `;
                 
-                //  IMPORTANTE: Agregar a window.imagenesEnMemoria.logo para que se envíe al hacer click en ENVIAR
-                if (fotoData.id && window.imagenesEnMemoria && window.imagenesEnMemoria.logo) {
+                //  IMPORTANTE: Agregar a globalThis.imagenesEnMemoria.logo para que se envíe al hacer click en ENVIAR
+                if (fotoData.id && globalThis.imagenesEnMemoria && globalThis.imagenesEnMemoria.logo) {
                     // Crear un objeto Blob-like o File-like con la ruta
-                    window.imagenesEnMemoria.logo.push({
+                    globalThis.imagenesEnMemoria.logo.push({
                         ruta: srcUrl,
                         esGuardada: true,
                         fotoId: fotoData.id
@@ -1924,7 +1924,7 @@ function cargarBorrador(cotizacion) {
                         borrarImagenLogo(fotoData.id, btn);
                     } else {
                         // Si es nueva (sin guardar), solo eliminar del DOM
-                        eliminarFotoLogoInmediatamente(srcUrl, window.cotizacionIdActual);
+                        eliminarFotoLogoInmediatamente(srcUrl, globalThis.cotizacionIdActual);
                     }
                 };
                 
@@ -1982,14 +1982,14 @@ async function eliminarFotoCotizacion(element, cotizacionId) {
                 element.remove();
             }
 
-            window.showToast('Foto eliminada correctamente', 'success');
+            globalThis.showToast('Foto eliminada correctamente', 'success');
         } else {
 
-            window.showToast('Error al eliminar la foto: ' + data.message, 'error');
+            globalThis.showToast('Error al eliminar la foto: ' + data.message, 'error');
         }
     } catch (error) {
 
-        window.showToast('Error al eliminar la foto', 'error');
+        globalThis.showToast('Error al eliminar la foto', 'error');
     }
 }
 
@@ -2019,7 +2019,7 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
             });
             
             // Enviar solicitud al backend para eliminar inmediatamente
-            fetch(window.location.origin + '/api/asesores/fotos/eliminar', {
+            fetch(globalThis.location.origin + '/api/asesores/fotos/eliminar', {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -2091,9 +2091,9 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                         }
                     }
                     
-                    //  PASO 2: Eliminar también de window.imagenesEnMemoria.logo
-                    if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
-                        const beforeCount = window.imagenesEnMemoria.logo.length;
+                    //  PASO 2: Eliminar también de globalThis.imagenesEnMemoria.logo
+                    if (globalThis.imagenesEnMemoria && globalThis.imagenesEnMemoria.logo && Array.isArray(globalThis.imagenesEnMemoria.logo)) {
+                        const beforeCount = globalThis.imagenesEnMemoria.logo.length;
 
 
                         
@@ -2101,7 +2101,7 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                         const nombreArchivo = rutaFoto.split('/').pop();
 
                         
-                        window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter((imagen, idx) => {
+                        globalThis.imagenesEnMemoria.logo = globalThis.imagenesEnMemoria.logo.filter((imagen, idx) => {
 
                             
                             // Si es un string (ruta completa)

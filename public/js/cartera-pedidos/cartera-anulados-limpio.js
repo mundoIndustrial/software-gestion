@@ -14,12 +14,12 @@ let totalPages = 1;
 let pedidosPorPagina = 10;
 
 // Exponer datos globalmente para que el sistema compartido pueda acceder
-window.pedidosDataAnulados = pedidosDataAnulados;
+globalThis.pedidosDataAnulados = pedidosDataAnulados;
 
 // ===== FUNCIONES ESPECÍFICAS DE LA VISTA =====
 
 // Función principal para cargar pedidos (será llamada por el sistema compartido)
-window.cargarPedidos = async function() {
+globalThis.cargarPedidos = async function() {
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
   
   if (!tablaPedidosBody) {
@@ -69,7 +69,7 @@ window.cargarPedidos = async function() {
       pedidosDataAnulados = data.data || [];
       
       // Sincronizar con la variable global
-      window.pedidosDataAnulados = pedidosDataAnulados;
+      globalThis.pedidosDataAnulados = pedidosDataAnulados;
       
       // Extraer datos de paginación
       const pagination = data.pagination || {};
@@ -192,7 +192,7 @@ function goToPage(page) {
   if (page < 1 || page > totalPages) return;
   
   currentPage = page;
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 }
 
 function actualizarPaginacion(total) {
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
   
   // Cargar pedidos iniciales
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 });
 
 // Función para obtener la fecha de anulación correcta
