@@ -40,6 +40,10 @@ Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function
         Route::post('activar-recibo', [ProcesosPrendaDetalleController::class, 'activarRecibo'])
             ->name('activar-recibo');
 
+        // Anular recibo
+        Route::post('anular-recibo', [ProcesosPrendaDetalleController::class, 'anularRecibo'])
+            ->name('anular-recibo');
+
         // Gestión de imágenes
         Route::prefix('imagenes')->name('imagenes.')->group(function () {
             Route::get('/', [ProcesosPrendaDetalleController::class, 'obtenerImagenes'])

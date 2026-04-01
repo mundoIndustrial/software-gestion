@@ -272,6 +272,10 @@ window.__programarActualizacionDiariaLogo = function() {
 };
 
 window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, novedades) {
+    // Extract pedido_parcial_id from the DOM
+    const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoPrendaDetalleId}"]`);
+    const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
+    
     const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.area-novedad') }}`, {
         method: 'POST',
         headers: {
@@ -283,6 +287,7 @@ window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, n
             proceso_prenda_detalle_id: procesoPrendaDetalleId,
             area,
             novedades,
+            pedido_parcial_id: pedidoParcialId ? parseInt(pedidoParcialId) : null,
         }),
     });
 
@@ -712,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnTitle = completado ? 'Click para deshacer completado' : 'Marcar como completado';
                 
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 180px 140px;
@@ -779,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (window.__isDisenadorLogos) {
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 180px 140px;
@@ -843,7 +848,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
 
             return `
-                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" style="
+                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
                     min-width: 1860px;
                     display: grid;
                     grid-template-columns: 100px 120px 200px 300px 170px 230px 190px 260px 160px;

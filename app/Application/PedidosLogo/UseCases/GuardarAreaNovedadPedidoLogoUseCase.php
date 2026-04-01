@@ -19,10 +19,13 @@ final class GuardarAreaNovedadPedidoLogoUseCase
 
     public function execute(array $payload): array
     {
+        \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Payload recibido:', $payload);
+        
         $validator = Validator::make($payload, [
             'proceso_prenda_detalle_id' => ['required', 'integer', 'min:1'],
             'area' => ['required', 'string'],
             'novedades' => ['nullable', 'string'],
+            'pedido_parcial_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $response = null;
@@ -37,6 +40,14 @@ final class GuardarAreaNovedadPedidoLogoUseCase
             $procesoId = (int) $payload['proceso_prenda_detalle_id'];
             $area = (string) $payload['area'];
             $novedades = isset($payload['novedades']) ? (string) $payload['novedades'] : null;
+            $pedidoParcialId = isset($payload['pedido_parcial_id']) ? (int) $payload['pedido_parcial_id'] : null;
+
+            \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Datos extraídos:', [
+                'procesoId' => $procesoId,
+                'area' => $area,
+                'novedades' => $novedades,
+                'pedidoParcialId' => $pedidoParcialId,
+            ]);
 
             $validacion = $this->validarContextoProceso($procesoId, $area);
             if ($validacion['error'] !== null) {
@@ -45,10 +56,17 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                 $prendaPedidoId = (int) $validacion['prenda_pedido_id'];
                 $timestamp = now()->toDateTimeString();
 
-                $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $timestamp): void {
+                $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $pedidoParcialId, $timestamp): void {
                     $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId);
                     $fechasAreas = $this->extraerFechasAreas($existente);
                     $fechasAreas[$area] = $timestamp;
+
+                    \Log::info('GuardarAreaNovedadPedidoLogoUseCase - Llamando upsertSeguimiento con:', [
+                        'procesoId' => $procesoId,
+                        'prendaPedidoId' => $prendaPedidoId,
+                        'area' => $area,
+                        'pedidoParcialId' => $pedidoParcialId,
+                    ]);
 
                     $this->seguimientoAreaRepository->upsertSeguimiento(
                         $procesoId,
@@ -56,7 +74,8 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                         $area,
                         $novedades,
                         $fechasAreas,
-                        $timestamp
+                        $timestamp,
+                        $pedidoParcialId
                     );
                 });
 

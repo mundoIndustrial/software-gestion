@@ -18,20 +18,35 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             . "WHEN 5 THEN 'SUBLIMADO' "
             . "ELSE NULL END";
 
-        $query = PedidosProcesosPrendaDetalle::query()
-            ->select([
-                'pedidos_procesos_prenda_detalles.*',
-                'palp.area as area',
-                'palp.novedades as novedades',
-                'palp.fechas_areas as fechas_areas',
-                DB::raw('COALESCE(ppar.consecutivo_actual, crp.consecutivo_actual) as numero_recibo_consecutivo'),
-                DB::raw('COALESCE(ppar.created_at, crp.created_at) as fecha_creacion_recibo'),
-                DB::raw('CASE WHEN ppar.id IS NOT NULL THEN 1 ELSE 0 END as es_parcial'),
-                DB::raw('ppar.id as pedido_parcial_id'),
-            ])
+        // Query 1: Procesos base sin parciales
+        $queryProcesos = PedidosProcesosPrendaDetalle::query()
+            ->selectRaw("
+                pedidos_procesos_prenda_detalles.id,
+                pedidos_procesos_prenda_detalles.prenda_pedido_id,
+                pedidos_procesos_prenda_detalles.tipo_proceso_id,
+                pedidos_procesos_prenda_detalles.estado,
+                pedidos_procesos_prenda_detalles.numero_recibo,
+                pedidos_procesos_prenda_detalles.tipo_recibo,
+                pedidos_procesos_prenda_detalles.etiqueta_proceso,
+                pedidos_procesos_prenda_detalles.notas_rechazo,
+                pedidos_procesos_prenda_detalles.fecha_aprobacion,
+                pedidos_procesos_prenda_detalles.aprobado_por,
+                pedidos_procesos_prenda_detalles.datos_adicionales,
+                pedidos_procesos_prenda_detalles.created_at,
+                pedidos_procesos_prenda_detalles.updated_at,
+                pedidos_procesos_prenda_detalles.deleted_at,
+                MAX(palp.area) as area,
+                MAX(palp.novedades) as novedades,
+                MAX(palp.fechas_areas) as fechas_areas,
+                crp.consecutivo_actual as numero_recibo_consecutivo,
+                crp.created_at as fecha_creacion_recibo,
+                0 as es_parcial,
+                NULL as pedido_parcial_id,
+                pp.pedido_produccion_id
+            ")
             ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'pedidos_procesos_prenda_detalles.prenda_pedido_id')
-            ->leftJoin('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
                 $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
                     ->on('crp.prenda_id', '=', 'pp.id')
                     ->where('crp.activo', 1)
@@ -45,37 +60,66 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                     ->whereNull('ppar.deleted_at')
                     ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
             })
-            ->with([
-                'tipoProceso',
-                'prenda.pedidoProduccion.cliente',
-                'prenda.pedidoProduccion.asesora',
-            ])
-            ->whereIn('tipo_proceso_id', $tipoProcesoIds)
-            ->where(function ($q) {
-                $q->whereNotNull('ppar.id')
-                    ->orWhere(function ($q2) {
-                        $q2->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
-                            ->whereNotNull('crp.consecutivo_actual');
-                    });
-            });
+            ->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
+            ->whereNotNull('crp.consecutivo_actual')
+            ->whereNull('ppar.id')
+            ->whereIn('pedidos_procesos_prenda_detalles.tipo_proceso_id', $tipoProcesoIds)
+            ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
 
-        if ($soloMinimalRole && $areaFija) {
-            $query->where('palp.area', $areaFija);
-        }
+        // Query 2: Todos los parciales individuales
+        $queryParciales = DB::table('pedidos_parciales as ppar')
+            ->selectRaw("
+                pedidos_procesos_prenda_detalles.id,
+                ppar.prenda_pedido_id,
+                pedidos_procesos_prenda_detalles.tipo_proceso_id,
+                ppar.estado as estado,
+                pedidos_procesos_prenda_detalles.numero_recibo,
+                pedidos_procesos_prenda_detalles.tipo_recibo,
+                pedidos_procesos_prenda_detalles.etiqueta_proceso,
+                pedidos_procesos_prenda_detalles.notas_rechazo,
+                pedidos_procesos_prenda_detalles.fecha_aprobacion,
+                pedidos_procesos_prenda_detalles.aprobado_por,
+                pedidos_procesos_prenda_detalles.datos_adicionales,
+                pedidos_procesos_prenda_detalles.created_at,
+                pedidos_procesos_prenda_detalles.updated_at,
+                pedidos_procesos_prenda_detalles.deleted_at,
+                MAX(palp.area) as area,
+                MAX(palp.novedades) as novedades,
+                MAX(palp.fechas_areas) as fechas_areas,
+                ppar.consecutivo_actual as numero_recibo_consecutivo,
+                ppar.created_at as fecha_creacion_recibo,
+                1 as es_parcial,
+                ppar.id as pedido_parcial_id,
+                pp.pedido_produccion_id
+            ")
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+            ->join('pedidos_procesos_prenda_detalles', function ($join) use ($tipoReciboCase) {
+                $join->on('pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'pp.id')
+                    ->whereRaw("({$tipoReciboCase}) = ppar.tipo_recibo");
+            })
+            ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
+            ->where('ppar.estado', 'APROBADO')
+            ->where('ppar.activo', 1)
+            ->whereNull('ppar.deleted_at')
+            ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id', 'pp.pedido_produccion_id');
 
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('crp.consecutivo_actual', 'like', "%{$search}%")
-                    ->orWhere('ppar.consecutivo_actual', 'like', "%{$search}%")
-                    ->orWhereHas('prenda.pedidoProduccion.cliente', function ($subQ) use ($search) {
-                        $subQ->where('nombre', 'like', "%{$search}%");
-                    });
-            });
-        }
+        // Combinar queries
+        $results = $queryProcesos->unionAll($queryParciales)
+            ->orderBy('numero_recibo_consecutivo', 'DESC')
+            ->paginate($perPage);
 
-        $query->orderByRaw('COALESCE(ppar.consecutivo_actual, crp.consecutivo_actual) DESC');
+        // Map items to ensure all attributes are available
+        $results->getCollection()->transform(function ($item) {
+            if (is_object($item)) {
+                // Ensure pedido_parcial_id is accessible as an attribute
+                if (!isset($item->pedido_parcial_id) && isset($item->attributes['pedido_parcial_id'])) {
+                    $item->pedido_parcial_id = $item->attributes['pedido_parcial_id'];
+                }
+            }
+            return $item;
+        });
 
-        return $query->paginate($perPage);
+        return $results;
     }
 
     public function obtenerPedidoProduccionIdPorProceso(int $procesoPrendaDetalleId): ?int

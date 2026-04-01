@@ -429,6 +429,8 @@ class ReciboPedidoService implements ReciboPedidoServiceContract
                 'estado' => $proc->estado ?? 'Pendiente',
                 'modo_tallas' => $modoTallas,  // NUEVO: Marcar modo
                 'tallas_detalles' => $tallesDetalles,  // NUEVO: Datos por talla
+                'fecha_aprobacion' => $proc->fecha_aprobacion ?? null,
+                'aprobado_por' => $proc->aprobado_por ?? null,
             ];
         }
         

@@ -568,6 +568,8 @@ class PedidoPrendaDetalleBuilder
             'modo_tallas' => $proceso->modo_tallas ?? 'general',
             'tallas' => $this->obtenerTallasDelProceso($proceso),
             'imagenes' => $this->obtenerImagenesDelProceso($proceso),
+            'fecha_aprobacion' => $proceso->fecha_aprobacion ?? null,
+            'aprobado_por' => $proceso->aprobado_por ?? null,
         ];
     }
 

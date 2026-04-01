@@ -26,7 +26,7 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
         ];
     }
 
-    public function upsertSeguimiento(int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp): void
+    public function upsertSeguimiento(int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp, ?int $pedidoParcialId = null): void
     {
         $existente = DB::table('prenda_areas_logo_pedido')
             ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
@@ -40,6 +40,7 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
                     'area' => $area,
                     'novedades' => $novedades,
                     'fechas_areas' => json_encode($fechasAreas),
+                    'pedido_parcial_id' => $pedidoParcialId,
                     'updated_at' => $timestamp,
                 ]);
             return;
@@ -51,6 +52,7 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
             'area' => $area,
             'novedades' => $novedades,
             'fechas_areas' => json_encode($fechasAreas),
+            'pedido_parcial_id' => $pedidoParcialId,
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ]);
