@@ -472,15 +472,10 @@
 
         // Cargar datos de recibos
         try {
-            // Determinar la ruta correcta según la página actual
-            let apiUrl;
-            if (window.location.pathname.includes('/registros')) {
-                // Usar la ruta de registros recibos-datos
-                apiUrl = `/registros/${pedidoId}/recibos-datos`;
-            } else {
-                // Usar la ruta que incluye los consecutivos (obtenerDetalleCompleto)
-                apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
-            }
+            // Usar siempre la ruta completa que retorna procesos pendientes
+            // /pedidos-public/{id}/recibos-datos retorna datos completos (ObtenerDetalleCompletoUseCase)
+            // /registros/{id}/recibos-datos retorna solo procesos aprobados (GetRecibosDatosUseCase)
+            const apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
             
             console.log('[abrirSelectorRecibos] Fetching URL:', apiUrl);
             

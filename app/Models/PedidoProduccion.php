@@ -336,4 +336,25 @@ class PedidoProduccion extends Model
 
         return $ultimoProceso?->proceso ?? 'Sin procesos';
     }
+
+    /**
+     * Obtener la fecha estimada de entrega máxima de los recibos de costura
+     * Busca la fecha más lejana entre todos los recibos de tipo COSTURA y COSTURA-BODEGA
+     * 
+     * @return \Carbon\Carbon|null La fecha máxima estimada de entrega o null si no hay recibos
+     */
+    public function getFechaEstimadaMaximaEntrega(): ?\Carbon\Carbon
+    {
+        return $this->consecutivosRecibos()
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->max('fecha_estimada_de_entrega')
+            ? \Carbon\Carbon::parse(
+                $this->consecutivosRecibos()
+                    ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+                    ->whereNotNull('fecha_estimada_de_entrega')
+                    ->max('fecha_estimada_de_entrega')
+            )
+            : null;
+    }
 }

@@ -22,7 +22,9 @@
             $hoy = \Carbon\Carbon::today();
             $contadores = [
                 'vencidos' => $ordenes->getCollection()->filter(function($orden) use ($hoy) {
-                    return $orden->fecha_estimada_de_entrega && $orden->fecha_estimada_de_entrega < $hoy;
+                    $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
+                    $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
+                    return $fechaEntrega && $fechaEntrega < $hoy;
                 })->count(),
                 'en_progreso' => $ordenes->getCollection()->where('estado', 'En Ejecución')->count(),
             ];
@@ -73,9 +75,13 @@
                                 ->count();
                             $progreso = $totalRecibos > 0 ? round(($recibosEntregados / $totalRecibos) * 100) : 0;
                             
+                            // Obtener fecha máxima de entrega de recibos de costura
+                            $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
+                            $fechaEntregaVerificacion = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
+                            
                             // Verificar si la orden está vencida
                             $hoy = \Carbon\Carbon::today();
-                            $esVencida = $orden->fecha_estimada_de_entrega && $orden->fecha_estimada_de_entrega < $hoy;
+                            $esVencida = $fechaEntregaVerificacion && $fechaEntregaVerificacion < $hoy;
                         @endphp
                         <tr class="table-row" data-orden-id="{{ $orden->id }}" data-vencido="{{ $esVencida ? 'true' : 'false' }}">
                             <td class="col-accion">
@@ -85,6 +91,9 @@
                                 <div class="action-menu" style="display: none;">
                                     <a href="#" class="menu-item" data-action="detalle">
                                         <i class="fas fa-eye"></i> Ver Detalle
+                                    </a>
+                                    <a href="#" class="menu-item" data-action="recibos">
+                                        <i class="fas fa-receipt"></i> Ver Recibos
                                     </a>
                                     <a href="#" class="menu-item" data-action="seguimiento">
                                         <i class="fas fa-tasks"></i> Seguimiento
@@ -108,10 +117,14 @@
                                 @endif
                             </td>
                             <td class="col-entrega">
+                                @php
+                                    $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
+                                    $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
+                                @endphp
                                 @if($diaEntrega !== '-')
                                     <span class="entrega-date">↑ {{ $diaEntrega }}</span>
                                 @else
-                                    <span class="entrega-date">{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}</span>
+                                    <span class="entrega-date">{{ $fechaEntrega ? $fechaEntrega->format('d/m/Y') : '-' }}</span>
                                 @endif
                             </td>
                             <td class="col-progreso">
@@ -189,6 +202,9 @@
 
 <!-- Modal de Tracking/Seguimiento de Prendas -->
 <x-orders-components.order-tracking-modal />
+
+<!-- Modal Selector de Recibos de Producción -->
+@include('components.modals.recibos-process-selector')
 
 @push('scripts')
 <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>

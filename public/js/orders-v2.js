@@ -375,6 +375,14 @@ function handleMenuAction(event, action, ordenId) {
             console.log(' Abriendo factura del pedido');
             openDetailModal(ordenId, numeroPedido);
             break;
+        case 'recibos':
+            console.log(' Abriendo selector de recibos');
+            if (typeof globalThis.abrirSelectorRecibos === 'function') {
+                globalThis.abrirSelectorRecibos(ordenId);
+            } else {
+                console.error('abrirSelectorRecibos no disponible');
+            }
+            break;
         case 'seguimiento':
             console.log(' Abriendo seguimiento');
             if (typeof globalThis.openOrderTracking === 'function') {
