@@ -216,7 +216,7 @@
 @include('asesores.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
-@include('asesores.pedidos.modals.modal-agregar-editar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')
 @include('asesores.pedidos.modals.modal-editar-epp')
 
 @push('scripts')

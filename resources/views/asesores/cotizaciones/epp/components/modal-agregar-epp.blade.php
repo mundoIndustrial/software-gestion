@@ -8,4 +8,4 @@
     window.eppEnEdicion = window.eppEnEdicion || null;
 </script>
 
-@include('asesores.pedidos.modals.modal-agregar-editar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')

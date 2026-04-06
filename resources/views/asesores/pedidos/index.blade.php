@@ -163,10 +163,10 @@
 @include('asesores.pedidos.components.modal-editar-prenda')
 
 <!-- Componente: Modal Agregar EPP (mismo modal que en creación) -->
-@include('asesores.pedidos.modals.modal-agregar-editar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')
 
 <!-- Componente: Modal Editar EPP -->
-@include('asesores.pedidos.components.modal-editar-epp')
+@include('shared.pedidos.components.modal-editar-epp')
 
 {{-- modal-agregar-prenda-nueva YA se incluye desde components/modals.blade.php --}}
 {{-- NO duplicar aquí para evitar "Identifier already declared" en todos los scripts --}}
