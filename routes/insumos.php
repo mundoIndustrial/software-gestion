@@ -11,6 +11,17 @@ use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 // ========================================
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
     Route::get('/materiales', [InsumosController::class, 'materiales'])->name('materiales.index');
+    
+    // DEBUG: Endpoint que devuelve los parámetros exactos que recibe
+    Route::get('/debug-filter-params', function(\Illuminate\Http\Request $request) {
+        return response()->json([
+            'filter_columns' => $request->get('filter_columns', []),
+            'filter_values' => $request->get('filter_values', []),
+            'page' => $request->get('page', 1),
+            'query_string' => $request->getQueryString(),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    })->name('debug-filter-params');
     Route::post('/materiales/{pedido}/guardar', [InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
     Route::post('/materiales/{pedido}/eliminar', [InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
     Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');

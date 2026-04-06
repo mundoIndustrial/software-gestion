@@ -11,9 +11,21 @@ class ObtenerOpcionesFiltroInsumosUseCase
     ) {
     }
 
-    public function execute(string $column): array
+    public function execute(string $column, ?string $searchTerm = null): array
     {
-        return $this->repository->obtenerOpcionesFiltro($column);
+        $opciones = $this->repository->obtenerOpcionesFiltro($column);
+        
+        // Filtrar por término de búsqueda si se proporciona
+        if ($searchTerm && !empty($searchTerm)) {
+            $searchTermLower = strtolower($searchTerm);
+            $opciones = array_filter($opciones, function($valor) use ($searchTermLower) {
+                return stripos($valor, $searchTermLower) !== false;
+            });
+            // Reindexar array después de filtrar
+            $opciones = array_values($opciones);
+        }
+        
+        return $opciones;
     }
 }
 

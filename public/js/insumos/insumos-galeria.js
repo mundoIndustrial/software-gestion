@@ -221,7 +221,19 @@ class InsumosGaleria {
         }, 10);
         
         // Construir Galeria con los datos existentes
-        this.construirGaleria(galeria);
+        // Obtener la prenda actual del estado del modalManager
+        let prendaIdActual = null;
+        try {
+            if (window.PedidosRecibosModuleInstance && window.PedidosRecibosModuleInstance.modalManager) {
+                const estado = window.PedidosRecibosModuleInstance.modalManager.getState();
+                prendaIdActual = estado?.prendaId;
+                console.log('[abrirGaleria] Prenda actual del estado:', prendaIdActual);
+            }
+        } catch (e) {
+            console.log('[abrirGaleria] No se pudo obtener prendaId del estado:', e.message);
+        }
+        
+        this.construirGaleria(galeria, prendaIdActual);
         
         // Actualizar botones
         const btnFactura = document.getElementById('btn-factura');
@@ -253,22 +265,62 @@ class InsumosGaleria {
     /**
      * Construye la Galeria usando los datos del pedido actual
      */
-    construirGaleria(container) {
+    construirGaleria(container, prendaIdFiltro = null) {
         console.log('[construirGaleria] Iniciando construccion de Galeria');
+        console.log('[construirGaleria] Filtrando por prendaId:', prendaIdFiltro);
         
         // Obtener los datos del pedido actual - intentar multiples fuentes
-        let datosActuales = window.receiptManager ? window.receiptManager.datosFactura : null;
+        let datosActuales = null;
         
-        // Fallback: Si no hay receiptManager, intentar con PedidosRecibosModule
-        if (!datosActuales && window.pedidosRecibosModule) {
-            const estado = window.pedidosRecibosModule.getEstado();
-            if (estado && estado.datosCompletos) {
-                datosActuales = estado.datosCompletos;
-                console.log('[construirGaleria] Datos obtenidos desde PedidosRecibosModule:', datosActuales);
+        // OPCIÓN 1: Intentar desde el PedidosRecibosModule que se usa en /insumos/materiales
+        try {
+            if (window.PedidosRecibosModuleInstance && typeof window.PedidosRecibosModuleInstance.modalManager !== 'undefined') {
+                const estado = window.PedidosRecibosModuleInstance.modalManager.getState();
+                if (estado && estado.datosCompletos) {
+                    datosActuales = estado.datosCompletos;
+                    console.log('[construirGaleria] ✓ Datos obtenidos desde PedidosRecibosModuleInstance.modalManager');
+                }
+            }
+        } catch (e) {
+            console.log('[construirGaleria] No se pudieron obtener datos de PedidosRecibosModuleInstance:', e.message);
+        }
+        
+        // OPCIÓN 2: Si no hay datos, intentar con receiptManager (para compatibilidad con otros contextos)
+        if (!datosActuales && window.receiptManager && window.receiptManager.datosFactura) {
+            datosActuales = window.receiptManager.datosFactura;
+            console.log('[construirGaleria] Datos obtenidos desde ReceiptManager');
+        }
+        
+        // OPCIÓN 3: Fallback: Si no hay receiptManager, intentar con PedidosRecibosModule global
+        if (!datosActuales && window.pedidosRecibosModule && typeof window.pedidosRecibosModule.modalManager !== 'undefined') {
+            try {
+                const estado = window.pedidosRecibosModule.modalManager.getState();
+                if (estado && estado.datosCompletos) {
+                    datosActuales = estado.datosCompletos;
+                    console.log('[construirGaleria] Datos obtenidos desde PedidosRecibosModule.modalManager');
+                }
+            } catch (e) {
+                console.log('[construirGaleria] No se pudieron obtener datos de PedidosRecibosModule:', e.message);
             }
         }
         
-        console.log('[construirGaleria] Datos del ReceiptManager:', datosActuales);
+        if (!datosActuales) {
+            console.warn('[construirGaleria] ❌ Buscando por modalManager global en window...');
+            for (const key in window) {
+                if (key.toLowerCase().includes('modal') && typeof window[key] === 'object' && window[key].getState) {
+                    try {
+                        const estado = window[key].getState();
+                        if (estado && estado.datosCompletos) {
+                            datosActuales = estado.datosCompletos;
+                            console.log(`[construirGaleria] ✓ Datos encontrados en window.${key}.getState()`);
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+        
+        console.log('[construirGaleria] Datos finales:', datosActuales ? '✓ Encontrados' : '✗ NO encontrados');
         
         if (!datosActuales) {
             console.warn('[construirGaleria] No hay datos disponibles de ninguna fuente, mostrando mensaje simple');
@@ -298,10 +350,17 @@ class InsumosGaleria {
         let tieneImagenes = false;
         this.imagenesActuales = [];
         
+        // Si hay filtro de prenda, filtrar solo esa prenda
+        let prendasAMostrar = datosActuales.prendas;
+        if (prendaIdFiltro !== null && prendaIdFiltro !== undefined) {
+            prendasAMostrar = datosActuales.prendas.filter(p => p.id == prendaIdFiltro);
+            console.log('[construirGaleria] Filtrado a prenda específica:', prendaIdFiltro, 'Resultados:', prendasAMostrar.length);
+        }
+        
         // Recorrer prendas y mostrar imagenes
-        datosActuales.prendas.forEach((prenda, prendaIndex) => {
+        prendasAMostrar.forEach((prenda, prendaIndex) => {
             const nombrePrenda = prenda.nombre || prenda.nombre_prenda || `Prenda ${prendaIndex + 1}`;
-            console.log(`[construirGaleria] Analizando prenda ${prendaIndex}:`, nombrePrenda);
+            console.log(`[construirGaleria] Analizando prenda ${prendaIndex}:`, nombrePrenda, 'ID:', prenda.id);
             
             if (prenda.imagenes && prenda.imagenes.length > 0) {
                 tieneImagenes = true;
@@ -983,3 +1042,8 @@ window.insumosHandlers.galeria = {
     inicializarBotonCerrarInsumos,
     mostrarImagen: (index) => insumosGaleria.mostrarImagen(index),
 };
+
+// Exponerlas también globalmente para que onclick="toggleFactura()" funcione
+window.toggleFactura = toggleFactura;
+window.toggleGaleria = toggleGaleria;
+window.cerrarModal = cerrarModal;

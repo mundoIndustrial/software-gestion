@@ -13,7 +13,7 @@
         { src: '/js/insumos/pagination.js' },
         { src: '/js/insumos/index.js', type: 'module' },
         { src: '/js/insumos/modal-handlers-insumos.js' },
-        { src: '/js/insumos/filter-manager-insumos.js' },
+        { src: '/js/insumos/filter-manager-no-url.js' },
         { src: '/js/insumos/material-operations-insumos.js' },
         { src: '/js/insumos/form-handlers-insumos.js' },
         { src: '/js/insumos/status-actions-insumos.js' },
@@ -40,6 +40,11 @@
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = scriptDef.src;
+            // Agregar timestamp para evitar caché en desarrollo
+            if (scriptDef.src.includes('filter-manager')) {
+                script.src += '?t=' + Date.now();
+                console.log('[PageLoader] Forzando recarga sin caché:', script.src);
+            }
             script.defer = false;
             script.async = false;
             if (scriptDef.type === 'module') {

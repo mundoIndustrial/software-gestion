@@ -37,7 +37,10 @@ class RecibosViewTransformer
                 'cliente' => $recibo->cliente,
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado,
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area,
+                'recibo_estado' => $recibo->recibo_estado,
+                'recibo_area' => $recibo->recibo_area,
                 'pedido_estado' => $recibo->pedido_estado,
+                'pedido_area' => $recibo->pedido_area,
                 'created_at' => $fechaInicioOrden,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
                 'fecha_estimada_de_entrega' => !empty($recibo->fecha_estimada_de_entrega)

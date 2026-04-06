@@ -66,56 +66,29 @@
                 </div>
             </div>
 
-            {{-- Buscador Mejorado --}}
-            <form action="{{ route('insumos.materiales.index') }}" method="GET" class="flex gap-3 items-end" style="padding: 0 0.5rem;">
+            {{-- Buscador - Sin URL, estado local puro --}}
+            <div class="flex gap-3 items-end" style="padding: 0 0.5rem;">
                 <div class="flex-1 relative">
                     <div class="relative">
                         <input 
                             type="text" 
                             name="search" 
-                            value="{{ request('search') }}"
                             placeholder="Buscar por N° Recibo (1234) o Cliente (Empresa ABC)..."
                             class="w-full px-4 py-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-sm"
                         >
+                        {{-- El botón X se agregará dinámicamente por search-debounce.js --}}
                     </div>
                 </div>
-                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2 whitespace-nowrap">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    Buscar
-                </button>
-                @if((request('filter_column') && request('filter_value')) || (request('filter_columns') && request('filter_values')))
-                    <a href="{{ route('insumos.materiales.index') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition shadow-sm flex items-center gap-2 whitespace-nowrap border border-gray-300">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                        </svg>
-                        Limpiar Filtros
-                    </a>
-                @endif
-                @if(request('search'))
-                    <a href="{{ route('insumos.materiales.index') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition shadow-sm flex items-center gap-2 whitespace-nowrap border border-gray-300">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Limpiar Búsqueda
-                    </a>
-                @endif
-            </form>
-
-            {{-- Mensaje de búsqueda activa --}}
-            @if(request('search'))
-                <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
-                    <p class="text-blue-800 text-sm flex items-center gap-2">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                        <strong>Búsqueda activa:</strong> Mostrando <strong>{{ $ordenes->total() }}</strong> resultado(s) para "<strong>{{ request('search') }}</strong>"
-                    </p>
-                </div>
-            @endif
+            </div>
         </div>
     </div>
+
+    {{-- Botón Flotante Limpiar Filtros (esquina inferior derecha) --}}
+    <button type="button" id="btnClearAllFiltersFloating" onclick="clearAllTableFilters();" class="floating-clear-filter-btn" style="display: none;" title="Limpiar filtros activos">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+    </button>
 
     <div style="margin: 0; width: 100%; overflow: visible;">
         {{-- Tabla Principal de Órdenes --}}
@@ -412,7 +385,7 @@
 <!-- Modal de Detalle de Orden -->
 <div id="modal-overlay" data-insumos-action="close-modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;"></div>
 
-<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
 </div>
 

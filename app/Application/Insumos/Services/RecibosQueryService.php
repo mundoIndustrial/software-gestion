@@ -24,9 +24,7 @@ class RecibosQueryService
         ]);
 
         try {
-            $query = $this->repository->buildBaseQuery();
-            \Log::info(' Base query construida exitosamente');
-
+            // Obtener parámetros de filtro
             $search = $request->get('search', '');
             $filterColumns = (array) $request->get('filter_columns', []);
             $filterValuesArray = (array) $request->get('filter_values', []);
@@ -41,6 +39,18 @@ class RecibosQueryService
                     $filterValues = [(string) $singleValue];
                 }
             }
+
+            // Si hay filtros o búsqueda, usar query sin los filtros por defecto
+            $hasFilters = !empty($filterColumns) || !empty($filterValuesArray) || !empty($search);
+            if ($hasFilters) {
+                \Log::info(' Aplicando query con filtros personalizados (sin filtros por defecto)');
+                $query = $this->repository->buildBaseQueryForFiltering();
+            } else {
+                \Log::info(' Usando query base con filtros por defecto');
+                $query = $this->repository->buildBaseQuery();
+            }
+            
+            \Log::info(' Base query construida exitosamente');
 
             $query = $this->repository->applyFilters(
                 $query,

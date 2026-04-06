@@ -840,3 +840,108 @@ body.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-tertiary);
 }
+
+/* ========================================
+   ESTILOS PARA FILTROS CON BADGES
+   ======================================== */
+
+.filter-btn-insumos {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.filter-btn-insumos.has-filter {
+    color: #ef4444;
+}
+
+.filter-badge {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: badgePop 0.3s ease-out;
+}
+
+@keyframes badgePop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   BOTÓN FLOTANTE LIMPIAR FILTROS
+   ======================================== */
+
+.floating-clear-filter-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), 
+                0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    z-index: 999;
+    animation: floatIn 0.4s ease-out;
+}
+
+.floating-clear-filter-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5),
+                0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.floating-clear-filter-btn:active {
+    transform: scale(0.95);
+}
+
+@keyframes floatIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .floating-clear-filter-btn {
+        bottom: 1rem;
+        right: 1rem;
+        width: 48px;
+        height: 48px;
+    }
+
+    .floating-clear-filter-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}

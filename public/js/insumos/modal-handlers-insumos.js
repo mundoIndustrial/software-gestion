@@ -3,6 +3,7 @@
  * Superficie estable minima para modales de materiales.
  */
 let openOrderDetailModalHandler = null;
+let pedidosRecibosModuleInstance = null;
 
 async function resolveOpenOrderDetailModalHandler() {
     if (typeof openOrderDetailModalHandler === 'function') {
@@ -10,9 +11,13 @@ async function resolveOpenOrderDetailModalHandler() {
     }
 
     const { PedidosRecibosModule } = await import('/js/modulos/pedidos-recibos/PedidosRecibosModule.js');
-    const module = new PedidosRecibosModule();
+    pedidosRecibosModuleInstance = new PedidosRecibosModule();
+    
+    // Guardar la instancia globalmente para que otros scripts (como insumos-galeria.js) puedan acceder a ella
+    window.PedidosRecibosModuleInstance = pedidosRecibosModuleInstance;
+    
     openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) =>
-        module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+        pedidosRecibosModuleInstance.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
 
     return openOrderDetailModalHandler;
 }

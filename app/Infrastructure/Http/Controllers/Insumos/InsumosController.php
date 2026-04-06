@@ -95,11 +95,13 @@ class InsumosController extends Controller
 
     /**
      * Obtener valores únicos de una columna para filtros
+     * Soporta búsqueda opcional con parámetro ?search=
      */
-    public function obtenerValoresFiltro($column)
+    public function obtenerValoresFiltro(Request $request, $column)
     {
         try {
-            $resultado = $this->obtenerOpcionesFiltroUseCase->execute($column);
+            $searchTerm = $request->query('search', null);
+            $resultado = $this->obtenerOpcionesFiltroUseCase->execute($column, $searchTerm);
             return response()->json([
                 'success' => true,
                 'column' => $column,
@@ -125,6 +127,7 @@ class InsumosController extends Controller
                 'url' => $request->fullUrl(),
                 'user_id' => Auth::id(),
                 'user_name' => Auth::user()?->name ?? 'unknown',
+                'is_ajax' => $request->header('X-Requested-With') === 'XMLHttpRequest',
             ]);
 
             $user = Auth::user();
@@ -147,6 +150,17 @@ class InsumosController extends Controller
                 'first_page' => $ordenes->currentPage() ?? 'N/A'
             ]);
             
+            // Si es una petición AJAX, retornar solo la tabla HTML
+            if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+                Log::info(' Retornando respuesta AJAX (solo tabla)');
+                return view('insumos.materiales.table-partial', [
+                    'ordenes' => $ordenes,
+                    'user' => $user,
+                    'search' => $request->get('search', ''),
+                ])->render();
+            }
+            
+            // Si no es AJAX, retornar la vista completa
             return view('insumos.materiales.index', [
                 'ordenes' => $ordenes,
                 'user' => $user,
@@ -158,6 +172,15 @@ class InsumosController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'url' => $request->fullUrl(),
             ]);
+            
+            // Si es AJAX, retornar error JSON
+            if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al obtener recibos: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return $this->handleException($e, 'obtener recibos de costura');
         }
     }
