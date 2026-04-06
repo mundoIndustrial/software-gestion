@@ -1344,7 +1344,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         allowEscapeKey: true,
         showConfirmButton: false,
         showCloseButton: true,
-        titleClass: 'text-lg font-bold text-gray-800',
+        customClass: { title: 'text-lg font-bold text-gray-800' },
         didOpen: () => {
             const popup = Swal.getPopup();
             if (popup) {

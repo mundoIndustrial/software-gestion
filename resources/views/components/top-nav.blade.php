@@ -128,7 +128,7 @@
         </div>
         <script>
         (function() {
-            let bodegaTabActiva = 'ordenes';
+            let bodegaTabActiva = 'novedades';
             const rutaBase = window.location.pathname.startsWith('/despacho') ? '/despacho' : '/gestion-bodega';
 
             const bellBtn = document.getElementById('bodegaBellBtn');
@@ -176,50 +176,7 @@
                         badge.textContent = data.totalGeneral;
                         badge.style.display = data.totalGeneral > 0 ? 'flex' : 'none';
 
-                        let html = `
-                            <div style="display:flex; border-bottom:2px solid #e0e6ed;">
-                                <button class="bodega-notif-tab" data-tab="ordenes"
-                                    style="flex:1; padding:0.6rem; border:none; background:${bodegaTabActiva === 'ordenes' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${bodegaTabActiva === 'ordenes' ? '#2563eb' : '#7f8c8d'}; border-bottom:${bodegaTabActiva === 'ordenes' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
-                                    Órdenes (${data.totalPendientes})
-                                </button>
-                                <button class="bodega-notif-tab" data-tab="novedades"
-                                    style="flex:1; padding:0.6rem; border:none; background:${bodegaTabActiva === 'novedades' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${bodegaTabActiva === 'novedades' ? '#2563eb' : '#7f8c8d'}; border-bottom:${bodegaTabActiva === 'novedades' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
-                                    Novedades (${data.totalNovedades})
-                                </button>
-                            </div>`;
-
-                        // Tab Órdenes
-                        html += `<div class="bodega-tab-content" data-content="ordenes" style="display:${bodegaTabActiva === 'ordenes' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
-                        if (data.notificaciones && data.notificaciones.length > 0) {
-                            html += data.notificaciones.map(notif => `
-                                <div style="padding:0.7rem 1rem; border-bottom:1px solid #e0e6ed; ${notif.visto ? 'opacity:0.55;' : ''}">
-                                    <div style="display:flex; gap:0.6rem; align-items:start;">
-                                        <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="bodega-pedido-check" data-pedido-id="${notif.id}" ${notif.visto ? 'checked' : ''}
-                                                style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;">
-                                        </label>
-                                        <div style="flex:1; min-width:0;">
-                                            <h4 style="margin:0 0 0.3rem 0; font-size:0.9rem; color:#2c3e50;">
-                                                <strong>Orden #${notif.numero_pedido}</strong>
-                                            </h4>
-                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
-                                                Cliente: <strong>${notif.cliente}</strong>
-                                            </p>
-                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
-                                                Asesor: ${notif.asesor}
-                                            </p>
-                                            <small style="color:#999;">${notif.fecha}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('');
-                        } else {
-                            html += `<div style="padding:2rem; text-align:center; color:#7f8c8d;">
-                                <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">verified</span>
-                                <p>¡Sin órdenes pendientes!</p>
-                            </div>`;
-                        }
-                        html += `</div>`;
+                        let html = ``;
 
                         // Tab Novedades
                         html += `<div class="bodega-tab-content" data-content="novedades" style="display:${bodegaTabActiva === 'novedades' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
@@ -252,15 +209,6 @@
 
                         list.innerHTML = html;
 
-                        // Tab listeners
-                        list.querySelectorAll('.bodega-notif-tab').forEach(tab => {
-                            tab.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                bodegaTabActiva = this.dataset.tab;
-                                cargarNotificacionesBodega();
-                            });
-                        });
-
                         function toggleVistoBodega(checkbox, url) {
                             const item = checkbox.closest('div[style*="border-bottom"]');
                             const checked = checkbox.checked;
@@ -283,14 +231,6 @@
                             })
                             .catch(err => console.error('Error toggle visto:', err));
                         }
-
-                        // Checkbox pedidos
-                        list.querySelectorAll('.bodega-pedido-check').forEach(chk => {
-                            chk.addEventListener('change', function(e) {
-                                e.stopPropagation();
-                                toggleVistoBodega(this, `${rutaBase}/notificaciones/pedido/${this.dataset.pedidoId}/toggle-visto`);
-                            });
-                        });
 
                         // Checkbox novedades
                         list.querySelectorAll('.bodega-news-check').forEach(chk => {

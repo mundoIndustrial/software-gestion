@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BodegaNota;
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\PedidoProduccion;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,15 +85,15 @@ class DespachoObservacionesController extends Controller
         
         // Agregar el campo de novedades del pedido si existe
         if ($pedido->novedades) {
-            // Separar múltiples cambios de EPP
-            $cambios = preg_split('/\n\n(?=\[HOMOLOGADO EPP\])/', $pedido->novedades);
+            // Separar múltiples novedades por salto doble
+            $cambios = array_filter(
+                array_map('trim', explode("\n\n", $pedido->novedades)),
+                fn($c) => !empty($c)
+            );
             
             foreach ($cambios as $cambio) {
                 $cambio = trim($cambio);
-                if (empty($cambio)) continue;
-                
-                // Solo procesar cambios de EPP
-                if (strpos($cambio, '[HOMOLOGADO EPP]') === false) {
+                if (empty($cambio)) {
                     continue;
                 }
                 
@@ -102,9 +103,32 @@ class DespachoObservacionesController extends Controller
                 $fecha = $pedido->created_at;
                 $contenidoLimpio = $cambio;
                 
-                // Buscar línea con formato "(Asesor - fecha)" al final
-                if (preg_match('/^(.+?)\n\(([^)]+)\)$/', $cambio, $matches)) {
-                    // Formato nuevo con información de asesor
+                // Intenta parsear formato: "Rol-Nombre-FechaHora - Contenido"
+                if (preg_match('/^([^-]+)-([^-]+)-(.+?)\s*-\s+(.+)$/is', $cambio, $matches)) {
+                    $rol = trim($matches[1]);
+                    $nombreAsesor = trim($matches[2]);
+                    $fechaTexto = trim($matches[3] ?? '');
+                    $contenidoLimpio = trim($matches[4]);
+                    
+                    // Intentar parsear la fecha
+                    if (!empty($fechaTexto)) {
+                        try {
+                            $fecha = Carbon::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
+                            if (!$fecha) {
+                                $fecha = Carbon::createFromFormat('d/m/Y g:i a', $fechaTexto);
+                            }
+                            if (!$fecha) {
+                                $fecha = Carbon::createFromFormat('d/m/Y H:i:s', $fechaTexto);
+                            }
+                            if (!$fecha) {
+                                $fecha = $pedido->created_at;
+                            }
+                        } catch (\Exception $e) {
+                            $fecha = $pedido->created_at;
+                        }
+                    }
+                } elseif (preg_match('/^(.+?)\n\(([^)]+)\)$/', $cambio, $matches)) {
+                    // Formato nuevo con información de asesor en paréntesis al final
                     $contenidoLimpio = trim($matches[1]);
                     $datosAsesor = trim($matches[2]);
                     
@@ -116,9 +140,9 @@ class DespachoObservacionesController extends Controller
                         
                         // Intentar parsear la fecha
                         try {
-                            $fecha = \DateTime::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
+                            $fecha = Carbon::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
                             if (!$fecha) {
-                                $fecha = \DateTime::createFromFormat('d/m/Y H:i:s', $fechaTexto);
+                                $fecha = Carbon::createFromFormat('d/m/Y H:i:s', $fechaTexto);
                             }
                             if (!$fecha) {
                                 $fecha = $pedido->created_at;
@@ -137,14 +161,22 @@ class DespachoObservacionesController extends Controller
                     $nombreAsesor = 'Sistema';
                 }
                 
+                // Convertir fecha a ISO 8601
+                $fechaIso = $fecha;
+                if ($fecha instanceof Carbon) {
+                    $fechaIso = $fecha->toIso8601String();
+                } elseif (is_object($fecha)) {
+                    $fechaIso = $fecha->format('c');
+                }
+                
                 $novedadItem = [
                     'source' => 'pedido',
                     'id' => 'pedido-novedad-' . md5($cambio),
                     'contenido' => $contenidoLimpio,
                     'usuario_nombre' => $nombreAsesor,
                     'usuario_rol' => $rol,
-                    'created_at' => is_object($fecha) ? $fecha->toIso8601String() : $fecha,
-                    'updated_at' => is_object($fecha) ? $fecha->toIso8601String() : $fecha,
+                    'created_at' => $fechaIso,
+                    'updated_at' => $fechaIso,
                 ];
                 
                 array_unshift($observaciones, $novedadItem);
