@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases\RegistroOrden;
 
+use Carbon\Carbon;
 use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
 use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
@@ -145,16 +146,19 @@ class GetSeguimientoPorPrendaUseCase
             }
         }
 
-        $procesosSeguimiento = $this->obtenerYCalcularProcesos(
+        $procesosSeguimientoData = $this->obtenerYCalcularProcesos(
             $pedidoModel->numero_pedido,
             $prenda->id,
             $numeroReciboCostura,
             $reciboCosturaId
         );
+        
+        $procesosSeguimiento = $procesosSeguimientoData['procesos'] ?? [];
+        $fechaPrimerProceso = $procesosSeguimientoData['fecha_primer_proceso'] ?? null;
 
         $seguimientosPorArea = $this->agruparProcesosPorArea($procesosSeguimiento);
 
-        $seguimientosPorArea = $this->inyectarAreaInsumos($seguimientosPorArea, $consecutivos);
+        $seguimientosPorArea = $this->inyectarAreaInsumos($seguimientosPorArea, $consecutivos, $fechaPrimerProceso);
 
         $datosActivacion = $this->calcularDatosActivacionRecibo($consecutivos, $pedidoModel);
 
@@ -191,7 +195,7 @@ class GetSeguimientoPorPrendaUseCase
             'recibos_especiales' => $recibosEspeciales,
         ]);
 
-        return [
+        $datosLista = [
             'id' => $prenda->id,
             'nombre_prenda' => $prenda->nombre_prenda,
             'descripcion' => $prenda->descripcion,
@@ -201,10 +205,17 @@ class GetSeguimientoPorPrendaUseCase
             'seguimientos_por_area' => $seguimientosPorArea,
             'procesos' => $procesosArray,
             'consecutivos' => $consecutivos->toArray(),
-            'datos_activacion' => $datosActivacion,
+            'datos_activacion_recibo' => $datosActivacion,
             'area_mas_reciente' => $this->obtenerAreaMasReciente($consecutivos),
             'recibos_especiales' => $recibosEspeciales,
         ];
+
+        \Log::info('[construirSeguimientoPrenda] DATOS FINALES CON ACTIVACION', [
+            'prenda_id' => $prenda->id,
+            'datos_activacion_recibo' => $datosActivacion,
+        ]);
+
+        return $datosLista;
     }
 
     /**
@@ -239,10 +250,15 @@ class GetSeguimientoPorPrendaUseCase
             'procesos_areas' => $procesos->pluck('proceso')->unique()->toArray()
         ]);
 
-        // Obtener fechas de completado por área
         $completadosPorArea = [];
         if ($reciboCosturaId) {
             $completadosPorArea = $this->consecutivosRepository->obtenerFechasCompletadoPorArea($reciboCosturaId);
+        }
+
+        // Obtener fecha del primer proceso (será la fecha_fin de Insumos)
+        $fechaPrimerProceso = null;
+        if ($procesos->count() > 0) {
+            $fechaPrimerProceso = $procesos->first()->created_at;
         }
 
         $procesosCalculados = [];
@@ -250,6 +266,7 @@ class GetSeguimientoPorPrendaUseCase
             $siguienteProceso = $procesos->get($index + 1);
 
             $clone = clone $proceso;
+            // IMPORTANTE: Usar SOLO created_at, no la columna fecha_inicio que está mal
             $clone->fecha_inicio = $proceso->created_at;
             $clone->fecha_fin = $siguienteProceso ? $siguienteProceso->created_at : null;
 
@@ -268,7 +285,10 @@ class GetSeguimientoPorPrendaUseCase
             $procesosCalculados[] = $clone;
         }
 
-        return $procesosCalculados;
+        return [
+            'procesos' => $procesosCalculados,
+            'fecha_primer_proceso' => $fechaPrimerProceso,
+        ];
     }
 
     /**
@@ -337,9 +357,13 @@ class GetSeguimientoPorPrendaUseCase
             $duracionEnArea = CalculadorDiasService::calcularDiasHabiles($inicioCalculo, $finCalculo);
         }
 
-        // Calcular total de días (desde inicio hasta completado/fin)
+        // Calcular total de días = duracion_asignacion + duracion_en_area
+        // (No hacer cálculo independiente para evitar duplicación de lógica)
         $totalDias = null;
-        if ($fechaInicio) {
+        if ($duracionAsignacion !== null && $duracionEnArea !== null) {
+            $totalDias = $duracionAsignacion + $duracionEnArea;
+        } elseif ($fechaInicio) {
+            // Fallback si falta alguna duración individual
             $finCalculo = $fechaCompletado ?: $fechaFin ?: now();
             $totalDias = CalculadorDiasService::calcularDiasHabiles($fechaInicio, $finCalculo);
         }
@@ -356,7 +380,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Inyectar área virtual Insumos
      */
-    private function inyectarAreaInsumos(array $seguimientosPorArea, $consecutivos): array
+    private function inyectarAreaInsumos(array $seguimientosPorArea, $consecutivos, $fechaPrimerProceso = null): array
     {
         $hasInsumos = false;
         foreach (array_keys($seguimientosPorArea) as $k) {
@@ -382,13 +406,9 @@ class GetSeguimientoPorPrendaUseCase
             return $seguimientosPorArea;
         }
 
-        $fechaEnvioProduccion = null;
-        foreach (array_keys($seguimientosPorArea) as $k) {
-            if (str_contains(strtolower($k), 'corte')) {
-                $fechaEnvioProduccion = $seguimientosPorArea[$k]['fecha_inicio'] ?? null;
-                break;
-            }
-        }
+        // CORRECCIÓN: Usar directamente created_at del primer proceso
+        // NO usar fecha_inicio de Corte que está incorrecta
+        $fechaEnvioProduccion = $fechaPrimerProceso;
 
         $yaEnviado = !empty($fechaEnvioProduccion);
 
@@ -416,6 +436,7 @@ class GetSeguimientoPorPrendaUseCase
 
     /**
      * Calcular datos de activación del recibo
+     * Retorna las fechas (creación orden, activación recibo) y tiempo transcurrido
      */
     private function calcularDatosActivacionRecibo($consecutivos, $pedidoModel): array
     {
@@ -431,18 +452,27 @@ class GetSeguimientoPorPrendaUseCase
             return [];
         }
 
-        $reciboCreatedAt = $reciboCostura->created_at ?? null;
-        $fechaCreacionOrden = $pedidoModel->created_at ?? null;
+        // Convertir a Carbon si es necesario
+        $reciboCreatedAt = $reciboCostura->created_at ? ($reciboCostura->created_at instanceof Carbon ? $reciboCostura->created_at : Carbon::parse($reciboCostura->created_at)) : null;
+        $fechaCreacionOrden = $pedidoModel->created_at ? ($pedidoModel->created_at instanceof Carbon ? $pedidoModel->created_at : Carbon::parse($pedidoModel->created_at)) : null;
 
         $diasHabiles = null;
         if ($fechaCreacionOrden && $reciboCreatedAt) {
             $diasHabiles = CalculadorDiasService::calcularDiasHabiles($fechaCreacionOrden, $reciboCreatedAt);
         }
 
-        return [
+        $datosFormateados = [
+            'fecha_creacion_orden' => $fechaCreacionOrden,
+            'fecha_creacion_orden_formateada' => $fechaCreacionOrden ? $fechaCreacionOrden->format('d/m/Y \a \l\a\s H:i') : null,
+            'fecha_activacion_recibo' => $reciboCreatedAt,
+            'fecha_activacion_recibo_formateada' => $reciboCreatedAt ? $reciboCreatedAt->format('d/m/Y \a \l\a\s H:i') : null,
             'dias_transcurridos' => $diasHabiles,
-            'fecha_activacion' => $reciboCreatedAt,
+            'dias_transcurridos_texto' => $diasHabiles !== null ? ($diasHabiles === 0 ? '0 días' : "$diasHabiles día" . ($diasHabiles !== 1 ? 's' : '')) : null,
         ];
+
+        \Log::info('[calcularDatosActivacionRecibo] RETORNANDO', $datosFormateados);
+
+        return $datosFormateados;
     }
 
     /**

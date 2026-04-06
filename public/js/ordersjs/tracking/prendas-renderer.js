@@ -433,23 +433,23 @@ class PrendasRenderer {
       const fechasWrapper = document.createElement('div');
       fechasWrapper.className = 'tracking-info-row';
 
-      const fechaCreacionOrden = globalThis.currentOrderData?.created_at || null;
-
-      // Usar datos_activacion_recibo pre-calculados por el backend (más confiable)
+      // Usar datos_activacion_recibo del backend (más confiable)
       const datosActivacion = prenda?.datos_activacion_recibo || {};
-      reciboCreatedAt = datosActivacion.fecha_activacion_recibo || null;
+      
+      const fechaCreacionOrden = datosActivacion.fecha_creacion_orden || null;
+      const fechaCreacionOrdenFormateada = datosActivacion.fecha_creacion_orden_formateada || null;
+      
+      const fechaActivacionRecibo = datosActivacion.fecha_activacion_recibo || null;
+      const fechaActivacionReciboFormateada = datosActivacion.fecha_activacion_recibo_formateada || null;
+      
+      const diasTranscurridos = datosActivacion.dias_transcurridos;
+      const diasTranscurridosTexto = datosActivacion.dias_transcurridos_texto || '-';
 
-      // Fallback: buscar en consecutivos si datos_activacion_recibo no está disponible
-      if (!reciboCreatedAt) {
-        const consecutivosList = typeof normalizeConsecutivos === 'function' 
-          ? normalizeConsecutivos(prenda?.consecutivos)
-          : [];
-        if (consecutivosList.length > 0) {
-          const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
-          const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true)) || consecutivosList[0];
-          reciboCreatedAt = reciboActivo?.created_at || null;
-        }
-      }
+      console.log('[prendas-renderer] datosActivacion:', {
+        fechaCreacionOrden: fechaCreacionOrdenFormateada,
+        fechaActivacionRecibo: fechaActivacionReciboFormateada,
+        diasTranscurridos: diasTranscurridosTexto
+      });
 
       const cardCreacionOrden = document.createElement('div');
       cardCreacionOrden.className = 'tracking-info-card';
@@ -464,7 +464,7 @@ class PrendasRenderer {
         </div>
         <div class="tracking-info-content">
           <span class="tracking-info-label">Fecha creación orden</span>
-          <span class="tracking-info-value">${typeof formatDateTime === 'function' ? formatDateTime(fechaCreacionOrden) : '-'}</span>
+          <span class="tracking-info-value">${fechaCreacionOrdenFormateada || '-'}</span>
         </div>
       `;
 
@@ -479,45 +479,29 @@ class PrendasRenderer {
         </div>
         <div class="tracking-info-content">
           <span class="tracking-info-label">Fecha activación recibo</span>
-          <span class="tracking-info-value">${datosActivacion.fecha_activacion_recibo_formateada || (typeof formatDateTime === 'function' ? formatDateTime(reciboCreatedAt) : '-') || '-'}</span>
+          <span class="tracking-info-value">${fechaActivacionReciboFormateada || '-'}</span>
         </div>
       `;
 
-      // Tiempo transcurrido: usar valor pre-calculado del backend, o calcular como fallback
-      let tiempoTranscurridoText = datosActivacion.tiempo_transcurrido_completo || '-';
-      if (tiempoTranscurridoText === '-') {
-        const fechaCreacionDate = typeof toDateObject === 'function' ? toDateObject(fechaCreacionOrden) : null;
-        const reciboActDate = typeof toDateObject === 'function' ? toDateObject(reciboCreatedAt) : null;
-        if (fechaCreacionDate && reciboActDate) {
-          const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
-          const human = typeof formatDurationHuman === 'function' ? formatDurationHuman(diffMs) : '';
-          const diasHabiles = typeof calcularDiasHabilesSync === 'function' 
-            ? calcularDiasHabilesSync(fechaCreacionDate, reciboActDate)
-            : 0;
-          tiempoTranscurridoText = diasHabiles > 0
-            ? `${human} (${diasHabiles} días hábiles)`
-            : human;
-        }
-      }
-
-      const cardTiempoTrans = document.createElement('div');
-      cardTiempoTrans.className = 'tracking-info-card';
-      cardTiempoTrans.innerHTML = `
+      // Tiempo transcurrido
+      const cardTiempoTranscurrido = document.createElement('div');
+      cardTiempoTranscurrido.className = 'tracking-info-card';
+      cardTiempoTranscurrido.innerHTML = `
         <div class="tracking-info-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 6v6l4 2"></path>
+            <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
         </div>
         <div class="tracking-info-content">
           <span class="tracking-info-label">Tiempo transcurrido</span>
-          <span class="tracking-info-value">${tiempoTranscurridoText}</span>
+          <span class="tracking-info-value">${diasTranscurridosTexto}</span>
         </div>
       `;
 
       fechasWrapper.appendChild(cardCreacionOrden);
       fechasWrapper.appendChild(cardActivacionRecibo);
-      fechasWrapper.appendChild(cardTiempoTrans);
+      fechasWrapper.appendChild(cardTiempoTranscurrido);
       activationSection.appendChild(fechasWrapper);
       container.appendChild(activationSection);
     } catch (e) {

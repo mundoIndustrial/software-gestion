@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="row" style="margin-bottom: 20px;">
+        <div class="col-12">
+            <h2 style="margin: 0; color: #1f2937; font-weight: 600;">Recibos de Costura</h2>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <!-- Table Component -->
@@ -12,7 +17,9 @@
     </div>
 </div>
 
-<!-- Contenedor de dropdowns dinámicos (igual que en insumos) -->
+
+
+<!-- Contenedor para dropdowns (requerido por DropdownService.js) -->
 <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none; width: 0; height: 0; overflow: visible;"></div>
 
 <!-- Modal para ver detalles del recibo -->

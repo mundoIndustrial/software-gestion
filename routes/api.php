@@ -103,3 +103,11 @@ require_once base_path('routes/api-supervisor-pedidos.php');
  */
 require_once base_path('routes/api-asesores.php');
 
+/**
+ * Test Routes - Diagnóstico (solo en desarrollo)
+ */
+if (config('app.debug')) {
+    require_once base_path('routes/test.php');
+}
+
+
