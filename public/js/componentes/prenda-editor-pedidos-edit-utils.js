@@ -5,6 +5,37 @@
 (function() {
     'use strict';
 
+    function _centrarModalSwal(modal, zIndex = 2000000) {
+        const container = modal?.closest('.swal2-container');
+        if (!container) return;
+
+        container.style.position = 'fixed';
+        container.style.inset = '0';
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.padding = '1rem';
+        container.style.zIndex = String(zIndex);
+    }
+
+    function _mostrarModalPrendaBloqueada(mensaje) {
+        const texto = mensaje || 'Esta prenda se encuentra en produccion, por ende no se puede editar. Comunicate con el lider de produccion.';
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Edicion bloqueada',
+                text: texto,
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    container: 'swal-bloqueo-edicion-container'
+                },
+                didOpen: (modal) => _centrarModalSwal(modal)
+            });
+            return;
+        }
+        alert(texto);
+    }
+
     async function _obtenerPrendaCompletaDesdeAPI(prenda, pedidoId, prendaId, getUrlPrefix, normalizarDatosBD) {
         let prendaCompleta = prenda;
         if (!(pedidoId && prendaId)) return prendaCompleta;
@@ -23,14 +54,41 @@
         });
 
         if (!response.ok) {
+            let errorJson = null;
+            try {
+                errorJson = await response.json();
+            } catch (e) {
+                errorJson = null;
+            }
+
+            if (response.status === 409 && (errorJson?.bloqueada_edicion || errorJson?.success === false)) {
+                throw {
+                    isBlocked: true,
+                    message: errorJson?.message || 'Esta prenda se encuentra en produccion, por ende no se puede editar. Comunicate con el lider de produccion.'
+                };
+            }
+
             console.warn('[PedidosAdapter]  Error HTTP', response.status, '- usando datos locales');
             return prendaCompleta;
         }
 
         const result = await response.json();
         if (!(result.success && result.prenda)) {
+            if (result?.bloqueada_edicion || result?.prenda?.puede_editar === false || result?.prenda?.bloqueo_edicion?.bloqueada) {
+                throw {
+                    isBlocked: true,
+                    message: result?.message || result?.prenda?.bloqueo_edicion?.mensaje
+                };
+            }
             console.warn('[PedidosAdapter]  Respuesta sin datos de prenda, usando datos locales');
             return prendaCompleta;
+        }
+
+        if (result.prenda.puede_editar === false || result.prenda.bloqueo_edicion?.bloqueada) {
+            throw {
+                isBlocked: true,
+                message: result.prenda.bloqueo_edicion?.mensaje
+            };
         }
 
         prendaCompleta = result.prenda;
@@ -115,6 +173,11 @@
             await _abrirModalConPrendaCompleta(prendaCompleta, prendaIndex, abrirModalManual);
             _ajustarUIModoEdicionPrenda();
         } catch (error) {
+            if (error && error.isBlocked) {
+                cerrarSweetAlertsActivos();
+                _mostrarModalPrendaBloqueada(error.message);
+                return;
+            }
             console.error('[PedidosAdapter] Error al cargar prenda:', error);
             if (typeof Swal !== 'undefined') {
                 Swal.fire('Error', 'No se pudieron cargar los datos de la prenda: ' + error.message, 'error');

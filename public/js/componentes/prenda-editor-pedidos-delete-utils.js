@@ -5,6 +5,19 @@
 (function() {
     'use strict';
 
+    function _centrarModalSwal(modal, zIndex = 2000000) {
+        const container = modal?.closest('.swal2-container');
+        if (!container) return;
+
+        container.style.position = 'fixed';
+        container.style.inset = '0';
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.padding = '1rem';
+        container.style.zIndex = String(zIndex);
+    }
+
     async function _enviarEliminarPrendaRequest(pedidoId, prendaId, motivo, getUrlPrefix) {
         const urlPrefix = getUrlPrefix();
         const deleteUrl = `${urlPrefix.save}/${pedidoId}/eliminar-prenda`;
@@ -28,13 +41,32 @@
 
     async function _obtenerErrorEliminarDesdeResponse(response) {
         let errorMsg = 'Error desconocido';
+        let errorJson = null;
         try {
-            const error = await response.json();
-            errorMsg = error.message || error.error || JSON.stringify(error);
+            errorJson = await response.json();
+            errorMsg = errorJson.message || errorJson.error || JSON.stringify(errorJson);
         } catch (e) {
             errorMsg = `HTTP ${response.status}: ${response.statusText}`;
         }
-        return errorMsg;
+        return { errorMsg, errorJson };
+    }
+
+    function _mostrarBloqueoEliminacion(errorMsg) {
+        const texto = errorMsg || 'Esta prenda se encuentra en produccion, por ende no se puede eliminar. Comunicate con el lider de produccion.';
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Eliminacion bloqueada',
+                text: texto,
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    container: 'swal-bloqueo-eliminacion-container'
+                },
+                didOpen: (modal) => _centrarModalSwal(modal)
+            });
+            return;
+        }
+        alert(texto);
     }
 
     function _actualizarEstadoLocalTrasEliminar(prendaIndex) {
@@ -77,8 +109,12 @@
 
             const response = await _enviarEliminarPrendaRequest(pedidoId, prendaId, motivo, getUrlPrefix);
             if (!response.ok) {
-                const errorMsg = await _obtenerErrorEliminarDesdeResponse(response);
+                const { errorMsg, errorJson } = await _obtenerErrorEliminarDesdeResponse(response);
                 console.error('[PedidosAdapter] Error al eliminar:', errorMsg);
+                if (response.status === 409) {
+                    _mostrarBloqueoEliminacion(errorMsg);
+                    return;
+                }
                 if (mostrarError) {
                     mostrarError(`No se pudo eliminar: ${errorMsg}`);
                 }

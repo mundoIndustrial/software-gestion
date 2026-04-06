@@ -275,6 +275,15 @@ class PrendasPedidoController
             return $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
             ]);
+        } catch (\DomainException $e) {
+            Log::warning('[PrendasPedidoController] Edicion bloqueada por consecutivo', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_edicion' => true,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('[PrendasPedidoController] Error actualizando prenda completa', [
@@ -350,6 +359,10 @@ class PrendasPedidoController
             $response = $this->jsonFailure('Prenda no encontrada para actualizar', 404);
         } catch (ValidationException $e) {
             $response = $this->jsonFailure(self::VALIDACION_FALLIDA, 422, ['errors' => $e->errors()]);
+        } catch (\DomainException $e) {
+            $response = $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_edicion' => true,
+            ]);
         } catch (\Throwable $e) {
             Log::error('[PrendasPedidoController] Error en endpoint puente actualizarPrendaDesdeProduccion', [
                 'pedido_id' => $pedidoId,
@@ -445,6 +458,15 @@ class PrendasPedidoController
             $response = $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
             ]);
+        } catch (\DomainException $e) {
+            Log::warning('[PrendasPedidoController] Eliminacion bloqueada por consecutivo', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $response = $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_eliminacion' => true,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('[PrendasPedidoController] Error eliminando prenda', [
@@ -490,6 +512,16 @@ class PrendasPedidoController
             ]);
 
             return $this->jsonFailure('Prenda no encontrada', 404);
+        } catch (\DomainException $e) {
+            Log::warning(' [PRENDA-DATOS] Edicion bloqueada por consecutivo', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_edicion' => true,
+            ]);
 
         } catch (\Exception $e) {
             Log::error(' [PRENDA-DATOS] Error obteniendo datos de prenda', [

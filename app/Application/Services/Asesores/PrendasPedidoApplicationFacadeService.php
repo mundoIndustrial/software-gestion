@@ -30,6 +30,7 @@ final class PrendasPedidoApplicationFacadeService
         private readonly GestionEliminarPrendaService $gestionEliminarPrendaService,
         private readonly ConsultarEdicionPrendaPedidoService $consultarEdicionPrendaPedidoService,
         private readonly PrendaPedidoEdicionAuditoriaService $prendaPedidoEdicionAuditoriaService,
+        private readonly PrendaEdicionBloqueoService $prendaEdicionBloqueoService,
     ) {
     }
 
@@ -92,6 +93,11 @@ final class PrendasPedidoApplicationFacadeService
 
     public function actualizarPrendaCompleta(Request $request, int $pedidoId, array $validated): mixed
     {
+        $prendaId = (int) ($validated['prenda_id'] ?? 0);
+        if ($prendaId > 0) {
+            $this->validarEdicionPermitida($pedidoId, $prendaId);
+        }
+
         $preparacion = $this->prepararActualizacionPrendaService->preparar($request, $pedidoId, $validated);
         $validated = $preparacion['validated'];
 
@@ -139,16 +145,48 @@ final class PrendasPedidoApplicationFacadeService
 
     public function eliminarPrenda(int $pedidoId, int $prendaId, string $motivo): array
     {
+        $this->validarEliminacionPermitida($pedidoId, $prendaId);
         return $this->gestionEliminarPrendaService->eliminarPrenda($pedidoId, $prendaId, $motivo);
     }
 
     public function obtenerDatosPrendaEdicion(int $pedidoId, int $prendaId): array
     {
+        $this->validarEdicionPermitida($pedidoId, $prendaId);
         return $this->consultarEdicionPrendaPedidoService->obtenerDatosPrendaEdicion($pedidoId, $prendaId);
     }
 
     public function obtenerDatosEdicion(int $pedidoId): array
     {
         return $this->consultarEdicionPrendaPedidoService->obtenerDatosEdicion($pedidoId);
+    }
+
+    private function validarEdicionPermitida(int $pedidoId, int $prendaId): void
+    {
+        $bloqueo = $this->prendaEdicionBloqueoService->evaluar($pedidoId, $prendaId);
+        if (!($bloqueo['bloqueada'] ?? false)) {
+            return;
+        }
+
+        $mensaje = (string) ($bloqueo['mensaje']
+            ?? $this->prendaEdicionBloqueoService->mensajeBloqueo('editar', $bloqueo['area'] ?? null));
+        throw new \DomainException($mensaje);
+    }
+
+    private function validarEliminacionPermitida(int $pedidoId, int $prendaId): void
+    {
+        $bloqueo = $this->prendaEdicionBloqueoService->evaluar($pedidoId, $prendaId);
+        if (!($bloqueo['bloqueada'] ?? false)) {
+            return;
+        }
+
+        if (!empty($bloqueo['estado_pedido'])) {
+            throw new \DomainException(
+                $this->prendaEdicionBloqueoService->mensajeBloqueoPorEstadoPedido('eliminar', $bloqueo['estado_pedido'])
+            );
+        }
+
+        throw new \DomainException(
+            $this->prendaEdicionBloqueoService->mensajeBloqueo('eliminar', $bloqueo['area'] ?? null)
+        );
     }
 }

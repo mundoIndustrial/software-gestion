@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\DB;
 
 class ObtenerDatosPrendaPedidoService
 {
+    public function __construct(
+        private readonly PrendaEdicionBloqueoService $prendaEdicionBloqueoService,
+    ) {
+    }
+
     public function obtenerParaEdicion(int $pedidoId, int $prendaId): ?array
     {
         \Log::info('[PRENDA-DATOS] Cargando datos de prenda para edición', [
@@ -34,6 +39,7 @@ class ObtenerDatosPrendaPedidoService
         $procesos = $this->obtenerProcesos($prendaId);
         $tallas = $this->obtenerTallas($prendaId);
         $generos = array_keys($tallas);
+        $bloqueoEdicion = $this->prendaEdicionBloqueoService->evaluar($pedidoId, $prendaId);
 
         $datos = [
             'id' => $prenda->id,
@@ -49,6 +55,8 @@ class ObtenerDatosPrendaPedidoService
             'generos' => $generos,
             'variantes' => $variantesFormateadas,
             'procesos' => $procesos,
+            'puede_editar' => $bloqueoEdicion['puede_editar'],
+            'bloqueo_edicion' => $bloqueoEdicion,
         ];
 
         \Log::info('[PRENDA-DATOS] Datos compilados exitosamente', [
