@@ -159,8 +159,14 @@
         const isDespachoPage = globalThis.location.pathname.includes('/despacho');
 
         // Buscar en botones de despacho primero
-        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        let btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
         console.log(`[DEBUG-BADGE] - Botón despacho encontrado:`, !!btn);
+        
+        if (!btn) {
+            // Buscar en botones antiguos de despacho (backward compatibility)
+            btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+            console.log(`[DEBUG-BADGE] - Botón despacho (legacy) encontrado:`, !!btn);
+        }
         
         if (!btn) {
             // Buscar en botones de asesores/pedidos
@@ -240,11 +246,9 @@
     }
 
     async function refrescarBadgesObservacionesDespacho() {
-        console.log(`[DEBUG]  refrescarBadgesObservacionesDespacho INICIADO`);
         
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
-            console.log(`[DEBUG] - Filas encontradas con data-pedido-id: ${rows.length}`);
             
             const ids = rows
                 .map(r => r.getAttribute('data-pedido-id'))
@@ -252,10 +256,7 @@
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
 
-            console.log(`[DEBUG] - IDs de pedidos extraídos:`, ids);
-
             if (ids.length === 0) {
-                console.log(`[DEBUG]  No hay IDs de pedidos, saliendo`);
                 return;
             }
 
@@ -264,12 +265,7 @@
             const url = isDespachoPage 
                 ? '/despacho/observaciones/resumen'
                 : '/api/asesores/pedidos/observaciones-despacho/resumen';
-                
-            console.log(`[DEBUG] - Página actual: ${globalThis.location.pathname}`);
-            console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
-            console.log(`[DEBUG] - URL a consultar: ${url}`);
 
-            console.log(`[DEBUG]  Enviando request al servidor...`);
             const r = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -281,25 +277,17 @@
                 cache: 'no-store',
             });
 
-            console.log(`[DEBUG] - Response status: ${r.status}`);
-            console.log(`[DEBUG] - Response ok: ${r.ok}`);
-
             const data = await r.json().catch(() => null);
-            console.log(`[DEBUG]  Respuesta del servidor:`, data);
             
             const map = (data && data.success && data.data) ? data.data : {};
-            console.log(`[DEBUG] - Map de unread counts:`, map);
 
-            console.log(`[DEBUG] Renderizando badges para cada pedido...`);
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
-                console.log(`[DEBUG] - Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
             
-            console.log(`[DEBUG]  Refrescado de badges completado`);
         } catch (e) {
-            console.error('[DEBUG]  Error refrescando badges de observaciones despacho:', e);
+            console.error('Error refrescando badges de observaciones despacho:', e);
         }
     }
 
@@ -367,8 +355,6 @@
         const url = isDespachoPage 
             ? `/despacho/${pedidoId}/observaciones`
             : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho`;
-            
-        console.log(`[DEBUG] Obteniendo observaciones desde: ${url}`);
         
         const r = await fetch(url, {
             method: 'GET',
@@ -1046,39 +1032,27 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log(`[DEBUG]  DOMContentLoaded - Iniciando sistema de badges`);
-        console.log(`[DEBUG] - Página actual: ${globalThis.location.pathname}`);
-        console.log(`[DEBUG] - URL completa: ${globalThis.location.href}`);
         
         try {
-            console.log(`[DEBUG]  Buscando filas con data-pedido-id...`);
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
             const ids = rows.map(r => r.getAttribute('data-pedido-id')).filter(Boolean);
-            console.log(`[DEBUG] - Filas encontradas: ${rows.length}`);
-            console.log(`[DEBUG] - IDs encontrados:`, ids);
             
             const ejecutar = async () => {
-                console.log(`[DEBUG] ⏰ Iniciando carga de previews...`);
                 for (const id of ids) {
-                    console.log(`[DEBUG] - Cargando preview para pedido ${id}...`);
                     await cargarPreviewObservacionesDespacho(id);
                     await new Promise(r => setTimeout(r, 25));
                 }
-                console.log(`[DEBUG]  Previews cargados`);
                 
                 // Refresh badges after loading previews
-                console.log(`[DEBUG]  Refrescando badges después de cargar previews...`);
                 await refrescarBadgesObservacionesDespacho();
                 refrescarBadgesNovedadesDespacho();
 
                 // Setup WebSocket para tiempo real
-                console.log(`[DEBUG]  Configurando WebSocket...`);
                 setupObservacionesRealtime();
-                console.log(`[DEBUG]  Sistema de badges completamente inicializado`);
             };
             ejecutar();
         } catch (e) {
-            console.error('[DEBUG]  Error inicializando previews de observaciones despacho:', e);
+            console.error('Error inicializando previews de observaciones despacho:', e);
         }
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
@@ -1087,14 +1061,9 @@
             const botonObs = e.target.closest('.despacho-obs-btn[data-pedido-id]');
             if (botonObs) {
                 const pedidoId = botonObs.getAttribute('data-pedido-id');
-                console.log(`[DEBUG-BADGE] 🖱️ USUARIO HIZO CLIC EN BOTÓN DE OBSERVACIONES`);
-                console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
-                console.log(`[DEBUG-BADGE] - Botón:`, botonObs);
-                console.log(`[DEBUG-BADGE] - Event target:`, e.target);
                 
                 // Verificar estado actual antes de marcar
                 const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-                console.log(`[DEBUG-BADGE] - ¿Era visto recientemente antes del clic?: ${wasRecentlySeen}`);
                 
                 // Marcar como visto en localStorage inmediatamente
                 console.log(`[DEBUG-BADGE]  Marcando como visto en localStorage...`);

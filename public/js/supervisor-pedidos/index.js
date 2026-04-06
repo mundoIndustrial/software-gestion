@@ -271,7 +271,7 @@ function resolveFilterColumn(btn) {
     const title = btn.getAttribute('title') || '';
     switch (title) {
         case 'Filtrar Fecha': return 'fecha';
-        case 'Filtrar N�mero':
+        case 'Filtrar Número':
         case 'Filtrar Número': return 'numero';
         case 'Filtrar Cliente': return 'cliente';
         case 'Filtrar Estado': return 'estado';

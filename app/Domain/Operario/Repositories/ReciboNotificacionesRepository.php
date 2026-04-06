@@ -24,9 +24,9 @@ interface ReciboNotificacionesRepository
     public function marcarLeida(int $userId, int $reciboId, string $tipoRecibo, \DateTimeInterface $fecha): void;
 
     /**
-     * Marca como leÃ­das todas las notificaciones no vistas segÃºn los mismos filtros de listar.
+     * Marca como leidas todas las notificaciones no vistas segun los mismos filtros de listar.
      *
-     * @return int Cantidad de recibos marcados como vistos (segÃºn los ids encontrados)
+     * @return int Cantidad de recibos marcados como vistos (segun los ids encontrados)
      */
     public function marcarTodasLeidas(
         int $userId,

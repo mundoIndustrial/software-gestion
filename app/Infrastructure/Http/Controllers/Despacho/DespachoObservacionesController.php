@@ -74,16 +74,117 @@ class DespachoObservacionesController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Observaciones marcadas como leídas',
+            'message' => 'Observaciones marcadas como leidas',
         ]);
     }
 
     public function obtenerObservaciones(PedidoProduccion $pedido): JsonResponse
     {
+        $observaciones = $this->service->obtenerObservacionesUnificadas((int) $pedido->id);
+        
+        // Agregar el campo de novedades del pedido si existe
+        if ($pedido->novedades) {
+            // Separar mÃºltiples cambios de EPP
+            $cambios = preg_split('/\n\n(?=\[HOMOLOGADO EPP\])/', $pedido->novedades);
+            
+            foreach ($cambios as $cambio) {
+                $cambio = trim($cambio);
+                if (empty($cambio)) continue;
+                
+                // Solo procesar cambios de EPP
+                if (strpos($cambio, '[HOMOLOGADO EPP]') === false) {
+                    continue;
+                }
+                
+                // Parsear nombre del asesor y fecha del mensaje
+                $nombreAsesor = null;
+                $rol = 'Asesor';
+                $fecha = $pedido->created_at;
+                $contenidoLimpio = $cambio;
+                
+                // Buscar lÃ­nea con formato "(Asesor - fecha)" al final
+                if (preg_match('/^(.+?)\n\(([^)]+)\)$/', $cambio, $matches)) {
+                    // Formato nuevo con informaciÃ³n de asesor
+                    $contenidoLimpio = trim($matches[1]);
+                    $datosAsesor = trim($matches[2]);
+                    
+                    // Parsear "Asesor - fecha" o "Asesor (Rol) - fecha"
+                    if (preg_match('/^(.+?)\s*(?:\(([^)]+)\))?\s*-\s*(.+)$/', $datosAsesor, $asesoresMatches)) {
+                        $nombreAsesor = trim($asesoresMatches[1]);
+                        $rol = !empty($asesoresMatches[2]) ? trim($asesoresMatches[2]) : 'Asesor';
+                        $fechaTexto = trim($asesoresMatches[3]);
+                        
+                        // Intentar parsear la fecha
+                        try {
+                            $fecha = \DateTime::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
+                            if (!$fecha) {
+                                $fecha = \DateTime::createFromFormat('d/m/Y H:i:s', $fechaTexto);
+                            }
+                            if (!$fecha) {
+                                $fecha = $pedido->created_at;
+                            }
+                        } catch (\Exception $e) {
+                            $fecha = $pedido->created_at;
+                        }
+                    }
+                } else {
+                    // Formato antiguo sin informaciÃ³n de asesor - buscar en auditorÃ­a
+                    $nombreAsesor = $this->buscarUsuarioDeAuditoriaEpp($pedido->id);
+                }
+                
+                // Si todavÃ­a no tiene nombre, usar "Sistema"
+                if (!$nombreAsesor) {
+                    $nombreAsesor = 'Sistema';
+                }
+                
+                $novedadItem = [
+                    'source' => 'pedido',
+                    'id' => 'pedido-novedad-' . md5($cambio),
+                    'contenido' => $contenidoLimpio,
+                    'usuario_nombre' => $nombreAsesor,
+                    'usuario_rol' => $rol,
+                    'created_at' => is_object($fecha) ? $fecha->toIso8601String() : $fecha,
+                    'updated_at' => is_object($fecha) ? $fecha->toIso8601String() : $fecha,
+                ];
+                
+                array_unshift($observaciones, $novedadItem);
+            }
+        }
+        
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerObservacionesUnificadas((int) $pedido->id),
+            'data' => $observaciones,
         ]);
+    }
+
+    /**
+     * Busca en la auditorÃ­a el usuario que hizo cambios de EPP para un pedido
+     */
+    private function buscarUsuarioDeAuditoriaEpp(int $pedidoId): ?string
+    {
+        try {
+            // Buscar cambios de EPP en auditorÃ­a
+            $cambio = DB::table('pedidos_auditoria')
+                ->where('pedidos_produccion_id', $pedidoId)
+                ->where(function ($query) {
+                    $query->where('tipo_cambio', 'like', '%EPP%')
+                        ->orWhere('detalles', 'like', '%EPP%');
+                })
+                ->latest('created_at')
+                ->first();
+            
+            if ($cambio && $cambio->usuario_id) {
+                // Obtener nombre del usuario desde tabla users
+                $usuario = DB::table('users')->where('id', $cambio->usuario_id)->first();
+                if ($usuario) {
+                    return $usuario->name;
+                }
+            }
+        } catch (\Exception $e) {
+            // Si hay error, simplemente retorna null
+        }
+        
+        return null;
     }
 
     public function guardarObservacion(Request $request, PedidoProduccion $pedido): JsonResponse
@@ -103,7 +204,7 @@ class DespachoObservacionesController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Observación guardada exitosamente',
+            'message' => 'Observacion guardada exitosamente',
             'data' => $this->service->mapPayload($row),
         ]);
     }
@@ -124,12 +225,12 @@ class DespachoObservacionesController extends Controller
         } catch (NotFoundHttpException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Observación no encontrada',
+                'message' => 'Observacion no encontrada',
             ], 404);
         } catch (AccessDeniedHttpException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'No tienes permiso para editar esta observación',
+                'message' => 'No tienes permiso para editar esta observacion',
             ], 403);
         }
 
@@ -137,7 +238,7 @@ class DespachoObservacionesController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Observación actualizada correctamente',
+            'message' => 'Observacion actualizada correctamente',
             'data' => $this->service->mapPayload($row),
         ]);
     }
@@ -149,12 +250,12 @@ class DespachoObservacionesController extends Controller
         } catch (NotFoundHttpException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Observación no encontrada',
+                'message' => 'Observacion no encontrada',
             ], 404);
         } catch (AccessDeniedHttpException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'No tienes permiso para eliminar esta observación',
+                'message' => 'No tienes permiso para eliminar esta observacion',
             ], 403);
         }
 
@@ -162,7 +263,7 @@ class DespachoObservacionesController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Observación eliminada correctamente',
+            'message' => 'Observacion eliminada correctamente',
         ]);
     }
 

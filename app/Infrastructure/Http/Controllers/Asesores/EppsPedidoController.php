@@ -108,7 +108,10 @@ class EppsPedidoController
                 $validated['motivo'],
                 (int) $validated['cantidad'],
                 $validated['observaciones'] ?? null,
-                isset($validated['epp_id']) ? (int) $validated['epp_id'] : null
+                isset($validated['epp_id']) ? (int) $validated['epp_id'] : null,
+                auth()?->user()?->name,
+                now(),
+                implode(', ', auth()?->user()?->getRoleNames()?->toArray() ?? ['Asesor'])
             );
 
             $this->prendaPedidoEdicionAuditoriaService->registrarEppNuevo(

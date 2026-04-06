@@ -244,7 +244,7 @@ class OperarioController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al marcar como leÃ­da',
+                'message' => 'Error al marcar como leidas',
             ], 500);
         }
     }
@@ -267,7 +267,7 @@ class OperarioController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al marcar todas como leÃ­das',
+                'message' => 'Error al marcar todas como leidas',
             ], 500);
         }
     }

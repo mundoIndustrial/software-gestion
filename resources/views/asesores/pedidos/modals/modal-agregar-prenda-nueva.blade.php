@@ -275,7 +275,7 @@
                     </div>
                 </div>
 
-                <!-- Variaciones -->
+                {{-- <!-- Variaciones -->
                 <div class="form-section" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1.25rem; margin-top: 1.5rem; background: rgba(0, 102, 204, 0.02);">
                     <label class="form-label-primary" style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                         <span class="material-symbols-rounded" style="color: #0066cc; font-size: 1.5rem;">tune</span>
@@ -368,6 +368,7 @@
                         </table>
                     </div>
                 </div>
+                --}}
                 
                 <!-- Procesos -->
                 <div class="form-section">

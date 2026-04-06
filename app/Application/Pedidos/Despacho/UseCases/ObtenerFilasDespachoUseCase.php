@@ -69,6 +69,8 @@ class ObtenerFilasDespachoUseCase implements ObtenerFilasDespachoUseCaseContract
             'prendas.prendaPedidoTallas',
             'epps.epp',
             'epps.imagenes',
+            'epps.homologadoDe.epp',
+            'epps.homologaciones.epp',
         ])->find($pedidoId);
 
         if (!$pedido) {

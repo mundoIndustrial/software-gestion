@@ -11,6 +11,7 @@ use App\Models\BodegaNota;
 use App\Models\DesparChoParcialesModel;
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaEntrega;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -26,7 +27,7 @@ class DespachoControlApplicationService
     public function obtenerListadoIndex(string $search): array
     {
         $query = PedidoProduccion::query()
-            ->whereIn('estado', ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('estado', ['Pendiente', 'En Ejecucion', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC')
@@ -59,7 +60,7 @@ class DespachoControlApplicationService
 
             $pedido->fecha_entrega_prendas = $fechaEntrega && $fechaEntrega->entrega
                 ? $fechaEntrega->entrega->fecha_entrega->format('d/m/Y h:i A')
-                : '—';
+                : '-';
 
             return $pedido;
         });
@@ -154,7 +155,7 @@ class DespachoControlApplicationService
 
     public function obtenerFacturaDatos(PedidoProduccion $pedido): array
     {
-        $facturaService = new \App\Application\Pedidos\Services\FacturaPedidoService();
+        $facturaService = new \App\Infrastructure\Services\Pedidos\FacturaPedidoService();
         return $facturaService->obtenerDatosFactura($pedido->id);
     }
 
@@ -178,7 +179,7 @@ class DespachoControlApplicationService
             })
             ->first();
 
-        Log::info('[DespachoController] Búsqueda de despacho', [
+        Log::info('[DespachoController] BÃºsqueda de despacho', [
             'pedido_id' => $pedido->id,
             'tipo_item' => $validated['tipo_item'],
             'item_id' => $validated['item_id'],
@@ -188,7 +189,7 @@ class DespachoControlApplicationService
         ]);
 
         if (!$despacho) {
-            Log::info('[DespachoController] Creando registro de despacho automáticamente', [
+            Log::info('[DespachoController] Creando registro de despacho automÃ¡ticamente', [
                 'pedido_id' => $pedido->id,
                 'tipo_item' => $validated['tipo_item'],
                 'item_id' => $validated['item_id'],
@@ -220,7 +221,7 @@ class DespachoControlApplicationService
 
         return [
             'success' => true,
-            'message' => 'Ítem marcado como entregado',
+            'message' => 'item marcado como entregado',
             'despacho_id' => $despacho->id,
             'fecha_entrega' => $despacho->fresh()->fecha_entrega?->format('Y-m-d'),
         ];
@@ -375,6 +376,19 @@ class DespachoControlApplicationService
                     'fecha_entrega' => now(),
                     'updated_at' => now(),
                 ]);
+
+                // Si es prenda, tambiÃ©n actualizar PrendaEntrega para que se muestre la fecha en la vista
+                if ($tipoItem === 'prenda' && $itemId) {
+                    PrendaEntrega::updateOrCreate(
+                        ['prenda_pedido_id' => $itemId],
+                        [
+                            'entregado' => true,
+                            'fecha_entrega' => now(),
+                            'usuario_id' => auth()->id(),
+                        ]
+                    );
+                }
+
                 $itemsProcesados++;
             }
 
@@ -406,7 +420,7 @@ class DespachoControlApplicationService
 
             return [
                 'success' => true,
-                'message' => "Pedido #{$pedido->numero_pedido} marcado como entregado completamente ({$itemsProcesados} ítems procesados)",
+                'message' => "Pedido #{$pedido->numero_pedido} marcado como entregado completamente ({$itemsProcesados} items procesados)",
                 'items_procesados' => $itemsProcesados,
                 'items_creados' => $itemsCreados,
                 'estado_anterior' => $estadoAnterior,
@@ -439,7 +453,7 @@ class DespachoControlApplicationService
             ->values();
 
         $pendientesBodegueroText = $bodegaRows->count() === 0
-            ? '— Sin observaciones'
+            ? 'Sin observaciones'
             : $bodegaRows->map(function ($row) {
                 $fechaISO = $row->updated_at ?: $row->created_at;
                 $fecha = $fechaISO ? \Carbon\Carbon::parse($fechaISO)->format('d/m/Y H:i') : '';
@@ -448,7 +462,7 @@ class DespachoControlApplicationService
             })->implode("\n");
 
         $observacionesAsesoraText = $observacionesAsesora->count() === 0
-            ? '— Sin observaciones'
+            ? 'Sin observaciones'
             : $observacionesAsesora->map(function ($row) {
                 $fechaISO = $row->updated_at ?: $row->created_at;
                 $fecha = $fechaISO ? \Carbon\Carbon::parse($fechaISO)->format('d/m/Y H:i') : '';
@@ -491,7 +505,7 @@ class DespachoControlApplicationService
             $totalItems = $itemsPendientes->count();
             $itemsRestantes = $totalItems - $itemsEntregados;
 
-            Log::info('[DespachoController] Verificación de estado del pedido', [
+            Log::info('[DespachoController] VerificaciÃ³n de estado del pedido', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'total_items' => $totalItems,

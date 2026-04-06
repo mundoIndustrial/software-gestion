@@ -23,7 +23,10 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
         string $motivo,
         int $cantidadNueva,
         ?string $observacionesNuevas,
-        ?int $eppIdNuevo
+        ?int $eppIdNuevo,
+        ?string $nombreAsesor = null,
+        $timestamp = null,
+        ?string $rolAsesor = null
     ): array {
         $pedidoEppAnterior = PedidoEpp::findOrFail($pedidoEppIdAnterior);
         $epp = $pedidoEppAnterior->epp;
@@ -31,7 +34,32 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
 
         $pedido = PedidoProduccion::findOrFail($pedidoId);
 
-        $mensaje = "[HOMOLOGADO EPP] {$nombreEpp} (Cantidad anterior: {$pedidoEppAnterior->cantidad} → Nueva: {$cantidadNueva}) - Motivo: {$motivo}";
+        // Si no se proporciona nombre de asesor ni timestamp, usar actuales
+        if (!$nombreAsesor) {
+            $nombreAsesor = auth()?->user()?->name ?? 'Sistema';
+        }
+        if (!$rolAsesor && auth()?->user()) {
+            // Intentar obtener el rol del usuario (roles en Laravel)
+            $roles = auth()->user()->getRoleNames() ?? [];
+            $rolAsesor = count($roles) > 0 ? implode(', ', $roles->toArray()) : 'Asesor';
+        }
+        if (!$rolAsesor) {
+            $rolAsesor = 'Asesor';
+        }
+        if (!$timestamp) {
+            $timestamp = now();
+        }
+
+        $fechaFormato = is_string($timestamp) 
+            ? $timestamp 
+            : (is_object($timestamp) ? $timestamp->format('d/m/Y, g:i:s a') : now()->format('d/m/Y, g:i:s a'));
+
+        $datosAsesor = "{$nombreAsesor}";
+        if ($rolAsesor && $rolAsesor !== 'Asesor') {
+            $datosAsesor .= " ({$rolAsesor})";
+        }
+
+        $mensaje = "[HOMOLOGADO EPP] {$nombreEpp} (Cantidad anterior: {$pedidoEppAnterior->cantidad} → Nueva: {$cantidadNueva}) - Motivo: {$motivo}\n({$datosAsesor} - {$fechaFormato})";
         $pedido->novedades = $pedido->novedades
             ? $pedido->novedades . "\n\n" . $mensaje
             : $mensaje;

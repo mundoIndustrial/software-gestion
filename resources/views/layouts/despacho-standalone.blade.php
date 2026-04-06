@@ -142,6 +142,10 @@
     @push('styles')
         <link rel="stylesheet" href="{{ asset('css/top-nav.css') }}">
     @endpush
+    
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 <body>
 <div class="app-container">

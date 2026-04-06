@@ -238,7 +238,7 @@ async function cargarNovedadesAdvanced(pedidoId) {
     `;
     
     try {
-        const response = await fetch(`/registros/${pedidoId}/novedades`);
+        const response = await fetch(`/despacho/${pedidoId}/observaciones`);
         
         if (!response.ok) {
             throw new Error('Error al cargar novedades');
@@ -246,9 +246,15 @@ async function cargarNovedadesAdvanced(pedidoId) {
         
         const data = await response.json();
         
-        if (data.novedades && data.novedades.trim() !== '') {
-            // Parsear novedades del campo texto
-            novedadesData = parsearNovedades(data.novedades);
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+            // Mapear observaciones al formato esperado por renderizarNovedades
+            novedadesData = data.data.map(obs => ({
+                id: obs.id,
+                usuario: obs.usuario_nombre || 'Sin usuario',
+                fechaHora: obs.created_at ? new Date(obs.created_at).toLocaleString() : '',
+                texto: obs.contenido,
+                source: obs.source,
+            }));
             renderizarNovedades();
         } else {
             // No hay novedades

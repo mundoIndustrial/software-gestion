@@ -43,7 +43,7 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     };
     
-    // Funci�n auxiliar para agregar /storage/ a URLs
+    // Funcion auxiliar para agregar /storage/ a URLs
     const agregarStorage = (url) => {
         if (!url) return '';
         if (url.startsWith('/')) return url;
@@ -146,7 +146,7 @@ function generarTarjetaProceso(tipo, datos) {
     // HTML de Imagenes
     let imagenesHTML = '';
     
-    // ?? PRIORIDAD: Usar imagenesFiles si est�n disponibles (para archivos que a�n no se subieron)
+    // ?? PRIORIDAD: Usar imagenesFiles si estan disponibles (para archivos que aun no se subieron)
     // Esto evita depender de blob URLs antiguos que se invalidan
     let imagenesParaRenderizar = datos.imagenes || [];
     if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
@@ -155,10 +155,10 @@ function generarTarjetaProceso(tipo, datos) {
     }
     
     if (imagenesParaRenderizar && imagenesParaRenderizar.length > 0) {
-        // ?? CR�TICO: Filtrar Imagenes eliminadas usando imagenesEliminadas
-        // imagenesEliminadas contiene null para Imagenes eliminadas, objeto para v�lidas
+        // ?? CRITICO: Filtrar Imagenes eliminadas usando imagenesEliminadas
+        // imagenesEliminadas contiene null para Imagenes eliminadas, objeto para VALIDAS
         // IMPORTANTE: imagenesEliminadas solo contiene las Imagenes ORIGINALES (de BD)
-        // Las Imagenes nuevas (File objects) no est�n en imagenesEliminadas
+        // Las Imagenes nuevas (File objects) no estan en imagenesEliminadas
         
         let imagenesValidas = [];
         
@@ -170,7 +170,7 @@ function generarTarjetaProceso(tipo, datos) {
             const imagenesOriginales = imagenesParaRenderizar.slice(0, cantidadOriginales);
             const imagenesNuevas = imagenesParaRenderizar.slice(cantidadOriginales);
             
-            // Filtrar originales: solo incluir si no est� marcada como null en imagenesEliminadas
+            // Filtrar originales: solo incluir si no estan marcada como null en imagenesEliminadas
             const originalesFiltradas = imagenesOriginales.filter((img, idx) => {
                 return datos.imagenesEliminadas[idx] !== null;
             });
@@ -178,11 +178,11 @@ function generarTarjetaProceso(tipo, datos) {
             // Combinar: originales filtradas + todas las nuevas
             imagenesValidas = [...originalesFiltradas, ...imagenesNuevas];
             
-            console.log(`??? [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} v�lidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
+            console.log(`??? [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} validas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
         } else {
-            // Sin imagenesEliminadas: incluir todas las Imagenes v�lidas
+            // Sin imagenesEliminadas: incluir todas las Imagenes validas
             imagenesValidas = imagenesParaRenderizar.filter(img => img !== null && img !== undefined);
-            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} Imagenes v�lidas`);
+            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} Imagenes validas`);
         }
         
         console.log(`??? [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} Imagenes`, {
@@ -201,7 +201,7 @@ function generarTarjetaProceso(tipo, datos) {
                     <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Imagenes (${imagenesValidas.length})</strong>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         ${imagenesValidas.slice(0, 4).map((img, idx) => {
-                            // Determinar la URL seg�n el tipo de objeto
+                            // Determinar la URL segun el tipo de objeto
                             let imgSrc = '';
                             if (img instanceof File) {
                                 imgSrc = URL.createObjectURL(img);
@@ -237,7 +237,7 @@ function generarTarjetaProceso(tipo, datos) {
                             return imgSrc ? `
                                 <div style="position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" 
                                      onclick="abrirGaleriaImagenesProceso('${tipo}', ${idx})"
-                                     title="Click para ver galer�a">
+                                     title="Click para ver galeria">
                                     <img src="${imgSrc}" 
                                         style="width: 100%; height: 100%; object-fit: cover;" 
                                         alt="Imagen ${idx + 1}">
@@ -255,7 +255,7 @@ function generarTarjetaProceso(tipo, datos) {
                 </div>
             `;
         } else {
-            console.log(`?? [RENDER-TARJETA-${tipo}] Imagenes array existe pero est� vac�o`);
+            console.log(`?? [RENDER-TARJETA-${tipo}] Imagenes array existe pero esta vacio`);
         }
     } else {
         console.log(`?? [RENDER-TARJETA-${tipo}] NO hay Imagenes en datos.imagenes`, {
@@ -358,9 +358,9 @@ function generarTarjetaProceso(tipo, datos) {
                 
                 const tallaDisplay = formatearTallaKey(tallaKey);
 
-                // Ubicaciones - cada l�nea en su propia fila
+                // Ubicaciones - cada linea en su propia fila
                 const ubicsTalla = (detalle.ubicaciones || []).filter(u => u);
-                // Expandir: si una ubicaci�n tiene saltos de l�nea, separar en l�neas individuales
+                // Expandir: si una ubicacion tiene saltos de linea, separar en lineas individuales
                 const lineasUbic = [];
                 ubicsTalla.forEach(u => {
                     String(u).split(/\n/).forEach(linea => {
@@ -481,7 +481,7 @@ function generarTarjetaProceso(tipo, datos) {
     // ?? PRIORIDAD: Combinar Imagenes existentes (del servidor) con Files nuevos (no subidos)
     let fotosDisplay = [];
     
-    // 1. Agregar Imagenes existentes del servidor (URLs v�lidas)
+    // 1. Agregar Imagenes existentes del servidor (URLs validas)
     if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
         fotosDisplay = [...datos.fotosGenerales];
     } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
@@ -517,19 +517,19 @@ function generarTarjetaProceso(tipo, datos) {
         debeRenderizarFotosGenerales: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0
     });
     
-    // Renderizar ubicaci�n general si est� en modo "general"
+    // Renderizar ubicacion general si esta en modo "general"
     if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && ubicacionesDisplay) {
         ubicacionGeneralHTML = `
             <div style="background: #f3f4f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #d1d5db;">
                 <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                    <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACI�N GENERAL
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACION GENERAL
                 </strong>
                 <span style="color: #6b7280; font-size: 0.8rem; line-height: 1.4;">${ubicacionesDisplay}</span>
             </div>
         `;
     }
     
-    // Renderizar fotos generales si est� en modo "general"
+    // Renderizar fotos generales si esta en modo "general"
     if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0) {
         const fotosHTML = fotosDisplay.map((src, idx) => {
             let imgSrc = src;
@@ -558,16 +558,16 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     }
 
-    // --- Construir contenido seg�n el modo ---
+    // --- Construir contenido segun el modo ---
     let contenidoHTML;
     if (esGeneralMode) {
-        // Modo GENERAL: ubicaci�n general + fotos generales + tallas + observaciones por talla
+        // Modo GENERAL: ubicacion general + fotos generales + tallas + observaciones por talla
         contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${tallasHTML}${tallasConObservacionesHTML}`;
     } else if (contenidoPorTallasHTML) {
-        // Modo ESPEC�FICO: ubicaci�n general (si existe) + fotos generales (si existen) + detalles por talla
+        // Modo ESPECÍFICO: ubicacion general (si existe) + fotos generales (si existen) + detalles por talla
         contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`;
     } else {
-        // Modo GEN�RICO (sin tallas o formato antiguo)
+        // Modo GENÉRICO (sin tallas o formato antiguo)
         contenidoHTML = `<div style="margin-bottom: 0.75rem;">
                 <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
                 <div>${ubicacionesHTML}</div>

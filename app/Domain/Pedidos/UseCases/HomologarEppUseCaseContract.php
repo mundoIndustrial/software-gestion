@@ -10,7 +10,10 @@ interface HomologarEppUseCaseContract
         string $motivo,
         int $cantidadNueva,
         ?string $observacionesNuevas,
-        ?int $eppIdNuevo
+        ?int $eppIdNuevo,
+        ?string $nombreAsesor = null,
+        $timestamp = null,
+        ?string $rolAsesor = null
     ): array;
 }
 

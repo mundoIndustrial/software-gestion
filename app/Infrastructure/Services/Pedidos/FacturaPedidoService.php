@@ -491,10 +491,33 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
         if ($prenda->tallas && $prenda->tallas->count() > 0) {
             foreach ($prenda->tallas as $t) {
                 $genero = $t->genero ?? 'GENERAL';
+                $genero = strtoupper($genero);
+                $esSobremedida = (bool)($t->es_sobremedida ?? false);
+                
                 if (!isset($tallas[$genero])) {
                     $tallas[$genero] = [];
                 }
-                $tallas[$genero][$t->talla] = (int)$t->cantidad;
+                
+                // Si es sobremedida: siempre mostrar "SOBREMEDIDA" como talla
+                if ($esSobremedida) {
+                    $tallaKey = 'SOBREMEDIDA';
+                    if (!isset($tallas[$genero][$tallaKey])) {
+                        $tallas[$genero][$tallaKey] = 0;
+                    }
+                    $tallas[$genero][$tallaKey] += (int)$t->cantidad;
+                }
+                // Para UNISEX sin sobremedida: usar "—" 
+                elseif ($genero === 'UNISEX') {
+                    $tallaKey = '—';
+                    if (!isset($tallas[$genero][$tallaKey])) {
+                        $tallas[$genero][$tallaKey] = 0;
+                    }
+                    $tallas[$genero][$tallaKey] += (int)$t->cantidad;
+                }
+                // Para otros géneros: usar la talla específica
+                else {
+                    $tallas[$genero][$t->talla] = (int)$t->cantidad;
+                }
             }
         }
         
