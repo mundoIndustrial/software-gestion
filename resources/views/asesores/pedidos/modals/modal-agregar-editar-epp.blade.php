@@ -1599,8 +1599,53 @@ function prepararDatosParaEnvio(itemsPedido) {
     const formData = new FormData();
     
     itemsPedido.forEach((item, index) => {
-        if (item.tipo === 'epp' && item.imagenes && item.imagenes.length > 0) {
-            // Procesar EPP con imágenes
+        // Caso: item es el pedido completo (tiene propiedad epps[])
+        if (item && item.epps && Array.isArray(item.epps)) {
+            const pedidoProcesado = { ...item };
+            pedidoProcesado.epps = item.epps.map((epp, eppIndex) => {
+                const tieneImagenesConArchivo = epp.imagenes && epp.imagenes.length > 0 &&
+                    epp.imagenes.some(img => img.file);
+
+                const eppData = {
+                    ...epp,
+                    modo_imagenes: tieneImagenesConArchivo ? 'upload' : 'reuse'
+                };
+
+                if (tieneImagenesConArchivo) {
+                    eppData.imagenes = [];
+                    epp.imagenes.forEach((imagen, imgIndex) => {
+                        if (imagen.file) {
+                            const fieldName = `epp_imagen_${eppIndex}_${imgIndex}`;
+                            formData.append(fieldName, imagen.file);
+                            formData.append(`${fieldName}_metadata`, JSON.stringify({
+                                id: imagen.id,
+                                nombre: imagen.nombre,
+                                extension: imagen.extension,
+                                ruta_storage: imagen.ruta_storage,
+                                nombre_archivo: imagen.nombre_archivo,
+                                ruta_completa: imagen.ruta_completa,
+                                ruta_web: imagen.ruta_web,
+                                pedido_epp_id: imagen.pedido_epp_id,
+                                principal: imagen.principal,
+                                orden: imagen.orden
+                            }));
+                            eppData.imagenes.push({
+                                id: imagen.id,
+                                nombre: imagen.nombre,
+                                ruta_web: imagen.ruta_web,
+                                principal: imagen.principal,
+                                orden: imagen.orden
+                            });
+                        }
+                    });
+                }
+
+                return eppData;
+            });
+            datosLimpios.push(pedidoProcesado);
+
+        // Caso legacy: item es un EPP individual con imágenes
+        } else if (item.tipo === 'epp' && item.imagenes && item.imagenes.length > 0) {
             const eppData = {
                 uid: item.uid || `uid-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
                 epp_id: item.epp_id,
@@ -1608,17 +1653,14 @@ function prepararDatosParaEnvio(itemsPedido) {
                 categoria: item.categoria || '',
                 cantidad: item.cantidad,
                 observaciones: item.observaciones,
-                imagenes: [] // Array vacío, las imágenes van en FormData
+                modo_imagenes: 'upload',
+                imagenes: []
             };
             
-            // Agregar cada imagen al FormData
             item.imagenes.forEach((imagen, imgIndex) => {
                 if (imagen.file) {
-                    // Agregar archivo al FormData con nombre único
                     const fieldName = `epp_imagen_${index}_${imgIndex}`;
                     formData.append(fieldName, imagen.file);
-                    
-                    // Agregar metadatos de la imagen al FormData
                     formData.append(`${fieldName}_metadata`, JSON.stringify({
                         id: imagen.id,
                         nombre: imagen.nombre,
@@ -1631,8 +1673,6 @@ function prepararDatosParaEnvio(itemsPedido) {
                         principal: imagen.principal,
                         orden: imagen.orden
                     }));
-                    
-                    // Agregar referencia en el EPP (sin base64)
                     eppData.imagenes.push({
                         id: imagen.id,
                         nombre: imagen.nombre,
@@ -1645,8 +1685,12 @@ function prepararDatosParaEnvio(itemsPedido) {
             
             datosLimpios.push(eppData);
         } else {
-            // Agregar otros items sin modificar
-            datosLimpios.push(item);
+            // Agregar otros items sin modificar, asegurando modo_imagenes sólo en EPPs individuales
+            if (item.tipo === 'epp') {
+                datosLimpios.push({ ...item, modo_imagenes: item.modo_imagenes || 'reuse' });
+            } else {
+                datosLimpios.push(item);
+            }
         }
     });
     

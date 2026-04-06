@@ -1025,7 +1025,8 @@ class ItemAPIService {
                 if (Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: img,
                                 formdata_key: formdataKey,
@@ -1037,7 +1038,8 @@ class ItemAPIService {
                             //  RECUPERAR File desde el registro global por UID
                             const fileOriginal = this.fileRegistry.get(img.file.uid);
                             console.log(`[extraerFiles]  Recuperando File de EPP desde registry para uid:`, img.file.uid);
-                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: fileOriginal,
                                 formdata_key: formdataKey,

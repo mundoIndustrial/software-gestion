@@ -37,6 +37,7 @@
             categoria: eppRaw.categoria || '',
             cantidad: eppRaw.cantidad || 1,
             observaciones: eppRaw.observaciones || '',
+            modo_imagenes: eppRaw.modo_imagenes || 'upload',
             imagenes: normalizarImagenes(eppRaw.imagenes || [])
         };
     }
@@ -380,12 +381,10 @@
                     if (Array.isArray(epp.imagenes)) {
                         epp.imagenes.forEach(function(imgObj, imgIdx) {
                             const file = imgObj.file || imgObj;
-                            const formdataKey = imgObj.formdata_key || ('epps[' + eppIdx + '][imagenes][' + imgIdx + ']');
-                            
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;
-                                //  OPTIMIZADO: Removido archivosDebug
                             }
                         });
                     }
