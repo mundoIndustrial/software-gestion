@@ -93,7 +93,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
     // Crear notificación flotante
     const notificacion = document.createElement('div');
     notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
-    notificacion.innerHTML = `✅ Pedido #${numeroPedido} marcado como entregado`;
+    notificacion.innerHTML = ` Pedido #${numeroPedido} marcado como entregado`;
     
     document.body.appendChild(notificacion);
     
@@ -375,7 +375,7 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log('🔌 Iniciando conexión WebSocket para despacho...');
+    console.log(' Iniciando conexión WebSocket para despacho...');
     
     if (!window.Echo || !window.EchoInstance) {
         console.error('❌ Echo no está inicializado. Reintentando...');

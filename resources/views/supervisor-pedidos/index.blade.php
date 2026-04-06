@@ -129,6 +129,13 @@
 
     <!-- Scripts para edición de prendas desde lista de pedidos (requeridos por editarPrendaDePedido) -->
     <script defer src="{{ asset('js/componentes/prenda-form-collector.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/swal-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-delete-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-save-utils.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-edit-utils.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-adapter.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-agregar-pedido.js') }}"></script>
 

@@ -139,7 +139,7 @@ class PedidosRealtimeRefresh {
                 
                 // /supervisor-pedidos: escuchar eventos pero no recargar
                 if (this.isSupervisorPedidosPage) {
-                    if (this.debug) console.log('🔌 [PedidosRealtime] Configurando supervisor-pedidos');
+                    if (this.debug) console.log(' [PedidosRealtime] Configurando supervisor-pedidos');
 
                     ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
                         if (this.debug) console.log(' Pedido actualizado (supervisor)');
@@ -170,7 +170,7 @@ class PedidosRealtimeRefresh {
 
                 // /cartera/pedidos: escuchar y recargar tabla
                 if (this.isCarteraPage) {
-                    if (this.debug) console.log('🔌 [PedidosRealtime] Configurando cartera/pedidos');
+                    if (this.debug) console.log(' [PedidosRealtime] Configurando cartera/pedidos');
 
                     ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
                         if (this.debug) console.log(' Pedido creado (cartera)');
@@ -229,7 +229,7 @@ class PedidosRealtimeRefresh {
                     throw new Error('User ID no encontrado para suscripción privada');
                 }
 
-                if (this.debug) console.log('🔌 [PedidosRealtime] Configurando asesores - canal privado');
+                if (this.debug) console.log(' [PedidosRealtime] Configurando asesores - canal privado');
 
                 try {
                     ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {

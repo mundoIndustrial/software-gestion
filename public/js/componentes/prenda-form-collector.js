@@ -51,7 +51,7 @@ class PrendaFormCollector {
             // ============================================
             // 2. PROCESAR IMÁGENES DE PRENDA
             // ============================================
-            const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+            const imagenesTemporales = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
             console.log('[prenda-form-collector]  PROCESANDO IMÁGENES DE PRENDA:', {
                 imagenesTemporales_length: imagenesTemporales.length,
@@ -233,7 +233,7 @@ class PrendaFormCollector {
             // 3. CONSTRUIR OBJETO BASE DE PRENDA
             // ============================================
             //  IMPORTANTE: Hacer DEEP COPY de tallasRelacionales
-            // porque window.tallasRelacionales es limpiado después
+            // porque globalThis.tallasRelacionales es limpiado después
             // Si asignas la referencia, el objeto se vacía
             const copiarTallasRelacionales = (obj) => {
                 const copia = {};
@@ -244,13 +244,27 @@ class PrendaFormCollector {
             };
             
             //  IMPORTANTE: Hacer DEEP COPY de procesosSeleccionados
-            // porque window.procesosSeleccionados puede ser limpiado después
+            // porque globalThis.procesosSeleccionados puede ser limpiado después
             const copiarProcesos = (procesos) => {
+                console.log('[copiarProcesos] 🔍 INICIANDO - Procesos a copiar:', {
+                    'es_objeto': !Array.isArray(procesos) && typeof procesos === 'object',
+                    'keys': Object.keys(procesos || {}),
+                    'contenido_completo': procesos
+                });
+                
                 if (!procesos || typeof procesos !== 'object') {
                     return {};
                 }
                 const copia = {};
                 Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
+                    console.log(`[copiarProcesos] Copiando tipo: ${tipoProceso}`, {
+                        'proceso.tipo': proceso?.tipo,
+                        'proceso.datos EXISTS': !!proceso?.datos,
+                        'proceso.datos type': typeof proceso?.datos,
+                        'proceso.datos keys': Object.keys(proceso?.datos || {}),
+                        'proceso COMPLETO': proceso
+                    });
+                    
                     if (proceso && typeof proceso === 'object') {
                         // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes, datosExtendidos)
                         let datosCopiados = null;
@@ -302,16 +316,16 @@ class PrendaFormCollector {
                 return copia;
             };
             
-            // IMPORTANTE: Obtener tallas desde window.tallasRelacionales O desde StateManager (si viene del wizard)
-            let tallasParaGuardar = window.tallasRelacionales || {};
+            // IMPORTANTE: Obtener tallas desde globalThis.tallasRelacionales O desde StateManager (si viene del wizard)
+            let tallasParaGuardar = globalThis.tallasRelacionales || {};
             
-            // Si window.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
-            const hasWindowTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
+            // Si globalThis.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
+            const hasglobalThisTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
             
-            if (!hasWindowTallas && window.StateManager && window.StateManager.getAsignaciones) {
-                console.log('[prenda-form-collector]  window.tallasRelacionales está vacío, recuperando de StateManager...');
+            if (!hasglobalThisTallas && globalThis.StateManager && globalThis.StateManager.getAsignaciones) {
+                console.log('[prenda-form-collector]  globalThis.tallasRelacionales está vacío, recuperando de StateManager...');
                 
-                const asignaciones = window.StateManager.getAsignaciones();
+                const asignaciones = globalThis.StateManager.getAsignaciones();
                 tallasParaGuardar = {};
                 
                 // Convertir asignaciones a formato cantidad_talla
@@ -333,8 +347,8 @@ class PrendaFormCollector {
             }
             
             // 🟢 NUEVO: Si hay "SOLO CANTIDAD", agregarlo al objeto de tallas con género especial
-            if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0) {
-                console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', window.cantidadSoloSeleccionada);
+            if (globalThis.cantidadSoloSeleccionada && globalThis.cantidadSoloSeleccionada > 0) {
+                console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', globalThis.cantidadSoloSeleccionada);
                 
                 // Inicializar el género especial si no existe
                 if (!tallasParaGuardar['GENERICO']) {
@@ -342,7 +356,7 @@ class PrendaFormCollector {
                 }
                 
                 // Agregar la cantidad con talla especial "SIN_ESPECIFICAR"
-                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = window.cantidadSoloSeleccionada;
+                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = globalThis.cantidadSoloSeleccionada;
                 
                 console.log('[prenda-form-collector] Tallas actualizadas con SOLO CANTIDAD:', tallasParaGuardar);
             }
@@ -357,7 +371,7 @@ class PrendaFormCollector {
                 imagenes: imagenesCopia,
                 telasAgregadas: [],
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
-                procesos: copiarProcesos(window.procesosSeleccionados),
+                procesos: copiarProcesos(globalThis.procesosSeleccionados),
                 // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
                 cantidad_talla: copiarTallasRelacionales(tallasParaGuardar || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
@@ -392,9 +406,9 @@ class PrendaFormCollector {
             console.log('[prenda-form-collector]     * DAMA:', prendaData.cantidad_talla.DAMA);
             console.log('[prenda-form-collector]     * CABALLERO:', prendaData.cantidad_talla.CABALLERO);
             console.log('[prenda-form-collector]     * UNISEX:', prendaData.cantidad_talla.UNISEX);
-            console.log('[prenda-form-collector]   - window.tallasRelacionales:', window.tallasRelacionales);
-            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (tallas)?', prendaData.cantidad_talla === window.tallasRelacionales);
-            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === window.procesosSeleccionados);
+            console.log('[prenda-form-collector]   - globalThis.tallasRelacionales:', globalThis.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (tallas)?', prendaData.cantidad_talla === globalThis.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === globalThis.procesosSeleccionados);
 
             // ============================================
             // 4. PROCESAR TELAS AGREGADAS (FUENTE UNICA)
@@ -417,21 +431,21 @@ class PrendaFormCollector {
             });
 
             console.log('[prenda-form-collector] INICIANDO PROCESAMIENTO DE TELAS (fuente unica):', {
-                window_telasCreacion_exists: !!window.telasCreacion,
-                window_telasCreacion_isArray: Array.isArray(window.telasCreacion),
-                window_telasCreacion_length: window.telasCreacion?.length || 0
+                globalThis_telasCreacion_exists: !!globalThis.telasCreacion,
+                globalThis_telasCreacion_isArray: Array.isArray(globalThis.telasCreacion),
+                globalThis_telasCreacion_length: globalThis.telasCreacion?.length || 0
             });
 
-            if (Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                prendaData.telasAgregadas = window.telasCreacion.map(mapearTelaCanonica);
+            if (Array.isArray(globalThis.telasCreacion) && globalThis.telasCreacion.length > 0) {
+                prendaData.telasAgregadas = globalThis.telasCreacion.map(mapearTelaCanonica);
             } else if (
-                Array.isArray(window.telasAgregadas) &&
-                window.telasAgregadas.length > 0 &&
-                (!window.telasCreacion || !Array.isArray(window.telasCreacion))
+                Array.isArray(globalThis.telasAgregadas) &&
+                globalThis.telasAgregadas.length > 0 &&
+                (!globalThis.telasCreacion || !Array.isArray(globalThis.telasCreacion))
             ) {
-                prendaData.telasAgregadas = window.telasAgregadas.map(mapearTelaCanonica);
+                prendaData.telasAgregadas = globalThis.telasAgregadas.map(mapearTelaCanonica);
             } else if (
-                !window.telasCreacion &&
+                !globalThis.telasCreacion &&
                 prendaEditIndex !== null &&
                 prendaEditIndex !== undefined &&
                 prendasArray[prendaEditIndex]
@@ -484,7 +498,7 @@ class PrendaFormCollector {
                     
                     // Si encontramos el ID, guardarlo
                     if (mangaId) {
-                        variantes.tipo_manga_id = parseInt(mangaId);
+                        variantes.tipo_manga_id = Number(mangaId);
                         console.log('[prenda-form-collector] Manga encontrada en datalist:', {
                             nombre: valorManga,
                             id: mangaId
@@ -558,15 +572,15 @@ class PrendaFormCollector {
             
             // DIAGNÓSTICO: Verificar qué está disponible
             console.log('[prenda-form-collector]  DIAGNÓSTICO de asignaciones:');
-            console.log('[prenda-form-collector]   - window.ColoresPorTalla existe?', !!window.ColoresPorTalla);
-            console.log('[prenda-form-collector]   - window.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
-                window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
-            console.log('[prenda-form-collector]   - window.StateManager existe?', !!window.StateManager);
-            console.log('[prenda-form-collector]   - window.StateManager.getAsignaciones existe?', 
-                window.StateManager && typeof window.StateManager.getAsignaciones === 'function');
+            console.log('[prenda-form-collector]   - globalThis.ColoresPorTalla existe?', !!globalThis.ColoresPorTalla);
+            console.log('[prenda-form-collector]   - globalThis.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
+                globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
+            console.log('[prenda-form-collector]   - globalThis.StateManager existe?', !!globalThis.StateManager);
+            console.log('[prenda-form-collector]   - globalThis.StateManager.getAsignaciones existe?', 
+                globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function');
             
-            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
-                asignacionesColores = window.ColoresPorTalla.obtenerDatosAsignaciones();
+            if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
+                asignacionesColores = globalThis.ColoresPorTalla.obtenerDatosAsignaciones();
                 console.log('[prenda-form-collector]  Asignaciones obtenidas de ColoresPorTalla:', asignacionesColores);
                 console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
                 console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
@@ -576,8 +590,8 @@ class PrendaFormCollector {
                 console.log('[prenda-form-collector]  Asignaciones de colores por talla (API antigua):', asignacionesColores);
             } else {
                 // Si no hay función disponible, intentar obtener del StateManager
-                if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
-                    asignacionesColores = window.StateManager.getAsignaciones();
+                if (globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function') {
+                    asignacionesColores = globalThis.StateManager.getAsignaciones();
                     console.log('[prenda-form-collector]  Asignaciones de colores recuperadas de StateManager:');
                     console.log('[prenda-form-collector]   - Datos:', asignacionesColores);
                     console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
@@ -590,8 +604,8 @@ class PrendaFormCollector {
             
             const construirAsignacionesConImagenesPersistidas = (asignacionesBase) => {
                 const resultado = {};
-                const getImageWizard = (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function')
-                    ? window.ColoresPorTalla.getImage.bind(window.ColoresPorTalla)
+                const getImageWizard = (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.getImage === 'function')
+                    ? globalThis.ColoresPorTalla.getImage.bind(globalThis.ColoresPorTalla)
                     : null;
 
                 Object.entries(asignacionesBase || {}).forEach(([clave, asignacion]) => {
@@ -659,7 +673,7 @@ class PrendaFormCollector {
                     }
                     const talla = asignacion.talla;
                     // Sumar cantidades reales de colores para esta talla
-                    const totalCantidad = (asignacion.colores || []).reduce((sum, c) => sum + (parseInt(c.cantidad) || 0), 0);
+                    const totalCantidad = (asignacion.colores || []).reduce((sum, c) => sum + (Number(c.cantidad) || 0), 0);
                     if (totalCantidad > 0 && talla) {
                         tallasRecalculadas[genero][talla] = totalCantidad;
                     }
@@ -704,5 +718,5 @@ class PrendaFormCollector {
 }
 
 // Instancia global para usar en toda la aplicación
-window.prendaFormCollector = new PrendaFormCollector();
+globalThis.prendaFormCollector = new PrendaFormCollector();
 

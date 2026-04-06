@@ -213,7 +213,7 @@ class DespachoGeneradorService
             
             // Si este EPP es una homologación, obtener el historial completo
             if ($pedidoEpp->homologado_de !== null) {
-                \Log::info('[DESPACHO-EPP-ITEM] ✅ EPP ES UNA HOMOLOGACIÓN', [
+                \Log::info('[DESPACHO-EPP-ITEM]  EPP ES UNA HOMOLOGACIÓN', [
                     'epp_id' => $pedidoEpp->id,
                     'homologado_de' => $pedidoEpp->homologado_de,
                 ]);
@@ -253,7 +253,7 @@ class DespachoGeneradorService
                     \Log::warning('[DESPACHO-EPP-ITEM] ⚠️ Loop infinito detectado', ['epp_id' => $pedidoEpp->id]);
                     $tieneHistorial = false;
                 } else {
-                    \Log::info('[DESPACHO-EPP-ITEM] ✅ Original encontrado', [
+                    \Log::info('[DESPACHO-EPP-ITEM]  Original encontrado', [
                         'original_id' => $original->id,
                         'intentos' => $intentos,
                     ]);
@@ -261,7 +261,7 @@ class DespachoGeneradorService
                     // Obtener todas las versiones a partir del original
                     $todasLasVersiones = $this->obtenerTodasLasVersiones($original);
                     
-                    \Log::info('[DESPACHO-EPP-ITEM] ✅ Versiones obtenidas', [
+                    \Log::info('[DESPACHO-EPP-ITEM]  Versiones obtenidas', [
                         'total' => $todasLasVersiones->count(),
                         'versiones_ids' => $todasLasVersiones->pluck('id')->toArray(),
                     ]);
@@ -279,7 +279,7 @@ class DespachoGeneradorService
                         ];
                     }
                     
-                    \Log::info('[DESPACHO-EPP-ITEM] ✅ HISTORIAL CONSTRUIDO FINAL', [
+                    \Log::info('[DESPACHO-EPP-ITEM]  HISTORIAL CONSTRUIDO FINAL', [
                         'epp_id' => $pedidoEpp->id,
                         'versiones_en_historial' => count($historialHomologaciones),
                         'historial_json' => json_encode($historialHomologaciones),

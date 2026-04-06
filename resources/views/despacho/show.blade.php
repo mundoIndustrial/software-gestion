@@ -98,7 +98,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         return;
     }
 
-    console.log('✅ [toggleHistorialEpp] Mostrando historial con', historialHomologaciones.length, 'versiones');
+    console.log(' [toggleHistorialEpp] Mostrando historial con', historialHomologaciones.length, 'versiones');
 
     // Construir tabla con header sticky
     let tablaHtml = `
@@ -155,7 +155,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
     // Mostrar modal si Swal está disponible, sino usar un alert mejorado
     if (window.Swal) {
-        console.log('✅ Usando Swal para mostrar modal');
+        console.log(' Usando Swal para mostrar modal');
         Swal.fire({
             title: ' Historial de Cambios',
             html: tablaHtml,
@@ -196,12 +196,12 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 [DOMContentLoaded] Despacho show.blade.php cargado');
+    console.log(' [DOMContentLoaded] Despacho show.blade.php cargado');
     
     // Pasar datos del pedido a JavaScript
     window.pedidoId = {{ $pedido->id }};
     window.numeroPedido = '{{ $pedido->numero_pedido }}';
-    console.log('📋 [DOMContentLoaded] Pedido ID:', window.pedidoId, 'Número:', window.numeroPedido);
+    console.log(' [DOMContentLoaded] Pedido ID:', window.pedidoId, 'Número:', window.numeroPedido);
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }}</span>
                                                                 </button>
                                                                 <script type="text/javascript">
-                                                                    console.log('✅ [BLADE] Botón "Ver cambios" renderizado para PRENDA ID: {{ $primeraFila->id }}', {
+                                                                    console.log(' [BLADE] Botón "Ver cambios" renderizado para PRENDA ID: {{ $primeraFila->id }}', {
                                                                         historialLength: {{ count($primeraFila->historial_homologaciones ?? []) }},
                                                                         badge: {{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }},
                                                                     });
@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }}</span>
                                                 </button>
                                                 <script type="text/javascript">
-                                                    console.log('✅ [BLADE] Botón "Ver cambios" renderizado para EPP ID: {{ $fila->id }}', {
+                                                    console.log(' [BLADE] Botón "Ver cambios" renderizado para EPP ID: {{ $fila->id }}', {
                                                         historialLength: {{ count($fila->historial_homologaciones ?? []) }},
                                                         badge: {{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }},
                                                     });

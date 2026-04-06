@@ -443,6 +443,13 @@
 <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/swal-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-delete-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-save-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-edit-utils.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 
 <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>

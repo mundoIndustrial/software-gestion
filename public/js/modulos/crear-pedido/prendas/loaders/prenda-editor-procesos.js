@@ -145,10 +145,22 @@ class PrendaEditorProcesos {
      * @private
      */
     static _normalizarDatosProceso(proceso, tipo) {
+        console.log(`[_normalizarDatosProceso] 🔍 RECIBIDO para tipo "${tipo}":`, {
+            'tiene DATOS anidado': !!proceso?.datos,
+            'proceso.datos type': typeof proceso?.datos,
+            'proceso.datos keys': Object.keys(proceso?.datos || {}),
+            'tiene ubicaciones AQUÍ': !!proceso?.ubicaciones,
+            'tiene ubicaciones EN DATOS': !!proceso?.datos?.ubicaciones,
+            'proceso COMPLETO': proceso
+        });
+        
+        // 🔴 FIX: Si datos está anidado, extraerlo
+        const datosActuales = proceso?.datos || proceso;
+        
         const datos = {
-            ...proceso,
+            ...datosActuales,
             tipo: tipo,
-            modo_tallas: proceso?.modo_tallas || 'generico'
+            modo_tallas: datosActuales?.modo_tallas || proceso?.modo_tallas || 'generico'
         };
         delete datos.modoTallas;
         
@@ -156,6 +168,13 @@ class PrendaEditorProcesos {
             this._registrarImagenesDebug(tipo, datos.imagenes);
             datos.imagenes = this._normalizarImagenes(datos.imagenes);
         }
+        
+        console.log(`[_normalizarDatosProceso]  RESULTADO para "${tipo}":`, {
+            'ubicaciones': datos.ubicaciones?.length || 0,
+            'tallas': Object.keys(datos.tallas || {}),
+            'imagenes': datos.imagenes?.length || 0,
+            'observaciones': datos.observaciones?.substring(0, 30) || 'sin observaciones'
+        });
         
         return datos;
     }

@@ -25,7 +25,7 @@ globalThis.WizardManager = (function() {
          * INICIALIZACIÓN: Configurar listeners directamente sin depender de WizardBootstrap
          */
         inicializarListeners() {
-            console.log('[WizardManager] 🔌 Inicializando listeners directamente...');
+            console.log('[WizardManager]  Inicializando listeners directamente...');
             
             const btnSiguiente = document.getElementById('wzd-btn-siguiente');
             const btnAtras = document.getElementById('wzd-btn-atras');

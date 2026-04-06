@@ -1244,7 +1244,7 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log('🔌 Iniciando conexión WebSocket para despacho...');
+    console.log(' Iniciando conexión WebSocket para despacho...');
     
     try {
         // Usar la instancia existente de Echo en lugar de crear una nueva

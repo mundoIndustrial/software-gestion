@@ -1,5 +1,5 @@
 /**
- * 🔌 Módulo de Servicio - Comunicación con Servidor
+ *  Módulo de Servicio - Comunicación con Servidor
  * Responsabilidad: Obtener datos del servidor de forma segura
  */
 

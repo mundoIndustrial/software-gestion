@@ -63,7 +63,7 @@ class BodegaRealtimeRefresh {
                 }
 
                 if (this.debug) {
-                    console.log('[BodegaRealtime] 🔌 Configurando canales de bodega con WebSocket');
+                    console.log('[BodegaRealtime]  Configurando canales de bodega con WebSocket');
                     console.log('  - User ID:', userId);
                 }
                 
@@ -112,7 +112,7 @@ class BodegaRealtimeRefresh {
             }
 
             if (this.debug) {
-                console.log(`🔌 [BodegaRealtime] Suscribiendo al canal: ${channelName}`);
+                console.log(` [BodegaRealtime] Suscribiendo al canal: ${channelName}`);
             }
 
             // Suscribirse a evento .detalle.actualizado
@@ -265,7 +265,7 @@ class BodegaRealtimeRefresh {
             // Nota: La desuscripción de ws.subscribe() se maneja internamente en window.shared.websocket
             // Solo limpiamos nuestra referencia local
             this.channels.delete(channelName);
-            if (this.debug) console.log(`🔌 [BodegaRealtime] Abandonado canal local: ${channelName}`);
+            if (this.debug) console.log(` [BodegaRealtime] Abandonado canal local: ${channelName}`);
         }
     }
 
@@ -274,7 +274,7 @@ class BodegaRealtimeRefresh {
         this.channels.forEach((value, channelName) => {
             // Nota: La desuscripción de ws.subscribe() se maneja internamente en window.shared.websocket
             // Solo limpiamos nuestra referencia local
-            if (this.debug) console.log(`🔌 [BodegaRealtime] Abandonado canal local: ${channelName}`);
+            if (this.debug) console.log(` [BodegaRealtime] Abandonado canal local: ${channelName}`);
         });
         this.channels.clear();
         if (this.debug) console.log('[BodegaRealtime]  Todos los canales limpiados');

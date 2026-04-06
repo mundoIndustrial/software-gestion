@@ -28,7 +28,7 @@ globalThis.fetch = function(...args) {
                         console.log(`\n📌 PRENDA ${index + 1}: ${prenda.nombre_prenda} (ID: ${prenda.id})`);
                         console.log(`   ├── Área más reciente del sistema: ${prenda.area_mas_reciente || 'NO DEFINIDA'}`);
                         
-                        console.log(`   └── 📋 BUSCANDO RECIBO 15 EN CONSECUTIVOS:`);
+                        console.log(`   └──  BUSCANDO RECIBO 15 EN CONSECUTIVOS:`);
                         let tieneRecibo15 = false;
                         prenda.consecutivos.forEach((cons, idx) => {
                             const esRecibo15 = cons.consecutivo_actual === 15;
@@ -56,7 +56,7 @@ globalThis.fetch = function(...args) {
                     
                     console.log('\n╔════════════════════════════════════════════════════════════════╗');
                     if (encontroRecibo15) {
-                        console.log('║ ✅ RECIBO 15 ENCONTRADO - Ver área arriba (🔴 RECIBO 15)      ║');
+                        console.log('║  RECIBO 15 ENCONTRADO - Ver área arriba (🔴 RECIBO 15)      ║');
                     } else {
                         console.log('║ ⚠️  RECIBO 15 NO ENCONTRADO EN ESTE PEDIDO                      ║');
                     }
@@ -75,6 +75,6 @@ globalThis.fetch = function(...args) {
     return originalFetch.apply(this, args);
 };
 
-console.log('✅ Verificación del recibo 15 activada');
+console.log(' Verificación del recibo 15 activada');
 console.log('📖 Ahora carga el modal de seguimiento de prendas');
 console.log('💡 Se mostrará en la consola el área exacta del recibo número 15\n');

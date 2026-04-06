@@ -177,6 +177,13 @@
 <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/swal-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-delete-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-save-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-edit-utils.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-agregar-pedido.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/epp-agregar-pedido.js') }}?v={{ $v }}"></script>

@@ -445,6 +445,16 @@ class GestionItemsUI {
 
     _cargarModoEdicion() {
         const prendaAEditar = this.prendas[this.prendaEditIndex];
+        
+        // 🔍 DIAGNOSTIC: Verificar que procesos están en this.prendas[index]
+        console.log('[_cargarModoEdicion] 🔍 SEGUNDA EDICIÓN - Verificando estado:');
+        console.log('[_cargarModoEdicion]   this.prendaEditIndex:', this.prendaEditIndex);
+        console.log('[_cargarModoEdicion]   prendaAEditar.nombre_prenda:', prendaAEditar?.nombre_prenda);
+        console.log('[_cargarModoEdicion]   prendaAEditar.procesos EXISTS:', !!prendaAEditar?.procesos);
+        console.log('[_cargarModoEdicion]   prendaAEditar.procesos TYPE:', typeof prendaAEditar?.procesos);
+        console.log('[_cargarModoEdicion]   prendaAEditar.procesos KEYS:', Object.keys(prendaAEditar?.procesos || {}));
+        console.log('[_cargarModoEdicion]   COMPLETO:', prendaAEditar?.procesos);
+        
         if (prendaAEditar && this.prendaEditor) {
             this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
         }
@@ -869,6 +879,25 @@ class GestionItemsUI {
 
         const prendaAnterior = structuredClone(this.prendas[this.prendaEditIndex]);
         this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
+
+        //  DIAGNOSTIC: Verificar que procesos se guardaron
+        console.log('[_procesarEditacionEnMemoria]  DESPUÉS DE GUARDAR en this.prendas[' + this.prendaEditIndex + ']:');
+        console.log('[_procesarEditacionEnMemoria]   procesos EXISTS:', !!this.prendas[this.prendaEditIndex].procesos);
+        console.log('[_procesarEditacionEnMemoria]   procesos TYPE:', typeof this.prendas[this.prendaEditIndex].procesos);
+        console.log('[_procesarEditacionEnMemoria]   procesos KEYS:', Object.keys(this.prendas[this.prendaEditIndex].procesos || {}));
+        
+        // LOG CRÍTICO: Verificar estructura de CADA proceso guardado
+        const procesosGuardados = this.prendas[this.prendaEditIndex].procesos || {};
+        console.log('[_procesarEditacionEnMemoria] 📦 ESTRUCTURA GUARDADA:');
+        Object.entries(procesosGuardados).forEach(([tipo, proc]) => {
+            console.log(`  ${tipo}:`, {
+                'tiene.datos': !!proc?.datos,
+                'tiene.ubicaciones (aquí)': !!proc?.ubicaciones,
+                'tiene.ubicaciones (en datos)': !!proc?.datos?.ubicaciones,
+                'ubicaciones_count': proc?.datos?.ubicaciones?.length || proc?.ubicaciones?.length || 0,
+                'tallas_count': Object.keys(proc?.datos?.tallas || proc?.tallas || {}).length
+            });
+        });
 
         console.log('[guardarPrenda] PRENDA ACTUALIZADA:', {
             'Nombre ANTES': prendaAnterior.nombre_prenda,

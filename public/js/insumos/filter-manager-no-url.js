@@ -258,7 +258,7 @@ async function applyFiltersToBackend() {
         }
         
         const html = await response.text();
-        console.log('[FilterManager] 📄 HTML recibido, longitud:', html.length);
+        console.log('[FilterManager]  HTML recibido, longitud:', html.length);
         
         // Actualizar tabla
         if (typeof updateTableFromHtml === 'function') {

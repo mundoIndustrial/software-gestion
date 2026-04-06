@@ -658,7 +658,7 @@ function configurarWebSocketsPedidos() {
     return;
   }
 
-  console.log('🔌 [CarteraPedidos] Intentando conectar a WebSockets...');
+  console.log(' [CarteraPedidos] Intentando conectar a WebSockets...');
 
   try {
     // Escuchar en el canal 'pedidos.creados'

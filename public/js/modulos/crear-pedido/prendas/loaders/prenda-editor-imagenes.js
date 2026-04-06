@@ -10,7 +10,8 @@ class PrendaEditorImagenes {
     static cargar(prenda) {
         console.log(' [Imagenes] Cargando:', {
             cantidad: prenda.imagenes?.length || 0,
-            tipo: typeof prenda.imagenes
+            tipo: typeof prenda.imagenes,
+            estructura_primera: prenda.imagenes?.[0] ? Object.keys(prenda.imagenes[0]) : 'N/A'
         });
         
         const { preview, contador, btn } = this._obtenerElementosDom();
@@ -18,13 +19,49 @@ class PrendaEditorImagenes {
         
         preview.innerHTML = '';
         
-        if (prenda.imagenes?.length > 0) {
-            this._cargarConImagenes(prenda, preview, contador, btn);
+        // Validar si hay imágenes válidas
+        const imagenesValidas = this._obtenerImagenesValidas(prenda);
+        
+        if (imagenesValidas.length > 0) {
+            this._cargarConImagenes({ imagenes: imagenesValidas }, preview, contador, btn);
         } else {
             this._cargarSinImagenes(preview, contador, btn);
         }
         
         console.log(' [Imagenes] Completado');
+    }
+    
+    /**
+     * Obtener imágenes válidas de la estructura de prenda
+     * Soporta múltiples formatos de estructura
+     * @private
+     */
+    static _obtenerImagenesValidas(prenda) {
+        // Formato 1: prenda.imagenes es un array
+        if (Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
+            return prenda.imagenes.filter(img => img && (img.url || img.previewUrl || img.ruta || img.ruta_webp || img.ruta_original));
+        }
+        
+        // Formato 2: prenda.imagen es una URL única
+        if (prenda.imagen && typeof prenda.imagen === 'string') {
+            console.log('[_obtenerImagenesValidas] Usando prenda.imagen única:', prenda.imagen.substring(0, 60));
+            return [{
+                url: prenda.imagen,
+                previewUrl: prenda.imagen,
+                nombre: 'imagen-principal'
+            }];
+        }
+        
+        // Formato 3: Intentar obtener desde storage si no hay imagenes
+        if (globalThis.imagenesPrendaStorage) {
+            const imagenes = globalThis.imagenesPrendaStorage.obtenerImagenes();
+            if (imagenes.length > 0) {
+                console.log('[_obtenerImagenesValidas] Usando imágenes del storage:', imagenes.length);
+                return imagenes;
+            }
+        }
+        
+        return [];
     }
 
     /**
@@ -43,8 +80,10 @@ class PrendaEditorImagenes {
      * Cargar preview con imágenes
      * @private
      */
-    static _cargarConImagenes(prenda, preview, contador, btn) {
-        const imagenesConBlobUrl = this._procesarImagenesConBlobUrl(prenda.imagenes);
+    static _cargarConImagenes(prendaODatos, preview, contador, btn) {
+        // Soportar tanto prenda completa como { imagenes: [...] }
+        const imagenes = prendaODatos.imagenes || prendaODatos;
+        const imagenesConBlobUrl = this._procesarImagenesConBlobUrl(imagenes);
         
         if (globalThis.imagenesPrendaStorage) {
             globalThis.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
@@ -78,17 +117,23 @@ class PrendaEditorImagenes {
 
     /**
      * Procesar imágenes agregando blob URLs
+     * ⚠️ CRÍTICO: Preservar blob URLs válidas existentes para edición
      * @private
      */
     static _procesarImagenesConBlobUrl(imagenes) {
+        console.log('[_procesarImagenesConBlobUrl] INICIANDO - Imágenes a procesar:', imagenes.length);
+        
         return imagenes.map((img, idx) => {
             const imagenConId = {
                 ...img,
                 id: img.id || img.imagen_id || null,
             };
             
+            // 1️⃣ PRIMERO: Si hay File object, crear blob URL NUEVO
+            // (Esto asegura que en ediciones posteriores el blob sea válido)
             if (img.file instanceof File) {
                 const nuevoBlob = URL.createObjectURL(img.file);
+                console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Creando blob URL NUEVO desde File`);
                 return {
                     ...imagenConId,
                     file: img.file,
@@ -98,22 +143,28 @@ class PrendaEditorImagenes {
                 };
             }
             
-            if (img.previewUrl?.startsWith('blob:') || img.previewUrl?.startsWith('data:')) {
+            // 2️⃣ SEGUNDO: Preservar blob URLs existentes (primera edición)
+            if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
+                console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Preservando blob URL existente`);
                 return imagenConId;
             }
             
-            if (typeof img === 'object') {
-                const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
+            // 3️⃣ TERCERO: Intentar obtener URL del servidor (ediciones posteriores si blob expiró)
+            const urlServidor = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
+            if (urlServidor && typeof urlServidor === 'string') {
+                console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Usando URL servidor: ${urlServidor.substring(0, 50)}...`);
                 return {
                     ...imagenConId,
-                    previewUrl: url,
-                    url: url,
+                    previewUrl: urlServidor,
+                    url: urlServidor,
                     nombre: img.nombre || `imagen-${idx + 1}`,
                     tamano: img.tamano || 0
                 };
             }
             
-            return img;
+            // 4️⃣ FALLBACK: Retornar tal cual
+            console.warn(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: No se pudo determinar URL`);
+            return imagenConId;
         });
     }
 
@@ -122,18 +173,38 @@ class PrendaEditorImagenes {
      * @private
      */
     static _renderizarPreviewConImagenes(preview, imagenes, contador, btn) {
+        console.log('[_renderizarPreviewConImagenes] INICIO', {
+            imagenesCount: imagenes.length,
+            primeraImagen: imagenes[0] ? {
+                previewUrl: imagenes[0].previewUrl?.substring(0, 60) + '...',
+                url: imagenes[0].url?.substring(0, 60) + '...',
+                nombreCampo: Object.keys(imagenes[0]).join(', ')
+            } : 'N/A'
+        });
+        
         const container = document.createElement('div');
         container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
         
         const img = document.createElement('img');
         const primeraImagen = imagenes[0];
         
-        if (!primeraImagen.previewUrl || primeraImagen.previewUrl === 'undefined') {
-            console.error('[Imagenes]  previewUrl inválido en carga:', primeraImagen.previewUrl);
+        // Obtener URL a usar - priorizar previewUrl, luego url
+        let urlAUsar = null;
+        if (primeraImagen.previewUrl && primeraImagen.previewUrl !== 'undefined') {
+            urlAUsar = primeraImagen.previewUrl;
+            console.log('[_renderizarPreviewConImagenes] Usando previewUrl:', urlAUsar.substring(0,  60) + '...');
+        } else if (primeraImagen.url && primeraImagen.url !== 'undefined') {
+            urlAUsar = primeraImagen.url;
+            console.log('[_renderizarPreviewConImagenes] Usando url:', urlAUsar.substring(0, 60) + '...');
+        }
+        
+        if (!urlAUsar) {
+            console.error('[_renderizarPreviewConImagenes] NO HAY URL VÁLIDA en primera imagen:', primeraImagen);
             this._establecerImagenNoDisponible(img);
         } else {
-            img.src = primeraImagen.previewUrl;
+            img.src = urlAUsar;
             img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            console.log('[_renderizarPreviewConImagenes] Imagen asignada: ' + urlAUsar.substring(0, 60) + '...');
         }
         
         container.appendChild(img);
@@ -148,6 +219,8 @@ class PrendaEditorImagenes {
         if (btn) {
             btn.style.display = imagenes.length < 3 ? 'block' : 'none';
         }
+        
+        console.log('[_renderizarPreviewConImagenes] FIN - Preview renderizado');
     }
 
     /**
