@@ -143,7 +143,7 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     }
     
-    // HTML de im�genes
+    // HTML de Imagenes
     let imagenesHTML = '';
     
     // ?? PRIORIDAD: Usar imagenesFiles si est�n disponibles (para archivos que a�n no se subieron)
@@ -155,17 +155,17 @@ function generarTarjetaProceso(tipo, datos) {
     }
     
     if (imagenesParaRenderizar && imagenesParaRenderizar.length > 0) {
-        // ?? CR�TICO: Filtrar im�genes eliminadas usando imagenesEliminadas
-        // imagenesEliminadas contiene null para im�genes eliminadas, objeto para v�lidas
-        // IMPORTANTE: imagenesEliminadas solo contiene las im�genes ORIGINALES (de BD)
-        // Las im�genes nuevas (File objects) no est�n en imagenesEliminadas
+        // ?? CR�TICO: Filtrar Imagenes eliminadas usando imagenesEliminadas
+        // imagenesEliminadas contiene null para Imagenes eliminadas, objeto para v�lidas
+        // IMPORTANTE: imagenesEliminadas solo contiene las Imagenes ORIGINALES (de BD)
+        // Las Imagenes nuevas (File objects) no est�n en imagenesEliminadas
         
         let imagenesValidas = [];
         
-        // Si hay imagenesEliminadas, usarla para filtrar las im�genes originales
+        // Si hay imagenesEliminadas, usarla para filtrar las Imagenes originales
         if (datos.imagenesEliminadas && datos.imagenesEliminadas.length > 0) {
-            // Filtrar solo las im�genes originales usando imagenesEliminadas
-            // Las primeras N im�genes corresponden a imagenesEliminadas
+            // Filtrar solo las Imagenes originales usando imagenesEliminadas
+            // Las primeras N Imagenes corresponden a imagenesEliminadas
             const cantidadOriginales = datos.imagenesEliminadas.length;
             const imagenesOriginales = imagenesParaRenderizar.slice(0, cantidadOriginales);
             const imagenesNuevas = imagenesParaRenderizar.slice(cantidadOriginales);
@@ -180,12 +180,12 @@ function generarTarjetaProceso(tipo, datos) {
             
             console.log(`??? [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} v�lidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
         } else {
-            // Sin imagenesEliminadas: incluir todas las im�genes v�lidas
+            // Sin imagenesEliminadas: incluir todas las Imagenes v�lidas
             imagenesValidas = imagenesParaRenderizar.filter(img => img !== null && img !== undefined);
-            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} im�genes v�lidas`);
+            console.log(`??? [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} Imagenes v�lidas`);
         }
         
-        console.log(`??? [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} im�genes`, {
+        console.log(`??? [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} Imagenes`, {
             imagenesArray: imagenesValidas.map(img => ({
                 tipo: img instanceof File ? 'File' : typeof img,
                 nombre: img?.nombre || img?.name || 'sin-nombre',
@@ -198,7 +198,7 @@ function generarTarjetaProceso(tipo, datos) {
         if (imagenesValidas.length > 0) {
             imagenesHTML = `
                 <div style="margin-top: 0.75rem;">
-                    <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">IM�GENES (${imagenesValidas.length})</strong>
+                    <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Imagenes (${imagenesValidas.length})</strong>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         ${imagenesValidas.slice(0, 4).map((img, idx) => {
                             // Determinar la URL seg�n el tipo de objeto
@@ -255,10 +255,10 @@ function generarTarjetaProceso(tipo, datos) {
                 </div>
             `;
         } else {
-            console.log(`?? [RENDER-TARJETA-${tipo}] Im�genes array existe pero est� vac�o`);
+            console.log(`?? [RENDER-TARJETA-${tipo}] Imagenes array existe pero est� vac�o`);
         }
     } else {
-        console.log(`?? [RENDER-TARJETA-${tipo}] NO hay im�genes en datos.imagenes`, {
+        console.log(`?? [RENDER-TARJETA-${tipo}] NO hay Imagenes en datos.imagenes`, {
             tieneImagenes: !!datos.imagenes,
             esArray: Array.isArray(datos.imagenes),
             longitud: datos.imagenes?.length || 0
@@ -378,10 +378,10 @@ function generarTarjetaProceso(tipo, datos) {
                     ? `<div style="padding: 0.3rem 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px; font-size: 0.75rem; color: #78350f;">${obsTalla}</div>`
                     : '';
 
-                // ?? PRIORIDAD: Combinar im�genes existentes con Files nuevos
+                // ?? PRIORIDAD: Combinar Imagenes existentes con Files nuevos
                 let imgsTalla = [];
                 
-                // 1. Agregar im�genes existentes (URLs del servidor)
+                // 1. Agregar Imagenes existentes (URLs del servidor)
                 if (detalle.imagenes && Array.isArray(detalle.imagenes)) {
                     imgsTalla = detalle.imagenes.filter(img => {
                         if (!img) return false;
@@ -478,10 +478,10 @@ function generarTarjetaProceso(tipo, datos) {
             : String(datos.ubicaciones)
     )) || '';
     
-    // ?? PRIORIDAD: Combinar im�genes existentes (del servidor) con Files nuevos (no subidos)
+    // ?? PRIORIDAD: Combinar Imagenes existentes (del servidor) con Files nuevos (no subidos)
     let fotosDisplay = [];
     
-    // 1. Agregar im�genes existentes del servidor (URLs v�lidas)
+    // 1. Agregar Imagenes existentes del servidor (URLs v�lidas)
     if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
         fotosDisplay = [...datos.fotosGenerales];
     } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {

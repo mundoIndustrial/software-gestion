@@ -99,19 +99,26 @@
         });
     }
 
-    function mostrarExito(resultado) {
+    function mostrarExito(resultado, datos) {
         const modoEdicion = window.modoEdicion || false;
         const pedidoId = window.pedidoEditarId || null;
+        const nombreCliente = (typeof datos?.cliente === 'string' && datos.cliente.trim())
+            ? datos.cliente.trim()
+            : (resultado?.cliente_nombre || resultado?.nombre_cliente || resultado?.cliente || '');
 
         if (modoEdicion && pedidoId) {
             return Swal.fire({
                 icon: 'success',
                 title: 'Cambios Guardados',
+                customClass: {
+                    container: 'swal-centered-container',
+                    popup: 'swal-centered-popup'
+                },
                 html: `
                     <div style="text-align: left;">
                         <p>El pedido ha sido actualizado correctamente.</p>
                         <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
-                            <strong>Pedido #${resultado.numero_pedido || pedidoId}</strong>
+                            <strong>Cliente:</strong> ${nombreCliente || 'Sin nombre'}
                         </p>
                     </div>
                 `,
@@ -123,11 +130,15 @@
         return Swal.fire({
             icon: 'success',
             title: 'Borrador Guardado',
+            customClass: {
+                container: 'swal-centered-container',
+                popup: 'swal-centered-popup'
+            },
             html: `
                 <div style="text-align: left;">
                     <p>Tu pedido ha sido guardado como borrador.</p>
                     <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
-                        <strong>ID:</strong> #${resultado.pedido_id}
+                        <strong>Cliente:</strong> ${nombreCliente || 'Sin nombre'}
                     </p>
                 </div>
             `,
@@ -179,7 +190,7 @@
                 throw new Error(resultado.message || 'Error desconocido al guardar borrador');
             }
 
-            await mostrarExito(resultado);
+            await mostrarExito(resultado, datos);
         } catch (error) {
             await mostrarError(error);
         }

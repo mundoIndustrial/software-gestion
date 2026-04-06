@@ -155,13 +155,14 @@ function cargarPrendas(prendas) {
             }
 
             
-            let variaciones = prenda.variaciones;
-            if (typeof variaciones === 'string') {
+            // Buscar variantes (nombre correcto desde backend MapearPedidoEdicionService)
+            let variantes = prenda.variantes || prenda.variaciones || {};
+            if (typeof variantes === 'string') {
                 try {
-                    variaciones = JSON.parse(variaciones);
+                    variantes = JSON.parse(variantes);
                 } catch (e) {
 
-                    variaciones = {};
+                    variantes = {};
                 }
             }
             
@@ -277,8 +278,8 @@ function cargarPrendas(prendas) {
                 talla_colores: Array.isArray(tallaColores) ? tallaColores : [],
                 asignacionesColoresPorTalla: (asignacionesColoresPorTalla && typeof asignacionesColoresPorTalla === 'object') ? asignacionesColoresPorTalla : {},
                 tipo_flujo_tallas: tipoFlujoTallas,
-                variantes: variaciones,
-                variaciones: variaciones,
+                variantes: variantes,
+                variaciones: variantes,
                 tipo_manga: prenda.tipo_manga,
                 obs_manga: prenda.obs_manga,
                 tipo_broche: prenda.tipo_broche,

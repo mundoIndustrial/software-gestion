@@ -35,8 +35,27 @@ class PedidoDraftMutationService
             }
 
             $pedidoEppRef = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
+            
+            // Si el EPP es NUEVO (no existe en el pedido), crearlo primero
             if (!$pedidoEppRef) {
-                continue;
+                Log::info('[PedidoDraftMutationService] EPP nuevo detectado, creando relación', [
+                    'pedido_id' => $pedidoId,
+                    'epp_id' => $eppId,
+                ]);
+                
+                // Crear el EPP en la tabla pedido_epp
+                $this->pedidoImagenesService->procesarYAsignarEpps($request, $pedidoId, [$eppData]);
+                
+                // Recargar la referencia
+                $pedidoEppRef = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
+                
+                if (!$pedidoEppRef) {
+                    Log::warning('[PedidoDraftMutationService] No se pudo crear EPP nuevo', [
+                        'pedido_id' => $pedidoId,
+                        'epp_id' => $eppId,
+                    ]);
+                    continue;
+                }
             }
 
             $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEppRef->pedidoEppId);

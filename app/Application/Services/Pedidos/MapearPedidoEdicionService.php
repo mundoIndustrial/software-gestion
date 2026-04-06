@@ -433,6 +433,25 @@ class MapearPedidoEdicionService
                 'tipo_flujo_tallas' => $tipoFlujoTallas,
                 'tipoFlujoTallas' => $tipoFlujoTallas,
 
+                // Variantes (primera variante como objeto, para compatibilidad con frontend)
+                'variantes' => $prenda->variantes && $prenda->variantes->count() > 0 
+                    ? (function($variante) {
+                        return [
+                            'id' => $variante->id,
+                            'tipo_manga_id' => $variante->tipo_manga_id,
+                            'tipo_manga' => $variante->tipoManga?->nombre ?? null,
+                            'obs_manga' => $variante->manga_obs,
+                            'tiene_bolsillos' => $variante->tiene_bolsillos ?? false,
+                            'obs_bolsillos' => $variante->bolsillos_obs,
+                            'tipo_broche_boton_id' => $variante->tipo_broche_boton_id,
+                            'tipo_broche' => $variante->tipoBrocheBoton?->nombre ?? null,
+                            'obs_broche' => $variante->broche_boton_obs,
+                            'tiene_reflectivo' => $variante->tiene_reflectivo ?? false,
+                            'obs_reflectivo' => $variante->obs_reflectivo ?? null,
+                        ];
+                    })($prenda->variantes->first())
+                    : [],
+
                 // Telas/colores
                 'telasAgregadas' => $this->construirTelasAgregadas($prenda, $tallaColores),
 

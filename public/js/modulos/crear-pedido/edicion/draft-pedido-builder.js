@@ -127,6 +127,7 @@
     function construirEppsProcesados(datos, formData) {
         return (datos.epps || []).map((e, eppIndex) => {
             const imagenesExistentes = [];
+            let tieneArchivosNuevos = false;
 
             if (Array.isArray(e.imagenes)) {
                 e.imagenes.forEach((img, imgIndex) => {
@@ -134,8 +135,9 @@
 
                     if (img instanceof File || (img.file && img.file instanceof File)) {
                         const file = img instanceof File ? img : img.file;
-                        const fieldName = `epps.${eppIndex}.imagenes.${imgIndex}`;
+                        const fieldName = `epps_${eppIndex}_imagenes_${imgIndex}`;
                         formData.append(fieldName, file);
+                        tieneArchivosNuevos = true;
                         return;
                     }
 
@@ -152,12 +154,19 @@
                 });
             }
 
-            return {
+            const eppPayload = {
                 epp_id: e.epp_id,
                 cantidad: e.cantidad,
                 observaciones: e.observaciones,
                 imagenes: imagenesExistentes
             };
+
+            // Si hay archivos nuevos, indicar modo "upload"
+            if (tieneArchivosNuevos) {
+                eppPayload.modo_imagenes = 'upload';
+            }
+
+            return eppPayload;
         });
     }
 

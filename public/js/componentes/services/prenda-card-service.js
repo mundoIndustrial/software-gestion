@@ -454,7 +454,9 @@ window.PrendaCardService = {
 
             }
             
-            const esBooleano = typeof valor === 'boolean';
+            // Detectar si debe mostrar "-" en especificación
+            // Para campos booleanos (tiene_bolsillos, tiene_reflectivo) nunca mostrar valor numérico
+            const esBooleano = typeof valor === 'boolean' || valKey.startsWith('tiene_');
             
             tablasFilasHTML += `
                 <tr>

@@ -92,6 +92,8 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
             'prendas.tallas',
             'prendas.tallas.coloresAsignados',
             'prendas.fotos',
+            'prendas.variantes.tipoManga',
+            'prendas.variantes.tipoBrocheBoton',
             'prendas.coloresTelas.tela',
             'prendas.coloresTelas.color',
             'prendas.coloresTelas.fotos',

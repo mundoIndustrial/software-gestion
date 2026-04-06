@@ -585,23 +585,16 @@ class ModalNovedadEdicion {
                 }
             }
             
-            // Agregar variantes SOLO SI fueron modificadas
-            // Leer variantes ACTUALES del formulario
+            // Agregar variantes SIEMPRE, ya que aunque no se modifiquen visiblemente,
+            // el backend las necesita para actualizar la prenda completa
             const variantesActuales = await this.obtenerVariantesDelFormulario();
+            const variantesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
             
-            // Comparar con las originales
-            const variantesModificadas = this.compararVariantes(
-                this.variantesOriginalesAlAbrirModal, 
-                variantesActuales
-            );
-            
-            if (variantesModificadas) {
-                // Solo enviar si realmente fueron modificadas
-                const variantesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
+            if (variantesArray && variantesArray.length > 0) {
                 formData.append('variantes', JSON.stringify(variantesArray));
-                console.log('[modal-novedad-edicion]  Variantes MODIFICADAS enviadas:', variantesArray);
+                console.log('[modal-novedad-edicion]  Variantes enviadas:', variantesArray);
             } else {
-                console.log('[modal-novedad-edicion]  Variantes NO modificadas - no se envían');
+                console.log('[modal-novedad-edicion]  Sin variantes para enviar');
             }
             
             // ========== NUEVO: LEER FILAS DE TELAS NUEVAS DEL MODAL ==========

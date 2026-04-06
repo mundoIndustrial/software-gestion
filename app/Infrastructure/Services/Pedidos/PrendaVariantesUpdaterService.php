@@ -73,11 +73,21 @@ final class PrendaVariantesUpdaterService
                 $upd['tipo_manga_id'] = $variante['tipo_manga_id'];
             }
             
-            if (array_key_exists('tipo_broche_boton_id', $variante)) $upd['tipo_broche_boton_id'] = $variante['tipo_broche_boton_id'];
-            if (array_key_exists('manga_obs', $variante))            $upd['manga_obs'] = $variante['manga_obs'];
-            if (array_key_exists('broche_boton_obs', $variante))     $upd['broche_boton_obs'] = $variante['broche_boton_obs'];
-            if (array_key_exists('tiene_bolsillos', $variante))      $upd['tiene_bolsillos'] = $variante['tiene_bolsillos'];
-            if (array_key_exists('bolsillos_obs', $variante))        $upd['bolsillos_obs'] = $variante['bolsillos_obs'];
+            if (array_key_exists('tipo_broche_boton_id', $variante)) {
+                $upd['tipo_broche_boton_id'] = $variante['tipo_broche_boton_id'];
+            }
+            if (array_key_exists('manga_obs', $variante)) {
+                $upd['manga_obs'] = $variante['manga_obs'];
+            }
+            if (array_key_exists('broche_boton_obs', $variante)) {
+                $upd['broche_boton_obs'] = $variante['broche_boton_obs'];
+            }
+            if (array_key_exists('tiene_bolsillos', $variante)) {
+                $upd['tiene_bolsillos'] = $variante['tiene_bolsillos'];
+            }
+            if (array_key_exists('bolsillos_obs', $variante)) {
+                $upd['bolsillos_obs'] = $variante['bolsillos_obs'];
+            }
 
             if (empty($upd)) {
                 continue;

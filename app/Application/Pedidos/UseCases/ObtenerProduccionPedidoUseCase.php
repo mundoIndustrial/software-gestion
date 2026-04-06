@@ -34,11 +34,11 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
      */
     protected function obtenerOpciones(): array
     {
-        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true, incluirPrendas = true');
+        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true, incluirPrendas = true, incluirEpps = true');
         
         return [
             'incluirPrendas' => true,  // ← AHORA INCLUYE PRENDAS PARA LA FACTURA EDITABLE
-            'incluirEpps' => false,
+            'incluirEpps' => true,      // ← INCLUIR EPPs CON IMÁGENES PARA LA RECARGA DESPUÉS DE GUARDAR
             'incluirProcesos' => true,
             'incluirImagenes' => false,
         ];
