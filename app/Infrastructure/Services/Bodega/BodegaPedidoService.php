@@ -719,8 +719,15 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
         $items = [];
         $eppsProcesados = []; // Para evitar duplicados
         
+        // IMPORTANTE: Consultar TODOS los EPPs incluyendo soft-deleted (necesario para historial de homologaciones)
+        $todosLosEppsBD = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoProduccion?->id)
+            ->withTrashed()
+            ->get()
+            ->keyBy('id');
+        
         \Log::debug('[procesarEpps] Iniciando procesamiento', [
             'cantidad_epps' => count($epps),
+            'cantidad_epps_bd_con_trashed' => count($todosLosEppsBD),
             'numero_pedido' => $recibo->numero_pedido,
             'epps_ids' => array_map(fn($epp) => $epp['pedido_epp_id'] ?? 'null', $epps)
         ]);
@@ -739,7 +746,8 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
             ]);
             
             if ($pedidoEppId) {
-                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
+                // Buscar el EPP en el array que consultamos con withTrashed
+                $pedidoEpp = $todosLosEppsBD[$pedidoEppId] ?? null;
                 
                 if ($pedidoEpp) {
                     // SOLO PROCESAR EPPs ORIGINALES (homologado_de IS NULL)

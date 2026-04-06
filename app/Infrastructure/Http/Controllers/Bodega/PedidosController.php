@@ -551,10 +551,12 @@ class PedidosController extends Controller
                 ->porEstado('Pendiente')
                 ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'bodega_detalles_talla.numero_pedido');
 
-            // LEFT JOIN a bodega_detalles_visto solo si es EPP para evitar N+1 queries
-            if ($area === 'EPP') {
-                $query->leftJoin('bodega_detalles_visto as bdv', 'bdv.bodega_detalle_id', '=', 'bodega_detalles_talla.id');
-            }
+            // LEFT JOIN a bodega_detalles_visto para ambas áreas (EPP y Costura)
+            // Filtrar solo los registros del usuario actual para que cada usuario tenga su propio estado de "visto"
+            $query->leftJoin('bodega_detalles_visto as bdv', function($join) {
+                $join->on('bdv.bodega_detalle_id', '=', 'bodega_detalles_talla.id')
+                     ->where('bdv.user_id', '=', auth()->id());
+            });
 
             // Excluir pedidos anulados para ambas áreas
             // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
@@ -572,6 +574,9 @@ class PedidosController extends Controller
                     ->where('estado', 'Entregado')
                     ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
             });
+
+            // Agregar filtro adicional en bodega_detalles_talla para excluir estado_bodega = 'Entregado' y 'Anulado'
+            $query->whereNotIn('bodega_detalles_talla.estado_bodega', ['Entregado', 'Anulado']);
 
             // Agrupar por numero_pedido para evitar duplicación
             $query->select([
@@ -592,7 +597,7 @@ class PedidosController extends Controller
                 DB::raw('SUM(bodega_detalles_talla.cantidad) as cantidad_total'),
                 DB::raw('SUM(bodega_detalles_talla.pendientes) as pendientes_total'),
                 DB::raw('MIN(bodega_detalles_talla.talla) as talla_ejemplo'),
-                DB::raw($area === 'EPP' ? 'MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists' : '"0" as visto_exists')
+                DB::raw('MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists')
             ])
             ->groupBy('bodega_detalles_talla.numero_pedido')
             ->orderBy($area === 'EPP' ? DB::raw('CAST(bodega_detalles_talla.numero_pedido AS UNSIGNED)') : 'bodega_detalles_talla.numero_pedido', 'desc');
@@ -638,6 +643,30 @@ class PedidosController extends Controller
                 $estados = explode(',', $request->get('estado'));
                 $query->whereIn('bodega_detalles_talla.estado_bodega', $estados);
                 $filtrosAplicados['estado'] = $estados;
+            }
+            
+            if ($request->filled('fecha_creacion')) {
+                $fechas = explode(',', $request->get('fecha_creacion'));
+                $query->where(function($q) use ($fechas) {
+                    foreach ($fechas as $index => $fecha) {
+                        $fechaDecodificada = urldecode(trim($fecha));
+                        
+                        try {
+                            $fechaFormateada = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaDecodificada)->format('Y-m-d');
+                            
+                            if ($index === 0) {
+                                $q->whereDate('bodega_detalles_talla.created_at', $fechaFormateada);
+                            } else {
+                                $q->orWhereDate('bodega_detalles_talla.created_at', $fechaFormateada);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error("Error al procesar fecha '{$fechaDecodificada}': " . $e->getMessage());
+                            continue;
+                        }
+                    }
+                });
+                
+                $filtrosAplicados['fecha_creacion'] = $fechas;
             }
             
             if ($request->filled('fecha_entrega')) {
@@ -712,7 +741,10 @@ class PedidosController extends Controller
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];
                 
-                // Agregar 'visto' solo si es EPP - traído desde la query principal, sin N+1
+                // Agregar 'visto_exists' para ambas áreas (EPP y Costura) - traído desde la query principal, sin N+1
+                $datos['visto_exists'] = (bool) $detalle->visto_exists;
+                
+                // Agregar 'visto' solo si es EPP para compatibilidad
                 if ($area === 'EPP') {
                     $datos['visto'] = (bool) $detalle->visto_exists;
                 }
@@ -1495,6 +1527,9 @@ class PedidosController extends Controller
                     case 'estado':
                         $datos = $this->filtroService->obtenerEstadosCostura($search, $page, $perPage);
                         break;
+                    case 'fecha_creacion':
+                        $datos = $this->filtroService->obtenerFechasCreacionCostura($search, $page, $perPage);
+                        break;
                     case 'fecha':
                     case 'fecha_entrega':
                         $datos = $this->filtroService->obtenerFechasCostura($search, $page, $perPage);
@@ -1519,6 +1554,9 @@ class PedidosController extends Controller
                     case 'estado':
                         $datos = $this->filtroService->obtenerEstadosEpp($search, $page, $perPage);
                         break;
+                    case 'fecha_creacion':
+                        $datos = $this->filtroService->obtenerFechasCreacionEpp($search, $page, $perPage);
+                        break;
                     case 'fecha':
                     case 'fecha_entrega':
                         $datos = $this->filtroService->obtenerFechasEpp($search, $page, $perPage);
@@ -1542,6 +1580,9 @@ class PedidosController extends Controller
                         break;
                     case 'estado':
                         $datos = $this->filtroService->obtenerEstadosCostura($search, $page, $perPage);
+                        break;
+                    case 'fecha_creacion':
+                        $datos = $this->filtroService->obtenerFechasCreacionCostura($search, $page, $perPage);
                         break;
                     case 'fecha':
                     case 'fecha_entrega':

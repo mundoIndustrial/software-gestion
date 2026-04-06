@@ -450,6 +450,68 @@ class BodegaFiltroService implements BodegaFiltroServiceContract
         }
     }
 
+    public function obtenerFechasCreacionCostura(string|null $search, int $page, int $perPage): Collection
+    {
+        try {
+            \Log::info('obtenerFechasCreacionCostura iniciado', ['search' => $search]);
+            
+            $search = $search ?? '';
+            
+            $query = BodegaDetalleTalla::selectRaw('DATE(created_at) as fecha')
+                ->where('area', 'Costura')
+                ->where('estado_bodega', 'Pendiente')
+                ->whereNotNull('created_at')
+                ->distinct()
+                ->orderBy('fecha', 'desc');
+
+            if ($search && strlen($search) >= 4) {
+                $query->where('created_at', 'LIKE', '%' . $search . '%');
+            }
+
+            $result = $query->get()->pluck('fecha')->map(function($fecha) {
+                return ['valor' => Carbon::parse($fecha)->format('d/m/Y'), 'cantidad' => BodegaDetalleTalla::whereDate('created_at', $fecha)->where('area', 'Costura')->where('estado_bodega', 'Pendiente')->count()];
+            });
+            
+            \Log::info('obtenerFechasCreacionCostura completado', ['count' => $result->count()]);
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerFechasCreacionCostura: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return collect();
+        }
+    }
+
+    public function obtenerFechasCreacionEpp(string|null $search, int $page, int $perPage): Collection
+    {
+        try {
+            \Log::info('obtenerFechasCreacionEpp iniciado', ['search' => $search]);
+            
+            $search = $search ?? '';
+            
+            $query = BodegaDetalleTalla::selectRaw('DATE(created_at) as fecha')
+                ->where('area', 'EPP')
+                ->where('estado_bodega', 'Pendiente')
+                ->whereNotNull('created_at')
+                ->distinct()
+                ->orderBy('fecha', 'desc');
+
+            if ($search && strlen($search) >= 4) {
+                $query->where('created_at', 'LIKE', '%' . $search . '%');
+            }
+
+            $result = $query->get()->pluck('fecha')->map(function($fecha) {
+                return ['valor' => Carbon::parse($fecha)->format('d/m/Y'), 'cantidad' => BodegaDetalleTalla::whereDate('created_at', $fecha)->where('area', 'EPP')->where('estado_bodega', 'Pendiente')->count()];
+            });
+            
+            \Log::info('obtenerFechasCreacionEpp completado', ['count' => $result->count()]);
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerFechasCreacionEpp: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return collect();
+        }
+    }
+
     public function call(string $method, array $arguments = []): mixed
     {
         if (!method_exists($this, $method)) {

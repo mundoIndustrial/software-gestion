@@ -241,7 +241,7 @@ class PedidoProduccion extends Model
     {
         return $this->hasMany(PedidoEpp::class, 'pedido_produccion_id')
             ->withTrashed()
-            ->with('epp');  // Cargar también los datos del EPP
+            ->with(['epp', 'imagenes']);  // Cargar también los datos del EPP e imágenes
     }
 
     /**

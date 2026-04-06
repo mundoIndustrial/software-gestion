@@ -250,7 +250,7 @@
                                                         <!-- DESCRIPCIÓN (PRENDA) - once per color group -->
                                                         @if($isFirstRowOfColor)
                                                         <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $totalRowsColor }}" style="width: 22%;">
-                                                            <div class="font-bold text-black mb-1">
+                                                            <div class="font-bold text-black mb-2 flex items-center gap-2">
                                                                 {{ $nombre }}
                                                                 @if($colorLabel)
                                                                     <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
@@ -259,6 +259,17 @@
                                                                     <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                                 @endif
                                                             </div>
+                                                            @if(($baseItem['tipo'] ?? null) === 'EPP' || ($baseItem['area'] ?? null) === 'EPP')
+                                                                @if($baseItem['tiene_historial'] ?? false)
+                                                                <button type="button" 
+                                                                        onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
+                                                                        title="Ver historial completo de cambios"
+                                                                        class="w-full px-2 py-1 mb-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition toggle-homologacion-btn relative">
+                                                                    🔽 Ver cambios
+                                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($baseItem['historial_homologaciones']) - 1 }}</span>
+                                                                </button>
+                                                                @endif
+                                                            @endif
                                                             @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
                                                                 <div class="text-slate-600 text-xs mb-2 italic">
                                                                     {{ $desc['descripcion'] }}
@@ -596,7 +607,7 @@
                                                     @endphp
                                                     <div class="font-bold text-black mb-1 flex items-center gap-2">
                                                         {{ $nombre }}
-                                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                        @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
                                                             @if($item['tiene_historial'] ?? false)
                                                                 <button type="button" 
                                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"

@@ -1031,6 +1031,13 @@
     <!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->
     @vite(['resources/js/app.js'])
 
+    <!-- DDD Core Bundle: Shared services y WebSocket cliente -->
+    @if(app()->environment('production'))
+        <script src="{{ asset('js/bundles/shared-core.min.js') }}"></script>
+    @else
+        <script src="{{ asset('js/bundles/shared-core.js') }}"></script>
+    @endif
+
     <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para usuarios autorizados) -->
     @auth
     @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos') || auth()->user()->hasRole('despacho') || auth()->user()->hasRole('cartera'))
