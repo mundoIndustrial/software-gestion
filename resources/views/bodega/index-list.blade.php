@@ -59,6 +59,9 @@
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
                                     Creación
                                 </th>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700">
+                                    Última Actualización
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200">
@@ -88,6 +91,9 @@
                                     </td>
                                     <td class="px-6 py-4 text-center text-black">
                                         {{ \Carbon\Carbon::parse($pedidoData['fecha_pedido'])->format('d/m/Y h:i:s A') }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-black">
+                                        {{ \Carbon\Carbon::parse($pedidoData['fecha_actualizacion'])->format('d/m/Y h:i:s A') }}
                                     </td>
                                 </tr>
                             @endforeach

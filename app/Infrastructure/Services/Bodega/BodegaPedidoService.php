@@ -12,6 +12,7 @@ use App\Models\EppBodegaDetalle;
 use App\Models\CosturaBodegaDetalle;
 use App\Models\PedidoVistoSupervisor;
 use App\Models\PedidoRevisado;
+use App\Models\PedidoAnexoHistorial;
 use App\Application\Services\EntregaService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Bodega\Calculators\PedidoEstadoCalculator;
@@ -175,6 +176,7 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
                 'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
                 'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
                 'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
+                'fecha_actualizacion' => $this->obtenerUltimaActualizacionPrendas($numeroPedido) ?? $primerPedido->created_at,
                 'cantidad_items' => $pedidosDelNumero->count(),
                 'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
                 'pedido_revisado' => !empty($pedidoRevisado),
@@ -589,6 +591,7 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
                     'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
                     'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
                     'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
+                    'fecha_actualizacion' => $this->obtenerUltimaActualizacionPrendas($numeroPedido) ?? $primerPedido->created_at,
                     'cantidad_items' => $pedidosDelNumero->count(),
                     'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
                     'pedido_revisado' => !empty($pedidoRevisado),
@@ -1204,6 +1207,28 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         
         $nombreArticulo = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? WarehouseConstants::DEFAULT_SIN_NOMBRE;
         return 'nombre_' . md5(strtolower(trim($nombreArticulo)));
+    }
+
+    /**
+     * Obtener la fecha del último cambio en prendas o EPPs del pedido
+     * Busca en pedido_anexos_historial registros de tipo PRENDA o EPP
+     */
+    private function obtenerUltimaActualizacionPrendas(string $numeroPedido): ?\Carbon\Carbon
+    {
+        // Obtener el registro de PedidoProduccion para acceder a su ID
+        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        
+        if (!$pedidoProduccion) {
+            return null;
+        }
+        
+        // Buscar el último cambio de prendas o EPPs
+        $ultimoCambio = PedidoAnexoHistorial::where('pedido_produccion_id', $pedidoProduccion->id)
+            ->whereIn('tipo', ['PRENDA', 'EPP'])
+            ->latest('created_at')
+            ->first();
+        
+        return $ultimoCambio?->created_at;
     }
 
     private function obtenerGeneroDelItem(array $item): string
