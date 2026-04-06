@@ -8,7 +8,7 @@
             color: white;
             padding: 0.75rem 1.25rem;
             display: grid;
-            grid-template-columns: 140px 170px 170px 140px 170px 200px 160px 170px 170px;
+            grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px;
             gap: 1.8rem;
             font-weight: 600;
             font-size: 0.8rem;
@@ -26,12 +26,6 @@
             <div class="th-wrapper">
                 <span>Estado</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Estado">
-                    <span class="material-symbols-rounded">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper">
-                <span>Área</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Área">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>

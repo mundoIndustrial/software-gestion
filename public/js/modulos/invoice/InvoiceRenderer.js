@@ -43,6 +43,11 @@ class InvoiceRenderer {
                             <div style="font-weight: 700; color: #1a3a52; font-size: 13px; margin-bottom: 2px;">${datos.cliente}</div>
                             <div style="color: #666; font-size: 13px;">Asesor: ${datos.asesora}</div>
                             <div style="color: #666; font-size: 13px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
+                            ${datos.orden_compra ? `
+                                <div style="color: #666; font-size: 13px; margin-top: 3px;">
+                                    <strong>Orden de Compra:</strong> ${datos.orden_compra}
+                                </div>
+                            ` : ''}
                             ${datos.observaciones ? `
                                 <div style="color: #666; font-size: 13px; margin-top: 3px;">
                                     <strong>Observaciones:</strong> ${datos.observaciones}

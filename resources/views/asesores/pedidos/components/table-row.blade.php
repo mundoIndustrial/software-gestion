@@ -80,7 +80,7 @@
      data-prendas="{{ json_encode($pedidoPrendas) }}"
      style="
     display: grid;
-    grid-template-columns: 140px 170px 170px 140px 170px 200px 160px 170px 170px;
+    grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px;
     gap: 1.8rem;
     padding: 0.75rem 1.25rem;
     align-items: center;
@@ -138,12 +138,6 @@
     <div class="table-cell">
         <span class="estado-badge" style="{{ $badgeStyles }} color: white; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; white-space: nowrap;">
             {{ $estadoTexto }}
-        </span>
-    </div>
-
-    <div style="display: flex; align-items: center;">
-        <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; display: inline-block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; white-space: nowrap;">
-            {{ $area }}
         </span>
     </div>
 

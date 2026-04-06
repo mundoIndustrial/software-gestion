@@ -606,6 +606,10 @@
                     <label for="editFormaPago" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
                     <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="editOrdenCompra" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Orden de Compra</label>
+                    <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                </div>
             </div>
         `;
         
@@ -619,7 +623,8 @@
             if (result.isConfirmed) {
                 const datosActualizados = {
                     cliente: document.getElementById('editCliente').value,
-                    forma_de_pago: document.getElementById('editFormaPago').value
+                    forma_de_pago: document.getElementById('editFormaPago').value,
+                    orden_compra: document.getElementById('editOrdenCompra').value
                 };
                 
                 // Abrir modal de justificación ANTES de guardar
@@ -693,6 +698,7 @@
                 body: JSON.stringify({
                     cliente: datosActualizados.cliente || '',
                     forma_de_pago: datosActualizados.forma_de_pago || '',
+                    orden_compra: datosActualizados.orden_compra || '',
                     justificacion: datosActualizados.justificacion || ''
                 })
             });
@@ -715,6 +721,7 @@
             if (window.datosEdicionPedido) {
                 window.datosEdicionPedido.cliente = datosActualizados.cliente;
                 window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
+                window.datosEdicionPedido.orden_compra = datosActualizados.orden_compra;
                 if (data.data && data.data.novedades) {
                     window.datosEdicionPedido.novedades = data.data.novedades;
                 }

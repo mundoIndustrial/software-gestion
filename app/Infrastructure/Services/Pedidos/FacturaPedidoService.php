@@ -86,6 +86,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
             'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
             'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
             'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
+            'orden_compra' => $pedido->orden_compra ?? '',
             'fecha' => $fechaCreacion,
             'fecha_creacion' => $fechaCreacion,
             'observaciones' => $pedido->observaciones ?? '',

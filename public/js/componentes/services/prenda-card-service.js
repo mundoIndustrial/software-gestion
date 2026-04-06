@@ -704,14 +704,12 @@ window.PrendaCardService = {
                                 </div>
                                 <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
+                            ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? `
                             <div style="margin-top: 0.35rem; font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
-                                ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? 'Colores asignados' : 'Sin colores asignados'}
+                                Colores asignados
                             </div>
-                            ${coloresHTML || `
-                                <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; font-size: 0.72rem; color: #64748b;">
-                                    No hay imagenes o colores asociados para esta talla.
-                                </div>
-                            `}
+                            ${coloresHTML}
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
@@ -1032,14 +1030,12 @@ window.PrendaCardService = {
                                 </div>
                                 <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
+                            ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? `
                             <div style="margin-top: 0.35rem; font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
-                                ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? 'Colores asignados' : 'Sin colores asignados'}
+                                Colores asignados
                             </div>
-                            ${coloresHTML || `
-                                <div style="margin-top: 0.55rem; border-top: 1px solid rgba(125,211,252,0.35); padding-top: 0.45rem; font-size: 0.72rem; color: #64748b;">
-                                    No hay imagenes o colores asociados para esta talla.
-                                </div>
-                            `}
+                            ${coloresHTML}
+                            ` : ''}
                         </div>
                     `;
                 }).join('');

@@ -324,6 +324,7 @@ function renderizarRecibo(datos) {
                     <div style="font-weight: 700; color: #1a3a52; font-size: 13px; margin-bottom: 2px;">${datosRecibo.cliente?.nombre || datosRecibo.cliente || 'Cliente'}</div>
                     <div style="color: #666; font-size: 13px;">Asesor: ${datosRecibo.asesor?.nombre || datosRecibo.asesor || datosRecibo.nombre_asesor || 'N/A'}</div>
                     <div style="color: #666; font-size: 13px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datosRecibo.forma_pago || datosRecibo.metodo_pago || 'N/A'}</span></div>
+                    ${datosRecibo.orden_compra ? `<div style="color: #666; font-size: 13px; margin-top: 3px;"><strong>Orden de Compra:</strong> ${datosRecibo.orden_compra}</div>` : ''}
                     ${datosRecibo.observaciones ? `<div style="color: #666; font-size: 13px; margin-top: 3px;"><strong>Observaciones:</strong> ${datosRecibo.observaciones}</div>` : ''}
                 </div>
                 <div style="text-align: right; font-size: 13px;">

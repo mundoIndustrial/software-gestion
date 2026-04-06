@@ -28,6 +28,10 @@ final class ActualizarPedidoCamposUseCase
             $datosActualizar['forma_de_pago'] = $dto->formaDePago;
         }
 
+        if ($dto->ordenCompra !== null) {
+            $datosActualizar['orden_compra'] = $dto->ordenCompra;
+        }
+
         if ($dto->novedades !== null) {
             $datosActualizar['novedades'] = $dto->novedades;
         }
