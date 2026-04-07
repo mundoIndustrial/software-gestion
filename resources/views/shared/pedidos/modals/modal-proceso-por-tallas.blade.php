@@ -10,18 +10,16 @@
             </h3>
             <!-- Selector de Modo -->
             <div style="display: flex; gap: 0.5rem; align-items: center; margin-right: 1rem;">
-                <button id="btn-modo-general" class="btn-modo-activo" 
-                    onclick="cambiarModoModalPorTallas('general')"
+                <button id="btn-modo-general" class="btn-modo-activo" data-prt-action="cambiar-modo" data-mode="general"
                     style="padding: 0.4rem 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #6b7280;">
                     General
                 </button>
-                <button id="btn-modo-especifico" class="btn-modo-inactivo"
-                    onclick="cambiarModoModalPorTallas('especifico')"
+                <button id="btn-modo-especifico" class="btn-modo-inactivo" data-prt-action="cambiar-modo" data-mode="especifico"
                     style="padding: 0.4rem 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #6b7280;">
                     Específico
                 </button>
             </div>
-            <button class="modal-close-btn" onclick="cerrarModalProcesoPorTallas()">
+            <button class="modal-close-btn" data-prt-action="cerrar-modal">
                 <span class="material-symbols-rounded">close</span>
             </button>
         </div>
@@ -70,7 +68,7 @@
                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">photo_camera</span>Fotos Generales
                         </label>
                         <div id="prt-galeria-general" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start;">
-                            <div onclick="document.getElementById('prt-foto-input-general').click()" 
+                            <div data-prt-action="abrir-input" data-target-id="prt-foto-input-general"
                                 style="width: 70px; height: 70px; border: 2px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white; flex-shrink: 0;">
                                 <div style="text-align:center;">
                                     <span class="material-symbols-rounded" style="font-size:1.3rem;color:#999;">add_photo_alternate</span>
@@ -78,7 +76,7 @@
                                 </div>
                             </div>
                         </div>
-                        <input type="file" id="prt-foto-input-general" accept="image/*" multiple style="display:none;" onchange="cargarFotosGenerales(this)">
+                        <input type="file" id="prt-foto-input-general" data-prt-action="cargar-fotos-generales" accept="image/*" multiple style="display:none;">
                     </div>
                 </div>
             </div>
@@ -117,8 +115,8 @@
 
         <!-- Footer -->
         <div class="modal-footer" style="flex-shrink: 0;">
-            <button class="btn btn-secondary" onclick="cerrarModalProcesoPorTallas()">Cancelar</button>
-            <button class="btn btn-primary" onclick="guardarProcesoPorTallas()">
+            <button class="btn btn-secondary" data-prt-action="cerrar-modal">Cancelar</button>
+            <button class="btn btn-primary" data-prt-action="guardar-modal">
                 <span class="material-symbols-rounded">check</span>Guardar Proceso
             </button>
         </div>

@@ -151,7 +151,7 @@
 <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
 
 <!-- Componente: Modal Editar Pedido -->
-@include('asesores.pedidos.components.modal-editar-pedido')
+@include('shared.pedidos.components.modal-editar-pedido')
 
 <!-- Componente: Modal Lista Prendas -->
 @include('asesores.pedidos.components.modal-prendas-lista')
@@ -1441,7 +1441,9 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>

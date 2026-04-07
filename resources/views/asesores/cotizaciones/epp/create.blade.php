@@ -289,7 +289,13 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tabla.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ $v }}"></script>
@@ -303,4 +309,3 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/cotizaciones/epp/cotizacion-epp-create-page.js') }}?v={{ $v }}"></script>
 @endpush
-

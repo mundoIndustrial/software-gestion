@@ -213,7 +213,7 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+@include('shared.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 @include('shared.pedidos.modals.modal-agregar-editar-epp')
@@ -294,7 +294,9 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
@@ -354,7 +356,13 @@
     <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
     
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Logo -->

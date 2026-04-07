@@ -108,10 +108,18 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         );
 
         // 7. Actualizar procesos y sus imagenes
-        $this->prendaProcesosUpdaterService->actualizarProcesos($prenda, $dto->procesos);
+        $this->prendaProcesosUpdaterService->actualizarProcesos(
+            $prenda,
+            $dto->procesos,
+            $dto->fotosProcesoNuevo ?? []
+        );
         // 8. Guardar novedad en pedido_produccion
         // 9. Mantener campo explícito de tipo de flujo de tallas sincronizado
         $this->sincronizarTipoFlujoTallasPersistido($prenda);
+        
+        // Tocar el updated_at del pedido padre (modificar prenda = actualización del pedido)
+        $prenda->pedidoProduccion()->touch();
+        
         return $this->postUpdateHydrationService->hidratarParaRespuesta($prenda);
     }
 

@@ -182,7 +182,7 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+@include('shared.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 @include('shared.pedidos.modals.modal-agregar-editar-epp')
@@ -259,7 +259,9 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}?v={{ $v }}"></script>
@@ -310,7 +312,13 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prendas-wrappers.js') }}?v={{ $v }}"></script>
 

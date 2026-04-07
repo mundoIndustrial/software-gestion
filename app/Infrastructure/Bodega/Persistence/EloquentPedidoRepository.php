@@ -54,7 +54,7 @@ class EloquentPedidoRepository implements PedidoRepositoryInterface
         return $modelo ? $this->modelToEntity($modelo) : null;
     }
 
-    public function save(Pedido $pedido): void
+    public function save(Pedido $pedido, bool $actualizarTimestamp = true): void
     {
         // Buscar si ya existe
         $modelo = ReciboPrenda::find($pedido->getId());
@@ -78,7 +78,18 @@ class EloquentPedidoRepository implements PedidoRepositoryInterface
         if ($pedidoProduccion) {
             $pedidoProduccion->estado = $pedido->getEstado()->getValor();
             $pedidoProduccion->novedades = $pedido->getNovedades();
-            $pedidoProduccion->save();
+            
+            // Si no debe actualizar timestamp (cambios de estado), usar update con timestamps deshabilitados
+            if (!$actualizarTimestamp) {
+                PedidoProduccion::where('id', $pedidoProduccion->id)
+                    ->update([
+                        'estado' => $pedido->getEstado()->getValor(),
+                        'novedades' => $pedido->getNovedades(),
+                    ]);
+            } else {
+                // Actualizar normalmente (toca updated_at)
+                $pedidoProduccion->save();
+            }
         }
     }
 

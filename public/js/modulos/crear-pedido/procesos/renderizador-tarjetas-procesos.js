@@ -219,8 +219,8 @@ const ProcesoEditService = {
     },
 
     abrirModalPorTallas(tipo) {
-        if (globalThis.abrirModalProcesoPorTallas) {
-            globalThis.abrirModalProcesoPorTallas(tipo);
+        if (globalThis.ProcesoPorTallasController?.abrirModalProcesoPorTallas) {
+            globalThis.ProcesoPorTallasController.abrirModalProcesoPorTallas(tipo);
         }
     },
 
@@ -563,5 +563,4 @@ globalThis.RenderizadorTarjetasProcesosModule = Object.freeze({
 });
 
 })();
-
 

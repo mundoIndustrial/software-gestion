@@ -75,6 +75,9 @@ class PedidoEppService
                 $pedidosEpp[] = $pedidoEpp;
             }
 
+            // Tocar el updated_at del pedido (agregar EPP = actualización del pedido)
+            $pedido->touch();
+
             return $pedidosEpp;
         });
     }
@@ -216,6 +219,9 @@ class PedidoEppService
         if (isset($datos['tallas_medidas']) && is_array($datos['tallas_medidas'])) {
             $pedidoEpp->setTransientTallasMedidas($datos['tallas_medidas']);
         }
+
+        // Tocar el updated_at del pedido padre (modificar EPP = actualización del pedido)
+        $pedidoEpp->pedidoProduccion()->touch();
     }
 
     /**

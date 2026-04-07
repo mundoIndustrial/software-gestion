@@ -50,13 +50,9 @@ class EliminarProcesoUseCase implements EliminarProcesoUseCaseContract
             throw new \DomainException('Proceso no encontrado');
         }
 
-        $totalProcesosDistintos = $this->procesoPedidoWriteRepository
-            ->contarProcesosLegacyDistintos($numeroPedido);
-
-        if ($totalProcesosDistintos <= 1) {
-            throw new \DomainException('No se puede eliminar el unico proceso de una orden');
-        }
-
+        // PERMITIR: Eliminar procesos aunque sea el único (cambio 2026-04-07)
+        // Antes: throw new \DomainException('No se puede eliminar el unico proceso de una orden');
+        
         $this->procesoPedidoWriteRepository
             ->eliminarProcesoLegacyPorNombre($numeroPedido, $nombreProcesoLegacy);
 

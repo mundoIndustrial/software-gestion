@@ -10,13 +10,20 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
 {
     public function contarPendientesAsesor(string $asesorNombre): int
     {
-        return DB::table('bodega_detalles_talla')
+        // Excluir registros que apuntan a EPPs que fueron soft-deleted (homologados)
+        return DB::table('bodega_detalles_talla as bdt')
+            ->leftJoin('pedido_epp as pe', 'bdt.pedido_epp_id', '=', 'pe.id')
             ->select('numero_pedido')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->where('estado_bodega', 'Pendiente')
             ->where('asesor', 'like', "%{$asesorNombre}%")
-            ->whereNull('deleted_at')
+            ->whereNull('bdt.deleted_at')
+            // Excluir registros cuyo pedido_epp_id apunta a un EPP que fue soft-deleted (homologado)
+            ->where(function ($query) {
+                $query->whereNull('bdt.pedido_epp_id')  // Sin pedido_epp_id (prendas)
+                    ->orWhereNull('pe.deleted_at');    // O el EPP está vigente (no fue homologado)
+            })
             ->distinct()
             ->count('numero_pedido');
     }
@@ -29,13 +36,20 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
         int $perPage = 20
     ): array {
         // Consultar bodega_detalles_talla filtrado por asesor y estado Pendiente
+        // IMPORTANTE: Excluir registros que apuntan a EPPs que fueron homologados (soft-deleted en pedido_epp)
         $query = DB::table('bodega_detalles_talla as bdt')
             ->leftJoin('pedidos_produccion as pp', 'bdt.pedido_produccion_id', '=', 'pp.id')
+            ->leftJoin('pedido_epp as pe', 'bdt.pedido_epp_id', '=', 'pe.id')
             ->select('bdt.*', 'pp.created_at as pedido_fecha_creacion')
             ->whereNotNull('bdt.numero_pedido')
             ->where('bdt.numero_pedido', '!=', '')
             ->where('bdt.estado_bodega', 'Pendiente')
-            ->whereNull('bdt.deleted_at');
+            ->whereNull('bdt.deleted_at')
+            // Excluir registros cuyo pedido_epp_id apunta a un EPP que fue soft-deleted (homologado)
+            ->where(function ($query) {
+                $query->whereNull('bdt.pedido_epp_id')  // Sin pedido_epp_id (prendas)
+                    ->orWhereNull('pe.deleted_at');    // O el EPP está vigente (no fue homologado)
+            });
         
         // Filtrar por asesor
         if ($asesorNombre) {
@@ -58,6 +72,10 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
         $pedidosAgrupados = $detalles->groupBy('numero_pedido')->map(function ($items, $numeroPedido) {
             $primerItem = $items->first();
             $totalItems = $items->count();
+            // Contar ITEMS ÚNICOS (por EPP o Prenda), no registros (que pueden tener múltiples tallas/colores)
+            $itemsUnicos = $items->groupBy(function ($item) {
+                return $item->pedido_epp_id ?? $item->prenda_id;
+            })->count();
             $totalCantidad = $items->sum(function($item) {
                 return is_numeric($item->cantidad) ? (int)$item->cantidad : 0;
             });
@@ -75,7 +93,7 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
                 'fecha_entrega' => $primerItem->fecha_entrega ? Carbon::parse($primerItem->fecha_entrega)->format('d/m/Y') : '',
                 'tipo' => $tipoDisplay,
                 'total_items' => $totalItems,
-                'total_pendientes' => $totalItems,
+                'total_pendientes' => $itemsUnicos,
                 'total_cantidad' => $totalCantidad,
                 'areas' => $areas,
                 'detalles' => $items->map(function($item) {

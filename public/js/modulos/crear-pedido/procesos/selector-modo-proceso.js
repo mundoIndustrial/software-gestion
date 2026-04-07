@@ -150,8 +150,10 @@ globalThis.seleccionarModoProcesoTallas = function() {
         }
         // Por defecto, cuando el usuario elige "Por Tallas" en la creación, se abre en modo general.
         globalThis.procesosSeleccionados[tipoProceso].datos.modo_tallas = 'general';
-        globalThis.abrirModalProcesoPorTallas(tipoProceso);
+        if (globalThis.ProcesoPorTallasController?.abrirModalProcesoPorTallas) {
+            globalThis.ProcesoPorTallasController.abrirModalProcesoPorTallas(tipoProceso);
+        }
     } else {
-        console.error('[selector-modo] abrirModalProcesoPorTallas no encontrada');
+        console.error('[selector-modo] ProcesoPorTallasController.abrirModalProcesoPorTallas no encontrada');
     }
 };

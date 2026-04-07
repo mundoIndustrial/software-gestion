@@ -30,6 +30,37 @@ final class PrepararActualizacionPrendaService
         $imgs = $this->procesarImagenesService->procesarParaActualizar($request, $pedidoId);
 
         $procesosAEliminar = $this->normalizarArray($request->input('procesos_a_eliminar'));
+        $procesosAEliminar = array_values(array_unique(array_map('intval', $procesosAEliminar)));
+        $procesosAEliminar = array_values(array_filter($procesosAEliminar, fn ($id) => $id > 0));
+
+        // Regla canónica: "eliminar" tiene prioridad sobre "actualizar".
+        // Si un proceso viene en procesos_a_eliminar, lo quitamos del payload de procesos
+        // para evitar que el updater lo recree/retoque en el mismo request.
+        if (!empty($procesosAEliminar)) {
+            $procesosPayloadNormalizado = $this->normalizarProcesosPayload($validated['procesos'] ?? null);
+            if (!empty($procesosPayloadNormalizado)) {
+                $procesosPayloadFiltrado = array_values(array_filter(
+                    $procesosPayloadNormalizado,
+                    function ($proceso) use ($procesosAEliminar) {
+                        if (!is_array($proceso) || !isset($proceso['id'])) {
+                            return true;
+                        }
+                        return !in_array((int) $proceso['id'], $procesosAEliminar, true);
+                    }
+                ));
+
+                $validated['procesos'] = is_string($validated['procesos'] ?? null)
+                    ? json_encode($procesosPayloadFiltrado)
+                    : $procesosPayloadFiltrado;
+
+                Log::info('[PrepararActualizacionPrendaService] Reconciliacion delete>update aplicada', [
+                    'procesos_a_eliminar' => $procesosAEliminar,
+                    'procesos_payload_original_count' => count($procesosPayloadNormalizado),
+                    'procesos_payload_filtrado_count' => count($procesosPayloadFiltrado),
+                ]);
+            }
+        }
+
         if (!empty($procesosAEliminar)) {
             Log::info('[PrepararActualizacionPrendaService] Eliminando procesos marcados', [
                 'cantidad' => count($procesosAEliminar),
@@ -74,5 +105,42 @@ final class PrepararActualizacionPrendaService
 
         return [];
     }
-}
 
+    private function extraerIdsProcesosDesdePayload(mixed $procesosRaw): array
+    {
+        if (is_string($procesosRaw)) {
+            $decoded = json_decode($procesosRaw, true);
+            $procesosRaw = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($procesosRaw)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($procesosRaw as $proceso) {
+            if (!is_array($proceso)) {
+                continue;
+            }
+            if (!isset($proceso['id'])) {
+                continue;
+            }
+            $id = (int) $proceso['id'];
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function normalizarProcesosPayload(mixed $procesosRaw): array
+    {
+        if (is_string($procesosRaw)) {
+            $decoded = json_decode($procesosRaw, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return is_array($procesosRaw) ? $procesosRaw : [];
+    }
+}

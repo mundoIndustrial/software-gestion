@@ -39,7 +39,7 @@
                 
                 <!-- Content -->
                 <div style="flex: 1; overflow: auto; padding: 8px 10px; background: #fafafa;">
-                    ${htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`}
+                    ${htmlBotones + `<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`}
                 </div>
             </div>
         `;

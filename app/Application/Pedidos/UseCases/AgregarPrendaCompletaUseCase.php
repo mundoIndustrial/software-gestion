@@ -77,6 +77,9 @@ final class AgregarPrendaCompletaUseCase implements AgregarPrendaCompletaUseCase
 
             $this->prendaNovedadService->guardarNovedad($prenda, $dto);
 
+            // Tocar el updated_at del pedido padre (agregar prenda = actualización del pedido)
+            $prenda->pedidoProduccion()->touch();
+
             return $prenda;
         });
     }
