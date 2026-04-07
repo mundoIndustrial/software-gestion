@@ -94,21 +94,26 @@
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->
                                     <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
+                                        @php
+                                            // Detectar si hay EPP eliminado en el historial
+                                            $hayEppEliminado = false;
+                                            if($item['tiene_historial'] ?? false) {
+                                                $historial = $item['historial_homologaciones'] ?? [];
+                                                foreach($historial as $h) {
+                                                    if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
+                                                        $hayEppEliminado = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
                                         <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
                                             {{ $nombre }}
                                             @if($color)
                                                 <span class="font-bold"> - {{ strtoupper($color) }}</span>
                                             @endif
-                                            @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
-                                                @if($item['tiene_historial'] ?? false)
-                                                    <button type="button" 
-                                                            class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
-                                                            onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
-                                                        <span class="text-sm">🔽</span>
-                                                        <span>Ver cambios</span>
-                                                        <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
-                                                    </button>
-                                                @endif
+                                            @if($hayEppEliminado)
+                                                <span class="text-blue-600 font-semibold text-xs">(homologado)</span>
                                             @endif
                                         </div>
                                         @if($deBodega)
@@ -229,6 +234,17 @@
                                     
                                     <!-- ESTADO (ESTÁTICO) -->
                                     <td class="px-4 py-3" style="width: 18%;">
+                                        @if($item['tiene_historial'] ?? false)
+                                            <div class="mb-2">
+                                                <button type="button" 
+                                                        class="w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center justify-center gap-1 relative"
+                                                        onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                    <span class="text-sm">🔽</span>
+                                                    <span>Ver cambios</span>
+                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                </button>
+                                            </div>
+                                        @endif
                                         <div class="w-full px-2 py-1 border border-slate-300 bg-slate-100 text-black text-xs font-semibold uppercase rounded" 
                                              style="background-color: rgb(254, 243, 199); color: rgb(120, 53, 15);">
                                             @php

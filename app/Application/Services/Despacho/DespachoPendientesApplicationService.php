@@ -440,12 +440,14 @@ class DespachoPendientesApplicationService
                 $estadoBodega = $item['estado_bodega'] ?? null;
                 $deBodega = (bool) ($item['de_bodega'] ?? ($item['descripcion']['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false)));
                 $procesos = $item['descripcion']['procesos'] ?? [];
+                $tieneHistorial = $item['tiene_historial'] ?? false;
 
                 $estadoPendiente = ($tipo === 'epp')
                     ? (($item['epp_estado'] ?? null) === 'Pendiente' || (!($item['epp_estado']) && $estadoBodega === 'Pendiente'))
                     : ($estadoBodega === 'Pendiente');
 
-                $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && $estadoPendiente;
+                // EPPs pendientes O EPPs con historial de homologaciones (eliminados/reemplazados)
+                $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoPendiente || $tieneHistorial);
                 $esPrendaDeBodegaSinProcesos = ($tipo === 'prenda')
                     && $deBodega
                     && ($estadoBodega === 'Pendiente')

@@ -403,7 +403,7 @@ class BodegaPedidoDetalleService
 
         $empresa = $recibo->cliente ?? 'N/A';
 
-        $area = $bodegaData['area'] ?? null;
+        $area = $bodegaData['area'] ?? 'EPP';  // Asegurar que EPPs siempre tengan area 'EPP'
         $estadoBodega = $bodegaData['estado_bodega'] ?? null;
         $cantidad = $bodegaData['cantidad'] ?? $eppCantidad;
         $pendientes = $bodegaData['pendientes'] ?? null;
@@ -568,16 +568,21 @@ class BodegaPedidoDetalleService
                 'tipo' => $item['tipo'] ?? 'unknown',
                 'area' => $item['area'] ?? 'unknown',
                 'tiene_tallas' => isset($item['tallas']) && is_array($item['tallas']),
+                'tiene_historial' => $item['tiene_historial'] ?? false,
             ], $items),
         ]);
 
         foreach ($items as $item) {
             $tallas = $item['tallas'] ?? [];
+            $tieneHistorialItem = $item['tiene_historial'] ?? false;
 
             $tallasFiltradas = [];
             foreach ($tallas as $talla) {
                 $estadoPendiente = ($talla['estado_bodega'] ?? '') === WarehouseConstants::STATE_PENDING;
-                if ($estadoPendiente) {
+                // Incluir si está en estado Pendiente O si es EPP con historial de homologaciones
+                $esEppConHistorial = ($item['tipo'] ?? '') === 'EPP' && $tieneHistorialItem;
+                
+                if ($estadoPendiente || $esEppConHistorial) {
                     $tallasFiltradas[] = $talla;
                 }
             }
