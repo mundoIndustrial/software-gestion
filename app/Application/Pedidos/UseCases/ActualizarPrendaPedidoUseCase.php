@@ -7,6 +7,7 @@ use App\Domain\Pedidos\UseCases\ActualizarPrendaPedidoUseCaseContract;
 use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
+use App\Models\TipoProceso;
 use Illuminate\Support\Facades\Log;
 
 final class ActualizarPrendaPedidoUseCase implements ActualizarPrendaPedidoUseCaseContract
@@ -209,8 +210,18 @@ final class ActualizarPrendaPedidoUseCase implements ActualizarPrendaPedidoUseCa
             return;
         }
 
-        $prenda->procesos()->delete();
+        $idsProcesosSincronizados = [];
+
         foreach ($dto->procesos as $proceso) {
+            if (!is_array($proceso)) {
+                continue;
+            }
+
+            $tipoProcesoId = $this->resolverTipoProcesoId($proceso);
+            if (!$tipoProcesoId) {
+                continue;
+            }
+
             // Decodificar ubicaciones si vienen como JSON string
             $ubicaciones = $proceso['ubicaciones'] ?? null;
             if (is_string($ubicaciones)) {
@@ -219,19 +230,83 @@ final class ActualizarPrendaPedidoUseCase implements ActualizarPrendaPedidoUseCa
                     if (is_array($ubicacionesDecodificadas)) {
                         $ubicaciones = $ubicacionesDecodificadas;
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $ubicaciones = null;
                 }
             }
 
-            $prenda->procesos()->create([
-                'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
+            $modoTallas = $proceso['modo_tallas'] ?? $proceso['modoTallas'] ?? 'generico';
+            $modosValidos = ['generico', 'general', 'especifico'];
+            if (!in_array($modoTallas, $modosValidos, true)) {
+                $modoTallas = 'generico';
+            }
+
+            $payload = [
+                'tipo_proceso_id' => $tipoProcesoId,
                 'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
-            ]);
+                'observaciones' => $proceso['observaciones'] ?? null,
+                'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                'modo_tallas' => $modoTallas,
+                'datos_adicionales' => json_encode($proceso),
+            ];
+
+            $procesoId = isset($proceso['id']) ? (int) $proceso['id'] : null;
+            $procesoExistente = null;
+
+            if ($procesoId) {
+                $procesoExistente = $prenda->procesos()
+                    ->withTrashed()
+                    ->where('id', $procesoId)
+                    ->first();
+            }
+
+            if (!$procesoExistente) {
+                $procesoExistente = $prenda->procesos()
+                    ->withTrashed()
+                    ->where('tipo_proceso_id', $tipoProcesoId)
+                    ->first();
+            }
+
+            if ($procesoExistente) {
+                if (method_exists($procesoExistente, 'trashed') && $procesoExistente->trashed()) {
+                    $procesoExistente->restore();
+                }
+                $procesoExistente->update($payload);
+                $idsProcesosSincronizados[] = $procesoExistente->id;
+                continue;
+            }
+
+            $nuevoProceso = $prenda->procesos()->create($payload);
+            $idsProcesosSincronizados[] = $nuevoProceso->id;
+        }
+
+        if (!empty($idsProcesosSincronizados)) {
+            $prenda->procesos()
+                ->whereNotIn('id', $idsProcesosSincronizados)
+                ->delete();
         }
     }
-}
 
+    private function resolverTipoProcesoId(array $proceso): ?int
+    {
+        $tipoProcesoId = $proceso['tipo_proceso_id'] ?? null;
+        if ($tipoProcesoId) {
+            return (int) $tipoProcesoId;
+        }
+
+        $tipoProcesoNombre = $proceso['tipo'] ?? $proceso['nombre'] ?? null;
+        if (!$tipoProcesoNombre) {
+            return null;
+        }
+
+        $tipo = TipoProceso::query()
+            ->whereRaw('LOWER(slug) = ?', [strtolower((string) $tipoProcesoNombre)])
+            ->orWhereRaw('LOWER(nombre) = ?', [strtolower((string) $tipoProcesoNombre)])
+            ->first();
+
+        return $tipo?->id ? (int) $tipo->id : null;
+    }
+}
 
 
 

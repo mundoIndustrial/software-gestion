@@ -11,27 +11,35 @@
         return;
     }
 
+    function callGlobal(fnName, ...args) {
+        const fn = global[fnName];
+        if (typeof fn !== 'function') {
+            return undefined;
+        }
+        return fn(...args);
+    }
+
     global.ProcesoModalController = {
         state,
         modules,
-        abrir: global.abrirModalProcesoGenerico,
-        cerrar: global.cerrarModalProcesoGenerico,
-        guardarProceso: global.agregarProcesoAlPedido,
+        abrir: (...args) => callGlobal('abrirModalProcesoGenerico', ...args),
+        cerrar: (...args) => callGlobal('cerrarModalProcesoGenerico', ...args),
+        guardarProceso: (...args) => callGlobal('agregarProcesoAlPedido', ...args),
         imagenes: {
-            manejar: global.manejarImagenProceso,
-            eliminar: global.eliminarImagenProceso,
-            confirmarEliminacion: global.confirmarEliminarImagenProceso,
-            limpiar: global.limpiarImagenesProceso
+            manejar: (...args) => callGlobal('manejarImagenProceso', ...args),
+            eliminar: (...args) => callGlobal('eliminarImagenProceso', ...args),
+            confirmarEliminacion: (...args) => callGlobal('confirmarEliminarImagenProceso', ...args),
+            limpiar: (...args) => callGlobal('limpiarImagenesProceso', ...args)
         },
         tallas: {
-            guardarSeleccion: global.guardarTallasSeleccionadas,
-            actualizarResumen: global.actualizarResumenTallasProceso,
-            abrirEditor: global.abrirEditorTallasEspecificas,
-            cerrarEditor: global.cerrarEditorTallas
+            guardarSeleccion: (...args) => callGlobal('guardarTallasSeleccionadas', ...args),
+            actualizarResumen: (...args) => callGlobal('actualizarResumenTallasProceso', ...args),
+            abrirEditor: (...args) => callGlobal('abrirEditorTallasEspecificas', ...args),
+            cerrarEditor: (...args) => callGlobal('cerrarEditorTallas', ...args)
         },
         buffer: {
-            aplicar: global.aplicarCambiosProcesosDesdeBuffer,
-            obtener: global.obtenerBufferProcesoActual
+            aplicar: (...args) => callGlobal('aplicarCambiosProcesosDesdeBuffer', ...args),
+            obtener: (...args) => callGlobal('obtenerBufferProcesoActual', ...args)
         },
         debug: {
             enabled() {

@@ -15,7 +15,7 @@
  * @param {HTMLInputElement} input - Input de tipo file
  * @param {number} procesoIndex - Índice del proceso (1, 2, 3)
  */
-globalThis.manejarImagenProceso = function(input, procesoIndex) {
+const manejarImagenProcesoLegacy = function(input, procesoIndex) {
     if (!input.files || input.files.length === 0) {
         return;
     }
@@ -104,7 +104,7 @@ globalThis.manejarImagenProceso = function(input, procesoIndex) {
             btnEliminar.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                eliminarImagenProceso(previewIndex, procesoIndex);
+                eliminarImagenProcesoLegacy(previewIndex, procesoIndex);
             };
             
             // Posicionar elementos
@@ -149,7 +149,7 @@ globalThis.manejarImagenProceso = function(input, procesoIndex) {
  * @param {number} previewIndex - Índice del preview HTML (1, 2, 3) - del cuadro en el modal
  * @param {number} procesoIndex - Índice del proceso en el storage (1, 2, 3)
  */
-globalThis.eliminarImagenProceso = function(previewIndex, procesoIndex) {
+const eliminarImagenProcesoLegacy = function(previewIndex, procesoIndex) {
     // Soportar llamadas antiguas con un solo parámetro (backward compatibility)
     if (procesoIndex === undefined) {
         procesoIndex = previewIndex;
@@ -180,6 +180,14 @@ globalThis.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         });
     }
 };
+
+if (!globalThis.ProcesoModalController?.imagenes?.manejar) {
+    globalThis.manejarImagenProceso = manejarImagenProcesoLegacy;
+}
+
+if (!globalThis.ProcesoModalController?.imagenes?.eliminar) {
+    globalThis.eliminarImagenProceso = eliminarImagenProcesoLegacy;
+}
 
 /**
  * Mostrar imagen ampliada en modal

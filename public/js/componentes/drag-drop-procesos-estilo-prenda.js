@@ -1,6 +1,10 @@
 // DRAG & DROP PARA PROCESOS - EXACTAMENTE COMO PRENDAS
 // Sin logs para una experiencia limpia
 
+function obtenerManejadorImagenProceso() {
+    return globalThis.ProcesoModalController?.imagenes?.manejar || globalThis.manejarImagenProceso;
+}
+
 globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     console.log(`[setupDragAndDropProceso]  INICIO - Configurando para preview ${procesoIndex}`);
     console.log(`[setupDragAndDropProceso]Timestamp:`, new Date().toISOString());
@@ -83,9 +87,10 @@ globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         tempInput.files = files;
         
         // Usar la función existente para manejar la imagen
-        if (typeof globalThis.manejarImagenProceso === 'function') {
+        const manejarImagenProceso = obtenerManejadorImagenProceso();
+        if (typeof manejarImagenProceso === 'function') {
             console.log(`[setupDragAndDropProceso]  Llamando manejarImagenProceso desde drop ${procesoIndex}`);
-            globalThis.manejarImagenProceso(tempInput, procesoIndex);
+            manejarImagenProceso(tempInput, procesoIndex);
         } else {
             console.error(`[setupDragAndDropProceso]  manejarImagenProceso no disponible`);
         }
@@ -311,8 +316,9 @@ globalThis.setupDragAndDropSeccionCompleta = function() {
         tempInput.files = files;
         
         // Usar la función existente
-        if (typeof globalThis.manejarImagenProceso === 'function') {
-            globalThis.manejarImagenProceso(tempInput, parseInt(procesoIndex));
+        const manejarImagenProceso = obtenerManejadorImagenProceso();
+        if (typeof manejarImagenProceso === 'function') {
+            manejarImagenProceso(tempInput, parseInt(procesoIndex));
         }
         
         // Reset variables

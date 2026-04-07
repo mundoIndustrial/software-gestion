@@ -514,7 +514,7 @@ class DragDropManager {
                                     let numeroProceso = this._determinarNumeroProceso(elementoActivo, elementoCursor);
                                     if (numeroProceso) {
                                         handlerCorrecto = `proceso-${numeroProceso}`;
-                                        funcionManejo = (input) => globalThis.manejarImagenProceso(input, numeroProceso);
+                                        funcionManejo = (input) => (globalThis.ProcesoModalController?.imagenes?.manejar || globalThis.manejarImagenProceso)?.(input, numeroProceso);
                                         UIHelperService.log('DragDropManager', ` Usando handler para proceso ${numeroProceso}`);
                                     }
                                     break;
@@ -569,7 +569,7 @@ class DragDropManager {
                                     break;
                                 case 'proceso-generico':
                                     handlerCorrecto = 'proceso-1 (fallback)';
-                                    funcionManejo = (input) => globalThis.manejarImagenProceso(input, 1);
+                                    funcionManejo = (input) => (globalThis.ProcesoModalController?.imagenes?.manejar || globalThis.manejarImagenProceso)?.(input, 1);
                                     break;
                                 default:
                                     handlerCorrecto = 'prendas (fallback)';

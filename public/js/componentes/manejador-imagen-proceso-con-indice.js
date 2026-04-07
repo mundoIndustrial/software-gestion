@@ -19,6 +19,10 @@
  * @param {HTMLInputElement} input - Input de tipo file
  * @param {number} cuadroIndex - Índice del cuadro en el modal (1, 2, 3)
  */
+function obtenerManejadorImagenProceso() {
+    return globalThis.ProcesoModalController?.imagenes?.manejar || globalThis.manejarImagenProceso;
+}
+
 globalThis.manejarImagenProcesoConIndice = function(input, cuadroIndex) {
     if (!input.files || input.files.length === 0) {
         globalThis._procesoQuadroIndex = undefined;
@@ -37,8 +41,9 @@ globalThis.manejarImagenProcesoConIndice = function(input, cuadroIndex) {
     globalThis._procesoQuadroIndex = cuadroIndex;
     
     // Delegar a la función original
-    if (typeof globalThis.manejarImagenProceso === 'function') {
-        globalThis.manejarImagenProceso(input, procesoIndex);
+    const manejarImagenProceso = obtenerManejadorImagenProceso();
+    if (typeof manejarImagenProceso === 'function') {
+        manejarImagenProceso(input, procesoIndex);
     }
     
     // Limpiar después
