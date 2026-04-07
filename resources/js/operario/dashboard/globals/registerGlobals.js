@@ -5,6 +5,8 @@ import {
     guardarNovedad,
     editarNovedad,
     eliminarNovedad,
+    cancelarConfirmacion,
+    confirmarEliminar,
 } from '../novedades/novedades';
 import {
     manejarPasarACostura,
@@ -36,6 +38,8 @@ export function registerDashboardGlobals() {
     window.guardarNovedad = guardarNovedad;
     window.editarNovedad = editarNovedad;
     window.eliminarNovedad = eliminarNovedad;
+    window.cancelarConfirmacion = cancelarConfirmacion;
+    window.confirmarEliminar = confirmarEliminar;
 
     // Costura / asignación
     window.manejarPasarACostura = manejarPasarACostura;

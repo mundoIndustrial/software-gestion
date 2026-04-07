@@ -1107,13 +1107,53 @@ if (auth()->user()->hasRole('administrador-costura')) {
 
 <!-- Modales -->
 <!-- Modal de Mensaje Genérico -->
-<div id="modalMensaje" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+<div id="modalMensaje" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
     <div id="modalMensajeContenido" style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div id="modalMensajeIcono" style="font-size: 3rem; margin-bottom: 1rem;"></div>
         <h3 id="modalMensajeTitulo" style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600;"></h3>
         <p id="modalMensajeTexto" style="margin: 0 0 1.5rem 0; color: #666;"></p>
     </div>
 </div>
+
+<!-- Modal de Confirmación -->
+<div id="modalConfirmacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: #fef3c7; margin: 0 auto 1rem; font-size: 2rem;">⚠️</div>
+        <h3 id="modalConfirmacionTitulo" style="margin: 0 0 0.75rem 0; font-size: 1.25rem; font-weight: 700; color: #111827; text-align: center;">¿Eliminar novedad?</h3>
+        <p id="modalConfirmacionTexto" style="margin: 0 0 1.5rem 0; color: #6b7280; text-align: center; line-height: 1.5; font-size: 0.95rem;">Esta acción no se puede deshacer.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <button id="btnConfirmarNo" onclick="cancelarConfirmacion()" style="padding: 0.75rem 1rem; background: #f3f4f6; color: #374151; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">Cancelar</button>
+            <button id="btnConfirmarSi" onclick="confirmarEliminar()" style="padding: 0.75rem 1rem; background: #ef4444; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#btnConfirmarNo:hover {
+    background: #e5e7eb;
+}
+
+#btnConfirmarSi:hover {
+    background: #dc2626;
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+}
+
+#btnConfirmarSi:active {
+    transform: translateY(0);
+}
+</style>
 
 <!-- Modal de Novedades -->
 <div id="modalNovedad" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">

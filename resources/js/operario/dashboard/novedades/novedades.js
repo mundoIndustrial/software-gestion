@@ -279,12 +279,43 @@ export function editarNovedad(novedadId, textoActual, tipoActual) {
 }
 
 export function eliminarNovedad(novedadId) {
-    if (!confirm('¿Eliminar esta novedad?')) {
+    const modal = document.getElementById('modalConfirmacion');
+    if (!modal) {
+        mostrarError('Error', 'Modal no encontrado');
+        return;
+    }
+
+    // Guardar el ID para usarlo después en confirmarEliminar
+    window.novedadIdAEliminar = novedadId;
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+}
+
+export function cancelarConfirmacion() {
+    const modal = document.getElementById('modalConfirmacion');
+    if (modal) {
+        modal.style.display = 'none';
+        window.novedadIdAEliminar = null;
+    }
+}
+
+export function confirmarEliminar() {
+    const novedadId = window.novedadIdAEliminar;
+    if (!novedadId) {
+        mostrarError('Error', 'ID de novedad no encontrado');
         return;
     }
 
     const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
     const prendaId = document.getElementById('novedadPrendaId')?.value;
+    const btnConfirmarSi = document.getElementById('btnConfirmarSi');
+    
+    // Mostrar estado de carga
+    if (btnConfirmarSi) {
+        btnConfirmarSi.disabled = true;
+        btnConfirmarSi.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite; vertical-align: middle;">refresh</span>';
+    }
 
     httpJson(`/operario/api/novedades/${novedadId}`, {
         method: 'DELETE',
@@ -293,6 +324,9 @@ export function eliminarNovedad(novedadId) {
         .then((r) => r.json())
         .then((data) => {
             if (data.success) {
+                // Cerrar modal
+                cancelarConfirmacion();
+                
                 if (numeroPedido && prendaId) {
                     cargarNovedadesDelUsuario(numeroPedido, prendaId);
                 }
@@ -305,6 +339,12 @@ export function eliminarNovedad(novedadId) {
         .catch((err) => {
             console.error('Error eliminando novedad:', err);
             mostrarError('Error', 'Error eliminando novedad');
+        })
+        .finally(() => {
+            if (btnConfirmarSi) {
+                btnConfirmarSi.disabled = false;
+                btnConfirmarSi.innerHTML = 'Eliminar';
+            }
         });
 }
 

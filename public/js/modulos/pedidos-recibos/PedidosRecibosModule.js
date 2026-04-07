@@ -1305,6 +1305,23 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     const tieneReflectivo = primeraVariante?.tiene_reflectivo || prendaData?.tiene_reflectivo || false;
                     const obsReflectivo = primeraVariante?.obs_reflectivo || prendaData?.obs_reflectivo || '';
                     
+                    // Construir línea compacta de TELAS: Nombre / Color | REF: ref | Manga con obs
+                    const telaPartesPrincipal = [];
+                    if (prendaData?.tela) telaPartesPrincipal.push(esc(prendaData.tela));
+                    if (prendaColor) telaPartesPrincipal.push(esc(prendaColor));
+                    const telaMain = telaPartesPrincipal.join(' / ');
+                    
+                    const refText = prendaData?.ref_tela || prendaData?.referencia || prendaData?.ref || '';
+                    
+                    const mangaInfo = [];
+                    if (manga) mangaInfo.push(`MANGA: ${esc(manga)}${obsManga ? ` (${esc(obsManga)})` : ''}`);
+                    
+                    const telaLinea = [];
+                    if (telaMain) telaLinea.push(telaMain);
+                    if (refText) telaLinea.push(`REF: ${refText}`);
+                    const telaLineaTexto = telaLinea.join(' | ');
+                    const mangaLineaTexto = mangaInfo.join('');
+                    
                     return `
                         <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
                         <div id="order-date" class="order-date">
@@ -1329,68 +1346,46 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         </div>
 
                         <div class="prenda-info">
-                          <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
+                          <div class="prenda-name">PRENDA 1: ${esc(prendaNombre || '-').toUpperCase()}</div>
                         </div>
                         
-                        <div class="costura-section">
-                          ${prendaColor ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">COLOR:</span>
-                              <span class="value">${esc(prendaColor)}</span>
-                            </div>
+                        <div class="costura-section" style="line-height: 1.4; font-size: 11px;">
+                          ${telaLineaTexto ? `
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TELAS: ${telaLineaTexto}</span>
                           </div>
                           ` : ''}
                           
-                          ${prendaData?.tela ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TELA:</span>
-                              <span class="value">${esc(prendaData.tela)}</span>
-                            </div>
-                          </div>
-                          ` : ''}
-                          
-                          ${manga ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIPO MANGA:</span>
-                              <span class="value">${esc(manga)}</span>
-                            </div>
-                            ${obsManga ? `<div class="costura-obs">${esc(obsManga)}</div>` : ''}
+                          ${mangaLineaTexto ? `
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">${mangaLineaTexto}</span>
                           </div>
                           ` : ''}
                           
                           ${broche ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">BROCHE/BOTÓN:</span>
-                              <span class="value">${esc(broche)}</span>
-                            </div>
-                            ${obsBroche ? `<div class="costura-obs">${esc(obsBroche)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">BROCHE/BOTÓN:</span> ${esc(broche)}${obsBroche ? ` (${esc(obsBroche)})` : ''}
                           </div>
                           ` : ''}
                           
                           ${tieneBolsillos ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIENE BOLSILLOS:</span>
-                              <span class="value">SÍ</span>
-                            </div>
-                            ${obsBolsillos ? `<div class="costura-obs">${esc(obsBolsillos)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TIENE BOLSILLOS:</span> SÍ${obsBolsillos ? ` - ${esc(obsBolsillos)}` : ''}
                           </div>
                           ` : ''}
                           
                           ${tieneReflectivo ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIENE REFLECTIVO:</span>
-                              <span class="value">SÍ</span>
-                            </div>
-                            ${obsReflectivo ? `<div class="costura-obs">${esc(obsReflectivo)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TIENE REFLECTIVO:</span> SÍ${obsReflectivo ? ` - ${esc(obsReflectivo)}` : ''}
                           </div>
                           ` : ''}
                         </div>
+                        
+                        ${(ubicaciones && ubicaciones.length > 0) ? `
+                        <div style="margin: 4px 0; font-size: 11px;">
+                          ${ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')}
+                        </div>
+                        ` : ''}
                         
                         ${tallasResumen ? `
                         <div class="section">
@@ -1432,11 +1427,6 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                           </div>
                         </div>
                         ` : ''}
-                        
-                        <div class="section">
-                          <h4>DESCRIPCIÓN:</h4>
-                          <div class="descripcion-list">${(ubicaciones && ubicaciones.length > 0 && ubicaciones[0]) ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('') : '<div>-</div>'}</div>
-                        </div>
                     `;
                 }
                 
@@ -1562,6 +1552,11 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     return '';
                 }).join('');
 
+                // Si no hay bloques, no mostrar la sección completa
+                if (!Array.isArray(blocks) || blocks.length === 0) {
+                    return '';
+                }
+
                 return `
                     <div class="section observations-section" style="margin-top: 2px;">
                       <h4 style="margin-bottom: 2px; font-size: 11px;">OBSERVACIONES POR TALLA</h4>
@@ -1586,7 +1581,6 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                       <div class="receipt-card">
                         ${renderHeader(p.num)}
                         ${renderTallasSection(p.blocks)}
-                        ${renderFooter()}
                       </div>
                     </div>
                 `;
