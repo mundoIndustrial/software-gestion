@@ -420,7 +420,7 @@ async function eliminarNovedad(novedadId) {
             
             // Adjuntar evento directamente sin timeout
             btnConfirmar.onclick = async function(event) {
-                console.log('[eliminarNovedad] 🖱️ Botón confirmar clickeado!', event);
+                console.log('[eliminarNovedad]  Botón confirmar clickeado!', event);
                 console.log('[eliminarNovedad]  Event target:', event.target);
                 
                 // Prevenir comportamiento por defecto

@@ -65,7 +65,7 @@ globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
             return;
         }
         
-        console.log(`[setupDragAndDropProceso] 📁 Files recibidos en drop ${procesoIndex}:`, files.length);
+        console.log(`[setupDragAndDropProceso]  Files recibidos en drop ${procesoIndex}:`, files.length);
         
         // Procesar el primer archivo (solo imágenes)
         const file = files[0];
@@ -105,7 +105,7 @@ globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         fotoPanelContainer._dragDropConfigured = true;
         
         fotoPanelContainer.addEventListener('click', (e) => {
-            console.log(`[setupDragAndDropProceso] 🖱️ CLICK detectado en contenedor`);
+            console.log(`[setupDragAndDropProceso]  CLICK detectado en contenedor`);
             console.log(`[setupDragAndDropProceso]Event target:`, e.target);
             
             // Detectar si el click es en un preview (pero no en botón eliminar ni en img)
@@ -142,7 +142,7 @@ globalThis.setupDragAndDropProceso = function(previewElement, procesoIndex) {
             
             // Abrir el selector de archivos
             const inputProceso = document.getElementById(`proceso-foto-input-${index}`);
-            console.log(`[setupDragAndDropProceso] 📁 Input encontrado:`, inputProceso);
+            console.log(`[setupDragAndDropProceso]  Input encontrado:`, inputProceso);
             
             if (inputProceso) {
                 console.log(`[setupDragAndDropProceso]  Intentando abrir input ${index}`);

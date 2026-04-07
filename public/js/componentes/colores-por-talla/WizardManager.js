@@ -1351,7 +1351,7 @@ globalThis.WizardManager = (function() {
             
             try {
                 // Actualizar etiquetas del resumen
-                console.log('[WizardManager] 🏷️ Actualizando etiquetas del resumen...');
+                console.log('[WizardManager]  Actualizando etiquetas del resumen...');
                 this.actualizarEtiquetasResumen();
                 
                 // Generar interfaz de colores por talla

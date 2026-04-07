@@ -23,7 +23,7 @@ Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflecti
    - Cada talla puede tener su propia imagen de referencia
    - Botón para eliminar imagen
 
-## 📁 Archivos Implementados
+##  Archivos Implementados
 
 ### Nuevos Archivos JavaScript
 

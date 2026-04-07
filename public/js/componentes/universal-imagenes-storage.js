@@ -216,7 +216,7 @@ globalThis.universalImagenesStorage = {
         console.log('Resumen completo:', this.obtenerResumen());
         
         Object.keys(this._storage).forEach(tipo => {
-            console.group(`📁 ${tipo.toUpperCase()}`);
+            console.group(` ${tipo.toUpperCase()}`);
             Object.keys(this._storage[tipo]).forEach(indice => {
                 const imagenes = this._storage[tipo][indice];
                 console.log(`  [${indice}] ${imagenes.length} imágenes:`, 

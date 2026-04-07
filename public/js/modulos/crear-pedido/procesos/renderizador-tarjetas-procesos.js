@@ -22,7 +22,7 @@ const PROCESOS_NOMBRES = Object.freeze({
     sublimado: 'Sublimado'
 });
 
-// Compatibilidad hacia atrás para scripts legacy.
+// Compatibilidad hacia atrÃ¡s para scripts legacy.
 globalThis.iconosProcesos = PROCESOS_ICONOS;
 globalThis.nombresProcesos = PROCESOS_NOMBRES;
 
@@ -147,7 +147,7 @@ function configurarDragDropSiDisponible() {
 }
 /**
  * Renderizar todas las tarjetas de procesos en el modal de prenda - OPTIMIZADO
- * Usa batch rendering para evitar reflows múltiples
+ * Usa batch rendering para evitar reflows mÃºltiples
  */
 globalThis.renderizarTarjetasProcesos = function() {
     const container = document.getElementById(RENDER_PROCESOS_CONTAINER_ID);
@@ -198,7 +198,7 @@ globalThis.renderizarTarjetasProcesos = function() {
     return true;
 };
 /**
- * Generar HTML de una tarjeta de proceso - VERSIÓN SIMPLIFICADA
+ * Generar HTML de una tarjeta de proceso - VERSIÃ“N SIMPLIFICADA
  */
 function generarTarjetaProceso(tipo, datos) {
     if (globalThis.ProcesoCardRendererService && typeof globalThis.ProcesoCardRendererService.generarTarjetaProceso === 'function') {
@@ -224,14 +224,27 @@ const ProcesoEditService = {
         }
     },
 
+    abrirModalGenerico(tipo, esEdicion = false) {
+        const controller = globalThis.ProcesoModalController;
+        if (controller?.abrir) {
+            controller.abrir(tipo, esEdicion);
+            return true;
+        }
+        if (globalThis.abrirModalProcesoGenerico) {
+            globalThis.abrirModalProcesoGenerico(tipo, esEdicion);
+            return true;
+        }
+        return false;
+    },
+
     editarDesdeModal(tipo) {
-        console.log(' [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
+        console.log(' [EDITAR-PROCESO-MODAL] Iniciando ediciÃ³n de proceso existente:', tipo);
         
         // Obtener datos del proceso
         const proceso = this.obtenerProceso(tipo);
 
         // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
-        // CRÍTICO: Buscar en orden de prioridad correcto
+        // CRÃTICO: Buscar en orden de prioridad correcto
         const modoTallas = proceso?.datos?.modo_tallas || 'generico';
         console.log(' [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas, {
             datos_modo_tallas: proceso?.datos?.modo_tallas,
@@ -264,10 +277,10 @@ const ProcesoEditService = {
             return;
         }
         
-        //  PASO 1: Iniciar el gestor de edición (marca como "en edición")
+        //  PASO 1: Iniciar el gestor de ediciÃ³n (marca como "en ediciÃ³n")
         if (globalThis.gestorEditacionProcesos) {
             globalThis.gestorEditacionProcesos.iniciarEdicion(tipo, false); // false = no es nuevo
-            console.log(' [EDITAR-PROCESO-MODAL] Gestor de edición iniciado para:', tipo);
+            console.log(' [EDITAR-PROCESO-MODAL] Gestor de ediciÃ³n iniciado para:', tipo);
         }
         
         //  PASO 2: Iniciar editor de procesos (captura estado original)
@@ -277,7 +290,7 @@ const ProcesoEditService = {
                 console.error(' [EDITAR-PROCESO-MODAL] No se pudo iniciar editor de procesos');
                 return;
             }
-            console.log(' [EDITAR-PROCESO-MODAL] Editor de procesos iniciado en modo EDICIÓN');
+            console.log(' [EDITAR-PROCESO-MODAL] Editor de procesos iniciado en modo EDICIÃ“N');
         }
         
         //  PASO 3: Cargar datos en el modal ANTES de abrirlo
@@ -288,9 +301,9 @@ const ProcesoEditService = {
             console.error('[EDITAR-PROCESO-MODAL] cargarDatosProcesoEnModal no disponible');
         }
         
-        //  PASO 4: Abrir modal en modo EDICIÓN
-        if (globalThis.abrirModalProcesoGenerico) {
-            console.log(' [EDITAR-PROCESO-MODAL] Abriendo modal genérico en modo EDICIÓN');
+        //  PASO 4: Abrir modal en modo EDICIÃ“N
+        if (this.abrirModalGenerico(tipo, false)) {
+            console.log(' [EDITAR-PROCESO-MODAL] Abriendo modal genÃ©rico en modo EDICIÃ“N');
             
             const swalContainer = document.querySelector('.swal2-container');
             const swalPopup = document.querySelector('.swal2-popup');
@@ -300,7 +313,7 @@ const ProcesoEditService = {
                 console.log(' [EDITAR-PROCESO-MODAL] Swal2 z-index:', globalThis.getComputedStyle(swalContainer).zIndex);
             }
             
-            globalThis.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
+            // apertura delegada a abrirModalGenerico
 
             const procesoTieneTallasGuardadas = (() => {
                 const t = proceso?.datos?.tallas;
@@ -310,7 +323,7 @@ const ProcesoEditService = {
             })();
 
             // Sincronizar desde la prenda SOLO como fallback cuando el proceso NO tiene tallas guardadas.
-            // Si se ejecuta en edición con tallas (especialmente talla__color), pisa la configuración del proceso.
+            // Si se ejecuta en ediciÃ³n con tallas (especialmente talla__color), pisa la configuraciÃ³n del proceso.
             if (!procesoTieneTallasGuardadas) {
                 setTimeout(() => {
                     // Copiar tallas de globalThis.tallasRelacionales a globalThis.tallasCantidadesProceso
@@ -332,23 +345,23 @@ const ProcesoEditService = {
                             globalThis.tallasCantidadesProceso.dama = {};
                             const tallasDama = [];
 
-                            //  FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
+                            //  FIX: Si DAMA tiene SOBREMEDIDA (nÃºmero o objeto anidado), EXTRAERLA
                             for (const [talla, valor] of Object.entries(globalThis.tallasRelacionales.DAMA)) {
                                 if (talla === 'SOBREMEDIDA') {
                                     // SOBREMEDIDA puede ser:
-                                    // 1. Un NÚMERO directo: 344 → significa DAMA sobremedida
-                                    // 2. Un OBJETO anidado: {DAMA: 34} → extraer por género
+                                    // 1. Un NÃšMERO directo: 344 â†’ significa DAMA sobremedida
+                                    // 2. Un OBJETO anidado: {DAMA: 34} â†’ extraer por gÃ©nero
 
                                     if (typeof valor === 'number') {
-                                        // SOBREMEDIDA como número: es para DAMA (género actual)
+                                        // SOBREMEDIDA como nÃºmero: es para DAMA (gÃ©nero actual)
                                         globalThis.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
-                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (número) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (nÃºmero) extraÃ­da:', valor);
                                     } else if (typeof valor === 'object' && valor !== null) {
                                         // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
                                         for (const [genero, cantidad] of Object.entries(valor)) {
                                             globalThis.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                         }
-                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (objeto) extraÃ­da:', valor);
                                     }
                                 } else {
                                     // Otras tallas: copiar directamente
@@ -365,20 +378,20 @@ const ProcesoEditService = {
                             globalThis.tallasCantidadesProceso.caballero = {};
                             const tallasCaballero = [];
 
-                            //  FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
+                            //  FIX: Mismo tratamiento para CABALLERO (nÃºmero o objeto anidado)
                             for (const [talla, valor] of Object.entries(globalThis.tallasRelacionales.CABALLERO)) {
                                 if (talla === 'SOBREMEDIDA') {
-                                    // SOBREMEDIDA puede ser número o objeto
+                                    // SOBREMEDIDA puede ser nÃºmero o objeto
                                     if (typeof valor === 'number') {
-                                        // SOBREMEDIDA como número: es para CABALLERO
+                                        // SOBREMEDIDA como nÃºmero: es para CABALLERO
                                         globalThis.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
-                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (nÃºmero) extraÃ­da:', valor);
                                     } else if (typeof valor === 'object' && valor !== null) {
-                                        // SOBREMEDIDA anidada: extraer por género
+                                        // SOBREMEDIDA anidada: extraer por gÃ©nero
                                         for (const [genero, cantidad] of Object.entries(valor)) {
                                             globalThis.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                         }
-                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                                        console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (objeto) extraÃ­da:', valor);
                                     }
                                 } else {
                                     globalThis.tallasCantidadesProceso.caballero[talla] = valor;
@@ -405,9 +418,10 @@ const ProcesoEditService = {
                     }
 
                     // Renderizar el resumen con las tallas ya aplicadas
-                    if (globalThis.actualizarResumenTallasProceso && typeof globalThis.actualizarResumenTallasProceso === 'function') {
-                        console.log('[EDITAR-PROCESO-MODAL]  Renderizando resumen de tallas automáticamente con "done_all"...');
-                        globalThis.actualizarResumenTallasProceso();
+                    const actualizarResumen = globalThis.ProcesoModalController?.tallas?.actualizarResumen || globalThis.actualizarResumenTallasProceso;
+                    if (typeof actualizarResumen === 'function') {
+                        console.log('[EDITAR-PROCESO-MODAL]  Renderizando resumen de tallas automaticamente con "done_all"...');
+                        actualizarResumen();
                         console.log('[EDITAR-PROCESO-MODAL]  Resumen de tallas renderizado con tallas aplicadas');
                     }
                 }, 100);
@@ -418,18 +432,18 @@ const ProcesoEditService = {
                 });
             }
             
-            // Verificar z-index después de abrir
+            // Verificar z-index despuÃ©s de abrir
             setTimeout(() => {
                 const modalProceso = document.getElementById('modal-proceso-generico');
                 const swal = document.querySelector('.swal2-container');
                 
-                // Forzar z-index máximo para asegurar que esté encima de todo
+                // Forzar z-index mÃ¡ximo para asegurar que estÃ© encima de todo
                 if (modalProceso) {
                     modalProceso.style.setProperty('z-index', '9999999999', 'important');
-                    console.log(' [EDITAR-PROCESO-MODAL] Z-index forzado dinámicamente:', globalThis.getComputedStyle(modalProceso).zIndex);
+                    console.log(' [EDITAR-PROCESO-MODAL] Z-index forzado dinÃ¡micamente:', globalThis.getComputedStyle(modalProceso).zIndex);
                 }
                 
-                console.log(' [EDITAR-PROCESO-MODAL] DESPUÉS de abrirModalProcesoGenerico:');
+                console.log(' [EDITAR-PROCESO-MODAL] DESPUÃ‰S de abrirModalProcesoGenerico:');
                 console.log('   - Modal proceso existe?:', !!modalProceso);
                 if (modalProceso) {
                     console.log('   - Modal proceso z-index (inline):', modalProceso.style.zIndex);
@@ -456,19 +470,19 @@ const ProcesoEditService = {
                 });
                 console.log('   - Top elementos con z-index alto:');
                 conZAlto.slice(0, 5).forEach(el => {
-                    console.log(`     ✓ ${el.tagName}#${el.id || '(sin-id)'}.${el.className || '(sin-class)'}: z=${globalThis.getComputedStyle(el).zIndex}`);
+                    console.log(`     âœ“ ${el.tagName}#${el.id || '(sin-id)'}.${el.className || '(sin-class)'}: z=${globalThis.getComputedStyle(el).zIndex}`);
                 });
             }, 100);
             
-            // Marcar claramente que estamos en modo edición
+            // Marcar claramente que estamos en modo ediciÃ³n
             const modalProceso = document.getElementById('modal-proceso-generico');
             if (modalProceso) {
                 modalProceso.setAttribute('data-modo-edicion', 'true');
                 modalProceso.setAttribute('data-tipo-proceso-editando', tipo);
-                console.log('🏷️ [EDITAR-PROCESO-MODAL] Modal marcado como modo edición');
+                console.log(' [EDITAR-PROCESO-MODAL] Modal marcado como modo ediciÃ³n');
             }
         } else {
-            console.error(' [EDITAR-PROCESO-MODAL] No existe globalThis.abrirModalProcesoGenerico');
+            console.error(' [EDITAR-PROCESO-MODAL] No existe apertura de modal de proceso');
         }
     },
 
@@ -482,8 +496,8 @@ const ProcesoEditService = {
         }
         
         // Abrir modal del proceso
-        if (globalThis.abrirModalProcesoGenerico) {
-            globalThis.abrirModalProcesoGenerico(tipo);
+        if (this.abrirModalGenerico(tipo, false)) {
+            // apertura delegada a abrirModalGenerico
             
             // Cargar datos existentes en el modal
             if (proceso?.datos) {
@@ -533,8 +547,8 @@ function eliminarProcesoLocalmente(tipo) {
 }
 
 /**
- * API del módulo frontend (fachada estable).
- * Mantiene un punto único de acceso y reduce acoplamiento directo a globals sueltos.
+ * API del mÃ³dulo frontend (fachada estable).
+ * Mantiene un punto Ãºnico de acceso y reduce acoplamiento directo a globals sueltos.
  */
 globalThis.RenderizadorTarjetasProcesosModule = Object.freeze({
     renderizar: () => globalThis.renderizarTarjetasProcesos(),
@@ -549,7 +563,5 @@ globalThis.RenderizadorTarjetasProcesosModule = Object.freeze({
 });
 
 })();
-
-
 
 

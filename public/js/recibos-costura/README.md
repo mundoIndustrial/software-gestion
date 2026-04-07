@@ -68,7 +68,7 @@
 
 ---
 
-## 📁 Estructura de Carpetas
+##  Estructura de Carpetas
 
 ```
 recibos-costura/

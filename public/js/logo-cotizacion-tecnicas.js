@@ -787,7 +787,7 @@ function abrirModalDatosIguales(tecnicas) {
                             Imágenes - ${tecnica.nombre} (Máximo 3)
                         </label>
                         <div class="dImagenesDropzone-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
-                            <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
+                            <div style="margin-bottom: 6px; font-size: 1.3rem;"></div>
                             <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
                             <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
                             <input type="file" class="dImagenTecnicaInput-${idx}" accept="image/*" multiple style="display: none;" />
@@ -1079,7 +1079,7 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
                     cursor: pointer;
                     transition: all 0.2s;
                 ">
-                    <div style="margin-bottom: 8px; font-size: 1.3rem;">📁</div>
+                    <div style="margin-bottom: 8px; font-size: 1.3rem;"></div>
                     <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imagen aquí</p>
                     <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
                     <input type="file" class="dImagenLogoCompartidoInput" accept="image/*" style="display: none;" />
@@ -1455,7 +1455,7 @@ function agregarFilaPrenda() {
             <div>
                 <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Imágenes (máximo 3)</label>
                 <div class="imagenes-dropzone-${prendasIndex}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 24px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
-                    <div style="margin-bottom: 8px; font-size: 1.5rem;">📁</div>
+                    <div style="margin-bottom: 8px; font-size: 1.5rem;"></div>
                     <p style="margin: 0 0 4px 0; font-weight: 500; color: #333;">Arrastra imágenes aquí</p>
                     <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
                     <input type="file" class="imagen-prenda-input-${prendasIndex}" accept="image/*" multiple style="display: none;" />
@@ -3064,7 +3064,7 @@ function renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda) {
                         `).join('')}
                     </div>
                     <div class="edit-dropzone" data-tecnica="${nombreTecnica}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
-                        <div style="font-size: 1.2rem; margin-bottom: 6px;">📁</div>
+                        <div style="font-size: 1.2rem; margin-bottom: 6px;"></div>
                         <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
                         <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes, máximo 3)</div>
                         <input type="file" class="input-imagenes" data-tecnica="${nombreTecnica}" accept="image/*" multiple style="display:none;" />
@@ -3660,7 +3660,7 @@ function agregarFilaTelaLogo(boton) {
         </td>
         <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
             <div class="dropzone-tela-logo" style="border: 1px dashed #ddd; padding: 6px; border-radius: 3px; background: #fafafa; cursor: pointer; font-size: 0.75rem; color: #999; transition: all 0.2s;" title="Haz clic o arrastra una imagen">
-                📁 Imagen
+                 Imagen
             </div>
             <input type="file" class="input-file-tela-logo" accept="image/*" style="display: none;">
             <div class="preview-tela-logo" style="margin-top: 4px; display: none; position: relative; width: 60px; height: 60px; border-radius: 3px; overflow: hidden; border: 1px solid #ddd;">
@@ -3755,7 +3755,7 @@ function agregarFilaTelaMultiTecnica(tbody) {
         </td>
         <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
             <div class="dropzone-tela-multi" style="border: 1px dashed #ddd; padding: 6px; border-radius: 3px; background: #fafafa; cursor: pointer; font-size: 0.75rem; color: #999; transition: all 0.2s;" title="Haz clic o arrastra una imagen">
-                📁 Imagen
+                 Imagen
             </div>
             <input type="file" class="input-file-tela-multi" accept="image/*" style="display: none;">
             <div class="preview-tela-multi" style="margin-top: 4px; display: none; position: relative; width: 60px; height: 60px; border-radius: 3px; overflow: hidden; border: 1px solid #ddd;">

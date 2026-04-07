@@ -5,7 +5,7 @@
  * qué área tiene el recibo número 15 (consecutivo_actual = 15)
  */
 
-console.log('🔍 INICIANDO VERIFICACIÓN DEL RECIBO 15');
+console.log(' INICIANDO VERIFICACIÓN DEL RECIBO 15');
 
 // 1. Interceptar la petición de seguimiento
 const originalFetch = globalThis.fetch;
@@ -25,7 +25,7 @@ globalThis.fetch = function(...args) {
                     let encontroRecibo15 = false;
                     
                     data.pedido.prendas.forEach((prenda, index) => {
-                        console.log(`\n📌 PRENDA ${index + 1}: ${prenda.nombre_prenda} (ID: ${prenda.id})`);
+                        console.log(`\n PRENDA ${index + 1}: ${prenda.nombre_prenda} (ID: ${prenda.id})`);
                         console.log(`   ├── Área más reciente del sistema: ${prenda.area_mas_reciente || 'NO DEFINIDA'}`);
                         
                         console.log(`   └──  BUSCANDO RECIBO 15 EN CONSECUTIVOS:`);
@@ -58,7 +58,7 @@ globalThis.fetch = function(...args) {
                     if (encontroRecibo15) {
                         console.log('║  RECIBO 15 ENCONTRADO - Ver área arriba (🔴 RECIBO 15)      ║');
                     } else {
-                        console.log('║ ⚠️  RECIBO 15 NO ENCONTRADO EN ESTE PEDIDO                      ║');
+                        console.log('║   RECIBO 15 NO ENCONTRADO EN ESTE PEDIDO                      ║');
                     }
                     console.log('╚════════════════════════════════════════════════════════════════╝\n');
                 }

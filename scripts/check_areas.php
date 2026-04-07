@@ -128,12 +128,12 @@ echo "  • Total recibos: $totalRecibos\n";
 echo "  • Recibos especiales: $recibosEspeciales\n";
 
 if ($totalAreas == 0 && $totalProcesos > 0) {
-    echo "\n  ⚠️  PROBLEMA: Hay procesos pero NO hay áreas en prenda_areas_logo_pedido\n";
+    echo "\n    PROBLEMA: Hay procesos pero NO hay áreas en prenda_areas_logo_pedido\n";
     echo "      El sistema de áreas Logo no está registrando datos.\n";
 } elseif ($totalAreas > 0) {
     echo "\n  ✓ OK: Hay datos de áreas registrados\n";
 } else {
-    echo "\n  ⚠️  No hay datos suficientes para analizar\n";
+    echo "\n    No hay datos suficientes para analizar\n";
 }
 
 echo "\n" . str_repeat("=", 100) . "\n\n";

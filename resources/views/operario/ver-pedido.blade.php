@@ -1348,7 +1348,7 @@
             const headerElement = document.getElementById('header-numero-recibo');
             if (headerElement && numeroRecibo) {
                 headerElement.textContent = '#' + numeroRecibo;
-                console.log('🏷️ [HEADER ACTUALIZADO] Recibo:', numeroRecibo);
+                console.log(' [HEADER ACTUALIZADO] Recibo:', numeroRecibo);
             }
         }
     }
@@ -1612,7 +1612,7 @@
         }, FAILSAFE_MS);
 
         try {
-            console.log('🎬 [VER-PEDIDO] ===== INICIALIZANDO PÁGINA =====');
+            console.log(' [VER-PEDIDO] ===== INICIALIZANDO PÁGINA =====');
             
             if (typeof llenarDatosModal === 'function') {
                 llenarDatosModal();

@@ -246,7 +246,7 @@ class PrendaFormCollector {
             //  IMPORTANTE: Hacer DEEP COPY de procesosSeleccionados
             // porque globalThis.procesosSeleccionados puede ser limpiado después
             const copiarProcesos = (procesos) => {
-                console.log('[copiarProcesos] 🔍 INICIANDO - Procesos a copiar:', {
+                console.log('[copiarProcesos]  INICIANDO - Procesos a copiar:', {
                     'es_objeto': !Array.isArray(procesos) && typeof procesos === 'object',
                     'keys': Object.keys(procesos || {}),
                     'contenido_completo': procesos

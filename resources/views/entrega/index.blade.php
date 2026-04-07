@@ -123,7 +123,7 @@
                     <div class="stat-label">Total Piezas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🏷️</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="corte-etiqueteadas">0</div>
                     <div class="stat-label">Piezas etiqueteadas</div>
                 </div>

@@ -195,7 +195,7 @@ class StorageDiagnoseCommand extends Command
             foreach ($dirs as $dir) {
                 $dirName = basename($dir);
                 $fileCount = count(File::allFiles($dir));
-                $this->components->twoColumnDetail("  📁 $dirName", "$fileCount archivos");
+                $this->components->twoColumnDetail("   $dirName", "$fileCount archivos");
             }
         }
 

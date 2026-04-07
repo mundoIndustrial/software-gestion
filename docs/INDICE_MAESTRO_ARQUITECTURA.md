@@ -5,7 +5,7 @@
 
 ---
 
-## 📁 ARCHIVOS CREADOS
+##  ARCHIVOS CREADOS
 
 ### 1️⃣ ARQUITECTURA BASE
 Ubicación: `/public/js/arquitectura/`

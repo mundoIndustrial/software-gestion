@@ -446,8 +446,8 @@ class GestionItemsUI {
     _cargarModoEdicion() {
         const prendaAEditar = this.prendas[this.prendaEditIndex];
         
-        // 🔍 DIAGNOSTIC: Verificar que procesos están en this.prendas[index]
-        console.log('[_cargarModoEdicion] 🔍 SEGUNDA EDICIÓN - Verificando estado:');
+        //  DIAGNOSTIC: Verificar que procesos están en this.prendas[index]
+        console.log('[_cargarModoEdicion]  SEGUNDA EDICIÓN - Verificando estado:');
         console.log('[_cargarModoEdicion]   this.prendaEditIndex:', this.prendaEditIndex);
         console.log('[_cargarModoEdicion]   prendaAEditar.nombre_prenda:', prendaAEditar?.nombre_prenda);
         console.log('[_cargarModoEdicion]   prendaAEditar.procesos EXISTS:', !!prendaAEditar?.procesos);
@@ -461,7 +461,7 @@ class GestionItemsUI {
     }
 
     _cargarModoCreacion() {
-        console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando globalThis.telasCreacion para NUEVA prenda');
+        console.log('[abrirModalAgregarPrendaNueva]  RESET - Limpiando globalThis.telasCreacion para NUEVA prenda');
         console.log('[abrirModalAgregarPrendaNueva]   ANTES:', globalThis.telasCreacion);
 
         globalThis.telasCreacion = [];
@@ -633,7 +633,7 @@ class GestionItemsUI {
 
     _logEstadoInicial() {
         console.log('\n\n═══════════════════════════════════════════════════════════════');
-        console.log(' [agregarPrendaNueva] ⏱️ CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
+        console.log(' [agregarPrendaNueva]  CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
         console.log('═══════════════════════════════════════════════════════════════');
         
         const estadoImagenesPrenda = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
@@ -1236,7 +1236,7 @@ class GestionItemsUI {
     }
 
     mostrarModalExito() {
-        console.log('[mostrarModalExito] 🎬 INICIANDO');
+        console.log('[mostrarModalExito]  INICIANDO');
         console.log('[mostrarModalExito] ¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
         console.log('[mostrarModalExito] ¿datosPedidoCreado?', this.datosPedidoCreado);
         
@@ -1312,6 +1312,8 @@ globalThis.editarProcesoEdicion = function(tipo) {
         if (globalThis.abrirModalProcesoPorTallas) {
             globalThis.abrirModalProcesoPorTallas(tipo);
         }
+    } else if (globalThis.ProcesoModalController?.abrir) {
+        globalThis.ProcesoModalController.abrir(tipo);
     } else if (globalThis.abrirModalProcesoGenerico) {
         globalThis.abrirModalProcesoGenerico(tipo);
         
@@ -1427,8 +1429,9 @@ function _cargarProcesoTallas(datos) {
     globalThis.tallasCantidadesProceso.caballero = caballeroTallas;
     globalThis.tallasCantidadesProceso.sobremedida = sobremedidaTallas;
 
-    if (globalThis.actualizarResumenTallasProceso) {
-        globalThis.actualizarResumenTallasProceso();
+    const actualizarResumen = globalThis.ProcesoModalController?.tallas?.actualizarResumen || globalThis.actualizarResumenTallasProceso;
+    if (typeof actualizarResumen === 'function') {
+        actualizarResumen();
     }
 }
 
@@ -1455,5 +1458,4 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
-
 

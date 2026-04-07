@@ -16,7 +16,7 @@ if (config('app.debug')) {
                 if ($response->successful()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Conexión a API exitosa ✅',
+                        'message' => 'Conexión a API exitosa ',
                         'status' => $response->status(),
                         'data_count' => count($response->json()),
                         'sample' => array_slice($response->json(), 0, 2)

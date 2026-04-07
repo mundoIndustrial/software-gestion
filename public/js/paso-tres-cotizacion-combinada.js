@@ -727,7 +727,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                         cursor: pointer;
                         transition: all 0.2s;
                     ">
-                        <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
+                        <div style="margin-bottom: 6px; font-size: 1.3rem;"></div>
                         <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
                         <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
                         <input type="file" class="dImagenInput-p3-${idx}" accept="image/*" multiple style="display: none;" />
@@ -1008,7 +1008,7 @@ function abrirModalSeleccionarTecnicasCompartidas(tecnicas, imagenesCompartidas)
                     cursor: pointer;
                     transition: all 0.2s;
                 ">
-                    <div style="margin-bottom: 8px; font-size: 1.3rem;">📁</div>
+                    <div style="margin-bottom: 8px; font-size: 1.3rem;"></div>
                     <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imagen aquí</p>
                     <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
                     <input type="file" class="dImagenCompartidasInput" accept="image/*" style="display: none;" />
@@ -2356,7 +2356,7 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
                 <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Imágenes - ${tecnicaNombre} (máx. 3)</div>
                 <div class="p3-edit-existentes" data-tecnica-key="${key}" style="display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
                 <div class="p3-edit-drop" data-tecnica-key="${key}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
-                    <div style="font-size: 1.2rem; margin-bottom: 6px;">📁</div>
+                    <div style="font-size: 1.2rem; margin-bottom: 6px;"></div>
                     <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
                     <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes, máximo 3)</div>
                     <input type="file" class="p3-edit-file" data-tecnica-key="${key}" accept="image/*" multiple style="display:none;" />

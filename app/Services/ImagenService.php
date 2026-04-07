@@ -55,7 +55,7 @@ class ImagenService
             
             if (!File::exists($rutaCarpeta)) {
                 File::makeDirectory($rutaCarpeta, 0755, true);
-                \Log::info("📁 Carpeta creada", ['ruta' => $rutaCarpeta]);
+                \Log::info(" Carpeta creada", ['ruta' => $rutaCarpeta]);
             }
             
             // Generar nombre único

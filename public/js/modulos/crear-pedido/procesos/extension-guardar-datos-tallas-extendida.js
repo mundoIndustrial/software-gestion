@@ -10,6 +10,12 @@
 // Guardar la función original antes de reemplazarla
 const guardarTallasSeleccionadasOriginal = globalThis.guardarTallasSeleccionadas;
 
+function obtenerProcesoActualEnModal() {
+    return globalThis.ProcesoModalController?.state?.procesoActual
+        || globalThis.procesoModalState?.procesoActual
+        || null;
+}
+
 /**
  * Nueva función que extiende guardarTallasSeleccionadas
  * Guarda también los datos extendidos (ubicaciones, imágenes, observaciones)
@@ -29,6 +35,7 @@ globalThis.guardarTallasSeleccionadas = function() {
     guardarTallasSeleccionadasOriginal.call(this);
     
     // Ahora guardar los datos extendidos en el objeto del proceso
+    const procesoActual = obtenerProcesoActualEnModal();
     if (procesoActual && globalThis.procesosSeleccionados[procesoActual]?.datos) {
         
         // Guardar datos extendidos

@@ -31,14 +31,14 @@ class ObtenerPrendasInput
      */
     public static function fromRequest(Request $request): self
     {
-        // Validar
+        // Validar - q es opcional para permitir búsquedas vacías (cargar todas las prendas)
         $validated = $request->validate([
-            'q' => ['required', 'string', 'min:1', 'max:100'],
+            'q' => ['nullable', 'string', 'max:100'],
             'limit' => ['integer', 'min:1', 'max:500']
         ]);
 
         return new self(
-            busqueda: trim($validated['q']),
+            busqueda: trim($validated['q'] ?? ''),
             limite: $validated['limit'] ?? 50,
         );
     }

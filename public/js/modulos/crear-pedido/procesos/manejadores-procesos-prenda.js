@@ -54,7 +54,12 @@ function marcarProceso(tipoProceso) {
     if (typeof globalThis.abrirSelectorModoProceso === 'function') {
         globalThis.abrirSelectorModoProceso(tipoProceso);
     } else {
-        globalThis.abrirModalProcesoGenerico(tipoProceso);
+        const controller = globalThis.ProcesoModalController;
+        if (controller?.abrir) {
+            controller.abrir(tipoProceso);
+        } else {
+            globalThis.abrirModalProcesoGenerico(tipoProceso);
+        }
     }
 }
 

@@ -120,7 +120,7 @@ class VerificarImagenesTelas extends Command
         $carpetaTelas = "public/pedidos/{$pedidoId}/telas";
         if (Storage::exists($carpetaTelas)) {
             $archivos = Storage::files($carpetaTelas);
-            $this->info("\n📁 Archivos en {$carpetaTelas}:");
+            $this->info("\n Archivos en {$carpetaTelas}:");
             $this->line("   Total: " . count($archivos));
             foreach (array_slice($archivos, 0, 5) as $archivo) {
                 $this->line("   - " . basename($archivo));
@@ -129,7 +129,7 @@ class VerificarImagenesTelas extends Command
                 $this->line("   ... y " . (count($archivos) - 5) . " más");
             }
         } else {
-            $this->warn("\n📁 Carpeta {$carpetaTelas} no existe");
+            $this->warn("\n Carpeta {$carpetaTelas} no existe");
         }
 
         // Query SQL alternativa

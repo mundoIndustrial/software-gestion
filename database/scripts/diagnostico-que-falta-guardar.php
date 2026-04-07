@@ -35,7 +35,7 @@ if (is_dir($pedidosDir)) {
                 $f !== '.' && $f !== '..' && is_dir($pedidoPath . '/' . $f)
             );
             
-            echo "📁 Carpetas en pedido:\n";
+            echo " Carpetas en pedido:\n";
             foreach ($subdirs as $subdir) {
                 $subPath = $pedidoPath . '/' . $subdir;
                 $files = array_filter(scandir($subPath), fn($f) => 

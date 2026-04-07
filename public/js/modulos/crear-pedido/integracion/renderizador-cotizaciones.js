@@ -13,7 +13,7 @@
      * @param {Array} prendas - Array de prendas desde cotización
      */
     window.renderizarPrendasDesdeCotizacion = function(prendas) {
-        console.log('[renderizador-cotizaciones] 🎬 Iniciando renderizado de prendas desde cotización:', prendas.length);
+        console.log('[renderizador-cotizaciones]  Iniciando renderizado de prendas desde cotización:', prendas.length);
         
         const container = document.getElementById('prendas-container-editable');
         if (!container) {

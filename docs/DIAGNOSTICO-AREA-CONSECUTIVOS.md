@@ -6,7 +6,7 @@ El recibo de costura con `consecutivo_actual = 15` mostraba el área incorrecta:
 - **Había**: "insumos"
 - **Debería ser**: "control calidad"
 
-## 🔍 Causa Raíz
+##  Causa Raíz
 
 Hay dos problemas en el código:
 
@@ -16,7 +16,7 @@ En `ConsecutivosRecibosRepository::obtenerTodosPorPrenda()`:
 // ❌ ANTES: Sin ordenar explícitamente
 ->get();  // Orden impredecible
 
-// ✅ DESPUÉS: Ordenado por ID DESC
+//  DESPUÉS: Ordenado por ID DESC
 ->orderByDesc('id')
 ->get();
 ```
@@ -34,7 +34,7 @@ consecutivos_recibos_pedidos:
 
 **El problema**: `first()` devol un registro ALEATORIO u de los primeros registrados, no el COSTURA que es el que tienevalor significativo en `consecutivo_actual`.
 
-## ✅ Solución Implementada
+##  Solución Implementada
 
 ### 1. Ordenar explícitamente la query
 **Archivo**: `app/Infrastructure/Repositories/ConsecutivosRecibosRepository.php`
@@ -110,7 +110,7 @@ Agregar logs en `GetSeguimientoPorPrendaUseCase`:
 ]);
 ```
 
-## 📊 Ejemplos de Comportamiento
+##  Ejemplos de Comportamiento
 
 ### Antes del Fix
 ```
@@ -125,11 +125,11 @@ first() podría devolver cualquiera → Resultado impredecible ❌
 ### Después del Fix
 ```
 Consecutivos en BD:
-- ID 10: COSTURA, area='control calidad' ← SELECCIONADO ✅
+- ID 10: COSTURA, area='control calidad' ← SELECCIONADO 
 - ID 11: ESTAMPADO, area='estampado'
 - ID 12: BORDADO, area='bordado'
 
-Busca específicamente COSTURA → Resultado consistente ✅
+Busca específicamente COSTURA → Resultado consistente 
 area_mas_reciente = 'control calidad'
 ```
 
@@ -143,7 +143,7 @@ area_mas_reciente = 'control calidad'
 ## ✨ Resultado Esperado
 
 Después de estos cambios:
-- ✅ El área mostrada en el modal será siempre la del recibo COSTURA
-- ✅ El consecutivo_actual será coherente con el área mostrada
-- ✅ No habrá inconsistencias entre "insumos" y "control calidad"
-- ✅ La query siempre devuelve ordenada por ID DESC (más reciente primero)
+-  El área mostrada en el modal será siempre la del recibo COSTURA
+-  El consecutivo_actual será coherente con el área mostrada
+-  No habrá inconsistencias entre "insumos" y "control calidad"
+-  La query siempre devuelve ordenada por ID DESC (más reciente primero)

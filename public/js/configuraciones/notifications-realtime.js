@@ -664,7 +664,7 @@ function showNotificationDetailModal(notif) {
                         <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.user || 'N/A'}</p>
                     </div>
                     <div>
-                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">🏷️ Tipo de Evento</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;"> Tipo de Evento</h4>
                         <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.event_type || 'N/A'}</p>
                     </div>
                 </div>

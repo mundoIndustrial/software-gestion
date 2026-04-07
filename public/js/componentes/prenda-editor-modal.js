@@ -861,12 +861,12 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             nombre_final: nombrePrenda
         });
 
-        // 🎬 ESTABLECER SNAPSHOT DIRECTAMENTE CON IMÁGENES CORRECTAMENTE MAPEADAS
+        //  ESTABLECER SNAPSHOT DIRECTAMENTE CON IMÁGENES CORRECTAMENTE MAPEADAS
         // Esto asegura que el snapshot tenga id, ruta_original, ruta_webp
         if (globalThis.imagenesPrendaStorage) {
             // Guardar snapshot ANTES de pasar a modal, con los IDs incluidos
             globalThis.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaImagenesMapeadas));
-            console.log('🎬 [EDITAR-PRENDA] SNAPSHOT ESTABLECIDO CON IMÁGENES MAPEADAS:', {
+            console.log(' [EDITAR-PRENDA] SNAPSHOT ESTABLECIDO CON IMÁGENES MAPEADAS:', {
                 cantidad: prendaImagenesMapeadas.length,
                 primerImagen: prendaImagenesMapeadas[0]
             });
@@ -1685,6 +1685,12 @@ async function cargarPrendasDatalist() {
         }
         
         const busqueda = inputNombre.value.trim();
+        
+        // Si no hay búsqueda y el datalist está vacío, no hacer solicitud
+        if (!busqueda && datalist.children.length === 0) {
+            console.log('[cargarPrendasDatalist] Búsqueda vacía, esperando que el usuario escriba...');
+            return;
+        }
         
         // Realizar búsqueda en el backend
         const url = new URL('/api/asesores/prendas/autocomplete', globalThis.location.origin);

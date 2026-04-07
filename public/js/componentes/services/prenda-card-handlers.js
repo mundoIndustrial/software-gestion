@@ -13,7 +13,7 @@ globalThis.PrendaCardHandlers = {
         // Debug: Capturar todos los clicks en botones de tres puntos para diagnóstico
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn-menu-tres-puntos')) {
-                console.log('[DEBUG GLOBAL] 🖱️ Click capturado en listener global - btn-menu-tres-puntos');
+                console.log('[DEBUG GLOBAL]  Click capturado en listener global - btn-menu-tres-puntos');
                 console.log('[DEBUG GLOBAL]  Target:', e.target);
                 console.log('[DEBUG GLOBAL]  Closest:', e.target.closest('.btn-menu-tres-puntos'));
             }
@@ -23,7 +23,7 @@ globalThis.PrendaCardHandlers = {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('.btn-menu-tres-puntos');
             if (btn) {
-                console.log('[PrendaCardHandlers] 🖱️ CLICK en btn-menu-tres-puntos (listener específico)');
+                console.log('[PrendaCardHandlers]  CLICK en btn-menu-tres-puntos (listener específico)');
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation(); // Evitar otros listeners
@@ -66,7 +66,7 @@ globalThis.PrendaCardHandlers = {
                     header.dataset.toggleDisabled = 'false';
                 }, 300); // 300ms de protección
                 
-                console.log('[PrendaCardHandlers] 🖱️ CLICK detectado en sección expandible');
+                console.log('[PrendaCardHandlers]  CLICK detectado en sección expandible');
                 console.log('[PrendaCardHandlers]  Target:', e.target);
                 console.log('[PrendaCardHandlers]  Closest header:', header);
 
@@ -195,7 +195,7 @@ globalThis.PrendaCardHandlers = {
                         
                         // Verificar si hay elementos específicos según el tipo de sección
                         const section = header.getAttribute('data-section');
-                        console.log('[PrendaCardHandlers] 🏷️ Tipo de sección:', section);
+                        console.log('[PrendaCardHandlers]  Tipo de sección:', section);
                         
                         if (section === 'variaciones') {
                             const variantes = content.querySelectorAll('.variacion-item');
@@ -233,7 +233,7 @@ globalThis.PrendaCardHandlers = {
                         while (parent && level < 8) { // Aumenté a 8 niveles
                             const parentStyle = globalThis.getComputedStyle(parent);
                             const parentRect = parent.getBoundingClientRect();
-                            console.log(`[PrendaCardHandlers] 📁 Padre Nivel ${level}:`, {
+                            console.log(`[PrendaCardHandlers]  Padre Nivel ${level}:`, {
                                 tagName: parent.tagName,
                                 className: parent.className,
                                 display: parentStyle.display,

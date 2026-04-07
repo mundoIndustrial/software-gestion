@@ -78,7 +78,7 @@ if (is_dir($pedidosDir)) {
     if (empty($carpetas)) {
         echo "  NO HAY CARPETAS DE PEDIDOS CREADAS\n";
     } else {
-        echo "📁 Carpetas de pedidos: " . count($carpetas) . "\n\n";
+        echo " Carpetas de pedidos: " . count($carpetas) . "\n\n";
         
         // Mostrar últimas 5
         rsort($carpetas, SORT_NUMERIC);

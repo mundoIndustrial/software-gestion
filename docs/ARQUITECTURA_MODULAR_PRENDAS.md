@@ -14,7 +14,7 @@
 
 ---
 
-## 📁 Estructura Nueva
+##  Estructura Nueva
 
 ```
 prendas/

@@ -145,7 +145,7 @@ class PrendaEditorProcesos {
      * @private
      */
     static _normalizarDatosProceso(proceso, tipo) {
-        console.log(`[_normalizarDatosProceso] 🔍 RECIBIDO para tipo "${tipo}":`, {
+        console.log(`[_normalizarDatosProceso]  RECIBIDO para tipo "${tipo}":`, {
             'tiene DATOS anidado': !!proceso?.datos,
             'proceso.datos type': typeof proceso?.datos,
             'proceso.datos keys': Object.keys(proceso?.datos || {}),

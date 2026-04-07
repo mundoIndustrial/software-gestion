@@ -17,12 +17,12 @@ class ProcesarFotosTelasService
      */
     public function procesar(Request $request, array $productos): array
     {
-        Log::info('📁 [FOTOS-TELAS] Iniciando procesamiento de fotos');
+        Log::info(' [FOTOS-TELAS] Iniciando procesamiento de fotos');
 
         $productosProcessados = [];
         $allFiles = $request->allFiles();
 
-        Log::info('📁 [FOTOS-TELAS] Archivos recibidos: ' . count($allFiles));
+        Log::info(' [FOTOS-TELAS] Archivos recibidos: ' . count($allFiles));
 
         foreach ($productos as $productoIndex => $producto) {
             $productosProcessados[$productoIndex] = $producto;

@@ -766,7 +766,10 @@ function _limpiarContenedores() {
  * Determina el modo final (especifico o general)
  */
 function _determinarModoFinal(tipoProceso) {
-    const dbData = globalThis.procesosGuardados?.[tipoProceso]?.datos || {};
+    // Buscar primero en procesosGuardados (BD), luego en procesosSeleccionados (session)
+    const dbData = globalThis.procesosGuardados?.[tipoProceso]?.datos || 
+                   globalThis.procesosSeleccionados?.[tipoProceso]?.datos || 
+                   {};
     const modoDb = dbData.modo_tallas?.toLowerCase();
     const datosExt = dbData.datosExtendidos || {};
     
@@ -774,7 +777,22 @@ function _determinarModoFinal(tipoProceso) {
                            (datosExt.caballero && Object.keys(datosExt.caballero).length > 0) ||
                            (datosExt.sobremedida && Object.keys(datosExt.sobremedida).length > 0);
     
-    return (modoDb === 'especifico' && hayEspecificos) ? 'especifico' : 'general';
+    // Si está guardado como específico Y tiene datos específicos, mantener ese modo
+    // Si está guardado como específico pero NO tiene datos específicos, puede ser nuevo
+    const resultado = (modoDb === 'especifico') ? 'especifico' : 'general';
+    
+    console.log('[_determinarModoFinal] Determinando modo para:', tipoProceso, {
+        modoDb,
+        hayEspecificos,
+        datosExtensionCount: {
+            dama: Object.keys(datosExt.dama || {}).length,
+            caballero: Object.keys(datosExt.caballero || {}).length,
+            sobremedida: Object.keys(datosExt.sobremedida || {}).length
+        },
+        resultado
+    });
+    
+    return resultado;
 }
 
 /**
@@ -1417,17 +1435,25 @@ globalThis.guardarProcesoPorTallas = function() {
             imagenesFilesSample: datos.imagenesFiles?.slice(0, 2).map(file => file instanceof File ? `File: ${file.name}` : typeof file)
         });
 
-        // Filtrar blob URLs de imagenes - solo mantener URLs del servidor
-        const imagenesValidas = modoModalPorTallasActual === 'general' ? [] : (datos.imagenes || []).filter(img => {
-            if (typeof img === 'string') {
-                return !img.startsWith('blob:') && !img.startsWith('data:');
-            }
-            if (typeof img === 'object' && img) {
-                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
-                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
-            }
-            return false;
-        });
+        // En modo ESPECÍFICO, mantener las blob URLs (son las imágenes nuevas agregadas por el usuario)
+        // En modo GENERAL, filtrar blobs (solo mantener URLs del servidor)
+        const imagenesValidas = modoModalPorTallasActual === 'general' 
+            ? [] 
+            : (datos.imagenes || []).filter(img => {
+                if (typeof img === 'string') {
+                    // En especifico: mantener TODAS (incluyendo blobs)
+                    // En general: filtrar blobs
+                    if (modoModalPorTallasActual === 'especifico') {
+                        return true; // Mantener blob URLs, data URLs, y URLs del servidor
+                    }
+                    return !img.startsWith('blob:') && !img.startsWith('data:');
+                }
+                if (typeof img === 'object' && img) {
+                    const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                    return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+                }
+                return false;
+            });
 
         datosExtendidos[genero][tallaKey] = {
             cantidadSeleccionada: datos.cantidadSeleccionada,
@@ -1470,6 +1496,12 @@ globalThis.guardarProcesoPorTallas = function() {
         fotosGenerales: modoModalPorTallasActual === 'general' ? [...fotosGeneralesExistentes] : [],
         imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)
     };
+
+    console.log('[GUARDAR-POR-TALLAS]  DATOS GUARDADOS EN SESIÓN - modo_tallas:', modoModalPorTallasActual, {
+        tallasTotales: Object.keys(tallas.dama).length + Object.keys(tallas.caballero).length + Object.keys(tallas.sobremedida).length,
+        datosExtendidosTotales: Object.values(datosExtendidos).reduce((acc, g) => acc + Object.keys(g).length, 0),
+        modoGuardado: modoModalPorTallasActual
+    });
 
     console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual, {
         tipo: procesoPorTallasActual,

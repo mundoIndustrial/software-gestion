@@ -329,7 +329,7 @@ class CotizacionPrendaController extends Controller
 
         // Debug: Ver todos los archivos recibidos
         $allFiles = $request->allFiles();
-        \Log::info('📁 DEBUG allFiles():', [
+        \Log::info(' DEBUG allFiles():', [
             'keys' => array_keys($allFiles),
             'count' => count($allFiles),
         ]);
@@ -337,7 +337,7 @@ class CotizacionPrendaController extends Controller
         // Laravel agrupa los archivos bajo 'prendas', necesitamos acceder a la estructura anidada
         $prendasData = $request->file('prendas', []);
         
-        \Log::info('📁 Estructura de prendas recibida:', [
+        \Log::info(' Estructura de prendas recibida:', [
             'tiene_prendas' => !empty($prendasData),
             'tipo' => gettype($prendasData),
             'es_array' => is_array($prendasData),

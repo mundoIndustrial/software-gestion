@@ -88,7 +88,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     });
     
     if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
-        console.warn('⚠️ [toggleHistorialEpp] Sin historial o historial vacío');
+        console.warn(' [toggleHistorialEpp] Sin historial o historial vacío');
         // Si Swal no está disponible, usar alert
         if (window.Swal) {
             Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </script>
                                             @else
                                                 <script type="text/javascript">
-                                                    console.log('⚠️ [BLADE] EPP SIN botón (no tiene_historial)', {
+                                                    console.log(' [BLADE] EPP SIN botón (no tiene_historial)', {
                                                         epp_id: {{ $fila->id }},
                                                         nombre: '{{ $fila->objetoEpp["nombre"] ?? $fila->objetoEpp["nombre_completo"] ?? "N/A" }}',
                                                         tiene_historial: {{ $fila->tiene_historial ?? false ? 'true' : 'false' }},

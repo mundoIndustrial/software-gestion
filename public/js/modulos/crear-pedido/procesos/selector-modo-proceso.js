@@ -27,6 +27,15 @@ const nombresSelectorProceso = {
     sublimado: 'Sublimado'
 };
 
+function abrirModalProcesoGenericoSeguro(tipoProceso, esEdicion = false) {
+    const controller = globalThis.ProcesoModalController;
+    if (controller?.abrir) {
+        controller.abrir(tipoProceso, esEdicion);
+        return;
+    }
+    globalThis.abrirModalProcesoGenerico?.(tipoProceso, esEdicion);
+}
+
 /**
  * Abre el modal selector de modo para un proceso.
  * Se llama desde manejarCheckboxProceso en lugar de abrirModalProcesoGenerico.
@@ -37,7 +46,7 @@ globalThis.abrirSelectorModoProceso = function(tipoProceso) {
     const modal = document.getElementById('modal-selector-modo-proceso');
     if (!modal) {
         console.warn('[selector-modo] Modal selector no encontrado, abriendo modal genérico como fallback');
-        globalThis.abrirModalProcesoGenerico(tipoProceso);
+        abrirModalProcesoGenericoSeguro(tipoProceso);
         return;
     }
     
@@ -106,7 +115,7 @@ globalThis.seleccionarModoProcesoTodas = function() {
     }
     
     // Abrir modal genérico (que tiene ubicaciones, observaciones y fotos)
-    globalThis.abrirModalProcesoGenerico(tipoProceso);
+    abrirModalProcesoGenericoSeguro(tipoProceso);
     
     // Auto-asignar todas las tallas
     setTimeout(function() {

@@ -284,8 +284,9 @@
         globalThis.tallasCantidadesProceso.caballero = { ...caballeroTallas };
         globalThis.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
 
-        if (globalThis.actualizarResumenTallasProceso) {
-            globalThis.actualizarResumenTallasProceso();
+        const actualizarResumen = globalThis.ProcesoModalController?.tallas?.actualizarResumen || globalThis.actualizarResumenTallasProceso;
+        if (typeof actualizarResumen === 'function') {
+            actualizarResumen();
         }
     }
 

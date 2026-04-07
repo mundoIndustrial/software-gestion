@@ -252,7 +252,9 @@
     <script defer src="{{ js_asset('js/utilidades/prenda-data-builder.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/validador-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}?v={{ $v }}"></script>
@@ -325,6 +327,13 @@
     <script defer src="{{ js_asset('js/prendas/utils/image-processor.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/prendas/builders/procesos-builder.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/image-converter-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-context.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-normalizers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-renderers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-data-utils.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-variations-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-sizing-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-process-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/prenda-card-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-card-readonly.js') }}?v={{ $v }}"></script>

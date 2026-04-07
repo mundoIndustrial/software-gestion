@@ -32,7 +32,13 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     // Usar PrendaCardService para generar HTML
     try {
         console.log('[generarTarjetaPrendaReadOnly]  Llamando PrendaCardService.generar()');
-        const htmlTarjeta = globalThis.PrendaCardService.generar(prenda, indice);
+        const ctx = {
+            imageConverter: globalThis.ImageConverterService,
+            coloresPorTallaStore: globalThis.ColoresPorTalla,
+            gestionItemsUI: globalThis.gestionItemsUI,
+            showProcessImage: globalThis.mostrarImagenProcesoGrande,
+        };
+        const htmlTarjeta = globalThis.PrendaCardService.generar(prenda, indice, ctx);
         console.log('[generarTarjetaPrendaReadOnly]  HTML generado exitosamente');
         return htmlTarjeta;
     } catch (error) {
@@ -126,5 +132,4 @@ function agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice) {
         tarjeta.__asignacionesListener = handleActualizacion;
     }
 }
-
 

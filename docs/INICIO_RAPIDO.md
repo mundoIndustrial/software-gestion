@@ -66,7 +66,7 @@ Ves:
 
 ---
 
-## 📁 DÓNDE ESTÁN LOS ARCHIVOS
+##  DÓNDE ESTÁN LOS ARCHIVOS
 
 ### Código
 ```

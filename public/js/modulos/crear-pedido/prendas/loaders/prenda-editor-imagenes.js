@@ -117,7 +117,7 @@ class PrendaEditorImagenes {
 
     /**
      * Procesar imágenes agregando blob URLs
-     * ⚠️ CRÍTICO: Preservar blob URLs válidas existentes para edición
+     *  CRÍTICO: Preservar blob URLs válidas existentes para edición
      * @private
      */
     static _procesarImagenesConBlobUrl(imagenes) {

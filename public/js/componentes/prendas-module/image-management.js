@@ -68,7 +68,7 @@ globalThis.manejarImagenesPrenda = function(input) {
  * Usa globalThis.imagenesPrendaStorage para obtener las imágenes
  */
 globalThis.actualizarPreviewPrenda = function() {
-    console.log('[actualizarPreviewPrenda] 🎬 Iniciando actualización del preview');
+    console.log('[actualizarPreviewPrenda]  Iniciando actualización del preview');
     
     try {
         const preview = document.getElementById('nueva-prenda-foto-preview');
@@ -133,7 +133,7 @@ globalThis.actualizarPreviewPrenda = function() {
         } else {
             img.src = imagenes[0].previewUrl;
             img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
-            console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
+            console.log('[actualizarPreviewPrenda]  Src de imagen:', img.src);
         }
         
         container.appendChild(img);

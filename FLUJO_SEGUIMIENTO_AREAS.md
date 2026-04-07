@@ -1,19 +1,19 @@
-# 🎯 Flujo Completo de Datos: Modal de Seguimiento por Áreas
+#  Flujo Completo de Datos: Modal de Seguimiento por Áreas
 
-## 📌 RESUMEN EJECUTIVO
+##  RESUMEN EJECUTIVO
 
 El modal de seguimiento muestra **datos de áreas** (Insumos, Corte, Costura, etc.) con **duraciones calculadas** mediante un flujo orquestado que:
 
-1. ✅ Obtiene procesos de la tabla `proceso_prenda`
-2. ✅ Recupera fechas de completado de `prenda_recibo_completado`
-3. ✅ Calcula duraciones con CalculadorDiasService (excluye festivos/fines de semana)
-4. ✅ Inyecta área virtual "Insumos"
-5. ✅ Retorna JSON estructurado al frontend
-6. ✅ Frontend renderiza tarjetas de área con duraciones
+1.  Obtiene procesos de la tabla `proceso_prenda`
+2.  Recupera fechas de completado de `prenda_recibo_completado`
+3.  Calcula duraciones con CalculadorDiasService (excluye festivos/fines de semana)
+4.  Inyecta área virtual "Insumos"
+5.  Retorna JSON estructurado al frontend
+6.  Frontend renderiza tarjetas de área con duraciones
 
 ---
 
-## 🔗 PARTE 1: ESTRUCTURA DE DATOS (TABLAS)
+##  PARTE 1: ESTRUCTURA DE DATOS (TABLAS)
 
 ### Tabla 1: `consecutivos_recibos_pedidos`
 **Ubicación**: [app/Models/ConsecutivosRecibosPedidos.php](app/Models/ConsecutivosRecibosPedidos.php)
@@ -71,7 +71,7 @@ WHERE id_recibo = ? AND area = ?;
 
 ---
 
-## 🏗️ PARTE 2: FLUJO BACKEND
+##  PARTE 2: FLUJO BACKEND
 
 ### 1️⃣ Endpoint de Entrada
 ```
@@ -387,7 +387,7 @@ private function inyectarAreaInsumos(...)
 
 ---
 
-## 📺 PARTE 3: FLUJO FRONTEND
+##  PARTE 3: FLUJO FRONTEND
 
 ### Controlador: TrackingTimelineController
 **Archivo**: [public/js/ordersjs/presentation/TrackingTimelineController.js](public/js/ordersjs/presentation/TrackingTimelineController.js)
@@ -498,15 +498,15 @@ createAreaCard(area, data, readonly = false) {
             <!-- DURACIONES DEL BACKEND -->
             <div class="tracking-row">
                 <div class="tracking-item">
-                    <label>Duración asignación ⏱️</label>
+                    <label>Duración asignación </label>
                     <span class="duration">${duracionAsignacion}</span>
                 </div>
                 <div class="tracking-item">
-                    <label>Duración en área ⏱️</label>
+                    <label>Duración en área </label>
                     <span class="duration">${duracionEnArea}</span>
                 </div>
                 <div class="tracking-item">
-                    <label>Total días ⏱️</label>
+                    <label>Total días </label>
                     <span class="duration">${totalDias}</span>
                 </div>
             </div>
@@ -531,7 +531,7 @@ createAreaCard(area, data, readonly = false) {
 
 ---
 
-## 📊 MAPA DE FLUJO DE DATOS
+##  MAPA DE FLUJO DE DATOS
 
 ```
 TABLAS BD              BACKEND PROCESSING           JSON Response        FRONTEND Rendering
@@ -576,7 +576,7 @@ completado (fechas)   ┘   CalculadorDiasService
 
 ---
 
-## 🎯 RESUMEN RÁPIDO
+##  RESUMEN RÁPIDO
 
 ### Para obtener datos de área completada:
 1. **ID del recibo**: Desde `consecutivos_recibos_pedidos.id`
@@ -597,7 +597,7 @@ completado (fechas)   ┘   CalculadorDiasService
 
 ---
 
-## 🔍 ARCHIVOS CLAVE POR RESPONSABILIDAD
+##  ARCHIVOS CLAVE POR RESPONSABILIDAD
 
 | Responsabilidad | Archivo |
 |---|---|

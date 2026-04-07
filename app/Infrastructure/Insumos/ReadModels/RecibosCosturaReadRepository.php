@@ -79,7 +79,7 @@ class RecibosCosturaReadRepository
 
         // VALIDAR QUE HAY FILTROS
         if (empty($filterColumns) && empty($filterValuesArray) && empty($search)) {
-            \Log::warning('[applyFilters] ⚠️ ADVERTENCIA: No hay filtros para aplicar!');
+            \Log::warning('[applyFilters]  ADVERTENCIA: No hay filtros para aplicar!');
             return $query;
         }
 

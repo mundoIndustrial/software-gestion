@@ -47,6 +47,19 @@ class PedidoProcesoTallaBuilder
             }
 
             foreach ($tallasAgrupadas as $tallaReal => $tallaAgrupadaData) {
+                // Extraer ubicaciones y observaciones de todos los colores
+                $todasLasUbicaciones = [];
+                $primerObservacion = null;
+                
+                foreach ($tallaAgrupadaData['colores'] as $colorData) {
+                    if (!empty($colorData['ubicaciones'])) {
+                        $todasLasUbicaciones = array_merge($todasLasUbicaciones, $colorData['ubicaciones']);
+                    }
+                    if (!$primerObservacion && !empty($colorData['observaciones'])) {
+                        $primerObservacion = $colorData['observaciones'];
+                    }
+                }
+
                 DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
                     [
                         'proceso_prenda_detalle_id' => $proceso->id,
@@ -55,6 +68,8 @@ class PedidoProcesoTallaBuilder
                     ],
                     [
                         'cantidad' => (int) $tallaAgrupadaData['totalCantidad'],
+                        'ubicaciones' => !empty($todasLasUbicaciones) ? json_encode($todasLasUbicaciones) : null,
+                        'observaciones' => $primerObservacion,
                         'updated_at' => now(),
                     ]
                 );
@@ -65,24 +80,24 @@ class PedidoProcesoTallaBuilder
                     ->where('talla', $tallaReal)
                     ->value('id');
 
+                // Guardar ubicaciones y observaciones por color si existen
                 foreach ($tallaAgrupadaData['colores'] as $colorData) {
-                    if (empty($colorData['nombre'])) {
-                        continue;
+                    // Si hay nombre de color, guardar en tabla de colores
+                    if (!empty($colorData['nombre'])) {
+                        DB::table('pedidos_procesos_prenda_talla_colores')->updateOrInsert(
+                            [
+                                'pedidos_procesos_prenda_talla_id' => $tallaProcesoId,
+                                'color_nombre' => $colorData['nombre'],
+                            ],
+                            [
+                                'tela_nombre' => null,
+                                'ubicaciones' => !empty($colorData['ubicaciones']) ? json_encode($colorData['ubicaciones']) : null,
+                                'observaciones' => $colorData['observaciones'] ?? null,
+                                'cantidad' => (int) $colorData['cantidad'],
+                                'updated_at' => now(),
+                            ]
+                        );
                     }
-
-                    DB::table('pedidos_procesos_prenda_talla_colores')->updateOrInsert(
-                        [
-                            'pedidos_procesos_prenda_talla_id' => $tallaProcesoId,
-                            'color_nombre' => $colorData['nombre'],
-                        ],
-                        [
-                            'tela_nombre' => null,
-                            'ubicaciones' => !empty($colorData['ubicaciones']) ? json_encode($colorData['ubicaciones']) : null,
-                            'observaciones' => $colorData['observaciones'] ?? null,
-                            'cantidad' => (int) $colorData['cantidad'],
-                            'updated_at' => now(),
-                        ]
-                    );
                 }
             }
         }

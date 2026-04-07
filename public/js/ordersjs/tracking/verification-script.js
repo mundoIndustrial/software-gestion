@@ -179,7 +179,7 @@
             // Probar duración humana
             const duration = window.formatDurationHuman ? 
                 formatDurationHuman(86400000) : 'ERROR';
-            console.log('⏱️ formatDurationHuman test:', duration);
+            console.log(' formatDurationHuman test:', duration);
 
             console.log(' Pruebas rápidas completadas');
         } catch (error) {

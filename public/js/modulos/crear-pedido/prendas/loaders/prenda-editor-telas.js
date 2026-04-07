@@ -575,9 +575,9 @@ globalThis.configurarDragDropProcesos = function() {
         console.log(`[configurarDragDropProcesos]  Preview ${i} reemplazado en DOM`);
         
         // Click para abrir file input
-        console.log(`[configurarDragDropProcesos] 🖱️ Agregando listener CLICK al preview ${i}`);
+        console.log(`[configurarDragDropProcesos]  Agregando listener CLICK al preview ${i}`);
         newPreview.addEventListener('click', (e) => {
-            console.log(`[configurarDragDropProcesos] 🖱️ CLICK detectado en preview ${i}`);
+            console.log(`[configurarDragDropProcesos]  CLICK detectado en preview ${i}`);
             console.log(`[configurarDragDropProcesos]Event details:`, {
                 target: e.target,
                 currentTarget: e.currentTarget,
@@ -586,7 +586,7 @@ globalThis.configurarDragDropProcesos = function() {
             });
             
             const fileInput = document.getElementById(`proceso-foto-input-${i}`);
-            console.log(`[configurarDragDropProcesos] 📁 Input file ${i}:`, fileInput);
+            console.log(`[configurarDragDropProcesos]  Input file ${i}:`, fileInput);
             
             if (fileInput) {
                 console.log(`[configurarDragDropProcesos]  Abriendo input file ${i}`);
@@ -643,13 +643,13 @@ globalThis.configurarDragDropProcesos = function() {
             newPreview.style.background = '#f9fafb';
             
             const files = e.dataTransfer.files;
-            console.log(`[configurarDragDropProcesos] 📁 Files recibidos en drop ${i}:`, files.length);
+            console.log(`[configurarDragDropProcesos]  Files recibidos en drop ${i}:`, files.length);
             
             if (files.length > 0) {
                 const fileInput = document.getElementById(`proceso-foto-input-${i}`);
                 if (fileInput) {
                     fileInput.files = files;
-                    console.log(`[configurarDragDropProcesos] 📁 Files asignados a input ${i}`);
+                    console.log(`[configurarDragDropProcesos]  Files asignados a input ${i}`);
                     // Disparar evento change
                     const event = new Event('change', { bubbles: true });
                     fileInput.dispatchEvent(event);

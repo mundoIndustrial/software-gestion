@@ -170,8 +170,8 @@ El módulo incluye logs detallados con emojis:
 
 ### Navegación del Código
 
-- **📁 Carpeta clara**: Todo en `prendas-module/`
-- **🏷️ Nombres descriptivos**: Cada archivo indica su propósito
+- ** Carpeta clara**: Todo en `prendas-module/`
+- ** Nombres descriptivos**: Cada archivo indica su propósito
 - ** Documentación**: README en cada nivel
 - ** Búsqueda fácil**: Encuentra rápidamente lo que necesitas
 

@@ -250,7 +250,7 @@ class DespachoGeneradorService
                     \Log::error('[DESPACHO-EPP-ITEM] ❌ Original es null', ['epp_id' => $pedidoEpp->id]);
                     $tieneHistorial = false;
                 } else if ($intentos >= $maxIntentos) {
-                    \Log::warning('[DESPACHO-EPP-ITEM] ⚠️ Loop infinito detectado', ['epp_id' => $pedidoEpp->id]);
+                    \Log::warning('[DESPACHO-EPP-ITEM]  Loop infinito detectado', ['epp_id' => $pedidoEpp->id]);
                     $tieneHistorial = false;
                 } else {
                     \Log::info('[DESPACHO-EPP-ITEM]  Original encontrado', [

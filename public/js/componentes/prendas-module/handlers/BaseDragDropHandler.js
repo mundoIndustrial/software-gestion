@@ -34,7 +34,7 @@ class BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual() {
-        UIHelperService.log(`${this.constructor.name}`, `🖱️ Iniciando pegado desde menú contextual (${this.tipo})...`);
+        UIHelperService.log(`${this.constructor.name}`, ` Iniciando pegado desde menú contextual (${this.tipo})...`);
         
         try {
             // Verificar si ClipboardService está disponible
@@ -48,7 +48,7 @@ class BaseDragDropHandler {
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: this.maxArchivos });
 
-            UIHelperService.log(`${this.constructor.name}`, `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log(`${this.constructor.name}`, ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);

@@ -285,7 +285,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual(tipo) {
-        UIHelperService.log('TelaDragDropHandler', `🖱️ Iniciando pegado desde menú contextual (${tipo})...`);
+        UIHelperService.log('TelaDragDropHandler', ` Iniciando pegado desde menú contextual (${tipo})...`);
         
         try {
             // Verificar si ClipboardService está disponible
@@ -299,7 +299,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: 1 });
 
-            UIHelperService.log('TelaDragDropHandler', `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log('TelaDragDropHandler', ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);

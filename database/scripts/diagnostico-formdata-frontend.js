@@ -63,7 +63,7 @@ window.fetch = function(...args) {
             
             console.log('\n ARCHIVOS:');
             Object.entries(formDataAnalisis.archivos).forEach(([key, files]) => {
-                console.log('   📁 ' + key + ': ' + files.length + ' archivo(s)');
+                console.log('    ' + key + ': ' + files.length + ' archivo(s)');
                 files.forEach((file, idx) => {
                     console.log(`      [${idx}] ${file.nombre} (${file.tipo}) - ${file.tamanoKB} KB`);
                 });

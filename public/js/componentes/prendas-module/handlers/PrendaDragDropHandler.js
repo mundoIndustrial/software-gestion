@@ -551,7 +551,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual(conImagenes) {
-        UIHelperService.log('PrendaDragDropHandler', '🖱️ Iniciando pegado desde menú contextual...');
+        UIHelperService.log('PrendaDragDropHandler', ' Iniciando pegado desde menú contextual...');
         
         try {
             // Verificar límite de imágenes
@@ -573,7 +573,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 maxArchivos: this.maxImagenes - this.imagenesActuales.length
             });
 
-            UIHelperService.log('PrendaDragDropHandler', `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log('PrendaDragDropHandler', ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);

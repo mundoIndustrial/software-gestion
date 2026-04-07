@@ -17,9 +17,9 @@
 ##  Nueva Arquitectura
 
 ```
-📁 public/js/modulos/crear-pedido/telas/
+ public/js/modulos/crear-pedido/telas/
 ├──  gestion-telas.js              #  Loader principal (4KB)
-└── 📁 telas-module/                 #  Módulo completo
+└──  telas-module/                 #  Módulo completo
     ├──  estado-validacion.js      #  Estado y validaciones (5KB)
     ├──  gestion-telas.js          #  CRUD de telas (10KB)
     ├──  manejo-imagenes.js        #  Galería y preview (12KB)

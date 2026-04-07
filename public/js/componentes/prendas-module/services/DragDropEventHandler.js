@@ -205,7 +205,7 @@ class DragDropEventHandler {
             }
         });
 
-        // 🖱️ Evento context menu (botón derecho) - DESACTIVADO
+        //  Evento context menu (botón derecho) - DESACTIVADO
         // Solo permitimos pegado con Ctrl+V directamente, que es más intuitivo
         // y evita la confusión de un menú contextual que solo muestra instrucciones
 

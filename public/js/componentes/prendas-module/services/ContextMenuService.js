@@ -209,7 +209,7 @@ class ContextMenuService {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            UIHelperService.log('ContextMenuService', `🖱️ Clic en opción: ${opcion.texto}`);
+            UIHelperService.log('ContextMenuService', ` Clic en opción: ${opcion.texto}`);
             
             // Ejecutar callback o accion si existe (compatibilidad con ambos)
             const funcionAEjecutar = opcion.callback || opcion.accion;

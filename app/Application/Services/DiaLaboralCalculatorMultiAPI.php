@@ -106,26 +106,26 @@ class DiaLaboralCalculatorMultiAPI
         // Intenta Nager.Date (api.nager.date)
         $festivos = $this->intentarNagerDateAPI($year);
         if (!empty($festivos)) {
-            Log::info("[DiaLaboralCalculator] ✅ Nager.Date API (api.nager.date) funcionó para {year}", ['year' => $year]);
+            Log::info("[DiaLaboralCalculator]  Nager.Date API (api.nager.date) funcionó para {year}", ['year' => $year]);
             return $festivos;
         }
 
         // Intenta Nager.Date alternativo (nager.date)
         $festivos = $this->intentarNagerDateAlternativo($year);
         if (!empty($festivos)) {
-            Log::info("[DiaLaboralCalculator] ✅ Nager.Date alternativo (nager.date) funcionó para {year}", ['year' => $year]);
+            Log::info("[DiaLaboralCalculator]  Nager.Date alternativo (nager.date) funcionó para {year}", ['year' => $year]);
             return $festivos;
         }
 
         // Intenta Abstract API
         $festivos = $this->intentarAbstractAPI($year);
         if (!empty($festivos)) {
-            Log::info("[DiaLaboralCalculator] ✅ Abstract API funcionó para {year}", ['year' => $year]);
+            Log::info("[DiaLaboralCalculator]  Abstract API funcionó para {year}", ['year' => $year]);
             return $festivos;
         }
 
         // Fallback: cálculo local
-        Log::warning("[DiaLaboralCalculator] ⚠️ Todas las APIs fallaron, usando cálculo local para {year}", ['year' => $year]);
+        Log::warning("[DiaLaboralCalculator]  Todas las APIs fallaron, usando cálculo local para {year}", ['year' => $year]);
         return $this->obtenerFestivosLocales($year);
     }
 

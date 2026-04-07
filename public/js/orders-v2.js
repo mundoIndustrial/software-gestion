@@ -54,7 +54,7 @@ function initializeFilters() {
 }
 
 function filterByStatus(status) {
-    console.log(`🔍 Filtrando por estado: ${status || 'todos'}`);
+    console.log(` Filtrando por estado: ${status || 'todos'}`);
     
     const tableRows = document.querySelectorAll('.orders-table tbody tr');
     let visibleCount = 0;
@@ -161,8 +161,8 @@ function initializeActionMenus() {
             
             // Buscar el menú siguiente
             const menu = this.nextElementSibling;
-            console.log('🔍 Elemento siguiente:', menu);
-            console.log('🔍 ¿Tiene clase action-menu?:', menu?.classList.contains('action-menu'));
+            console.log(' Elemento siguiente:', menu);
+            console.log(' ¿Tiene clase action-menu?:', menu?.classList.contains('action-menu'));
             
             if (menu && menu.classList.contains('action-menu')) {
                 console.log(' Menú encontrado, cerrando otros...');
@@ -294,14 +294,14 @@ function initializeCheckboxes() {
 
 // Función para abrir modal de detalles
 function openDetailModal(ordenId, numeroPedido) {
-    console.log(`🔍 Abriendo factura - Orden: ${ordenId}, Pedido: ${numeroPedido}`);
+    console.log(` Abriendo factura - Orden: ${ordenId}, Pedido: ${numeroPedido}`);
     
     // Abrir la factura usando InvoiceLazyLoader
     if (typeof globalThis.verFacturaDelPedido === 'function') {
         console.log('✓ Cargando factura con verFacturaDelPedido');
         globalThis.verFacturaDelPedido(numeroPedido, ordenId);
     } else {
-        console.warn('⚠️ verFacturaDelPedido no disponible, usando fallback');
+        console.warn(' verFacturaDelPedido no disponible, usando fallback');
         // Fallback: abrir en nueva ventana
         globalThis.open(`/asesores/recibos/${ordenId}`, '_blank');
     }

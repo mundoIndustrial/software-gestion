@@ -1,15 +1,37 @@
 /**
  * gestor-modal-proceso-generico.js
  * 
- * Maneja la funcionalidad del modal genérico de procesos
+ * Maneja la funcionalidad del modal generico de procesos
  * (Reflectivo, Estampado, Bordado, DTF, Sublimado)
  */
 
-let procesoActual = null;
-// NUEVO: Flag para diferenciar entre CREACIÓN y EDICIÓN
-let modoActual = 'crear';  // 'crear' o 'editar'
-// NUEVO: Buffer temporal para cambios en EDICIÓN (no se sincroniza hasta GUARDAR CAMBIOS final)
-let cambiosProceso = null;
+const procesoModalState = globalThis.procesoModalState || {
+    procesoActual: null,
+    // NUEVO: Flag para diferenciar entre CREACION y EDICION
+    modoActual: 'crear',  // 'crear' o 'editar'
+    // NUEVO: Buffer temporal para cambios en EDICION (no se sincroniza hasta GUARDAR CAMBIOS final)
+    cambiosProceso: null
+};
+globalThis.procesoModalState = procesoModalState;
+
+if (typeof globalThis.PROCESO_MODAL_DEBUG !== 'boolean') {
+    globalThis.PROCESO_MODAL_DEBUG = false;
+}
+function procesoModalDebug(...args) {
+    if (!globalThis.PROCESO_MODAL_DEBUG) {
+        return;
+    }
+    console.info(...args);
+}
+globalThis.procesoModalDebug = procesoModalDebug;
+
+const procesoModalModules = globalThis.procesoModalModules || {
+    ui: {},
+    imagenes: {},
+    persistencia: {},
+    tallas: {}
+};
+globalThis.procesoModalModules = procesoModalModules;
 
 globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
 globalThis.ubicacionesProcesoSeleccionadas = [];
@@ -17,7 +39,7 @@ globalThis.ubicacionesProcesoSeleccionadas = [];
 // Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 }, sobremedida: { DAMA: 10, CABALLERO: 5 } }
 globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
 
-// Configuración por tipo de proceso
+// configuracion por tipo de proceso
 const procesosConfig = {
     reflectivo: {
         titulo: 'Agregar Reflectivo',
@@ -46,22 +68,22 @@ const procesosConfig = {
     }
 };
 
-// Tallas estándar por género
+// Tallas estandar por genero
 const tallasEstandar = {
     dama: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
     caballero: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
 };
 
-// helpers para abrir modal genérico de proceso
+// helpers para abrir modal generico de proceso
 function _procesoGenerico_resetImagenesEliminadas() {
     globalThis.imagenesEliminadasProcesoStorage = [];
-    console.log('[abrirModalProcesoGenerico]  Storage de imágenes eliminadas reseteado');
+    procesoModalDebug('[abrirModalProcesoGenerico]  Storage de imagenes eliminadas reseteado');
 }
 
 function _procesoGenerico_determinarIndice(tipoProceso, esEdicion) {
     if (esEdicion && globalThis.procesosSeleccionados?.[tipoProceso]?.indiceResultado !== undefined) {
         globalThis.procesoActualIndex = globalThis.procesosSeleccionados[tipoProceso].indiceResultado;
-        console.log(`🔢 [abrirModalProcesoGenerico] EDICIÓN: Usando índice existente ${globalThis.procesoActualIndex} para ${tipoProceso}`);
+        procesoModalDebug(`[abrirModalProcesoGenerico] EDICION: Usando indice existente ${globalThis.procesoActualIndex} para ${tipoProceso}`);
         return;
     }
 
@@ -78,12 +100,12 @@ function _procesoGenerico_determinarIndice(tipoProceso, esEdicion) {
     }
 
     globalThis.procesoActualIndex = indiceDisponible;
-    console.log(`🔢 [abrirModalProcesoGenerico] CREACIÓN: Índices usados=${[...indicesUsados]}, index asignado=${globalThis.procesoActualIndex} para ${tipoProceso}`);
+    procesoModalDebug(`[abrirModalProcesoGenerico] CREACION: indice usados=${[...indicesUsados]}, index asignado=${globalThis.procesoActualIndex} para ${tipoProceso}`);
 }
 
 function _procesoGenerico_limpiarStorageUniversal(esEdicion) {
     if (globalThis.universalImagenesStorage && !esEdicion && globalThis.procesoActualIndex !== undefined) {
-        console.log(`[abrirModalProcesoGenerico]  LIMPIEZA FORZADA: Storage de PROCESOS[${globalThis.procesoActualIndex}] para nuevo proceso`);
+        procesoModalDebug(`[abrirModalProcesoGenerico]  LIMPIEZA FORZADA: Storage de PROCESOS[${globalThis.procesoActualIndex}] para nuevo proceso`);
         globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
     }
 }
@@ -94,12 +116,12 @@ function _procesoGenerico_limpiarCreacion() {
 
     if (globalThis.imagenesProcesoActual) {
         globalThis.imagenesProcesoActual = [null, null, null];
-        console.log('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoActual limpiado para nuevo proceso');
+        procesoModalDebug('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoActual limpiado para nuevo proceso');
     }
 
     if (globalThis.imagenesProcesoExistentes) {
         globalThis.imagenesProcesoExistentes = [];
-        console.log('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoExistentes limpiado para nuevo proceso');
+        procesoModalDebug('[abrirModalProcesoGenerico]  globalThis.imagenesProcesoExistentes limpiado para nuevo proceso');
     }
 
     const resumenTallas = document.getElementById('proceso-tallas-resumen');
@@ -138,7 +160,7 @@ function _procesoGenerico_cargarEdicion(tipoProceso) {
         sobremedida: sobremedidaSel
     };
 
-    console.log(' [EDICIÓN] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
+    procesoModalDebug(' [EDICION] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
         tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
         tallasSeleccionadasProceso: globalThis.tallasSeleccionadasProceso
     });
@@ -172,22 +194,22 @@ function _procesoGenerico_actualizarTextos(config, tipoProceso, esEdicion) {
 function _procesoGenerico_abrirModal(modal) {
     modal.style.display = 'flex';
     modal.style.zIndex = '999999999';
-    console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
+    procesoModalDebug(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
     modal.removeAttribute('aria-hidden');
 }
 
 function _procesoGenerico_postOpen(esEdicion) {
-    console.log('[abrirModalProcesoGenerico]  Sincronizando tallas de la prenda con el proceso...');
+    procesoModalDebug('[abrirModalProcesoGenerico]  Sincronizando tallas de la prenda con el proceso...');
     globalThis.sincronizarTallasConModalProceso?.();
-    console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
+    procesoModalDebug(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
 
     if (!esEdicion) {
         globalThis.aplicarProcesoParaTodasTallas();
-        console.log('[abrirModalProcesoGenerico]  Tallas aplicadas automáticamente al abrir modal');
+        procesoModalDebug('[abrirModalProcesoGenerico]  Tallas aplicadas automaticamente al abrir modal');
     }
 }
 
-// Abrir modal para un tipo específico de proceso
+// Abrir modal para un tipo especifico de proceso
 globalThis.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     const modal = document.getElementById('modal-proceso-generico');
     if (!modal) {
@@ -196,8 +218,8 @@ globalThis.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) 
 
     _procesoGenerico_resetImagenesEliminadas();
 
-    procesoActual = tipoProceso;
-    modoActual = esEdicion ? 'editar' : 'crear';
+    procesoModalState.procesoActual = tipoProceso;
+    procesoModalState.modoActual = esEdicion ? 'editar' : 'crear';
 
     _procesoGenerico_determinarIndice(tipoProceso, esEdicion);
     _procesoGenerico_limpiarStorageUniversal(esEdicion);
@@ -226,15 +248,15 @@ globalThis.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) 
 // Cerrar modal
 // @param {boolean} procesoGuardado - Si es true, mantiene el checkbox seleccionado (proceso guardado exitosamente)
 function _cerrarModalProcesoGenerico_crear(procesoGuardado) {
-    if (modoActual !== 'crear' || !procesoActual || procesoGuardado) return;
+    if (procesoModalState.modoActual !== 'crear' || !procesoModalState.procesoActual || procesoGuardado) return;
 
-    const checkbox = document.getElementById(`checkbox-${procesoActual}`);
+    const checkbox = document.getElementById(`checkbox-${procesoModalState.procesoActual}`);
     if (checkbox?.checked) {
         checkbox._ignorarOnclick = true;
         checkbox.checked = false;
     }
 
-    globalThis.manejarCheckboxProceso?.(procesoActual, false);
+    globalThis.manejarCheckboxProceso?.(procesoModalState.procesoActual, false);
 
     if (checkbox) {
         checkbox._ignorarOnclick = false;
@@ -244,36 +266,36 @@ function _cerrarModalProcesoGenerico_crear(procesoGuardado) {
 }
 
 function _cerrarModalProcesoGenerico_editar(procesoGuardado) {
-    if (modoActual !== 'editar' || !procesoGuardado) return;
+    if (procesoModalState.modoActual !== 'editar' || !procesoGuardado) return;
 
-    console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
+    procesoModalDebug('[EDICION] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
     if (globalThis.gestorEditacionProcesos) {
-        console.log('[EDICIÓN]  Guardando cambios en gestorEditacionProcesos...');
+        procesoModalDebug('[EDICION]  Guardando cambios en gestorEditacionProcesos...');
         globalThis.gestorEditacionProcesos.guardarCambiosActuales();
-        console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
+        procesoModalDebug('[EDICION]  Cambios guardados en gestorEditacionProcesos');
     }
 }
 
 function _cerrarModalProcesoGenerico_storage() {
-    // Esta rama está deshabilitada pero se conserva por referencia futura.
+    // Esta rama esta deshabilitada pero se conserva por referencia futura.
     // Se usa una bandera para evitar constantes inalcanzables que disparen linter.
     const storageDeshabilitado = false;
 
-    if (storageDeshabilitado && modoActual === 'crear' && globalThis.procesoActualIndex !== undefined) {
-        console.log('[cerrarModalProcesoGenerico]  NO se limpia storage - imágenes necesarias para tarjetas');
-        console.log(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del índice ${globalThis.procesoActualIndex}`);
+    if (storageDeshabilitado && procesoModalState.modoActual === 'crear' && globalThis.procesoActualIndex !== undefined) {
+        procesoModalDebug('[cerrarModalProcesoGenerico]  NO se limpia storage - imagenes necesarias para tarjetas');
+        procesoModalDebug(`[cerrarModalProcesoGenerico]  Limpiando storage UNIVERSAL de PROCESOS del indice ${globalThis.procesoActualIndex}`);
 
         if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.eliminarTodasLasImagenes === 'function') {
             globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
-            console.log(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para índice ${globalThis.procesoActualIndex}`);
+            procesoModalDebug(`[cerrarModalProcesoGenerico]  Storage UNIVERSAL de PROCESOS limpiado para indice ${globalThis.procesoActualIndex}`);
         }
         imagenesProcesoActual = [null, null, null];
         if (globalThis.imagenesProcesoActual) {
             globalThis.imagenesProcesoActual = [null, null, null];
         }
-        console.log('[cerrarModalProcesoGenerico]  Arrays locales de imágenes limpiados');
+        procesoModalDebug('[cerrarModalProcesoGenerico]  Arrays locales de imagenes limpiados');
     } else {
-        console.log('[cerrarModalProcesoGenerico]  Storage conservado - imágenes necesarias para renderizado');
+        procesoModalDebug('[cerrarModalProcesoGenerico]  Storage conservado - imagenes necesarias para renderizado');
     }
 }
 
@@ -287,9 +309,9 @@ globalThis.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     _cerrarModalProcesoGenerico_editar(procesoGuardado);
     _cerrarModalProcesoGenerico_storage();
 
-    procesoActual = null;
+    procesoModalState.procesoActual = null;
     globalThis.procesoActualIndex = undefined;
-    modoActual = 'crear';
+    procesoModalState.modoActual = 'crear';
 };
 
 // Array para almacenar los archivos reales del proceso (hasta 3)
@@ -298,21 +320,21 @@ let imagenesProcesoActual = [null, null, null];
 
 // Manejar upload de imagen individual
 globalThis.manejarImagenProceso = function(input, indice) {
-    console.log(`[manejarImagenProceso]  INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${globalThis.procesoActualIndex}`);
+    procesoModalDebug(`[manejarImagenProceso]  INICIO - input=${input?.tagName}, indice=${indice}, procesoActualIndex=${globalThis.procesoActualIndex}`);
     
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
-        console.log(`[manejarImagenProceso] 📁 Archivo detectado: ${file.name} (${file.size} bytes)`);
+        procesoModalDebug(`[manejarImagenProceso]  Archivo detectado: ${file.name} (${file.size} bytes)`);
         
         //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
-        //  CRÍTICO: Sincronizar con globalThis.imagenesProcesoActual (usado en PATCH)
+        //  CRITICO: Sincronizar con globalThis.imagenesProcesoActual (usado en PATCH)
         if (!globalThis.imagenesProcesoActual) {
             globalThis.imagenesProcesoActual = [null, null, null];
         }
         globalThis.imagenesProcesoActual[indice - 1] = file;
-        console.log('[manejarImagenProceso]  Imagen guardada en globalThis.imagenesProcesoActual:', {
+        procesoModalDebug('[manejarImagenProceso]  Imagen guardada en globalThis.imagenesProcesoActual:', {
             indice: indice,
             filename: file.name,
             size: file.size,
@@ -321,7 +343,7 @@ globalThis.manejarImagenProceso = function(input, indice) {
         
         //  NUEVO: Guardar en storage universal de PROCESOS
         if (globalThis.universalImagenesStorage && globalThis.procesoActualIndex !== undefined) {
-            console.log(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${globalThis.procesoActualIndex}`);
+            procesoModalDebug(`[manejarImagenProceso]  Guardando en storage universal - procesoActualIndex=${globalThis.procesoActualIndex}`);
             const imagenData = {
                 file: file,
                 previewUrl: URL.createObjectURL(file),
@@ -333,17 +355,17 @@ globalThis.manejarImagenProceso = function(input, indice) {
             };
             
             const resultado = globalThis.universalImagenesStorage.agregarImagen('procesos', globalThis.procesoActualIndex, imagenData);
-            console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${globalThis.procesoActualIndex}] - resultado=${resultado}`);
+            procesoModalDebug(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${globalThis.procesoActualIndex}] - resultado=${resultado}`);
         } else {
             console.warn('[manejarImagenProceso]  No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
-            console.log('[manejarImagenProceso]  Debug:', {
+            procesoModalDebug('[manejarImagenProceso]  Debug:', {
                 universalStorage: !!globalThis.universalImagenesStorage,
                 procesoActualIndex: globalThis.procesoActualIndex,
                 agregarImagen: typeof globalThis.universalImagenesStorage?.agregarImagen
             });
         }
         
-        // Mostrar preview usando URL.createObjectURL (más eficiente que base64)
+        // Mostrar preview usando URL.createObjectURL (mas eficiente que base64)
         const preview = document.getElementById(`proceso-foto-preview-${indice}`);
         if (preview) {
             const objectUrl = URL.createObjectURL(file);
@@ -353,7 +375,7 @@ globalThis.manejarImagenProceso = function(input, indice) {
                 <img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
             `;
             
-            //  Crear botón eliminar con data-indice (event delegation global lo detectará)
+            //  Crear boton eliminar con data-indice (event delegation global lo detectar)
             let deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
             if (deleteBtn) deleteBtn.remove();
             deleteBtn = document.createElement('button');
@@ -363,73 +385,78 @@ globalThis.manejarImagenProceso = function(input, indice) {
             deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
             deleteBtn.textContent = '×';
             preview.appendChild(deleteBtn);
-            console.log('[manejarImagenProceso]  Botón eliminar creado con data-indice:', indice);
+            procesoModalDebug('[manejarImagenProceso]  boton eliminar creado con data-indice:', indice);
             
             // Limpiar URL cuando el elemento se elimine (prevenir memory leaks)
             preview._objectUrl = objectUrl;
         }
         
     } else {
-        console.log('[manejarImagenProceso]  No hay archivos en el input');
+        procesoModalDebug('[manejarImagenProceso]  No hay archivos en el input');
     }
 };
 
-//  NUEVO: Variable global para rastrear qué imagen se está eliminando
+//  NUEVO: Variable global para rastrear que imagen se esta eliminando
 globalThis._imagenAEliminarIndice = null;
 
 //  EVENT DELEGATION GLOBAL: Detectar clicks en botones .btn-eliminar-imagen-proceso
-// Esto funciona incluso después de que setupDragAndDropProceso clone el preview con cloneNode(true)
-// porque cloneNode NO copia event listeners, pero event delegation en document SÍ los detecta
+// Esto funciona incluso despues de que setupDragAndDropProceso clone el preview con cloneNode(true)
+// porque cloneNode NO copia event listeners, pero event delegation en document si los detecta
 (function() {
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-eliminar-imagen-proceso');
         if (btn) {
-            console.log('[EVENT-DELEGATION]  Click detectado en botón eliminar imagen');
+            procesoModalDebug('[EVENT-DELEGATION]  Click detectado en boton eliminar imagen');
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
             
             const indice = Number.parseInt(btn.dataset.indice, 10);
-            console.log('[EVENT-DELEGATION]  Índice del botón:', indice);
+            procesoModalDebug('[EVENT-DELEGATION]  indice del boton:', indice);
             
             if (indice && typeof globalThis.eliminarImagenProceso === 'function') {
-                console.log('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
+                procesoModalDebug('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
                 globalThis.eliminarImagenProceso(indice);
             } else {
-                console.error('[EVENT-DELEGATION]  Índice inválido o función no existe:', indice, typeof globalThis.eliminarImagenProceso);
+                console.error('[EVENT-DELEGATION]  indice invalido o funcion no existe:', indice, typeof globalThis.eliminarImagenProceso);
             }
         }
     }, true); // true = capture phase, se ejecuta ANTES que otros handlers
-    console.log('[EVENT-DELEGATION]  Event delegation global registrado para .btn-eliminar-imagen-proceso');
+    procesoModalDebug('[EVENT-DELEGATION]  Event delegation global registrado para .btn-eliminar-imagen-proceso');
 })();
 
-// Mostrar modal de confirmación para eliminar imagen
-globalThis.mostrarModalConfirmarEliminarImagen = function(indice) {
-    console.log('[mostrarModalConfirmarEliminarImagen]  INICIANDO - Mostrando modal para imagen:', indice);
+function _mostrarModalConfirmarEliminarImagen(indice, source = 'mostrarModalConfirmarEliminarImagen') {
+    procesoModalDebug('[' + source + ']  INICIANDO - Mostrando modal para imagen:', indice);
     globalThis._imagenAEliminarIndice = indice;
-    console.log('[mostrarModalConfirmarEliminarImagen]  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
+    procesoModalDebug('[' + source + ']  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
-    console.log('[mostrarModalConfirmarEliminarImagen]  Modal encontrado?:', !!modal);
+    procesoModalDebug('[' + source + ']  Modal encontrado?:', !!modal);
     
     if (modal) {
-        console.log('[mostrarModalConfirmarEliminarImagen]  Modal existe, mostrando...');
+        procesoModalDebug('[' + source + ']  Modal existe, mostrando...');
         modal.style.display = 'flex';
         modal.style.zIndex = '999999999';
-        console.log('[mostrarModalConfirmarEliminarImagen]  Modal mostrado con z-index:', modal.style.zIndex);
+        procesoModalDebug('[' + source + ']  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
-        console.error('[mostrarModalConfirmarEliminarImagen]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
-        console.log('[mostrarModalConfirmarEliminarImagen]  Elementos en body:', document.body.children.length);
-        console.log('[mostrarModalConfirmarEliminarImagen]  Buscando modales con clase modal-overlay:');
+        console.error('[' + source + ']  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
+        procesoModalDebug('[' + source + ']  Elementos en body:', document.body.children.length);
+        procesoModalDebug('[' + source + ']  Buscando modales con clase modal-overlay:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
-            console.log(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}, Z-index: ${m.style.zIndex}`);
+            procesoModalDebug(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}, Z-index: ${m.style.zIndex}`);
         });
     }
+}
+procesoModalModules.ui.mostrarModalConfirmarEliminarImagen = _mostrarModalConfirmarEliminarImagen;
+
+// Mostrar modal de confirmacion para eliminar imagen
+globalThis.mostrarModalConfirmarEliminarImagen = function(indice) {
+    procesoModalModules.ui.mostrarModalConfirmarEliminarImagen(indice, 'mostrarModalConfirmarEliminarImagen');
 };
 
-// Cerrar modal de confirmación
+// Cerrar modal de confirmacion
 globalThis.cerrarModalConfirmarEliminarImagen = function() {
-    console.log('[cerrarModalConfirmarEliminarImagen]  Cerrando modal');
+    procesoModalDebug('[cerrarModalConfirmarEliminarImagen]  Cerrando modal');
     globalThis._imagenAEliminarIndice = null;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
@@ -438,7 +465,7 @@ globalThis.cerrarModalConfirmarEliminarImagen = function() {
     }
 };
 
-// Helpers para confirmar eliminación de imagen
+// Helpers para confirmar eliminacion de imagen
 function _confirmarEliminarImagenProceso_revocarURLs(preview) {
     if (!preview) return;
 
@@ -451,6 +478,7 @@ function _confirmarEliminarImagenProceso_revocarURLs(preview) {
         preview._objectUrl = null;
     }
 }
+procesoModalModules.imagenes.revocarURLs = _confirmarEliminarImagenProceso_revocarURLs;
 
 function _confirmarEliminarImagenProceso_resetMocks(indice) {
     if (imagenesProcesoActual !== undefined) {
@@ -460,6 +488,7 @@ function _confirmarEliminarImagenProceso_resetMocks(indice) {
         globalThis.imagenesProcesoActual[indice - 1] = null;
     }
 }
+procesoModalModules.imagenes.resetMocks = _confirmarEliminarImagenProceso_resetMocks;
 
 function _confirmarEliminarImagenProceso_guardarExistente(indice) {
     if (!(globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > (indice - 1))) {
@@ -477,7 +506,7 @@ function _confirmarEliminarImagenProceso_guardarExistente(indice) {
 
         if (!yaGuardado) {
             globalThis.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
-            console.log('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
+            procesoModalDebug('[confirmarEliminarImagenProceso]  Imagen GUARDADA en storage de eliminadas:', {
                 id: imagenAeliminarObj.id,
                 ruta: imagenAeliminarObj.ruta_original,
                 identificador,
@@ -491,7 +520,7 @@ function _confirmarEliminarImagenProceso_guardarExistente(indice) {
 
     globalThis.imagenesProcesoExistentes[indice - 1] = null;
     const imagenesParaEnviar = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
-    console.log('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
+    procesoModalDebug('[confirmarEliminarImagenProceso]  Imagen existente marcada como eliminada:', {
         indice: indice - 1,
         imagenesRestantes: imagenesParaEnviar.length,
         storageLlenado: globalThis.imagenesEliminadasProcesoStorage,
@@ -501,6 +530,7 @@ function _confirmarEliminarImagenProceso_guardarExistente(indice) {
 
     return true;
 }
+procesoModalModules.imagenes.guardarExistente = _confirmarEliminarImagenProceso_guardarExistente;
 
 function _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar() {
     const imagenesParaEnviar = [];
@@ -515,9 +545,10 @@ function _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar() {
         });
     }
 
-    console.log('[confirmarEliminarImagenProceso] Imágenes restantes:', imagenesParaEnviar.length);
+    procesoModalDebug('[confirmarEliminarImagenProceso] imagenes restantes:', imagenesParaEnviar.length);
     return imagenesParaEnviar;
 }
+procesoModalModules.imagenes.obtenerImagenesParaEnviar = _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar;
 
 function _confirmarEliminarImagenProceso_registrarEnEditor() {
     if (!globalThis.procesosEditor) return;
@@ -525,6 +556,7 @@ function _confirmarEliminarImagenProceso_registrarEnEditor() {
     const imagenesParaRegistrar = _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar();
     globalThis.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
 }
+procesoModalModules.imagenes.registrarEnEditor = _confirmarEliminarImagenProceso_registrarEnEditor;
 
 function _confirmarEliminarImagenProceso_resetPreview(preview, indice) {
     if (!preview) return;
@@ -543,28 +575,29 @@ function _confirmarEliminarImagenProceso_resetPreview(preview, indice) {
         deleteBtn.remove();
     }
 }
+procesoModalModules.imagenes.resetPreview = _confirmarEliminarImagenProceso_resetPreview;
 
-// Confirmar eliminación de imagen
+// Confirmar eliminacion de imagen
 globalThis.confirmarEliminarImagenProceso = function() {
     const indice = globalThis._imagenAEliminarIndice;
     if (!indice) return;
 
-    console.log('[confirmarEliminarImagenProceso]  Confirmando eliminación de imagen:', indice);
+    procesoModalDebug('[confirmarEliminarImagenProceso]  Confirmando eliminacion de imagen:', indice);
     cerrarModalConfirmarEliminarImagen();
 
     const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-    _confirmarEliminarImagenProceso_revocarURLs(preview);
+    procesoModalModules.imagenes.revocarURLs(preview);
 
-    _confirmarEliminarImagenProceso_resetMocks(indice);
+    procesoModalModules.imagenes.resetMocks(indice);
 
-    const eliminadoExistente = _confirmarEliminarImagenProceso_guardarExistente(indice);
+    const eliminadoExistente = procesoModalModules.imagenes.guardarExistente(indice);
     if (!eliminadoExistente) {
-        _confirmarEliminarImagenProceso_obtenerImagenesParaEnviar();
+        procesoModalModules.imagenes.obtenerImagenesParaEnviar();
     }
 
-    _confirmarEliminarImagenProceso_registrarEnEditor();
+    procesoModalModules.imagenes.registrarEnEditor();
 
-    _confirmarEliminarImagenProceso_resetPreview(preview, indice);
+    procesoModalModules.imagenes.resetPreview(preview, indice);
 
     const input = document.getElementById(`proceso-foto-input-${indice}`);
     if (input) {
@@ -572,34 +605,12 @@ globalThis.confirmarEliminarImagenProceso = function() {
     }
 };
 
-// Eliminar imagen del proceso (ahora muestra modal de confirmación)
+// Eliminar imagen del proceso (ahora muestra modal de confirmacion)
 globalThis.eliminarImagenProceso = function(indice) {
-    console.log('[eliminarImagenProceso]  INICIANDO - Click en botón eliminar para imagen:', indice);
-    
-    // Guardar el índice globalmente
-    globalThis._imagenAEliminarIndice = indice;
-    console.log('[eliminarImagenProceso]  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
-    
-    // Buscar el modal directamente
-    const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
-    console.log('[eliminarImagenProceso]  Modal encontrado?:', !!modal);
-    
-    if (modal) {
-        console.log('[eliminarImagenProceso]  Modal existe, mostrando...');
-        modal.style.display = 'flex';
-        modal.style.zIndex = '999999999';
-        console.log('[eliminarImagenProceso]  Modal mostrado con z-index:', modal.style.zIndex);
-    } else {
-        console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
-        // Listar todos los modales disponibles
-        console.log('[eliminarImagenProceso]  Modales disponibles en el DOM:');
-        document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
-            console.log(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}`);
-        });
-    }
+    procesoModalModules.ui.mostrarModalConfirmarEliminarImagen(indice, 'eliminarImagenProceso');
 };
 
-// Limpiar todas las imágenes del proceso
+// Limpiar todas las imagenes del proceso
 function limpiarImagenesProceso() {
     // Limpiar URLs generadas
     for (let i = 1; i <= 3; i++) {
@@ -613,20 +624,20 @@ function limpiarImagenesProceso() {
     // Limpiar array local
     imagenesProcesoActual = [null, null, null];
     
-    //  CRÍTICO: Limpiar arrays globales para evitar contaminación
+    //  CRITICO: Limpiar arrays globales para evitar contaminacion
     if (globalThis.imagenesProcesoActual) {
         globalThis.imagenesProcesoActual = [null, null, null];
-        console.log('[limpiarImagenesProceso]  globalThis.imagenesProcesoActual limpiado');
+        procesoModalDebug('[limpiarImagenesProceso]  globalThis.imagenesProcesoActual limpiado');
     }
     
     if (globalThis.imagenesProcesoExistentes) {
         globalThis.imagenesProcesoExistentes = [];
-        console.log('[limpiarImagenesProceso]  globalThis.imagenesProcesoExistentes limpiado');
+        procesoModalDebug('[limpiarImagenesProceso]  globalThis.imagenesProcesoExistentes limpiado');
     }
     
-    //  NUEVO: Limpiar también el storage universal si hay un índice activo
+    //  NUEVO: Limpiar tambien el storage universal si hay un indice activo
     if (globalThis.universalImagenesStorage && globalThis.procesoActualIndex !== undefined) {
-        console.log(`[limpiarImagenesProceso]  Limpiando storage universal de PROCESOS[${globalThis.procesoActualIndex}]`);
+        procesoModalDebug(`[limpiarImagenesProceso]  Limpiando storage universal de PROCESOS[${globalThis.procesoActualIndex}]`);
         globalThis.universalImagenesStorage.eliminarTodasLasImagenes('procesos', globalThis.procesoActualIndex);
     }
     
@@ -651,7 +662,7 @@ function limpiarImagenesProceso() {
     }
 }
 
-// Agregar ubicación a la lista
+// Agregar ubicacion a la lista
 globalThis.agregarUbicacionProceso = function() {
     const input = document.getElementById('input-ubicacion-nueva');
     const ubicacion = input?.value?.trim();
@@ -678,7 +689,7 @@ globalThis.agregarUbicacionProceso = function() {
     globalThis.renderizarListaUbicaciones();
 };
 
-// Remover ubicación de la lista
+// Remover ubicacion de la lista
 globalThis.removerUbicacionProceso = function(ubicacion) {
     // Si es objeto, comparar por ubicacion.ubicacion
     if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
@@ -705,7 +716,7 @@ globalThis.renderizarListaUbicaciones = function() {
     container.innerHTML = '';
     
     if (globalThis.ubicacionesProcesoSeleccionadas.length === 0) {
-        container.innerHTML = '<small style="color: #9ca3af;">Escribe una ubicación y haz click en "+" para agregarla</small>';
+        container.innerHTML = '<small style="color: #9ca3af;">Escribe una ubicacion y haz click en "+" para agregarla</small>';
         return;
     }
     
@@ -718,9 +729,9 @@ globalThis.renderizarListaUbicaciones = function() {
         
         if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
             ubicacionTexto = ubicacion.ubicacion;
-            ubicacionKey = JSON.stringify(ubicacion); // Para comparación en remover
+            ubicacionKey = JSON.stringify(ubicacion); // Para comparacion en remover
             
-            // Si tiene descripción, mostrar expandido
+            // Si tiene descripcion, mostrar expandido
             if (ubicacion.descripcion) {
                 const desc = ubicacion.descripcion.substring(0, 80) + (ubicacion.descripcion.length > 80 ? '...' : '');
                 tag.style.cssText = 'display: flex; gap: 0.75rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.875rem; flex-direction: column;';
@@ -809,7 +820,7 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
         sobremedida: tallasPrendaConCantidades.sobremedida || {}
     };
     
-    console.log(' [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
+    procesoModalDebug(' [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
         tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
         tallasSeleccionadas: globalThis.tallasSeleccionadasProceso
     });
@@ -819,7 +830,7 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
 
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    console.log('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
+    procesoModalDebug('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
 
     const normalizarGenero = (generoRaw) => {
         const g = String(generoRaw || '').trim().toLowerCase();
@@ -986,36 +997,36 @@ function obtenerTallasDeLaPrenda() {
 
     const tablaPrimaria = extraerTallasDesdeTabla();
     if (tablaPrimaria.colores > 0) {
-        console.log('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
+        procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
         return tablaPrimaria.tallas;
     }
 
     const state = extraerTallasDesdeStateManager();
     if (state) {
-        console.log('[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)');
+        procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)');
         return state;
     }
 
     if (tablaPrimaria.filas > 0) {
         const tablaSinColor = extraerTallasDesdeTablaSinColor(document.getElementById('tabla-resumen-asignaciones-cuerpo'));
         if (tablaSinColor) {
-            console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
+            procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
             return tablaSinColor;
         }
     }
 
     const relacionales = extraerTallasRelacionales();
     if (relacionales) {
-        console.log('[obtenerTallasDeLaPrenda]  FUENTE 4 USADA: tallasRelacionales (legacy)');
+        procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 4 USADA: tallasRelacionales (legacy)');
         return relacionales;
     }
 
     if (globalThis.cantidadSoloSeleccionada) {
-        console.log('[obtenerTallasDeLaPrenda]  FUENTE 5 USADA: cantidadSoloSeleccionada');
+        procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 5 USADA: cantidadSoloSeleccionada');
         return { dama: {}, caballero: {}, sobremedida: { 'UNISEX': globalThis.cantidadSoloSeleccionada } };
     }
 
-    console.log('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacío');
+    procesoModalDebug('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacio');
     return crearEstructuraTallas();
 }
 
@@ -1030,7 +1041,7 @@ function mostrarModalAdvertenciaTallas() {
                 antes de aplicar el proceso.
             </p>
             <p style="color: #6b7280; margin-bottom: 2rem; font-size: 0.875rem;">
-                Agrega tallas en la sección "TALLAS Y CANTIDADES" del formulario.
+                Agrega tallas en la seccion "TALLAS Y CANTIDADES" del formulario.
             </p>
             <button type="button" class="btn btn-primary" onclick="cerrarModalAdvertencia()" style="padding: 0.75rem 2rem;">
                 <span class="material-symbols-rounded">check</span>Entendido
@@ -1059,14 +1070,14 @@ function mostrarModalAdvertenciaTallas() {
         </div>
     `;
     
-    console.log('[MODAL-ADVERTENCIA-TALLAS] Creando modal');
+    procesoModalDebug('[MODAL-ADVERTENCIA-TALLAS] Creando modal');
     
     // Agregar seguro a getComputedStyle
     const swal2Container = document.querySelector('.swal2-container');
     if (swal2Container) {
-        console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', globalThis.getComputedStyle(swal2Container).zIndex);
+        procesoModalDebug('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', globalThis.getComputedStyle(swal2Container).zIndex);
     } else {
-        console.log('[MODAL-ADVERTENCIA-TALLAS] Sin swal2-container activo');
+        procesoModalDebug('[MODAL-ADVERTENCIA-TALLAS] Sin swal2-container activo');
     }
     
     document.body.appendChild(modal);
@@ -1075,7 +1086,7 @@ function mostrarModalAdvertenciaTallas() {
 
     setTimeout(() => {
         modal.style.setProperty('z-index', '9999999999', 'important');
-        console.log('[MODAL-ADVERTENCIA-TALLAS] Modal visible');
+        procesoModalDebug('[MODAL-ADVERTENCIA-TALLAS] Modal visible');
     }, 10);
 }
 
@@ -1087,7 +1098,7 @@ globalThis.cerrarModalAdvertencia = function() {
     }
 };
 
-// Abrir editor de tallas específicas
+// Abrir editor de tallas especificas
 globalThis.abrirEditorTallasEspecificas = function() {
 
     
@@ -1134,8 +1145,8 @@ globalThis.abrirEditorTallasEspecificas = function() {
                 const colorDisplay = (parts[1] || null);
                 const etiquetaDisplay = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
                 
-                // Calcular cuánto está asignado en otros procesos
-                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'dama', procesoActual);
+                // Calcular cuanto esta asignado en otros procesos
+                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'dama', procesoModalState.procesoActual);
                 const cantidadDisponible = cantidadPrenda - totalAsignado;
                 
                 const label = document.createElement('label');
@@ -1171,7 +1182,7 @@ globalThis.abrirEditorTallasEspecificas = function() {
                 `;
                 label.style.cssText = 'display: block; cursor: pointer; user-select: none;';
                 
-                // Agregar información sobre procesos previos si existen
+                // Agregar informacion sobre procesos previos si existen
                 if (procesosDetalle.length > 0) {
                     const infoDiv = document.createElement('div');
                     infoDiv.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-left: 2.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 4px;';
@@ -1208,8 +1219,8 @@ globalThis.abrirEditorTallasEspecificas = function() {
                 const colorDisplay = (parts[1] || null);
                 const etiquetaDisplay = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
                 
-                // Calcular cuánto está asignado en otros procesos
-                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'caballero', procesoActual);
+                // Calcular cuanto esta asignado en otros procesos
+                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'caballero', procesoModalState.procesoActual);
                 const cantidadDisponible = cantidadPrenda - totalAsignado;
                 
                 const label = document.createElement('label');
@@ -1245,7 +1256,7 @@ globalThis.abrirEditorTallasEspecificas = function() {
                 `;
                 label.style.cssText = 'display: block; cursor: pointer; user-select: none;';
                 
-                // Agregar información sobre procesos previos si existen
+                // Agregar informacion sobre procesos previos si existen
                 if (procesosDetalle.length > 0) {
                     const infoDiv = document.createElement('div');
                     infoDiv.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-left: 2.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 4px;';
@@ -1264,16 +1275,16 @@ globalThis.abrirEditorTallasEspecificas = function() {
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
     
-    //  DIAGNÓSTICO Z-INDEX
-    console.log(' [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
-    console.log(' [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
-    console.log(' [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
+    //  DIAGNOSTICO Z-INDEX
+    procesoModalDebug(' [EDITOR-TALLAS] Abriendo modal de edicion de tallas...');
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Obtener z-index del modal principal
     const modalPrincipal = document.getElementById('modal-proceso-generico');
     if (modalPrincipal) {
-        console.log(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
-        console.log(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', globalThis.getComputedStyle(modalPrincipal).zIndex);
+        procesoModalDebug(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
+        procesoModalDebug(' [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', globalThis.getComputedStyle(modalPrincipal).zIndex);
     }
     
     // Forzar z-index aún más alto
@@ -1281,28 +1292,28 @@ globalThis.abrirEditorTallasEspecificas = function() {
     const zIndexPrincipalActual = parseInt(globalThis.getComputedStyle(modalPrincipal).zIndex) || 999999999;
     const nuevoZIndexEditor = zIndexPrincipalActual + 1;
     
-    console.log(' [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
-    console.log(' [EDITOR-TALLAS] Z-index PRINCIPAL actual:', zIndexPrincipalActual);
-    console.log(' [EDITOR-TALLAS] ASIGNANDO nuevo Z-index al editor:', nuevoZIndexEditor);
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index PRINCIPAL actual:', zIndexPrincipalActual);
+    procesoModalDebug(' [EDITOR-TALLAS] ASIGNANDO nuevo Z-index al editor:', nuevoZIndexEditor);
     
     // Aplicar z-index forzado
     modalEditor.style.zIndex = nuevoZIndexEditor.toString();
-    console.log(' [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
-    console.log(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
+    procesoModalDebug(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', globalThis.getComputedStyle(modalEditor).zIndex);
     
     // Verificar contexto de apilamiento
-    console.log(' [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
-    console.log('   - Modal Principal display:', globalThis.getComputedStyle(modalPrincipal).display);
-    console.log('   - Modal Principal position:', globalThis.getComputedStyle(modalPrincipal).position);
-    console.log('   - Editor display:', globalThis.getComputedStyle(modalEditor).display);
-    console.log('   - Editor position:', globalThis.getComputedStyle(modalEditor).position);
+    procesoModalDebug(' [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
+    procesoModalDebug('   - Modal Principal display:', globalThis.getComputedStyle(modalPrincipal).display);
+    procesoModalDebug('   - Modal Principal position:', globalThis.getComputedStyle(modalPrincipal).position);
+    procesoModalDebug('   - Editor display:', globalThis.getComputedStyle(modalEditor).display);
+    procesoModalDebug('   - Editor position:', globalThis.getComputedStyle(modalEditor).position);
     
-    // Listar todos los elementos con z-index alto en la página
-    console.log(' [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
+    // Listar todos los elementos con z-index alto en la pagina
+    procesoModalDebug(' [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
     document.querySelectorAll('[style*="z-index"], [class*="modal"], [class*="overlay"]').forEach((el, idx) => {
         const zIdx = globalThis.getComputedStyle(el).zIndex;
         if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100) {
-            console.log(`   ${idx}. ${el.id || el.className || el.tagName} - Z-index: ${zIdx}, Display: ${globalThis.getComputedStyle(el).display}`);
+            procesoModalDebug(`   ${idx}. ${el.id || el.className || el.tagName} - Z-index: ${zIdx}, Display: ${globalThis.getComputedStyle(el).display}`);
         }
     });
 
@@ -1345,25 +1356,25 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
     const talla = input.dataset.talla;
     const cantidad = parseInt(input.value) || 0;
     
-    // Obtener la cantidad máxima disponible en la prenda
+    // Obtener la cantidad maxima disponible en la prenda
     const tallasPrenda = obtenerTallasDeLaPrenda();
     const generoKey = genero.toLowerCase();
     const cantidadDisponibleEnPrenda = tallasPrenda[generoKey]?.[talla] || 0;
     
-    //  LÓGICA CORREGIDA: Las mismas prendas pueden recibir MÚLTIPLES procesos
-    // NO hay límite entre procesos. Solo validamos contra la cantidad total de la prenda.
+    //  LOGICA CORREGIDA: Las mismas prendas pueden recibir MULTIPLES procesos
+    // NO hay limite entre procesos. Solo validamos contra la cantidad total de la prenda.
     // Ejemplo: 20 camisas talla S pueden tener:
     //   - 10 con Bordado
     //   - 15 con Estampado (son las MISMAS u OTRAS camisas, lo importante es que NO superen 20 total)
     
-    console.log(` [actualizarCantidadTallaProceso] Validación para ${talla}/${genero}:`, {
+    procesoModalDebug(` [actualizarCantidadTallaProceso] Validacion para ${talla}/${genero}:`, {
         cantidadIntentada: cantidad,
         cantidadDisponibleEnPrenda: cantidadDisponibleEnPrenda,
-        procesoActual: procesoActual,
-        nota: 'Sin límite entre procesos - mismas prendas pueden recibir múltiples procesos'
+        procesoActual: procesoModalState.procesoActual,
+        nota: 'Sin limite entre procesos - mismas prendas pueden recibir multiples procesos'
     });
     
-    // VALIDACIÓN: Solo permitir que NO supere la cantidad total de la prenda
+    // VALIDACION: Solo permitir que NO supere la cantidad total de la prenda
     if (cantidad > cantidadDisponibleEnPrenda) {
         console.warn(` [actualizarCantidadTallaProceso] Cantidad ${cantidad} supera disponible en PRENDA ${cantidadDisponibleEnPrenda}`);
         
@@ -1373,11 +1384,11 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
         
         // Buscar el label padre que contiene 
         const label = input.closest('label');
-        console.log(' [ERROR-CSS] Label encontrado:', !!label);
+        procesoModalDebug(' [ERROR-CSS] Label encontrado:', !!label);
         
         // Buscar o crear wrapper para mantener el grid ordenado
         let wrapper = label?.closest('.talla-error-wrapper');
-        console.log(' [ERROR-CSS] Wrapper existente:', !!wrapper);
+        procesoModalDebug(' [ERROR-CSS] Wrapper existente:', !!wrapper);
         
         if (!wrapper) {
             wrapper = document.createElement('div');
@@ -1389,7 +1400,7 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
                 label.parentNode.insertBefore(wrapper, label);
                 // Meter label dentro del wrapper
                 wrapper.appendChild(label);
-                console.log(' [ERROR-CSS] Wrapper CREADO y label MOVIDO dentro');
+                procesoModalDebug(' [ERROR-CSS] Wrapper CREADO y label MOVIDO dentro');
             }
         }
         
@@ -1402,19 +1413,19 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
             errorDiv.style.cssText = 'color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; padding: 0 0.5rem; width: 100%; display: block;';
             if (wrapper) {
                 wrapper.appendChild(errorDiv);
-                console.log(' [ERROR-CSS] ErrorDiv CREADO dentro del wrapper');
+                procesoModalDebug(' [ERROR-CSS] ErrorDiv CREADO dentro del wrapper');
             }
         }
         
-        console.log(' [ERROR-CSS] ErrorDiv después de crear:');
-        console.log('   - Existe:', !!errorDiv);
-        console.log('   - Display (style):', errorDiv.style.display);
-        console.log('   - Display (computed):', globalThis.getComputedStyle(errorDiv).display);
+        procesoModalDebug(' [ERROR-CSS] ErrorDiv despues de crear:');
+        procesoModalDebug('   - Existe:', !!errorDiv);
+        procesoModalDebug('   - Display (style):', errorDiv.style.display);
+        procesoModalDebug('   - Display (computed):', globalThis.getComputedStyle(errorDiv).display);
         
         errorDiv.textContent = ` Máximo: ${cantidadDisponibleEnPrenda} unidades`;
         errorDiv.style.display = 'block';
         
-        console.log(' [ERROR-CSS] Mensaje asignado');
+        procesoModalDebug(' [ERROR-CSS] Mensaje asignado');
         
         // Limpiar el campo (dejar en 0)
         input.value = 0;
@@ -1422,7 +1433,7 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
         
       
     } else {
-        // Limpiar error si la cantidad es válida
+        // Limpiar error si la cantidad es valida
         input.style.borderColor = '#be185d';
         input.style.backgroundColor = '#fce7f3';
         let errorDiv = input.parentNode.querySelector('.error-cantidad');
@@ -1449,7 +1460,7 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
     input.style.borderColor = '';
     input.style.backgroundColor = '';
     
-    console.log(' [actualizarCantidadTallaProceso] Actualizado en tallasCantidadesProceso:', {
+    procesoModalDebug(' [actualizarCantidadTallaProceso] Actualizado en tallasCantidadesProceso:', {
         genero,
         talla,
         cantidad,
@@ -1462,10 +1473,10 @@ globalThis.actualizarCantidadTallaProceso = function(input) {
 globalThis.cerrarEditorTallas = function() {
     const modal = document.getElementById('modal-editor-tallas');
     if (modal) {
-        console.log(' [EDITOR-TALLAS] Cerrando modal...');
-        console.log(' [EDITOR-TALLAS] Z-index ANTES de cerrar:', globalThis.getComputedStyle(modal).zIndex);
+        procesoModalDebug(' [EDITOR-TALLAS] Cerrando modal...');
+        procesoModalDebug(' [EDITOR-TALLAS] Z-index ANTES de cerrar:', globalThis.getComputedStyle(modal).zIndex);
         modal.style.display = 'none';
-        console.log(' [EDITOR-TALLAS] Modal cerrado. Display:', globalThis.getComputedStyle(modal).display);
+        procesoModalDebug(' [EDITOR-TALLAS] Modal cerrado. Display:', globalThis.getComputedStyle(modal).display);
     }
 
 };
@@ -1473,74 +1484,75 @@ globalThis.cerrarEditorTallas = function() {
 // Guardar tallas seleccionadas desde el editor
 globalThis.guardarTallasSeleccionadas = function() {
 
-    console.log(' [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
-    console.log(' [guardarTallasSeleccionadas] Proceso actual:', procesoActual);
-    console.log(' [guardarTallasSeleccionadas] Modo:', modoActual);
+    procesoModalDebug(' [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
+    procesoModalDebug(' [guardarTallasSeleccionadas] Proceso actual:', procesoModalState.procesoActual);
+    procesoModalDebug(' [guardarTallasSeleccionadas] Modo:', procesoModalState.modoActual);
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
     globalThis.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
-    console.log(' [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', globalThis.tallasSeleccionadasProceso.dama);
+    procesoModalDebug(' [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', globalThis.tallasSeleccionadasProceso.dama);
     
     // Recopilar tallas CABALLERO
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
     globalThis.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
-    console.log(' [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', globalThis.tallasSeleccionadasProceso.caballero);
-    console.log(' [guardarTallasSeleccionadas] Cantidades por talla (proceso):', globalThis.tallasCantidadesProceso);
+    procesoModalDebug(' [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', globalThis.tallasSeleccionadasProceso.caballero);
+    procesoModalDebug(' [guardarTallasSeleccionadas] Cantidades por talla (proceso):', globalThis.tallasCantidadesProceso);
     
     // IMPORTANTE: Actualizar el objeto del proceso con las tallas y cantidades
     // para que no pierda los datos cuando se cierre el modal
-    if (procesoActual && globalThis.procesosSeleccionados[procesoActual]?.datos) {
-        globalThis.procesosSeleccionados[procesoActual].datos.tallas = {
+    if (procesoModalState.procesoActual && globalThis.procesosSeleccionados[procesoModalState.procesoActual]?.datos) {
+        globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallas = {
             dama: globalThis.tallasCantidadesProceso.dama || {},
             caballero: globalThis.tallasCantidadesProceso.caballero || {},
             sobremedida: globalThis.tallasCantidadesProceso.sobremedida || {}
         };
         
-        console.log(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoActual}":`, {
-            tallas: globalThis.procesosSeleccionados[procesoActual].datos.tallas,
+        procesoModalDebug(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoModalState.procesoActual}":`, {
+            tallas: globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallas,
             tallasCantidadesProceso: globalThis.tallasCantidadesProceso
         });
     } else {
-        console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!globalThis.procesosSeleccionados}`);
+        console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoModalState.procesoActual}", procesosSeleccionados exists=${!!globalThis.procesosSeleccionados}`);
     }
 
-    console.log(' [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
-    console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
-    console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
+    procesoModalDebug(' [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
+    procesoModalDebug('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    procesoModalDebug('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
     
-    console.log(' [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
-    console.log('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
-    console.log('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
+    procesoModalDebug(' [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
+    procesoModalDebug('   - Modal editor display:', globalThis.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    procesoModalDebug('   - Modal principal display:', globalThis.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     actualizarResumenTallasProceso();
-    console.log(' [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
+    procesoModalDebug(' [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
 };
+procesoModalModules.tallas.guardarTallasSeleccionadas = globalThis.guardarTallasSeleccionadas;
 
 // Actualizar resumen de tallas
 globalThis.actualizarResumenTallasProceso = function() {
-    console.log('[actualizarResumenTallasProceso] 🎬 Iniciando renderización de resumen...');
+    procesoModalDebug('[actualizarResumenTallasProceso]  Iniciando renderización de resumen...');
     
     const resumen = document.getElementById('proceso-tallas-resumen');
-    console.log('[actualizarResumenTallasProceso]  Elemento resumen encontrado?:', !!resumen);
+    procesoModalDebug('[actualizarResumenTallasProceso]  Elemento resumen encontrado?:', !!resumen);
     
     if (!resumen) {
         console.warn('[actualizarResumenTallasProceso]  NO SE ENCONTRÓ elemento #proceso-tallas-resumen');
         return;
     }
     
-    console.log('[actualizarResumenTallasProceso]  globalThis.tallasSeleccionadasProceso:', globalThis.tallasSeleccionadasProceso);
-    console.log('[actualizarResumenTallasProceso]  globalThis.tallasCantidadesProceso:', globalThis.tallasCantidadesProceso);
+    procesoModalDebug('[actualizarResumenTallasProceso]  globalThis.tallasSeleccionadasProceso:', globalThis.tallasSeleccionadasProceso);
+    procesoModalDebug('[actualizarResumenTallasProceso]  globalThis.tallasCantidadesProceso:', globalThis.tallasCantidadesProceso);
     
     const totalTallas = globalThis.tallasSeleccionadasProceso.dama.length + globalThis.tallasSeleccionadasProceso.caballero.length;
     const haySobremedida = globalThis.tallasSeleccionadasProceso.sobremedida && Object.keys(globalThis.tallasSeleccionadasProceso.sobremedida).length > 0;
-    console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas, ' | Hay sobremedida:', haySobremedida);
+    procesoModalDebug('[actualizarResumenTallasProceso] Total de tallas seleccionadas:', totalTallas, ' | Hay sobremedida:', haySobremedida);
     
     if (totalTallas === 0 && !haySobremedida) {
-        console.log('[actualizarResumenTallasProceso]  No hay tallas ni sobremedida seleccionadas, mostrando placeholder');
+        procesoModalDebug('[actualizarResumenTallasProceso]  No hay tallas ni sobremedida seleccionadas, mostrando placeholder');
         resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         return;
     }
@@ -1549,7 +1561,7 @@ globalThis.actualizarResumenTallasProceso = function() {
     
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
     const tallasProceso = globalThis.tallasCantidadesProceso || { dama: {}, caballero: {} };
-    console.log('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
+    procesoModalDebug('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
 
     const formatearTallaKey = (tallaKey) => {
         const parts = String(tallaKey).split('__');
@@ -1559,10 +1571,10 @@ globalThis.actualizarResumenTallasProceso = function() {
     };
     
     if (globalThis.tallasSeleccionadasProceso.dama.length > 0) {
-        console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', globalThis.tallasSeleccionadasProceso.dama);
+        procesoModalDebug('[actualizarResumenTallasProceso] Renderizando DAMA:', globalThis.tallasSeleccionadasProceso.dama);
         const tallasDamaHTML = globalThis.tallasSeleccionadasProceso.dama.map(t => {
             const cantidad = tallasProceso.dama?.[t] || 0;
-            console.log(`[actualizarResumenTallasProceso]  DAMA ${t}: cantidad=${cantidad}`);
+            procesoModalDebug(`[actualizarResumenTallasProceso]  DAMA ${t}: cantidad=${cantidad}`);
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${formatearTallaKey(t)}
                 <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1582,10 +1594,10 @@ globalThis.actualizarResumenTallasProceso = function() {
     }
     
     if (globalThis.tallasSeleccionadasProceso.caballero.length > 0) {
-        console.log('[actualizarResumenTallasProceso] 👨 Renderizando CABALLERO:', globalThis.tallasSeleccionadasProceso.caballero);
+        procesoModalDebug('[actualizarResumenTallasProceso] Renderizando CABALLERO:', globalThis.tallasSeleccionadasProceso.caballero);
         const tallasCaballeroHTML = globalThis.tallasSeleccionadasProceso.caballero.map(t => {
             const cantidad = tallasProceso.caballero?.[t] || 0;
-            console.log(`[actualizarResumenTallasProceso]  CABALLERO ${t}: cantidad=${cantidad}`);
+            procesoModalDebug(`[actualizarResumenTallasProceso]  CABALLERO ${t}: cantidad=${cantidad}`);
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${formatearTallaKey(t)}
                 <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1606,10 +1618,10 @@ globalThis.actualizarResumenTallasProceso = function() {
     
     // AGREGAR SOBREMEDIDA AL RESUMEN
     if (haySobremedida && globalThis.tallasCantidadesProceso.sobremedida) {
-        console.log('[actualizarResumenTallasProceso]  Renderizando SOBREMEDIDA:', globalThis.tallasCantidadesProceso.sobremedida);
+        procesoModalDebug('[actualizarResumenTallasProceso]  Renderizando SOBREMEDIDA:', globalThis.tallasCantidadesProceso.sobremedida);
         
         const sobremedidaHTML = Object.entries(globalThis.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
-            console.log(`[actualizarResumenTallasProceso]  SOBREMEDIDA ${genero}: ${cantidad}`);
+            procesoModalDebug(`[actualizarResumenTallasProceso]  SOBREMEDIDA ${genero}: ${cantidad}`);
             const colorMap = {
                 'DAMA': { bg: '#fce7f3', text: '#be185d' },
                 'CABALLERO': { bg: '#dbeafe', text: '#1d4ed8' },
@@ -1636,379 +1648,388 @@ globalThis.actualizarResumenTallasProceso = function() {
     }
     
     html += '</div>';
-    console.log('[actualizarResumenTallasProceso]  HTML generado (length):', html.length);
-    console.log('[actualizarResumenTallasProceso]  HTML preview:', html.substring(0, 200) + '...');
+    procesoModalDebug('[actualizarResumenTallasProceso]  HTML generado (length):', html.length);
+    procesoModalDebug('[actualizarResumenTallasProceso]  HTML preview:', html.substring(0, 200) + '...');
     
     resumen.innerHTML = html;
-    console.log('[actualizarResumenTallasProceso]  HTML inyectado en DOM');
-    console.log('[actualizarResumenTallasProceso]  innerHTML actual:', resumen.innerHTML.substring(0, 200));
+    procesoModalDebug('[actualizarResumenTallasProceso]  HTML inyectado en DOM');
+    procesoModalDebug('[actualizarResumenTallasProceso]  innerHTML actual:', resumen.innerHTML.substring(0, 200));
 };
+procesoModalModules.tallas.actualizarResumen = globalThis.actualizarResumenTallasProceso;
+
+function _procesoGenerico_clonarUbicacionesSeleccionadas() {
+    return (globalThis.ubicacionesProcesoSeleccionadas || []).map(u => {
+        if (u && typeof u === 'object') {
+            return { ...u };
+        }
+        return u;
+    });
+}
+
+function _procesoGenerico_normalizarImagenesEliminadas() {
+    const imagenesEliminadasArray = globalThis.imagenesEliminadasProcesoStorage || [];
+    return imagenesEliminadasArray
+        .map(img => {
+            if (img && img.id) {
+                return {
+                    id: img.id,
+                    ruta_original: img.ruta_original,
+                    ruta_webp: img.ruta_webp
+                };
+            }
+            return img;
+        })
+        .filter(img => img !== null && img !== undefined);
+}
 
 // Agregar proceso al pedido
+function _procesoGenerico_obtenerImagenesParaGuardar() {
+    procesoModalDebug('[agregarProcesoAlPedido]  Buscando imagenes en globalThis.procesosImagenesStorage...');
+    procesoModalDebug('[agregarProcesoAlPedido]  procesoActual:', procesoModalState.procesoActual);
+    procesoModalDebug('[agregarProcesoAlPedido]  procesoActualIndex:', globalThis.procesoActualIndex);
+    procesoModalDebug('[agregarProcesoAlPedido]  globalThis.procesosImagenesStorage.obtenerImagenes:', typeof globalThis.procesosImagenesStorage?.obtenerImagenes);
+
+    const imagenesExistentes = (globalThis.imagenesProcesoExistentes || []).filter(img => img !== null);
+    let imagenesDelStorage = [];
+    let imagenesNuevasAgregadas = [];
+
+    if (procesoModalState.modoActual !== 'editar') {
+        procesoModalDebug('[agregarProcesoAlPedido]  Modo CREACION: Buscando imagenes en storage UNIVERSAL de PROCESOS...');
+
+        if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.obtenerImagenes === 'function') {
+            if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
+                const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', globalThis.procesoActualIndex);
+                procesoModalDebug(`[agregarProcesoAlPedido] Usando INDICE ESPECIFICO: ${globalThis.procesoActualIndex} -> ${imagenesEnIndice?.length || 0} imagenes de PROCESOS`);
+                if (imagenesEnIndice && imagenesEnIndice.length > 0) {
+                    imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
+                    procesoModalDebug(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imagenes de PROCESOS en indice ${globalThis.procesoActualIndex}`);
+                }
+            } else {
+                console.warn('[agregarProcesoAlPedido]  procesoActualIndex NO definido, buscando en indices 1-3 como fallback...');
+                for (let idx = 1; idx <= 3; idx++) {
+                    const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', idx);
+                    procesoModalDebug(`  [agregarProcesoAlPedido] Fallback: Indice ${idx}: ${imagenesEnIndice?.length || 0} imagenes de PROCESOS`);
+                    if (imagenesEnIndice && imagenesEnIndice.length > 0) {
+                        imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
+                        procesoModalDebug(`[agregarProcesoAlPedido]  FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imagenes de PROCESOS en indice ${idx}`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (imagenesDelStorage.length === 0) {
+            const imagenesNuevas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null);
+            if (imagenesNuevas.length > 0) {
+                imagenesDelStorage = imagenesNuevas;
+                procesoModalDebug('[agregarProcesoAlPedido]  Fallback: Imagenes obtenidas desde globalThis.imagenesProcesoActual:', imagenesDelStorage.length);
+            }
+        }
+    } else {
+        procesoModalDebug('[agregarProcesoAlPedido]  Modo EDICION: Usando imagenesExistentes + imagenes NUEVAS agregadas');
+        imagenesNuevasAgregadas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
+        procesoModalDebug('[agregarProcesoAlPedido]  Imagenes nuevas agregadas en edicion:', imagenesNuevasAgregadas.length);
+    }
+
+    let imagenesFinales = [];
+
+    if (procesoModalState.modoActual === 'editar') {
+        procesoModalDebug('[agregarProcesoAlPedido]  DEBUG EDICION - Estado de variables:', {
+            'globalThis.imagenesProcesoExistentes': globalThis.imagenesProcesoExistentes,
+            length: globalThis.imagenesProcesoExistentes?.length || 0,
+            contenido: globalThis.imagenesProcesoExistentes?.map((img, idx) => ({
+                idx,
+                esNull: img === null,
+                esUndefined: img === undefined,
+                tipo: typeof img,
+                nombre: img?.name || img?.nombre || 'sin-nombre'
+            }))
+        });
+
+        if (globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > 0) {
+            imagenesFinales = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined);
+            procesoModalDebug('[agregarProcesoAlPedido]  MODO EDICION: Usando imagenes del estado actual del modal:', imagenesFinales.length);
+        } else {
+            const procesoGuardado = globalThis.procesosSeleccionados?.[procesoModalState.procesoActual]?.datos;
+            procesoModalDebug('[agregarProcesoAlPedido]  DEBUG - procesoGuardado:', procesoGuardado);
+            if (procesoGuardado?.imagenes && procesoGuardado.imagenes.length > 0) {
+                imagenesFinales = procesoGuardado.imagenes.filter(img => img !== null && img !== undefined);
+                procesoModalDebug('[agregarProcesoAlPedido]  MODO EDICION: Usando imagenes del proceso guardado (fallback):', imagenesFinales.length);
+            } else {
+                imagenesFinales = imagenesExistentes;
+                procesoModalDebug('[agregarProcesoAlPedido]  MODO EDICION: Usando imagenes existentes (ultimo fallback):', imagenesFinales.length);
+            }
+        }
+
+        if (imagenesNuevasAgregadas.length > 0) {
+            const imagenesUnicasNuevas = imagenesNuevasAgregadas.filter(nuevaImg => {
+                return nuevaImg instanceof File && !imagenesFinales.some(existingImg =>
+                    existingImg instanceof File && existingImg.name === nuevaImg.name && existingImg.size === nuevaImg.size
+                );
+            });
+
+            if (imagenesUnicasNuevas.length > 0) {
+                imagenesFinales = [...imagenesFinales, ...imagenesUnicasNuevas];
+                procesoModalDebug('[agregarProcesoAlPedido]  Agregando imagenes realmente nuevas en edicion:', imagenesUnicasNuevas.length);
+            } else {
+                procesoModalDebug('[agregarProcesoAlPedido]  No hay imagenes nuevas unicas para agregar (todas ya existen)');
+            }
+        }
+    } else {
+        if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
+            imagenesFinales = imagenesDelStorage;
+            procesoModalDebug(`[agregarProcesoAlPedido]  MODO CREACION: Usando imagenes del storage indice ${globalThis.procesoActualIndex}:`, imagenesFinales.length);
+        } else {
+            console.warn('[agregarProcesoAlPedido]  Sin indice de proceso definido, no se usaran imagenes');
+            imagenesFinales = [];
+        }
+    }
+
+    const imagenesValidas = imagenesFinales.filter(img => img !== null && img !== undefined && img !== '');
+
+    procesoModalDebug('[agregarProcesoAlPedido]  IMAGENES CAPTURADAS:', {
+        modoActual: procesoModalState.modoActual,
+        procesoActualIndex: globalThis.procesoActualIndex,
+        imagenesFinales: imagenesFinales.length,
+        imagenesValidas: imagenesValidas.length,
+        fuentes: {
+            imagenesDelStorage: imagenesDelStorage.length,
+            imagenesExistentes: imagenesExistentes.length,
+            imagenesNuevasAgregadas: imagenesNuevasAgregadas.length
+        },
+        imagenesValidasDetalle: imagenesValidas.map((img, idx) => ({
+            index: idx,
+            tipo: img instanceof File ? 'File' : 'Object',
+            nombre: img?.nombre || img?.name || 'sin-nombre',
+            tienePreviewUrl: !!img?.previewUrl,
+            tieneDataURL: !!img?.dataURL,
+            tieneFile: !!img?.file,
+            tieneUrl: !!img?.url,
+            tieneRuta: !!img?.ruta_original,
+            previewUrlSample: img?.previewUrl?.substring(0, 50) || 'N/A',
+            claves: typeof img === 'object' ? Object.keys(img) : 'N/A'
+        }))
+    });
+
+    return {
+        imagenesValidas,
+        imagenesExistentes,
+        imagenesDelStorage,
+        imagenesNuevasAgregadas
+    };
+}
+procesoModalModules.persistencia.obtenerImagenesParaGuardar = _procesoGenerico_obtenerImagenesParaGuardar;
+
+function _procesoGenerico_construirDatosProceso(imagenesValidas) {
+    const cantidadOriginales = (globalThis.imagenesProcesoExistentes || []).length;
+    const imagenesEliminadasNormalizadas = _procesoGenerico_normalizarImagenesEliminadas();
+    const ubicacionesClonadas = _procesoGenerico_clonarUbicacionesSeleccionadas();
+
+    // En edición, obtener ID y tipo_proceso_id del proceso existente
+    const procesoExistente = globalThis.procesosSeleccionados?.[procesoModalState.procesoActual];
+    const datosDelProceso = procesoExistente?.datos || procesoExistente;
+    const idProceso = datosDelProceso?.id || procesoExistente?.id;
+    const tipoProceso = datosDelProceso?.tipo_proceso_id || procesoExistente?.tipo_proceso_id;
+
+    procesoModalDebug('[agregarProcesoAlPedido]  BUSQUEDA DE ID:', {
+        procesoActual: procesoModalState.procesoActual,
+        existeProceso: !!procesoExistente,
+        existeDatos: !!datosDelProceso,
+        idEncontrado: !!idProceso,
+        idValor: idProceso,
+        tipoProcesoEncontrado: !!tipoProceso,
+        tipoValor: tipoProceso,
+        procesoExistenteKeys: procesoExistente ? Object.keys(procesoExistente) : [],
+        datosDelProcesoKeys: datosDelProceso ? Object.keys(datosDelProceso) : []
+    });
+
+    const datos = {
+        tipo: procesoModalState.procesoActual,
+        modo_tallas: globalThis.procesosSeleccionados?.[procesoModalState.procesoActual]?.datos?.modo_tallas || 'generico',
+        ubicaciones: ubicacionesClonadas,
+        observaciones: document.getElementById('proceso-observaciones')?.value || '',
+        tallas: {
+            dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
+            caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
+            sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
+        },
+        imagenes: imagenesValidas,
+        imagenesEliminadas: imagenesEliminadasNormalizadas
+    };
+
+    // Siempre incluir ID del proceso si existe (determina UPDATE vs INSERT en backend)
+    if (idProceso) {
+        datos.id = idProceso;
+        procesoModalDebug('[agregarProcesoAlPedido]  ID del proceso inclido para UPDATE:', idProceso);
+    } else {
+        procesoModalDebug('[agregarProcesoAlPedido]  WARNING: No se encontró ID del proceso. Modo:', procesoModalState.modoActual);
+    }
+    
+    if (tipoProceso) {
+        datos.tipo_proceso_id = tipoProceso;
+    }
+
+    procesoModalDebug('[agregarProcesoAlPedido]  DEBUG imagenesEliminadas:', {
+        cantidadOriginales,
+        storageLength: (globalThis.imagenesEliminadasProcesoStorage || []).length,
+        storageContent: globalThis.imagenesEliminadasProcesoStorage,
+        imagenesValidas: imagenesValidas.map((img, idx) => ({
+            idx,
+            esFile: img instanceof File,
+            tipo: typeof img,
+            nombre: img?.name || img?.nombre || 'sin-nombre'
+        })),
+        imagenesEliminadasArray: imagenesEliminadasNormalizadas.map((img, idx) => ({
+            idx,
+            esNull: img === null,
+            esFile: img instanceof File,
+            tipo: typeof img
+        }))
+    });
+
+    procesoModalDebug('[agregarProcesoAlPedido] Datos capturados:', {
+        tipo: procesoModalState.procesoActual,
+        tallas: datos.tallas,
+        tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
+        tieneUbicaciones: (globalThis.ubicacionesProcesoSeleccionadas || []).length > 0
+    });
+
+    return { datos, ubicacionesClonadas };
+}
+procesoModalModules.persistencia.construirDatosProceso = _procesoGenerico_construirDatosProceso;
+
+function _procesoGenerico_persistirDatosProceso(datos, ubicacionesClonadas) {
+    if (procesoModalState.modoActual === 'crear') {
+        if (!globalThis.procesosSeleccionados) {
+            globalThis.procesosSeleccionados = {};
+        }
+
+        if (!globalThis.procesosSeleccionados[procesoModalState.procesoActual]) {
+            globalThis.procesosSeleccionados[procesoModalState.procesoActual] = {
+                tipo: procesoModalState.procesoActual,
+                indiceResultado: globalThis.procesoActualIndex,
+                datos: null
+            };
+        }
+
+        globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos = {
+            ...datos,
+            ubicaciones: [...ubicacionesClonadas]
+        };
+        globalThis.procesosSeleccionados[procesoModalState.procesoActual].indiceResultado = globalThis.procesoActualIndex;
+
+        procesoModalDebug('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en globalThis.procesosSeleccionados:', {
+            tipo: procesoModalState.procesoActual,
+            indice: globalThis.procesoActualIndex,
+            datosGuardados: globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos
+        });
+        return;
+    }
+
+    if (procesoModalState.modoActual === 'editar') {
+        procesoModalDebug(' [EDICION] Guardando cambios del proceso');
+
+        if (!globalThis.procesosSeleccionados) {
+            globalThis.procesosSeleccionados = {};
+        }
+
+        const procesoExistente = globalThis.procesosSeleccionados[procesoModalState.procesoActual];
+        const idExistente = procesoExistente?.datos?.id;
+        const tipoProcesoId = procesoExistente?.datos?.tipo_proceso_id;
+
+        if (idExistente) {
+            datos.id = idExistente;
+        }
+        if (tipoProcesoId) {
+            datos.tipo_proceso_id = tipoProcesoId;
+        }
+
+        globalThis.procesosSeleccionados[procesoModalState.procesoActual] = {
+            tipo: procesoModalState.procesoActual,
+            indiceResultado: globalThis.procesoActualIndex,
+            datos: {
+                ...datos,
+                ubicaciones: [...ubicacionesClonadas]
+            }
+        };
+
+        procesoModalDebug(' [EDICION] Datos actualizados en globalThis.procesosSeleccionados:', {
+            tipo: procesoModalState.procesoActual,
+            id: datos.id,
+            ubicaciones: datos.ubicaciones?.length || 0,
+            imagenes: datos.imagenes?.length || 0,
+            tallas: datos.tallas
+        });
+
+        if (globalThis.procesosEditor) {
+            globalThis.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
+            globalThis.procesosEditor.registrarCambioImagenes(datos.imagenes);
+            globalThis.procesosEditor.registrarCambioObservaciones(datos.observaciones);
+            globalThis.procesosEditor.registrarCambioTallas(datos.tallas);
+        }
+
+        procesoModalState.cambiosProceso = datos;
+    }
+}
+procesoModalModules.persistencia.persistirDatosProceso = _procesoGenerico_persistirDatosProceso;
+
+function _procesoGenerico_postGuardar(modoAntesDeCerrar) {
+    globalThis.imagenesEliminadasProcesoStorage = [];
+    procesoModalDebug('[agregarProcesoAlPedido]  Storage de eliminadas reseteado despues de guardar');
+
+    cerrarModalProcesoGenerico(true);
+
+    if (globalThis.renderizarTarjetasProcesos) {
+        setTimeout(() => {
+            procesoModalDebug(` [agregarProcesoAlPedido] Renderizando tarjetas (modo: ${modoAntesDeCerrar})...`);
+            globalThis.renderizarTarjetasProcesos();
+
+            setTimeout(() => {
+                const container = document.getElementById('contenedor-tarjetas-procesos');
+                if (container) {
+                    const tarjetas = container.querySelectorAll('[data-tipo-proceso]');
+                    procesoModalDebug(` [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
+                    if (tarjetas.length === 0) {
+                        console.warn(' [agregarProcesoAlPedido-VERIFY]  NO se encontraron tarjetas. Re-renderizando...');
+                        globalThis.renderizarTarjetasProcesos();
+                    }
+                }
+            }, 100);
+        }, 50);
+    }
+
+    if (globalThis.actualizarResumenProcesos) {
+        globalThis.actualizarResumenProcesos();
+    }
+}
+procesoModalModules.persistencia.postGuardar = _procesoGenerico_postGuardar;
+
 globalThis.agregarProcesoAlPedido = function() {
-    if (!procesoActual) {
+    if (!procesoModalState.procesoActual) {
         alert('Error: no hay proceso seleccionado');
         return;
     }
-    
-    try {
-        //  FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
-        // Las imágenes se guardan por índice numérico (1, 2, 3), NO por nombre de proceso
-        console.log('[agregarProcesoAlPedido]  Buscando imágenes en globalThis.procesosImagenesStorage...');
-        console.log('[agregarProcesoAlPedido]  procesoActual:', procesoActual);
-        console.log('[agregarProcesoAlPedido]  procesoActualIndex:', globalThis.procesoActualIndex);
-        console.log('[agregarProcesoAlPedido]  globalThis.procesosImagenesStorage.obtenerImagenes:', typeof globalThis.procesosImagenesStorage?.obtenerImagenes);
-        
-        //  CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
-        // PERO TAMBIÉN capturar imágenes NUEVAS de imagenesProcesoActual (agregadas después de eliminar)
-        const imagenesExistentes = (globalThis.imagenesProcesoExistentes || []).filter(img => img !== null);
-        
-        let imagenesDelStorage = [];
-        let imagenesNuevasAgregadas = [];
-        
-        // Solo obtener del storage si NO estamos en edición (creación de nuevo proceso)
-        if (modoActual !== 'editar') {
-            console.log('[agregarProcesoAlPedido]  Modo CREACIÓN: Buscando imágenes en storage UNIVERSAL de PROCESOS...');
-            
-            //  CORRECCIÓN: Usar storage universal separado por tipo
-            if (globalThis.universalImagenesStorage && typeof globalThis.universalImagenesStorage.obtenerImagenes === 'function') {
-                if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
-                    const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', globalThis.procesoActualIndex);
-                    console.log(`[agregarProcesoAlPedido] 🔢 Usando ÍNDICE ESPECÍFICO: ${globalThis.procesoActualIndex} → ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
-                    if (imagenesEnIndice && imagenesEnIndice.length > 0) {
-                        imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                        console.log(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${globalThis.procesoActualIndex}`);
-                    }
-                } else {
-                    console.warn('[agregarProcesoAlPedido]  procesoActualIndex NO definido, buscando en índices 1-3 como fallback...');
-                    // FALLBACK: Si no está definido (error), buscar en todos (pero esto no debería pasar)
-                    for (let idx = 1; idx <= 3; idx++) {
-                        const imagenesEnIndice = globalThis.universalImagenesStorage.obtenerImagenes('procesos', idx);
-                        console.log(`  [agregarProcesoAlPedido] Fallback: Índice ${idx}: ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
-                        if (imagenesEnIndice && imagenesEnIndice.length > 0) {
-                            imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                            console.log(`[agregarProcesoAlPedido]  FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${idx}`);
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // Fallback: Imágenes locales del array imagenesProcesoActual
-            if (imagenesDelStorage.length === 0) {
-                //  CORRECCIÓN: Usar globalThis.imagenesProcesoActual en lugar de la variable local
-                const imagenesNuevas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null);
-                if (imagenesNuevas.length > 0) {
-                    imagenesDelStorage = imagenesNuevas;
-                    console.log('[agregarProcesoAlPedido]  Fallback: Imágenes obtenidas desde globalThis.imagenesProcesoActual:', imagenesDelStorage.length);
-                }
-            }
-        } else {
-            console.log('[agregarProcesoAlPedido]  Modo EDICIÓN: Usando imagenesExistentes + imágenes NUEVAS agregadas');
-            //  NUEVO: En modo EDICIÓN, también capturar imágenes NUEVAS de imagenesProcesoActual
-            // Esto permite agregar imágenes después de eliminar
-            imagenesNuevasAgregadas = (globalThis.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
-            console.log('[agregarProcesoAlPedido]  Imágenes nuevas agregadas en edición:', imagenesNuevasAgregadas.length);
-        }
-        
-        //  CORRECCIÓN CRÍTICA: Solo usar imágenes del proceso actual
-        // No mezclar imágenes de diferentes procesos
-        let imagenesFinales = [];
-        
-        if (modoActual === 'editar') {
-            //  CORRECCIÓN: En modo edición, usar el estado ACTUAL del modal
-            // que refleja las eliminaciones hechas por el usuario
-            console.log('[agregarProcesoAlPedido]  DEBUG EDICIÓN - Estado de variables:', {
-                'globalThis.imagenesProcesoExistentes': globalThis.imagenesProcesoExistentes,
-                'length': globalThis.imagenesProcesoExistentes?.length || 0,
-                'contenido': globalThis.imagenesProcesoExistentes?.map((img, idx) => ({
-                    idx,
-                    esNull: img === null,
-                    esUndefined: img === undefined,
-                    tipo: typeof img,
-                    nombre: img?.name || img?.nombre || 'sin-nombre'
-                }))
-            });
-            
-            if (globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > 0) {
-                // Usar imágenes del estado actual del modal (con eliminaciones aplicadas)
-                imagenesFinales = globalThis.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined);
-                console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes del estado actual del modal:', imagenesFinales.length);
-                console.log('[agregarProcesoAlPedido]  Imágenes filtradas (no null):', imagenesFinales.map((img, idx) => ({
-                    idx,
-                    nombre: img?.name || img?.nombre || 'sin-nombre',
-                    tipo: typeof img
-                })));
-            } else {
-                // Fallback: usar imágenes del proceso guardado
-                const procesoGuardado = globalThis.procesosSeleccionados?.[procesoActual]?.datos;
-                console.log('[agregarProcesoAlPedido]  DEBUG - procesoGuardado:', procesoGuardado);
-                if (procesoGuardado?.imagenes && procesoGuardado.imagenes.length > 0) {
-                    imagenesFinales = procesoGuardado.imagenes.filter(img => img !== null && img !== undefined);
-                    console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes del proceso guardado (fallback):', imagenesFinales.length);
-                } else {
-                    // Último fallback: usar imagenesExistentes
-                    imagenesFinales = imagenesExistentes;
-                    console.log('[agregarProcesoAlPedido]  MODO EDICIÓN: Usando imágenes existentes (último fallback):', imagenesFinales.length);
-                }
-            }
-            
-            //  CORRECCIÓN: Solo agregar imágenes NUEVAS que no estén ya en imagenesFinales
-            // Evitar duplicación de imágenes existentes
-            if (imagenesNuevasAgregadas.length > 0) {
-                // Filtrar solo imágenes realmente nuevas (File objects que no estén en imagenesFinales)
-                const imagenesUnicasNuevas = imagenesNuevasAgregadas.filter(nuevaImg => {
-                    return nuevaImg instanceof File && !imagenesFinales.some(existingImg => 
-                        existingImg instanceof File && existingImg.name === nuevaImg.name && existingImg.size === nuevaImg.size
-                    );
-                });
-                
-                if (imagenesUnicasNuevas.length > 0) {
-                    imagenesFinales = [...imagenesFinales, ...imagenesUnicasNuevas];
-                    console.log('[agregarProcesoAlPedido]  Agregando imágenes realmente nuevas en edición:', imagenesUnicasNuevas.length);
-                } else {
-                    console.log('[agregarProcesoAlPedido]  No hay imágenes nuevas únicas para agregar (todas ya existen)');
-                }
-            }
-        } else {
-            // En modo creación: SOLO usar imágenes del storage del proceso actual
-            if (globalThis.procesoActualIndex !== undefined && globalThis.procesoActualIndex > 0) {
-                imagenesFinales = imagenesDelStorage;
-                console.log(`[agregarProcesoAlPedido]  MODO CREACIÓN: Usando imágenes del storage índice ${globalThis.procesoActualIndex}:`, imagenesFinales.length);
-            } else {
-                console.warn('[agregarProcesoAlPedido]  Sin índice de proceso definido, no se usarán imágenes');
-                imagenesFinales = [];
-            }
-        }
-        
-        // Filtrar válidas (eliminadas marcadas como null)
-        const imagenesValidas = imagenesFinales.filter(img => img !== null && img !== undefined && img !== '');
-        
-        console.log('[agregarProcesoAlPedido]  IMÁGENES CAPTURADAS:', {
-            modoActual: modoActual,
-            procesoActualIndex: globalThis.procesoActualIndex,
-            imagenesFinales: imagenesFinales.length,
-            imagenesValidas: imagenesValidas.length,
-            fuentes: {
-                imagenesDelStorage: imagenesDelStorage.length,
-                imagenesExistentes: imagenesExistentes.length,
-                imagenesNuevasAgregadas: imagenesNuevasAgregadas.length
-            },
-            imagenesValidasDetalle: imagenesValidas.map((img, idx) => ({
-                index: idx,
-                tipo: img instanceof File ? 'File' : 'Object',
-                nombre: img?.nombre || img?.name || 'sin-nombre',
-                tienePreviewUrl: !!img?.previewUrl,
-                tieneDataURL: !!img?.dataURL,
-                tieneFile: !!img?.file,
-                tieneUrl: !!img?.url,
-                tieneRuta: !!img?.ruta_original,
-                previewUrlSample: img?.previewUrl?.substring(0, 50) || 'N/A',
-                claves: typeof img === 'object' ? Object.keys(img) : 'N/A'
-            }))
-        });
-        
-        // IMPORTANTE: Usar tallasCantidadesProceso que contiene las cantidades DEL PROCESO
-        // NO globalThis.tallasRelacionales que son las cantidades DE LA PRENDA
-        const cantidadOriginales = (globalThis.imagenesProcesoExistentes || []).length;
-        
-        //  CRÍTICO: Usar storage de eliminadas, no nulls
-        const imagenesEliminadasArray = globalThis.imagenesEliminadasProcesoStorage || [];
-        
-        const ubicacionesClonadas = (globalThis.ubicacionesProcesoSeleccionadas || []).map(u => {
-            if (u && typeof u === 'object') {
-                return { ...u };
-            }
-            return u;
-        });
 
-        const datos = {
-            tipo: procesoActual,
-            modo_tallas: globalThis.procesosSeleccionados?.[procesoActual]?.datos?.modo_tallas || 'generico',
-            ubicaciones: ubicacionesClonadas,
-            observaciones: document.getElementById('proceso-observaciones')?.value || '',
-            tallas: {
-                dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
-                caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
-                sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
-            },
-            imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
-            //  CRÍTICO: imagenesEliminadas debe contener IDs de imágenes a eliminar
-            imagenesEliminadas: imagenesEliminadasArray
-                .map(img => {
-                    // Ya están filtradas en el storage, solo mapear
-                    if (img && img.id) {
-                        return {
-                            id: img.id,
-                            ruta_original: img.ruta_original,
-                            ruta_webp: img.ruta_webp
-                        };
-                    }
-                    return img;
-                })
-                .filter(img => img !== null && img !== undefined) //  Filtrar por si acaso
-        };
-        
-        //  VERIFICAR: imagenesEliminadas se asignó correctamente
-        console.log('[agregarProcesoAlPedido]  OBJETO datos CONSTRUIDO:', {
-            tipo: datos.tipo,
-            tieneImagenes: !!datos.imagenes,
-            tieneImagenesEliminadas: !!datos.imagenesEliminadas,
-            imagenesEliminadasContent: datos.imagenesEliminadas,
-            storageEliminadas: globalThis.imagenesEliminadasProcesoStorage
-        });
-        
-        console.log('[agregarProcesoAlPedido]  DEBUG imagenesEliminadas:', {
-            cantidadOriginales: cantidadOriginales,
-            storageLength: (globalThis.imagenesEliminadasProcesoStorage || []).length,
-            storageContent: globalThis.imagenesEliminadasProcesoStorage,
-            imagenesValidas: imagenesValidas.map((img, idx) => ({
-                idx,
-                esFile: img instanceof File,
-                tipo: typeof img,
-                nombre: img?.name || img?.nombre || 'sin-nombre'
-            })),
-            imagenesEliminadasArray: imagenesEliminadasArray.map((img, idx) => ({
-                idx,
-                esNull: img === null,
-                esFile: img instanceof File,
-                tipo: typeof img
-            }))
-        });
-        
-        console.log('[agregarProcesoAlPedido] Datos capturados:', {
-            tipo: procesoActual,
-            tallas: datos.tallas,
-            tallasCantidadesProceso: globalThis.tallasCantidadesProceso,
-            tieneUbicaciones: ubicacionesProcesoSeleccionadas.length > 0
-        });
-        
-        // NUEVO: DIFERENCIAR ENTRE CREACIÓN Y EDICIÓN
-        if (modoActual === 'crear') {
-            // CREACIÓN: Guardar directamente en procesosSeleccionados (comportamiento actual)
-            if (!globalThis.procesosSeleccionados) {
-                globalThis.procesosSeleccionados = {};
-            }
-            
-            // Si el proceso NO existe todavía, crearlo
-            if (!globalThis.procesosSeleccionados[procesoActual]) {
-                globalThis.procesosSeleccionados[procesoActual] = {
-                    tipo: procesoActual,
-                    indiceResultado: globalThis.procesoActualIndex, //  Guardar el índice para futuras ediciones
-                    datos: null
-                };
-            }
-            
-            // Asignar los datos capturados
-            globalThis.procesosSeleccionados[procesoActual].datos = {
-                ...datos,
-                ubicaciones: [...ubicacionesClonadas]
-            };
-            globalThis.procesosSeleccionados[procesoActual].indiceResultado = globalThis.procesoActualIndex; // Garantizar que el índice está guardado
-            
-            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en globalThis.procesosSeleccionados:', {
-                tipo: procesoActual,
-                indice: globalThis.procesoActualIndex,
-                datosGuardados: globalThis.procesosSeleccionados[procesoActual].datos
-            });
-            
-        } else if (modoActual === 'editar') {
-            // EDICIÓN: Actualizar directamente en globalThis.procesosSeleccionados
-            console.log(' [EDICIÓN] Guardando cambios del proceso');
-            
-            if (!globalThis.procesosSeleccionados) {
-                globalThis.procesosSeleccionados = {};
-            }
-            
-            //  NUEVO: Preservar el ID del proceso existente en BD
-            const procesoExistente = globalThis.procesosSeleccionados[procesoActual];
-            const idExistente = procesoExistente?.datos?.id;
-            const tipoProcesoId = procesoExistente?.datos?.tipo_proceso_id;
-            
-            if (idExistente) {
-                datos.id = idExistente;
-            }
-            if (tipoProcesoId) {
-                datos.tipo_proceso_id = tipoProcesoId;
-            }
-            
-            // Actualizar directamente con los datos capturados del modal
-            globalThis.procesosSeleccionados[procesoActual] = {
-                tipo: procesoActual,
-                indiceResultado: globalThis.procesoActualIndex,
-                datos: {
-                    ...datos,
-                    ubicaciones: [...ubicacionesClonadas]
-                }
-            };
-            
-            console.log(' [EDICIÓN] Datos actualizados en globalThis.procesosSeleccionados:', {
-                tipo: procesoActual,
-                id: datos.id,
-                ubicaciones: datos.ubicaciones?.length || 0,
-                imagenes: datos.imagenes?.length || 0,
-                tallas: datos.tallas
-            });
-            
-            // También registrar en ProcesosEditor para tracking de cambios
-            if (globalThis.procesosEditor) {
-                globalThis.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
-                globalThis.procesosEditor.registrarCambioImagenes(datos.imagenes);
-                globalThis.procesosEditor.registrarCambioObservaciones(datos.observaciones);
-                globalThis.procesosEditor.registrarCambioTallas(datos.tallas);
-            }
-            
-            // Mantener buffer para compatibilidad
-            cambiosProceso = datos;
-        }
-        
-        //  NUEVO: Capturar modo ANTES de cerrar el modal (cerrar resetea modoActual a 'crear')
-        const modoAntesDeCerrar = modoActual;
-        console.log('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
-        
-        //  CRÍTICO: Resetear storage de eliminadas después de guardar
-        globalThis.imagenesEliminadasProcesoStorage = [];
-        console.log('[agregarProcesoAlPedido]  Storage de eliminadas reseteado después de guardar');
-        
-        // Cerrar modal indicando que el proceso fue guardado exitosamente
-        cerrarModalProcesoGenerico(true);
-        
-        // Renderizar tarjetas SIEMPRE después de guardar (tanto en edición como en creación)
-        if (globalThis.renderizarTarjetasProcesos) {
-            setTimeout(() => {
-                console.log(` [agregarProcesoAlPedido] Renderizando tarjetas (modo: ${modoAntesDeCerrar})...`);
-                globalThis.renderizarTarjetasProcesos();
-                
-                // VERIFICACIÓN: Confirmar que se renderizó correctamente
-                setTimeout(() => {
-                    const container = document.getElementById('contenedor-tarjetas-procesos');
-                    if (container) {
-                        const tarjetas = container.querySelectorAll('[data-tipo-proceso]');
-                        console.log(` [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
-                        if (tarjetas.length === 0) {
-                            console.warn(' [agregarProcesoAlPedido-VERIFY]  NO se encontraron tarjetas. Re-renderizando...');
-                            globalThis.renderizarTarjetasProcesos();
-                        }
-                    }
-                }, 100);
-            }, 50);
-        }
-        
-        // Actualizar resumen en prenda modal
-        if (globalThis.actualizarResumenProcesos) {
-            globalThis.actualizarResumenProcesos();
-        }
-        
+    try {
+        const { imagenesValidas } = procesoModalModules.persistencia.obtenerImagenesParaGuardar();
+        const { datos, ubicacionesClonadas } = procesoModalModules.persistencia.construirDatosProceso(imagenesValidas);
+
+        procesoModalModules.persistencia.persistirDatosProceso(datos, ubicacionesClonadas);
+
+        const modoAntesDeCerrar = procesoModalState.modoActual;
+        procesoModalDebug('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
+
+        procesoModalModules.persistencia.postGuardar(modoAntesDeCerrar);
     } catch (error) {
         console.error('[agregarProcesoAlPedido] Error:', error);
     }
 };
 
-// NUEVO: Función para aplicar cambios del buffer cuando se hace GUARDAR CAMBIOS de la prenda
-// Esta función es llamada ANTES de hacer el PATCH final
+// NUEVO: funcion para aplicar cambios del buffer cuando se hace GUARDAR CAMBIOS de la prenda
+// Esta funcion es llamada ANTES de hacer el PATCH final
 globalThis.aplicarCambiosProcesosDesdeBuffer = function() {
-    if (cambiosProceso) {
-        console.log('[APLICAR-BUFFER] Aplicando cambios del proceso al procesosSeleccionados:', cambiosProceso);
+    if (procesoModalState.cambiosProceso) {
+        procesoModalDebug('[APLICAR-BUFFER] Aplicando cambios del proceso al procesosSeleccionados:', procesoModalState.cambiosProceso);
         
         // Si no existe, crear
         if (!globalThis.procesosSeleccionados) {
@@ -2016,26 +2037,26 @@ globalThis.aplicarCambiosProcesosDesdeBuffer = function() {
         }
         
         // Crear o actualizar el proceso con los cambios del buffer
-        globalThis.procesosSeleccionados[cambiosProceso.tipo] = {
-            tipo: cambiosProceso.tipo,
-            datos: cambiosProceso
+        globalThis.procesosSeleccionados[procesoModalState.cambiosProceso.tipo] = {
+            tipo: procesoModalState.cambiosProceso.tipo,
+            datos: procesoModalState.cambiosProceso
         };
         
-        console.log('[APLICAR-BUFFER]  Cambios aplicados a procesosSeleccionados');
+        procesoModalDebug('[APLICAR-BUFFER]  Cambios aplicados a procesosSeleccionados');
         
         // Limpiar buffer
-        cambiosProceso = null;
+        procesoModalState.cambiosProceso = null;
     }
 };
 
-// NUEVO: Función para obtener el estado actual del buffer (para debugging/validación)
+// NUEVO: funcion para obtener el estado actual del buffer (para debugging/validación)
 globalThis.obtenerBufferProcesoActual = function() {
-    return cambiosProceso;
+    return procesoModalState.cambiosProceso;
 };
 
-// NUEVO: Función para obtener el modo actual (para debugging)
+// NUEVO: funcion para obtener el modo actual (para debugging)
 globalThis.obtenerModoActual = function() {
-    return modoActual;
+    return procesoModalState.modoActual;
 };
 
 // Confirmar que el módulo se cargó correctamente

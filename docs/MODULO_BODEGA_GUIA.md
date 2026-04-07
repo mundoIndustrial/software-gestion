@@ -19,7 +19,7 @@ Sistema completo de gestión de pedidos para el rol de Bodeguero en el ERP texti
 -  Auditoría de cambios
 -  Validación de datos en backend y frontend
 
-## 📁 Archivos Creados
+##  Archivos Creados
 
 ```
 resources/views/bodega/

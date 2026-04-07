@@ -287,7 +287,9 @@
     
     <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
@@ -395,6 +397,13 @@
     
     <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
     <script src="{{ asset('js/componentes/services/image-converter-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-context.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-normalizers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-renderers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-data-utils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-variations-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-sizing-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-process-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ time() }}"></script>
     

@@ -44,19 +44,8 @@ final class PrendaEdicionBloqueoService
 
         $registros = $this->obtenerRegistrosConsecutivo($pedidoId, $prendaId);
         if ($registros->isEmpty()) {
-            if ($this->normalizarTexto((string) $estadoPedido) === 'PENDIENTE_INSUMOS') {
-                return $this->respuestaPermitida($estadoPedido);
-            }
-
-            return [
-                'bloqueada' => true,
-                'puede_editar' => false,
-                'mensaje' => 'Esta prenda no tiene consecutivo habilitado para edicion. Comunicate con el lider de produccion.',
-                'consecutivo' => null,
-                'estado' => null,
-                'area' => null,
-                'estado_pedido' => $estadoPedido,
-            ];
+            // Si no hay consecutivo pero el pedido no está bloqueado, permitir editar
+            return $this->respuestaPermitida($estadoPedido);
         }
 
         if ($this->resolverRegistroPermitido($registros)) {
