@@ -25,6 +25,7 @@ class GestionItemsUI {
     prendaFlowService = null;
     eppFlowService = null;
     itemRemovalService = null;
+    itemsSyncService = null;
 
     constructor(options = {}) {
         // Inicializar servicios con validación de disponibilidad
@@ -266,6 +267,7 @@ class GestionItemsUI {
     }
 
 
+
     _getItemRemovalService() {
         if (!this.itemRemovalService) {
             this.itemRemovalService = new ItemRemovalService({ ui: this });
@@ -275,45 +277,21 @@ class GestionItemsUI {
         return this.itemRemovalService;
     }
 
-    async cargarItems() {
-        try {
-            if (!this._tieneServiciosBase()) {
-                return;
-            }
-
-            const resultado = await this.apiService.obtenerItems();
-            this.items = resultado.items;
-
-            //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
-            await this._actualizarRenderItemsOrdenados();
-        } catch (error) {
-            if (this.notificationService) {
-                this.notificationService.error('Error al cargar ítems');
-            }
-            throw error;  // Re-throw para que el caller pueda tomar acción adicional
+    _getItemsSyncService() {
+        if (!this.itemsSyncService) {
+            this.itemsSyncService = new ItemsSyncService({ ui: this });
+        } else {
+            this.itemsSyncService.ui = this;
         }
+        return this.itemsSyncService;
+    }
+
+    async cargarItems() {
+        return this._getItemsSyncService().cargarItems();
     }
 
     async agregarItem(itemData) {
-        try {
-            if (!this._tieneServiciosBase()) {
-
-                return false;
-            }
-            const resultado = await this.apiService.agregarItem(itemData);
-            if (resultado.success) {
-                this.items = resultado.items;
-                //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
-                await this._actualizarRenderItemsOrdenados();
-                this.notificationService.exito('Ítem agregado correctamente');
-                return true;
-            }
-        } catch (error) {
-            if (this.notificationService) {
-                this.notificationService.error('Error: ' + error.message);
-            }
-            return false;
-        }
+        return this._getItemsSyncService().agregarItem(itemData);
     }
 
     async eliminarItem(index) {
@@ -542,6 +520,7 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
+
 
 
 
