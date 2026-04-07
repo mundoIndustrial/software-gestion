@@ -398,11 +398,18 @@
                                                 </td>
                                                 @endif
 
-                                                @if($indexItem === 0)
-                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ count($grupo) }}" style="width: 6%;">
-                                                    {{ $generoFallback ? ucfirst(strtolower($generoFallback)) : '—' }}
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">
+                                                    @php
+                                                        $generoDisplay = '';
+                                                        if (!empty($item['genero'])) {
+                                                            $generoDisplay = $item['genero'];
+                                                        } elseif ($generoFallback) {
+                                                            $generoDisplay = $generoFallback;
+                                                        }
+                                                        $generoDisplay = (is_string($generoDisplay) && strtoupper(trim($generoDisplay)) === 'GENERICO') ? '' : $generoDisplay;
+                                                    @endphp
+                                                    {{ $generoDisplay ? ucfirst(strtolower($generoDisplay)) : '—' }}
                                                 </td>
-                                                @endif
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
                                                     {{ $item['talla'] ?? '—' }}
                                                 </td>

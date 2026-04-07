@@ -16,7 +16,7 @@ class PedidoRepositoryImpl implements PedidoRepository
     private function mapEstadoABD(string $estadoDDD): string
     {
         $mapa = [
-            'PENDIENTE' => 'Pendiente',
+            'PENDIENTE' => 'pendiente_cartera',
             'CONFIRMADO' => 'En Ejecución',
             'EN_PRODUCCION' => 'En Ejecución',
             'COMPLETADO' => 'Entregado',
@@ -30,6 +30,7 @@ class PedidoRepositoryImpl implements PedidoRepository
     {
         $mapa = [
             'Pendiente' => 'PENDIENTE',
+            'pendiente_cartera' => 'PENDIENTE',
             'PENDIENTE_SUPERVISOR' => 'PENDIENTE',
             'En Ejecucion' => 'EN_PRODUCCION',
             'En Ejecución' => 'EN_PRODUCCION',
@@ -56,6 +57,8 @@ class PedidoRepositoryImpl implements PedidoRepository
                 $pedido->setId($pedidoModel->id);
             } else {
                 $pedidoModel = PedidoModel::findOrFail($pedido->id());
+                // En actualizaciones generales del pedido no se modifica el estado.
+                $datos['estado'] = $pedidoModel->estado;
                 $pedidoModel->update($datos);
             }
 

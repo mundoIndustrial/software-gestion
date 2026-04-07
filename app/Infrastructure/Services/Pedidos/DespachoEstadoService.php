@@ -239,7 +239,7 @@ class DespachoEstadoService implements DespachoEstadoServiceContract
     }
 
     /**
-     * Cambiar estado del pedido a "Pendiente" si ya no hay items entregados
+     * Cambiar estado del pedido a "En Ejecución" si ya no hay items entregados
      */
     public function cambiarEstadoAPendienteSiCorresponde(int $pedidoId): bool
     {
@@ -272,8 +272,8 @@ class DespachoEstadoService implements DespachoEstadoServiceContract
                 return false;
             }
 
-            if ($pedido->estado === 'Pendiente') {
-                Log::info('Pedido ya está en estado Pendiente', [
+            if ($pedido->estado === 'En Ejecución') {
+                Log::info('Pedido ya está en estado En Ejecución', [
                     'pedido_id' => $pedidoId,
                     'numero_pedido' => $pedido->numero_pedido,
                 ]);
@@ -281,20 +281,20 @@ class DespachoEstadoService implements DespachoEstadoServiceContract
             }
 
             $estadoAnterior = $pedido->estado;
-            $pedido->estado = 'Pendiente';
+            $pedido->estado = 'En Ejecución';
             $pedido->save();
 
-            Log::info('Estado del pedido cambiado a Pendiente automáticamente', [
+            Log::info('Estado del pedido cambiado a En Ejecución automáticamente', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => 'Pendiente',
+                'estado_nuevo' => 'En Ejecución',
                 'fecha_cambio' => now()->toDateTimeString(),
             ]);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Error al cambiar estado del pedido a Pendiente', [
+            Log::error('Error al cambiar estado del pedido a En Ejecución', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

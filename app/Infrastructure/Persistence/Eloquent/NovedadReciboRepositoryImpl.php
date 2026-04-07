@@ -38,11 +38,4 @@ class NovedadReciboRepositoryImpl implements NovedadReciboRepository
         DB::table('prendas_pedido_novedades_recibo')->delete((int) $id);
     }
 
-    public function marcarPedidoPendientePorNumero(int $numeroPedido, \DateTimeInterface $fecha): void
-    {
-        DB::table('pedidos_produccion')
-            ->where('numero_pedido', (int) $numeroPedido)
-            ->update(['estado' => 'Pendiente', 'updated_at' => $fecha]);
-    }
 }
-

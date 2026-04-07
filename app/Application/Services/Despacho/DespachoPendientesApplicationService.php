@@ -23,7 +23,7 @@ class DespachoPendientesApplicationService
             ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->where('prendas_pedido.de_bodega', 1)
             ->whereNull('prendas_pedido.deleted_at')
             ->whereNull('pedidos_procesos_prenda_detalles.id')
@@ -76,7 +76,7 @@ class DespachoPendientesApplicationService
             ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->where('bodega_detalles_talla.area', 'Costura')
             ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
             ->whereNull('pedidos_procesos_prenda_detalles.id')
@@ -101,7 +101,7 @@ class DespachoPendientesApplicationService
         $estados = DB::table('bodega_detalles_talla')->distinct()->pluck('estado_bodega');
         $totalRegistros = DB::table('bodega_detalles_talla')->count();
 
-        \Log::info('[DEBUG] Bodega detalles análisis:', [
+        \Log::info('[DEBUG] Bodega detalles analisis:', [
             'total_registros' => $totalRegistros,
             'areas_disponibles' => $areas->toArray(),
             'estados_disponibles' => $estados->toArray(),
@@ -151,7 +151,7 @@ class DespachoPendientesApplicationService
             ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->where('bodega_detalles_talla.area', 'EPP')
             ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
             ->select('pedidos_produccion.*')
@@ -242,7 +242,7 @@ class DespachoPendientesApplicationService
 
                 if ($filter !== '') {
                     $bodegaPedidos = $this->aplicarFiltros($bodegaPedidos, $filter);
-                    \Log::info('[DEBUG] Bodega sin procesos después de filtros:', [
+                    \Log::info('[DEBUG] Bodega sin procesos despues de filtros:', [
                         'total_antes' => count($bodegaData),
                         'total_despues' => $bodegaPedidos->count(),
                     ]);
@@ -278,7 +278,7 @@ class DespachoPendientesApplicationService
 
                 if ($filter !== '') {
                     $eppPedidos = $this->aplicarFiltros($eppPedidos, $filter);
-                    \Log::info('[DEBUG] EPP después de filtros:', [
+                    \Log::info('[DEBUG] EPP despues de filtros:', [
                         'total_antes' => count($eppData),
                         'total_despues' => $eppPedidos->count(),
                     ]);
@@ -303,7 +303,7 @@ class DespachoPendientesApplicationService
 
         if ($filter !== '' && $pendientes->count() > 0) {
             $pendientes = $this->aplicarFiltros($pendientes, $filter);
-            \Log::info('[DEBUG] Pendientes finales después de filtros globales:', [
+            \Log::info('[DEBUG] Pendientes finales despues de filtros globales:', [
                 'total_antes' => $pendientes->count(),
                 'total_despues' => $pendientes->count(),
             ]);
@@ -313,7 +313,7 @@ class DespachoPendientesApplicationService
             return is_array($pedido) ? ($pedido['numero_pedido'] ?? '') : $pedido->numero_pedido;
         })->values();
 
-        \Log::info('[DEBUG] Pendientes antes de paginación - Números de pedido:', [
+        \Log::info('[DEBUG] Pendientes antes de paginacion - Numeros de pedido:', [
             'total_pendientes' => $pendientes->count(),
             'numeros_pedido' => $pendientes->map(function ($p) {
                 return is_array($p) ? ($p['numero_pedido'] ?? null) : $p->numero_pedido;
@@ -378,8 +378,8 @@ class DespachoPendientesApplicationService
                 ->orderBy('fecha_entrega', 'desc')
                 ->first();
 
-            $pedido->fecha_entrega = $fechaEntrega ? $fechaEntrega->fecha_entrega->format('d/m/Y h:i A') : '—';
-            $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '—';
+            $pedido->fecha_entrega = $fechaEntrega ? $fechaEntrega->fecha_entrega->format('d/m/Y h:i A') : '';
+            $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '';
             return $pedido;
         });
 
@@ -418,7 +418,7 @@ class DespachoPendientesApplicationService
         $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
 
         if (!$pedidoProduccion) {
-            throw new \RuntimeException('Pedido de producción no encontrado');
+            throw new \RuntimeException('Pedido de produccion no encontrado');
         }
 
         $pedidoData = [
@@ -522,9 +522,9 @@ class DespachoPendientesApplicationService
             $items[] = $itemNormalizado;
         }
 
-        $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
+        $estadosPermitidos = ['Pendiente', 'Entregado', 'En EjecuciÃ³n', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
         if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos, true)) {
-            throw new \RuntimeException('Este pedido no tiene un estado válido para despacho');
+            throw new \RuntimeException('Este pedido no tiene un estado vÃ¡lido para despacho');
         }
 
         return [
@@ -575,7 +575,7 @@ class DespachoPendientesApplicationService
                     'Pendiente' => 'Pendiente',
                     'PENDIENTE_INSUMOS' => 'PENDIENTE_INSUMOS',
                     'No iniciado' => 'No iniciado',
-                    'En Ejecución' => 'En Ejecución',
+                    'En EjecuciÃ³n' => 'En EjecuciÃ³n',
                     'Anulada' => 'Anulada',
                     'PENDIENTE_SUPERVISOR' => 'PENDIENTE_SUPERVISOR',
                     'DEVUELTO_A_ASESORA' => 'DEVUELTO_A_ASESORA',

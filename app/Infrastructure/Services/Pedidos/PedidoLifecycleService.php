@@ -122,9 +122,6 @@ class PedidoLifecycleService
 
     private function resolverEstadoInicial(array $datos): string
     {
-        $tienePrendas = isset($datos['items']) && is_array($datos['items']) && count($datos['items']) > 0;
-        $tieneEpps = isset($datos['epps']) && is_array($datos['epps']) && count($datos['epps']) > 0;
-
-        return ($tieneEpps && !$tienePrendas) ? 'En Ejecución' : 'pendiente_cartera';
+        return 'pendiente_cartera';
     }
 }

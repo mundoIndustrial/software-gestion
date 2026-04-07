@@ -82,10 +82,13 @@ class BodegaDatosService implements BodegaDatosServiceContract
                     
                     // Obtener variantes desde prenda_pedido_tallas (que tiene genero y talla)
                     // PERO usar solo la talla y género del detalle de bodega para evitar confusiones
+                    // Normalizar género a MAYÚSCULAS para coincidencia correcta
+                    $generoNormalizado = $detalle->genero ? strtoupper($detalle->genero) : 'DAMA';
+                    
                     $tallasPedido = \DB::table('prenda_pedido_tallas')
                         ->where('prenda_pedido_id', $prendaEnriquecida->id)
                         ->where('talla', $detalle->talla)
-                        ->where('genero', $detalle->genero ?? 'DAMA')
+                        ->where('genero', $generoNormalizado)
                         ->get();
                     
                     if ($tallasPedido->isNotEmpty()) {
@@ -111,10 +114,11 @@ class BodegaDatosService implements BodegaDatosServiceContract
                         })->toArray();
                     } else {
                         // Si no encuentra la talla exacta en prenda_pedido_tallas, usar el detalle de bodega directamente
+                        // Usar género normalizado (MAYÚSCULAS) para consistencia
                         $descripcionData['variantes'] = [
                             [
                                 'talla' => $detalle->talla,
-                                'genero' => $detalle->genero ?? null,
+                                'genero' => strtoupper($detalle->genero ?? 'DAMA'),
                                 'cantidad' => $detalle->cantidad,
                                 'manga' => null,
                                 'manga_obs' => null,

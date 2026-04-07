@@ -19,6 +19,4 @@ interface NovedadReciboRepository
 
     public function eliminar(int $id): void;
 
-    public function marcarPedidoPendientePorNumero(int $numeroPedido, \DateTimeInterface $fecha): void;
 }
-

@@ -11,26 +11,48 @@ let eppYaAgregadosEnFormulario = []; // IDs de EPPs ya en el formulario
 function obtenerEPPsYaAgregadosEnFormulario() {
     eppYaAgregadosEnFormulario = [];
     
-    // 1) Buscar la tabla en el formulario de cotizacion/pedido (modo creacion)
+    // 1) Buscar EPPs agregados en modo tabla (cotizacion) o modo tarjetas (pedido)
     const tablaItems = document.getElementById('tabla-items-pedido');
-    console.log('[obtenerEPPsYaAgregadosEnFormulario] Buscando tabla:', tablaItems);
-    
+    const listaItems = document.getElementById('lista-items-pedido');
+    console.log('[obtenerEPPsYaAgregadosEnFormulario] Buscando contenedores:', { tablaItems, listaItems });
+
+    const idsDetectados = new Set();
+
     if (tablaItems) {
-        // Buscar todas las filas con clase item-epp (estas tienen data-item-id)
+        // Modo tabla: filas tr.item-epp con data-item-id
         const filas = tablaItems.querySelectorAll('tr.item-epp');
-        console.log('[obtenerEPPsYaAgregadosEnFormulario] Filas encontradas:', filas.length);
-        
+        console.log('[obtenerEPPsYaAgregadosEnFormulario] Filas (tabla) encontradas:', filas.length);
+
         filas.forEach((fila, idx) => {
-            // Intentar primero con data-item-id (el ID del EPP)
-            let eppId = fila.getAttribute('data-item-id');
-            console.log(`[obtenerEPPsYaAgregadosEnFormulario] Fila ${idx}: data-item-id=${eppId}`);
-            
-            if (eppId) {
-                eppYaAgregadosEnFormulario.push(parseInt(eppId));
+            const eppId = parseInt(fila.getAttribute('data-item-id'), 10);
+            console.log(`[obtenerEPPsYaAgregadosEnFormulario] Fila tabla ${idx}: data-item-id=${eppId}`);
+
+            if (Number.isFinite(eppId)) {
+                idsDetectados.add(eppId);
             }
         });
-    } else {
-        console.warn('[obtenerEPPsYaAgregadosEnFormulario] tabla-items-pedido NO ENCONTRADA');
+    }
+
+    if (listaItems) {
+        // Modo tarjetas: .item-epp-card-nuevo con data-epp-id (y compatibilidad data-epp-original-id)
+        const tarjetas = listaItems.querySelectorAll('.item-epp-card-nuevo, .item-epp-card');
+        console.log('[obtenerEPPsYaAgregadosEnFormulario] Tarjetas encontradas:', tarjetas.length);
+
+        tarjetas.forEach((tarjeta, idx) => {
+            const idRaw = tarjeta.getAttribute('data-epp-id') || tarjeta.getAttribute('data-epp-original-id');
+            const eppId = parseInt(idRaw, 10);
+            console.log(`[obtenerEPPsYaAgregadosEnFormulario] Tarjeta ${idx}: epp-id=${eppId}`);
+
+            if (Number.isFinite(eppId)) {
+                idsDetectados.add(eppId);
+            }
+        });
+    }
+
+    eppYaAgregadosEnFormulario = Array.from(idsDetectados);
+
+    if (!tablaItems && !listaItems) {
+        console.warn('[obtenerEPPsYaAgregadosEnFormulario] No se encontró tabla-items-pedido ni lista-items-pedido');
     }
     
     // 2) MODO Edicion: tambien incluir EPPs del pedido existente (globalThis.datosEdicionPedido)

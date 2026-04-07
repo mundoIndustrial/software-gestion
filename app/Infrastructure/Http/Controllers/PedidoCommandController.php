@@ -265,7 +265,7 @@ class PedidoCommandController extends Controller
             ]);
 
             $request->validate([
-                'estado' => 'required|string|in:Pendiente,No iniciado,En Ejecución,Entregado,Anulada,PENDIENTE_SUPERVISOR,PENDIENTE_INSUMOS,pendiente_cartera,RECHAZADO_CARTERA,DEVUELTO_A_ASESORA'
+                'estado' => 'required|string|in:No iniciado,En Ejecución,Entregado,Anulada,PENDIENTE_SUPERVISOR,PENDIENTE_INSUMOS,pendiente_cartera,RECHAZADO_CARTERA,DEVUELTO_A_ASESORA'
             ]);
 
             $pedido = \App\Models\PedidoProduccion::find($id);

@@ -28,7 +28,7 @@ class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContra
                 'forma_de_pago' => strtolower(trim($dto->formaDePago ?? 'contado')),
                 'asesor_id' => $dto->asesorId,
                 'cliente_id' => $dto->clienteId,
-                'estado' => $dto->estado ?? 'Pendiente',
+                'estado' => $dto->estado ?? 'pendiente_cartera',
                 'area' => $dto->area ?? 'creacion de pedido',
                 'cantidad_total' => 0,
             ]);
@@ -101,7 +101,6 @@ class CrearProduccionPedidoUseCase implements CrearProduccionPedidoUseCaseContra
         }
     }
 }
-
 
 
 

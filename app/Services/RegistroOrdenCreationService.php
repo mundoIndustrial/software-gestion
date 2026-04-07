@@ -41,7 +41,7 @@ class RegistroOrdenCreationService
         try {
             // Crear pedido en PedidoProduccion
             // Valores por defecto si no se proporcionan
-            $estado = $data['estado'] ?? 'Pendiente';
+            $estado = $data['estado'] ?? 'pendiente_cartera';
             $area = $data['area'] ?? 'creacion de pedido';
             $numeroPedido = (int) ($data['pedido'] ?? 0);
 

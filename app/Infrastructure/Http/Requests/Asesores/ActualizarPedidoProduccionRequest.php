@@ -16,7 +16,7 @@ final class ActualizarPedidoProduccionRequest extends FormRequest
         return [
             'cliente' => 'sometimes|string|max:255',
             'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
+            'estado' => 'prohibited',
         ];
     }
 }
-

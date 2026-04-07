@@ -43,8 +43,6 @@ class CrearNovedadReciboUseCase
             'updated_at' => $now,
         ]);
 
-        $this->novedades->marcarPedidoPendientePorNumero((int) $request->numero_pedido, $now);
-
         \Log::info('[CrearNovedadReciboUseCase] Novedad creada', [
             'prenda_id' => (int) $request->prenda_id,
             'usuario_id' => (int) $usuario->id,
@@ -59,4 +57,3 @@ class CrearNovedadReciboUseCase
         ];
     }
 }
-

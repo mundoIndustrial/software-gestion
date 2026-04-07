@@ -97,7 +97,7 @@ final class GuardarPedidoUseCase
             prendas: $input->productos['prendas'] ?? $input->productos,
             epps: $input->productos['epps'] ?? [],
             area: $input->datosCliente['area'] ?? null,
-            estado: $input->datosCliente['estado'] ?? 'Pendiente',
+            estado: $input->datosCliente['estado'] ?? 'pendiente_cartera',
             asesorId: $input->datosCliente['asesor_id'] ?? null,
             clienteId: (int) $input->clienteId,
             formaDePago: $input->datosCliente['forma_de_pago'] ?? null,

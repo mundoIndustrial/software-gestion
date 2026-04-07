@@ -32,7 +32,7 @@ class CreateOrderUseCase
         $this->creationService->logOrderCreated(
             $pedido->numero_pedido,
             $validatedData['cliente'],
-            $validatedData['estado'] ?? 'Pendiente'
+            $validatedData['estado'] ?? 'pendiente_cartera'
         );
 
         $this->creationService->broadcastOrderCreated($pedido);
@@ -44,4 +44,3 @@ class CreateOrderUseCase
         ];
     }
 }
-

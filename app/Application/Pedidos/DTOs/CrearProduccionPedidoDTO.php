@@ -38,7 +38,7 @@ class CrearProduccionPedidoDTO
         $this->prendas = $prendas;
         $this->epps = $epps;
         $this->area = $area ?? 'creacion de pedido';
-        $this->estado = $estado ?? 'Pendiente';
+        $this->estado = $estado ?? 'pendiente_cartera';
         $this->asesorId = $asesorId;
         $this->clienteId = $clienteId;
         $this->formaDePago = $formaDePago;
@@ -57,7 +57,7 @@ class CrearProduccionPedidoDTO
             $datos['prendas'] ?? [],
             $datos['epps'] ?? [],
             $datos['area'] ?? 'creacion de pedido',
-            $datos['estado'] ?? 'Pendiente',
+            $datos['estado'] ?? 'pendiente_cartera',
             $datos['asesor_id'] ?? null,
             $datos['cliente_id'] ?? null,
             $datos['forma_pago'] ?? null
@@ -75,4 +75,3 @@ class CrearProduccionPedidoDTO
         }
     }
 }
-

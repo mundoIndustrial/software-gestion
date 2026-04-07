@@ -69,7 +69,7 @@ class CrearPedidoHandler implements CommandHandler
                 'forma_pago' => strtolower(trim($command->getFormaPago())), // Normalizar a minúsculas
                 'asesor_id' => $command->getAsesorId(),
                 'cantidad_total' => $command->getCantidadInicial(),
-                'estado' => 'Pendiente',
+                'estado' => 'pendiente_cartera',
             ]);
 
             Log::info(' [CrearPedidoHandler] Pedido creado en BD', [
@@ -84,7 +84,7 @@ class CrearPedidoHandler implements CommandHandler
                 cliente: $command->getCliente(),
                 formaPago: $command->getFormaPago(),
                 asesorId: $command->getAsesorId(),
-                estado: 'Pendiente',
+                estado: 'pendiente_cartera',
             );
 
             // Emitir eventos del agregado
