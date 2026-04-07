@@ -2270,6 +2270,86 @@
      position: relative;
      background: white;
      border-radius: 12px;
+     padding: 24px;
+     max-width: 400px;
+     width: 90%;
+     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+ }
+
+ /* ===== ESTILOS PARA ACTIVACIÓN DEL RECIBO (NUEVA DISPOSICIÓN) ===== */
+ 
+ /* Contenedor principal de la fila de activación */
+ .tracking-info-row {
+     display: flex;
+     gap: 16px;
+     width: 100%;
+     margin-bottom: 16px;
+     align-items: center;
+ }
+
+ /* Lado izquierdo: dos tarjetas de fechas */
+ .tracking-activation-left {
+     display: flex;
+     flex-direction: row;
+     gap: 12px;
+     flex: 0 0 auto;
+ }
+
+ .tracking-activation-left .tracking-info-card {
+     flex: 0 0 auto;
+     min-width: 0;
+ }
+
+ /* Lado derecho: badge de total días (estilo simple como area cards) */
+ .tracking-activation-total-dias {
+     display: flex;
+     flex-direction: column;
+     align-items: flex-end;
+     justify-content: center;
+     margin-left: auto;
+     padding: 0 8px;
+ }
+
+ .tracking-activation-total-label {
+     font-size: 11px;
+     font-weight: 600;
+     color: #6b7280;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+ }
+
+ .tracking-activation-total-value {
+     font-size: 14px;
+     font-weight: 700;
+     color: #1f2937;
+     margin-left: 4px;
+ }
+
+ /* Respuesta para tablets y móviles */
+ @media (max-width: 768px) {
+     .tracking-info-row {
+         flex-direction: column;
+         gap: 12px;
+     }
+
+     .tracking-activation-left {
+         flex: 1;
+     }
+
+     .tracking-activation-right {
+         flex: 1;
+         min-height: 120px;
+     }
+
+     .tracking-total-dias-badge {
+         min-height: 120px;
+         padding: 16px 20px;
+     }
+
+     .tracking-total-dias-value {
+         font-size: 28px;
+     }
+ }
      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
      max-width: 400px;
      width: 90%;

@@ -52,7 +52,7 @@ class CalculadorDiasService
         $festivosLocales = [
             Carbon::create($anio, 1, 1)->toDateString(),   // Año Nuevo
             Carbon::create($anio, 1, 6)->toDateString(),   // Reyes Magos
-            Carbon::create($anio, 3, 19)->toDateString(),  // San José
+            ($anio === 2026 ? Carbon::create($anio, 3, 23)->toDateString() : Carbon::create($anio, 3, 19)->toDateString()), // San José (2026 trasladado a 23/03)
             Carbon::create($anio, 5, 1)->toDateString(),   // Día del Trabajo
             Carbon::create($anio, 7, 1)->toDateString(),   // San Pedro y San Pablo
             Carbon::create($anio, 8, 7)->toDateString(),   // Batalla de Boyacá

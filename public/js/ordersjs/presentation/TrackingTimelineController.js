@@ -107,23 +107,34 @@ export class TrackingTimelineController {
       return card;
     };
 
-    fechasWrapper.appendChild(createInfoCard(
+    // Lado izquierdo: dos tarjetas de fechas
+    const fechasLeft = document.createElement('div');
+    fechasLeft.className = 'tracking-activation-left';
+    fechasLeft.appendChild(createInfoCard(
       'Fecha creación orden',
       datosActivacion.fecha_creacion_orden_formateada || '-',
       this.svgIcons.calendar()
     ));
-
-    fechasWrapper.appendChild(createInfoCard(
+    fechasLeft.appendChild(createInfoCard(
       'Fecha activación recibo',
       datosActivacion.fecha_activacion_recibo_formateada || '-',
       this.svgIcons.checkCircle()
     ));
+    fechasWrapper.appendChild(fechasLeft);
 
-    fechasWrapper.appendChild(createInfoCard(
-      'Tiempo transcurrido',
-      datosActivacion.tiempo_transcurrido_completo || '-',
-      this.svgIcons.clock()
-    ));
+    // Lado derecho: badge de total días (estilo simple como en area cards)
+    const diasTranscurridos = datosActivacion.dias_transcurridos;
+    const totalDiasDisplay = diasTranscurridos !== null && diasTranscurridos !== undefined 
+      ? (diasTranscurridos === 1 ? '1 día' : `${diasTranscurridos} días`)
+      : '-';
+    
+    const badgeTotalDias = document.createElement('div');
+    badgeTotalDias.className = 'tracking-activation-total-dias';
+    badgeTotalDias.innerHTML = `
+      <div class="tracking-activation-total-label">TOTAL DÍAS</div>
+      <div class="tracking-activation-total-value">${totalDiasDisplay}</div>
+    `;
+    fechasWrapper.appendChild(badgeTotalDias);
 
     activationSection.appendChild(fechasWrapper);
     container.appendChild(activationSection);
@@ -154,7 +165,7 @@ export class TrackingTimelineController {
         return;
       }
       
-      const areaCard = this.createAreaCard(area, data, prenda?.readonly || false, prenda?.recibos_especiales || []);
+      const areaCard = this.createAreaCard(area, data, prenda?.readonly || false);
       areasSection.appendChild(areaCard);
     });
   }
@@ -296,21 +307,6 @@ export class TrackingTimelineController {
       return duraciones?.total_dias || '---';
     })();
 
-    // Generar botones para recibos especiales si existen
-    const botonesRecibosEspeciales = recibosEspeciales && recibosEspeciales.length > 0
-      ? recibosEspeciales.map(recibo => {
-          const tipoLabel = recibo.tipo_recibo || 'Recibo';
-          const reciboData = JSON.stringify(recibo).replace(/"/g, '&quot;');
-          return `
-            <button class="tracking-special-recibo-btn" 
-                    onclick="handleAbrirReciboEspecial(${JSON.stringify(recibosEspeciales).replace(/"/g, '&quot;')}, event)" 
-                    title="${tipoLabel}">
-              ${tipoLabel}
-            </button>
-          `;
-        }).join('')
-      : '';
-
     const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
             <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
               ${this.svgIcons.edit()}
@@ -320,7 +316,6 @@ export class TrackingTimelineController {
               ${this.svgIcons.delete()}
             </button>
             ` : ''}
-            ${botonesRecibosEspeciales}
             ` : ''}`;
 
     card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;

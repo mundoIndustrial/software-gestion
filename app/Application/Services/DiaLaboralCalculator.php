@@ -151,9 +151,7 @@ class DiaLaboralCalculator
     {
         try {
             // Timeout de 5 segundos para no bloquear la aplicación
-            // followRedirects() es importante para nager.date/api/v3
             $response = Http::timeout(5)
-                ->followRedirects()
                 ->withoutVerifying()
                 ->withHeaders(['User-Agent' => 'Laravel-App/1.0'])
                 ->get($url);

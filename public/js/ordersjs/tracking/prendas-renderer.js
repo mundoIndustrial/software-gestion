@@ -484,24 +484,27 @@ class PrendasRenderer {
       `;
 
       // Tiempo transcurrido
-      const cardTiempoTranscurrido = document.createElement('div');
-      cardTiempoTranscurrido.className = 'tracking-info-card';
-      cardTiempoTranscurrido.innerHTML = `
-        <div class="tracking-info-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-        </div>
-        <div class="tracking-info-content">
-          <span class="tracking-info-label">Tiempo transcurrido</span>
-          <span class="tracking-info-value">${diasTranscurridosTexto}</span>
+      // Wrapper para las dos tarjetas de fechas (lado izquierdo)
+      const fechasLeft = document.createElement('div');
+      fechasLeft.className = 'tracking-activation-left';
+      fechasLeft.appendChild(cardCreacionOrden);
+      fechasLeft.appendChild(cardActivacionRecibo);
+      fechasWrapper.appendChild(fechasLeft);
+
+      // Badge de total días (lado derecho)
+      const totalDiasDisplay = diasTranscurridos !== null && diasTranscurridos !== undefined 
+        ? (diasTranscurridos === 1 ? '1 día' : `${diasTranscurridos} días`)
+        : '-';
+      
+      const badgeTotalDias = document.createElement('div');
+      badgeTotalDias.className = 'tracking-activation-right';
+      badgeTotalDias.innerHTML = `
+        <div class="tracking-total-dias-badge">
+          <div class="tracking-total-dias-label">TOTAL DÍAS</div>
+          <div class="tracking-total-dias-value">${totalDiasDisplay}</div>
         </div>
       `;
-
-      fechasWrapper.appendChild(cardCreacionOrden);
-      fechasWrapper.appendChild(cardActivacionRecibo);
-      fechasWrapper.appendChild(cardTiempoTranscurrido);
+      fechasWrapper.appendChild(badgeTotalDias);
       activationSection.appendChild(fechasWrapper);
       container.appendChild(activationSection);
     } catch (e) {
