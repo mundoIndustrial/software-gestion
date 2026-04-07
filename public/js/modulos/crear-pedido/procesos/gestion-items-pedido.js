@@ -24,6 +24,7 @@ class GestionItemsUI {
     prendaModalService = null;
     prendaFlowService = null;
     eppFlowService = null;
+    itemRemovalService = null;
 
     constructor(options = {}) {
         // Inicializar servicios con validación de disponibilidad
@@ -264,6 +265,16 @@ class GestionItemsUI {
         return this.eppFlowService;
     }
 
+
+    _getItemRemovalService() {
+        if (!this.itemRemovalService) {
+            this.itemRemovalService = new ItemRemovalService({ ui: this });
+        } else {
+            this.itemRemovalService.ui = this;
+        }
+        return this.itemRemovalService;
+    }
+
     async cargarItems() {
         try {
             if (!this._tieneServiciosBase()) {
@@ -306,100 +317,7 @@ class GestionItemsUI {
     }
 
     async eliminarItem(index) {
-        // Mostrar confirmación con SweetAlert
-        const result = await Swal.fire({
-            title: '¿Eliminar este ítem?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc3545'
-        });
-
-        if (!result.isConfirmed) return;
-
-        try {
-            if (!this._tieneServiciosBase()) {
-                return;
-            }
-
-            const itemInfo = this._getItemInfoByPosition(index);
-            if (!itemInfo) {
-                console.warn('[eliminarItem] Ítem no encontrado en posición:', index);
-                return;
-            }
-
-            this._removeItemByInfo(itemInfo, index);
-
-            await this._actualizarRenderItemsOrdenados();
-            this.notificationService.exito('Ítem eliminado');
-        } catch (error) {
-            this.notificationService?.error('Error: ' + error.message);
-        }
-    }
-
-    _getItemInfoByPosition(index) {
-        const itemsOrdenados = this.obtenerItemsOrdenados();
-        if (index < 0 || index >= itemsOrdenados.length) {
-            return null;
-        }
-
-        const item = itemsOrdenados[index];
-        let tipo = null;
-        let indice = -1;
-
-        if (item?.nombre_prenda) {
-            tipo = 'prenda';
-            indice = this.prendas.indexOf(item);
-        } else if (item?.nombre_completo || item?.nombre) {
-            tipo = 'epp';
-            indice = this.epps.indexOf(item);
-        }
-
-        if (!tipo || indice < 0) {
-            return null;
-        }
-
-        return { tipo, indice, item };
-    }
-
-    _removeItemByInfo(itemInfo, ordenIndex) {
-        const { tipo, indice } = itemInfo;
-
-        if (tipo === 'prenda') {
-            const prendaAEliminar = this.prendas[indice] || {};
-            const prendaIdExistente = prendaAEliminar.prenda_pedido_id || prendaAEliminar.id || null;
-
-            if (prendaIdExistente) {
-                this.prendasEliminadas.push({
-                    prenda_id: Number(prendaIdExistente),
-                    nombre_prenda: prendaAEliminar.nombre_prenda || prendaAEliminar.nombre_producto || 'PRENDA',
-                    motivo: 'Eliminada desde edicion de borrador'
-                });
-                debugLog('[eliminarItem]  Prenda existente marcada para eliminar en backend:', {
-                    prenda_id: prendaIdExistente,
-                    total_prendas_eliminadas: this.prendasEliminadas.length
-                });
-            }
-        }
-
-        if (tipo === 'prenda' && indice >= 0) {
-            this._stateRemoveItem('prenda', indice);
-            debugLog(`[eliminarItem]  Prenda eliminada del array. Quedan: ${this.prendas.length}`);
-        } else if (tipo === 'epp' && indice >= 0) {
-            this._stateRemoveItem('epp', indice);
-            debugLog(`[eliminarItem]  EPP eliminado del array. Quedan: ${this.epps.length}`);
-        }
-
-        this.ordenItems.splice(ordenIndex, 1);
-        this._rebuildOrdenIndices();
-
-        debugLog(`[eliminarItem]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
-
-        if (tipo === 'prenda' && this._ctx('gestorPrendaSinCotizacion')?.eliminar) {
-            this._ctx('gestorPrendaSinCotizacion').eliminar(indice);
-        }
+        return this._getItemRemovalService().eliminarItem(index);
     }
 
     abrirModalSeleccionPrendas() {
@@ -624,6 +542,7 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
+
 
 
 

@@ -319,7 +319,6 @@
                                 <th>Área</th>
                                 <th>Talla</th>
                                 <th style="text-align: center;">Cant.</th>
-                                <th>Pendientes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -408,13 +407,6 @@
                                     <td class="px-4 py-3 text-xs text-black">{{ $area === 'EPP' ? '-' : ($talla ?: '-') }}</td>
                                     <td class="px-4 py-3 text-xs text-black" style="text-align: center;">
                                         <span class="cantidad-badge">{{ $cantidad }}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-xs text-black">
-                                        @if($pendientes)
-                                            {{ $pendientes }}
-                                        @else
-                                            <span class="sin-observaciones">-</span>
-                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
