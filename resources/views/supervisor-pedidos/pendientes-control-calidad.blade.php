@@ -428,6 +428,7 @@
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/supervisor-pedidos/sidebar-badge-manager.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
 

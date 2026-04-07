@@ -1982,75 +1982,87 @@ window.llenarReciboCosturaMobile = function(data) {
                             }
                         }
                         
+                        // OVERRIDE: si la prenda trae talla_colores, preferir este detalle para agrupar por color,
+                        // incluso si el proceso trae tallas genéricas (ej: REFLECTIVO).
+                        if (
+                            !esReciboParcial &&
+                            (!proceso.talla_colores || !Array.isArray(proceso.talla_colores) || proceso.talla_colores.length === 0) &&
+                            prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0
+                        ) {
+                            tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                        }
+
                         if (tallasObj && typeof tallasObj === 'object') {
                             const tallasLineas = [];
-                            ['dama', 'caballero', 'unisex'].forEach((genero) => {
-                                if (tallasObj[genero] && typeof tallasObj[genero] === 'object') {
-                                    const tallasGenero = tallasObj[genero];
-                                    const items = [];
-                                    
-                                    // Detectar si hay colores (datos son arrays de objetos)
-                                    const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
-                                    
-                                    if (tieneColores) {
-                                        // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
-                                        const porColor = {};
-                                        Object.entries(tallasGenero).forEach(([talla, datos]) => {
-                                            if (Array.isArray(datos)) {
-                                                datos.forEach(d => {
-                                                    const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
-                                                    const color = esColorValido ? d.color.toUpperCase() : '__SIN_COLOR__';
-                                                    if (!porColor[color]) porColor[color] = [];
-                                                    porColor[color].push({ talla, cantidad: d.cantidad || 0 });
-                                                });
-                                            } else {
-                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                                porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
-                                            }
-                                        });
-                                        
-                                        // Renderizar agrupado por color
-                                        const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
-                                        const sinColor = porColor['__SIN_COLOR__'] || [];
-                                        
-                                        if (coloresReales.length > 0) {
-                                            let colorTexto = `<strong>${genero.toUpperCase()}:</strong>`;
-                                            coloresReales.forEach(([color, tallasArr]) => {
-                                                const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                                colorTexto += `<br><span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`;
-                                            });
-                                            items.push(colorTexto);
-                                        } else if (sinColor.length > 0) {
-                                            const tallasStr = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`).join(', ');
-                                            items.push(`<strong>${genero.toUpperCase()}:</strong> ${tallasStr}`);
-                                        }
-                                    } else {
-                                        // Sin colores - formato simple
-                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
-                                            let cantidad = 0;
-                                            if (Array.isArray(val)) {
-                                                cantidad = val.reduce((acc, item) => {
-                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
-                                                    return acc + c;
-                                                }, 0);
-                                            } else if (val && typeof val === 'object') {
-                                                cantidad = parseInt(val.cantidad) || 0;
-                                            } else {
-                                                cantidad = parseInt(val) || 0;
-                                            }
-                                            if (cantidad > 0) {
-                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-                                            }
-                                        });
-                                        if (items.length > 0) {
-                                            tallasLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
-                                        }
-                                    }
-                                    if (items.length > 0 && !tieneColores) {
-                                        tallasLineas.push(items.join('<br>'));
-                                    }
-                                }
-                            });
+	                            ['dama', 'caballero', 'unisex'].forEach((generoBase) => {
+	                                const generoKey = (tallasObj && typeof tallasObj === 'object' && tallasObj[generoBase])
+	                                    ? generoBase
+	                                    : generoBase.toUpperCase();
+
+	                                if (tallasObj[generoKey] && typeof tallasObj[generoKey] === 'object') {
+	                                    const tallasGenero = tallasObj[generoKey];
+	                                    const generoLabel = generoKey.toString().toUpperCase();
+	                                    
+	                                    // Detectar si hay colores (datos son arrays de objetos)
+	                                    const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
+	                                    
+	                                    if (tieneColores) {
+	                                        // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
+	                                        const porColor = {};
+	                                        Object.entries(tallasGenero).forEach(([talla, datos]) => {
+	                                            if (Array.isArray(datos)) {
+	                                                datos.forEach(d => {
+	                                                    const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
+	                                                    const color = esColorValido ? d.color.toUpperCase() : '__SIN_COLOR__';
+	                                                    if (!porColor[color]) porColor[color] = [];
+	                                                    porColor[color].push({ talla, cantidad: d.cantidad || 0 });
+	                                                });
+	                                            } else {
+	                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+	                                                porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
+	                                            }
+	                                        });
+	                                        
+	                                        // Renderizar agrupado por color
+	                                        const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+	                                        const sinColor = porColor['__SIN_COLOR__'] || [];
+	                                        
+	                                        if (coloresReales.length > 0) {
+	                                            let colorTexto = `<strong>${generoLabel}:</strong>`;
+	                                            coloresReales.forEach(([color, tallasArr]) => {
+	                                                const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+	                                                colorTexto += `<br><span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`;
+	                                            });
+	                                            tallasLineas.push(colorTexto);
+	                                        } else if (sinColor.length > 0) {
+	                                            const tallasStr = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`).join(', ');
+	                                            tallasLineas.push(`<strong>${generoLabel}:</strong> ${tallasStr}`);
+	                                        }
+	                                    } else {
+	                                        // Sin colores - formato simple
+	                                        const items = [];
+	                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
+	                                            let cantidad = 0;
+	                                            if (Array.isArray(val)) {
+	                                                cantidad = val.reduce((acc, item) => {
+	                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+	                                                    return acc + c;
+	                                                }, 0);
+	                                            } else if (val && typeof val === 'object') {
+	                                                cantidad = parseInt(val.cantidad) || 0;
+	                                            } else {
+	                                                cantidad = parseInt(val) || 0;
+	                                            }
+	                                            if (cantidad > 0) {
+	                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+	                                            }
+	                                        });
+	                                        if (items.length > 0) {
+	                                            tallasLineas.push(`<strong>${generoLabel}:</strong> ${items.join(', ')}`);
+	                                        }
+	                                    }
+	                                }
+	                            });
                             
                             // Also check top-level keys that look like sizes (for non-nested formats)
                             if (tallasLineas.length === 0) {

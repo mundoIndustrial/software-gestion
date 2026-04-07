@@ -376,6 +376,24 @@ class OperarioController extends Controller
     public function getPedidoData($numeroPedido)
     {
         $result = $this->getPedidoDataOperarioUseCase->execute((int) $numeroPedido, request());
+        
+        // FILTRAR POR PRENDA_ID si se proporciona
+        $prendaIdParam = request()->query('prenda_id');
+        if ($prendaIdParam !== null && isset($result['payload']['data']['prendas'])) {
+            $prendaIdParam = (int) $prendaIdParam;
+            
+            // Filtrar solo la prenda especificada
+            $prendasFiltradas = array_filter(
+                $result['payload']['data']['prendas'],
+                fn($prenda) => (int) ($prenda['id'] ?? 0) === $prendaIdParam
+            );
+            
+            // Si encontramos la prenda, dejarla como única
+            if (!empty($prendasFiltradas)) {
+                $result['payload']['data']['prendas'] = array_values($prendasFiltradas);
+            }
+        }
+        
         return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));
     }
 
