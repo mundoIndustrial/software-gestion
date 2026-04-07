@@ -107,18 +107,22 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*') && !request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
+                            style="display:flex;align-items:center;gap:0.5rem;"
                             aria-label="Gestionar pedidos de producción">
                         <span class="material-symbols-rounded">factory</span>
                         <span class="menu-label">Pedidos</span>
+                        <span class="badge-alert" id="pedidosTotalBadgeCount" style="display: none; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; min-width: 22px; flex-shrink: 0;">0</span>
                         <span class="material-symbols-rounded submenu-arrow">expand_more</span>
                     </button>
                     <ul class="submenu">
                         <li class="submenu-item">
                             <a href="{{ route('asesores.pedidos.index') }}"
                                class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;"
                                aria-label="Ver todos los pedidos">
                                 <span class="material-symbols-rounded">assignment</span>
                                 <span class="menu-label">Seguimiento</span>
+                                <span class="badge-alert" id="seguimientoBadgeCount" style="display: none; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; min-width: 22px; flex-shrink: 0;">0</span>
                             </a>
                         </li>
                         <li class="submenu-item">
@@ -262,6 +266,46 @@
             });
     }
 
-    // Cargar conteo solo al cargar la página
-    document.addEventListener('DOMContentLoaded', cargarConteoPendientes);
+    // Cargar conteo de pedidos devueltos
+    function cargarConteoPedidosDevueltos() {
+        fetch('/api/asesores/conteo-pedidos-devueltos')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('seguimientoBadgeCount');
+                if (badge && data.success && data.conteo > 0) {
+                    badge.textContent = data.conteo;
+                    badge.style.display = 'flex';
+                } else if (badge) {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar conteo de pedidos devueltos:', error);
+            });
+    }
+
+    // Cargar conteo total de producción (suma de pedidos devueltos + recibos devueltos)
+    function cargarConteoPedidosProduccion() {
+        fetch('/api/asesores/conteo-pedidos-produccion')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('pedidosTotalBadgeCount');
+                if (badge && data.success && data.conteo > 0) {
+                    badge.textContent = data.conteo;
+                    badge.style.display = 'flex';
+                } else if (badge) {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar conteo de producción:', error);
+            });
+    }
+
+    // Cargar conteos solo al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarConteoPendientes();
+        cargarConteoPedidosDevueltos();
+        cargarConteoPedidosProduccion();
+    });
 </script>

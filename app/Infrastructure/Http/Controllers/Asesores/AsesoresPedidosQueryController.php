@@ -83,6 +83,74 @@ final class AsesoresPedidosQueryController extends Controller
         }
     }
 
+    public function contarPedidosDevueltos(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401, ['conteo' => 0]);
+            }
+
+            $conteo = \App\Models\PedidoProduccion::query()
+                ->where('asesor_id', $user->id)
+                ->where('estado', 'DEVUELTO_A_ASESORA')
+                ->count();
+
+            return $this->json([
+                'success' => true,
+                'conteo' => $conteo,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al contar pedidos devueltos', ['error' => $e->getMessage()]);
+            return $this->failure('Error al contar pedidos devueltos', 500, [
+                'conteo' => 0,
+            ]);
+        }
+    }
+
+    public function contarPedidosProduccion(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401, ['conteo' => 0]);
+            }
+
+            // Contar pedidos devueltos a asesor
+            $pedidosDevueltos = \App\Models\PedidoProduccion::query()
+                ->where('asesor_id', $user->id)
+                ->where('estado', 'DEVUELTO_A_ASESORA')
+                ->count();
+
+            // Contar recibos de costura devueltos
+            $recibosDevueltos = \App\Models\ConsecutivoReciboPedido::query()
+                ->where('activo', 1)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                ->whereRaw("UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)", [
+                    'DEVUELTO_ASESOR',
+                    'DEVUELTO_A_ASESOR',
+                ])
+                ->whereHas('pedido', static function ($pedidoQuery) use ($user) {
+                    $pedidoQuery->where('asesor_id', $user->id);
+                })
+                ->count();
+
+            $conteoTotal = $pedidosDevueltos + $recibosDevueltos;
+
+            return $this->json([
+                'success' => true,
+                'conteo' => $conteoTotal,
+                'pedidos_devueltos' => $pedidosDevueltos,
+                'recibos_devueltos' => $recibosDevueltos,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al contar producción', ['error' => $e->getMessage()]);
+            return $this->failure('Error al contar producción', 500, [
+                'conteo' => 0,
+            ]);
+        }
+    }
+
     public function obtenerPendientesAsesor(Request $request): JsonResponse
     {
         try {

@@ -37,6 +37,10 @@ function registerAsesoresDashboardYPendientesRoutes(): void
         ->name('pendientes.index');
     Route::get('/conteo-pendientes-asesor', [AsesoresPedidosQueryController::class, 'contarPendientesAsesor'])
         ->name('pendientes.count');
+    Route::get('/conteo-pedidos-devueltos', [AsesoresPedidosQueryController::class, 'contarPedidosDevueltos'])
+        ->name('pedidos.devueltos.count');
+    Route::get('/conteo-pedidos-produccion', [AsesoresPedidosQueryController::class, 'contarPedidosProduccion'])
+        ->name('pedidos.produccion.count');
     Route::get('/pendientes/{id}/notas', [AsesoresPedidosQueryController::class, 'obtenerNotasPedido'])
         ->whereNumber('id')
         ->name('pendientes.notas');
