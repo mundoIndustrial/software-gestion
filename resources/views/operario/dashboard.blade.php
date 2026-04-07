@@ -113,25 +113,34 @@
                         // Determinar tipo de recibo para filtro
                         // Para vista-costura y costura-reflectivo: una prenda puede tener ambos tipos de recibos
                         // Para otros roles: solo muestra reflectivos
-                        $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
-                        $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
-                        $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos) || in_array('PARCIAL', $tiposRecibos);
-                        
-                        // Obtener el área del recibo principal para filtros
-                        $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
-                        $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
+	                        $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
+	                        $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
+	                        $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos) || in_array('PARCIAL', $tiposRecibos);
+	                        $reciboReflectivoParaFiltro = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
+	                            return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
+	                        });
+	                        $areaReciboReflectivoFiltro = strtolower(trim((string) ($reciboReflectivoParaFiltro['area'] ?? '')));
+	                        $reflectivoEnControlCalidad = in_array($areaReciboReflectivoFiltro, ['control calidad', 'control de calidad'], true);
+	                        $mostrarReflectivoEnFiltro = $tieneReflectivo;
+	                        if (auth()->user()->hasRole('vista-costura') && $reflectivoEnControlCalidad) {
+	                            $mostrarReflectivoEnFiltro = false;
+	                        }
+	                        
+	                        // Obtener el área del recibo principal para filtros
+	                        $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
+	                        $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
                         
                         // Para vista-costura y costura-reflectivo, guardar ambos tipos en el atributo data
-                        if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
-                            // Guardar tipos separados por comas para poder filtrar correctamente
-                            $tiposParaFiltro = [];
-                            if ($tieneCostura) $tiposParaFiltro[] = 'costura';
-                            if ($tieneReflectivo) $tiposParaFiltro[] = 'reflectivo';
-                            $esReflectivo = implode(',', $tiposParaFiltro); // "costura,reflectivo" o "costura" o "reflectivo"
-                        } else {
-                            // Para otros roles, solo mostrar reflectivos
-                            $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
-                        }
+	                        if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
+	                            // Guardar tipos separados por comas para poder filtrar correctamente
+	                            $tiposParaFiltro = [];
+	                            if ($tieneCostura) $tiposParaFiltro[] = 'costura';
+	                            if ($mostrarReflectivoEnFiltro) $tiposParaFiltro[] = 'reflectivo';
+	                            $esReflectivo = implode(',', $tiposParaFiltro); // "costura,reflectivo" o "costura" o "reflectivo"
+	                        } else {
+	                            // Para otros roles, solo mostrar reflectivos
+	                            $esReflectivo = $mostrarReflectivoEnFiltro ? 'reflectivo' : 'costura';
+	                        }
                         
                         // Por defecto:
                         // - costura-reflectivo: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
@@ -559,6 +568,7 @@
                                             $tieneEncargadoCosturaRef = !empty($encargadoCosturaRef);
                                             $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                             $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
+                                            $esControlCalidadRef = in_array(strtolower(trim((string)$areaReciboRef)), ['control calidad', 'control de calidad'], true);
                                         @endphp
                                         
                                         {{-- Botón PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
@@ -621,20 +631,22 @@
                                                 {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                             </button>
 
-                                            <button class="btn-pasar-cc" 
-                                                    data-visible-filtro="reflectivo"
-                                                    id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
-                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    data-tipo-recibo="REFLECTIVO"
-                                                    data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
-                                                    data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
-                                                    data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
-                                                    onclick="pasarAControlCalidad(this)">
-                                                <span class="material-symbols-rounded">check_circle</span>
-                                                PASAR A C.C
-                                            </button>
+	                                            @if(!$esControlCalidadRef)
+	                                                <button class="btn-pasar-cc" 
+	                                                        data-visible-filtro="reflectivo"
+	                                                        id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
+	                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+	                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+	                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+	                                                        data-tipo-recibo="REFLECTIVO"
+	                                                        data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+	                                                        data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
+	                                                        data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
+	                                                        onclick="pasarAControlCalidad(this)">
+	                                                    <span class="material-symbols-rounded">check_circle</span>
+	                                                    PASAR A C.C
+	                                                </button>
+	                                            @endif
                                             @endif
                                         @endif
                                         

@@ -80,7 +80,18 @@ class ProcesoPrendaRepositoryImpl implements ProcesoPrendaRepository
      */
     public function findByProceso(string $proceso): \Illuminate\Database\Eloquent\Collection
     {
-        return ProcesoPrenda::where('proceso', $proceso)
+        $norm = strtolower(trim($proceso));
+
+        // Normalizar para soportar variantes comunes como "Control de Calidad" vs "Control Calidad"
+        if (in_array($norm, ['control de calidad', 'control calidad'], true)) {
+            return ProcesoPrenda::query()
+                ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
+                ->whereNull('deleted_at')
+                ->get();
+        }
+
+        return ProcesoPrenda::query()
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', [$norm])
             ->whereNull('deleted_at')
             ->get();
     }

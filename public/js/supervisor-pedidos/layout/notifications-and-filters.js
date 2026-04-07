@@ -454,16 +454,16 @@
             fetch('/api/supervisor-pedidos/recibos/pendientes-control-calidad-count')
                 .then(response => response.json())
                 .then(data => {
-                    if (!data || !data.success || (data.count || 0) <= 0) {
-                        badgeControlCalidad.style.display = 'none';
-                        return;
-                    }
-
-                    badgeControlCalidad.textContent = data.count;
+                    const rawCount = (!data || !data.success)
+                        ? 0
+                        : (data.count ?? data?.data?.count ?? 0);
+                    const count = parseInt(rawCount || 0, 10) || 0;
+                    badgeControlCalidad.textContent = String(count);
                     badgeControlCalidad.style.display = 'inline-flex';
                 })
                 .catch(() => {
-                    badgeControlCalidad.style.display = 'none';
+                    badgeControlCalidad.textContent = '0';
+                    badgeControlCalidad.style.display = 'inline-flex';
                 });
         }
 
@@ -581,5 +581,3 @@
         window.addEventListener('supervisorPedidos:filtersUpdated', function() {
             updateClearButtonVisibility();
         });
-
-

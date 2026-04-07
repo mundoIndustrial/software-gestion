@@ -49,7 +49,7 @@
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">fact_check</span>
                         <span class="menu-label">Pendiente C.C</span>
-                        <span class="badge-alert" id="controlCalidadPendientesCount" style="display: none;">0</span>
+                        <span class="badge-alert" id="controlCalidadPendientesCount">0</span>
                     </a>
                 </li>
                 <li class="menu-item">

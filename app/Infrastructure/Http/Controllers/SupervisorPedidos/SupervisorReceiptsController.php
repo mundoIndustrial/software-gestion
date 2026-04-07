@@ -249,7 +249,7 @@ class SupervisorReceiptsController extends Controller
     public function pendientesControlCalidadCount(): JsonResponse
     {
         $count = DB::table('consecutivos_recibos_pedidos')
-            ->where('tipo_recibo', 'COSTURA')
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
             ->where('activo', 1)
             ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->count();

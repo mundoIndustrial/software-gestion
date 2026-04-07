@@ -44,7 +44,10 @@
             });
             
             const data = await response.json();
-            return data?.data?.count ?? 0;
+            const rawCount = (data && typeof data === 'object')
+                ? (data.count ?? data?.data?.count ?? 0)
+                : 0;
+            return parseInt(rawCount, 10) || 0;
         } catch (err) {
             console.warn('[SidebarBadgeManager] Error fetching count from API:', err);
             // Fallback a contar en la tabla
@@ -57,13 +60,9 @@
      */
     async function updateBadge() {
         const count = await fetchCountFromApi();
-        
-        if (count > 0) {
-            badgeElement.textContent = count;
-            badgeElement.style.display = 'flex';
-        } else {
-            badgeElement.style.display = 'none';
-        }
+
+        badgeElement.textContent = String(count);
+        badgeElement.style.display = 'flex';
     }
 
     /**

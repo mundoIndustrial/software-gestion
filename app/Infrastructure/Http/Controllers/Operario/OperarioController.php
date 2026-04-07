@@ -133,15 +133,28 @@ class OperarioController extends Controller
         $dashboardData = $this->getOperarioDashboardUseCase->execute($request);
 
         // Contar recibos en Control de Calidad desde procesos_prenda
-        $procesosCC = ProcesoPrenda::where('proceso', 'Control de Calidad')->get();
+        $procesosCC = ProcesoPrenda::query()
+            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
+            ->whereNull('deleted_at')
+            ->get();
+
+        $pedidoIdsPorNumero = \App\Models\PedidoProduccion::query()
+            ->whereIn('numero_pedido', $procesosCC->pluck('numero_pedido')->filter()->unique()->values())
+            ->pluck('id', 'numero_pedido');
         
         $conteoControlCalidadCostura = 0;
         $conteoControlCalidadReflectivo = 0;
 
         foreach ($procesosCC as $proceso) {
+            $pedidoProduccionId = $pedidoIdsPorNumero[$proceso->numero_pedido] ?? null;
+            if (!$pedidoProduccionId) {
+                continue;
+            }
+
             // Obtener el tipo de recibo desde ConsecutivoReciboPedido
-            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $proceso->numero_pedido)
+            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', (int) $pedidoProduccionId)
                 ->where('consecutivo_actual', $proceso->numero_recibo)
+                ->where('activo', 1)
                 ->first();
 
             if ($recibo) {

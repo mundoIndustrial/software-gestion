@@ -70,18 +70,29 @@ class ObtenerRecibosControlCalidadUseCase
             }
 
             $recibosEnCC = [];
+            $seenReciboIds = [];
 
             foreach ($procesosCC as $proceso) {
+                $pedido = $this->pedidoRepository->findByNumeroWithPrendas((int) $proceso->numero_pedido);
+                if (!$pedido) {
+                    \Log::debug('[ObtenerRecibosControlCalidadUseCase] Pedido no encontrado para proceso CC', [
+                        'numero_pedido' => $proceso->numero_pedido,
+                        'proceso_id' => $proceso->id,
+                    ]);
+                    continue;
+                }
+
                 // Obtener el tipo_recibo del ConsecutivoReciboPedido
                 $recibo = $this->reciboRepository->findActiveByPedidoConsecutivoTipo(
-                    (int) $proceso->numero_pedido,
+                    (int) $pedido->id,
                     (int) $proceso->numero_recibo,
                     $tipoRecibo
                 );
 
                 if (!$recibo) {
                     \Log::debug('[ObtenerRecibosControlCalidadUseCase] ConsecutivoReciboPedido no encontrado', [
-                        'numero_pedido' => $proceso->numero_pedido,
+                        'pedido_produccion_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido ?? $proceso->numero_pedido,
                         'numero_recibo' => $proceso->numero_recibo,
                         'tipo_recibo' => $tipoRecibo,
                     ]);
@@ -93,13 +104,17 @@ class ObtenerRecibosControlCalidadUseCase
                 // Filtrar por tipo solicitado (considera COSTURA y COSTURA-BODEGA como equivalentes)
                 if ($tipoReciboActual === $tipoRecibo || 
                     ($tipoRecibo === 'COSTURA' && in_array($tipoReciboActual, ['COSTURA', 'COSTURA-BODEGA']))) {
+
+                    if (isset($seenReciboIds[$recibo->id])) {
+                        continue;
+                    }
                     
-                    $pedido = $this->pedidoRepository->findByNumeroWithPrendas((int) $proceso->numero_pedido);
                     $prenda = $this->prendaRepository->obtenerPorId((int) $proceso->prenda_pedido_id);
 
                     if ($pedido && $prenda) {
                         $recibosEnCC[] = [
                             'id' => $recibo->id,
+                            'pedido_produccion_id' => (int) $pedido->id,
                             'numero_pedido' => $pedido->numero_pedido ?? $proceso->numero_pedido,
                             'prenda_id' => $prenda->id,
                             'nombre_prenda' => $prenda->nombre_prenda,
@@ -109,6 +124,8 @@ class ObtenerRecibosControlCalidadUseCase
                             'proceso_id' => $proceso->id,
                             'tiene_parciales' => false,
                         ];
+
+                        $seenReciboIds[$recibo->id] = true;
 
                         \Log::debug('[ObtenerRecibosControlCalidadUseCase] Recibo agregado', [
                             'recibo_id' => $recibo->id,
@@ -122,7 +139,7 @@ class ObtenerRecibosControlCalidadUseCase
             // Verificar parciales para cada recibo
             foreach ($recibosEnCC as &$reciboEnCC) {
                 $parciales = $this->distribucionRepository->findParcialesConTallasParaRecibo(
-                    pedidoProduccionId: (int) $reciboEnCC['numero_pedido'],
+                    pedidoProduccionId: (int) ($reciboEnCC['pedido_produccion_id'] ?? 0),
                     prendaId: (int) $reciboEnCC['prenda_id'],
                     tipoRecibo: $reciboEnCC['tipo_recibo'],
                     consecutivoOriginal: $reciboEnCC['consecutivo_actual']

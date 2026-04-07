@@ -27,6 +27,8 @@ export function pasarAControlCalidad(btn) {
     const recibo = btn.dataset.recibo;
     const parcialId = btn.dataset.parcialId;
     const esParcial = btn.dataset.esParcial === '1';
+    const rolActual = (document.querySelector('.operario-dashboard')?.dataset?.userRole || '').toString().trim().toLowerCase();
+    const esVistaCosturaReflectivo = rolActual === 'vista-costura' && String(tipoRecibo || '').toUpperCase() === 'REFLECTIVO';
 
     const esDeshacer = btn.textContent.includes('DESHACER');
 
@@ -117,7 +119,12 @@ export function pasarAControlCalidad(btn) {
                 } else {
                     btn.dataset.area = 'Control Calidad';
                     btn.dataset.procesoId = data.data?.proceso_id || '';
-                    btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                    if (esVistaCosturaReflectivo) {
+                        // Regla de UI: en vista-costura/reflectivo, al quedar en CC ya no debe mostrarse el botón.
+                        btn.style.display = 'none';
+                    } else {
+                        btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                    }
                 }
 
                 mostrarExito('Éxito', data.message || 'Recibo enviado a Control de Calidad correctamente');
