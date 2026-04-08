@@ -207,6 +207,35 @@
     gap: 12px;
 }
 
+.asesoras-tracking-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 28px 20px;
+    background: #f9fafb;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    color: #475569;
+    text-align: center;
+}
+
+.asesoras-tracking-spinner {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid #dbeafe;
+    border-top-color: #1e40af;
+    animation: asesorasTrackingSpin 0.8s linear infinite;
+}
+
+@keyframes asesorasTrackingSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Timeline Item */
 .asesoras-timeline-item {
     display: flex;
@@ -347,18 +376,20 @@
  * @param {number} pedido - Número del pedido
  */
 window.openAsesorasTrackingModal = async function(pedido) {
+    let order = null;
     try {
         console.log('[openAsesorasTrackingModal] Abriendo modal para pedido:', pedido);
+        showAsesorasTrackingLoadingState(pedido);
         
         // Obtener datos del pedido - intentar varias rutas
-        let order = null;
         let response = null;
         
         // Intentar primero con /api/supervisor-pedidos/ordenes/{id}/datos
         try {
             response = await fetch(`/api/supervisor-pedidos/ordenes/${pedido}/datos`);
             if (response.ok) {
-                order = await response.json();
+                const result = await response.json();
+                order = result.data || result;
                 console.log('[openAsesorasTrackingModal] Datos obtenidos de /api/supervisor-pedidos/ordenes/{id}/datos');
             }
         } catch (e) {
@@ -388,7 +419,8 @@ window.openAsesorasTrackingModal = async function(pedido) {
         console.log('[openAsesorasTrackingModal] Datos del pedido:', order);
         
         // Llenar información básica del modal
-        document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
+        const numeroPedidoMostrar = order.numero_pedido || order.numeroPedido || pedido || '-';
+        document.getElementById('asesorasTrackingOrderNumber').textContent = numeroPedidoMostrar;
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
         
                 
@@ -398,20 +430,18 @@ window.openAsesorasTrackingModal = async function(pedido) {
         
         // Fecha estimada de entrega
         let fechaEstimada = '-';
-        if (order.fecha_estimada_de_entrega) {
-            const fecha = new Date(order.fecha_estimada_de_entrega);
-            if (!isNaN(fecha.getTime())) {
-                fechaEstimada = fecha.toLocaleDateString('es-ES', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-            }
+        const fechaEntrega = getAsesorasEstimatedDeliveryDate(order);
+        if (fechaEntrega) {
+            fechaEstimada = fechaEntrega.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
         }
         document.getElementById('asesorasTrackingDeliveryDate').textContent = fechaEstimada;
         
         // Llenar timeline de áreas (procesos simplificados)
-        await fillAsesorasTimeline(pedido);
+        await fillAsesorasTimeline(pedido, order);
         
         // Mostrar modal
         const modal = document.getElementById('asesorasTrackingModal');
@@ -425,7 +455,8 @@ window.openAsesorasTrackingModal = async function(pedido) {
         // Aún así intentar llenar el timeline y mostrar el modal con datos parciales
         try {
             console.log('[openAsesorasTrackingModal] Intentando llenar timeline de todas formas...');
-            await fillAsesorasTimeline(pedido);
+            showAsesorasTrackingLoadingState(pedido);
+            await fillAsesorasTimeline(pedido, order);
             
             // Mostrar modal
             const modal = document.getElementById('asesorasTrackingModal');
@@ -440,14 +471,45 @@ window.openAsesorasTrackingModal = async function(pedido) {
     }
 };
 
+function showAsesorasTrackingLoadingState(pedido) {
+    const modal = document.getElementById('asesorasTrackingModal');
+    const timelineContainer = document.getElementById('asesorasTimelineContainer');
+    const orderNumber = document.getElementById('asesorasTrackingOrderNumber');
+    const client = document.getElementById('asesorasTrackingClient');
+    const status = document.getElementById('asesorasTrackingStatus');
+    const deliveryDate = document.getElementById('asesorasTrackingDeliveryDate');
+
+    if (orderNumber) orderNumber.textContent = pedido || '-';
+    if (client) client.textContent = 'Cargando...';
+    if (status) status.textContent = 'Cargando...';
+    if (deliveryDate) deliveryDate.textContent = 'Cargando...';
+
+    if (timelineContainer) {
+        timelineContainer.innerHTML = `
+            <div class="asesoras-tracking-loading">
+                <div class="asesoras-tracking-spinner"></div>
+                <div>Cargando seguimiento del pedido...</div>
+            </div>
+        `;
+    }
+
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
 /**
  * Llena el timeline con los procesos del pedido
  * @param {number} pedido - Número del pedido
  */
-async function fillAsesorasTimeline(pedido) {
+async function fillAsesorasTimeline(pedido, order = null) {
     try {
         const container = document.getElementById('asesorasTimelineContainer');
         if (!container) return;
+        try {
+            if (renderAsesorasRecibosTimeline(container, order)) return;
+        } catch (renderError) {
+            console.warn('[fillAsesorasTimeline] Error renderizando recibos, se usara fallback por procesos:', renderError);
+        }
         // Obtener los procesos del pedido (misma lógica que en tracking)
         let responseData = null;
         
@@ -581,17 +643,157 @@ async function fillAsesorasTimeline(pedido) {
         });
         
     } catch (error) {
+        console.error('[fillAsesorasTimeline] Error no controlado:', error);
         const container = document.getElementById('asesorasTimelineContainer');
         if (container) {
-            container.innerHTML = '<p style="text-align: center; color: #d32f2f; font-size: 0.9rem;">Error al cargar procesos</p>';
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+                    <p style="margin: 0; font-size: 14px; font-weight: 500;">No hay procesos/recibos para mostrar</p>
+                </div>
+            `;
         }
     }
+}
+
+/**
+ * Renderiza la sección de proceso listando cada recibo del pedido
+ * con su fecha estimada de entrega.
+ */
+function renderAsesorasRecibosTimeline(container, order) {
+    const recibos = ((order && Array.isArray(order.recibos)) ? order.recibos : [])
+        .filter(recibo => String(recibo && recibo.tipo_recibo || '').toUpperCase() !== 'COSTURA-BODEGA');
+    if (recibos.length === 0) {
+        return false;
+    }
+
+    const recibosOrdenados = [...recibos].sort((a, b) => {
+        const fechaA = new Date((a && a.fecha_estimada_de_entrega) || 0);
+        const fechaB = new Date((b && b.fecha_estimada_de_entrega) || 0);
+        const fechaAValida = !isNaN(fechaA.getTime());
+        const fechaBValida = !isNaN(fechaB.getTime());
+
+        if (fechaAValida && fechaBValida && fechaA.getTime() !== fechaB.getTime()) {
+            return fechaA - fechaB;
+        }
+        if (fechaAValida && !fechaBValida) return -1;
+        if (!fechaAValida && fechaBValida) return 1;
+
+        const consecutivoA = Number((a && a.consecutivo_actual) || 0);
+        const consecutivoB = Number((b && b.consecutivo_actual) || 0);
+        return consecutivoA - consecutivoB;
+    });
+
+    container.innerHTML = '';
+
+    recibosOrdenados.forEach((recibo, index) => {
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'asesoras-timeline-item in-progress';
+
+        const tipoRecibo = formatAsesorasReadableText(recibo && recibo.tipo_recibo, 'Recibo');
+        const consecutivo = (recibo && recibo.consecutivo_actual) ? recibo.consecutivo_actual : '-';
+        const area = formatAsesorasReadableText(recibo && recibo.area, 'Sin area');
+        const fechaEntrega = formatAsesorasDateOnly(recibo && recibo.fecha_estimada_de_entrega);
+        const tituloRecibo = String(tipoRecibo).toUpperCase() === 'COSTURA-BODEGA'
+            ? `#${consecutivo}`
+            : `${tipoRecibo} #${consecutivo}`;
+
+        timelineItem.innerHTML = `
+            <div class="asesoras-timeline-icon">
+                ${index + 1}
+            </div>
+            <div class="asesoras-timeline-content">
+                <div class="asesoras-timeline-area">${tituloRecibo}</div>
+                <div class="asesoras-timeline-date">Entrega estimada: <strong>${fechaEntrega}</strong></div>
+                <div class="asesoras-timeline-date">${area}</div>
+            </div>
+        `;
+
+        container.appendChild(timelineItem);
+    });
+
+    return true;
+}
+
+/**
+ * Formatea textos de enum/campos para mostrar en UI.
+ */
+function formatAsesorasReadableText(value, fallback = '-') {
+    if (value === undefined || value === null || value === '') {
+        return fallback;
+    }
+
+    return String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+/**
+ * Formatea una fecha a texto largo en es-ES.
+ */
+function formatAsesorasDateOnly(rawDate) {
+    if (!rawDate) return '-';
+
+    const fecha = new Date(rawDate);
+    if (isNaN(fecha.getTime())) {
+        return '-';
+    }
+
+    return fecha.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+/**
+ * Obtiene la fecha estimada de entrega para el modal de asesoras.
+ * Prioriza la fecha mas lejana calculada por recibos.
+ */
+function getAsesorasEstimatedDeliveryDate(order) {
+    if (!order || typeof order !== 'object') {
+        return null;
+    }
+
+    const candidateDates = [];
+
+    if (order.fecha_mas_lejana_recibos) {
+        candidateDates.push(order.fecha_mas_lejana_recibos);
+    }
+
+    if (Array.isArray(order.recibos)) {
+        order.recibos.forEach(recibo => {
+            if (recibo && recibo.fecha_estimada_de_entrega) {
+                candidateDates.push(recibo.fecha_estimada_de_entrega);
+            }
+        });
+    }
+
+    if (order.fecha_estimada_de_entrega) {
+        candidateDates.push(order.fecha_estimada_de_entrega);
+    }
+
+    let fechaMaxima = null;
+    candidateDates.forEach(rawDate => {
+        const fecha = new Date(rawDate);
+        if (isNaN(fecha.getTime())) {
+            return;
+        }
+        if (!fechaMaxima || fecha > fechaMaxima) {
+            fechaMaxima = fecha;
+        }
+    });
+
+    return fechaMaxima;
 }
 
 /**
  * Convierte el estado del pedido a formato legible
  */
 function formatAsesorasOrderStatus(estado) {
+    if (estado === undefined || estado === null || estado === '') {
+        return 'No iniciado';
+    }
+
     const statusMap = {
         'PENDIENTE_SUPERVISOR': 'Pendiente por Aprobación',
         'APROBADO_SUPERVISOR': 'Aprobado',
@@ -644,3 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+
+
+

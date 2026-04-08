@@ -193,7 +193,10 @@ final class AsesoresPedidosQueryController extends Controller
     public function apiListar(Request $request): JsonResponse
     {
         try {
-            $filtros = [];
+            $filtros = [
+                'page' => max(1, (int) $request->query('page', 1)),
+                'per_page' => max(1, (int) $request->query('per_page', 15)),
+            ];
             if ($request->filled('estado')) {
                 $filtros['estado'] = $request->estado;
             }

@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 class GetOrderDetailsReadService
 {
+    private const RECIBOS_AREA_LOGO_MAP = [
+        'BORDADO' => 2,
+        'ESTAMPADO' => 3,
+        'DTF' => 4,
+        'SUBLIMADO' => 5,
+    ];
+
     public function __construct(
         private readonly OrderRepository $orderRepository,
         private readonly PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter
@@ -46,6 +53,19 @@ class GetOrderDetailsReadService
         $ordenArray['total_entregado'] = $totalEntregado;
         $ordenArray['es_cotizacion'] = !empty($pedido->cotizacion_id);
 
+        // Fecha estimada para seguimiento: usar la mas lejana de los recibos del pedido.
+        $fechaMasLejanaRecibos = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedido->id)
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->max('fecha_estimada_de_entrega');
+
+        if (!empty($fechaMasLejanaRecibos)) {
+            $ordenArray['fecha_estimada_de_entrega'] = $fechaMasLejanaRecibos;
+            $ordenArray['fecha_mas_lejana_recibos'] = $fechaMasLejanaRecibos;
+        } else {
+            $ordenArray['fecha_mas_lejana_recibos'] = null;
+        }
+
         if ($pedido->asesora) {
             $ordenArray['asesor'] = $pedido->asesora->name ?? '';
             $ordenArray['asesora'] = $pedido->asesora->name ?? '';
@@ -60,6 +80,31 @@ class GetOrderDetailsReadService
             $ordenArray['cliente_nombre'] = $ordenArray['cliente'];
         }
 
+        $recibos = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByRaw('CASE WHEN fecha_estimada_de_entrega IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('fecha_estimada_de_entrega', 'asc')
+            ->orderBy('consecutivo_actual', 'asc')
+            ->get([
+                'id',
+                'pedido_produccion_id',
+                'prenda_id',
+                'tipo_recibo',
+                'consecutivo_actual',
+                'consecutivo_inicial',
+                'activo',
+                'estado',
+                'area',
+                'dia_de_entrega',
+                'fecha_estimada_de_entrega',
+                'created_at',
+                'updated_at',
+            ])
+            ->map(fn ($recibo) => (array) $recibo)
+            ->toArray();
+
+        $ordenArray['recibos'] = $this->resolverAreasRecibos($recibos);
+
         $ordenArray['descripcion_prendas'] = $this->buildDescripcionConTallas($pedido);
 
         $prendasFormato = $this->formatPrendas($pedido);
@@ -73,6 +118,89 @@ class GetOrderDetailsReadService
         ]);
 
         return $ordenArray;
+    }
+
+    /**
+     * Para recibos de logo, el área visible debe salir de prenda_areas_logo_pedido.
+     * COSTURA / REFLECTIVO y demás tipos conservan el área de consecutivos_recibos_pedidos.
+     */
+    private function resolverAreasRecibos(array $recibos): array
+    {
+        if ($recibos === []) {
+            return [];
+        }
+
+        $prendaIds = [];
+        foreach ($recibos as $recibo) {
+            $tipoRecibo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+            $prendaId = (int) ($recibo['prenda_id'] ?? 0);
+
+            if ($prendaId > 0 && isset(self::RECIBOS_AREA_LOGO_MAP[$tipoRecibo])) {
+                $prendaIds[$prendaId] = $prendaId;
+            }
+        }
+
+        if ($prendaIds === []) {
+            return $recibos;
+        }
+
+        $procesos = DB::table('pedidos_procesos_prenda_detalles')
+            ->whereIn('prenda_pedido_id', array_values($prendaIds))
+            ->whereIn('tipo_proceso_id', array_values(self::RECIBOS_AREA_LOGO_MAP))
+            ->get(['id', 'prenda_pedido_id', 'tipo_proceso_id']);
+
+        $procesoPorPrendaYTipo = [];
+        $procesoIds = [];
+
+        foreach ($procesos as $proceso) {
+            $prendaId = (int) $proceso->prenda_pedido_id;
+            $tipoProcesoId = (int) $proceso->tipo_proceso_id;
+            $procesoId = (int) $proceso->id;
+
+            $procesoPorPrendaYTipo[$prendaId][$tipoProcesoId] = $procesoId;
+            $procesoIds[$procesoId] = $procesoId;
+        }
+
+        if ($procesoIds === []) {
+            return $recibos;
+        }
+
+        $areas = DB::table('prenda_areas_logo_pedido')
+            ->whereIn('proceso_prenda_detalle_id', array_values($procesoIds))
+            ->orderByDesc('created_at')
+            ->get(['proceso_prenda_detalle_id', 'area']);
+
+        $areaMasRecientePorProceso = [];
+        foreach ($areas as $area) {
+            $procesoId = (int) $area->proceso_prenda_detalle_id;
+
+            if (!isset($areaMasRecientePorProceso[$procesoId]) && !empty($area->area)) {
+                $areaMasRecientePorProceso[$procesoId] = (string) $area->area;
+            }
+        }
+
+        foreach ($recibos as &$recibo) {
+            $tipoRecibo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+            $prendaId = (int) ($recibo['prenda_id'] ?? 0);
+            $tipoProcesoId = self::RECIBOS_AREA_LOGO_MAP[$tipoRecibo] ?? null;
+
+            if ($tipoProcesoId === null || $prendaId <= 0) {
+                continue;
+            }
+
+            $procesoId = $procesoPorPrendaYTipo[$prendaId][$tipoProcesoId] ?? null;
+            if ($procesoId === null) {
+                continue;
+            }
+
+            $areaLogo = $areaMasRecientePorProceso[$procesoId] ?? null;
+            if (!empty($areaLogo)) {
+                $recibo['area'] = $areaLogo;
+            }
+        }
+        unset($recibo);
+
+        return $recibos;
     }
 
     private function formatPrendas($pedido): array

@@ -60,6 +60,14 @@ class PedidoProduccion extends Model
 {
     use HasFactory, SoftDeletes, HasLegibleEstado;
 
+    /**
+     * Cache en memoria por request para evitar consultas repetidas
+     * de fecha maxima de entrega por pedido.
+     *
+     * @var array<int, \Carbon\Carbon|null>
+     */
+    protected static array $fechaMaximaEntregaCache = [];
+
     protected $table = 'pedidos_produccion';
 
     protected $fillable = [
@@ -345,30 +353,28 @@ class PedidoProduccion extends Model
      */
     public function getFechaEstimadaMaximaEntrega(): ?\Carbon\Carbon
     {
+        if (array_key_exists($this->id, self::$fechaMaximaEntregaCache)) {
+            $cached = self::$fechaMaximaEntregaCache[$this->id];
+            return $cached ? $cached->copy() : null;
+        }
+
         $query = $this->consecutivosRecibos()
             ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
             ->whereNotNull('fecha_estimada_de_entrega');
 
         $fechaMaxima = $query->max('fecha_estimada_de_entrega');
 
-        if (app()->environment('local')) {
-            $fechas = $this->consecutivosRecibos()
-                ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
-                ->whereNotNull('fecha_estimada_de_entrega')
-                ->orderBy('fecha_estimada_de_entrega', 'asc')
-                ->pluck('fecha_estimada_de_entrega')
-                ->map(fn($f) => (string) $f)
-                ->values()
-                ->all();
+        $fechaCarbon = $fechaMaxima ? \Carbon\Carbon::parse($fechaMaxima) : null;
+        self::$fechaMaximaEntregaCache[$this->id] = $fechaCarbon;
 
-            \Log::debug('[PedidoProduccion::getFechaEstimadaMaximaEntrega] Fechas de recibos COSTURA', [
+        if (app()->environment('local') && config('app.debug')) {
+            \Log::debug('[PedidoProduccion::getFechaEstimadaMaximaEntrega] Fecha maxima calculada', [
                 'pedido_id' => $this->id,
                 'numero_pedido' => $this->numero_pedido,
-                'fechas_candidatas_asc' => $fechas,
                 'fecha_maxima' => $fechaMaxima,
             ]);
         }
 
-        return $fechaMaxima ? \Carbon\Carbon::parse($fechaMaxima) : null;
+        return $fechaCarbon ? $fechaCarbon->copy() : null;
     }
 }

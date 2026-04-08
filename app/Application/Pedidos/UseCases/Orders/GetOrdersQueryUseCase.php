@@ -52,14 +52,16 @@ class GetOrdersQueryUseCase
             );
 
             $numeroPedidosPagina = array_map(fn ($orden) => $orden->numero_pedido, $ordenes->items());
+            $pedidoIdsPagina = array_map(fn ($orden) => (int) $orden->id, $ordenes->items());
             $areasMap = $this->processService->getLastProcessByOrderNumbers($numeroPedidosPagina);
             $encargadosCreacionOrdenMap = $this->processService->getCreacionOrdenEncargados($numeroPedidosPagina);
+            $fechaMaximaRecibosPorPedido = $this->extendedQueryService->getMaxDeliveryDatesByPedidoIds($pedidoIdsPagina);
             $areaOptions = AreaOptions::getArray();
             $totalDiasCalculados = $this->ensureTotalDiasCalculados($ordenes, $totalDiasCalculados, $festivos);
 
             $response = $request->wantsJson()
-                ? $this->buildJsonResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions)
-                : $this->buildViewResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions);
+                ? $this->buildJsonResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions, $fechaMaximaRecibosPorPedido)
+                : $this->buildViewResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions, $fechaMaximaRecibosPorPedido);
         }
 
         return $response;
@@ -191,7 +193,8 @@ class GetOrdersQueryUseCase
         array $areasMap,
         array $encargadosCreacionOrdenMap,
         array $totalDiasCalculados,
-        array $areaOptions
+        array $areaOptions,
+        array $fechaMaximaRecibosPorPedido
     ): array {
         $ordenesFiltered = array_map(
             fn ($orden) => $this->transformService->transformarOrden($orden, $areasMap, $encargadosCreacionOrdenMap),
@@ -219,6 +222,10 @@ class GetOrdersQueryUseCase
                     'to' => $ordenes->lastItem(),
                 ],
                 'pagination_html' => '',
+                'fechaMaximaRecibosPorPedido' => array_map(
+                    static fn ($fecha) => $fecha?->toDateString(),
+                    $fechaMaximaRecibosPorPedido
+                ),
             ],
         ];
     }
@@ -231,7 +238,8 @@ class GetOrdersQueryUseCase
         array $areasMap,
         array $encargadosCreacionOrdenMap,
         array $totalDiasCalculados,
-        array $areaOptions
+        array $areaOptions,
+        array $fechaMaximaRecibosPorPedido
     ): array {
         $context = 'registros';
         $title = 'Registro de Órdenes';
@@ -254,8 +262,12 @@ class GetOrdersQueryUseCase
                 'icon',
                 'fetchUrl',
                 'updateUrl',
-                'modalContext'
+                'modalContext',
+                'fechaMaximaRecibosPorPedido'
             ),
         ];
     }
 }
+
+
+

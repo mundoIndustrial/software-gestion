@@ -523,7 +523,7 @@ body {
     justify-content: center;
 }
 
-.page-btn:hover:not(:disabled) {
+.page-btn:hover:not(.disabled) {
     border-color: var(--primary);
     background: #eff6ff;
 }
@@ -534,9 +534,17 @@ body {
     border-color: var(--primary);
 }
 
-.page-btn:disabled {
+.page-btn:disabled,
+.page-btn.disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-indicator {
+    width: auto;
+    min-width: 78px;
+    padding: 0 0.75rem;
 }
 
 .pagination-select {
@@ -547,7 +555,7 @@ body {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
     border-radius: 4px;
-    cursor: pointer;
+    cursor: default;
     background: var(--bg-white);
 }
 

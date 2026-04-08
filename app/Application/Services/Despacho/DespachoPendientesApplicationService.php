@@ -23,7 +23,7 @@ class DespachoPendientesApplicationService
             ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('prendas_pedido.de_bodega', 1)
             ->whereNull('prendas_pedido.deleted_at')
             ->whereNull('pedidos_procesos_prenda_detalles.id')
@@ -76,7 +76,7 @@ class DespachoPendientesApplicationService
             ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'Costura')
             ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
             ->whereNull('pedidos_procesos_prenda_detalles.id')
@@ -151,7 +151,7 @@ class DespachoPendientesApplicationService
             ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->whereNotNull('pedidos_produccion.numero_pedido')
             ->where('pedidos_produccion.numero_pedido', '!=', '')
-            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
             ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
             ->select('pedidos_produccion.*')
@@ -524,7 +524,7 @@ class DespachoPendientesApplicationService
             $items[] = $itemNormalizado;
         }
 
-        $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
+        $estadosPermitidos = ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'];
         if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos, true)) {
             throw new \RuntimeException('Este pedido no tiene un estado válido para despacho');
         }

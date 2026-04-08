@@ -33,7 +33,12 @@ class ListarProduccionPedidosUseCase
         );
 
         if (!empty($resultado->query)) {
-            $paginator->appends($resultado->query);
+            $queryParams = $resultado->query;
+            unset($queryParams['page']);
+
+            if (!empty($queryParams)) {
+                $paginator->appends($queryParams);
+            }
         }
 
         return $paginator;

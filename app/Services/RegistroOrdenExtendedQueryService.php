@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PedidoProduccion;
+use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
@@ -218,5 +219,36 @@ class RegistroOrdenExtendedQueryService
             }
             return $value;
         }, $values);
+    }
+
+    /**
+     * Obtener fecha maxima de entrega de recibos COSTURA/COSTURA-BODEGA
+     * para un conjunto de pedidos en una sola consulta.
+     *
+     * @param array<int, int> $pedidoIds
+     * @return array<int, \Carbon\Carbon|null> Mapa [pedido_produccion_id => fecha_maxima]
+     */
+    public function getMaxDeliveryDatesByPedidoIds(array $pedidoIds): array
+    {
+        if (empty($pedidoIds)) {
+            return [];
+        }
+
+        $rows = ConsecutivoReciboPedido::query()
+            ->selectRaw('pedido_produccion_id, MAX(fecha_estimada_de_entrega) as fecha_maxima')
+            ->whereIn('pedido_produccion_id', $pedidoIds)
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->groupBy('pedido_produccion_id')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->pedido_produccion_id] = $row->fecha_maxima
+                ? \Carbon\Carbon::parse($row->fecha_maxima)
+                : null;
+        }
+
+        return $map;
     }
 }

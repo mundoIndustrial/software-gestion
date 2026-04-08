@@ -38,6 +38,8 @@ final class AsesoresPedidosViewController extends Controller
     {
         try {
             $filtros = [];
+            $filtros['page'] = max(1, (int) $request->query('page', 1));
+            $filtros['per_page'] = max(1, (int) $request->query('per_page', 15));
             if ($request->filled('estado')) {
                 $filtros['estado'] = $request->estado;
             }

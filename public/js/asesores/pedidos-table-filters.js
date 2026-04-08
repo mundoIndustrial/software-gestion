@@ -21,10 +21,11 @@ function loadFiltersFromLocalStorage() {
     const saved = localStorage.getItem('pedidosTableFilters');
     if (saved) {
         try {
-            selectedFilters = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            selectedFilters = (parsed && typeof parsed === 'object') ? parsed : {};
             return true;
         } catch (e) {
-
+            selectedFilters = {};
             return false;
         }
     }
@@ -527,29 +528,24 @@ function applyTableFilters() {
                             if (!prenda) return false;
                             
                             try {
-                                const prendaData = JSON.parse(prenda);
-                                let searchIn = '';
-                                
-                                if (field === 'nombre_prenda') {
-                                    searchIn = (prendaData.nombre_prenda || '').toLowerCase();
-                                } else if (field === 'tela') {
-                                    searchIn = (prendaData.tela || '').toLowerCase();
-                                } else if (field === 'color') {
-                                    searchIn = (prendaData.color || '').toLowerCase();
-                                } else if (field === 'descripcion') {
-                                    searchIn = (prendaData.descripcion || '').toLowerCase();
-                                } else if (field === 'todos') {
-                                    // Buscar en todos los campos
-                                    const todos = [
-                                        prendaData.nombre_prenda || '',
-                                        prendaData.tela || '',
-                                        prendaData.color || '',
-                                        prendaData.descripcion || ''
-                                    ].join(' ').toLowerCase();
-                                    searchIn = todos;
-                                }
-                                
-                                return searchIn.includes(searchText.toLowerCase());
+                                const parsed = JSON.parse(prenda);
+                                const prendas = Array.isArray(parsed) ? parsed : [parsed];
+
+                                return prendas.some((prendaData) => {
+                                    const nombre = String(prendaData?.nombre_prenda || '').toLowerCase();
+                                    const tela = String(prendaData?.tela || '').toLowerCase();
+                                    const color = String(prendaData?.color || '').toLowerCase();
+                                    const descripcion = String(prendaData?.descripcion || '').toLowerCase();
+
+                                    let searchIn = '';
+                                    if (field === 'nombre_prenda') searchIn = nombre;
+                                    else if (field === 'tela') searchIn = tela;
+                                    else if (field === 'color') searchIn = color;
+                                    else if (field === 'descripcion') searchIn = descripcion;
+                                    else if (field === 'todos') searchIn = [nombre, tela, color, descripcion].join(' ');
+
+                                    return searchIn.includes(searchText.toLowerCase());
+                                });
                             } catch (e) {
                                 // Si no hay data-prenda-info, hacer búsqueda en el texto visible
                                 return cellValue.toLowerCase().includes(searchText.toLowerCase());
@@ -609,7 +605,16 @@ function initializeFilterButtons() {
     //  Cargar filtros: primero desde URL, luego desde localStorage
     const hasURLFilters = loadFiltersFromURL();
     if (!hasURLFilters) {
-        loadFiltersFromLocalStorage();
+        const params = new URLSearchParams(globalThis.location.search);
+        const hasPageParam = params.has('page');
+
+        // Evitar aplicar filtros guardados al navegar páginas si la URL no trae filtros.
+        if (hasPageParam) {
+            selectedFilters = {};
+            localStorage.removeItem('pedidosTableFilters');
+        } else {
+            loadFiltersFromLocalStorage();
+        }
     }
     
     // Obtener el header de la tabla para mapear correctamente

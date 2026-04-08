@@ -533,6 +533,7 @@
         const cantidad = parseInt(document.getElementById('cantidadEPPEdicion').value);
         const observaciones = document.getElementById('observacionesEPPEdicion').value;
         const eppId = eppData.epp_id;
+        const pedidoEppId = obtenerPedidoEppIdDesdeData(eppData);
         
         if (cantidad < 1) {
             Swal.fire({
@@ -552,6 +553,7 @@
         // Guardar los datos para usarlos después en confirmarNovedad
         window.cambiosEppPendientes = {
             eppData,
+            pedidoEppId,
             cantidad,
             observaciones,
             eppId
@@ -670,7 +672,7 @@
                 });
                 
                 try {
-                    const response = await fetch(`/api/pedido-epp/${cambios.eppData.pedido_epp_id}/imagenes`, {
+                    const response = await fetch(`/api/pedido-epp/${cambios.pedidoEppId}/imagenes`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -706,7 +708,7 @@
             }
             
             const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
-            const pedidoEppId = cambios.eppData.pedido_epp_id;
+            const pedidoEppId = cambios.pedidoEppId;
             
             console.log(' [Modal Novedad] Guardando cambios con novedad...', {
                 pedidoId,
@@ -835,6 +837,47 @@
     let imagenesEPPActuales = [];
     let imagenesAEliminar = [];
     let imagenesAAgregar = [];
+
+    function obtenerPedidoEppIdDesdeData(eppData) {
+        if (!eppData || typeof eppData !== 'object') return null;
+        return eppData.pedido_epp_id || eppData.id || null;
+    }
+
+    function normalizarUrlImagenEpp(imagen) {
+        const rawUrl = imagen?.ruta_web || imagen?.url || imagen?.ruta_original || '';
+        if (!rawUrl) return '';
+
+        const url = String(rawUrl).replace(/\\/g, '/').trim();
+
+        if (/^(https?:)?\/\//i.test(url) || /^(blob:|data:)/i.test(url)) return url;
+        if (url.startsWith('/storage/')) return url;
+        if (url.startsWith('storage/')) return `/${url}`;
+        if (url.startsWith('/')) return url;
+
+        return `/storage/${url.replace(/^\/+/, '')}`;
+    }
+
+    function abrirVistaImagenEpp(imgUrl, nombre) {
+        if (!imgUrl) return;
+
+        if (window.invoiceRenderer && typeof window.invoiceRenderer.abrirModalImagen === 'function') {
+            window.invoiceRenderer.abrirModalImagen(imgUrl, nombre || 'Imagen EPP');
+            return;
+        }
+
+        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+            Swal.fire({
+                imageUrl: imgUrl,
+                imageAlt: nombre || 'Imagen EPP',
+                showConfirmButton: false,
+                showCloseButton: true,
+                width: 'auto'
+            });
+            return;
+        }
+
+        window.open(imgUrl, '_blank');
+    }
     
     function abrirSelectorImagenesEPP() {
         document.getElementById('modal-selector-imagenes-epp').style.display = 'flex';
@@ -954,12 +997,12 @@
         // Imágenes existentes
         imagenesEPPActuales.forEach((imagen, index) => {
             // Construir URL asegurando que siempre incluya /storage/
-            let imgUrl = imagen.ruta_web || imagen.url || `/storage/${imagen.ruta_original}`;
+            let imgUrl = normalizarUrlImagenEpp(imagen);
             
             // Si no empieza con /storage/, agregarlo
-            if (imgUrl && !imgUrl.startsWith('/storage/')) {
-                imgUrl = '/storage/' + imgUrl.replace(/^\/+/, '');
-            }
+            const nombreImagen = imagen.nombre || `Imagen ${index + 1}`;
+            const imgUrlEscapada = imgUrl.replace(/'/g, "\\'");
+            const nombreEscapado = nombreImagen.replace(/'/g, "\\'");
             
             console.log(`[actualizarGaleriaImagenes] Imagen ${index}:`, {
                 id: imagen.id,
@@ -970,7 +1013,7 @@
             });
             html += `
                 <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onclick="window.invoiceRenderer.abrirModalImagen('${imgUrl}', '${imagen.nombre || 'Imagen ' + (index + 1)}')">
+                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="abrirVistaImagenEpp('${imgUrlEscapada}', '${nombreEscapado}')">
                     <div style="position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;" onclick="eliminarImagenEPP('${imagen.id}', ${index})">×</div>
                 </div>
             `;
@@ -1039,10 +1082,12 @@
         
         // Guardar datos en variable global
         window.eppEnEdicionActual = eppData;
+        const pedidoEppId = obtenerPedidoEppIdDesdeData(eppData);
+        window.eppEnEdicionActual.pedido_epp_id = pedidoEppId;
         
         // Cargar imágenes existentes
-        if (eppData.pedido_epp_id) {
-            cargarImagenesEPP(eppData.pedido_epp_id);
+        if (pedidoEppId) {
+            cargarImagenesEPP(pedidoEppId);
         } else {
             actualizarGaleriaImagenes();
         }
@@ -1077,6 +1122,7 @@
         const cantidad = parseInt(document.getElementById('cantidadEPPEdicion').value);
         const observaciones = document.getElementById('observacionesEPPEdicion').value;
         const eppId = eppData.epp_id;
+        const pedidoEppId = obtenerPedidoEppIdDesdeData(eppData);
         
         if (cantidad < 1) {
             Swal.fire({
@@ -1096,6 +1142,7 @@
         // Guardar los datos para usarlos después en confirmarNovedad
         window.cambiosEppPendientes = {
             eppData,
+            pedidoEppId,
             cantidad,
             observaciones,
             eppId,
@@ -1280,4 +1327,5 @@
     window.eliminarImagenNuevaEPP = eliminarImagenNuevaEPP;
     window.abrirModalHomologarEpp = abrirModalHomologarEpp;
 </script>
+
 

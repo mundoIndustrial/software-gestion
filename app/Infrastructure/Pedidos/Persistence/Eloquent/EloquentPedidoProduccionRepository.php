@@ -45,12 +45,24 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
     {
         $page = max(1, (int) ($filtros['page'] ?? 1));
         $perPage = max(1, (int) ($filtros['per_page'] ?? 15));
+        $queryParams = collect($filtros)
+            ->except(['page', 'per_page'])
+            ->toArray();
+
+        $fechaMaximaRecibosSubquery = DB::table('consecutivos_recibos_pedidos')
+            ->selectRaw('pedido_produccion_id, MAX(fecha_estimada_de_entrega) as fecha_maxima_recibos')
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->groupBy('pedido_produccion_id');
 
         $query = PedidoProduccion::query()
             ->select([
                 'pedidos_produccion.*',
                 'pedidos_produccion.area',
+                DB::raw('fecha_maxima_recibos_subquery.fecha_maxima_recibos as fecha_estimada_calculada'),
             ])
+            ->leftJoinSub($fechaMaximaRecibosSubquery, 'fecha_maxima_recibos_subquery', function ($join) {
+                $join->on('fecha_maxima_recibos_subquery.pedido_produccion_id', '=', 'pedidos_produccion.id');
+            })
             ->with(['cotizacion', 'prendas']);
 
         if (!empty($filtros['asesor_id'])) {
@@ -80,6 +92,15 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             $query->whereDate('created_at', '<=', $filtros['fecha_hasta']);
         }
 
+        if (!empty($filtros['search'])) {
+            $search = trim((string) $filtros['search']);
+            $query->where(function ($subquery) use ($search) {
+                $subquery->where('numero_pedido', 'LIKE', "%{$search}%")
+                    ->orWhere('cliente', 'LIKE', "%{$search}%")
+                    ->orWhere('novedades', 'LIKE', "%{$search}%");
+            });
+        }
+
         $paginator = $query
             ->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
@@ -94,7 +115,9 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
                 novedades: $pedido->novedades,
                 forma_pago: $pedido->forma_de_pago,
                 fecha_creacion: optional($pedido->created_at)?->format('Y-m-d H:i:s'),
-                fecha_estimada: optional($pedido->fecha_estimada_de_entrega)?->format('Y-m-d H:i:s'),
+                fecha_estimada: !empty($pedido->fecha_estimada_calculada)
+                    ? (string) $pedido->fecha_estimada_calculada
+                    : null,
                 asesor_id: $pedido->asesor_id !== null ? (int) $pedido->asesor_id : null,
             ))
             ->all();
@@ -105,7 +128,7 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             perPage: $paginator->perPage(),
             currentPage: $paginator->currentPage(),
             path: $paginator->path(),
-            query: $filtros,
+            query: $queryParams,
         );
     }
 

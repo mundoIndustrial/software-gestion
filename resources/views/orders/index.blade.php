@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Registro de Órdenes - MundoIndustrial')
-@section('page-title', 'Registro de Órdenes')
+@section('title', 'Registro de Ordenes - MundoIndustrial')
+@section('page-title', 'Registro de Ordenes')
 
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -15,16 +15,19 @@
 @section('content')
 <div class="orders-container">
     
-    <!-- Filtros Rápidos -->
+    <!-- Filtros Rapidos -->
     <div class="controls-bar">
 
         @php
             $hoy = \Carbon\Carbon::today();
+
             $contadores = [
-                'vencidos' => $ordenes->getCollection()->filter(function($orden) use ($hoy) {
-                    $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
+                'vencidos' => $ordenes->getCollection()->filter(function($orden) use ($hoy, $fechaMaximaRecibosPorPedido) {
+                    $fechaMaximaRecibos = $fechaMaximaRecibosPorPedido[$orden->id] ?? null;
                     $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
-                    return $fechaEntrega && $fechaEntrega < $hoy;
+                    $estado = \Illuminate\Support\Str::lower((string) ($orden->estado ?? ''));
+                    $esEntregado = \Illuminate\Support\Str::contains($estado, 'entregado');
+                    return !$esEntregado && $fechaEntrega && $fechaEntrega < $hoy;
                 })->count(),
                 'en_progreso' => $ordenes->getCollection()->where('estado', 'En Ejecución')->count(),
             ];
@@ -65,13 +68,17 @@
                             $estadoClass = 'estado-' . str_replace(' ', '-', strtolower($estado));
                             $diaEntrega = $orden->dia_de_entrega ?? '-';
                             
-                            // Obtener fecha máxima de entrega de recibos de costura
-                            $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
+                            // Obtener fecha maxima de entrega de recibos de costura
+                            $fechaMaximaRecibos = $fechaMaximaRecibosPorPedido[$orden->id] ?? null;
                             $fechaEntregaVerificacion = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
                             
-                            // Verificar si la orden está vencida
+                            // Verificar si la orden esta vencida
                             $hoy = \Carbon\Carbon::today();
-                            $esVencida = $fechaEntregaVerificacion && $fechaEntregaVerificacion < $hoy;
+                            $esEntregado = \Illuminate\Support\Str::contains(
+                                \Illuminate\Support\Str::lower((string) ($orden->estado ?? '')),
+                                'entregado'
+                            );
+                            $esVencida = !$esEntregado && $fechaEntregaVerificacion && $fechaEntregaVerificacion < $hoy;
                         @endphp
                         <tr class="table-row" data-orden-id="{{ $orden->id }}" data-vencido="{{ $esVencida ? 'true' : 'false' }}">
                             <td class="col-accion">
@@ -95,7 +102,7 @@
                                 <strong>#{{ $orden->numero_pedido ?? $orden->id }}</strong>
                             </td>
                             <td class="col-cliente">
-                                <span class="client-dot">●</span>
+                                <span class="client-dot">&bull;</span>
                                 {{ $orden->cliente ?? '-' }}
                             </td>
                             <td class="col-estado">
@@ -107,14 +114,10 @@
                                 @endif
                             </td>
                             <td class="col-entrega">
-                                @php
-                                    $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
-                                    $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
-                                @endphp
                                 @if(false && $diaEntrega !== '-')
-                                    <span class="entrega-date">↑ {{ $diaEntrega }}</span>
+                                    <span class="entrega-date">&uarr; {{ $diaEntrega }}</span>
                                 @else
-                                    <span class="entrega-date">{{ $fechaEntrega ? $fechaEntrega->format('d/m/Y') : '-' }}</span>
+                                    <span class="entrega-date">{{ $fechaEntregaVerificacion ? $fechaEntregaVerificacion->format('d/m/Y') : '-' }}</span>
                                 @endif
                             </td>
                         </tr>
@@ -130,45 +133,35 @@
             </table>
         </div>
 
-        <!-- Paginación -->
-        <div class="pagination-container">
-            <div class="pagination-info">
-                <span>Mostrando 1-25 de {{ $ordenes->total() }} pedidos</span>
+        <!-- Paginacion -->
+        <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <div class="text-sm text-slate-700">
+                Mostrando <span class="font-medium">{{ $ordenes->count() }}</span> de <span class="font-medium">{{ $ordenes->total() }}</span> pedidos
             </div>
-            <div class="pagination-controls">
+            <div class="flex gap-2">
                 @if($ordenes->hasPages())
-                    <a href="{{ $ordenes->url(1) }}" class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
-                        <i class="fas fa-chevron-left"></i> <i class="fas fa-chevron-left"></i>
-                    </a>
-                    <a href="{{ $ordenes->previousPageUrl() }}" class="page-btn" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                    
-                    @php
-                        $start = max(1, $ordenes->currentPage() - 2);
-                        $end = min($ordenes->lastPage(), $ordenes->currentPage() + 2);
-                    @endphp
-                    
-                    @for($i = $start; $i <= $end; $i++)
-                        <a href="{{ $ordenes->url($i) }}" class="page-btn {{ $i == $ordenes->currentPage() ? 'active' : '' }}">
-                            {{ $i }}
+                    @if(!$ordenes->onFirstPage())
+                        <a href="{{ $ordenes->url(1) }}" class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors" title="Primera pagina">
+                            &laquo; Primero
                         </a>
-                    @endfor
-                    
-                    <a href="{{ $ordenes->nextPageUrl() }}" class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                    <a href="{{ $ordenes->url($ordenes->lastPage()) }}" class="page-btn" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
-                        <i class="fas fa-chevron-right"></i> <i class="fas fa-chevron-right"></i>
-                    </a>
+                        <a href="{{ $ordenes->previousPageUrl() }}" class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
+                            &larr; Anterior
+                        </a>
+                    @endif
+
+                    <span class="px-3 py-1 text-sm text-slate-600">
+                        Pagina {{ $ordenes->currentPage() }} de {{ $ordenes->lastPage() }}
+                    </span>
+
+                    @if($ordenes->hasMorePages())
+                        <a href="{{ $ordenes->nextPageUrl() }}" class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
+                            Siguiente &rarr;
+                        </a>
+                        <a href="{{ $ordenes->url($ordenes->lastPage()) }}" class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors" title="Ultima pagina">
+                            Ultimo &raquo;
+                        </a>
+                    @endif
                 @endif
-            </div>
-            <div class="pagination-select">
-                <select class="per-page-select">
-                    <option value="25" selected>25 por página</option>
-                    <option value="50">50 por página</option>
-                    <option value="100">100 por página</option>
-                </select>
             </div>
         </div>
     </div>
@@ -182,7 +175,7 @@
             <button class="btn-close">&times;</button>
         </div>
         <div class="modal-body" id="modalBody">
-            <!-- Contenido dinámico -->
+            <!-- Contenido dinamico -->
         </div>
     </div>
 </div>
@@ -190,7 +183,7 @@
 <!-- Modal de Tracking/Seguimiento de Prendas -->
 <x-orders-components.order-tracking-modal />
 
-<!-- Modal Selector de Recibos de Producción -->
+<!-- Modal Selector de Recibos de Produccion -->
 @include('components.modals.recibos-process-selector')
 
 @push('scripts')
@@ -200,12 +193,12 @@
 <script type="module">
     import { PedidosRecibosModule } from '/js/modulos/pedidos-recibos/index.js';
     
-    // Exponer el módulo globalmente para que orders-v2.js lo pueda usar
+    // Exponer el modulo globalmente para que orders-v2.js lo pueda usar
     window.pedidosRecibosModule = new PedidosRecibosModule();
     
     // Inicializar InvoiceLazyLoader para abrir facturas
     new InvoiceLazyLoader();
-    console.log('✓ PedidosRecibosModule y InvoiceLazyLoader inicializados');
+    console.log('OK PedidosRecibosModule y InvoiceLazyLoader inicializados');
 </script>
 
 <!-- Sistema de Tracking/Seguimiento de Prendas -->
@@ -226,3 +219,7 @@
 @endpush
 
 @endsection
+
+
+
+

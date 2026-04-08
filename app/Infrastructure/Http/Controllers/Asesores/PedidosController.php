@@ -71,6 +71,8 @@ class PedidosController
             $filtros = [
                 'estado' => $request->get('estado'),
                 'search' => $request->get('search'),
+                'page' => max(1, (int) $request->get('page', 1)),
+                'per_page' => max(1, (int) $request->get('per_page', 15)),
             ];
 
             $usuario = Auth::user();
