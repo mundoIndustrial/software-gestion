@@ -126,8 +126,12 @@
     function __clearBadge(pedidoId) {
         console.log(`[DEBUG-BADGE] __clearBadge llamado para pedidoId: ${pedidoId}`);
         
-        // Buscar en botones de despacho
-        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        // Buscar en botones de despacho (clase actual)
+        let btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
+        if (!btn) {
+            // Buscar en botones antiguos de despacho (backward compatibility)
+            btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        }
         if (!btn) {
             // Buscar en botones de asesores/pedidos
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);

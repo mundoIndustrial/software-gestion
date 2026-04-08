@@ -35,7 +35,7 @@
             <!-- Laravel Echo para actualizaciones en tiempo real -->
             <script>
                 // Echo ya está inicializado vía Vite en app.js
-                console.log('[Layout App] Echo disponible para bodega:', typeof window.EchoInstance !== 'undefined');
+                console.log('[Layout App] Echo disponible para bodega:', !!window.EchoInstance);
             </script>
         @endauth
     @endif

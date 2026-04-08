@@ -479,6 +479,9 @@ function initTrackingModalListeners() {
   // Abrir selector de prendas (overlay)
   globalThis.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
+      // Lazy init: solo configurar listeners/UI del modal al primer uso real.
+      initTrackingModalListeners();
+
       console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
 
       if (mostrarSelector) {
@@ -1251,9 +1254,4 @@ function initTrackingModalListeners() {
 
   globalThis.abrirReciboEspecial = abrirReciboEspecial;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTrackingModalListeners, { once: true });
-  } else {
-    initTrackingModalListeners();
-  }
-
+  // Inicializacion diferida: se ejecuta desde openOrderTracking().

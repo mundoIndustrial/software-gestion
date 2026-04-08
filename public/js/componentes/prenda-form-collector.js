@@ -413,8 +413,61 @@ class PrendaFormCollector {
             // ============================================
             // 4. PROCESAR TELAS AGREGADAS (FUENTE UNICA)
             // ============================================
-            // Nota: las imagenes de tela NO viven en telasAgregadas; la fuente unica es
-            // asignacionesColoresPorTalla[colores[].imagen / imagen_id / imagen_ruta].
+            // Preservar imagenes de tela (nuevas y existentes) para que lleguen al
+            // FormData y no se pierdan al crear el pedido.
+            const normalizarImagenesTela = (tela = {}) => {
+                const imagenesFuente = Array.isArray(tela.imagenes)
+                    ? tela.imagenes
+                    : (Array.isArray(tela.fotos) ? tela.fotos : []);
+
+                return imagenesFuente
+                    .map((img) => {
+                        if (img instanceof File) {
+                            return img;
+                        }
+
+                        if (img && img.file instanceof File) {
+                            return {
+                                file: img.file,
+                                uid: img.uid || null,
+                                previewUrl: img.previewUrl || img.preview || null,
+                                nombre: img.nombre || img.file.name || ''
+                            };
+                        }
+
+                        if (typeof img === 'string' && img.trim() !== '') {
+                            return {
+                                ruta: img,
+                                ruta_webp: img,
+                                urlDesdeDB: true
+                            };
+                        }
+
+                        if (img && typeof img === 'object') {
+                            const ruta = img.ruta || img.ruta_webp || img.ruta_original || img.url || img.previewUrl || null;
+                            if (ruta) {
+                                return {
+                                    uid: img.uid || null,
+                                    ruta: ruta,
+                                    ruta_webp: img.ruta_webp || ruta,
+                                    ruta_original: img.ruta_original || null,
+                                    url: img.url || ruta,
+                                    previewUrl: img.previewUrl || null,
+                                    nombre: img.nombre || img.nombre_archivo || ''
+                                };
+                            }
+                        }
+
+                        return null;
+                    })
+                    .filter((img) => {
+                        if (!img) return false;
+                        if (img instanceof File) return true;
+                        if (img.file instanceof File) return true;
+                        return !!(img.ruta || img.ruta_webp || img.ruta_original || img.url || img.previewUrl);
+                    });
+            };
+
             const mapearTelaCanonica = (tela = {}) => ({
                 id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
                 _original_id: tela._original_id || tela.id || null,
@@ -427,7 +480,7 @@ class PrendaFormCollector {
                 color_id: tela.color_id || 0,
                 nombre_tela: tela.nombre_tela || tela.tela || '',
                 color_nombre: tela.color_nombre || tela.color || '',
-                imagenes: []
+                imagenes: normalizarImagenesTela(tela)
             });
 
             console.log('[prenda-form-collector] INICIANDO PROCESAMIENTO DE TELAS (fuente unica):', {
@@ -461,7 +514,7 @@ class PrendaFormCollector {
                 }
             }
 
-            console.log('[prenda-form-collector] TELAS CANONICAS mapeadas (sin imagenes):', {
+            console.log('[prenda-form-collector] TELAS CANONICAS mapeadas (preservando imagenes):', {
                 length: prendaData.telasAgregadas?.length || 0,
                 primer_elemento: prendaData.telasAgregadas?.[0]
             });
@@ -719,4 +772,3 @@ class PrendaFormCollector {
 
 // Instancia global para usar en toda la aplicación
 globalThis.prendaFormCollector = new PrendaFormCollector();
-

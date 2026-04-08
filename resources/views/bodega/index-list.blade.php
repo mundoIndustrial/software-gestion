@@ -784,7 +784,7 @@ function marcarComoVisto(pedidoId, visto) {
 // Sistema de tiempo real para actualizaciones de pedidos
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar si Echo está disponible
-    if (typeof window.EchoInstance !== 'undefined') {
+    if (window.EchoInstance) {
         console.log('[Bodega Realtime] Escuchando actualizaciones de pedidos...');
         
         // Escuchar actualizaciones de pedidos desde cartera

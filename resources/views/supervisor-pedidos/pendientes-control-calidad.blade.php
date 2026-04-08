@@ -624,10 +624,11 @@ if (document.readyState === 'loading') {
 }
 
 // Funcion para guardar el color en la BD
-function guardarColorCostura(reciboId, color) {
+async function guardarColorCostura(reciboId, color) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    fetch('/api/supervisor-pedidos/recibos/guardar-color-costura', {
+
+    try {
+        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-costura', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -637,14 +638,26 @@ function guardarColorCostura(reciboId, color) {
             numero_recibo: reciboId,
             color: color
         })
-    })
-    .catch(error => console.error('Error al guardar color:', error));
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error al guardar color (HTTP):', response.status, errorText);
+            return;
+        }
+
+        const data = await response.json();
+        if (!data?.success) {
+            console.error('Error al guardar color (API):', data);
+        }
+    } catch (error) {
+        console.error('Error al guardar color:', error);
+    }
 }
 </script>
 @endpush
 
 @endsection
-
 
 
 

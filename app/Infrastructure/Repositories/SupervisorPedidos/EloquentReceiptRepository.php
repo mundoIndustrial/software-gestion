@@ -470,6 +470,24 @@ class EloquentReceiptRepository implements ReceiptRepository
         return (string) $newConsecutive;
     }
 
+    public function updateSewingReceiptColor(string $receiptNumber, string $color): int
+    {
+        $normalizedReceiptNumber = trim((string) $receiptNumber);
+        $normalizedColor = trim((string) $color);
+
+        if ($normalizedReceiptNumber === '' || $normalizedColor === '') {
+            return 0;
+        }
+
+        return DB::table('consecutivos_recibos_pedidos')
+            ->where('consecutivo_actual', $normalizedReceiptNumber)
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
+            ->update([
+                'color_costura' => $normalizedColor,
+                'updated_at' => now(),
+            ]);
+    }
+
     /**
      * @param array<string, mixed> $filters
      */

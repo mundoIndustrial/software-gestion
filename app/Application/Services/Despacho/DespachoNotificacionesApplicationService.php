@@ -47,6 +47,13 @@ class DespachoNotificacionesApplicationService
             ->limit(50)
             ->get();
 
+        \Log::info('[Despacho Notificaciones] Query novedades', [
+            'tipos' => $novedadesTipos,
+            'desde' => now()->subDays(7)->toDateTimeString(),
+            'total_encontradas' => $novedadesQuery->count(),
+            'total_news_table' => News::count(),
+        ]);
+
         $ordenesAnuladas = PedidoProduccion::where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)

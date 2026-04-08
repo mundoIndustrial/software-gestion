@@ -289,9 +289,18 @@ class ObtenerDetalleCompletoUseCase
                 // Cargar consecutivos/recibos
                 $prenda['recibos'] = $this->obtenerConsecutivosPrenda($pedido->id, $prendaId);
                 $prenda['consecutivos'] = $prenda['recibos'];
+
+                // Cargar estado de entrega para reflejar correctamente el boton Entregar/Deshacer.
+                $entrega = $this->readService->findPrendaEntrega((int) $prendaId);
+                $prenda['entrega'] = $entrega ? [
+                    'entregado' => (bool) $entrega->entregado,
+                    'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
+                    'usuario' => $entrega->usuario?->name,
+                ] : null;
             } else {
                 $prenda['ancho_metraje'] = null;
                 $prenda['recibos'] = null;
+                $prenda['entrega'] = null;
             }
         }
         unset($prenda);
@@ -366,6 +375,8 @@ class ObtenerDetalleCompletoUseCase
                         'tipo_recibo' => $c->tipo_recibo,
                         'consecutivo_actual' => $c->consecutivo_actual,
                         'activo' => $c->activo,
+                        'estado' => $c->estado,
+                        'area' => $c->area,
                     ];
                 }
             }

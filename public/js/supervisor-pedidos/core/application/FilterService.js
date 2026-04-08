@@ -108,6 +108,13 @@ class FilterService {
             container.style.opacity = '0.6';
             container.style.pointerEvents = 'none';
 
+            // Mostrar overlay de carga
+            const loadingOverlay = document.getElementById('sp-loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.style.opacity = '1';
+            }
+
             const data = await this.repository.fetchOrdersData(urlString);
 
             if (typeof window.renderSupervisorOrdersTable !== 'function') {
@@ -140,6 +147,13 @@ class FilterService {
         } finally {
             container.style.opacity = '';
             container.style.pointerEvents = '';
+
+            // Ocultar overlay de carga
+            const overlay = document.getElementById('sp-loading-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            }
         }
     }
 

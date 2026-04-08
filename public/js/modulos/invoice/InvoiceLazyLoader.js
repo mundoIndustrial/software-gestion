@@ -294,6 +294,11 @@ class InvoiceLazyLoader {
         }
         this.precargaInteligenteEjecutada = true;
 
+        if (window.__disableInvoicePreload === true) {
+            console.log('[InvoiceLazyLoader] Precarga deshabilitada por configuracion de pagina');
+            return;
+        }
+
         if (!this.necesitaFactura()) {
             return;
         }

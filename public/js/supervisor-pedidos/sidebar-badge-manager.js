@@ -89,11 +89,27 @@
     function setupRealtimeListeners() {
         // Esperar a que el sistema de WebSocket esté listo
         if (typeof window.waitForEcho === 'function') {
-            window.waitForEcho().then(() => {
-                setupWebSocketListeners();
-            }).catch(err => {
-                console.warn('[SidebarBadgeManager] WebSocket not available', err);
-            });
+            try {
+                const waitResult = window.waitForEcho();
+
+                if (waitResult && typeof waitResult.then === 'function') {
+                    waitResult
+                        .then(() => {
+                            setupWebSocketListeners();
+                        })
+                        .catch(err => {
+                            console.warn('[SidebarBadgeManager] WebSocket not available', err);
+                        });
+                    return;
+                }
+
+                // Fallback para implementaciones callback-only de waitForEcho
+                window.waitForEcho(() => {
+                    setupWebSocketListeners();
+                });
+            } catch (err) {
+                console.warn('[SidebarBadgeManager] waitForEcho falló, usando fallback', err);
+            }
         } else {
             // Fallback: verificar disponibilidad después de un tiempo
             setTimeout(() => {

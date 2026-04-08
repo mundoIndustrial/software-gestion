@@ -135,14 +135,14 @@
     }
 
     .btn-entregar-prenda.entregado {
-        background: #3b82f6;
-        cursor: default;
+        background: #f59e0b;
+        cursor: pointer;
     }
 
     .btn-entregar-prenda.entregado:hover {
-        background: #3b82f6;
-        transform: none;
-        box-shadow: none;
+        background: #d97706;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
     }
 
     .prenda-title {
@@ -713,12 +713,15 @@
             const indicadorBodega = prenda.de_bodega == 1 ? ' <span style="color: #ef4444; font-size: 12px; font-weight: 600; margin-left: 8px;">(SE SACA DE BODEGA)</span>' : '';
 
             // Verificar si la prenda está entregada
-            const estaEntregada = prenda.entrega?.entregado || false;
+            const todosRecibosEnDespacho = Array.isArray(recibos)
+                && recibos.length > 0
+                && recibos.every((recibo) => String(recibo?.area || '').trim().toUpperCase() === 'DESPACHO');
+            const estaEntregada = Boolean(prenda.entrega?.entregado || todosRecibosEnDespacho);
             const claseEntregada = estaEntregada ? 'entregada' : '';
             const claseBotonEntregado = estaEntregada ? 'entregado' : '';
-            const textoBoton = estaEntregada ? 'Entregado' : 'Entregar';
-            const colorBoton = estaEntregada ? '#3b82f6' : '#10b981';
-            const iconoBoton = estaEntregada ? 'fa-check-double' : 'fa-check-circle';
+            const textoBoton = estaEntregada ? 'Deshacer' : 'Entregar';
+            const colorBoton = estaEntregada ? '#f59e0b' : '#10b981';
+            const iconoBoton = estaEntregada ? 'fa-rotate-left' : 'fa-check-circle';
             const ocultarBotonEntregar = window.location.pathname.includes('/registros');
             
             // Depuración completa de datos de la prenda
@@ -1674,12 +1677,12 @@
             
             // Actualizar UI solo si la petición fue exitosa
             if (nuevoEstado) {
-                // Cambiar a entregada
+                // Cambiar a entregada (en UI dejamos opcion de deshacer)
                 header.classList.add('entregada');
                 button.classList.add('entregado');
-                buttonText.textContent = 'Entregado';
-                button.style.background = '#3b82f6';
-                icon.className = 'fas fa-check-double';
+                buttonText.textContent = 'Deshacer';
+                button.style.background = '#f59e0b';
+                icon.className = 'fas fa-rotate-left';
                 
                 console.log(`[Prenda ${prendaId}] Estado cambiado a: ENTREGADA`, result.data);
                 mostrarMensajeExito(result.message || 'Prenda marcada como entregada');
@@ -1693,6 +1696,11 @@
                 
                 console.log(`[Prenda ${prendaId}] Estado cambiado a: NO ENTREGADA`);
                 mostrarMensajeExito(result.message || 'Prenda marcada como no entregada');
+            }
+
+            // Re-sincronizar desde backend para asegurar estado real del boton/areas.
+            if (window.selectorRecibosState?.pedidoId) {
+                await cargarDatosRecibos(window.selectorRecibosState.pedidoId);
             }
             
         } catch (error) {

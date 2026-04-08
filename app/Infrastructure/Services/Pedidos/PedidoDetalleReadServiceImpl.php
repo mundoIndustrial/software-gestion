@@ -112,7 +112,16 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 $query->where('prenda_id', $prendaId)
                     ->orWhereNull('prenda_id');
             })
-            ->select(['id', 'tipo_recibo', 'consecutivo_actual', 'consecutivo_inicial', 'activo', 'created_at'])
+            ->select([
+                'id',
+                'tipo_recibo',
+                'consecutivo_actual',
+                'consecutivo_inicial',
+                'activo',
+                'estado',
+                'area',
+                'created_at',
+            ])
             ->get();
     }
 

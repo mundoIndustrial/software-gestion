@@ -33,11 +33,26 @@ window.EchoInstance = window.EchoInstance || null;
 window.Echo = window.Echo || null;
 
 window.waitForEcho = function (callback) {
-    if (window.echoReady && window.Echo) {
-        callback();
-    } else {
-        window.echoReadyCallbacks.push(callback);
+    const isReady = window.echoReady && window.Echo;
+
+    // Compatibilidad 1: callback
+    if (typeof callback === 'function') {
+        if (isReady) {
+            callback(window.Echo);
+        } else {
+            window.echoReadyCallbacks.push(callback);
+        }
+        return;
     }
+
+    // Compatibilidad 2: Promise
+    if (isReady) {
+        return Promise.resolve(window.Echo);
+    }
+
+    return new Promise((resolve) => {
+        window.echoReadyCallbacks.push(resolve);
+    });
 };
 
 window.notifyEchoReady = function () {
@@ -46,7 +61,9 @@ window.notifyEchoReady = function () {
     while (window.echoReadyCallbacks.length > 0) {
         const callback = window.echoReadyCallbacks.shift();
         try {
-            callback();
+            if (typeof callback === 'function') {
+                callback(window.Echo);
+            }
         } catch (error) {
             console.error('[Echo] Error ejecutando callback:', error);
         }

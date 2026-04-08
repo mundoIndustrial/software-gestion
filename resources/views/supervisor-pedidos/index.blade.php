@@ -70,7 +70,28 @@
 @endpush
 
 @section('content')
-<div class="supervisor-pedidos-container">
+<div class="supervisor-pedidos-container" style="position: relative;">
+
+    <!-- Overlay de carga -->
+    <div id="sp-loading-overlay" style="
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.75);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 120px;
+        border-radius: 8px;
+        transition: opacity 0.3s ease;
+    ">
+        <div style="text-align: center;">
+            <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                <span class="sr-only">Cargando...</span>
+            </div>
+            <p style="margin-top: 0.75rem; color: #555; font-size: 0.95rem; font-weight: 500;">Cargando pedidos...</p>
+        </div>
+    </div>
 
     <div id="supervisorPedidosIndexContent">
 
@@ -111,13 +132,8 @@
 
 @push('scripts')
     <script defer src="{{ asset('js/supervisor-pedidos/modales-acciones.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/modales-acciones.js')) }}"></script>
+    <script defer src="{{ asset('js/supervisor-pedidos/lazy-editor-loader.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/lazy-editor-loader.js')) }}"></script>
     <script defer src="{{ asset('js/supervisor-pedidos/index.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/index.js')) }}"></script>
-
-    <!--  SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
-    <script defer src="/js/utilidades/validation-service.js"></script>
-    <script defer src="/js/utilidades/ui-modal-service.js"></script>
-    <script defer src="/js/utilidades/deletion-service.js"></script>
-    <script defer src="/js/utilidades/galeria-service.js"></script>
 
     <!--  SERVICIO DE ALMACENAMIENTO DE IMÁGENES (Requerido para agregar/eliminar imágenes) -->
 
@@ -125,19 +141,6 @@
     <script defer src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
     <script defer src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
     <script defer src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/epp-agregar-pedido.js') }}"></script>
-
-    <!-- Scripts para edición de prendas desde lista de pedidos (requeridos por editarPrendaDePedido) -->
-    <script defer src="{{ asset('js/componentes/prenda-form-collector.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/swal-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-delete-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-save-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-edit-utils.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-adapter.js') }}"></script>
-    <script defer src="{{ asset('js/componentes/prenda-agregar-pedido.js') }}"></script>
 
     <!-- Inicializador de servicios de imágenes -->
 
@@ -153,6 +156,9 @@
     <script defer src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceExportService.js')) }}"></script>
     <script defer src="{{ asset('js/invoice-preview-live.js') }}"></script>
     <!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->
+    <script>
+        window.__disableInvoicePreload = true;
+    </script>
     <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceLazyLoader.js')) }}"></script>
 
     <!-- Scripts específicos de supervisor -->
@@ -162,7 +168,6 @@
 
     <!-- Scripts para Modal de Seguimiento de Pedidos -->
     <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}"></script>
-    <script defer type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
     <!-- Novedades, Galería y Toggle Factura -->
     <!-- Limpiar asignaciones y selección de pedidos -->

@@ -357,15 +357,10 @@ window.PrendaEditorPreloader = (function() {
 })();
 
 // ============================================================================
-// INICIALIZACIÓN AUTOMÁTICA
+// INICIALIZACIÓN BAJO DEMANDA
 // ============================================================================
 
-// Iniciar precarguía cuando la página esté lista
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.PrendaEditorPreloader.start();
-    });
-} else {
-    // Si el script se carga después de DOMContentLoaded
-    window.PrendaEditorPreloader.start();
-}
+// NO precargar automáticamente al cargar la página.
+// La precarga se inicia cuando el usuario interactúa con edición de prendas
+// (via PrendaEditorPreloader.start() o PrendaEditorPreloader.loadWithLoader()).
+// Esto evita descargar ~20 scripts y hacer llamadas API innecesarias en el init.

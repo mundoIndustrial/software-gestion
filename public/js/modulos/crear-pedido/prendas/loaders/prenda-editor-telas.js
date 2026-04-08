@@ -694,10 +694,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = PrendaEditorTelas;
 }
 
-//  DIAGNÓSTICO: Probar APIs al cargar el módulo
-console.log('[PrendaEditorTelas]  Módulo cargado, probando APIs...');
-setTimeout(() => {
-    if (typeof probarApisTelasColores === 'function') {
-        probarApisTelasColores();
-    }
-}, 1000);
+// Módulo PrendaEditorTelas cargado (APIs se prueban bajo demanda, no al inicio).

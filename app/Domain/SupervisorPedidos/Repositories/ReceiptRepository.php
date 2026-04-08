@@ -73,4 +73,6 @@ interface ReceiptRepository
     public function getQualityControlReceiptFilterOptions(string $field): array;
 
     public function generateNextConsecutiveForType(string $receiptType): string;
+
+    public function updateSewingReceiptColor(string $receiptNumber, string $color): int;
 }

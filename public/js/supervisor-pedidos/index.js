@@ -13,6 +13,15 @@ if (!window.supervisorPedidos?.isReady) {
 const _spFilter = window.supervisorPedidos.filterService;
 const _spNotify = window.shared.notify;
 
+// Ocultar overlay de carga inicial
+(function() {
+    const overlay = document.getElementById('sp-loading-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 300);
+    }
+})();
+
 // ===== VARIABLES GLOBALES =====
 let filtroActual = null;
 
@@ -27,6 +36,14 @@ function _spEscapeHtml(value) {
 
 function _spEscapeJsSingle(value) {
     return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+async function ensureEditorModulesReady() {
+    if (typeof window.ensureSupervisorEditorModulesLoaded !== 'function') {
+        return;
+    }
+
+    await window.ensureSupervisorEditorModulesLoaded();
 }
 
 function _spFormatDateTime(value) {
@@ -283,7 +300,12 @@ function resolveFilterColumn(btn) {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarIndicadoresFiltros();
-    navegarSupervisorPedidos(window.location.href, { pushState: false });
+
+    // La tabla ya llega renderizada por Blade en la carga inicial.
+    // Evitamos un segundo fetch AJAX inmediato que duplicaba trabajo y retrasaba la vista.
+    if (!document.querySelector('#supervisorPedidosIndexContent [data-pedido-row="true"]')) {
+        navegarSupervisorPedidos(window.location.href, { pushState: false });
+    }
 });
 
 // ===== MENU VER ORDEN =====
@@ -790,7 +812,7 @@ async function aprobarOrden(ordenId, numeroOrden) {
     }
 }
 
-function verOrdenDetalles(ordenId, numeroPedido = null) {
+async function verOrdenDetalles(ordenId, numeroPedido = null) {
     const menu = document.getElementById(`ver-menu-${ordenId}`);
     if (menu) menu.style.display = 'none';
 
@@ -801,6 +823,7 @@ function verOrdenDetalles(ordenId, numeroPedido = null) {
     }
 
     try {
+        await ensureEditorModulesReady();
         const numero = String(numeroPedido || ordenId || '');
         window.verFacturaDelPedido(numero, Number(ordenId));
     } catch (error) {
@@ -831,6 +854,7 @@ async function editarPedido(pedidoId) {
     window.edicionEnProgreso = true;
 
     try {
+        await ensureEditorModulesReady();
         await _ensureSwal();
 
         Swal.fire({
@@ -882,6 +906,4 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
-
-
 
