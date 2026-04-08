@@ -30,9 +30,8 @@ class DespachoControlApplicationService
             ->whereIn('estado', ['Pendiente', 'En Ejecucion', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
-            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC')
-            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC')
-            ->orderByDesc('created_at');
+            ->orderByRaw('COALESCE((SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id), pedidos_produccion.created_at) DESC')
+            ->orderByDesc('pedidos_produccion.created_at');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
