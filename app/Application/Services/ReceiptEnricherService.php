@@ -27,27 +27,38 @@ class ReceiptEnricherService
     public function enriquecer(array $recibos): array
     {
         $parcialesPorRecibo = $this->obtenerMapaParcialesPorRecibo($recibos);
+        
+        // OPTIMIZACIÓN: Cachear cálculos de días para evitar recálculos innecesarios
+        // cuando hay múltiples recibos del mismo pedido
+        $diasPorPedido = [];
 
-        return array_map(function($recibo) use ($parcialesPorRecibo) {
+        return array_map(function($recibo) use ($parcialesPorRecibo, &$diasPorPedido) {
+            $pedidoId = (int) ($recibo['pedido_produccion_id'] ?? 0);
+            
             $pedido = PedidoProduccion::with([
                 'prendas.coloresTelas.tela',
                 'prendas.coloresTelas.color',
                 'prendas.tallas'
-            ])->find($recibo['pedido_produccion_id']);
+            ])->find($pedidoId);
 
             $reciboKey = $this->buildReciboKey(
-                (int) ($recibo['pedido_produccion_id'] ?? 0),
+                $pedidoId,
                 (int) ($recibo['prenda_id'] ?? 0),
                 (string) ($recibo['tipo_recibo'] ?? ''),
                 $this->normalizeConsecutivo($recibo['consecutivo_actual'] ?? '')
             );
 
             $totalParciales = (int) ($parcialesPorRecibo[$reciboKey] ?? 0);
+            
+            // OPTIMIZACIÓN: Usar caché de días por pedido
+            if ($pedido && !isset($diasPorPedido[$pedidoId])) {
+                $diasPorPedido[$pedidoId] = $this->diaLaboralCalculator->calcular($pedido->created_at);
+            }
 
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
-                'dias_calculados' => $pedido ? $this->diaLaboralCalculator->calcular($pedido->created_at) : 0,
+                'dias_calculados' => $diasPorPedido[$pedidoId] ?? 0,
                 'cantidad_total' => $this->cantidadCalculator->calcular($recibo),
                 'tiene_parciales' => $totalParciales > 0,
                 'total_parciales' => $totalParciales,

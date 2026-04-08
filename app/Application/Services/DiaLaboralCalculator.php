@@ -7,13 +7,36 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * DiaLaboralCalculator
+ * DiaLaboralCalculator - Optimizado con memoización
  * 
  * Responsabilidad: Calcular días laborales (excluyendo fines de semana y festivos)
  * Obtiene festivos dinámicamente desde la API de Nager.Date
+ * 
+ * OPTIMIZACIONES:
+ * - Caché interno de cálculos por fecha de inicio
+ * - Caché de festivos por año para evitar APIs repetidas
+ * - Memoización de Pascua por año
  */
 class DiaLaboralCalculator
 {
+    /**
+     * Caché interno de cálculos: fecha_inicio => dias_laborales
+     * @var array
+     */
+    private array $calculoCache = [];
+    
+    /**
+     * Caché interno de festivos por año: year => [fecha => true, ...]
+     * @var array
+     */
+    private array $festivosCache = [];
+    
+    /**
+     * Caché de Pascua por año
+     * @var array
+     */
+    private array $pascuaCache = [];
+
     /**
      * Calcular días laborales desde la creación de la orden hasta ahora
      * Excluye: sábados, domingos y días festivos
@@ -29,6 +52,18 @@ class DiaLaboralCalculator
         try {
             if (!$fechaInicio) {
                 return 0;
+            }
+
+            // OPTIMIZACIÓN: Normalizar la fecha a fecha sin hora para usar como clave de caché
+            $fechaNormalizadaStr = $fechaInicio->copy()->startOfDay()->format('Y-m-d');
+            
+            // OPTIMIZACIÓN: Verificar si ya está en caché
+            if (isset($this->calculoCache[$fechaNormalizadaStr])) {
+                Log::debug("[DiaLaboralCalculator] ✓ CACHÉ HIT - Usando cálculo en memoria para {fecha}", [
+                    'fecha' => $fechaNormalizadaStr,
+                    'dias' => $this->calculoCache[$fechaNormalizadaStr]
+                ]);
+                return $this->calculoCache[$fechaNormalizadaStr];
             }
 
             $fechaInicio = $fechaInicio->copy();
@@ -64,11 +99,15 @@ class DiaLaboralCalculator
                 $current->addDay();
             }
 
+            // OPTIMIZACIÓN: Guardar en caché
+            $this->calculoCache[$fechaNormalizadaStr] = max(0, $totalDays);
+
             Log::info("[DiaLaboralCalculator] Cálculo final: {dias} días laborales desde {inicio}", [
                 'dias' => $totalDays,
                 'inicio' => $fechaInicio->format('Y-m-d'),
                 'fin' => $fechaFin->format('Y-m-d'),
-                'festivos_encontrados' => count($festivosSet)
+                'festivos_encontrados' => count($festivosSet),
+                'cache_size' => count($this->calculoCache)
             ]);
 
             return max(0, $totalDays);
@@ -113,21 +152,33 @@ class DiaLaboralCalculator
     /**
      * Obtener festivos de un año específico desde la API de Nager.Date
      * Intenta múltiples endpoints hasta obtener éxito
+     * OPTIMIZACIÓN: Usa caché de festivos por año
      * 
      * @param int $year Año a consultar
      * @return array Mapa de festivos (fecha => true)
      */
     private function obtenerFestivosDelAnio(int $year): array
     {
+        // OPTIMIZACIÓN: Verificar caché de festivos
+        if (isset($this->festivosCache[$year])) {
+            Log::debug("[DiaLaboralCalculator] ✓ CACHÉ FESTIVOS HIT para año {year}", [
+                'year' => $year,
+                'count' => count($this->festivosCache[$year])
+            ]);
+            return $this->festivosCache[$year];
+        }
+
         // Intento 1: api.nager.date (original)
         $festivos = $this->intentarNagerDateAPI("https://api.nager.date/v3/PublicHolidays/{$year}/CO", "api.nager.date", $year);
         if (!empty($festivos)) {
+            $this->festivosCache[$year] = $festivos;
             return $festivos;
         }
 
         // Intento 2: date.nager.at (dominio alternativo - FUNCIONA SIEMPRE)
         $festivos = $this->intentarNagerDateAPI("https://date.nager.at/api/v3/PublicHolidays/{$year}/CO", "date.nager.at", $year);
         if (!empty($festivos)) {
+            $this->festivosCache[$year] = $festivos;
             return $festivos;
         }
 
@@ -136,7 +187,9 @@ class DiaLaboralCalculator
             'year' => $year,
             'source' => 'LOCAL_FALLBACK'
         ]);
-        return $this->obtenerFestivosLocales($year);
+        $festivos = $this->obtenerFestivosLocales($year);
+        $this->festivosCache[$year] = $festivos;
+        return $festivos;
     }
 
     /**
@@ -280,12 +333,18 @@ class DiaLaboralCalculator
     /**
      * Algoritmo de Computus para calcular la fecha de Pascua
      * Devuelve el Domingo de Pascua
+     * OPTIMIZACIÓN: Cachea resultado por año
      * 
      * @param int $year Año
      * @return Carbon fecha del Domingo de Pascua
      */
     private function calcularPascua(int $year): ?Carbon
     {
+        // OPTIMIZACIÓN: Verificar caché de Pascua
+        if (isset($this->pascuaCache[$year])) {
+            return $this->pascuaCache[$year];
+        }
+
         try {
             $a = $year % 19;
             $b = (int)($year / 100);
@@ -301,7 +360,12 @@ class DiaLaboralCalculator
             $m = (int)(($h + $l - 7 * (int)(($h + $l) / 11) + 114) / 31);
             $p = ($h + $l - 7 * (int)(($h + $l) / 11) + 114) % 31 + 1;
 
-            return Carbon::createFromDate($year, $m, $p);
+            $result = Carbon::createFromDate($year, $m, $p);
+            
+            // OPTIMIZACIÓN: Guardar en caché
+            $this->pascuaCache[$year] = $result;
+            
+            return $result;
         } catch (\Exception $e) {
             Log::error("[DiaLaboralCalculator] Error calculando Pascua para año {$year}", [
                 'error' => $e->getMessage()
@@ -310,3 +374,4 @@ class DiaLaboralCalculator
         }
     }
 }
+

@@ -43,6 +43,7 @@
            aria-label="Pendientes Unificados">
           <span class="material-symbols-rounded" aria-hidden="true">pending_actions</span>
           <span class="menu-label">Pendientes</span>
+          <span class="badge badge-pending" id="pendientes-badge" style="display: none; margin-left: 8px; background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 12px; font-weight: bold; min-width: 20px; text-align: center;">0</span>
         </a>
       </li>
       <li class="menu-item">
@@ -756,3 +757,28 @@
   <div class="sidebar-footer">
   </div>
 </aside>
+
+<script>
+  // Cargar contador de pendientes
+  function actualizarContadorPendientes() {
+    fetch('/despacho/api/pendientes-todos?per_page=1')
+      .then(response => response.json())
+      .then(data => {
+        const badge = document.getElementById('pendientes-badge');
+        const total = data.pagination?.total || 0;
+        if (badge && total > 0) {
+          badge.textContent = total;
+          badge.style.display = 'inline-block';
+        } else if (badge) {
+          badge.style.display = 'none';
+        }
+      })
+      .catch(error => console.error('Error al obtener pendientes:', error));
+  }
+
+  // Actualizar al cargar la página
+  document.addEventListener('DOMContentLoaded', actualizarContadorPendientes);
+  
+  // Actualizar cada 30 segundos
+  setInterval(actualizarContadorPendientes, 30000);
+</script>
