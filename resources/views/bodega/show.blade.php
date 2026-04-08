@@ -260,6 +260,21 @@
                                                                 @endif
                                                             </div>
                                                             @if(($baseItem['tipo'] ?? null) === 'EPP' || ($baseItem['area'] ?? null) === 'EPP')
+                                                                @php
+                                                                    $hayEppEliminado = false;
+                                                                    if($baseItem['tiene_historial'] ?? false) {
+                                                                        $historial = $baseItem['historial_homologaciones'] ?? [];
+                                                                        foreach($historial as $h) {
+                                                                            if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
+                                                                                $hayEppEliminado = true;
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                @if($hayEppEliminado)
+                                                                    <div class="text-blue-600 font-semibold text-xs mb-2">(homologado)</div>
+                                                                @endif
                                                                 @if($baseItem['tiene_historial'] ?? false)
                                                                 <button type="button" 
                                                                         onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
@@ -608,6 +623,21 @@
                                                     <div class="font-bold text-black mb-1 flex items-center gap-2">
                                                         {{ $nombre }}
                                                         @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
+                                                            @php
+                                                                $hayEppEliminado = false;
+                                                                if($item['tiene_historial'] ?? false) {
+                                                                    $historial = $item['historial_homologaciones'] ?? [];
+                                                                    foreach($historial as $h) {
+                                                                        if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
+                                                                            $hayEppEliminado = true;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            @if($hayEppEliminado)
+                                                                <span class="text-blue-600 font-semibold text-xs">(homologado)</span>
+                                                            @endif
                                                             @if($item['tiene_historial'] ?? false)
                                                                 <button type="button" 
                                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"

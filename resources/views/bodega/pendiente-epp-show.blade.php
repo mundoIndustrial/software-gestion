@@ -83,6 +83,21 @@
                                     <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
                                         <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
                                             {{ $nombre }}
+                                            @php
+                                                $hayEppEliminado = false;
+                                                if($item['tiene_historial'] ?? false) {
+                                                    $historial = $item['historial_homologaciones'] ?? [];
+                                                    foreach($historial as $h) {
+                                                        if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
+                                                            $hayEppEliminado = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            @endphp
+                                            @if($hayEppEliminado)
+                                                <span class="text-blue-600 font-semibold text-xs">(homologado)</span>
+                                            @endif
                                             @if($item['tiene_historial'] ?? false)
                                                 <button type="button"
                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
