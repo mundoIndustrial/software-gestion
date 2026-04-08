@@ -27,6 +27,8 @@ interface PedidoDetalleReadService
 
     public function findReciboCosturaByPedidoId(int $pedidoId): ?object;
 
+    public function getFechaEstimadaMasLejanaByPedidoId(int $pedidoId): ?string;
+
     public function getTallasProceso(int $procesoDetalleId): Collection;
 
     public function getColoresByProcesoTalla(int $procesoTallaId): Collection;

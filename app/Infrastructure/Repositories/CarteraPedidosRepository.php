@@ -26,6 +26,8 @@ class CarteraPedidosRepository
 
         $query = PedidoProduccion::whereIn('estado', $estadosPendientes)
             ->whereNotIn('estado', $estadosExcluidos)
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->whereHas('prendas');
 
         if (!empty($search)) {
@@ -85,6 +87,8 @@ class CarteraPedidosRepository
 
         $query = PedidoProduccion::whereNotNull('aprobado_por_cartera_en')
             ->whereIn('estado', $estadosPermitidos)
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->whereHas('prendas');
 
         if (!empty($search)) {
@@ -141,6 +145,8 @@ class CarteraPedidosRepository
         string $sortOrder = 'desc'
     ): array {
         $query = PedidoProduccion::whereIn('estado', ['RECHAZADO_CARTERA'])
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->whereHas('prendas');
 
         if (!empty($search)) {
@@ -197,6 +203,8 @@ class CarteraPedidosRepository
         string $sortOrder = 'desc'
     ): array {
         $query = PedidoProduccion::whereIn('estado', ['Anulada'])
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->whereHas('prendas');
 
         if (!empty($search)) {
@@ -249,6 +257,8 @@ class CarteraPedidosRepository
 
         $clientes = PedidoProduccion::whereIn('estado', $estadosPendientes)
             ->whereNotIn('estado', $estadosExcluidos)
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->select('cliente')
             ->distinct()
             ->orderBy('cliente')
@@ -259,6 +269,8 @@ class CarteraPedidosRepository
 
         $fechas = PedidoProduccion::whereIn('estado', $estadosPendientes)
             ->whereNotIn('estado', $estadosExcluidos)
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->selectRaw('DATE(created_at) as fecha')
             ->distinct()
             ->orderBy('fecha', 'desc')

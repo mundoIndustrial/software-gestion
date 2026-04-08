@@ -32,12 +32,12 @@ class OrderLoaderService {
   async loadCompleteOrder(orderId) {
     try {
       console.log('[OrderLoaderService] Iniciando carga de orden:', orderId);
-
-      // Phase 1: Load basic order data
-      const orderData = await this.loadOrderBasicData(orderId);
       
-      // Phase 2: Load prendas and areas config
-      const prendasData = await this.loadPrendasWithTracking(orderId);
+      // Ejecutar ambas consultas en paralelo para reducir latencia total.
+      const [orderData, prendasData] = await Promise.all([
+        this.loadOrderBasicData(orderId),
+        this.loadPrendasWithTracking(orderId)
+      ]);
 
       return {
         success: true,
@@ -102,6 +102,8 @@ class OrderLoaderService {
       const order = this.orderState.getOrder();
       if (order && pedido?.recibo_principal) {
         order.recibo_principal = pedido.recibo_principal;
+        // Refrescar cabecera cuando ya conocemos el recibo principal
+        this.onOrderLoaded(order);
       }
 
       // Trigger callback for UI update (rendering)

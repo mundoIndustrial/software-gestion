@@ -5,13 +5,13 @@
  * 
  * Architecture: Domain-Driven Design (DDD)
  * 
- * Responsabilidad: Coordinación de eventos y flujo de datos
+ * Responsabilidad: Coordinacion de eventos y flujo de datos
  * 
  * Capas utilizadas:
  * - Domain: OrderState, DateFormatter
  * - Infrastructure: QueryUtils
- * - Application: OrderApiService (próxima fase)
- * - Interface: DOMRenderer (próxima fase)
+ * - Application: OrderApiService (proxima fase)
+ * - Interface: DOMRenderer (proxima fase)
  */
 
 // ============================================================
@@ -136,8 +136,8 @@ const trackingTimelineController = new TrackingTimelineController({
 // Instancia del renderer de recibos especiales
 const specialReceiptsRenderer = new SpecialReceiptsRenderer();
 
-// Instancia del selector de días (será inicializada en setupDaysSelector)
-// Se expone globalmente para que otros módulos puedan acceder
+// Instancia del selector de dias (sera inicializada en setupDaysSelector)
+// Se expone globalmente para que otros modulos puedan acceder
 let daysSelector = null;
 globalThis.trackingDaysSelector = null;
 let trackingModalListenersInitialized = false;
@@ -171,11 +171,11 @@ function ensureDaysSelectorInitialized() {
 }
 
 /**
- * Actualizar selector de días con reintentos
- * Espera a que el selector esté disponible antes de actualizar
+ * Actualizar selector de dias con reintentos
+ * Espera a que el selector este disponible antes de actualizar
  * 
- * @param {number} dias - Número de días a establecer (1-35)
- * @param {number} intento - Intento actual (máx 5)
+ * @param {number} dias - Numero de dias a establecer (1-35)
+ * @param {number} intento - Intento actual (max 5)
  */
 function updateDaysSelectorWithRetry(dias, intento = 0) {
   if (!dias) {
@@ -201,7 +201,7 @@ function updateDaysSelectorWithRetry(dias, intento = 0) {
     console.log(`[updateDaysSelectorWithRetry] Selector no disponible, reintentando (${intento + 1}/10)...`);
     setTimeout(() => updateDaysSelectorWithRetry(dias, intento + 1), 100);
   } else {
-    console.warn('[updateDaysSelectorWithRetry] Selector no disponible después de 10 intentos');
+    console.warn('[updateDaysSelectorWithRetry] Selector no disponible despues de 10 intentos');
   }
 }
 
@@ -250,12 +250,14 @@ function initTrackingModalListeners() {
   }
 
   /**
-   * Guardar selección de día de entrega desde el modal de seguimiento
+   * Guardar seleccion de dia de entrega desde el modal de seguimiento
    */
   async function saveDiaEntregaSelection() {
     try {
       const diasSeleccionados = orderState.getSelectedDays();
       const order = orderState.getOrder();
+      const currentPrenda = orderState.getCurrentPrenda();
+      const prendaId = currentPrenda?.id || currentPrenda?.prenda_pedido_id || null;
 
       if (!order) {
         console.warn('[saveDiaEntregaSelection] No hay orden cargada');
@@ -267,22 +269,32 @@ function initTrackingModalListeners() {
         return;
       }
 
-      console.log('[saveDiaEntregaSelection] Calculando fecha de entrega:', {
+      if (!prendaId) {
+        console.warn('[saveDiaEntregaSelection] No hay prenda seleccionada. Se cancela para evitar actualizar todos los recibos.');
+        if (typeof showError === 'function') {
+          showError('Selecciona una prenda antes de editar los días de entrega');
+        }
+        return;
+      }
+
+      console.log('[saveDiaEntregaSelection] Guardando día de entrega por prenda:', {
         pedido_id: order.id,
+        prenda_id: prendaId,
         dias_estimados: diasSeleccionados
       });
 
-      const result = await OrderApiService.calculateDeliveryDate(order.id, diasSeleccionados);
+      const result = await OrderApiService.calculateDeliveryDate(order.id, diasSeleccionados, prendaId);
 
-      if (result.fecha_estimada) {
-        const fechaFormateada = DateFormatter.format(result.fecha_estimada);
+      const fechaReciboActualizada = result?.fecha_estimada_recibo_actualizado || result?.fecha_estimada_de_entrega || null;
+      if (fechaReciboActualizada) {
+        const fechaFormateada = DateFormatter.format(fechaReciboActualizada);
         QueryUtils.setText('trackingEstimatedDate', fechaFormateada);
         QueryUtils.setText('selectorOrderEstimatedDate', fechaFormateada);
       }
 
       if (typeof showSuccess === 'function') {
         const diasText = `${diasSeleccionados} día${diasSeleccionados !== 1 ? 's' : ''}`;
-        showSuccess(`Fecha de entrega calculada: ${diasText}`);
+        showSuccess(`Fecha de entrega actualizada para el recibo de la prenda: ${diasText}`);
       }
 
     } catch (error) {
@@ -324,7 +336,7 @@ function initTrackingModalListeners() {
 
   // Configurar listeners del modal agregar proceso
   function setupAddProcesoModalListeners() {
-    // Phase 12: Usar ModalEventBinder para patrón reutilizable
+    // Phase 12: Usar ModalEventBinder para patron reutilizable
     const binder = new ModalEventBinder('addProcesoModal', { logger: console });
     
     binder
@@ -342,11 +354,11 @@ function initTrackingModalListeners() {
         callback: closeAddProcesoModal
       });
 
-    // Configurar selector dinámico para encargado
+    // Configurar selector dinamico para encargado
     setupEncargadoDynamicSelector();
   }
 
-  // Función para configurar el selector dinámico de encargado
+  // Funcion para configurar el selector dinamico de encargado
   // Phase 12: Refactorizado para usar AreasConfigService + ProcessFormManager
   function setupEncargadoDynamicSelector() {
     const procesoArea = document.getElementById('procesoArea');
@@ -398,7 +410,7 @@ function initTrackingModalListeners() {
       
       formManager.createEncargadoField(container, 'select', 'procesoEncargado', encargados);
       
-      console.log('[createEncargadoSelect] ✓ Encargados cargados:', encargados.length);
+      console.log('[createEncargadoSelect] âœ“ Encargados cargados:', encargados.length);
     } catch (error) {
       console.error('[createEncargadoSelect] Error:', error);
       createEncargadoInput(container);
@@ -411,21 +423,21 @@ function initTrackingModalListeners() {
     console.log('[createEncargadoInput] Input de texto creado');
   }
 
-  // Función para cerrar el modal de agregar proceso
+  // Funcion para cerrar el modal de agregar proceso
   function closeAddProcesoModal() {
     ModalUtils.close('addProcesoModal');
   }
 
-  // Configurar botón volver
+  // Configurar boton volver
   function setupBackButton() {
     const backBtn = document.getElementById('backToPrendasBtn');
     if (backBtn) {
       backBtn.onclick = showPrendasView;
-      console.log('[setupBackButton] Botón volver configurado');
+      console.log('[setupBackButton] Boton volver configurado');
     }
   }
 
-  // Exponer función de reintentos del selector de días para que otros módulos puedan usarla
+  // Exponer funcion de reintentos del selector de dias para que otros modulos puedan usarla
   globalThis.updateDaysSelectorWithRetry = updateDaysSelectorWithRetry;
   globalThis.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
 
@@ -459,7 +471,7 @@ function initTrackingModalListeners() {
 
     container.innerHTML = `
       <div class="tracking-prendas-loading-state tracking-prendas-loading-state-error" role="alert">
-        <p class="tracking-prendas-loading-text">No se pudo cargar la información del pedido.</p>
+        <p class="tracking-prendas-loading-text">No se pudo cargar la informacion del pedido.</p>
       </div>
     `;
   }
@@ -478,13 +490,14 @@ function initTrackingModalListeners() {
       
       // Poblar globalThis.currentOrderData con los datos cargados en orderState
       const snapshot = orderState.getSnapshot();
-      const prendas = orderState.getPrendas(); // ← Obtener prendas directamente, no desde snapshot
+      const prendas = orderState.getPrendas(); // â† Obtener prendas directamente, no desde snapshot
       
       globalThis.currentOrderData = {
         id: snapshot.order?.id,
         numero_pedido: snapshot.order?.numero_pedido,
         cliente: snapshot.order?.cliente,
         estado: snapshot.order?.estado,
+        recibo_principal: snapshot.order?.recibo_principal,
         prendas: prendas || []
       };
       
@@ -502,12 +515,12 @@ function initTrackingModalListeners() {
     }
   };
 
-  // Compatibilidad con implementación vieja (tracking-modal-script.blade.php)
+  // Compatibilidad con implementacion vieja (tracking-modal-script.blade.php)
   globalThis.mostrarTrackingModal = function(pedidoData) {
     try {
       const orderId = pedidoData?.id || pedidoData?.pedido_id || pedidoData?.pedido?.id || null;
       if (!orderId) {
-        console.error('[mostrarTrackingModal] No se encontró orderId en pedidoData:', pedidoData);
+        console.error('[mostrarTrackingModal] No se encontro orderId en pedidoData:', pedidoData);
         return;
       }
 
@@ -520,19 +533,19 @@ function initTrackingModalListeners() {
 
 
 
-  // Actualizar información del pedido en el modal y selector
+  // Actualizar informacion del pedido en el modal y selector
   function updateOrderInfo(orderData) {
     updateRenderer.updateOrderInfo(orderData, orderState, DateFormatter, daysSelector);
   }
 
 
 
-  // Renderizar tabla única de prendas en el overlay
+  // Renderizar tabla unica de prendas en el overlay
   function renderPrendas(prendas) {
     const container = document.getElementById('trackingPrendasSelectorContainer');
     if (!container) return;
     
-    // Phase 10: Usar PrendaTrackingRenderer para separar lógica de presentación
+    // Phase 10: Usar PrendaTrackingRenderer para separar logica de presentacion
     prendaTrackingRenderer.renderPrendasTable(container, prendas, SvgIcons, orderState);
     
     // Actualizar fecha estimada de entrega del pedido
@@ -551,7 +564,7 @@ function initTrackingModalListeners() {
 
 
 
-  // Permite editar el área actual incluso si no existe proceso (creación rápida con prefill)
+  // Permite editar el area actual incluso si no existe proceso (creacion rapida con prefill)
   globalThis.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
     try {
       stopEventPropagation(event, true);
@@ -575,13 +588,65 @@ function initTrackingModalListeners() {
 
 
 
-  globalThis.showPrendaTrackingFromTable = async function(index) {
+  function resolvePrendaFromClickContext(prendas, prendaId, index) {
+    let resolvedPrendaId = prendaId;
+    let resolvedConsecutivo = null;
+
     try {
-      console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
-      
-      const prenda = orderState.getPrendas()[index];
+      const evt = globalThis.event;
+      const target = evt?.target || null;
+      const row = target?.closest ? target.closest('.prendas-table-row') : null;
+
+      if (row) {
+        if (!resolvedPrendaId) {
+          const rowPrendaId = row.getAttribute('data-prenda-id');
+          if (rowPrendaId && String(rowPrendaId).trim() !== '') {
+            resolvedPrendaId = rowPrendaId;
+          }
+        }
+
+        const consecutivoText = row.querySelector('.prendas-consecutivo-cell')?.textContent?.trim() || '';
+        if (/^\d+$/.test(consecutivoText)) {
+          resolvedConsecutivo = String(parseInt(consecutivoText, 10));
+        }
+      }
+    } catch (e) {
+      console.warn('[resolvePrendaFromClickContext] No se pudo leer contexto del click:', e);
+    }
+
+    let prenda = null;
+
+    if (resolvedPrendaId !== null && resolvedPrendaId !== undefined && String(resolvedPrendaId).trim() !== '') {
+      prenda = prendas.find((p) =>
+        String(p?.id) === String(resolvedPrendaId) ||
+        String(p?.prenda_pedido_id) === String(resolvedPrendaId)
+      ) || null;
+    }
+
+    if (!prenda && resolvedConsecutivo) {
+      prenda = prendas.find((p) => {
+        const consecutivos = Array.isArray(p?.consecutivos) ? p.consecutivos : [];
+        const costura = consecutivos.find((c) => String(c?.tipo_recibo || '').toUpperCase() === 'COSTURA');
+        return costura && String(costura?.consecutivo_actual) === resolvedConsecutivo;
+      }) || null;
+    }
+
+    if (!prenda) {
+      prenda = prendas[index];
+    }
+
+    return prenda;
+  }
+
+  globalThis.showPrendaTrackingFromTable = async function(index, prendaId = null) {
+    try {
+      console.log('[showPrendaTrackingFromTable] INICIO - Indice:', index, 'prendaId:', prendaId);
+
+      const prendas = orderState.getPrendas();
+      const prenda = resolvePrendaFromClickContext(prendas, prendaId, index);
+
       if (!prenda) {
-        console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
+        console.error('[showPrendaTrackingFromTable] Prenda no encontrada para indice/id:', { index, prendaId });
         return;
       }
       
@@ -636,8 +701,15 @@ function initTrackingModalListeners() {
             console.log('[enrichPrendaForTracking] DOM trackingOrderRecibo actualizado con consecutivo:', consecutivoData.consecutivo);
           }
         }
+
+        if (Object.prototype.hasOwnProperty.call(consecutivoData, 'dia_de_entrega')) {
+          enrichedPrenda.dia_de_entrega = consecutivoData.dia_de_entrega;
+        }
+        if (Object.prototype.hasOwnProperty.call(consecutivoData, 'fecha_estimada_de_entrega')) {
+          enrichedPrenda.fecha_estimada_de_entrega = consecutivoData.fecha_estimada_de_entrega;
+        }
       } else {
-        console.warn('[enrichPrendaForTracking] Consecutivo sin success=true o vacío');
+        console.warn('[enrichPrendaForTracking] Consecutivo sin success=true o vacio');
       }
     } catch (error) {
       console.warn('[enrichPrendaForTracking] No se pudo cargar consecutivo-costura:', error);
@@ -687,13 +759,15 @@ function initTrackingModalListeners() {
     await trackingTimelineController.showPrendaTracking(prendaEnriquecida);
   };
 
-  globalThis.handleVerProcesos = async function(index) {
+  globalThis.handleVerProcesos = async function(index, prendaId = null) {
     try {
-      console.log('[handleVerProcesos] Mostrando recibos especiales para prenda en índice:', index);
-      
-      const prenda = orderState.getPrendas()[index];
+      console.log('[handleVerProcesos] Mostrando recibos especiales para prenda en indice/id:', { index, prendaId });
+
+      const prendas = orderState.getPrendas();
+      const prenda = resolvePrendaFromClickContext(prendas, prendaId, index);
+
       if (!prenda) {
-        console.error('[handleVerProcesos] Prenda no encontrada en índice:', index);
+        console.error('[handleVerProcesos] Prenda no encontrada para indice/id:', { index, prendaId });
         return;
       }
       
@@ -712,7 +786,7 @@ function initTrackingModalListeners() {
       // Mostrar modal de recibos especiales
       specialReceiptsRenderer.showReceipts(prenda);
       
-      // Inicializar event listeners si no están inicializados
+      // Inicializar event listeners si no estan inicializados
       specialReceiptsRenderer.initializeEventListeners();
       
     } catch (error) {
@@ -772,7 +846,7 @@ function initTrackingModalListeners() {
     });
   }
 
-  // Ejecutar la eliminación del proceso
+  // Ejecutar la eliminacion del proceso
   async function executeDeleteProcess() {
     if (!orderState.getProcessToDelete()) return;
     
@@ -798,15 +872,15 @@ function initTrackingModalListeners() {
 
         orderState.clearProcessToDelete();
         
-        // Re-renderizar el timeline después de eliminar exitosamente
-        // Obtener la prenda actualizada (la eliminación ya actualizó los datos en orderState)
+        // Re-renderizar el timeline despues de eliminar exitosamente
+        // Obtener la prenda actualizada (la eliminacion ya actualizo los datos en orderState)
         const updatedPrenda = orderState.getCurrentPrenda();
         if (updatedPrenda) {
-          console.log('[executeDeleteProcess] Re-renderizando timeline después de eliminación');
+          console.log('[executeDeleteProcess] Re-renderizando timeline despues de eliminacion');
           renderPrendaTrackingTimeline(updatedPrenda);
         }
         
-        // Actualizar la tabla de recibos-costura con el nuevo área
+        // Actualizar la tabla de recibos-costura con el nuevo area
         console.log('[executeDeleteProcess] Actualizando tabla de recibos');
         await actualizarAreaEnTablaRecibos();
       });
@@ -819,13 +893,13 @@ function initTrackingModalListeners() {
       console.log('[actualizarAreaEnTablaRecibos] Verificando si estamos en recibos-costura');
       
       if (!globalThis.location.pathname.includes('/recibos-costura')) {
-        console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualización');
+        console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualizacion');
         return;
       }
 
       const pedidoId = orderState.getOrderId();
       const prendaId = orderState.getCurrentPrenda()?.id || null;
-      // Intentar obtener numeroRecibo desde múltiples fuentes
+      // Intentar obtener numeroRecibo desde multiples fuentes
       const numeroRecibo = orderState.getConsecutivoCosturaData()?.consecutivo 
                           || orderState.getCurrentPrenda()?.numero_recibo_costura
                           || globalThis.currentOrderData?.prendas?.find(p => p.id === prendaId)?.numero_recibo_costura
@@ -842,7 +916,7 @@ function initTrackingModalListeners() {
 
       const row = findReciboCosturaRow(pedidoId, prendaId, numeroRecibo);
       if (!row) {
-        console.warn('[actualizarAreaEnTablaRecibos] No se encontró fila a actualizar', {
+        console.warn('[actualizarAreaEnTablaRecibos] No se encontro fila a actualizar', {
           pedidoId,
           prendaId,
           numeroRecibo
@@ -891,7 +965,7 @@ function initTrackingModalListeners() {
     return null;
   }
 
-  // Manejar edición de proceso
+  // Manejar edicion de proceso
   globalThis.handleEditarProceso = async function(procesoId, areaName, processData, event) {
     stopEventPropagation(event);
     
@@ -910,7 +984,7 @@ function initTrackingModalListeners() {
       
     } catch (error) {
       console.error('[handleEditarProceso] Error:', error);
-      showError('Error al preparar edición: ' + error.message);
+      showError('Error al preparar edicion: ' + error.message);
     }
   };
 
@@ -935,7 +1009,7 @@ function initTrackingModalListeners() {
           area: processData.area
         });
 
-        // Llamar a API de actualización
+        // Llamar a API de actualizacion
         const result = await OrderApiService.updateProceso(procesoId, processData);
 
         await processWorkflowService.reloadDataAfterSave(result);
@@ -1012,7 +1086,7 @@ function initTrackingModalListeners() {
       await buttonMgr.executeAsync(async () => {
         const result = await processWorkflowService.executeCompleteWorkflow({
           onValidationError: (errors) => {
-            console.warn('[handleAgregarProceso] Errores de validación:', errors);
+            console.warn('[handleAgregarProceso] Errores de validacion:', errors);
           },
           onComplete: async () => {
             formManager.clear();
@@ -1032,7 +1106,7 @@ function initTrackingModalListeners() {
       
       if (error instanceof SyntaxError && error.message.includes('JSON')) {
         console.error('[handleAgregarProceso] Error de JSON');
-        showError('Error del servidor: La respuesta no es válida. Posiblemente un error de permisos o validación.');
+        showError('Error del servidor: La respuesta no es valida. Posiblemente un error de permisos o validacion.');
       }
     }
   }
@@ -1056,7 +1130,7 @@ function initTrackingModalListeners() {
       // Si hay solo uno, abrirlo directamente
       abrirReciboEspecial(recibosEspeciales[0]);
     } else {
-      // Si hay múltiples, mostrar selector
+      // Si hay multiples, mostrar selector
       mostrarSelectorRecibosEspeciales(recibosEspeciales);
     }
   };
@@ -1065,7 +1139,7 @@ function initTrackingModalListeners() {
     console.log('[abrirReciboEspecial] Abriendo recibo:', recibo);
     
     if (!recibo || !recibo.id) {
-      showError('Error: Datos del recibo inválidos');
+      showError('Error: Datos del recibo invalidos');
       return;
     }
     
@@ -1081,17 +1155,17 @@ function initTrackingModalListeners() {
       specialReceiptsRenderer.closeModal();
       
       // Para recibos especiales (BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO),
-      // abrir directamente en una nueva pestaña o ventana del visualizador-logo
+      // abrir directamente en una nueva pestana o ventana del visualizador-logo
       const tiposEspeciales = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO', 'REFLECTIVO'];
       const esRecibEspecial = tiposEspeciales.includes(recibo.tipo_recibo);
       
       if (esRecibEspecial) {
         console.log('[abrirReciboEspecial] Recibo especial detectado, abriendo en visualizador-logo');
-        // Abrir en nueva ventana/pestaña para mejor visualización
+        // Abrir en nueva ventana/pestana para mejor visualizacion
         const url = `/visualizador-logo/pedidos-logo?pedido=${currentOrderData.id}&recibo=${recibo.id}&tipo=${recibo.tipo_recibo}`;
         window.open(url, '_blank', 'width=900,height=700,resizable=yes,scrollbars=yes');
       } else {
-        // Para costura u otros tipos: usar el módulo existente
+        // Para costura u otros tipos: usar el modulo existente
         setTimeout(() => {
           if (typeof window.openOrderDetailModalWithProcess === 'function') {
             const prenda = currentOrderData.prendas && currentOrderData.prendas.length > 0 
@@ -1099,7 +1173,7 @@ function initTrackingModalListeners() {
               : null;
             
             if (!prenda || !prenda.id) {
-              showError('Error: No se encontró la prenda');
+              showError('Error: No se encontro la prenda');
               return;
             }
             
@@ -1156,12 +1230,12 @@ function initTrackingModalListeners() {
 
   /**
    * Abre modal con detalles del recibo especial
-   * NOTA: Ahora se abre a través de abrirReciboEspecial() -> openOrderDetailModalWithProcess()
-   * Esta función se mantiene por compatibilidad pero no se usa
+   * NOTA: Ahora se abre a traves de abrirReciboEspecial() -> openOrderDetailModalWithProcess()
+   * Esta funcion se mantiene por compatibilidad pero no se usa
    */
   globalThis.openReceiptModal = async function(receiptId, tipoRecibo, numeroRecibo) {
-    console.warn('[openReceiptModal] Esta función está deprecada. Usar abrirReciboEspecial() en su lugar');
-    // Intentar usar la forma alternativa si está disponible
+    console.warn('[openReceiptModal] Esta funcion esta deprecada. Usar abrirReciboEspecial() en su lugar');
+    // Intentar usar la forma alternativa si esta disponible
     if (typeof window.openOrderDetailModalWithProcess === 'function') {
       console.log('[openReceiptModal] Redirigiendo a openOrderDetailModalWithProcess');
       window.openOrderDetailModalWithProcess(globalThis.currentOrderData?.id, receiptId, tipoRecibo);
@@ -1182,3 +1256,4 @@ function initTrackingModalListeners() {
   } else {
     initTrackingModalListeners();
   }
+

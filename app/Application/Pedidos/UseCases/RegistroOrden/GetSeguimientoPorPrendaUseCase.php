@@ -9,6 +9,7 @@ use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Services\CalculadorDiasService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,6 +24,8 @@ class GetSeguimientoPorPrendaUseCase
     private PedidoProduccionTrackingRepository $pedidoRepository;
     private ConsecutivosRecibosRepository $consecutivosRepository;
     private PrendaPedidoQuantityCalculator $prendaQuantityCalculator;
+    private array $festivosPorAnioEnMemoria = [];
+    private array $festivosPorRangoEnMemoria = [];
 
     public function __construct(
         PedidoProduccionTrackingRepository $pedidoRepository,
@@ -537,6 +540,11 @@ class GetSeguimientoPorPrendaUseCase
      */
     private function obtenerFestivosDesdeAPI(int $yearInicio, int $yearFin): array
     {
+        $rangoKey = "{$yearInicio}-{$yearFin}";
+        if (isset($this->festivosPorRangoEnMemoria[$rangoKey])) {
+            return $this->festivosPorRangoEnMemoria[$rangoKey];
+        }
+
         $festivos = [];
 
         for ($year = $yearInicio; $year <= $yearFin; $year++) {
@@ -552,6 +560,7 @@ class GetSeguimientoPorPrendaUseCase
             ]);
         }
 
+        $this->festivosPorRangoEnMemoria[$rangoKey] = $festivos;
         return $festivos;
     }
 
@@ -562,9 +571,21 @@ class GetSeguimientoPorPrendaUseCase
      */
     private function obtenerFestivosDelAnioDesdeAPI(int $year): array
     {
+        if (isset($this->festivosPorAnioEnMemoria[$year])) {
+            return $this->festivosPorAnioEnMemoria[$year];
+        }
+
+        $cacheKey = "seguimiento_prenda_festivos_{$year}";
+        $festivosCacheados = Cache::get($cacheKey);
+        if (is_array($festivosCacheados)) {
+            $this->festivosPorAnioEnMemoria[$year] = $festivosCacheados;
+            return $festivosCacheados;
+        }
+
+        // Priorizar date.nager.at porque api.nager.date está fallando por DNS en este entorno.
         $endpoints = [
-            "https://api.nager.date/v3/PublicHolidays/{$year}/CO",
             "https://date.nager.at/api/v3/PublicHolidays/{$year}/CO",
+            "https://api.nager.date/v3/PublicHolidays/{$year}/CO",
         ];
 
         foreach ($endpoints as $url) {
@@ -592,6 +613,8 @@ class GetSeguimientoPorPrendaUseCase
                         'count' => count($festivos)
                     ]);
 
+                    Cache::put($cacheKey, $festivos, now()->addDays(30));
+                    $this->festivosPorAnioEnMemoria[$year] = $festivos;
                     return $festivos;
                 }
             } catch (\Exception $e) {
@@ -609,6 +632,7 @@ class GetSeguimientoPorPrendaUseCase
             'year' => $year,
             'message' => 'Ambos endpoints de Nager.Date fallaron, continuando sin festivos'
         ]);
+        $this->festivosPorAnioEnMemoria[$year] = [];
         return [];
     }
 
@@ -764,4 +788,3 @@ class GetSeguimientoPorPrendaUseCase
         return $recibosEspeciales;
     }
 }
-

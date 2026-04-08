@@ -91,6 +91,8 @@ class SupervisorAsesoresController extends Controller
         // Total de pedidos de este mes (SIN filtro de asesores - para contexto)
         $totalPedidosMes = PedidoProduccion::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
             ->count();
 
         return response()->json([
@@ -245,7 +247,9 @@ class SupervisorAsesoresController extends Controller
         \Log::info('Asesores encontrados: ' . count($asesores));
         
         // Obtener TODOS los pedidos de la tabla sin filtros de asesor
-        $query = PedidoProduccion::with(['asesora', 'prendas.procesos', 'cotizacion', 'epps']);
+        $query = PedidoProduccion::with(['asesora', 'prendas.procesos', 'cotizacion', 'epps'])
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', ''); // Asegurar que el número sea válido
         
         // Búsqueda general (cliente o número de pedido)
         if ($request->has('search') && $request->search) {
@@ -396,6 +400,8 @@ class SupervisorAsesoresController extends Controller
         $limit = $request->get('limit', 50);
         
         $query = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
             ->with(['asesora' => function ($q) {
                 $q->select('id', 'name', 'email');
             }]);
@@ -475,7 +481,10 @@ class SupervisorAsesoresController extends Controller
         }
 
         $cotizacionesCount = Cotizacion::where('asesor_id', $id)->count();
-        $pedidosCount = PedidoProduccion::where('asesor_id', $id)->count();
+        $pedidosCount = PedidoProduccion::where('asesor_id', $id)
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
+            ->count();
         
         // Obtener últimas cotizaciones con nombre de cliente
         $ultimasCotizaciones = Cotizacion::where('asesor_id', $id)
@@ -498,6 +507,8 @@ class SupervisorAsesoresController extends Controller
         
         // Obtener últimos pedidos
         $ultimosPedidos = PedidoProduccion::where('asesor_id', $id)
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
             ->select('id', 'numero_pedido', 'cliente', 'estado', 'created_at')
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -532,7 +543,9 @@ class SupervisorAsesoresController extends Controller
 
             // Construir query base
             $cotizacionesQuery = Cotizacion::whereIn('asesor_id', $asesoresIds);
-            $pedidosQuery = PedidoProduccion::whereIn('asesor_id', $asesoresIds);
+            $pedidosQuery = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
+                ->whereNotNull('numero_pedido') // Excluir borradores
+                ->where('numero_pedido', '!=', ''); // Asegurar que el número sea válido
 
             // Si se filtra por asesor específico
             if ($asesorId) {
@@ -570,6 +583,8 @@ class SupervisorAsesoresController extends Controller
                             ->whereBetween('created_at', $dateFilter)
                             ->count(),
                         'pedidos_count' => PedidoProduccion::where('asesor_id', $user->id)
+                            ->whereNotNull('numero_pedido') // Excluir borradores
+                            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
                             ->whereBetween('created_at', $dateFilter)
                             ->count()
                     ];
@@ -646,7 +661,10 @@ class SupervisorAsesoresController extends Controller
         $asesoresIds = $this->getAsesores()->pluck('id')->toArray();
 
         $cotizacionesCount = Cotizacion::whereIn('user_id', $asesoresIds)->count();
-        $pedidosCount = PedidoProduccion::whereIn('asesor_id', $asesoresIds)->count();
+        $pedidosCount = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
+            ->whereNotNull('numero_pedido') // Excluir borradores
+            ->where('numero_pedido', '!=', '') // Asegurar que el número sea válido
+            ->count();
         $asesoresCount = count($asesoresIds);
         $conversionRate = $cotizacionesCount > 0 ? round(($pedidosCount / $cotizacionesCount) * 100) : 0;
 

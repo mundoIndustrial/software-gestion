@@ -57,7 +57,7 @@ class PedidoLifecycleService
             'asesor_id' => $asesorId,
             'cliente_id' => $datos['cliente_id'] ?? null,
             'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
-            'novedades' => $datos['descripcion'] ?? null,
+            'novedades' => null,
             'observaciones' => $datos['observaciones'] ?? null,
             'estado' => 'Borrador',
             'cantidad_total' => 0,

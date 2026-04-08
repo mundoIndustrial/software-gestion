@@ -287,28 +287,6 @@ class TrackingModalController {
         trackingModal.classList.add('show');
 
         try {
-            // Construir URL con prenda_id si está disponible
-            let urlConsecutivo = `/registros/${pedidoId}/consecutivo-costura`;
-            if (prendaIdTarget) {
-                urlConsecutivo += `?prenda_id=${prendaIdTarget}`;
-            }
-
-            // Obtener el consecutivo de costura para esta prenda específica
-            try {
-                const consecutivoResponse = await fetch(urlConsecutivo);
-                if (consecutivoResponse.ok) {
-                    const data = await consecutivoResponse.json();
-                    // Guardar para que tracking-modal-handler.js pueda usar encargado/area como fallback
-                    window.currentConsecutivoCosturaData = data;
-                    this._updateTrackingModalUI(data);
-                } else {
-                    console.warn('[TrackingModalController] Consecutivo-costura no disponible (HTTP' + consecutivoResponse.status + '), continuando sin él');
-                }
-            } catch (error) {
-                console.warn('[TrackingModalController] Error al obtener consecutivo de costura:', error);
-                // Continuar sin consecutivo
-            }
-
             // Enriquecer prenda con seguimientos_por_area SIEMPRE
             if (window.currentPrendaData && !window.currentPrendaData.seguimientos_por_area) {
                 try {
@@ -383,20 +361,6 @@ class TrackingModalController {
             // Asegurar que seguimientos_por_area existe aunque sea objeto vacío
             if (!window.currentPrendaData.seguimientos_por_area) {
                 window.currentPrendaData.seguimientos_por_area = {};
-            }
-            
-            // Cargar número de recibo (consecutivo) para mostrar en el modal
-            try {
-                if (typeof OrderApiService !== 'undefined' && window.currentPrendaData.id && pedidoId) {
-                    const consecutivoData = await OrderApiService.loadConsecutivoCostura(pedidoId, window.currentPrendaData.id);
-                    if (consecutivoData && consecutivoData.consecutivo) {
-                        window.currentPrendaData.recibo_display = consecutivoData.consecutivo;
-                        console.log('[TrackingModalController] Número de recibo agregado a prenda:', consecutivoData.consecutivo);
-                    }
-                }
-            } catch (error) {
-                console.warn('[TrackingModalController] No se pudo cargar el número de recibo:', error);
-                window.currentPrendaData.recibo_display = 'Sin recibo';
             }
             
             if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {

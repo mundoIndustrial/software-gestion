@@ -53,6 +53,10 @@ export class TrackingTimelineController {
       const areaActual = prenda.area_actual || '-';
       const numeroRecibo = prenda.recibo_display || 'Sin recibo';
       this.updateRenderer.updateReciboHeader(numeroRecibo, areaActual);
+      this.updateRenderer.updateDeliveryInfoFromPrenda(
+        prenda,
+        this.orderState.getOrder() || {}
+      );
 
       this.renderPrendaTrackingTimeline(prenda);
     } catch (error) {

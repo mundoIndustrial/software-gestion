@@ -556,7 +556,6 @@
             descripcion: prenda.descripcion || '',
             origen: prenda.origen || (prenda.de_bodega == 1 ? 'bodega' : 'confeccion'),
             de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
-            novedad: 'Actualización desde guardado de borrador',
             tallas: tallasData,
             variantes,
             asignaciones_colores: asignacionesColores,

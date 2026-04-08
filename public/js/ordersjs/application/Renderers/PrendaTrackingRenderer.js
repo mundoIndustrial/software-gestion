@@ -89,12 +89,14 @@ export class PrendaTrackingRenderer {
       const areaBadge = this.getAreaBadge(prenda);
       const procesosCount = this.getProcesssCount(prenda);
       const procesosDisabled = procesosCount === 0;
+      const prendaId = prenda.id || prenda.prenda_pedido_id || null;
+      const prendaIdArg = prendaId !== null ? `'${String(prendaId)}'` : 'null';
       
       // Obtener consecutivo COSTURA
       const consecutivoCostura = this.getConsecutivoCostura(prenda);
 
       tableHtml += `
-        <tr class="prendas-table-row" data-prenda-index="${index}">
+        <tr class="prendas-table-row" data-prenda-index="${index}" data-prenda-id="${prendaId !== null ? String(prendaId) : ''}">
           <td class="prendas-consecutivo-cell">
             ${consecutivoCostura || '-'}
           </td>
@@ -106,8 +108,9 @@ export class PrendaTrackingRenderer {
             <button 
               class="btn-procesos btn-sm ${procesosDisabled ? 'btn-disabled' : 'btn-primary'}"
               data-prenda-index="${index}"
+              data-prenda-id="${prendaId !== null ? String(prendaId) : ''}"
               ${procesosDisabled ? 'disabled' : ''}
-              onclick="${procesosDisabled ? '' : `handleVerProcesos(${index})`}"
+              onclick="${procesosDisabled ? '' : `handleVerProcesos(${index}, ${prendaIdArg})`}"
               title="${procesosDisabled ? 'Sin procesos registrados' : 'Ver procesos'}"
             >
               ${procesosDisabled ? `
@@ -133,7 +136,8 @@ export class PrendaTrackingRenderer {
             <button 
               class="btn-ver-prenda btn-sm btn-primary"
               data-prenda-index="${index}"
-              onclick="showPrendaTrackingFromTable(${index})"
+              data-prenda-id="${prendaId !== null ? String(prendaId) : ''}"
+              onclick="showPrendaTrackingFromTable(${index}, ${prendaIdArg})"
             >
               ${svgIcons.view()}
               Ver
@@ -158,16 +162,9 @@ export class PrendaTrackingRenderer {
    * @private
    */
   setupTableListeners(container, prendas) {
-    const buttons = container.querySelectorAll('.btn-ver-prenda');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const index = parseInt(btn.getAttribute('data-prenda-index'));
-        if (!Number.isFinite(index)) return;
-        window.showPrendaTrackingFromTable(index);
-      });
-    });
+    // Evitar doble ejecución: los botones ya usan onclick inline con índice/prendaId.
+    // Si en el futuro se quita el inline, este bloque se puede reactivar.
+    console.log('[PrendaTrackingRenderer.setupTableListeners] Listener adicional omitido para evitar doble click');
   }
 
   /**

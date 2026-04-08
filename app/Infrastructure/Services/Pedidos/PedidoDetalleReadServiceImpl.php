@@ -134,6 +134,16 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
             ->first();
     }
 
+    public function getFechaEstimadaMasLejanaByPedidoId(int $pedidoId): ?string
+    {
+        $maxFecha = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->max('fecha_estimada_de_entrega');
+
+        return $maxFecha ? (string) $maxFecha : null;
+    }
+
     public function getTallasProceso(int $procesoDetalleId): Collection
     {
         return DB::table('pedidos_procesos_prenda_tallas')

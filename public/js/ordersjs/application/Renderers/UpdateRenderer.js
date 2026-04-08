@@ -34,7 +34,6 @@ export class UpdateRenderer {
     setText('trackingOrderClient', cliente);
     setText('trackingOrderStatus', estadoDisplay);
     setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_de_entrega) || '-');
-    setText('trackingTotalDays', orderData.total_dias || '0');
 
     // Recibo principal (pre-computado y enviado por el backend)
     const reciboPrincipal = orderData.recibo_principal || '-';
@@ -161,6 +160,70 @@ export class UpdateRenderer {
     } else {
       console.warn('[UpdateRenderer.updateReciboHeader] No existe #trackingOrderRecibo en DOM');
     }
+  }
+
+  /**
+   * Actualizar días y fecha estimada desde el recibo COSTURA de la prenda seleccionada.
+   * Si no existen en la prenda, usa fallback del pedido.
+   *
+   * @param {Object} prenda
+   * @param {Object} orderData
+   */
+  updateDeliveryInfoFromPrenda(prenda, orderData = {}) {
+    const costuraData = this.getCosturaDataFromPrenda(prenda);
+
+    const diaRecibo = this.parseIntegerOrNull(
+      prenda?.dia_de_entrega ?? costuraData?.dia_de_entrega ?? null
+    );
+    const fechaRecibo = prenda?.fecha_estimada_de_entrega
+      ?? costuraData?.fecha_estimada_de_entrega
+      ?? null;
+
+    const diaFallbackPedido = this.parseIntegerOrNull(orderData?.dia_de_entrega ?? null);
+    const fechaFallbackPedido = orderData?.fecha_estimada_de_entrega ?? null;
+
+    const diaFinal = diaRecibo ?? diaFallbackPedido;
+    const fechaFinal = fechaRecibo || fechaFallbackPedido || null;
+
+    console.log('[UpdateRenderer.updateDeliveryInfoFromPrenda] Fuente de datos:', {
+      prendaId: prenda?.id || prenda?.prenda_pedido_id || null,
+      diaRecibo,
+      fechaRecibo,
+      diaFallbackPedido,
+      fechaFallbackPedido,
+      diaFinal,
+      fechaFinal
+    });
+
+    const fechaTexto = this.formatDate(fechaFinal) || 'No definida';
+    const trackingEstimatedDate = document.getElementById('trackingEstimatedDate');
+    const selectorEstimatedDate = document.getElementById('selectorOrderEstimatedDate');
+
+    if (trackingEstimatedDate) {
+      trackingEstimatedDate.textContent = fechaTexto;
+    }
+    if (selectorEstimatedDate) {
+      selectorEstimatedDate.textContent = fechaTexto;
+      const tieneFecha = fechaTexto !== 'No definida';
+      selectorEstimatedDate.style.color = tieneFecha ? '#1f2937' : '#9ca3af';
+      selectorEstimatedDate.style.fontWeight = tieneFecha ? '600' : '400';
+    }
+
+    const selector = window.trackingDaysSelector;
+    if (selector && typeof selector.setValue === 'function') {
+      selector.setValue(diaFinal ?? 0);
+    }
+  }
+
+  getCosturaDataFromPrenda(prenda) {
+    const consecutivos = Array.isArray(prenda?.consecutivos) ? prenda.consecutivos : [];
+    return consecutivos.find((c) => String(c?.tipo_recibo || '').toUpperCase() === 'COSTURA') || null;
+  }
+
+  parseIntegerOrNull(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : null;
   }
 
   /**

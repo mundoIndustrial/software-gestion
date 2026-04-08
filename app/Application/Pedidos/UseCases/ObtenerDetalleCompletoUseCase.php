@@ -404,18 +404,16 @@ class ObtenerDetalleCompletoUseCase
     }
 
     /**
-     * Agrega datos adicionales del pedido (fecha estimada, área, día entrega)
-     * Prioridad:
-     * 1. Datos del recibo de costura (ConsecutivoReciboPedido) - si existen
-     * 2. Datos de la tabla pedidos_produccion - fallback
+     * Agrega datos adicionales del pedido (fecha estimada, área, día entrega).
+     *
+     * Para el resumen del pedido se debe mostrar la fecha estimada global del pedido
+     * (que representa la fecha más lejana entre sus recibos).
      */
     private function agregarDatosAdicionalesPedido(PedidoProduccion $pedido, array &$responseData): void
     {
-        // Intentar obtener datos del recibo de costura primero (SaveDiaEntregaUseCase guarda ahí)
-        $reciboCostura = $this->readService->findReciboCosturaByPedidoId((int) $pedido->id);
-
+        $fechaMasLejanaRecibos = $this->readService->getFechaEstimadaMasLejanaByPedidoId((int) $pedido->id);
         if (!isset($responseData['fecha_estimada_de_entrega'])) {
-            $responseData['fecha_estimada_de_entrega'] = $reciboCostura?->fecha_estimada_de_entrega
+            $responseData['fecha_estimada_de_entrega'] = $fechaMasLejanaRecibos
                 ?? $pedido->fecha_estimada_de_entrega;
         }
 
@@ -424,8 +422,7 @@ class ObtenerDetalleCompletoUseCase
         }
 
         if (!isset($responseData['dia_de_entrega'])) {
-            $responseData['dia_de_entrega'] = $reciboCostura?->dia_de_entrega
-                ?? $pedido->dia_de_entrega;
+            $responseData['dia_de_entrega'] = $pedido->dia_de_entrega;
         }
 
         Log::info('[ObtenerDetalleCompletoUseCase] Datos del pedido agregados', [
@@ -433,6 +430,7 @@ class ObtenerDetalleCompletoUseCase
             'numero_pedido' => $pedido->numero_pedido,
             'dia_de_entrega' => $responseData['dia_de_entrega'] ?? null,
             'fecha_estimada_de_entrega' => $responseData['fecha_estimada_de_entrega'] ?? null,
+            'fecha_mas_lejana_recibos' => $fechaMasLejanaRecibos,
         ]);
     }
 }

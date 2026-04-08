@@ -85,12 +85,14 @@ class PrendasRenderer {
       // Contar recibos especiales para el badge de procesos
       const recibosEspeciales = prenda.recibos_especiales || [];
       const procesosCount = Array.isArray(recibosEspeciales) ? recibosEspeciales.length : 0;
+      const prendaId = prenda.id || prenda.prenda_pedido_id || null;
+      const prendaIdArg = prendaId !== null ? `'${String(prendaId)}'` : 'null';
       
       // Crear botón de procesos o texto según haya procesos
       let procesosHtml = '';
       if (procesosCount > 0) {
         procesosHtml = `
-          <button class="btn-procesos-badge" onclick="globalThis.handleVerProcesos && globalThis.handleVerProcesos(${index})" title="Ver procesos especiales">
+          <button class="btn-procesos-badge" onclick="globalThis.handleVerProcesos && globalThis.handleVerProcesos(${index}, ${prendaIdArg})" title="Ver procesos especiales">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="1"></circle>
               <circle cx="19" cy="12" r="1"></circle>
@@ -136,7 +138,7 @@ class PrendasRenderer {
       }
       
       tableHtml += `
-        <tr class="prendas-table-row" data-prenda-index="${index}">
+        <tr class="prendas-table-row" data-prenda-index="${index}" data-prenda-id="${prendaId !== null ? String(prendaId) : ''}">
           <td class="prendas-table-cell prendas-name-cell">
             <div class="prendas-name">${nombrePrenda}</div>
             ${badgeHtml}
@@ -153,7 +155,7 @@ class PrendasRenderer {
             <span class="estado-badge estado-${estadoPedido.toLowerCase().replace(/_/g, '-')}">${estadoFormateado}</span>
           </td>
           <td class="prendas-table-cell acciones-cell">
-            <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index})" title="${botonTitle}">
+            <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index}, ${prendaIdArg})" title="${botonTitle}" data-prenda-id="${prendaId !== null ? String(prendaId) : ''}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 11l3 3L22 4"></path>
                 <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
@@ -175,20 +177,94 @@ class PrendasRenderer {
   }
 
   // Mostrar seguimiento de una prenda específica desde la tabla
-  async showPrendaTrackingFromTable(index) {
+  resolvePrendaFromClickContext(prendas, prendaId, index) {
+    let resolvedPrendaId = prendaId;
+    let resolvedConsecutivo = null;
+
     try {
-      console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
-      
-      // Obtener la prenda desde globalThis.currentOrderData.prendas (asignado por tracking-modal-handler.js)
-      const prendas = globalThis.currentOrderData?.prendas;
+      const evt = globalThis.event;
+      const target = evt?.target || null;
+      const row = target?.closest ? target.closest('.prendas-table-row') : null;
+
+      if (row) {
+        if (!resolvedPrendaId) {
+          const rowPrendaId = row.getAttribute('data-prenda-id');
+          if (rowPrendaId && String(rowPrendaId).trim() !== '') {
+            resolvedPrendaId = rowPrendaId;
+          }
+        }
+
+        const consecutivoText = row.querySelector('.prendas-consecutivo-cell, .receipt-number-badge')?.textContent?.replace('#', '').trim() || '';
+        if (/^\d+$/.test(consecutivoText)) {
+          resolvedConsecutivo = String(parseInt(consecutivoText, 10));
+        }
+      }
+    } catch (e) {
+      console.warn('[PrendasRenderer.resolvePrendaFromClickContext] No se pudo leer contexto del click:', e);
+    }
+
+    console.log('[resolvePrendaFromClickContext] Contexto click:', {
+      index,
+      prendaIdParametro: prendaId,
+      resolvedPrendaId,
+      resolvedConsecutivo
+    });
+
+    let prenda = null;
+
+    if (resolvedPrendaId !== null && resolvedPrendaId !== undefined && String(resolvedPrendaId).trim() !== '') {
+      prenda = prendas.find((p) =>
+        String(p?.id) === String(resolvedPrendaId) ||
+        String(p?.prenda_pedido_id) === String(resolvedPrendaId)
+      ) || null;
+    }
+
+    if (!prenda && resolvedConsecutivo) {
+      prenda = prendas.find((p) => {
+        const consecutivos = Array.isArray(p?.consecutivos) ? p.consecutivos : [];
+        const costura = consecutivos.find((c) => String(c?.tipo_recibo || '').toUpperCase() === 'COSTURA');
+        return costura && String(costura?.consecutivo_actual) === resolvedConsecutivo;
+      }) || null;
+    }
+
+    if (!prenda) {
+      prenda = prendas[index];
+    }
+
+    console.log('[resolvePrendaFromClickContext] Resultado resolución:', {
+      resolvedBy: prenda ? (
+        (resolvedPrendaId && (String(prenda?.id) === String(resolvedPrendaId) || String(prenda?.prenda_pedido_id) === String(resolvedPrendaId)))
+          ? 'prendaId'
+          : (resolvedConsecutivo ? 'consecutivo' : 'index')
+      ) : 'none',
+      prendaId: prenda?.id || prenda?.prenda_pedido_id || null,
+      prendaNombre: prenda?.nombre_prenda || null
+    });
+
+    return prenda;
+  }
+
+  getConsecutivoCosturaFromPrenda(prenda) {
+    const consecutivos = Array.isArray(prenda?.consecutivos) ? prenda.consecutivos : [];
+    const costura = consecutivos.find((c) => String(c?.tipo_recibo || '').toUpperCase() === 'COSTURA');
+    return costura?.consecutivo_actual ? String(costura.consecutivo_actual) : null;
+  }
+
+  async showPrendaTrackingFromTable(index, prendaId = null) {
+    try {
+      console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index, 'prendaId:', prendaId);
+
+      // Preferir currentOrderData; fallback a prendasData
+      const prendas = globalThis.currentOrderData?.prendas || globalThis.prendasData;
       if (!prendas || !Array.isArray(prendas)) {
-        console.error('[showPrendaTrackingFromTable] No hay prendas disponibles en globalThis.currentOrderData.prendas');
+        console.error('[showPrendaTrackingFromTable] No hay prendas disponibles');
         return;
       }
       
-      const prenda = prendas[index];
+      const prenda = this.resolvePrendaFromClickContext(prendas, prendaId, index);
+
       if (!prenda) {
-        console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
+        console.error('[showPrendaTrackingFromTable] Prenda no encontrada para índice/id:', { index, prendaId });
         return;
       }
       
@@ -334,15 +410,18 @@ class PrendasRenderer {
           areaActual = prenda.ultimo_proceso_area;
         } else if (prenda.area && String(prenda.area).trim() !== '') {
           areaActual = prenda.area;
-        } else if (!globalThis.location.pathname.includes('/recibos-costura') && globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '') {
+        } else if (globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '') {
           areaActual = globalThis.currentOrderData.area;
         }
 
         // Usar ultimo_recibo_numero directamente (más confiable)
-        const numeroRecibo = prenda.ultimo_recibo_numero || 'Sin recibo';
+        const numeroReciboCostura = this.getConsecutivoCosturaFromPrenda(prenda);
+        const numeroRecibo = prenda.ultimo_recibo_numero || numeroReciboCostura || 'Sin recibo';
         
         console.log('[DEBUG] Datos de prenda para recibo:', {
+          'prenda_id': prenda.id || prenda.prenda_pedido_id,
           'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
+          'consecutivo_costura_desde_prenda': numeroReciboCostura,
           'area_actual_resuelta': areaActual
         });
         
@@ -361,14 +440,33 @@ class PrendasRenderer {
       }
       
       // Para el elemento trackingPrendaRecibo (compatible con código existente)
+      const numeroReciboCostura = this.getConsecutivoCosturaFromPrenda(prenda);
+      const numeroReciboFinal = prenda.ultimo_recibo_numero || numeroReciboCostura || null;
       let numeroRecibo = 'Sin recibo';
-      if (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-') {
-        numeroRecibo = `Recibo #${prenda.ultimo_recibo_numero}`;
+      if (numeroReciboFinal && numeroReciboFinal !== '-') {
+        numeroRecibo = `Recibo #${numeroReciboFinal}`;
       }
       
       const reciboElement = document.getElementById('trackingPrendaRecibo');
       if (reciboElement) {
+        console.log('[showPrendaTracking] Actualizando trackingPrendaRecibo:', {
+          antes: reciboElement.textContent,
+          despues: numeroRecibo,
+          fuente: prenda.ultimo_recibo_numero ? 'ultimo_recibo_numero' : (numeroReciboCostura ? 'consecutivos.COSTURA' : 'sin_recibo')
+        });
         reciboElement.textContent = numeroRecibo;
+      }
+
+      const trackingOrderReciboEl = document.getElementById('trackingOrderRecibo');
+      if (trackingOrderReciboEl) {
+        const nuevoValor = numeroReciboFinal || '-';
+        console.log('[showPrendaTracking] Actualizando trackingOrderRecibo:', {
+          prendaId: prenda.id || prenda.prenda_pedido_id,
+          antes: trackingOrderReciboEl.textContent,
+          despues: nuevoValor,
+          fuente: prenda.ultimo_recibo_numero ? 'ultimo_recibo_numero' : (numeroReciboCostura ? 'consecutivos.COSTURA' : 'fallback')
+        });
+        trackingOrderReciboEl.textContent = nuevoValor;
       }
       
       // Renderizar timeline de seguimiento
@@ -610,14 +708,12 @@ class PrendasRenderer {
     // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
     // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
     const prenda = globalThis.currentPrendaData || {};
-    const esRecibosCostura = globalThis.location.pathname.includes('/recibos-costura');
-
     const procesoIdFallback = globalThis.currentConsecutivoCosturaData?.proceso_id || null;
     const tieneProcesoReal = Boolean(prenda?.ultimo_proceso_id || procesoIdFallback);
 
     const areaActual = prenda?.ultimo_proceso_area
       || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
-      || (!esRecibosCostura && globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '' ? globalThis.currentOrderData.area : null)
+      || (globalThis.currentOrderData?.area && String(globalThis.currentOrderData.area).trim() !== '' ? globalThis.currentOrderData.area : null)
       || null;
 
     // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
@@ -655,8 +751,16 @@ class PrendasRenderer {
 globalThis.PrendasRenderer = PrendasRenderer;
 globalThis.prendasRenderer = new PrendasRenderer();
 
-// Funciones globales para compatibilidad
-globalThis.renderPrendas = (prendas) => globalThis.prendasRenderer.renderPrendas(prendas);
-globalThis.showPrendaTrackingFromTable = (index) => globalThis.prendasRenderer.showPrendaTrackingFromTable(index);
-globalThis.showPrendaTracking = (prenda) => globalThis.prendasRenderer.showPrendaTracking(prenda);
-globalThis.renderPrendaTrackingTimeline = (prenda) => globalThis.prendasRenderer.renderPrendaTrackingTimeline(prenda);
+// Funciones globales para compatibilidad (sin sobreescribir handlers modernos)
+const hasModernTrackingHandlers =
+  typeof globalThis.openOrderTracking === 'function' &&
+  typeof globalThis.handleVerProcesos === 'function';
+
+if (!hasModernTrackingHandlers) {
+  globalThis.renderPrendas = (prendas) => globalThis.prendasRenderer.renderPrendas(prendas);
+  globalThis.showPrendaTrackingFromTable = (index, prendaId) => globalThis.prendasRenderer.showPrendaTrackingFromTable(index, prendaId);
+  globalThis.showPrendaTracking = (prenda) => globalThis.prendasRenderer.showPrendaTracking(prenda);
+  globalThis.renderPrendaTrackingTimeline = (prenda) => globalThis.prendasRenderer.renderPrendaTrackingTimeline(prenda);
+} else {
+  console.log('[prendas-renderer] Tracking moderno detectado, no se sobreescriben handlers globales');
+}

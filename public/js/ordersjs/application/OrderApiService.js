@@ -1,21 +1,21 @@
 /**
  * Application Service: OrderApiService
  * 
- * Capa de aplicación que coordina entre Domain e Infrastructure.
+ * Capa de aplicacion que coordina entre Domain e Infrastructure.
  * 
  * Responsabilidades:
  * - Centralizar TODAS las llamadas a APIs
  * - Transformar respuestas del backend en objetos de dominio
  * - Manejo centralizado y consistente de errores
  * - Validaciones de negocio antes de enviar al backend
- * - Preparado para testing de APIs (fácil mockear)
+ * - Preparado para testing de APIs (facil mockear)
  * 
- * Patrón: Use Cases / Application Services (DDD)
- * Cada método representa un "use case" o caso de uso de la aplicación.
+ * Patron: Use Cases / Application Services (DDD)
+ * Cada metodo representa un "use case" o caso de uso de la aplicacion.
  * 
  * Beneficios:
  * - Un solo lugar para todas las APIs
- * - Fácil cambiar endpoints sin tocar el resto del código
+ * - Facil cambiar endpoints sin tocar el resto del codigo
  * - Manejo centralizado de CSRF, headers, errores
  * - Testeable: puede mockear sin cambiar tracking-modal-handler
  */
@@ -34,7 +34,7 @@ class OrderApiService {
   static REQUEST_TIMEOUT = 30000; // 30 segundos
 
   /**
-   * Cargar datos básicos de una orden
+   * Cargar datos basicos de una orden
    * Use Case: "Ver detalles de la orden"
    * 
    * @param {Number} orderId - ID de la orden
@@ -61,17 +61,17 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.loadOrderData] ✓ Respuesta:', result);
+      console.log('[OrderApiService.loadOrderData] âœ“ Respuesta:', result);
 
       // Extraer datos desde la estructura del endpoint
       const orderData = result.data || result;
 
-      // Validar estructura mínima
+      // Validar estructura minima
       this.#validateOrderData(orderData);
 
       return orderData;
     } catch (error) {
-      console.error('[OrderApiService.loadOrderData] ✗ Error:', error);
+      console.error('[OrderApiService.loadOrderData] âœ— Error:', error);
       throw this.#formatError('cargar datos del pedido', error);
     }
   }
@@ -104,7 +104,7 @@ class OrderApiService {
       }
 
       const data = await response.json();
-      console.log('[OrderApiService.loadPrendasWithTracking] ✓ Prendas cargadas:', data.prendas?.length);
+      console.log('[OrderApiService.loadPrendasWithTracking] âœ“ Prendas cargadas:', data.prendas?.length);
 
       return {
         prendas: data.prendas || [],
@@ -112,16 +112,16 @@ class OrderApiService {
         pedido: data.pedido || {}
       };
     } catch (error) {
-      console.error('[OrderApiService.loadPrendasWithTracking] ✗ Error:', error);
+      console.error('[OrderApiService.loadPrendasWithTracking] âœ— Error:', error);
       throw this.#formatError('cargar prendas con seguimiento', error);
     }
   }
 
   /**
-   * Cargar lista de encargados para una área específica
+   * Cargar lista de encargados para una area especifica
    * Use Case: "Asignar responsable a un proceso"
    * 
-   * @param {String} area - Nombre del área (ej: "costura", "corte")
+   * @param {String} area - Nombre del area (ej: "costura", "corte")
    * @returns {Promise<Array>} Array de encargados
    * @throws {Error} Si hay error o no hay encargados disponibles
    */
@@ -151,24 +151,24 @@ class OrderApiService {
       }
 
       if (!data.encargados || !Array.isArray(data.encargados)) {
-        throw new Error(`Respuesta inválida del servidor: encargados no es un array`);
+        throw new Error(`Respuesta invalida del servidor: encargados no es un array`);
       }
 
       if (data.encargados.length === 0) {
         throw new Error(`No hay encargados disponibles para: ${area}`);
       }
 
-      console.log('[OrderApiService.loadEncargados] ✓ Encargados cargados:', data.encargados.length);
+      console.log('[OrderApiService.loadEncargados] âœ“ Encargados cargados:', data.encargados.length);
       return data.encargados;
     } catch (error) {
-      console.error('[OrderApiService.loadEncargados] ✗ Error:', error);
+      console.error('[OrderApiService.loadEncargados] âœ— Error:', error);
       throw this.#formatError(`cargar encargados para ${area}`, error);
     }
   }
 
   /**
    * Cargar datos de consecutivo-costura para una prenda
-   * Use Case: "Refrescar datos de área/encargado en tabla de recibos"
+   * Use Case: "Refrescar datos de area/encargado en tabla de recibos"
    * 
    * @param {Number} orderId - ID de la orden
    * @param {Number} prendaId - ID de la prenda
@@ -196,45 +196,46 @@ class OrderApiService {
       }
 
       const data = await response.json();
-      console.log('[OrderApiService.loadConsecutivoCostura] ✓ Datos cargados');
+      console.log('[OrderApiService.loadConsecutivoCostura] âœ“ Datos cargados');
       return data;
     } catch (error) {
-      console.error('[OrderApiService.loadConsecutivoCostura] ✗ Error:', error);
+      console.error('[OrderApiService.loadConsecutivoCostura] âœ— Error:', error);
       throw this.#formatError('cargar consecutivo-costura', error);
     }
   }
 
   /**
    * Calcular fecha estimada de entrega
-   * Use Case: "Establecer fecha de entrega basada en días de trabajo"
+   * Use Case: "Establecer fecha de entrega basada en dias de trabajo"
    * 
-   * El backend calcula los días hábiles considerando:
-   * - Festivos según la localidad
+   * El backend calcula los dias habiles considerando:
+   * - Festivos segun la localidad
    * - Zona horaria del servidor
    * - Reglas de negocio de la empresa
    * 
    * @param {Number} orderId - ID de la orden
-   * @param {Number} estimatedDays - Días estimados para entregar
+   * @param {Number} estimatedDays - Dias estimados para entregar
    * @returns {Promise<Object>} { fecha_estimada, dias_calculados, ... }
    * @throws {Error} Si hay error
    */
-  static async calculateDeliveryDate(orderId, estimatedDays) {
+  static async calculateDeliveryDate(orderId, estimatedDays, prendaId = null) {
     if (!orderId) {
       throw new Error('OrderApiService: orderId es requerido');
     }
 
     if (!Number.isFinite(estimatedDays) || estimatedDays < 0) {
-      throw new Error('OrderApiService: estimatedDays debe ser un número positivo');
+      throw new Error('OrderApiService: estimatedDays debe ser un numero positivo');
     }
 
     console.log('[OrderApiService.calculateDeliveryDate] Calculando fecha:', {
       orderId,
-      estimatedDays
+      estimatedDays,
+      prendaId
     });
 
     try {
       const response = await this.#fetchWithTimeout(
-        `${this.BASE_URL}/pedidos/${orderId}/calcular-fecha-entrega`,
+        `/registros/${orderId}/dia-entrega`,
         {
           method: 'POST',
           headers: {
@@ -242,7 +243,9 @@ class OrderApiService {
             'X-CSRF-TOKEN': this.#getCsrfToken()
           },
           body: JSON.stringify({
-            dias_estimados: estimatedDays
+            dia_de_entrega: estimatedDays,
+            prenda_id: prendaId,
+            calcular_fecha_estimada: true
           })
         }
       );
@@ -254,15 +257,15 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.calculateDeliveryDate] ✓ Fecha calculada:', result);
+      console.log('[OrderApiService.calculateDeliveryDate] âœ“ Fecha calculada:', result);
 
-      if (!result.fecha_estimada) {
-        throw new Error('Respuesta inválida: no se recibió fecha estimada');
+      if (!result?.success) {
+        throw new Error(result?.message || 'No se pudo guardar el día de entrega');
       }
 
-      return result;
+      return result?.data || result;
     } catch (error) {
-      console.error('[OrderApiService.calculateDeliveryDate] ✗ Error:', error);
+      console.error('[OrderApiService.calculateDeliveryDate] âœ— Error:', error);
       throw this.#formatError('calcular fecha de entrega', error);
     }
   }
@@ -305,18 +308,18 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.saveProceso] ✓ Proceso guardado');
+      console.log('[OrderApiService.saveProceso] âœ“ Proceso guardado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.saveProceso] ✗ Error:', error);
+      console.error('[OrderApiService.saveProceso] âœ— Error:', error);
       throw this.#formatError('guardar proceso', error);
     }
   }
 
   /**
    * Eliminar un proceso
-   * Use Case: "Deshacer registración de un proceso"
+   * Use Case: "Deshacer registracion de un proceso"
    * 
    * @param {Number} procesId - ID del proceso
    * @returns {Promise<Object>} Respuesta del servidor
@@ -345,17 +348,17 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.deleteProceso] ✓ Proceso eliminado');
+      console.log('[OrderApiService.deleteProceso] âœ“ Proceso eliminado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.deleteProceso] ✗ Error:', error);
+      console.error('[OrderApiService.deleteProceso] âœ— Error:', error);
       throw this.#formatError('eliminar proceso', error);
     }
   }
 
   /**
-   * Método estático para eliminar proceso
+   * Metodo estatico para eliminar proceso
    * Alias de deleteProceso para compatibilidad con DI
    * 
    * @param {Number} procesoId - ID del proceso
@@ -367,7 +370,7 @@ class OrderApiService {
 
   /**
    * Actualizar un proceso existente
-   * Use Case: "Modificar estado/encargado/área de un proceso"
+   * Use Case: "Modificar estado/encargado/area de un proceso"
    * 
    * @param {Number} procesoId - ID del proceso
    * @param {Object} procesoData - { area, estado, fecha_inicio, encargado, observaciones }
@@ -403,23 +406,23 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.updateProceso] ✓ Proceso actualizado');
+      console.log('[OrderApiService.updateProceso] âœ“ Proceso actualizado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.updateProceso] ✗ Error:', error);
+      console.error('[OrderApiService.updateProceso] âœ— Error:', error);
       throw this.#formatError('actualizar proceso', error);
     }
   }
 
   /**
    * ============================================================
-   * MÉTODOS PRIVADOS (Helpers internos)
+   * METODOS PRIVADOS (Helpers internos)
    * ============================================================
    */
 
   /**
-   * Fetch con timeout automático
+   * Fetch con timeout automatico
    * @private
    */
   static async #fetchWithTimeout(url, options = {}) {
@@ -446,21 +449,21 @@ class OrderApiService {
   }
 
   /**
-   * Validar estructura mínima de datos de orden
+   * Validar estructura minima de datos de orden
    * @private
-   * @throws {Error} Si datos inválidos
+   * @throws {Error} Si datos invalidos
    */
   static #validateOrderData(orderData) {
     if (!orderData || typeof orderData !== 'object') {
-      throw new Error('Respuesta inválida: orderData no es un objeto');
+      throw new Error('Respuesta invalida: orderData no es un objeto');
     }
 
     if (!orderData.id) {
-      throw new Error('Respuesta inválida: orderData sin ID');
+      throw new Error('Respuesta invalida: orderData sin ID');
     }
 
     if (!orderData.numero_pedido) {
-      throw new Error('Respuesta inválida: orderData sin número de pedido');
+      throw new Error('Respuesta invalida: orderData sin numero de pedido');
     }
   }
 
@@ -473,10 +476,10 @@ class OrderApiService {
 
     if (error instanceof TypeError) {
       // Network error or fetch error
-      message += ': Error de red. Verifica tu conexión.';
+      message += ': Error de red. Verifica tu conexion.';
     } else if (error.name === 'AbortError') {
       // Timeout
-      message += ': La solicitud tardó demasiado. Intenta nuevamente.';
+      message += ': La solicitud tardo demasiado. Intenta nuevamente.';
     } else if (error.message) {
       message += `: ${error.message}`;
     }

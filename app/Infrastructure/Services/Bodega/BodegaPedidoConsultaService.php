@@ -57,6 +57,8 @@ class BodegaPedidoConsultaService
 
         $numerosAnulados = PedidoProduccion::query()
             ->where('estado', WarehouseConstants::STATE_CANCELLED)
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->pluck('numero_pedido')
             ->filter(fn ($n) => !empty($n))
             ->unique()
@@ -86,6 +88,8 @@ class BodegaPedidoConsultaService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
 
         $numerosEntregados = PedidoProduccion::where('estado', 'Entregado')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->pluck('numero_pedido')
             ->filter(fn ($n) => !empty($n))
             ->unique()

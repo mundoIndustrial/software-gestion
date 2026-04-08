@@ -17,28 +17,67 @@ class TrackingDataLoader {
   async openOrderTracking(orderId, mostrarSelector = true) {
     try {
       console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
-      
-      // Cargar datos básicos del pedido
-      await this.loadOrderBasicData(orderId);
-      
-      // Cargar prendas con seguimiento
-      await this.loadPrendasWithTracking(orderId);
-      
-      // Mostrar overlay de prendas solo si se solicita
+
+      // Mostrar overlay inmediatamente para feedback visual al usuario
       if (mostrarSelector) {
         if (typeof showPrendasSelector === 'function') {
           showPrendasSelector();
         }
+        this.renderPrendasSelectorLoadingState(orderId);
       }
-      
+
+      // Cargar en paralelo para reducir tiempo total de espera
+      await Promise.all([
+        this.loadOrderBasicData(orderId),
+        this.loadPrendasWithTracking(orderId)
+      ]);
+
       console.log('[openOrderTracking] Datos cargados correctamente. currentOrderData:', window.currentOrderData);
       
     } catch (error) {
       console.error('[openOrderTracking] Error:', error);
+      if (mostrarSelector) {
+        this.renderPrendasSelectorErrorState();
+      }
       if (typeof showError === 'function') {
         showError('Error al cargar datos de seguimiento');
       }
     }
+  }
+
+  renderPrendasSelectorLoadingState(orderId) {
+    const container = document.getElementById('trackingPrendasSelectorContainer');
+    if (!container) return;
+
+    const orderNumberEl = document.getElementById('selectorOrderNumber');
+    const orderClientEl = document.getElementById('selectorOrderClient');
+    const orderStatusEl = document.getElementById('selectorOrderStatus');
+    const orderStartDateEl = document.getElementById('selectorOrderStartDate');
+    const orderEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
+
+    if (orderNumberEl) orderNumberEl.textContent = String(orderId ?? '-');
+    if (orderClientEl) orderClientEl.textContent = 'Cargando...';
+    if (orderStatusEl) orderStatusEl.textContent = 'Cargando...';
+    if (orderStartDateEl) orderStartDateEl.textContent = 'Cargando...';
+    if (orderEstimatedDateEl) orderEstimatedDateEl.textContent = 'Cargando...';
+
+    container.innerHTML = `
+      <div class="tracking-prendas-loading-state" role="status" aria-live="polite">
+        <div class="tracking-prendas-loading-spinner" aria-hidden="true"></div>
+        <p class="tracking-prendas-loading-text">Cargando prendas del pedido...</p>
+      </div>
+    `;
+  }
+
+  renderPrendasSelectorErrorState() {
+    const container = document.getElementById('trackingPrendasSelectorContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="tracking-prendas-loading-state tracking-prendas-loading-state-error" role="alert">
+        <p class="tracking-prendas-loading-text">No se pudo cargar la información del pedido.</p>
+      </div>
+    `;
   }
 
   // Compatibilidad con implementación vieja (tracking-modal-script.blade.php)
@@ -141,10 +180,27 @@ class TrackingDataLoader {
         return;
       }
 
-      // Obtener el prenda_id del estado global
+      // Obtener prenda_id del contexto actual (evitar updates masivos)
       let prendaId = null;
-      if (window.currentPrendaData && window.currentPrendaData.id) {
-        prendaId = window.currentPrendaData.id;
+      if (window.currentPrendaData?.id || window.currentPrendaData?.prenda_pedido_id) {
+        prendaId = window.currentPrendaData.id || window.currentPrendaData.prenda_pedido_id;
+      }
+      if (!prendaId && window.orderState?.getCurrentPrenda) {
+        const currentPrenda = window.orderState.getCurrentPrenda();
+        prendaId = currentPrenda?.id || currentPrenda?.prenda_pedido_id || null;
+      }
+      if (!prendaId) {
+        const reciboShown = document.getElementById('trackingOrderRecibo')?.textContent?.trim() || '';
+        const consecutivo = /^\d+$/.test(reciboShown) ? parseInt(reciboShown, 10) : null;
+        const prendas = Array.isArray(window.currentOrderData?.prendas) ? window.currentOrderData.prendas : [];
+        if (consecutivo !== null) {
+          const prendaMatch = prendas.find((p) => {
+            const consecutivos = Array.isArray(p?.consecutivos) ? p.consecutivos : [];
+            const costura = consecutivos.find((c) => String(c?.tipo_recibo || '').toUpperCase() === 'COSTURA');
+            return Number(costura?.consecutivo_actual) === consecutivo;
+          });
+          prendaId = prendaMatch?.id || prendaMatch?.prenda_pedido_id || null;
+        }
       }
       
       console.log('[saveDiaEntregaSelection] Guardando:', {
@@ -152,6 +208,14 @@ class TrackingDataLoader {
         orden_id: ordenId,
         prenda_id: prendaId
       });
+
+      if (!prendaId) {
+        console.warn('[saveDiaEntregaSelection] No hay prenda seleccionada. Se cancela para evitar actualizar todos los recibos.');
+        if (typeof showError === 'function') {
+          showError('Selecciona una prenda antes de editar los días de entrega');
+        }
+        return;
+      }
       
       // Enviar al servidor
       const response = await fetch(`/registros/${ordenId}/dia-entrega`, {
@@ -174,17 +238,21 @@ class TrackingDataLoader {
       const result = await response.json();
       console.log('[saveDiaEntregaSelection] Respuesta del servidor:', result);
       
-      // Actualizar la UI con la fecha estimada calculada
-      if (result.data && result.data.fecha_estimada_de_entrega) {
+      // Actualizar la UI con la fecha estimada del recibo actualizado
+      const fechaEstimadaRecibo = result?.data?.fecha_estimada_recibo_actualizado
+        || result?.data?.fecha_estimada_de_entrega
+        || null;
+
+      if (fechaEstimadaRecibo) {
         const fechaEstimadaEl = document.getElementById('trackingEstimatedDate');
         if (fechaEstimadaEl) {
-          const fechaFormato = typeof formatDate === 'function' ? formatDate(result.data.fecha_estimada_de_entrega) : '-';
+          const fechaFormato = typeof formatDate === 'function' ? formatDate(fechaEstimadaRecibo) : '-';
           fechaEstimadaEl.textContent = fechaFormato;
         }
         
         const selectorEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
         if (selectorEstimatedDateEl) {
-          const fechaFormato = typeof formatDate === 'function' ? formatDate(result.data.fecha_estimada_de_entrega) : '-';
+          const fechaFormato = typeof formatDate === 'function' ? formatDate(fechaEstimadaRecibo) : '-';
           selectorEstimatedDateEl.textContent = fechaFormato;
         }
       }

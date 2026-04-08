@@ -41,6 +41,8 @@ class BodegaRepository implements BodegaRepositoryContract
 
         return ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosPedidos)
+            ->whereNotNull('pedidos_produccion.numero_pedido')
+            ->where('pedidos_produccion.numero_pedido', '!=', '')
             ->leftJoinSub($latestAnexoSubquery, 'pah_latest', function ($join) {
                 $join->on('pah_latest.pedido_produccion_id', '=', 'pedidos_produccion.id');
             })

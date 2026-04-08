@@ -4,15 +4,15 @@
 @section('page-title', 'Supervisión de Pedidos')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/index.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/index.css') }}?v={{ filemtime(public_path('css/supervisor-pedidos/index.css')) }}">
     <!-- CSS para modal-agregar-prenda-nueva y formularios de edición -->
-    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}?v={{ filemtime(public_path('css/crear-pedido.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}?v={{ filemtime(public_path('css/crear-pedido-editable.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}?v={{ filemtime(public_path('css/form-modal-consistency.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}?v={{ filemtime(public_path('css/swal-z-index-fix.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}?v={{ filemtime(public_path('css/componentes/prendas.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}?v={{ filemtime(public_path('css/modales/modal-exito-pedido.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}?v={{ filemtime(public_path('css/modulos/epp-modal.css')) }}">
  
     <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ filemtime(public_path('css/tracking-modal.css')) }}">
 
@@ -159,6 +159,10 @@
 
     <!-- Scripts para Recibos/Procesos -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+
+    <!-- Scripts para Modal de Seguimiento de Pedidos -->
+    <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}"></script>
+    <script defer type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
     <!-- Novedades, Galería y Toggle Factura -->
     <!-- Limpiar asignaciones y selección de pedidos -->

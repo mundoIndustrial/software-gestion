@@ -37,13 +37,13 @@ class RegistroOrdenExtendedQueryService
                 'novedades', 'dia_de_entrega', 'created_at',
                 'fecha_estimada_de_entrega', 'asesor_id', 'cliente_id', 'id'
             ])
-            ->whereNotNull('numero_pedido') //  Excluir pedidos sin número de pedido
-            ->where('numero_pedido', '>', 0) //  Asegurar que el número sea válido
+            ->whereNotNull('numero_pedido') //  Excluir pedidos sin número de pedido (borradores)
+            ->where('numero_pedido', '!=', '') //  Asegurar que el número sea válido (no string vacío)
             ->where(function (Builder $query) {
                 $query
                     ->whereIn('estado', [
                         'Entregado', self::ESTADO_EN_EJECUCION, 'No iniciado', 'Anulada',
-                        'Pendiente', 'PENDIENTE_SUPERVISOR' //  Agregar estos estados
+                        'Pendiente', 'PENDIENTE_SUPERVISOR' //  Agregar estos estados (NO incluye 'Borrador')
                     ])
                     ->orWhere(function (Builder $q) {
                         $q->where('estado', 'PENDIENTE_INSUMOS')

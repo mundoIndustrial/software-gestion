@@ -90,7 +90,7 @@ class GetConsecutivoCosturaUseCase
      * Obtener consecutivo y área del registro
      * @param int $pedidoId
      * @param string|null $prendaId
-     * @return array ['consecutivo' => ?string, 'area' => ?string]
+     * @return array ['consecutivo' => ?string, 'area' => ?string, 'dia_de_entrega' => ?int, 'fecha_estimada_de_entrega' => ?string]
      */
     private function obtenerConsecutivoYArea(int $pedidoId, ?string $prendaId): array
     {
@@ -100,7 +100,9 @@ class GetConsecutivoCosturaUseCase
 
         return [
             'consecutivo' => $registro->consecutivo_actual ?? null,
-            'area' => $registro->area ?? null
+            'area' => $registro->area ?? null,
+            'dia_de_entrega' => isset($registro->dia_de_entrega) ? (int) $registro->dia_de_entrega : null,
+            'fecha_estimada_de_entrega' => $registro->fecha_estimada_de_entrega ?? null,
         ];
     }
 
@@ -165,6 +167,8 @@ class GetConsecutivoCosturaUseCase
         return [
             'consecutivo' => $consecutivoData['consecutivo'],
             'area' => $consecutivoData['area'],
+            'dia_de_entrega' => $consecutivoData['dia_de_entrega'] ?? null,
+            'fecha_estimada_de_entrega' => $consecutivoData['fecha_estimada_de_entrega'] ?? null,
             'encargado' => $procesoData['encargado'],
             'proceso_id' => $procesoData['id'],
             'fecha_inicio' => $procesoData['fecha_inicio'],

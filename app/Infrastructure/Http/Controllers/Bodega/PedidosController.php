@@ -558,6 +558,10 @@ class PedidosController extends Controller
                      ->where('bdv.user_id', '=', auth()->id());
             });
 
+            // Excluir borradores (donde numero_pedido es NULL o vacío)
+            $query->whereNotNull('bodega_detalles_talla.numero_pedido')
+                  ->where('bodega_detalles_talla.numero_pedido', '!=', '');
+
             // Excluir pedidos anulados para ambas áreas
             // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
             $query->whereNotIn('bodega_detalles_talla.numero_pedido', function($subquery) {
@@ -810,6 +814,8 @@ class PedidosController extends Controller
             $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->whereNotNull('bodega_detalles_talla.numero_pedido')
+                ->where('bodega_detalles_talla.numero_pedido', '!=', '')
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
                 ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
                 ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
@@ -851,6 +857,8 @@ class PedidosController extends Controller
             $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->whereNotNull('bodega_detalles_talla.numero_pedido')
+                ->where('bodega_detalles_talla.numero_pedido', '!=', '')
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
                 ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
                 ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
