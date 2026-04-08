@@ -531,9 +531,9 @@ class GetSeguimientoPorPrendaUseCase
     }
 
     /**
-     * Obtener festivos DIRECTAMENTE de la API - SIN FALLBACKS
+     * Obtener festivos DIRECTAMENTE de la API - CON FALLBACK
      * Intenta múltiples endpoints de Nager.Date
-     * Si falla, lanza excepción en lugar de usar fallback
+     * Si falla, retorna array vacío (sin festivos) para permitir cálculo normal
      */
     private function obtenerFestivosDesdeAPI(int $yearInicio, int $yearFin): array
     {
@@ -544,8 +544,12 @@ class GetSeguimientoPorPrendaUseCase
             $festivos = array_merge($festivos, $festivosDelAnio);
         }
 
+        // Si no hay festivos, log de advertencia pero retorna array vacío (no lanza excepción)
         if (empty($festivos)) {
-            throw new \Exception("No se pudieron obtener festivos de la API para el rango {$yearInicio}-{$yearFin}");
+            Log::warning('[GetSeguimientoPorPrendaUseCase] No se obtuvieron festivos de la API, continuando sin considerarlos', [
+                'year_inicio' => $yearInicio,
+                'year_fin' => $yearFin
+            ]);
         }
 
         return $festivos;
@@ -554,6 +558,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Obtener festivos de UN AÑO desde la API
      * Intenta dos endpoints de Nager.Date
+     * Si falla, retorna array vacío en lugar de lanzar excepción
      */
     private function obtenerFestivosDelAnioDesdeAPI(int $year): array
     {
@@ -599,8 +604,12 @@ class GetSeguimientoPorPrendaUseCase
             }
         }
 
-        // Si llega aquí, AMBOS endpoints fallaron
-        throw new \Exception("No se pudieron obtener festivos de la API para el año {$year}. Ambos endpoints de Nager.Date fallaron.");
+        // Si llega aquí, AMBOS endpoints fallaron - retornar array vacío (sin festivos)
+        Log::warning('[GetSeguimientoPorPrendaUseCase] No se pudo obtener festivos para el año', [
+            'year' => $year,
+            'message' => 'Ambos endpoints de Nager.Date fallaron, continuando sin festivos'
+        ]);
+        return [];
     }
 
     /**
