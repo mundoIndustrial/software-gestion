@@ -418,18 +418,21 @@ class RegistroOrdenController extends Controller
      * 
      * Parámetros esperados en Request:
      * - dia_de_entrega: int (entre 1 y 35)
+     * - prenda_id: int (ID de la prenda cuyo recibo actualizar)
      */
     public function saveDiaEntrega(Request $request, $id)
     {
         try {
             $request->validate([
-                'dia_de_entrega' => 'nullable|integer|min:1|max:35'
+                'dia_de_entrega' => 'nullable|integer|min:1|max:35',
+                'prenda_id' => 'nullable|integer'
             ]);
 
             $diaDeEntrega = $request->input('dia_de_entrega');
+            $prendaId = $request->input('prenda_id');
 
             return response()->json(
-                $this->saveDiaEntregaUseCase->execute($id, $diaDeEntrega)
+                $this->saveDiaEntregaUseCase->execute($id, $diaDeEntrega, true, $prendaId)
             );
         } catch (\InvalidArgumentException $e) {
             \Log::error('Error validación en SaveDiaEntrega: ' . $e->getMessage());

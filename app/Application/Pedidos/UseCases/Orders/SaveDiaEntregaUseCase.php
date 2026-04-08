@@ -23,26 +23,46 @@ class SaveDiaEntregaUseCase
 
     /**
      * Ejecutar el caso de uso
-     * @param int $numeroPedido Número de pedido o ID del pedido
+     * @param int $numeroPedido ID del pedido
      * @param int|null $diaDeEntrega Días de entrega (1-35)
      * @param bool $calcularFechaEstimada Si calcular la fecha estimada
+     * @param int|null $prendaId ID de la prenda (para actualizar solo esos recibos)
      * @return array
      */
-    public function execute(int $numeroPedido, ?int $diaDeEntrega, bool $calcularFechaEstimada = true): array
+    public function execute(int $numeroPedido, ?int $diaDeEntrega, bool $calcularFechaEstimada = true, ?int $prendaId = null): array
     {
-        // Obtener el pedido - buscar por número o ID
-        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
-            ->orWhere('id', $numeroPedido)
-            ->firstOrFail();
+        // Obtener el pedido solo por ID
+        $pedido = PedidoProduccion::findOrFail($numeroPedido);
 
-        // Obtener todos los recibos de costura asociados a este pedido
-        $recibos = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
-            ->where('tipo_recibo', 'COSTURA')
-            ->get();
+        \Log::info('[SaveDiaEntregaUseCase.execute] Pedido encontrado', [
+            'numero_pedido_param' => $numeroPedido,
+            'pedido_id' => $pedido->id,
+            'prenda_id' => $prendaId
+        ]);
+
+        // Buscar recibos: si hay prenda_id, solo de esa prenda; si no, todos del pedido
+        $query = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id);
+        
+        if ($prendaId) {
+            $query = $query->where('prenda_id', $prendaId);
+        }
+        
+        $recibos = $query->get();
+
+        \Log::info('[SaveDiaEntregaUseCase.execute] Búsqueda de recibos', [
+            'pedido_produccion_id' => $pedido->id,
+            'prenda_id' => $prendaId,
+            'recibos_encontrados' => $recibos->count()
+        ]);
 
         if ($recibos->isEmpty()) {
+            \Log::error('[SaveDiaEntregaUseCase.execute] No se encontraron recibos', [
+                'numero_pedido_param' => $numeroPedido,
+                'pedido_id' => $pedido->id,
+                'prenda_id' => $prendaId
+            ]);
             throw new \InvalidArgumentException(
-                'No se encontraron recibos de costura para este pedido'
+                'No se encontraron recibos asociados a este pedido'
             );
         }
 
@@ -61,7 +81,7 @@ class SaveDiaEntregaUseCase
             $updateData['dia_de_entrega'] = null;
         }
 
-        // Calcular fecha estimada
+        // Calcular fecha estimada para estos recibos específicos
         if ($calcularFechaEstimada && $diaDeEntrega && $diaDeEntrega > 0) {
             $fechaInicio = $pedido->created_at;
             
@@ -76,24 +96,60 @@ class SaveDiaEntregaUseCase
             $updateData['fecha_estimada_de_entrega'] = null;
         }
 
-        // Actualizar todos los recibos en un solo query
-        $actualizados = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
-            ->where('tipo_recibo', 'COSTURA')
-            ->update($updateData);
+        // Actualizar solo los recibos encontrados (de la prenda específica o todos)
+        $actualizados = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id);
+        
+        if ($prendaId) {
+            $actualizados = $actualizados->where('prenda_id', $prendaId);
+        }
+        
+        $actualizados = $actualizados->update($updateData);
 
         // Log
         \Log::info('[SaveDiaEntregaUseCase] Día de entrega actualizado en recibos', [
             'numero_pedido' => $pedido->numero_pedido,
             'pedido_id' => $pedido->id,
+            'prenda_id' => $prendaId,
             'recibos_actualizados' => $actualizados,
-            'dia_de_entrega' => $diaDeEntrega,
-            'fecha_estimada_de_entrega' => $updateData['fecha_estimada_de_entrega'] ?? null,
-            'usuario_id' => auth()->id()
+            'dia_de_entrega' => $diaDeEntrega
         ]);
 
+        // **IMPORTANTE**: Calcular la fecha más lejana de TODOS los recibos del pedido
+        $todoRecibos = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+            ->get();
+
+        $fechaMaximaEstimada = null;
+        foreach ($todoRecibos as $recibo) {
+            if ($recibo->fecha_estimada_de_entrega) {
+                $fechaRecibo = Carbon::parse($recibo->fecha_estimada_de_entrega);
+                if (!$fechaMaximaEstimada || $fechaRecibo->isBefore($fechaMaximaEstimada)) {
+                    $fechaMaximaEstimada = $fechaRecibo;
+                }
+            }
+        }
+
+        // Actualizar la fecha general del pedido con la fecha más lejana
+        $pedidoUpdateData = [];
+        if ($prendaId) {
+            // Solo actualizamos dias_de_entrega del primer recibo (la lógica es que sea genérico)
+            if ($diaDeEntrega !== null) {
+                $pedidoUpdateData['dia_de_entrega'] = $diaDeEntrega;
+            }
+        }
+        if ($fechaMaximaEstimada) {
+            $pedidoUpdateData['fecha_estimada_de_entrega'] = $fechaMaximaEstimada;
+        }
+
+        if (!empty($pedidoUpdateData)) {
+            $pedido->update($pedidoUpdateData);
+            \Log::info('[SaveDiaEntregaUseCase] Pedido actualizado con fecha más lejana', [
+                'pedido_id' => $pedido->id,
+                'fecha_estimada_de_entrega' => $fechaMaximaEstimada
+            ]);
+        }
+
         // Recargar para obtener datos actualizados
-        $recibos = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
-            ->where('tipo_recibo', 'COSTURA')
+        $recibosActualizados = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
             ->get();
 
         return [
@@ -102,9 +158,9 @@ class SaveDiaEntregaUseCase
             'data' => [
                 'numero_pedido' => $pedido->numero_pedido,
                 'dia_de_entrega' => $diaDeEntrega,
-                'fecha_estimada_de_entrega' => $updateData['fecha_estimada_de_entrega'] ?? null,
+                'fecha_estimada_de_entrega' => $fechaMaximaEstimada ? $fechaMaximaEstimada->format('Y-m-d') : null,
                 'recibos_actualizados' => $actualizados,
-                'recibos' => $recibos->map(function($r) {
+                'recibos' => $recibosActualizados->map(function($r) {
                     return [
                         'id' => $r->id,
                         'consecutivo_actual' => $r->consecutivo_actual,

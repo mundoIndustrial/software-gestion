@@ -38,6 +38,11 @@ export class UpdateRenderer {
 
     // Recibo principal (pre-computado y enviado por el backend)
     const reciboPrincipal = orderData.recibo_principal || '-';
+    console.log('[UpdateRenderer.updateOrderInfo] trackingOrderRecibo <- recibo_principal:', {
+      pedidoId: orderData.id || null,
+      reciboPrincipal,
+      pathname: globalThis.location?.pathname || ''
+    });
     setText('trackingOrderRecibo', reciboPrincipal);
 
     // Selector de prendas
@@ -117,6 +122,12 @@ export class UpdateRenderer {
    * @param {string} area - Área actual
    */
   updateReciboHeader(numeroRecibo, area) {
+    console.log('[UpdateRenderer.updateReciboHeader] Entrada:', {
+      numeroRecibo,
+      area,
+      pathname: globalThis.location?.pathname || ''
+    });
+
     const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
     if (reciboHeaderElement) {
       reciboHeaderElement.textContent = area !== '-'
@@ -127,6 +138,28 @@ export class UpdateRenderer {
     const reciboElement = document.getElementById('trackingPrendaRecibo');
     if (reciboElement) {
       reciboElement.textContent = numeroRecibo;
+    }
+
+    const trackingOrderRecibo = document.getElementById('trackingOrderRecibo');
+    if (trackingOrderRecibo) {
+      const numeroNormalizado = String(numeroRecibo || '')
+        .replace(/^COSTURA\s*#\s*/i, '')
+        .replace(/^Recibo\s*#\s*/i, '')
+        .trim();
+
+      const valorFinal = numeroNormalizado && numeroNormalizado !== 'Sin recibo'
+        ? numeroNormalizado
+        : '-';
+
+      console.log('[UpdateRenderer.updateReciboHeader] trackingOrderRecibo <-', {
+        numeroReciboOriginal: numeroRecibo,
+        numeroNormalizado,
+        valorFinal
+      });
+
+      trackingOrderRecibo.textContent = valorFinal;
+    } else {
+      console.warn('[UpdateRenderer.updateReciboHeader] No existe #trackingOrderRecibo en DOM');
     }
   }
 

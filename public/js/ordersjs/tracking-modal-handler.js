@@ -429,11 +429,51 @@ function initTrackingModalListeners() {
   globalThis.updateDaysSelectorWithRetry = updateDaysSelectorWithRetry;
   globalThis.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
 
+  function renderPrendasSelectorLoadingState(orderId) {
+    const container = document.getElementById('trackingPrendasSelectorContainer');
+    if (!container) return;
+
+    const orderNumberEl = document.getElementById('selectorOrderNumber');
+    const orderClientEl = document.getElementById('selectorOrderClient');
+    const orderStatusEl = document.getElementById('selectorOrderStatus');
+    const orderStartDateEl = document.getElementById('selectorOrderStartDate');
+    const orderEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
+
+    if (orderNumberEl) orderNumberEl.textContent = String(orderId ?? '-');
+    if (orderClientEl) orderClientEl.textContent = 'Cargando...';
+    if (orderStatusEl) orderStatusEl.textContent = 'Cargando...';
+    if (orderStartDateEl) orderStartDateEl.textContent = 'Cargando...';
+    if (orderEstimatedDateEl) orderEstimatedDateEl.textContent = 'Cargando...';
+
+    container.innerHTML = `
+      <div class="tracking-prendas-loading-state" role="status" aria-live="polite">
+        <div class="tracking-prendas-loading-spinner" aria-hidden="true"></div>
+        <p class="tracking-prendas-loading-text">Cargando prendas del pedido...</p>
+      </div>
+    `;
+  }
+
+  function renderPrendasSelectorErrorState() {
+    const container = document.getElementById('trackingPrendasSelectorContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="tracking-prendas-loading-state tracking-prendas-loading-state-error" role="alert">
+        <p class="tracking-prendas-loading-text">No se pudo cargar la información del pedido.</p>
+      </div>
+    `;
+  }
+
   // Abrir selector de prendas (overlay)
   globalThis.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
       console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
-      
+
+      if (mostrarSelector) {
+        showPrendasSelector();
+        renderPrendasSelectorLoadingState(orderId);
+      }
+
       await orderLoaderService.loadCompleteOrder(orderId);
       
       // Poblar globalThis.currentOrderData con los datos cargados en orderState
@@ -450,15 +490,14 @@ function initTrackingModalListeners() {
       
       console.log('[openOrderTracking] globalThis.currentOrderData poblado:', globalThis.currentOrderData);
       console.log('[openOrderTracking] Prendas copiadas a globalThis.currentOrderData:', prendas.length);
-      
-      if (mostrarSelector) {
-        showPrendasSelector();
-      }
-      
+
       console.log('[openOrderTracking] Datos cargados correctamente. orderState:', orderState.getSnapshot());
       
     } catch (error) {
       console.error('[openOrderTracking] Error:', error);
+      if (mostrarSelector) {
+        renderPrendasSelectorErrorState();
+      }
       showError('Error al cargar datos de seguimiento');
     }
   };
@@ -555,8 +594,97 @@ function initTrackingModalListeners() {
     }
   };
 
+  async function enrichPrendaForTracking(prenda) {
+    if (!prenda || typeof prenda !== 'object') {
+      return prenda;
+    }
+
+    const pedidoId = orderState.getOrderId() || globalThis.currentOrderData?.id || null;
+    const prendaId = prenda.id || prenda.prenda_pedido_id || null;
+
+    console.log('[enrichPrendaForTracking] Inicio:', {
+      pedidoId,
+      prendaId,
+      prendaIdRaw: prenda.id,
+      prendaPedidoIdRaw: prenda.prenda_pedido_id,
+      reciboDisplayActual: prenda.recibo_display || null,
+      ultimoReciboNumeroActual: prenda.ultimo_recibo_numero || null
+    });
+
+    if (!pedidoId || !prendaId) {
+      console.warn('[enrichPrendaForTracking] Datos insuficientes, se devuelve prenda sin enriquecer');
+      return prenda;
+    }
+
+    const enrichedPrenda = { ...prenda };
+
+    try {
+      const consecutivoData = await OrderApiService.loadConsecutivoCostura(pedidoId, prendaId);
+      console.log('[enrichPrendaForTracking] Respuesta consecutivo-costura:', consecutivoData);
+      if (consecutivoData && consecutivoData.success) {
+        orderState.setConsecutivoCosturaData(consecutivoData);
+        globalThis.currentConsecutivoCosturaData = consecutivoData;
+
+        if (consecutivoData.consecutivo) {
+          const reciboTexto = `COSTURA #${consecutivoData.consecutivo}`;
+          enrichedPrenda.recibo_display = reciboTexto;
+          enrichedPrenda.ultimo_recibo_numero = consecutivoData.consecutivo;
+
+          const trackingOrderReciboEl = document.getElementById('trackingOrderRecibo');
+          if (trackingOrderReciboEl) {
+            trackingOrderReciboEl.textContent = consecutivoData.consecutivo;
+            console.log('[enrichPrendaForTracking] DOM trackingOrderRecibo actualizado con consecutivo:', consecutivoData.consecutivo);
+          }
+        }
+      } else {
+        console.warn('[enrichPrendaForTracking] Consecutivo sin success=true o vacío');
+      }
+    } catch (error) {
+      console.warn('[enrichPrendaForTracking] No se pudo cargar consecutivo-costura:', error);
+    }
+
+    const hasSeguimientos = enrichedPrenda.seguimientos_por_area && Object.keys(enrichedPrenda.seguimientos_por_area).length > 0;
+    if (!hasSeguimientos) {
+      try {
+        const response = await fetch(`/registros/${pedidoId}/seguimiento-prenda`);
+        console.log('[enrichPrendaForTracking] GET seguimiento-prenda status:', response.status);
+        if (response.ok) {
+          const trackingData = await response.json();
+          const prendaConTracking = Array.isArray(trackingData?.prendas)
+            ? trackingData.prendas.find((p) =>
+                String(p.id) === String(enrichedPrenda.id)
+                || String(p.prenda_pedido_id) === String(enrichedPrenda.id)
+                || String(p.id) === String(enrichedPrenda.prenda_pedido_id)
+                || String(p.prenda_pedido_id) === String(enrichedPrenda.prenda_pedido_id)
+              )
+            : null;
+
+          if (prendaConTracking?.seguimientos_por_area) {
+            enrichedPrenda.seguimientos_por_area = prendaConTracking.seguimientos_por_area;
+            console.log('[enrichPrendaForTracking] seguimientos_por_area asignado:', Object.keys(prendaConTracking.seguimientos_por_area));
+          }
+
+          if (prendaConTracking?.datos_activacion_recibo) {
+            enrichedPrenda.datos_activacion_recibo = prendaConTracking.datos_activacion_recibo;
+          }
+        }
+      } catch (error) {
+        console.warn('[enrichPrendaForTracking] No se pudo cargar seguimiento-prenda:', error);
+      }
+    }
+
+    console.log('[enrichPrendaForTracking] Resultado final:', {
+      reciboDisplay: enrichedPrenda.recibo_display || null,
+      ultimoReciboNumero: enrichedPrenda.ultimo_recibo_numero || null,
+      hasSeguimientosPorArea: !!(enrichedPrenda.seguimientos_por_area && Object.keys(enrichedPrenda.seguimientos_por_area).length > 0)
+    });
+
+    return enrichedPrenda;
+  }
+
   globalThis.showPrendaTracking = async function(prenda) {
-    await trackingTimelineController.showPrendaTracking(prenda);
+    const prendaEnriquecida = await enrichPrendaForTracking(prenda);
+    await trackingTimelineController.showPrendaTracking(prendaEnriquecida);
   };
 
   globalThis.handleVerProcesos = async function(index) {

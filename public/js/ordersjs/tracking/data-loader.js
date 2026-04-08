@@ -140,10 +140,17 @@ class TrackingDataLoader {
         console.warn('[saveDiaEntregaSelection] No se encontró el ID de la orden');
         return;
       }
+
+      // Obtener el prenda_id del estado global
+      let prendaId = null;
+      if (window.currentPrendaData && window.currentPrendaData.id) {
+        prendaId = window.currentPrendaData.id;
+      }
       
       console.log('[saveDiaEntregaSelection] Guardando:', {
         dias_seleccionados: diasSeleccionados,
-        orden_id: ordenId
+        orden_id: ordenId,
+        prenda_id: prendaId
       });
       
       // Enviar al servidor
@@ -155,6 +162,7 @@ class TrackingDataLoader {
         },
         body: JSON.stringify({
           dia_de_entrega: diasSeleccionados,
+          prenda_id: prendaId,
           calcular_fecha_estimada: true
         })
       });

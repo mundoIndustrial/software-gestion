@@ -53,6 +53,15 @@
   }
 }
 
+@keyframes tpsSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ===== OVERLAY DEL MODAL - INDEPENDIENTE ===== */
 #trackingPrendasSelectorOverlay {
   position: fixed;
@@ -257,6 +266,36 @@
   border-radius: 12px;
   border: 1px solid var(--tps-neutral-200);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tracking-prendas-loading-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 20px;
+  color: var(--tps-neutral-700);
+}
+
+.tracking-prendas-loading-state-error {
+  color: var(--tps-error);
+}
+
+.tracking-prendas-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--tps-neutral-200);
+  border-top-color: var(--tps-primary);
+  border-radius: 50%;
+  animation: tpsSpin 0.9s linear infinite;
+}
+
+.tracking-prendas-loading-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 /* ===== TABLA DE PRENDAS ===== */
