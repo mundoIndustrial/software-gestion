@@ -111,7 +111,7 @@
                                     $fechaMaximaRecibos = $orden->getFechaEstimadaMaximaEntrega();
                                     $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
                                 @endphp
-                                @if($diaEntrega !== '-')
+                                @if(false && $diaEntrega !== '-')
                                     <span class="entrega-date">↑ {{ $diaEntrega }}</span>
                                 @else
                                     <span class="entrega-date">{{ $fechaEntrega ? $fechaEntrega->format('d/m/Y') : '-' }}</span>

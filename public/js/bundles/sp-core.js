@@ -335,7 +335,18 @@ class FilterService {
             return true;
         } catch (e) {
             console.error('[FilterService] Error en navegación AJAX:', e);
-            window.location.href = urlString;
+            let shouldHardReload = true;
+            try {
+                const currentUrl = new URL(window.location.href, window.location.origin).toString();
+                const targetUrl = new URL(urlString, window.location.origin).toString();
+                shouldHardReload = currentUrl !== targetUrl;
+            } catch (_) {
+                shouldHardReload = true;
+            }
+
+            if (shouldHardReload) {
+                window.location.href = urlString;
+            }
             return false;
         } finally {
             container.style.opacity = '';

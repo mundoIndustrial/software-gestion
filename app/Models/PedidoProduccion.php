@@ -345,16 +345,30 @@ class PedidoProduccion extends Model
      */
     public function getFechaEstimadaMaximaEntrega(): ?\Carbon\Carbon
     {
-        return $this->consecutivosRecibos()
+        $query = $this->consecutivosRecibos()
             ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
-            ->whereNotNull('fecha_estimada_de_entrega')
-            ->max('fecha_estimada_de_entrega')
-            ? \Carbon\Carbon::parse(
-                $this->consecutivosRecibos()
-                    ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
-                    ->whereNotNull('fecha_estimada_de_entrega')
-                    ->max('fecha_estimada_de_entrega')
-            )
-            : null;
+            ->whereNotNull('fecha_estimada_de_entrega');
+
+        $fechaMaxima = $query->max('fecha_estimada_de_entrega');
+
+        if (app()->environment('local')) {
+            $fechas = $this->consecutivosRecibos()
+                ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+                ->whereNotNull('fecha_estimada_de_entrega')
+                ->orderBy('fecha_estimada_de_entrega', 'asc')
+                ->pluck('fecha_estimada_de_entrega')
+                ->map(fn($f) => (string) $f)
+                ->values()
+                ->all();
+
+            \Log::debug('[PedidoProduccion::getFechaEstimadaMaximaEntrega] Fechas de recibos COSTURA', [
+                'pedido_id' => $this->id,
+                'numero_pedido' => $this->numero_pedido,
+                'fechas_candidatas_asc' => $fechas,
+                'fecha_maxima' => $fechaMaxima,
+            ]);
+        }
+
+        return $fechaMaxima ? \Carbon\Carbon::parse($fechaMaxima) : null;
     }
 }
