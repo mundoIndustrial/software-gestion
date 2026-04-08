@@ -8,14 +8,18 @@ final class CambiarEstadoPedidoDTO
         public readonly int|string $pedidoId,
         public readonly string $nuevoEstado,
         public readonly ?string $razon = null,
+        public readonly ?string $nombreUsuario = null,
+        public readonly bool $registrarNovedad = false,
     ) {}
 
     public static function fromRequest(int|string $pedidoId, array $data): self
     {
         return new self(
             pedidoId: $pedidoId,
-            nuevoEstado: $data['nuevo_estado'] ?? throw new \InvalidArgumentException('nuevo_estado requerido'),
+            nuevoEstado: $data['nuevo_estado'] ?? $data['estado'] ?? throw new \InvalidArgumentException('nuevo_estado requerido'),
             razon: $data['razon'] ?? null,
+            nombreUsuario: $data['nombre_usuario'] ?? null,
+            registrarNovedad: (bool) ($data['registrar_novedad'] ?? false),
         );
     }
 }

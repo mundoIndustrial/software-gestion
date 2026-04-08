@@ -27,7 +27,7 @@
                 <div id="novedadesContainer" class="space-y-3">
                     <!-- Las novedades se cargarán aquí dinámicamente -->
                     <div class="flex justify-center items-center py-8">
-                        <span class="text-slate-500">⏳ Cargando novedades...</span>
+                        <span class="text-slate-500"> Cargando novedades...</span>
                     </div>
                 </div>
             </div>
@@ -233,12 +233,12 @@ async function cargarNovedadesAdvanced(pedidoId) {
     // Mostrar loading
     container.innerHTML = `
         <div class="flex justify-center items-center py-8">
-            <span class="text-slate-500">⏳ Cargando novedades...</span>
+            <span class="text-slate-500"> Cargando novedades...</span>
         </div>
     `;
     
     try {
-        const response = await fetch(`/registros/${pedidoId}/novedades`);
+        const response = await fetch(`/despacho/${pedidoId}/observaciones`);
         
         if (!response.ok) {
             throw new Error('Error al cargar novedades');
@@ -246,16 +246,22 @@ async function cargarNovedadesAdvanced(pedidoId) {
         
         const data = await response.json();
         
-        if (data.novedades && data.novedades.trim() !== '') {
-            // Parsear novedades del campo texto
-            novedadesData = parsearNovedades(data.novedades);
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+            // Mapear observaciones al formato esperado por renderizarNovedades
+            novedadesData = data.data.map(obs => ({
+                id: obs.id,
+                usuario: obs.usuario_nombre || 'Sin usuario',
+                fechaHora: obs.created_at ? new Date(obs.created_at).toLocaleString() : '',
+                texto: obs.contenido,
+                source: obs.source,
+            }));
             renderizarNovedades();
         } else {
             // No hay novedades
             container.innerHTML = `
                 <div class="flex justify-center items-center py-8">
                     <div class="text-center">
-                        <span class="text-slate-500 text-lg">📝 No hay novedades registradas</span>
+                        <span class="text-slate-500 text-lg"> No hay novedades registradas</span>
                         <p class="text-slate-400 text-sm mt-2">Haz clic en "Agregar Novedad" para comenzar</p>
                     </div>
                 </div>
@@ -269,7 +275,7 @@ async function cargarNovedadesAdvanced(pedidoId) {
         container.innerHTML = `
             <div class="flex justify-center items-center py-8">
                 <div class="text-center">
-                    <span class="text-red-500 text-lg">❌ Error al cargar novedades</span>
+                    <span class="text-red-500 text-lg"> Error al cargar novedades</span>
                     <p class="text-slate-400 text-sm mt-2">Por favor, intenta nuevamente</p>
                 </div>
             </div>
@@ -323,7 +329,7 @@ function renderizarNovedades() {
         container.innerHTML = `
             <div class="flex justify-center items-center py-8">
                 <div class="text-center">
-                    <span class="text-slate-500 text-lg">📝 No hay novedades registradas</span>
+                    <span class="text-slate-500 text-lg"> No hay novedades registradas</span>
                     <p class="text-slate-400 text-sm mt-2">Haz clic en "Agregar Novedad" para comenzar</p>
                 </div>
             </div>
@@ -483,7 +489,7 @@ async function agregarNuevaNovedad(texto) {
     }
     
     // Mostrar notificación de éxito
-    showNotification('✅ Novedad agregada correctamente', 'success');
+    showNotification(' Novedad agregada correctamente', 'success');
     
     // Actualizar la tabla principal
     updateRowNovedades(currentPedidoId, data.data.novedades);
@@ -528,7 +534,7 @@ async function actualizarNovedad(novedadId, nuevoTexto) {
     }
     
     // Mostrar notificación de éxito
-    showNotification('✅ Novedad actualizada correctamente', 'success');
+    showNotification(' Novedad actualizada correctamente', 'success');
     
     // Actualizar la tabla principal
     updateRowNovedades(currentPedidoId, data.data.novedades);
@@ -571,7 +577,7 @@ async function eliminarNovedad(novedadId) {
         }
         
         // Mostrar notificación y recargar
-        showNotification('✅ Novedad eliminada correctamente', 'success');
+        showNotification(' Novedad eliminada correctamente', 'success');
         updateRowNovedades(currentPedidoId, data.data.novedades);
         renderizarNovedades();
         

@@ -11,11 +11,11 @@ use App\Models\VariantePrenda;
 use App\Models\ColorPrenda;
 use App\Models\TelaPrenda;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class PedidoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private PedidoService $service;
     private User $usuario;
@@ -45,7 +45,7 @@ class PedidoServiceTest extends TestCase
                 [
                     'nombre_producto' => 'POLO HOMBRE',
                     'cantidad' => 10,
-                    'descripcion' => 'Polo bÃ¡sico'
+                    'descripcion' => 'Polo basico'
                 ]
             ],
             'especificaciones' => [
@@ -70,7 +70,7 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: NÃºmero de pedido es Ãºnico y secuencial
+     * Test: numero de pedido es unico y secuencial
      */
     public function test_numero_pedido_es_unico_y_secuencial(): void
     {
@@ -86,7 +86,7 @@ class PedidoServiceTest extends TestCase
             'estado' => 'borrador',
             'es_borrador' => true,
             'productos' => [['nombre_producto' => 'JEAN', 'cantidad' => 5]],
-            'especificaciones' => ['forma_pago' => 'CrÃ©dito']
+            'especificaciones' => ['forma_pago' => 'credito']
         ]);
         
         // Crear segundo pedido
@@ -126,7 +126,7 @@ class PedidoServiceTest extends TestCase
             'nombre_producto' => 'POLO HOMBRE',
             'genero' => 'Hombre',
             'es_jean_pantalon' => false,
-            'descripcion' => 'Polo bÃ¡sico',
+            'descripcion' => 'Polo basico',
             'tallas' => ['S', 'M', 'L'],
             'estado' => 'Pendiente'
         ]);
@@ -215,7 +215,7 @@ class PedidoServiceTest extends TestCase
         // Contar pedidos antes
         $pedidosAntes = PedidoProduccion::count();
 
-        // Actuar - todo deberÃ­a completarse sin error
+        // Actuar - todo deberia completarse sin error
         $pedido = $this->service->aceptarCotizacion($cotizacionOriginal);
 
         // Afirmar - no debe haber rollback
@@ -229,7 +229,7 @@ class PedidoServiceTest extends TestCase
     {
         $this->cotizacion->update([
             'especificaciones' => [
-                'forma_pago' => 'CrÃ©dito 30 dÃ­as'
+                'forma_pago' => 'credito 30 Dias'
             ]
         ]);
 
@@ -237,7 +237,7 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals('CrÃ©dito 30 dÃ­as', $pedido->forma_de_pago);
+        $this->assertEquals('credito 30 Dias', $pedido->forma_de_pago);
     }
 
     /**
@@ -262,15 +262,15 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals(now()->toDateString(), $pedido->fecha_de_creacion_de_orden);
+        $this->assertEquals(now()->toDateString(), $pedido->created_at);
     }
 
     /**
-     * Test: MÃºltiples prendas se crean correctamente
+     * Test: multiples prendas se crean correctamente
      */
     public function test_multiples_prendas_se_crean_correctamente(): void
     {
-        // Crear mÃºltiples prendas en cotización
+        // Crear multiples prendas en cotización
         for ($i = 0; $i < 3; $i++) {
             PrendaCotizacionFriendly::create([
                 'cotizacion_id' => $this->cotizacion->id,
@@ -287,4 +287,6 @@ class PedidoServiceTest extends TestCase
         $this->assertCount(3, $pedido->prendas->pluck('procesos')->flatten());
     }
 }
+
+
 

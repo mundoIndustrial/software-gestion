@@ -40,7 +40,6 @@ class AnalyzeQuotation extends Command
             ->get();
 
         $this->info(' PRENDAS GUARDADAS: ' . count($prendas));
-        $this->line('────────────────────────────────────────');
 
         foreach ($prendas as $prenda) {
             $this->line("Prenda ID: {$prenda->id} | {$prenda->nombre_producto}");
@@ -64,7 +63,7 @@ class AnalyzeQuotation extends Command
                         ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prenda->id)
                         ->count();
 
-                    $this->line("         📸 Fotos: $fotos");
+                    $this->line("          Fotos: $fotos");
                 }
             }
 
@@ -73,7 +72,7 @@ class AnalyzeQuotation extends Command
                 ->where('prenda_pedido_id', $prenda->id)
                 ->count();
 
-            $this->line("   📸 Fotos de prenda: $fotosPrenda");
+            $this->line("    Fotos de prenda: $fotosPrenda");
             $this->newLine();
         }
 

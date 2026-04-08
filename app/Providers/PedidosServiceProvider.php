@@ -8,19 +8,41 @@ use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use App\Application\Services\ColorGeneroMangaBrocheService;
-use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
-use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Application\Pedidos\Despacho\Services\DespachoGeneradorService;
+use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
+use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Domain\Pedidos\Despacho\Services\DespachoEstadoServiceContract;
+use App\Domain\Pedidos\Despacho\Services\DespachoValidadorServiceContract;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
+use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Application\Pedidos\UseCases\ObtenerDetalleCompletoUseCase;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
+use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
+use App\Domain\Pedidos\Despacho\UseCases\GuardarDespachoUseCaseContract;
+use App\Domain\Pedidos\UseCases\ObtenerFilasDespachoUseCaseContract;
+use App\Application\Shared\Contracts\AuditRepositoryInterface;
+use App\Application\Shared\Contracts\TransactionManagerInterface;
+use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
+use App\Infrastructure\Services\NewsAuditRepository;
+use App\Infrastructure\Services\EloquentTransactionManager;
+use App\Infrastructure\Services\BroadcastOrdenEventDispatcher;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetRecibosDatosUseCase;
+use App\Application\Pedidos\UseCases\RegistroOrden\GetNovedadesUseCase;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider para servicios de Pedidos
- * 
  * Responsabilidad: Registrar y configurar servicios con binding
  * Patrón: Service Provider + Dependency Injection
  * Principio: DIP - Dependency Inversion Principle
@@ -34,7 +56,7 @@ class PedidosServiceProvider extends ServiceProvider
     {
         // Registrar PrendaProcessorService como singleton
         // (reutilizable sin estado)
-        $this->app->singleton(PrendaProcessorService::class, function ($app) {
+        $this->app->singleton(PrendaProcessorService::class, function () {
             return new PrendaProcessorService();
         });
 
@@ -53,12 +75,12 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // Registrar PedidoLogoService como singleton (DDD)
-        $this->app->singleton(PedidoLogoService::class, function ($app) {
+        $this->app->singleton(PedidoLogoService::class, function () {
             return new PedidoLogoService();
         });
 
         // Registrar CopiarImagenesCotizacionAPedidoService como singleton
-        $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function ($app) {
+        $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function () {
             return new CopiarImagenesCotizacionAPedidoService();
         });
 
@@ -67,7 +89,7 @@ class PedidosServiceProvider extends ServiceProvider
         // ========================================
 
         // Registrar interfaz DesparChoParcialesRepository con implementación
-        $this->app->bind(DesparChoParcialesRepository::class, function ($app) {
+        $this->app->bind(DesparChoParcialesRepository::class, function () {
             return new DesparChoParcialesRepositoryImpl();
         });
 
@@ -76,7 +98,7 @@ class PedidosServiceProvider extends ServiceProvider
         // ========================================
 
         // Registrar ImagenRelocalizadorService como singleton
-        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+        $this->app->singleton(ImagenRelocalizadorService::class, function () {
             return new ImagenRelocalizadorService();
         });
 
@@ -87,9 +109,18 @@ class PedidosServiceProvider extends ServiceProvider
             );
         });
 
+        // Registrar DespachoEstadoService como singleton
+        $this->app->singleton(DespachoEstadoService::class, function ($app) {
+            return new DespachoEstadoService(
+                $app->make(DespachoEstadoServiceContract::class)
+            );
+        });
+
         // Registrar DespachoValidadorService como singleton
         $this->app->singleton(DespachoValidadorService::class, function ($app) {
-            return new DespachoValidadorService();
+            return new DespachoValidadorService(
+                $app->make(DespachoValidadorServiceContract::class)
+            );
         });
 
         // Registrar DesparChoParcialesPersistenceService como singleton
@@ -105,23 +136,81 @@ class PedidosServiceProvider extends ServiceProvider
 
         // Registrar ObtenerFilasDespachoUseCase
         $this->app->bind(ObtenerFilasDespachoUseCase::class, function ($app) {
-            return new ObtenerFilasDespachoUseCase(
-                $app->make(DespachoGeneradorService::class)
-            );
+            return $app->build(ObtenerFilasDespachoUseCase::class);
         });
 
         // Registrar GuardarDespachoUseCase
         $this->app->bind(GuardarDespachoUseCase::class, function ($app) {
-            return new GuardarDespachoUseCase(
-                $app->make(DespachoValidadorService::class),
-                $app->make(DesparChoParcialesPersistenceService::class)
+            return $app->build(GuardarDespachoUseCase::class);
+        });
+
+        // ========================================
+        // USE CASES DE REGISTRO ORDEN (APPLICATION LAYER)
+        // ========================================
+
+        // Registrar GetSeguimientoPorPrendaUseCase con repositorios
+        $this->app->bind(GetSeguimientoPorPrendaUseCase::class, function ($app) {
+            return new GetSeguimientoPorPrendaUseCase(
+                $app->make(PedidoProduccionTrackingRepository::class),
+                $app->make(ConsecutivosRecibosRepository::class),
+                $app->make(\App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator::class)
             );
         });
 
+        // Registrar GetDescripcionPrendasUseCase con repositorio
+        $this->app->bind(GetDescripcionPrendasUseCase::class, function ($app) {
+            return new GetDescripcionPrendasUseCase(
+                $app->make(PedidoProduccionTrackingRepository::class)
+            );
+        });
+
+        // Registrar GetConsecutivoCosturaUseCase con repositorios
+        $this->app->bind(GetConsecutivoCosturaUseCase::class, function ($app) {
+            return new GetConsecutivoCosturaUseCase(
+                $app->make(PedidoProduccionTrackingRepository::class),
+                $app->make(ConsecutivosRecibosRepository::class)
+            );
+        });
+
+        // Registrar CalcularDiasUseCase (sin depedencias)
+        $this->app->singleton(CalcularDiasUseCase::class, function () {
+            return new CalcularDiasUseCase();
+        });
+
+        // Registrar CalcularDiasBatchUseCase (sin dependencias)
+        $this->app->singleton(CalcularDiasBatchUseCase::class, function () {
+            return new CalcularDiasBatchUseCase();
+        });
+
+        // Registrar CalcularFechaEstimadaUseCase (sin dependencias)
+        $this->app->singleton(CalcularFechaEstimadaUseCase::class, function () {
+            return new CalcularFechaEstimadaUseCase();
+        });
+
+        // Registrar GetRecibosDatosUseCase (con dependencia de ObtenerDetalleCompletoUseCase)
+        $this->app->singleton(GetRecibosDatosUseCase::class, function ($app) {
+            return new GetRecibosDatosUseCase(
+                $app->make(ObtenerDetalleCompletoUseCase::class)
+            );
+        });
+
+        // Registrar GetNovedadesUseCase (sin dependencias)
+        $this->app->singleton(GetNovedadesUseCase::class, function () {
+            return new GetNovedadesUseCase();
+        });
+
         // Registrar ImagenRelocalizadorService como singleton
-        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+        $this->app->singleton(ImagenRelocalizadorService::class, function () {
             return new ImagenRelocalizadorService();
         });
+
+        // ========================================
+        // CONTRATOS DE INFRAESTRUCTURA (PORTS)
+        // ========================================
+
+        $this->app->bind(AuditRepositoryInterface::class, NewsAuditRepository::class);
+        $this->app->bind(TransactionManagerInterface::class, EloquentTransactionManager::class);
+        $this->app->bind(OrdenEventDispatcherInterface::class, BroadcastOrdenEventDispatcher::class);
     }
 
     /**
@@ -132,3 +221,5 @@ class PedidosServiceProvider extends ServiceProvider
         //
     }
 }
+
+

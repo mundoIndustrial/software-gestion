@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\DTOs;
 /**
  * ObtenerDatosGraficasDashboardDTO
  * 
- * DTO para obtener datos de grÃ¡ficas del dashboard
+ * DTO para obtener datos de graficas del dashboard
  */
 class ObtenerDatosGraficasDashboardDTO
 {

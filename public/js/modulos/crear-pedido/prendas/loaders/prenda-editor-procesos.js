@@ -1,5 +1,5 @@
 /**
- * ⚙️ Módulo de Procesos
+ *  Módulo de Procesos
  * Responsabilidad: Cargar y mostrar procesos (reflectivo, bordado, etc.)
  */
 
@@ -8,221 +8,394 @@ class PrendaEditorProcesos {
      * Cargar procesos en el modal
      */
     static cargar(prenda) {
-        console.log('⚙️ [PROCESOS-LOADER] ===== INICIO CARGA =====');
-        console.log('⚙️ [PROCESOS-LOADER] prenda.id:', prenda.id);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos EXISTS:', !!prenda.procesos);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos type:', typeof prenda.procesos);
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos isArray:', Array.isArray(prenda.procesos));
-        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos CONTENIDO COMPLETO:');
-        console.log(prenda.procesos);
+        this._registrarInicioDebug(prenda);
         
-        if (!prenda.procesos) {
-            console.log('⚠️ [PROCESOS-LOADER] procesos es NULL/UNDEFINED');
-            window.procesosSeleccionados = {};
+        if (!this._validarProcesoExiste(prenda)) {
             return;
         }
         
-        if (Array.isArray(prenda.procesos)) {
-            console.log('✅ [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
-        }
-        
-        console.log('⚙️ [Procesos] Cargando:', {
+        this._procesarYReplicarProcesos(prenda);
+        this._autoAplicarTallasACotizacion(prenda);
+        this._ejecutarRenderizacionYConfiguracion();
+    }
+
+    /**
+     * Registrar inicio de carga para debugging
+     * @private
+     */
+    static _registrarInicioDebug(prenda) {
+        console.log(' [PROCESOS-LOADER] ===== INICIO CARGA =====');
+        console.log(' [PROCESOS-LOADER] prenda.id:', prenda.id);
+        console.log(' [PROCESOS-LOADER] prenda.procesos EXISTS:', !!prenda.procesos);
+        console.log(' [PROCESOS-LOADER] prenda.procesos type:', typeof prenda.procesos);
+        console.log(' [PROCESOS-LOADER] prenda.procesos isArray:', Array.isArray(prenda.procesos));
+        console.log(' [PROCESOS-LOADER] prenda.procesos CONTENIDO COMPLETO:');
+        console.log(prenda.procesos);
+        console.log(' [Procesos] Cargando:', {
             cantidad: prenda.procesos?.length || Object.keys(prenda.procesos || {}).length || 0,
             tipo: Array.isArray(prenda.procesos) ? 'array' : typeof prenda.procesos,
             procesos: prenda.procesos
         });
-        
-        // 🔥 CRÍTICO: Replicar a global PRIMERO para que renderizarTarjetasProcesos() encuentre los datos
-        if (prenda.procesos && typeof prenda.procesos === 'object') {
-            // Convertir a formato plano de window.procesosSeleccionados
-            window.procesosSeleccionados = {};
-            
-            if (Array.isArray(prenda.procesos)) {
-                // Si es array, convertir a objeto con keys
-                prenda.procesos.forEach((proceso, idx) => {
-                    // 🔴 CRÍTICO: Extraer nombre del tipo de proceso - puede venir en diferentes formatos
-                    let tipoOriginal = proceso.tipo 
-                        || proceso.nombre 
-                        || (proceso.tipoProceso && proceso.tipoProceso.nombre)  // ← Nombre desde relación anidada (servidor)
-                        || `proceso_${idx}`;
-                    
-                    // 🔴 Normalizar a lowercase para que matchee iconos/nombres del renderizador
-                    const tipo = tipoOriginal.toLowerCase().trim();
-                    
-                    // 🔴 Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
-                    const datosNormalizados = { ...proceso, tipo: tipo };
-                    if (datosNormalizados.imagenes && Array.isArray(datosNormalizados.imagenes)) {
-                        console.log(`[PROCESOS-LOADER] 🖼️ Imágenes recibidas para ${tipo}:`, {
-                            cantidad: datosNormalizados.imagenes.length,
-                            primeraprimera: datosNormalizados.imagenes[0],
-                            tipo_primera: typeof datosNormalizados.imagenes[0],
-                            esObjeto: datosNormalizados.imagenes[0] instanceof Object
-                        });
-                        datosNormalizados.imagenes = datosNormalizados.imagenes.map(img => {
-                            if (typeof img === 'string') {
-                                if (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) return img;
-                                return '/storage/' + img;
-                            }
-                            // Si es objeto, asegurar que tiene las rutas normalizadas
-                            if (typeof img === 'object' && img !== null) {
-                                if (img.ruta_webp && !img.ruta_webp.startsWith('/') && !img.ruta_webp.startsWith('http') && !img.ruta_webp.startsWith('blob:') && !img.ruta_webp.startsWith('data:')) img.ruta_webp = '/storage/' + img.ruta_webp;
-                                if (img.ruta_original && !img.ruta_original.startsWith('/') && !img.ruta_original.startsWith('http') && !img.ruta_original.startsWith('blob:') && !img.ruta_original.startsWith('data:')) img.ruta_original = '/storage/' + img.ruta_original;
-                                if (img.url && !img.url.startsWith('/') && !img.url.startsWith('http') && !img.url.startsWith('blob:') && !img.url.startsWith('data:')) img.url = '/storage/' + img.url;
-                            }
-                            return img;
-                        });
-                    }
-                    
-                    window.procesosSeleccionados[tipo] = {
-                        tipo: tipo,
-                        datos: datosNormalizados
-                    };
-                    
-                    // 🔴 CRÍTICO: Verificar que modo_tallas existe y se propagó correctamente
-                    console.log(`[PROCESOS-LOADER] 🎯 Proceso "${tipo}" cargado:`, {
-                        tipo: tipo,
-                        procesoId: datosNormalizados.id,
-                        modo_tallas_desde_servidor: datosNormalizados.modo_tallas,
-                        modo_tallas_en_window: window.procesosSeleccionados[tipo].datos.modo_tallas,
-                        modoTallas_desde_servidor: datosNormalizados.modoTallas,
-                        modoTallas_en_window: window.procesosSeleccionados[tipo].datos.modoTallas,
-                        tipoProcesoNested: datosNormalizados.tipoProceso?.nombre,
-                        datosKeys: Object.keys(datosNormalizados).slice(0, 15),  // Primeros 15 campos
-                        estructuraCompleta: {
-                            datosNormalizados: datosNormalizados,
-                            windowDatos: window.procesosSeleccionados[tipo]?.datos
-                        }
-                    });
-                    
-                    // DEBUG: Registrar datosExtendidos si existen
-                    if (datosNormalizados.datosExtendidos) {
-                        console.log(`[PROCESOS-LOADER] 📊 datosExtendidos para ${tipo}:`, {
-                            tiene: true,
-                            estructura: Object.keys(datosNormalizados.datosExtendidos),
-                            contenido: datosNormalizados.datosExtendidos
-                        });
-                    }
-                });
-            } else {
-                // Si ya es objeto, procesarlo
-                Object.entries(prenda.procesos).forEach(([key, proceso]) => {
-                    // Si el valor es un objeto con datos, usarlo directamente
-                    if (proceso && typeof proceso === 'object' && (proceso.datos || proceso.tipo || proceso.ubicaciones)) {
-                        window.procesosSeleccionados[key] = {
-                            tipo: key,
-                            datos: proceso.datos || proceso
-                        };
-                    } else if (proceso === true || proceso === 1) {
-                        // Si es solo un boolean/flag, crear objeto mínimo
-                        window.procesosSeleccionados[key] = {
-                            tipo: key,
-                            datos: {
-                                tipo: key,
-                                ubicaciones: [],
-                                tallas: { dama: {}, caballero: {}, sobremedida: {} },
-                                observaciones: '',
-                                imagenes: []
-                            }
-                        };
-                    }
-                });
-            }
-            
-            console.log('[Carga] ⚙️ Procesos replicados en window.procesosSeleccionados:', {
-                keys: Object.keys(window.procesosSeleccionados),
-                count: Object.keys(window.procesosSeleccionados).length,
-                contenido: window.procesosSeleccionados
-            });
-            
-            // 🔴 CRÍTICO: Para procesos desde cotización, auto-aplicar "todas las tallas" si están vacías
-            // Los procesos de cotización vienen con talla_cantidad vacío - por defecto aplican a TODAS las tallas
-            const tallasRelacionales = window.tallasRelacionales || {};
-            const hayTallasEnPrenda = Object.keys(tallasRelacionales).length > 0;
-            
-            if (hayTallasEnPrenda && prenda.tipo === 'cotizacion') {
-                console.log('[Procesos] 🎯 Cotización detectada - auto-aplicando tallas a procesos sin tallas');
-                
-                // Construir objeto de tallas en formato proceso (lowercase keys)
-                const tallasParaProceso = {
-                    dama: tallasRelacionales.DAMA ? { ...tallasRelacionales.DAMA } : {},
-                    caballero: tallasRelacionales.CABALLERO ? { ...tallasRelacionales.CABALLERO } : {},
-                    sobremedida: tallasRelacionales.SOBREMEDIDA ? { ...tallasRelacionales.SOBREMEDIDA } : {}
-                };
-                
-                Object.entries(window.procesosSeleccionados).forEach(([key, proceso]) => {
-                    const datos = proceso.datos;
-                    // Verificar si tallas están vacías
-                    const tallasVacias = !datos.tallas || 
-                        (Object.keys(datos.tallas?.dama || {}).length === 0 && 
-                         Object.keys(datos.tallas?.caballero || {}).length === 0 &&
-                         Object.keys(datos.tallas?.sobremedida || {}).length === 0);
-                    const tallaCantidadVacia = !datos.talla_cantidad || 
-                        (Array.isArray(datos.talla_cantidad) && datos.talla_cantidad.length === 0) ||
-                        (typeof datos.talla_cantidad === 'object' && Object.keys(datos.talla_cantidad).length === 0);
-                    
-                    if (tallasVacias && tallaCantidadVacia) {
-                        datos.tallas = JSON.parse(JSON.stringify(tallasParaProceso));
-                        datos._aplicarTodasTallas = true; // Flag para indicar que fue auto-asignado
-                        console.log(`[Procesos] ✅ ${key}: tallas auto-asignadas (todas las de la prenda)`, datos.tallas);
-                    }
-                });
-            }
+    }
+
+    /**
+     * Validar que procesos existen
+     * @private
+     */
+    static _validarProcesoExiste(prenda) {
+        if (!prenda.procesos) {
+            console.log(' [PROCESOS-LOADER] procesos es NULL/UNDEFINED');
+            globalThis.procesosSeleccionados = {};
+            return false;
+        }
+        if (Array.isArray(prenda.procesos)) {
+            console.log(' [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
+        }
+        return true;
+    }
+
+    /**
+     * Procesar y replicar procesos a globalThis
+     * @private
+     */
+    static _procesarYReplicarProcesos(prenda) {
+        if (!prenda.procesos || typeof prenda.procesos !== 'object') {
+            return;
         }
         
-        // 🎨 CRÍTICO: Usar el nuevo renderizador de tarjetas
-        if (window.renderizarTarjetasProcesos) {
-            console.log('✅ [Procesos] Función renderizarTarjetasProcesos() disponible');
-            console.log('[Procesos]  window.procesosSeleccionados actual:', window.procesosSeleccionados);
-            
-            // Ejecutar inmediatamente (sin delay)
-            console.log('[Procesos] Ejecutando renderización AHORA...');
-            const exito = window.renderizarTarjetasProcesos();
-            
-            console.log('[Procesos] Resultado renderización:', {
-                exito: exito,
-                container: document.getElementById('contenedor-tarjetas-procesos'),
-                containerDisplay: document.getElementById('contenedor-tarjetas-procesos')?.style.display,
-                containerHTML: document.getElementById('contenedor-tarjetas-procesos')?.innerHTML.substring(0, 100)
-            });
-            
-            if (exito) {
-                console.log('✅ [Procesos] Completado - Tarjetas renderizadas correctamente');
-                
-                // 🔴 CRÍTICO: Marcar los checkboxes de procesos correspondientes
-                this._marcarCheckboxesProcesos(window.procesosSeleccionados);
-                
-                // 🔴 NUEVO: Configurar drag & drop para procesos
-                // El renderizador debe llamar a esto después de renderizar
-                console.log('[PROCESOS-LOADER] 🔄 Verificando configurarDragDropProcesos');
-                console.log('[PROCESOS-LOADER] 📊 Timestamp:', new Date().toISOString());
-                console.log('[PROCESOS-LOADER] 🔍 Stack trace:', new Error().stack);
-                
-                if (typeof configurarDragDropProcesos === 'function') {
-                    console.log('[PROCESOS-LOADER] 🚀 Llamando a configurarDragDropProcesos desde loader');
-                    configurarDragDropProcesos();
-                    console.log('[PROCESOS-LOADER] ✅ configurarDragDropProcesos ejecutado');
-                } else {
-                    console.warn('[PROCESOS-LOADER] ⚠️ configurarDragDropProcesos no disponible');
-                }
-                
-                // Verificación final: asegurar que el contenedor es visible
-                const container = document.getElementById('contenedor-tarjetas-procesos');
-                if (container) {
-                    console.log('[Procesos] ✅ Contenedor visible:', {
-                        display: container.style.display,
-                        visibility: container.style.visibility,
-                        innerHTML_length: container.innerHTML.length
-                    });
-                }
-                return;
-            } else {
-                console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() retornó false');
-            }
+        globalThis.procesosSeleccionados = {};
+        
+        if (Array.isArray(prenda.procesos)) {
+            this._procesarProcesoDesdeArray(prenda.procesos);
         } else {
-            console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() NO DISPONIBLE');
+            this._procesarProcesoDesdeObjeto(prenda.procesos);
         }
         
-        // Fallback: Si no existe renderizador, crear tarjetas simples
+        console.log('[Carga]  Procesos replicados en globalThis.procesosSeleccionados:', {
+            keys: Object.keys(globalThis.procesosSeleccionados),
+            count: Object.keys(globalThis.procesosSeleccionados).length,
+            contenido: globalThis.procesosSeleccionados
+        });
+    }
+
+    /**
+     * Procesar procesos cuando vienen como array
+     * @private
+     */
+    static _procesarProcesoDesdeArray(procesos) {
+        procesos.forEach((proceso, idx) => {
+            this._procesarYGuardarProceso(proceso, idx.toString());
+        });
+    }
+
+    /**
+     * Procesar procesos cuando vienen como objeto
+     * @private
+     */
+    static _procesarProcesoDesdeObjeto(procesos) {
+        Object.entries(procesos).forEach(([key, proceso]) => {
+            if (proceso && typeof proceso === 'object' && (proceso.datos || proceso.tipo || proceso.ubicaciones)) {
+                this._procesarYGuardarProceso(proceso, key);
+            } else if (proceso === true || proceso === 1) {
+                this._crearProcesoDesdeBandera(key);
+            } else if (globalThis.procesosSeleccionados[key]) {
+                // Reasignar con clave correcta
+                const procesoActual = globalThis.procesosSeleccionados[key];
+                delete globalThis.procesosSeleccionados[key];
+                globalThis.procesosSeleccionados[procesoActual.tipo] = procesoActual;
+            }
+        });
+    }
+
+    /**
+     * Procesar y guardar un proceso
+     * @private
+     */
+    static _procesarYGuardarProceso(proceso, keyOIdx) {
+        const tipo = this._extraerYNormalizarTipo(proceso, keyOIdx);
+        const datosNormalizados = this._normalizarDatosProceso(proceso, tipo);
+        
+        globalThis.procesosSeleccionados[tipo] = {
+            tipo: tipo,
+            datos: datosNormalizados
+        };
+        
+        this._registrarProcesoDebug(tipo, datosNormalizados);
+    }
+
+    /**
+     * Extraer y normalizar tipo de proceso
+     * @private
+     */
+    static _extraerYNormalizarTipo(proceso, keyOIdx) {
+        const tipoOriginal = proceso.tipo 
+            || proceso.nombre 
+            || proceso.tipo_proceso
+            || proceso.tipoProceso?.nombre
+            || `proceso_${keyOIdx}`;
+        
+        return String(tipoOriginal)
+            .toLowerCase()
+            .trim()
+            .replaceAll(/\s+/g, '-');
+    }
+
+    /**
+     * Normalizar datos del proceso
+     * @private
+     */
+    static _normalizarDatosProceso(proceso, tipo) {
+        console.log(`[_normalizarDatosProceso]  RECIBIDO para tipo "${tipo}":`, {
+            'tiene DATOS anidado': !!proceso?.datos,
+            'proceso.datos type': typeof proceso?.datos,
+            'proceso.datos keys': Object.keys(proceso?.datos || {}),
+            'tiene ubicaciones AQUÍ': !!proceso?.ubicaciones,
+            'tiene ubicaciones EN DATOS': !!proceso?.datos?.ubicaciones,
+            'proceso COMPLETO': proceso
+        });
+        
+        // 🔴 FIX: Si datos está anidado, extraerlo
+        const datosActuales = proceso?.datos || proceso;
+        
+        const datos = {
+            ...datosActuales,
+            tipo: tipo,
+            modo_tallas: datosActuales?.modo_tallas || proceso?.modo_tallas || 'generico'
+        };
+        delete datos.modoTallas;
+        
+        if (datos.imagenes?.length > 0) {
+            this._registrarImagenesDebug(tipo, datos.imagenes);
+            datos.imagenes = this._normalizarImagenes(datos.imagenes);
+        }
+        
+        console.log(`[_normalizarDatosProceso]  RESULTADO para "${tipo}":`, {
+            'ubicaciones': datos.ubicaciones?.length || 0,
+            'tallas': Object.keys(datos.tallas || {}),
+            'imagenes': datos.imagenes?.length || 0,
+            'observaciones': datos.observaciones?.substring(0, 30) || 'sin observaciones'
+        });
+        
+        return datos;
+    }
+
+    /**
+     * Registrar información de imágenes para debugging
+     * @private
+     */
+    static _registrarImagenesDebug(tipo, imagenes) {
+        console.log(`[PROCESOS-LOADER]  Imágenes recibidas para ${tipo}:`, {
+            cantidad: imagenes.length,
+            primeraprimera: imagenes[0],
+            tipo_primera: typeof imagenes[0],
+            esObjeto: imagenes[0] instanceof Object
+        });
+    }
+
+    /**
+     * Normalizar array de imágenes agregando prefijo /storage/ si necesario
+     * @private
+     */
+    static _normalizarImagenes(imagenes) {
+        return imagenes.map(img => {
+            if (typeof img === 'string') {
+                if (this._esUrlAbsoluta(img)) return img;
+                return '/storage/' + img;
+            }
+            
+            if (typeof img === 'object' && img !== null) {
+                if (img.ruta_webp) img.ruta_webp = this._normalizarRutaImagen(img.ruta_webp);
+                if (img.ruta_original) img.ruta_original = this._normalizarRutaImagen(img.ruta_original);
+                if (img.url) img.url = this._normalizarRutaImagen(img.url);
+            }
+            return img;
+        });
+    }
+
+    /**
+     * Verificar si URL es absoluta (comienza con /, http, blob:, data:)
+     * @private
+     */
+    static _esUrlAbsoluta(url) {
+        return url.startsWith('/') || url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:');
+    }
+
+    /**
+     * Normalizar ruta individual de imagen
+     * @private
+     */
+    static _normalizarRutaImagen(ruta) {
+        if (!ruta || this._esUrlAbsoluta(ruta)) return ruta;
+        return '/storage/' + ruta;
+    }
+
+    /**
+     * Registrar información del proceso para debugging
+     * @private
+     */
+    static _registrarProcesoDebug(tipo, datos) {
+        console.log(`[PROCESOS-LOADER]  Proceso "${tipo}" cargado:`, {
+            tipo: tipo,
+            procesoId: datos.id,
+            modo_tallas_desde_servidor: datos.modo_tallas,
+            modo_tallas_en_globalThis: globalThis.procesosSeleccionados[tipo].datos.modo_tallas,
+            tipoProcesoNested: datos.tipoProceso?.nombre,
+            datosKeys: Object.keys(datos).slice(0, 15),
+            estructuraCompleta: {
+                datosNormalizados: datos,
+                globalThisDatos: globalThis.procesosSeleccionados[tipo]?.datos
+            }
+        });
+        
+        if (datos.datosExtendidos) {
+            console.log(`[PROCESOS-LOADER]datosExtendidos para ${tipo}:`, {
+                tiene: true,
+                estructura: Object.keys(datos.datosExtendidos),
+                contenido: datos.datosExtendidos
+            });
+        }
+    }
+
+    /**
+     * Crear proceso desde bandera booleana
+     * @private
+     */
+    static _crearProcesoDesdeBandera(key) {
+        const tipo = String(key).toLowerCase().trim().replaceAll(/\s+/g, '-');
+        globalThis.procesosSeleccionados[tipo] = {
+            tipo: tipo,
+            datos: {
+                tipo: tipo,
+                modo_tallas: 'generico',
+                ubicaciones: [],
+                tallas: { dama: {}, caballero: {}, sobremedida: {} },
+                observaciones: '',
+                imagenes: []
+            }
+        };
+    }
+    /**
+     * Auto-aplicar tallas a procesos de cotización si están vacías
+     * @private
+     */
+    static _autoAplicarTallasACotizacion(prenda) {
+        const tallasRelacionales = globalThis.tallasRelacionales || {};
+        const hayTallasEnPrenda = Object.keys(tallasRelacionales).length > 0;
+        
+        if (!hayTallasEnPrenda || prenda.tipo !== 'cotizacion') {
+            return;
+        }
+        
+        console.log('[Procesos]  Cotización detectada - auto-aplicando tallas a procesos sin tallas');
+        
+        const tallasParaProceso = {
+            dama: tallasRelacionales.DAMA ? { ...tallasRelacionales.DAMA } : {},
+            caballero: tallasRelacionales.CABALLERO ? { ...tallasRelacionales.CABALLERO } : {},
+            sobremedida: tallasRelacionales.SOBREMEDIDA ? { ...tallasRelacionales.SOBREMEDIDA } : {}
+        };
+        
+        Object.entries(globalThis.procesosSeleccionados).forEach(([key, proceso]) => {
+            this._aplicarTallasAlProceso(key, proceso.datos, tallasParaProceso);
+        });
+    }
+
+    /**
+     * Aplicar tallas a un proceso si están vacías
+     * @private
+     */
+    static _aplicarTallasAlProceso(key, datos, tallasParaProceso) {
+        const tallasVacias = !datos.tallas || 
+            (Object.keys(datos.tallas?.dama || {}).length === 0 && 
+             Object.keys(datos.tallas?.caballero || {}).length === 0 &&
+             Object.keys(datos.tallas?.sobremedida || {}).length === 0);
+        const tallaCantidadVacia = !datos.talla_cantidad || 
+            (Array.isArray(datos.talla_cantidad) && datos.talla_cantidad.length === 0) ||
+            (typeof datos.talla_cantidad === 'object' && Object.keys(datos.talla_cantidad).length === 0);
+        
+        if (tallasVacias && tallaCantidadVacia) {
+            datos.tallas = structuredClone(tallasParaProceso);
+            datos._aplicarTodasTallas = true;
+            console.log(`[Procesos]  ${key}: tallas auto-asignadas (todas las de la prenda)`, datos.tallas);
+        }
+    }
+
+    /**
+     * Ejecutar renderización y configuración de procesos
+     * @private
+     */
+    static _ejecutarRenderizacionYConfiguracion() {
+        if (!globalThis.renderizarTarjetasProcesos) {
+            this._ejecutarFallback();
+            return;
+        }
+        
+        console.log(' [Procesos] Función renderizarTarjetasProcesos() disponible');
+        console.log('[Procesos]  globalThis.procesosSeleccionados actual:', globalThis.procesosSeleccionados);
+        console.log('[Procesos] Ejecutando renderización AHORA...');
+        
+        const exito = globalThis.renderizarTarjetasProcesos();
+        
+        if (!this._registrarYVerificarRenderizacion(exito)) {
+            this._ejecutarFallback();
+            return;
+        }
+        
+        this._marcarCheckboxesProcesos(globalThis.procesosSeleccionados);
+        this._configurarDragDropYVerificar();
+    }
+
+    /**
+     * Registrar y verificar resultado de renderización
+     * @private
+     */
+    static _registrarYVerificarRenderizacion(exito) {
+        const container = document.getElementById('contenedor-tarjetas-procesos');
+        console.log('[Procesos] Resultado renderización:', {
+            exito: exito,
+            container: container,
+            containerDisplay: container?.style.display,
+            containerHTML: container?.innerHTML.substring(0, 100)
+        });
+        return exito;
+    }
+
+    /**
+     * Configurar drag & drop y verificar
+     * @private
+     */
+    static _configurarDragDropYVerificar() {
+        console.log('[PROCESOS-LOADER]  Verificando configurarDragDropProcesos');
+        console.log('[PROCESOS-LOADER]Timestamp:', new Date().toISOString());
+        console.log('[PROCESOS-LOADER]  Llamando a configurarDragDropProcesos');
+        
+        if (typeof configurarDragDropProcesos === 'function') {
+            console.log('[PROCESOS-LOADER]  Llamando a configurarDragDropProcesos desde loader');
+            configurarDragDropProcesos();
+            console.log('[PROCESOS-LOADER]  configurarDragDropProcesos ejecutado');
+        } else {
+            console.warn('[PROCESOS-LOADER]  configurarDragDropProcesos no disponible');
+        }
+        
+        // Verificación final: asegurar que el contenedor es visible
+        const container = document.getElementById('contenedor-tarjetas-procesos');
+        if (container) {
+            console.log('[Procesos]  Contenedor visible:', {
+                display: container.style.display,
+                visibility: container.style.visibility,
+                innerHTML_length: container.innerHTML.length
+            });
+        }
+        
+        console.log(' [Procesos] Completado - Tarjetas renderizadas correctamente');
+    }
+
+    /**
+     * Ejecutar modo fallback si renderizador no está disponible
+     * @private
+     */
+    static _ejecutarFallback() {
+        console.warn(' [Procesos] renderizarTarjetasProcesos() no disponible o retornó false');
+        
         let container = document.getElementById('contenedor-tarjetas-procesos');
         if (!container) {
             container = document.getElementById('procesos-agregados');
@@ -232,31 +405,29 @@ class PrendaEditorProcesos {
         }
         
         if (!container) {
-            console.warn('❌ [Procesos] No encontrado contenedor');
+            console.warn(' [Procesos] No encontrado contenedor');
             return;
         }
         
-        // Convertir procesos a array
-        const procesosArray = this._convertirAArray(prenda.procesos);
+        const procesosArray = this._convertirAArray(globalThis.procesosSeleccionados);
         
         if (!procesosArray || procesosArray.length === 0) {
-            console.log('ℹ️ [Procesos] Sin procesos para cargar');
+            console.log(' [Procesos] Sin procesos para cargar');
             container.innerHTML = '';
             container.style.display = 'none';
             return;
         }
         
-        // Mostrar procesos (fallback simple)
         container.innerHTML = '';
         container.style.display = 'block';
         
         procesosArray.forEach((proceso, idx) => {
             const tarjeta = this._crearTarjeta(proceso, idx);
             container.appendChild(tarjeta);
-            console.log(`✅ [Procesos] ${idx + 1}: ${proceso.nombre}`);
+            console.log(` [Procesos] ${idx + 1}: ${proceso.nombre}`);
         });
         
-        console.log('✅ [Procesos] Completado (modo fallback)');
+        console.log(' [Procesos] Completado (modo fallback)');
     }
 
     /**
@@ -272,11 +443,7 @@ class PrendaEditorProcesos {
         // Si es un objeto, convertirlo
         if (procesos && typeof procesos === 'object') {
             return Object.entries(procesos)
-                .filter(([key, value]) => {
-                    // Ignorar valores falsos
-                    if (value === false || value === '' || value === null) return false;
-                    return true;
-                })
+                .filter(([key, value]) => value !== false && value !== '' && value !== null)
                 .map(([nombre, detalles]) => {
                     // Si es un objeto con detalles, usarlo
                     if (typeof detalles === 'object') {
@@ -352,21 +519,21 @@ class PrendaEditorProcesos {
                     cb._ignorarOnclick = true;
                     cb.checked = true;
                     cb._ignorarOnclick = false;
-                    console.log(`✅ [Procesos] Checkbox '${checkboxId}' marcado para proceso '${tipoProceso}'`);
+                    console.log(` [Procesos] Checkbox '${checkboxId}' marcado para proceso '${tipoProceso}'`);
                 }
             } else {
-                console.log(`ℹ️ [Procesos] No hay checkbox mapeado para proceso '${tipoProceso}' (tipo: '${tipoLower}')`);
+                console.log(` [Procesos] No hay checkbox mapeado para proceso '${tipoProceso}' (tipo: '${tipoLower}')`);
             }
         });
     }
 
     /**
      * Limpiar procesos
-     * ⚠️ CRÍTICO: SOLO limpiar el contenedor de tarjetas (procesos configurados)
+     *  CRÍTICO: SOLO limpiar el contenedor de tarjetas (procesos configurados)
      * NO tocar el .procesos-container (que contiene los checkboxes)
      */
     static limpiar() {
-        // 🔴 SOLO limpiar contenedor de tarjetas renderizadas
+        //  SOLO limpiar contenedor de tarjetas renderizadas
         // NO limpiar procesos-container (tiene los checkboxes para seleccionar procesos)
         const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
         if (contenedorTarjetas) {
@@ -381,7 +548,7 @@ class PrendaEditorProcesos {
             procesosAgregados.style.display = 'none';
         }
         
-        // ⚠️ NUNCA tocar .procesos-container (contiene los checkboxes!)
+        //  NUNCA tocar .procesos-container (contiene los checkboxes!)
         // const procesosContainer = document.querySelector('.procesos-container');
         // NO LIMPIAR - esto causa que desaparezcan los checkboxes
     }

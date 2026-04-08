@@ -1,14 +1,14 @@
-# 📋 Documentación: Sistema de Procesos con Datos Extendidos por Talla
+#  Documentación: Sistema de Procesos con Datos Extendidos por Talla
 
-## 🎯 Descripción General
+##  Descripción General
 
 Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflectivo, Bordado, Estampado, DTF, Sublimado) que ahora permite especificar datos detallados **por cada talla** en el editor de tallas específicas.
 
-## 🆕 Nuevas Funcionalidades
+##  Nuevas Funcionalidades
 
 ### En el Editor de Tallas Específicas, cada talla ahora tiene:
 
-1. **📍 Ubicación(es) por Talla**
+1. ** Ubicación(es) por Talla**
    - Input para ingresar ubicaciones específicas
    - Botón para agregar múltiples ubicaciones
    - Tags removibles de ubicaciones agregadas
@@ -23,7 +23,7 @@ Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflecti
    - Cada talla puede tener su propia imagen de referencia
    - Botón para eliminar imagen
 
-## 📁 Archivos Implementados
+##  Archivos Implementados
 
 ### Nuevos Archivos JavaScript
 
@@ -41,7 +41,7 @@ Se ha implementado un sistema mejorado para agregar procesos a prendas (Reflecti
 3. **`editor-tallas-extendido.js`** (opcional, para referencia)
    - Contiene funciones auxiliares para manejo de datos
 
-## 🔄 Flujo de Trabajo
+##  Flujo de Trabajo
 
 ### 1. **Seleccionar Proceso**
 ```
@@ -80,7 +80,7 @@ Se guardan simultáneamente:
 Se cierra el editor y se actualiza el resumen
 ```
 
-## 📊 Estructura de Datos
+##Estructura de Datos
 
 ### `window.datosExtendidosTallasProceso`
 ```javascript
@@ -127,7 +127,7 @@ Se cierra el editor y se actualiza el resumen
 }
 ```
 
-## 🔧 Funciones Principales
+##  Funciones Principales
 
 ### `extension-editor-tallas-multiproducto.js`
 
@@ -167,7 +167,7 @@ window.obtenerDatosExtendidosTalla(proceso, genero, talla)
 window.restaurarDatosExtendidosTallasProceso(proceso)
 ```
 
-## 🎨 Estilos en las Tarjetas
+## Estilos en las Tarjetas
 
 Cada tarjeta de talla tiene un color distintivo:
 - **DAMA**: Rosa (#be185d) para las de color, azul (#1d4ed8) para las estándar
@@ -186,13 +186,13 @@ Los campos están organizados verticalmente para mejor legibilidad:
 - En pantallas medianas: 2-3 tarjetas por fila
 - En pantallas grandes: 3+ tarjetas por fila
 
-## 🔐 Persistencia de Datos
+##  Persistencia de Datos
 
 Los datos se guardan automáticamente en:
 1. **En memoria**: `window.procesosSeleccionados` (mientras está en el navegador)
 2. **En el objeto del proceso**: Se guarden en `datosExtendidos` cuando se hace click en "Guardar Tallas"
 
-## ⚠️ Consideraciones Importantes
+##  Consideraciones Importantes
 
 1. Las imágenes se guardan como **Data URLs** (base64), pueden ocupar espacio en memoria
 2. Cada talla puede tener **múltiples ubicaciones** agregadas manualmente
@@ -200,7 +200,7 @@ Los datos se guardan automáticamente en:
 4. Las imágenes se pueden **agregar, eliminar y reemplazar** en cualquier momento
 5. Los datos se **pierden si no se hace click en "Guardar Tallas"**
 
-## 🧪 Testing
+##  Testing
 
 Para probar la funcionalidad:
 
@@ -213,16 +213,16 @@ Para probar la funcionalidad:
 7. Haz click en "Guardar Tallas"
 8. Los datos se guardarán automáticamente
 
-## 📝 Notas para Desarrolladores
+##  Notas para Desarrolladores
 
 - Las funciones originales se guardan con el sufijo "Original" antes de reemplazarlas
 - Se usa `event delegation` para manejar clicks en elementos dinámicos
 - Los datos se almacenan como objetos JavaScript (no como JSON directamente)
 - La sincronización entre la UI y los datos es automática via `data` attributes
 
-## 🚀 Próximas Mejoras Sugeridas
+##  Próximas Mejoras Sugeridas
 
-1. Validación de imágenes (tamaño máximo, formato)
+1. Validación de imágenes (tamano máximo, formato)
 2. Preview de datos antes de guardar
 3. Historial/undo de cambios
 4. Exportación de datos de procesos

@@ -59,7 +59,7 @@ export class PedidosRecibosModule {
         const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
         const esRegistros = window.location.pathname.includes('/registros');
         if ((esSupervisorPedidos || esRegistros) && tipoRecibo === 'costura-bodega') {
-            console.warn('🚫 [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
+            console.warn(' [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
             return;
         }
         
@@ -206,14 +206,14 @@ export class PedidosRecibosModule {
             }
 
             // Encontrar la prenda
-            console.log(`[PedidosRecibosModule] 🔍 Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
-            console.log(`[PedidosRecibosModule] 📋 IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
+            console.log(`[PedidosRecibosModule]  Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
+            console.log(`[PedidosRecibosModule]  IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
             
             const prendaData = datos.prendas.find(p => p.id == prendaId);
             
             if (!prendaData) {
-                console.error(`[PedidosRecibosModule] ❌ Prenda ${prendaId} no encontrada`);
-                console.error(`[PedidosRecibosModule] 🔍 Búsqueda realizada con:`, {
+                console.error(`[PedidosRecibosModule]  Prenda ${prendaId} no encontrada`);
+                console.error(`[PedidosRecibosModule]  Búsqueda realizada con:`, {
                     buscarPor: 'id',
                     valorBuscado: prendaId,
                     tipoDeComparacion: '== (flexible)',
@@ -226,7 +226,7 @@ export class PedidosRecibosModule {
                 throw new Error(`Prenda ${prendaId} no encontrada`);
             }
             
-            console.log(`[PedidosRecibosModule] ✅ Prenda encontrada:`, {
+            console.log(`[PedidosRecibosModule]  Prenda encontrada:`, {
                 id: prendaData.id,
                 nombre: prendaData.nombre || prendaData.nombre_prenda,
                 tieneRecibos: !!prendaData.recibos,
@@ -493,6 +493,9 @@ export class PedidosRecibosModule {
             if (consecutivoAnexo) {
                 recibo.numero_recibo = consecutivoAnexo;
             }
+            
+            // Inyectar fecha_activacion del parcial (si existe)
+            recibo.fecha_activacion = parcialData?.fecha_activacion || null;
 
             // Inyectar detalles por talla (observaciones/ubicaciones) del anexo
             // para que Formatters pinte OBSERVACIONES/UBICACIONES POR TALLA solo de las tallas anexadas.
@@ -667,7 +670,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 ? window.pedidosRecibosModule.getEstado()
                 : null;
 
-            console.log('[printReceiptModal] 🎯 ESTADO COMPLETO:', {
+            console.log('[printReceiptModal]  ESTADO COMPLETO:', {
                 estado,
                 'estado.datosCompletos': estado?.datosCompletos,
                 'estado.prendaData': estado?.prendaData,
@@ -682,7 +685,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
             const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
 
-            console.log('[printReceiptModal] 📋 DATOS EXTRAÍDOS:', {
+            console.log('[printReceiptModal]  DATOS EXTRAÍDOS:', {
                 datosPedido,
                 prendaData,
                 recibos,
@@ -1012,7 +1015,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const tallasResumen = (() => {
                 // Para procesos, priorizar tallas_detalle que viene desde la BD
                 let tallasProceso = null;
-                console.log('[printReceiptModal] 🔍 DEBUG - Datos de tallas disponibles:', {
+                console.log('[printReceiptModal]  DEBUG - Datos de tallas disponibles:', {
                     tipoProceso,
                     reciboActual,
                     prendaData,
@@ -1027,11 +1030,11 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si está disponible
                     if (Array.isArray(reciboActual.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
                         tallasProceso = reciboActual.tallas_detalle;
-                        console.log('[printReceiptModal] ✅ Usando tallas_detalle del reciboActual:', tallasProceso);
+                        console.log('[printReceiptModal]  Usando tallas_detalle del reciboActual:', tallasProceso);
                     } else if (tipoProceso.toUpperCase() === 'COSTURA') {
                         // Para COSTURA: usar variantes si no hay tallas_detalle
                         const variantes = reciboActual?.variantes || prendaData?.variantes || [];
-                        console.log('[printReceiptModal] 🎯 COSTURA - Variantes encontradas:', variantes);
+                        console.log('[printReceiptModal]  COSTURA - Variantes encontradas:', variantes);
                         
                         if (variantes.length > 0) {
                             // Convertir variantes al formato tallas_detalle
@@ -1042,7 +1045,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                                 es_sobremedida: v.es_sobremedida || false,
                                 observaciones: v.observaciones || []
                             }));
-                            console.log('[printReceiptModal] ✅ COSTURA - Variantes convertidas a tallas_detalle:', tallasProceso);
+                            console.log('[printReceiptModal]  COSTURA - Variantes convertidas a tallas_detalle:', tallasProceso);
                         }
                     } else if (prendaData?.procesos && Array.isArray(prendaData.procesos)) {
                         // Buscar el proceso actual en prendaData.procesos por tipo
@@ -1054,15 +1057,15 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         
                         if (procesoActual && Array.isArray(procesoActual.tallas_detalle) && procesoActual.tallas_detalle.length > 0) {
                             tallasProceso = procesoActual.tallas_detalle;
-                            console.log('[printReceiptModal] ✅ Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
+                            console.log('[printReceiptModal]  Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
                         } else if (procesoActual && procesoActual.tallas_detalle) {
-                            console.log('[printReceiptModal] ⚠️ procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
+                            console.log('[printReceiptModal]  procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
                         }
                         
                         // Si no hay tallas_detalle, intentar con tallas del proceso
                         if (!tallasProceso && procesoActual?.tallas) {
                             tallasProceso = procesoActual.tallas;
-                            console.log('[printReceiptModal] ✅ Usando tallas del proceso encontrado en prendaData:', tallasProceso);
+                            console.log('[printReceiptModal]  Usando tallas del proceso encontrado en prendaData:', tallasProceso);
                         }
                     }
                 }
@@ -1072,7 +1075,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     tallasProceso || reciboActual?.tallas || prendaData?.tallas || null,
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
-                console.log('[printReceiptModal] 📊 Resultado buildTallasResumen:', str);
+                console.log('[printReceiptModal]Resultado buildTallasResumen:', str);
                 if (str) return str;
                 
                 // Fallback para COSTURA: intentar desde variantes
@@ -1302,6 +1305,23 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     const tieneReflectivo = primeraVariante?.tiene_reflectivo || prendaData?.tiene_reflectivo || false;
                     const obsReflectivo = primeraVariante?.obs_reflectivo || prendaData?.obs_reflectivo || '';
                     
+                    // Construir línea compacta de TELAS: Nombre / Color | REF: ref | Manga con obs
+                    const telaPartesPrincipal = [];
+                    if (prendaData?.tela) telaPartesPrincipal.push(esc(prendaData.tela));
+                    if (prendaColor) telaPartesPrincipal.push(esc(prendaColor));
+                    const telaMain = telaPartesPrincipal.join(' / ');
+                    
+                    const refText = prendaData?.ref_tela || prendaData?.referencia || prendaData?.ref || '';
+                    
+                    const mangaInfo = [];
+                    if (manga) mangaInfo.push(`MANGA: ${esc(manga)}${obsManga ? ` (${esc(obsManga)})` : ''}`);
+                    
+                    const telaLinea = [];
+                    if (telaMain) telaLinea.push(telaMain);
+                    if (refText) telaLinea.push(`REF: ${refText}`);
+                    const telaLineaTexto = telaLinea.join(' | ');
+                    const mangaLineaTexto = mangaInfo.join('');
+                    
                     return `
                         <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
                         <div id="order-date" class="order-date">
@@ -1326,68 +1346,46 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         </div>
 
                         <div class="prenda-info">
-                          <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
+                          <div class="prenda-name">PRENDA 1: ${esc(prendaNombre || '-').toUpperCase()}</div>
                         </div>
                         
-                        <div class="costura-section">
-                          ${prendaColor ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">COLOR:</span>
-                              <span class="value">${esc(prendaColor)}</span>
-                            </div>
+                        <div class="costura-section" style="line-height: 1.4; font-size: 11px;">
+                          ${telaLineaTexto ? `
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TELAS: ${telaLineaTexto}</span>
                           </div>
                           ` : ''}
                           
-                          ${prendaData?.tela ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TELA:</span>
-                              <span class="value">${esc(prendaData.tela)}</span>
-                            </div>
-                          </div>
-                          ` : ''}
-                          
-                          ${manga ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIPO MANGA:</span>
-                              <span class="value">${esc(manga)}</span>
-                            </div>
-                            ${obsManga ? `<div class="costura-obs">${esc(obsManga)}</div>` : ''}
+                          ${mangaLineaTexto ? `
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">${mangaLineaTexto}</span>
                           </div>
                           ` : ''}
                           
                           ${broche ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">BROCHE/BOTÓN:</span>
-                              <span class="value">${esc(broche)}</span>
-                            </div>
-                            ${obsBroche ? `<div class="costura-obs">${esc(obsBroche)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">BROCHE/BOTÓN:</span> ${esc(broche)}${obsBroche ? ` (${esc(obsBroche)})` : ''}
                           </div>
                           ` : ''}
                           
                           ${tieneBolsillos ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIENE BOLSILLOS:</span>
-                              <span class="value">SÍ</span>
-                            </div>
-                            ${obsBolsillos ? `<div class="costura-obs">${esc(obsBolsillos)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TIENE BOLSILLOS:</span> SÍ${obsBolsillos ? ` - ${esc(obsBolsillos)}` : ''}
                           </div>
                           ` : ''}
                           
                           ${tieneReflectivo ? `
-                          <div class="costura-row">
-                            <div class="costura-field">
-                              <span class="label">TIENE REFLECTIVO:</span>
-                              <span class="value">SÍ</span>
-                            </div>
-                            ${obsReflectivo ? `<div class="costura-obs">${esc(obsReflectivo)}</div>` : ''}
+                          <div style="margin-bottom: 4px;">
+                            <span style="font-weight: 700;">TIENE REFLECTIVO:</span> SÍ${obsReflectivo ? ` - ${esc(obsReflectivo)}` : ''}
                           </div>
                           ` : ''}
                         </div>
+                        
+                        ${(ubicaciones && ubicaciones.length > 0) ? `
+                        <div style="margin: 4px 0; font-size: 11px;">
+                          ${ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')}
+                        </div>
+                        ` : ''}
                         
                         ${tallasResumen ? `
                         <div class="section">
@@ -1429,11 +1427,6 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                           </div>
                         </div>
                         ` : ''}
-                        
-                        <div class="section">
-                          <h4>DESCRIPCIÓN:</h4>
-                          <div class="descripcion-list">${(ubicaciones && ubicaciones.length > 0 && ubicaciones[0]) ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('') : '<div>-</div>'}</div>
-                        </div>
                     `;
                 }
                 
@@ -1501,18 +1494,18 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             let mostrarTituloTallas = true;
             let contenidoTallasFinal = tallasResumen;
             
-            console.log('[printReceiptModal] 🐛 DEBUG tallasResumen original:', tallasResumen);
+            console.log('[printReceiptModal] DEBUG tallasResumen original:', tallasResumen);
             
             if (tallasResumen) {
                 if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
-                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_SIN_TALLAS');
+                    console.log('[printReceiptModal] Procesando SOBREMEDIDA_SIN_TALLAS');
                     const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
                     mostrarTituloTallas = false;
                     contenidoTallasFinal = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
                         partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
-                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                    console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
-                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_CON_TALLAS');
+                    console.log('[printReceiptModal] Procesando SOBREMEDIDA_CON_TALLAS');
                     const lineas = tallasResumen.split('\n');
                     contenidoTallasFinal = lineas.map(linea => {
                         if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
@@ -1522,14 +1515,14 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         }
                         return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
                     }).join('<br>');
-                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                    console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else {
-                    console.log('[printReceiptModal] 🐛 Tallas normales');
+                    console.log('[printReceiptModal] Tallas normales');
                     // Tallas normales sin sobremedida
                     contenidoTallasFinal = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
                 }
                 
-                console.log('[printReceiptModal] 🐛 Variables finales:', {
+                console.log('[printReceiptModal] Variables finales:', {
                     mostrarTituloTallas,
                     contenidoTallasFinal
                 });
@@ -1559,6 +1552,11 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     return '';
                 }).join('');
 
+                // Si no hay bloques, no mostrar la sección completa
+                if (!Array.isArray(blocks) || blocks.length === 0) {
+                    return '';
+                }
+
                 return `
                     <div class="section observations-section" style="margin-top: 2px;">
                       <h4 style="margin-bottom: 2px; font-size: 11px;">OBSERVACIONES POR TALLA</h4>
@@ -1583,7 +1581,6 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                       <div class="receipt-card">
                         ${renderHeader(p.num)}
                         ${renderTallasSection(p.blocks)}
-                        ${renderFooter()}
                       </div>
                     </div>
                 `;

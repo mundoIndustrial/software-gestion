@@ -69,7 +69,7 @@ class CrearPrendaAction
             // Despachar job asincrónico
             Bus::dispatch(new ProcessPrendaImagenesJob($prendaId, $imagenesData));
 
-            \Log::info('📤 Job de procesamiento de imágenes despachado', [
+            \Log::info(' Job de procesamiento de imágenes despachado', [
                 'prenda_id' => $prendaId,
                 'cantidad' => count($imagenesData),
             ]);

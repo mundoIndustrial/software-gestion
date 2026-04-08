@@ -18,12 +18,12 @@
  * @returns {Promise<{success: boolean, ruta: string}>}
  */
 async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
-    console.log('📸 Subiendo imagen a cotización', {
+    console.log(' Subiendo imagen a cotización', {
         archivo: archivo.name,
         cotizacion_id: cotizacionId,
         prenda_id: prendaId,
         tipo: tipo,
-        tamaño: (archivo.size / 1024).toFixed(2) + ' KB'
+        tamano: (archivo.size / 1024).toFixed(2) + ' KB'
     });
 
     try {
@@ -48,7 +48,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         formData.append('tipo', tipo);
 
         // Enviar
-        const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
+        const response = await fetch(`/api/asesores/cotizaciones/${cotizacionId}/imagenes`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
@@ -65,7 +65,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         if (data.success) {
             console.log(' Imagen subida exitosamente', {
                 ruta: data.data.ruta,
-                tamaño: (archivo.size / 1024).toFixed(2) + ' KB'
+                tamano: (archivo.size / 1024).toFixed(2) + ' KB'
             });
 
             return {

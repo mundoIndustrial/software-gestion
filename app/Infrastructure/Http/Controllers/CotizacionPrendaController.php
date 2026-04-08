@@ -64,7 +64,7 @@ class CotizacionPrendaController extends Controller
         // Si algo falla, TODO se revierte (ROLLBACK)
         return DB::transaction(function () use ($request) {
             try {
-                Log::info('🔵 CotizacionPrendaController@store - Iniciando guardado de cotización de Prenda');
+                Log::info(' CotizacionPrendaController@store - Iniciando guardado de cotización de Prenda');
 
                 // Determinar si es borrador o enviada
                 $action = $request->input('action') ?? $request->input('accion');
@@ -329,7 +329,7 @@ class CotizacionPrendaController extends Controller
 
         // Debug: Ver todos los archivos recibidos
         $allFiles = $request->allFiles();
-        \Log::info('📁 DEBUG allFiles():', [
+        \Log::info(' DEBUG allFiles():', [
             'keys' => array_keys($allFiles),
             'count' => count($allFiles),
         ]);
@@ -337,7 +337,7 @@ class CotizacionPrendaController extends Controller
         // Laravel agrupa los archivos bajo 'prendas', necesitamos acceder a la estructura anidada
         $prendasData = $request->file('prendas', []);
         
-        \Log::info('📁 Estructura de prendas recibida:', [
+        \Log::info(' Estructura de prendas recibida:', [
             'tiene_prendas' => !empty($prendasData),
             'tipo' => gettype($prendasData),
             'es_array' => is_array($prendasData),
@@ -371,7 +371,7 @@ class CotizacionPrendaController extends Controller
 
             // 1. Procesar fotos de PRENDA: prendas[{index}][fotos][]
             if (isset($prendaFiles['fotos']) && is_array($prendaFiles['fotos'])) {
-                \Log::info('📸 Encontrado grupo de fotos de PRENDA', [
+                \Log::info(' Encontrado grupo de fotos de PRENDA', [
                     'prenda_index' => $prendaIndex,
                     'cantidad_archivos' => count($prendaFiles['fotos']),
                 ]);
@@ -413,7 +413,7 @@ class CotizacionPrendaController extends Controller
                                     'orden' => $fotoIndex + 1,
                                     'ancho' => null,
                                     'alto' => null,
-                                    'tamaño' => $archivoFoto->getSize(),
+                                    'tamano' => $archivoFoto->getSize(),
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
@@ -710,7 +710,7 @@ class CotizacionPrendaController extends Controller
                                         'orden' => $fotoIndex + 1,
                                         'ancho' => null,
                                         'alto' => null,
-                                        'tamaño' => $archivoFoto->getSize(),
+                                        'tamano' => $archivoFoto->getSize(),
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);

@@ -203,7 +203,9 @@ class TelaDragDropHandler extends BaseDragDropHandler {
         // UIHelperService.log('TelaDragDropHandler', 'Click en drop zone de tela');
         
         // Abrir file picker al clickear en la zona
-        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input')
+            || document.getElementById('nueva-prenda-tela-img-input')
+            || document.getElementById('simple-tela-img-input');
         if (fileInput) {
             fileInput.click();
         }
@@ -283,7 +285,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual(tipo) {
-        UIHelperService.log('TelaDragDropHandler', `🖱️ Iniciando pegado desde menú contextual (${tipo})...`);
+        UIHelperService.log('TelaDragDropHandler', ` Iniciando pegado desde menú contextual (${tipo})...`);
         
         try {
             // Verificar si ClipboardService está disponible
@@ -297,7 +299,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: 1 });
 
-            UIHelperService.log('TelaDragDropHandler', `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log('TelaDragDropHandler', ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
@@ -312,7 +314,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log('TelaDragDropHandler', '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log('TelaDragDropHandler', ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -321,14 +323,14 @@ class TelaDragDropHandler extends BaseDragDropHandler {
                     const archivos = [];
                     
                     for (const item of items) {
-                        UIHelperService.log('TelaDragDropHandler', `🔍 Tipos en item: ${item.types.join(', ')}`);
+                        UIHelperService.log('TelaDragDropHandler', ` Tipos en item: ${item.types.join(', ')}`);
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log('TelaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log('TelaDragDropHandler', ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log('TelaDragDropHandler', `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log('TelaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `tela-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type

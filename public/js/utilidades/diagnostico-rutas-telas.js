@@ -3,11 +3,11 @@
  * Verifica que las URLs de imágenes de telas sean accesibles
  */
 
-window.diagnosticarRutasTelas = async function() {
+globalThis.diagnosticarRutasTelas = async function() {
     console.log(' [DIAGNÓSTICO-RUTAS] Iniciando verificación de rutas de telas...');
     
     // Obtener telas disponibles
-    const telas = window.telasAgregadas || window.telasEdicion || window.telasCreacion || [];
+    const telas = globalThis.telasAgregadas || globalThis.telasEdicion || globalThis.telasCreacion || [];
     console.log(`[DIAGNÓSTICO-RUTAS] Telas a verificar: ${telas.length}`);
     
     if (telas.length === 0) {
@@ -18,7 +18,7 @@ window.diagnosticarRutasTelas = async function() {
     // Verificar cada tela
     for (let i = 0; i < telas.length; i++) {
         const tela = telas[i];
-        console.log(`\n[DIAGNÓSTICO-RUTAS] 🧵 Tela ${i}: ${tela.nombre_tela || 'SIN NOMBRE'}`);
+        console.log(`\n[DIAGNÓSTICO-RUTAS]  Tela ${i}: ${tela.nombre_tela || 'SIN NOMBRE'}`);
         
         if (!tela.imagenes || tela.imagenes.length === 0) {
             console.warn(`[DIAGNÓSTICO-RUTAS]    Sin imágenes`);
@@ -28,7 +28,7 @@ window.diagnosticarRutasTelas = async function() {
         // Verificar cada imagen
         for (let j = 0; j < tela.imagenes.length; j++) {
             const img = tela.imagenes[j];
-            console.log(`[DIAGNÓSTICO-RUTAS]   📸 Imagen ${j}:`, {
+            console.log(`[DIAGNÓSTICO-RUTAS]    Imagen ${j}:`, {
                 ruta: img.ruta || 'NULL',
                 ruta_webp: img.ruta_webp || 'NULL',
                 previewUrl: img.previewUrl || 'NULL',
@@ -62,6 +62,6 @@ window.diagnosticarRutasTelas = async function() {
 };
 
 // Exponer globalmente
-window.runDiagnosticoTelas = window.diagnosticarRutasTelas;
+globalThis.runDiagnosticoTelas = globalThis.diagnosticarRutasTelas;
 
-console.log(' [diagnostico-rutas-telas.js] Cargado - usa window.diagnosticarRutasTelas() para diagnosticar');
+console.log(' [diagnostico-rutas-telas.js] Cargado - usa globalThis.diagnosticarRutasTelas() para diagnosticar');

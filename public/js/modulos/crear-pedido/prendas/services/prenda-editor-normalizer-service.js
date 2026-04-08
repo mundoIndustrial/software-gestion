@@ -1,5 +1,5 @@
 /**
- * 🔄 Servicio de Normalización de Datos
+ *  Servicio de Normalización de Datos
  * Responsabilidad: Asegurar que los datos estén en el formato correcto
  */
 
@@ -38,7 +38,7 @@ class PrendaEditorNormalizerService {
         if (telasAgregadas && typeof telasAgregadas === 'object' && !Array.isArray(telasAgregadas)) {
             const convertido = Object.values(telasAgregadas);
             if (convertido.length > 0) {
-                console.log('[Normalizer] 🔄 Convertido telas de objeto a array');
+                console.log('[Normalizer]  Convertido telas de objeto a array');
                 return convertido;
             }
         }

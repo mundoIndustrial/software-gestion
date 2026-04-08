@@ -6,20 +6,24 @@ use Tests\TestCase;
 use App\Models\PedidoProduccion;
 use App\Models\DesparChoParcialesModel;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerEntregadoDespachoTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private User $usuario;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->usuario = User::factory()->create();
+
+        $suffix = now()->format('YmdHisv') . '_' . bin2hex(random_bytes(3));
+        $this->usuario = User::factory()->create([
+            'name' => "Despacho Test {$suffix}",
+            'email' => "despacho_test_{$suffix}@test.local",
+        ]);
         $this->actingAs($this->usuario);
     }
 
@@ -97,7 +101,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
         $response->assertStatus(404);
         $response->assertJson([
             'success' => false,
-            'message' => 'No se encontró registro de entrega para deshacer',
+            'message' => 'No se encontro registro de entrega para deshacer',
         ]);
     }
 
@@ -158,7 +162,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
         ]);
 
         // Cerrar sesión
-        $this->actingAs(null);
+        auth()->logout();
 
         // Intentar deshacer sin autenticación
         $response = $this->postJson(route('despacho.deshacer-entregado', $pedido->id), [
@@ -208,7 +212,7 @@ class DeshacerEntregadoDespachoTest extends TestCase
             'item_id' => 1,
         ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
         $response->assertJson([
             'success' => false,
         ]);

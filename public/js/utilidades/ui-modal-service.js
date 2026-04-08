@@ -46,7 +46,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
             return;
         }
         
-        // ⏳ Swal no está disponible, esperar
+        //  Swal no está disponible, esperar
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
             if (typeof Swal !== 'undefined') {
@@ -262,7 +262,7 @@ class UIModalService {
      */
     static async confirmarEliminacion(resourceName, identifier = '') {
         const resultado = await this.confirmar({
-            titulo: `🗑️ Eliminar ${resourceName}`,
+            titulo: ` Eliminar ${resourceName}`,
             mensaje: identifier 
                 ? `¿Estás seguro de que deseas eliminar ${resourceName} #${identifier}? Esta acción no se puede deshacer.`
                 : `¿Estás seguro de que deseas eliminar este ${resourceName}? Esta acción no se puede deshacer.`,

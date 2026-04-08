@@ -2,11 +2,10 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Obtener Items de Pedido
- * 
  * Responsabilidad:
  * - Recuperar items de la sesión de construcción
  * - Retornar en formato API
@@ -29,4 +28,3 @@ class ObtenerItemsPedidoUseCase
         ];
     }
 }
-

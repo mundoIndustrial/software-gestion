@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Recibos;
 
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Repositories\AsesoresRepository;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
@@ -12,11 +12,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ObtenerRecibosService
 {
-    protected PedidoProduccionRepository $pedidoProduccionRepository;
+    protected PedidoProduccionReadRepository $pedidoProduccionRepository;
     protected AsesoresRepository $asesoresRepository;
 
     public function __construct(
-        PedidoProduccionRepository $pedidoProduccionRepository,
+        PedidoProduccionReadRepository $pedidoProduccionRepository,
         AsesoresRepository $asesoresRepository
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
@@ -117,7 +117,7 @@ class ObtenerRecibosService
     }
 
     /**
-     * Obtener detalles de procesos de una prenda especÃ­fica
+     * Obtener detalles de procesos de una prenda especifica
      */
     public function obtenerProcesosPrenda(int $pedidoId, int $prendaId): array
     {
@@ -173,4 +173,3 @@ class ObtenerRecibosService
         return array_merge($recibo, ['resumen' => $resumen]);
     }
 }
-

@@ -1,4 +1,4 @@
-# 🔐 Jerarquía de Roles - Sistema de Herencia
+#  Jerarquía de Roles - Sistema de Herencia
 
 ## Descripción
 
@@ -262,7 +262,7 @@ php artisan tinker
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 Para verificar que la jerarquía funciona:
 

@@ -52,8 +52,8 @@ class EntregarPedidoHandler
                 $pedido->actualizarNovedades($nuevasNovedades);
             }
 
-            // 5. Persistir los cambios
-            $this->pedidoRepository->save($pedido);
+            // 5. Persistir los cambios (sin actualizar timestamp - cambio de estado no es actualización)
+            $this->pedidoRepository->save($pedido, false);
 
             // 6. Procesar eventos de dominio
             DomainEventDispatcher::processQueue();

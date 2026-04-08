@@ -1,5 +1,5 @@
 /**
- * 🎯 ORQUESTADOR - PrendaEditor (Simplificado)
+ *  ORQUESTADOR - PrendaEditor (Simplificado)
  * 
  * Responsabilidad: Coordinar flujos de edición
  * - Abrición/cierre de modal
@@ -98,7 +98,7 @@ class PrendaEditor {
     }
 
     /**
-     * 📊 NORMALIZAR TELAS
+     *NORMALIZAR TELAS
      * @private
      */
     _normalizarTelas(prenda) {
@@ -124,12 +124,12 @@ class PrendaEditor {
     }
 
     /**
-     * 🔄 CARGAR DATOS EN FORMULARIO
+     *  CARGAR DATOS EN FORMULARIO
      * Llama a cada loader para cargar su parte
      * @private
      */
     _cargarDatosEnFormulario(prenda) {
-        console.log('[🔄 Carga] Cargando datos en formulario...');
+        console.log('[ Carga] Cargando datos en formulario...');
 
         // Basicos
         if (typeof PrendaEditorBasicos !== 'undefined') {
@@ -146,14 +146,14 @@ class PrendaEditor {
             PrendaEditorTelas.cargar(prenda);
             // Replicar a global para edicion
             if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-                // 🔴 CRÍTICO: NO usar JSON.stringify/parse - DESTRUYE File objects y blob URLs
+                //  CRÍTICO: NO usar JSON.stringify/parse - DESTRUYE File objects y blob URLs
                 // Hacer copia profunda que preserve todos los objetos
                 window.telasCreacion = prenda.telasAgregadas.map(tela => ({
                     ...tela,
                     imagenes: tela.imagenes ? [...tela.imagenes] : []
                 }));
                 
-                console.log('[prenda-editor] ✅ telasCreacion replicado con spread operator (SIN stringify/parse):', {
+                console.log('[prenda-editor]  telasCreacion replicado con spread operator (SIN stringify/parse):', {
                     cantidad: window.telasCreacion.length,
                     primeraTela: window.telasCreacion[0]?.tela,
                     imagenesEnPrimera: window.telasCreacion[0]?.imagenes?.length || 0
@@ -191,25 +191,25 @@ class PrendaEditor {
             PrendaEditorProcesos.cargar(prenda);
         }
 
-        console.log(' [🔄 Carga] Datos cargados en formulario');
+        console.log(' [ Carga] Datos cargados en formulario');
         
-        // 🔴 CRÍTICO: Actualizar tabla de resumen DESPUÉS de cargar telas y colores
+        //  CRÍTICO: Actualizar tabla de resumen DESPUÉS de cargar telas y colores
         // Esto garantiza que la tabla se muestre aunque sea solo con telas simples
         if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
             setTimeout(() => {
                 window.ColoresPorTalla.actualizarTablaResumen();
-                console.log('[prenda-editor] 🎯 actualizarTablaResumen() ejecutado post-carga');
+                console.log('[prenda-editor]  actualizarTablaResumen() ejecutado post-carga');
             }, 50);
         }
         
-        // 🔴 NUEVO: Cargar sección UNISEX (antes SOLO CANTIDAD) si existe DIRECTAMENTE aquí
+        //  NUEVO: Cargar sección UNISEX (antes SOLO CANTIDAD) si existe DIRECTAMENTE aquí
         const tieneGenerico = prenda.generosConTallas && 
                              Object.keys(prenda.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
         const tieneGenericoEnCantidadTalla = prenda.cantidad_talla && 
                                              prenda.cantidad_talla.GENERICO;
         
         if (tieneGenerico || tieneGenericoEnCantidadTalla) {
-            console.log('[PrendaEditor] 📦 DETECTADA PRENDA CON UNISEX (GENERICO)');
+            console.log('[PrendaEditor]  DETECTADA PRENDA CON UNISEX (GENERICO)');
             
             // Limpiar tarjetas de géneros
             const containerGeneros = document.getElementById('tarjetas-generos-container');
@@ -275,16 +275,16 @@ class PrendaEditor {
             }
         }
         
-        // 🔴 CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
+        //  CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
         this._configurarDragDropEnEdicion();
     }
     
     /**
-     * 🔴 NUEVO: Configurar drag & drop en modo edición
+     *  NUEVO: Configurar drag & drop en modo edición
      * @private
      */
     _configurarDragDropEnEdicion() {
-        console.log('[PrendaEditor] 🔄 Configurando drag & drop en modo edición...');
+        console.log('[PrendaEditor]  Configurando drag & drop en modo edición...');
         
         // Opción 1: Usar DragDropManager si está disponible (reconfiguración)
         if (typeof window.DragDropManager !== 'undefined') {
@@ -293,13 +293,13 @@ class PrendaEditor {
             // Reconfigurar prendas
             if (typeof window.DragDropManager.reconfigurarPrendas === 'function') {
                 window.DragDropManager.reconfigurarPrendas();
-                console.log('[PrendaEditor] ✅ Drag & drop de prenda reconfigurado (DragDropManager)');
+                console.log('[PrendaEditor]  Drag & drop de prenda reconfigurado (DragDropManager)');
             }
             
             // Reconfigurar procesos
             if (typeof window.DragDropManager.reconfigurarProcesos === 'function') {
                 window.DragDropManager.reconfigurarProcesos();
-                console.log('[PrendaEditor] ✅ Drag & drop de procesos reconfigurado (DragDropManager)');
+                console.log('[PrendaEditor]  Drag & drop de procesos reconfigurado (DragDropManager)');
             }
         } else {
             // Opción 2: Fallback a funciones globales
@@ -307,19 +307,19 @@ class PrendaEditor {
             
             if (typeof configurarDragDropPrenda === 'function') {
                 configurarDragDropPrenda();
-                console.log('[PrendaEditor] ✅ Drag & drop de prenda configurado');
+                console.log('[PrendaEditor]  Drag & drop de prenda configurado');
             } else {
-                console.warn('[PrendaEditor] ⚠️ configurarDragDropPrenda no disponible');
+                console.warn('[PrendaEditor]  configurarDragDropPrenda no disponible');
             }
             
             if (typeof configurarDragDropProcesos === 'function') {
-                console.log('[PrendaEditor] 🔄 Llamando a configurarDragDropProcesos desde PrendaEditor');
-                console.log('[PrendaEditor] 📊 Timestamp:', new Date().toISOString());
-                console.log('[PrendaEditor] 🔍 Stack trace:', new Error().stack);
+                console.log('[PrendaEditor]  Llamando a configurarDragDropProcesos desde PrendaEditor');
+                console.log('[PrendaEditor]Timestamp:', new Date().toISOString());
+                console.log('[PrendaEditor]  Stack trace:', new Error().stack);
                 configurarDragDropProcesos();
-                console.log('[PrendaEditor] ✅ Drag & drop de procesos configurado');
+                console.log('[PrendaEditor]  Drag & drop de procesos configurado');
             } else {
-                console.warn('[PrendaEditor] ⚠️ configurarDragDropProcesos no disponible');
+                console.warn('[PrendaEditor]  configurarDragDropProcesos no disponible');
             }
         }
     }

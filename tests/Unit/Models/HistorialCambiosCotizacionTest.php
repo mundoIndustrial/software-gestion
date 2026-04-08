@@ -6,11 +6,11 @@ use Tests\TestCase;
 use App\Models\Cotizacion;
 use App\Models\HistorialCambiosCotizacion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class HistorialCambiosCotizacionTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test: Crear historial de cambios
@@ -27,7 +27,7 @@ class HistorialCambiosCotizacionTest extends TestCase
             'usuario_id' => $usuario->id,
             'usuario_nombre' => $usuario->name,
             'rol_usuario' => 'asesor',
-            'razon_cambio' => 'EnvÃ­o a contador',
+            'razon_cambio' => 'Envio a contador',
             'ip_address' => '192.168.1.1',
             'user_agent' => 'Mozilla/5.0',
             'datos_adicionales' => ['cliente' => 'XYZ'],
@@ -92,4 +92,6 @@ class HistorialCambiosCotizacionTest extends TestCase
         $this->assertInstanceOf(\Carbon\Carbon::class, $historial->created_at);
     }
 }
+
+
 

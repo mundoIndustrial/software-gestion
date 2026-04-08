@@ -2,8 +2,8 @@
 
 /**
  * Script de Análisis: Consecutivos por Proceso y Prenda - Pedido ID 1
- * 
- * Propósito: Diagnosticar si TODOS los procesos generan consecutivos 
+ *
+ * Propósito: Diagnosticar si TODOS los procesos generan consecutivos
  * por cada prenda que tiene el proceso
  */
 
@@ -62,7 +62,7 @@ foreach ($prendas as $index => $prenda) {
     // COSTURA se genera si NO es de bodega
     if (!$prenda->de_bodega) {
         $prendasPorProceso['COSTURA'][] = $prenda->id;
-        echo "    - 🔹 COSTURA - DEBERÍA TENER CONSECUTIVO (de_bodega=false)\n";
+        echo "    -  COSTURA - DEBERÍA TENER CONSECUTIVO (de_bodega=false)\n";
     }
     
     // Obtener procesos de la prenda
@@ -84,30 +84,30 @@ foreach ($prendas as $index => $prenda) {
             
             if ($tipoProceso === 'BORDADO') {
                 $prendasPorProceso['BORDADO'][] = $prenda->id;
-                echo "    - 🔹 BORDADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  BORDADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'ESTAMPADO') {
                 $prendasPorProceso['ESTAMPADO'][] = $prenda->id;
-                echo "    - 🔹 ESTAMPADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  ESTAMPADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'DTF') {
                 $prendasPorProceso['DTF'][] = $prenda->id;
-                echo "    - 🔹 DTF - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  DTF - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'SUBLIMADO') {
                 $prendasPorProceso['SUBLIMADO'][] = $prenda->id;
-                echo "    - 🔹 SUBLIMADO - DEBERÍA TENER CONSECUTIVO\n";
+                echo "    -  SUBLIMADO - DEBERÍA TENER CONSECUTIVO\n";
             }
             if ($tipoProceso === 'REFLECTIVO') {
                 $prendasPorProceso['REFLECTIVO'][] = $prenda->id;
-                echo "    - 🔹 REFLECTIVO";
+                echo "    -  REFLECTIVO";
                 if ($prenda->de_bodega) {
                     echo " - DEBERÍA TENER CONSECUTIVO (de_bodega=true)\n";
                 } else {
                     echo " - NO genera consecutivo (de_bodega=false)\n";
                     // Remover si no es de bodega
                     $prendasPorProceso['REFLECTIVO'] = array_diff(
-                        $prendasPorProceso['REFLECTIVO'], 
+                        $prendasPorProceso['REFLECTIVO'],
                         [$prenda->id]
                     );
                 }
@@ -205,7 +205,7 @@ foreach ($prendasPorProceso as $proceso => $prendasIds) {
 }
 
 if ($problemasEncontrados) {
-    echo "\n  📝 CAUSA RAÍZ:\n";
+    echo "\n   CAUSA RAÍZ:\n";
     echo "  En ConsecutivosRecibosService.php, los procesos BORDADO, ESTAMPADO,\n";
     echo "  DTF, SUBLIMADO y REFLECTIVO usan la condición:\n";
     echo "  if (!isset(\$procesosPorPedido['TIPO']))\n\n";

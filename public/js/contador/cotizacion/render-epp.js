@@ -51,13 +51,13 @@
     function formatearMoneda(num) {
         const n = Number(num);
         if (!Number.isFinite(n)) return '$ 0';
-        
+
         // Formatear sin redondear, mostrando hasta 2 decimales si existen
         const str = n.toFixed(2).replace('.', '.');
-        
+
         // Eliminar .00 si no hay decimales
         const formatted = str.endsWith('.00') ? str.slice(0, -3) : str;
-        
+
         return '$ ' + formatted;
     }
 
@@ -141,17 +141,8 @@
         const valorIva = (payload?.cotizacion?.iva !== undefined && payload?.cotizacion?.iva !== null && String(payload?.cotizacion?.iva).trim() !== '')
             ? Number(payload?.cotizacion?.iva)
             : null;
-        
-        // Logging para depuración
-        console.log('[EPP Render] Datos de IVA:', {
-            'payload.cotizacion.iva': payload?.cotizacion?.iva,
-            'valorIva': valorIva,
-            'tipo': typeof payload?.cotizacion?.iva,
-            'eppItems': eppItems.length,
-            'prendaItems': prendaItems.length,
-            'payload_completo': payload
-        });
 
+        // Logging para depuración
         let html = '<div class="epp-container" style="display: flex; flex-direction: column; gap: 1.25rem;">';
 
         if (tipoVenta) {
@@ -198,20 +189,13 @@
             const tot = (vu !== null) ? (vu * cant) : 0;
             return acc + (Number.isFinite(tot) ? tot : 0);
         }, 0);
-        
+
         // Calcular el IVA como porcentaje del subtotal
         const ivaPorcentaje = (valorIva !== null && Number.isFinite(valorIva)) ? Number(valorIva) : 0;
         const ivaValor = (subtotal * ivaPorcentaje) / 100;
         const totalConIva = subtotal + ivaValor;
-        
+
         // Logging para depuración del cálculo
-        console.log('[EPP Render] Cálculo de IVA:', {
-            'subtotal': subtotal,
-            'ivaPorcentaje': ivaPorcentaje,
-            'ivaValor': ivaValor,
-            'totalConIva': totalConIva,
-            'formula': `(${subtotal} × ${ivaPorcentaje}) ÷ 100 = ${ivaValor}`
-        });
 
         html += `
             <div style="margin-top: 0.25rem; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10); background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">

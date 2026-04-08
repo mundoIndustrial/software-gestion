@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Support\Facades\Log;
 
 class ObtenerFacturaUseCase
@@ -12,7 +12,7 @@ class ObtenerFacturaUseCase
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoProduccionRepository
+        private PedidoProduccionReadRepository $pedidoProduccionRepository
     ) {}
 
     public function ejecutar(ObtenerFacturaDTO $dto): array
@@ -69,5 +69,4 @@ class ObtenerFacturaUseCase
         }
     }
 }
-
 

@@ -229,7 +229,7 @@ async function loadBodegaTrackingData(pedido) {
 function calculateTotalDias(orden) {
     // Mapeo correcto de los 14 procesos en orden secuencial
     const procesos = [
-        { nombre: 'Creación de Orden', fecha: 'fecha_de_creacion_de_orden' },
+        { nombre: 'Creación de Orden', fecha: 'created_at' },
         { nombre: 'Inventario', fecha: 'inventario' },
         { nombre: 'Insumos y Telas', fecha: 'insumos_y_telas' },
         { nombre: 'Corte', fecha: 'corte' },
@@ -370,7 +370,7 @@ function buildBodegaProcessTimeline(orden) {
     
     // Mapeo de los 14 procesos en orden secuencial
     const procesos = [
-        { nombre: 'Creación Orden', fecha: 'fecha_de_creacion_de_orden', encargado: 'encargado_orden' },
+        { nombre: 'Creación Orden', fecha: 'created_at', encargado: 'encargado_orden' },
         { nombre: 'Inventario', fecha: 'inventario', encargado: 'encargados_inventario' },
         { nombre: 'Insumos', fecha: 'insumos_y_telas', encargado: 'encargados_insumos' },
         { nombre: 'Corte', fecha: 'corte', encargado: 'encargados_de_corte' },

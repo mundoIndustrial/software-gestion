@@ -9,16 +9,13 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ActualizarVariantePrendaUseCase
- * 
  * Orquesta la actualización de variante de prenda con preservación de datos.
- * 
  * Responsabilidades:
  * 1. Recibir DTO desde HTTP
  * 2. Validar sintaxis/negocio básica
  * 3. Crear Command
  * 4. Disparar a través de CommandBus
  * 5. Transformar resultado para respuesta HTTP
- * 
  * IMPORTANTE:
  * - Realiza MERGE de campos (solo actualiza los enviados)
  * - Preserva datos no mencionados en la request
@@ -34,7 +31,6 @@ final class ActualizarVariantePrendaUseCase
 
     /**
      * Ejecutar actualización de variante de prenda
-     * 
      * @param ActualizarVariantePrendaDTO $dto
      * @return array Datos de la variante actualizada
      * @throws \Exception Si hay error de validación o DB
@@ -64,7 +60,7 @@ final class ActualizarVariantePrendaUseCase
             );
 
             // Ejecutar comando a través del bus
-            $variante = $this->commandBus->dispatch($command);
+            $variante = $this->commandBus->execute($command);
 
             // Transformar resultado
             $resultado = $this->transformarVariante($variante);

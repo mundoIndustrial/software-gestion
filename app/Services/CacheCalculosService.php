@@ -93,7 +93,7 @@ class CacheCalculosService
     
     /**
      * Calcular días para una orden específica
-     * LÓGICA MEJORADA - SIEMPRE comienza desde fecha_de_creacion_de_orden: 
+     * LÓGICA MEJORADA - SIEMPRE comienza desde created_at: 
      * - Si hay Despacho: De fecha_creacion → Despacho
      * - Si está "No iniciado": De fecha_creacion → HOY
      * - Si está "En Ejecución": De fecha_creacion → HOY
@@ -104,7 +104,7 @@ class CacheCalculosService
         try {
             $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             
-            if (!$orden || !$orden->fecha_de_creacion_de_orden) {
+            if (!$orden || !$orden->created_at) {
                 return 0;
             }
             
@@ -118,8 +118,8 @@ class CacheCalculosService
                 } catch (\Exception $e) {}
             }
             
-            // PUNTO DE INICIO SIEMPRE: fecha_de_creacion_de_orden
-            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            // PUNTO DE INICIO SIEMPRE: created_at
+            $fechaInicio = Carbon::parse($orden->created_at);
             $estado = $estado ?? $orden->estado;
             
             // Buscar proceso "Despacho" para determinar fecha final
@@ -175,7 +175,7 @@ class CacheCalculosService
     
     /**
      * Calcular días para batch de órdenes
-     * LÓGICA MEJORADA: SIEMPRE comienza desde fecha_de_creacion_de_orden
+     * LÓGICA MEJORADA: SIEMPRE comienza desde created_at
      */
     private static function calcularDiasBatch(array $ordenes, array $festivos): array
     {
@@ -197,10 +197,10 @@ class CacheCalculosService
             
             // Obtener valores de forma segura (puede ser objeto o array)
             if (is_object($orden)) {
-                $fechaCreacion = $orden->fecha_de_creacion_de_orden ?? null;
+                $fechaCreacion = $orden->created_at ?? null;
                 $estado = $orden->estado ?? 'desconocido';
             } elseif (is_array($orden)) {
-                $fechaCreacion = $orden['fecha_de_creacion_de_orden'] ?? null;
+                $fechaCreacion = $orden['created_at'] ?? null;
                 $estado = $orden['estado'] ?? 'desconocido';
             }
             
@@ -210,7 +210,7 @@ class CacheCalculosService
             }
             
             try {
-                // PUNTO DE INICIO SIEMPRE: fecha_de_creacion_de_orden
+                // PUNTO DE INICIO SIEMPRE: created_at
                 $fechaInicio = Carbon::parse($fechaCreacion);
                 
                 // Buscar proceso "Despacho" para determinar fecha final
@@ -364,7 +364,7 @@ class CacheCalculosService
         $cacheSize = 0;
         
         try {
-            // Aproximar tamaño del caché
+            // Aproximar tamano del caché
             $sample = PedidoProduccion::first();
             if ($sample) {
                 $testKey = "test_cache_size_" . time();

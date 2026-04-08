@@ -5,10 +5,10 @@ namespace App\Domain\Pedidos\ValueObjects;
 /**
  * Value Object: NumeroPedido
  * 
- * Representa el nÃºmero Ãºnico de un pedido
+ * Representa el numero unico de un pedido
  * - Immutable
  * - Validado
- * - Ãšnico en el dominio
+ * - unico en el dominio
  */
 class NumeroPedido
 {

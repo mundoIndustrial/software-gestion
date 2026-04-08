@@ -3,11 +3,11 @@
  * Gestiona la navegación y lógica del wizard de 3 pasos
  */
 
-window.WizardManager = (function() {
+globalThis.WizardManager = (function() {
     'use strict';
 
     // Verificar solo StateManager como dependencia
-    if (!window.StateManager) {
+    if (!globalThis.StateManager) {
         console.error('[WizardManager]  StateManager no está disponible');
         return {};
     }
@@ -17,7 +17,7 @@ window.WizardManager = (function() {
         generoProcesado: null,  // Género del último paso 2 procesado
         generoCambiado: false,  // Bandera si el género cambió en Paso 1
         generoSeleccionandoEnPaso1: false,  // Flag para recordar selección en PASO 1
-        generoAnterior: null  // 🆕 Guardar género anterior para restaurar al volver
+        generoAnterior: null  //  Guardar género anterior para restaurar al volver
     };
 
     return {
@@ -25,7 +25,7 @@ window.WizardManager = (function() {
          * INICIALIZACIÓN: Configurar listeners directamente sin depender de WizardBootstrap
          */
         inicializarListeners() {
-            console.log('[WizardManager] 🔌 Inicializando listeners directamente...');
+            console.log('[WizardManager]  Inicializando listeners directamente...');
             
             const btnSiguiente = document.getElementById('wzd-btn-siguiente');
             const btnAtras = document.getElementById('wzd-btn-atras');
@@ -46,7 +46,7 @@ window.WizardManager = (function() {
                 if (btnCancelar && this._storedHandlers.cancelar) {
                     btnCancelar.removeEventListener('click', this._storedHandlers.cancelar, false);
                 }
-                console.log('[WizardManager] 🧹 Listeners anteriores removidos');
+                console.log('[WizardManager]  Listeners anteriores removidos');
             }
             
             // Crear nuevos handlers y guardar referencias
@@ -80,10 +80,10 @@ window.WizardManager = (function() {
                     
                     try {
                         let resultado = false;
-                        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
-                            resultado = window.ColoresPorTalla.wizardGuardarAsignacion();
-                        } else if (window.ColoresPorTalla && typeof window.ColoresPorTalla.guardarAsignacion === 'function') {
-                            resultado = window.ColoresPorTalla.guardarAsignacion();
+                        if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
+                            resultado = globalThis.ColoresPorTalla.wizardGuardarAsignacion();
+                        } else if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.guardarAsignacion === 'function') {
+                            resultado = globalThis.ColoresPorTalla.guardarAsignacion();
                         }
                         
                         if (resultado) {
@@ -120,8 +120,8 @@ window.WizardManager = (function() {
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('[WizardManager] 🔘 CLICK DIRECTO en botón Cancelar');
-                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.cerrarWizard === 'function') {
-                        window.ColoresPorTalla.cerrarWizard();
+                    if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.cerrarWizard === 'function') {
+                        globalThis.ColoresPorTalla.cerrarWizard();
                     }
                 }
             };
@@ -129,29 +129,29 @@ window.WizardManager = (function() {
             if (btnSiguiente) {
                 btnSiguiente.onclick = null;
                 btnSiguiente.addEventListener('click', this._storedHandlers.siguiente, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Siguiente');
+                console.log('[WizardManager]  Listener directo agregado a botón Siguiente');
             } else {
-                console.error('[WizardManager] ❌ Botón Siguiente (wzd-btn-siguiente) NO ENCONTRADO');
+                console.error('[WizardManager]  Botón Siguiente (wzd-btn-siguiente) NO ENCONTRADO');
             }
             
             if (btnAtras) {
                 btnAtras.onclick = null;
                 btnAtras.addEventListener('click', this._storedHandlers.atras, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Atrás');
+                console.log('[WizardManager]  Listener directo agregado a botón Atrás');
             } else {
-                console.error('[WizardManager] ❌ Botón Atrás (wzd-btn-atras) NO ENCONTRADO');
+                console.error('[WizardManager]  Botón Atrás (wzd-btn-atras) NO ENCONTRADO');
             }
             
             if (btnGuardar) {
                 btnGuardar.onclick = null;
                 btnGuardar.addEventListener('click', this._storedHandlers.guardar, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Guardar');
+                console.log('[WizardManager]  Listener directo agregado a botón Guardar');
             }
             
             if (btnCancelar) {
                 btnCancelar.onclick = null;
                 btnCancelar.addEventListener('click', this._storedHandlers.cancelar, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Cancelar');
+                console.log('[WizardManager]  Listener directo agregado a botón Cancelar');
             }
         },
 
@@ -161,7 +161,7 @@ window.WizardManager = (function() {
         resetearFlujo() {
             flujoInterno.generoProcesado = null;
             flujoInterno.generoCambiado = false;
-            console.log('[WizardManager] 🔄 Flujo interno reseteado para nueva sesión');
+            console.log('[WizardManager]  Flujo interno reseteado para nueva sesión');
         },
 
         /**
@@ -187,7 +187,7 @@ window.WizardManager = (function() {
             const generoActual = StateManager.getGeneroSeleccionado();
             const generesCambian = generoActual !== genero;
             
-            // 🆕 Guardar género anterior antes de cambiar
+            //  Guardar género anterior antes de cambiar
             flujoInterno.generoAnterior = generoActual;
             
             StateManager.setGeneroSeleccionado(genero);
@@ -205,7 +205,7 @@ window.WizardManager = (function() {
                 btnSiguiente.style.cursor = 'pointer';
                 btnSiguiente.style.pointerEvents = 'auto';
                 btnSiguiente.title = '';
-                console.log('[WizardManager] ✅ Botón Siguiente HABILITADO explícitamente después de seleccionar género');
+                console.log('[WizardManager]  Botón Siguiente HABILITADO explícitamente después de seleccionar género');
             } else {
                 console.error('[WizardManager] Botón wzd-btn-siguiente no encontrado');
             }
@@ -243,7 +243,7 @@ window.WizardManager = (function() {
             
             // Guardar en StateManager
             StateManager.setTelaSeleccionada(telaValor);
-            console.log('[WizardManager] ✅ PASO 0: Tela validada -', telaValor);
+            console.log('[WizardManager]  PASO 0: Tela validada -', telaValor);
             return true;
         },
 
@@ -270,7 +270,7 @@ window.WizardManager = (function() {
         pasoSiguiente() {
             // 🛡️ GUARD: Prevenir múltiples llamadas rápidas (por listeners duplicados)
             if (this._navegacionEnProgreso) {
-                console.log('[WizardManager] ⏳ Navegación ya en progreso, ignorando llamada duplicada a pasoSiguiente()');
+                console.log('[WizardManager]  Navegación ya en progreso, ignorando llamada duplicada a pasoSiguiente()');
                 return false;
             }
             this._navegacionEnProgreso = true;
@@ -279,7 +279,7 @@ window.WizardManager = (function() {
             console.log('[WizardManager]  pasoSiguiente() llamado...');
             const pasoActual = StateManager.getPasoActual();
             
-            // 🔧 VERIFICACIÓN: Asegurar que los botones estén en estado usable
+            //  VERIFICACIÓN: Asegurar que los botones estén en estado usable
             this._verificarYRepararBotones();
             
             switch (pasoActual) {
@@ -320,7 +320,7 @@ window.WizardManager = (function() {
         },
 
         /**
-         * 🎯 ALERTA: Mostrar cuando se restaura género automáticamente
+         *  ALERTA: Mostrar cuando se restaura género automáticamente
          */
         _mostrarAlertaGeneroRestaurado(genero) {
             // Buscar si existe un elemento para mostrar alertas
@@ -386,7 +386,7 @@ window.WizardManager = (function() {
                 return false;
             }
             
-            console.log('[WizardManager] ✅ Tallas validadas → PASO 3 (asignar colores)');
+            console.log('[WizardManager]  Tallas validadas → PASO 3 (asignar colores)');
             this.irPaso(3);
             return true;
         },
@@ -403,7 +403,7 @@ window.WizardManager = (function() {
         pasoAnterior() {
             // 🛡️ GUARD: Prevenir múltiples llamadas rápidas
             if (this._navegacionEnProgreso) {
-                console.log('[WizardManager] ⏳ Navegación ya en progreso, ignorando llamada duplicada');
+                console.log('[WizardManager]  Navegación ya en progreso, ignorando llamada duplicada');
                 return;
             }
             this._navegacionEnProgreso = true;
@@ -463,7 +463,7 @@ window.WizardManager = (function() {
          */
         irPaso(numeroPaso) {
             try {
-                console.log('[WizardManager] 🎯 irPaso() llamado con:', numeroPaso);
+                console.log('[WizardManager]  irPaso() llamado con:', numeroPaso);
                 
                 const totalPasos = this.obtenerTotalPasos();
                 console.log('[WizardManager] Total de pasos disponibles:', totalPasos);
@@ -494,7 +494,7 @@ window.WizardManager = (function() {
                 // Mostrar el paso correcto
                 const pasoElement = document.getElementById(`wizard-paso-${numeroPaso}`);
                 if (pasoElement) {
-                    console.log(`[WizardManager] 👁️ Mostrando paso: wizard-paso-${numeroPaso}`);
+                    console.log(`[WizardManager]  Mostrando paso: wizard-paso-${numeroPaso}`);
                     pasoElement.style.display = 'block';
                 } else {
                     console.error(`[WizardManager] Elemento del paso ${numeroPaso} no encontrado!`);
@@ -519,16 +519,16 @@ window.WizardManager = (function() {
                 
                 // Si es paso 1, cargar los géneros (no hace falta, ya están)
                 if (numeroPaso === 1) {
-                    console.log('[WizardManager] 👥 Paso 1 - géneros ya cargados');
+                    console.log('[WizardManager]  Paso 1 - géneros ya cargados');
                 }
                 
                 // Si es paso 2, cargar las tallas disponibles
                 if (numeroPaso === 2) {
                     try {
-                        console.log('[WizardManager] 📏 Cargando tallas para género...');
+                        console.log('[WizardManager]  Cargando tallas para género...');
                         const generoSeleccionado = StateManager.getGeneroSeleccionado();
                         if (generoSeleccionado) {
-                            window.WizardManager.cargarTallasParaGenero(generoSeleccionado);
+                            globalThis.WizardManager.cargarTallasParaGenero(generoSeleccionado);
                         } else {
                             console.error('[WizardManager] No hay género seleccionado para cargar tallas');
                         }
@@ -547,7 +547,7 @@ window.WizardManager = (function() {
                     }
                 }
                 
-                console.log('[WizardManager] 💾 Guardando paso actual en StateManager...');
+                console.log('[WizardManager]  Guardando paso actual en StateManager...');
                 StateManager.setPasoActual(numeroPaso);
                 
                 console.log(`[WizardManager] irPaso(${numeroPaso}) completado exitosamente`);
@@ -566,7 +566,7 @@ window.WizardManager = (function() {
                 const contenedor = document.getElementById('wizard-telas-botones');
                 const inputTela = document.getElementById('wizard-tela-input');
                 
-                const telas = window.telasCreacion || [];
+                const telas = globalThis.telasCreacion || [];
                 console.log('[WizardManager] Cargando telas disponibles, total:', telas.length);
                 
                 // Si no hay telas existentes, ocultar sección de acceso rápido
@@ -772,7 +772,7 @@ window.WizardManager = (function() {
                     btnAtras.style.alignItems = 'center';
                     btnAtras.style.justifyContent = 'center';
                     btnAtras.style.gap = '0.25rem';
-                    console.log('[WizardManager] ✅ Botón Atrás VISIBLE en paso 3');
+                    console.log('[WizardManager]  Botón Atrás VISIBLE en paso 3');
                 }
                 if (btnSiguiente) {
                     btnSiguiente.style.display = 'none';
@@ -784,7 +784,7 @@ window.WizardManager = (function() {
                     btnGuardar.style.justifyContent = 'center';
                     btnGuardar.style.gap = '0.25rem';
                     btnGuardar.disabled = false;
-                    console.log('[WizardManager] ✅ Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
+                    console.log('[WizardManager]  Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
                 }
                 
                 console.log('[WizardManager] Estado en paso 3:', {
@@ -810,7 +810,7 @@ window.WizardManager = (function() {
                 const genero = StateManager.getGeneroSeleccionado();
                 // Si el género es null (múltiples géneros), obtener de las asignaciones guardadas
                 if (!genero) {
-                    const asignaciones = window.AsignacionManager?.getAsignacionesPorTela() || [];
+                    const asignaciones = globalThis.AsignacionManager?.getAsignacionesPorTela() || [];
                     const generosUnicos = new Set();
                     Object.values(asignaciones).forEach(asign => {
                         if (asign && asign.genero) generosUnicos.add(asign.genero);
@@ -885,15 +885,15 @@ window.WizardManager = (function() {
                 if (tiposDisponibles.length === 1) {
                     const tipoUnico = tiposDisponibles[0];
                     console.log('[WizardManager] Un solo tipo de talla, mostrando:', tipoUnico);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipoUnico);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipoUnico);
                 } else if (tipoPrevio && tiposDisponibles.includes(tipoPrevio)) {
                     // Si había un tipo previamente seleccionado y sigue siendo válido, mostrar ese tipo
                     console.log('[WizardManager] Tipo previamente seleccionado encontrado:', tipoPrevio);
-                    window.WizardManager.mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoPrevio);
+                    globalThis.WizardManager.mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoPrevio);
                 } else {
                     // Si hay múltiples tipos y no hay uno previo, mostrar los botones de tipos
                     console.log('[WizardManager] Mostrando selector de tipos de talla');
-                    window.WizardManager.mostrarTiposTalla(genero, tiposDisponibles);
+                    globalThis.WizardManager.mostrarTiposTalla(genero, tiposDisponibles);
                 }
                 
                 // Actualizar etiqueta del género
@@ -919,7 +919,7 @@ window.WizardManager = (function() {
             console.log('[WizardManager]  Contenedor estado antes:', {
                 display: contenedor.style.display,
                 offsetHeight: contenedor.offsetHeight,
-                parentDisplay: window.getComputedStyle(contenedor.parentElement).display
+                parentDisplay: globalThis.getComputedStyle(contenedor.parentElement).display
             });
             
             contenedor.innerHTML = '';
@@ -980,7 +980,7 @@ window.WizardManager = (function() {
                 
                 // Evento click
                 btn.addEventListener('click', () => {
-                    console.log('[WizardManager] 🎯 Tipo seleccionado:', tipo);
+                    console.log('[WizardManager]  Tipo seleccionado:', tipo);
                     
                     // Marcar botón como seleccionado
                     const tipoBtns = document.querySelectorAll('.wizard-tipo-talla-btn');
@@ -999,7 +999,7 @@ window.WizardManager = (function() {
                     btn.style.fontWeight = '600';
                     
                     console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipo);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipo);
                 });
                 
                 btnContainer.appendChild(btn);
@@ -1097,7 +1097,7 @@ window.WizardManager = (function() {
 
                 // Evento click
                 btn.addEventListener('click', () => {
-                    console.log('[WizardManager] 🎯 Tipo seleccionado:', tipo);
+                    console.log('[WizardManager]  Tipo seleccionado:', tipo);
 
                     // Marcar botón como seleccionado
                     const tipoBtns = document.querySelectorAll('.wizard-tipo-talla-btn');
@@ -1116,7 +1116,7 @@ window.WizardManager = (function() {
                     btn.style.fontWeight = '600';
 
                     console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
-                    window.WizardManager.mostrarTallasPorTipo(genero, tipo);
+                    globalThis.WizardManager.mostrarTallasPorTipo(genero, tipo);
                 });
 
                 btnContainer.appendChild(btn);
@@ -1124,7 +1124,7 @@ window.WizardManager = (function() {
 
             // Automáticamente mostrar las tallas del tipo preseleccionado
             console.log('[WizardManager]  Cargando tallas para tipo preseleccionado:', tipoSeleccionado);
-            window.WizardManager.mostrarTallasPorTipo(genero, tipoSeleccionado);
+            globalThis.WizardManager.mostrarTallasPorTipo(genero, tipoSeleccionado);
         },
 
         /**
@@ -1138,7 +1138,7 @@ window.WizardManager = (function() {
             }
             
             try {
-                // 🔴 FIX: No borrar todo el contenedor (destruiría los botones Letra/Número).
+                //  FIX: No borrar todo el contenedor (destruiría los botones Letra/Número).
                 //    Solo borrar/reemplazar el sub-contenedor de tallas.
                 let tallasSubContainer = document.getElementById('wizard-tallas-sub-contenedor');
                 if (tallasSubContainer) {
@@ -1207,7 +1207,7 @@ window.WizardManager = (function() {
                 instruccionDiv.style.borderRadius = '4px';
                 instruccionDiv.style.fontSize = '0.85rem';
                 instruccionDiv.style.color = '#92400e';
-                instruccionDiv.innerHTML = '⚠️ <strong>Selecciona al menos una talla</strong> haciendo click en los botones de abajo';
+                instruccionDiv.innerHTML = ' <strong>Selecciona al menos una talla</strong> haciendo click en los botones de abajo';
                 tallasSubContainer.appendChild(instruccionDiv);
                 
                 // Contenedor para los checkboxes - HORIZONTAL
@@ -1351,13 +1351,13 @@ window.WizardManager = (function() {
             
             try {
                 // Actualizar etiquetas del resumen
-                console.log('[WizardManager] 🏷️ Actualizando etiquetas del resumen...');
+                console.log('[WizardManager]  Actualizando etiquetas del resumen...');
                 this.actualizarEtiquetasResumen();
                 
                 // Generar interfaz de colores por talla
                 console.log('[WizardManager]  Generando interfaz de colores...');
-                if (window.UIRenderer && typeof window.UIRenderer.generarInterfazColoresPorTalla === 'function') {
-                    window.UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
+                if (globalThis.UIRenderer && typeof globalThis.UIRenderer.generarInterfazColoresPorTalla === 'function') {
+                    globalThis.UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
                     console.log('[WizardManager]  Interfaz de colores generada exitosamente');
                 } else {
                     console.error('[WizardManager]  UIRenderer.generarInterfazColoresPorTalla no disponible');
@@ -1416,9 +1416,9 @@ window.WizardManager = (function() {
                 
                 // Paso 3: NO ir a paso 1 inmediatamente - esperar a que toggleVistaAsignacion lo haga
                 // (porque si hay múltiples telas, mostrarSelectoreTelasSiNecesario() ocultará paso 1)
-                console.log('[WizardManager] ⏳ Esperando que toggleVistaAsignacion maneje los pasos...');
+                console.log('[WizardManager]  Esperando que toggleVistaAsignacion maneje los pasos...');
                 
-                console.log('[WizardManager] ✅ Wizard reseteado y listo para reconfigurarse');
+                console.log('[WizardManager]  Wizard reseteado y listo para reconfigurarse');
             } catch (error) {
                 console.error('[WizardManager] Error en resetWizard():', error);
             }

@@ -1,5 +1,5 @@
 /**
- * 🔒 SharedPrendaDataService
+ *  SharedPrendaDataService
  * 
  * IMPORTANTE: AISLADO DE COTIZACIONES
  * - Solo maneja datos de PRENDAS (tabla prendas_pedido)
@@ -139,7 +139,7 @@ class SharedPrendaDataService {
         Logger.debug('Guardando prenda...', 'SharedPrendaData');
 
         try {
-            // 🔐 VALIDACIÓN DE AISLAMIENTO
+            //  VALIDACIÓN DE AISLAMIENTO
             // No permitir guardar datos que referencien cotizaciones
             if (prendaData.cotizacion_id !== undefined && prendaData.cotizacion_id !== null) {
                 Logger.warn('Detectado cotizacion_id en datos, será limpiado según contexto', 'SharedPrendaData');
@@ -410,5 +410,5 @@ class SharedPrendaDataService {
 }
 
 // Exportar
-window.SharedPrendaDataService = SharedPrendaDataService;
+globalThis.SharedPrendaDataService = SharedPrendaDataService;
 Logger.debug('DataService cargado', 'SharedPrendaData');

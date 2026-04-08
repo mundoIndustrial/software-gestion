@@ -2,9 +2,11 @@
 
 namespace App\Application\Pedidos\Despacho\UseCases;
 
+use App\Domain\Pedidos\Despacho\UseCases\GuardarDespachoUseCaseContract;
+
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
+use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Application\Pedidos\Despacho\DTOs\DespachoParcialesDTO;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Auth;
  * - Transacciones DB
  * - Auditoría/Logs
  */
-class GuardarDespachoUseCase
+class GuardarDespachoUseCase implements GuardarDespachoUseCaseContract
 {
     public function __construct(
         private DespachoValidadorService $validador,
@@ -79,6 +81,9 @@ class GuardarDespachoUseCase
                 }, $despachos),
                 usuarioId: $usuarioId,
             );
+            $despachosPersistidosCount = is_countable($despachosPersistidos)
+                ? count($despachosPersistidos)
+                : 0;
 
             DB::commit();
 
@@ -86,7 +91,7 @@ class GuardarDespachoUseCase
                 'pedido_id' => $control->pedidoId,
                 'numero_pedido' => $control->numeroPedido,
                 'cantidad_items' => count($despachos),
-                'cantidad_persistidos' => $despachosPersistidos->count(),
+                'cantidad_persistidos' => $despachosPersistidosCount,
                 'fecha_hora' => $control->fechaHora,
                 'cliente_empresa' => $control->clienteEmpresa,
                 'usuario_id' => $usuarioId,
@@ -97,7 +102,7 @@ class GuardarDespachoUseCase
                 'message' => 'Control de entregas guardado correctamente',
                 'pedido_id' => $control->pedidoId,
                 'despachos_procesados' => count($despachos),
-                'despachos_persistidos' => $despachosPersistidos->count(),
+                'despachos_persistidos' => $despachosPersistidosCount,
             ];
 
         } catch (\Exception $e) {
@@ -113,3 +118,8 @@ class GuardarDespachoUseCase
         }
     }
 }
+
+
+
+
+

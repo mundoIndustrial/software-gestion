@@ -78,14 +78,6 @@
         </a>
       </li>
       <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
-           aria-label="Pedidos anulados - Bodega">
-          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
-          <span class="menu-label">Pedidos anulados</span>
-        </a>
-      </li>
-      <li class="menu-item">
         <a href="{{ route('gestion-bodega.pendientes-costura') }}"
            class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
            aria-label="Pendiente Costura">
@@ -99,6 +91,14 @@
            aria-label="Pendiente EPP">
           <span class="material-symbols-rounded" aria-hidden="true">shield</span>
           <span class="menu-label">Pendiente EPP</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
+           aria-label="Pedidos anulados - Bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+          <span class="menu-label">Pedidos anulados</span>
         </a>
       </li>
       @if(auth()->user()->hasRole('bodeguero'))
@@ -263,6 +263,112 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('revisor_entregas'))
+    <!-- REVISOR ENTREGAS: Menú especializado solo para Recibos de Costura y Reflectivo -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestionar Producción</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="/recibos-costura"
+           class="menu-link {{ request()->is('recibos-costura') ? 'active' : '' }}"
+           aria-label="Ver recibos de costura">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          <span class="menu-label">Recibos de Costura</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="/recibos-reflectivo"
+           class="menu-link {{ request()->is('recibos-reflectivo') ? 'active' : '' }}"
+           aria-label="Ver recibos de reflectivo">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          <span class="menu-label">Recibos de Reflectivo</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    <!-- Sección Insumos para revisor_entregas -->
+    <div class="menu-section">
+      <span class="menu-section-title">Insumos</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+                aria-label="Gestionar Insumos">
+          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+          <span class="menu-label">Insumos</span>
+          <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('insumos.materiales.index') }}"
+               class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+               aria-label="Control de Insumos">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+              <span class="menu-label">Control de Insumos</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('insumos.plooter.index') }}"
+               class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+               aria-label="Gestión Plooter">
+              <span class="material-symbols-rounded" aria-hidden="true">description</span>
+              <span class="menu-label">Gestión Plooter</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      </ul>
+    </div>
+
+    @elseif(auth()->user()->hasRole('visualizador_plooter'))
+    <!-- VISUALIZADOR PLOOTER: Menú especializado para ver recibos de costura -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestionar Producción</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="/recibos-costura"
+           class="menu-link {{ request()->is('recibos-costura') ? 'active' : '' }}"
+           aria-label="Ver recibos de costura">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          <span class="menu-label">Recibos de Costura</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    <!-- Sección Insumos para visualizador_plooter -->
+    <div class="menu-section">
+      <span class="menu-section-title">Insumos</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+                aria-label="Gestionar Insumos">
+          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+          <span class="menu-label">Insumos</span>
+          <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('insumos.materiales.index') }}"
+               class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+               aria-label="Control de Insumos">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+              <span class="menu-label">Control de Insumos</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('insumos.plooter.index') }}"
+               class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+               aria-label="Gestión Plooter">
+              <span class="material-symbols-rounded" aria-hidden="true">description</span>
+              <span class="menu-label">Gestión Plooter</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      </ul>
+    </div>
+
     @else
     <!-- OTROS ROLES: Menú completo -->
     
@@ -283,7 +389,7 @@
 
     <!-- Sección Gestión de Órdenes -->
     <div class="menu-section">
-      <span class="menu-section-title">Gestiónar Ordenes</span>
+      <span class="menu-section-title">Gestionar Producción</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <button class="menu-link submenu-toggle {{ request()->routeIs('registros.*') ? 'active' : '' }}"
@@ -319,179 +425,219 @@
           </li>
         </ul>
       </li>
-      </ul>
-    </div>
-
-    <!-- Sección Bodega -->
-    <div class="menu-section">
-      <span class="menu-section-title">Bodega</span>
-      <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('bodega.index') }}"
-           class="menu-link {{ request()->routeIs('bodega.*') ? 'active' : '' }}"
-           aria-label="Módulo de bodega">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
-          <span class="menu-label">Bodega</span>
-        </a>
-      </li>
-      </ul>
-    </div>
-
-    <!-- Sección Gestión de Bodega -->
-    <div class="menu-section">
-      <span class="menu-section-title">Gestión de Bodega</span>
-      <ul class="menu-list" role="navigation">
-      <li class="menu-item">
-        <a href="{{ route('despacho.index') }}"
-           class="menu-link {{ request()->routeIs('despacho.*') ? 'active' : '' }}"
-           aria-label="Módulo de Despacho">
-          <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
-          <span class="menu-label">Despacho</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pedidos') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
-           aria-label="Gestión de pedidos - Bodega">
+        <button class="menu-link submenu-toggle {{ request()->routeIs('cartera.*', 'supervisor-pedidos.*') || request()->is('insumos*') ? 'active' : '' }}"
+                aria-label="Gestión de Pedidos">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Pendientes Pedidos</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
-           aria-label="Pedidos anulados - Bodega">
-          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
-          <span class="menu-label">Pedidos anulados</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
-           aria-label="Pendiente Costura">
-          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
-          <span class="menu-label">Pendiente Costura</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
-           aria-label="Pendiente EPP">
-          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
-          <span class="menu-label">Pendiente EPP</span>
-        </a>
-      </li>
-      </ul>
-    </div>
-
-    <!-- Sección Entregas -->
-    <div class="menu-section">
-      <span class="menu-section-title">Entregas</span>
-      <ul class="menu-list" role="navigation">
-      <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('entrega.*') ? 'active' : '' }}"
-                aria-label="Gestionar entregas">
-          <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
-          <span class="menu-label">Entregas</span>
+          <span class="menu-label">Gestión Pedidos</span>
           <span class="material-symbols-rounded submenu-arrow">expand_more</span>
         </button>
         <ul class="submenu">
           <li class="submenu-item">
-            <a href="{{ route('entrega.index', ['tipo' => 'pedido']) }}"
-               class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
-               aria-label="Entregas de pedidos">
+            <a href="{{ route('cartera.pedidos') }}"
+               class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
+               aria-label="Pendiente Cartera">
               <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-              <span class="menu-label">Pedidos</span>
+              <span class="menu-label">Pendiente Cartera</span>
             </a>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('entrega.index', ['tipo' => 'bodega']) }}"
-               class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
-               aria-label="Entregas de bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
-              <span class="menu-label">Bodega</span>
+            <a href="{{ route('supervisor-pedidos.index') }}"
+               class="menu-link {{ request()->routeIs('supervisor-pedidos.index') ? 'active' : '' }}"
+               aria-label="Pendiente Aprobador">
+              <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+              <span class="menu-label">Pendiente Aprobador</span>
             </a>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('entregas-completas.index') }}"
-               class="menu-link {{ request()->routeIs('entregas-completas.*') ? 'active' : '' }}"
-               aria-label="Seguimiento completo de entregas">
-              <span class="material-symbols-rounded" aria-hidden="true">timeline</span>
-              <span class="menu-label">Seguimiento de Entregas</span>
-            </a>
+            <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+                    aria-label="Gestionar Insumos">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+              <span class="menu-label">Insumos</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <a href="{{ route('insumos.materiales.index') }}"
+                   class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+                   aria-label="Control de Insumos">
+                  <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+                  <span class="menu-label">Control de Insumos</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('insumos.plooter.index') }}"
+                   class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+                   aria-label="Gestión Plooter">
+                  <span class="material-symbols-rounded" aria-hidden="true">description</span>
+                  <span class="menu-label">Gestión Plooter</span>
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </li>
       </ul>
     </div>
 
-    <!-- Sección Tableros y Balanceo -->
+    <!-- Sección Reportes (Entregas, Tableros y Vistas) -->
     <div class="menu-section">
-      <span class="menu-section-title">Tableros</span>
+      <span class="menu-section-title">Reportes y Análisis</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('tableros.*', 'balanceo.*') ? 'active' : '' }}"
-                aria-label="Tableros y balanceo">
-          <span class="material-symbols-rounded" aria-hidden="true">table_chart</span>
-          <span class="menu-label">Tableros</span>
+        <button class="menu-link submenu-toggle {{ request()->routeIs('entrega.*', 'entregas-completas.*', 'tableros.*', 'balanceo.*', 'vistas.*') ? 'active' : '' }}"
+                aria-label="Reportes, entregas y análisis">
+          <span class="material-symbols-rounded" aria-hidden="true">analytics</span>
+          <span class="menu-label">Reportes</span>
           <span class="material-symbols-rounded submenu-arrow">expand_more</span>
         </button>
         <ul class="submenu">
+          <!-- Entregas -->
           <li class="submenu-item">
-            <a href="{{ route('tableros.index') }}"
-               class="menu-link {{ request()->routeIs('tableros.*') ? 'active' : '' }}"
-               aria-label="Tableros de producción">
-              <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
-              <span class="menu-label">Producción</span>
-            </a>
+            <button class="menu-link submenu-toggle {{ request()->routeIs('entrega.*', 'entregas-completas.*') ? 'active' : '' }}"
+                    aria-label="Gestionar entregas">
+              <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
+              <span class="menu-label">Entregas</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <a href="{{ route('entrega.index', ['tipo' => 'pedido']) }}"
+                   class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
+                   aria-label="Entregas de pedidos">
+                  <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+                  <span class="menu-label">Pedidos</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('entrega.index', ['tipo' => 'bodega']) }}"
+                   class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
+                   aria-label="Entregas de bodega">
+                  <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
+                  <span class="menu-label">Bodega</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('entregas-completas.index') }}"
+                   class="menu-link {{ request()->routeIs('entregas-completas.*') ? 'active' : '' }}"
+                   aria-label="Seguimiento completo de entregas">
+                  <span class="material-symbols-rounded" aria-hidden="true">timeline</span>
+                  <span class="menu-label">Seguimiento</span>
+                </a>
+              </li>
+            </ul>
           </li>
+
+          <!-- Tableros -->
           <li class="submenu-item">
-            <a href="{{ route('balanceo.index') }}"
-               class="menu-link {{ request()->routeIs('balanceo.*') ? 'active' : '' }}"
-               aria-label="Balanceo de producción">
-              <span class="material-symbols-rounded" aria-hidden="true">schedule</span>
-              <span class="menu-label">Balanceo</span>
-            </a>
+            <button class="menu-link submenu-toggle {{ request()->routeIs('tableros.*', 'balanceo.*') ? 'active' : '' }}"
+                    aria-label="Tableros y balanceo">
+              <span class="material-symbols-rounded" aria-hidden="true">table_chart</span>
+              <span class="menu-label">Tableros</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <a href="{{ route('tableros.index') }}"
+                   class="menu-link {{ request()->routeIs('tableros.*') ? 'active' : '' }}"
+                   aria-label="Tableros de producción">
+                  <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
+                  <span class="menu-label">Producción</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('balanceo.index') }}"
+                   class="menu-link {{ request()->routeIs('balanceo.*') ? 'active' : '' }}"
+                   aria-label="Balanceo de producción">
+                  <span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+                  <span class="menu-label">Balanceo</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Vistas -->
+          <li class="submenu-item">
+            <button class="menu-link submenu-toggle {{ request()->routeIs('vistas.*') ? 'active' : '' }}"
+                    aria-label="Vistas del sistema">
+              <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+              <span class="menu-label">Vistas</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <a href="{{ route('vistas.index', ['tipo' => 'pedidos']) }}"
+                   class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
+                   aria-label="Vista de pedidos">
+                  <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+                  <span class="menu-label">Pedidos</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('vistas.index', ['tipo' => 'bodega']) }}"
+                   class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
+                   aria-label="Vista de bodega">
+                  <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
+                  <span class="menu-label">Bodega</span>
+                </a>
+              </li>
+              <li class="submenu-item">
+                <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
+                   class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
+                   aria-label="Vista de corte">
+                  <span class="material-symbols-rounded" aria-hidden="true">content_cut</span>
+                  <span class="menu-label">Corte</span>
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </li>
       </ul>
     </div>
 
-    <!-- Sección Vistas -->
+    <!-- Sección Gestión Despacho -->
     <div class="menu-section">
-      <span class="menu-section-title">Vistas</span>
+      <span class="menu-section-title">Gestión Despacho</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('vistas.*') ? 'active' : '' }}"
-                aria-label="Vistas del sistema">
-          <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
-          <span class="menu-label">Vistas</span>
+        <button class="menu-link submenu-toggle {{ request()->routeIs('despacho.*', 'gestion-bodega.*') ? 'active' : '' }}"
+                aria-label="Gestión de Despacho">
+          <span class="material-symbols-rounded" aria-hidden="true">warehouse</span>
+          <span class="menu-label">Gestión Despacho</span>
           <span class="material-symbols-rounded submenu-arrow">expand_more</span>
         </button>
         <ul class="submenu">
           <li class="submenu-item">
-            <a href="{{ route('vistas.index', ['tipo' => 'pedidos']) }}"
-               class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
-               aria-label="Vista de pedidos">
+            <a href="{{ route('despacho.index') }}"
+               class="menu-link {{ request()->routeIs('despacho.*') ? 'active' : '' }}"
+               aria-label="Módulo de Despacho">
+              <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
+              <span class="menu-label">Despacho</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('gestion-bodega.pedidos') }}"
+               class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
+               aria-label="Gestión de pedidos - Bodega">
               <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-              <span class="menu-label">Pedidos</span>
+              <span class="menu-label">Pendientes Pedidos</span>
             </a>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('vistas.index', ['tipo' => 'bodega']) }}"
-               class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
-               aria-label="Vista de bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
-              <span class="menu-label">Bodega</span>
+            <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+               class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+               aria-label="Pendiente Costura">
+              <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
+              <span class="menu-label">Pendiente Costura</span>
             </a>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
-               class="menu-link {{ request()->routeIs('vistas.index') ? 'active' : '' }}"
-               aria-label="Vista de corte">
-              <span class="material-symbols-rounded" aria-hidden="true">content_cut</span>
-              <span class="menu-label">Corte</span>
+            <a href="{{ route('gestion-bodega.pendientes-epp') }}"
+               class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
+               aria-label="Pendiente EPP">
+              <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+              <span class="menu-label">Pendiente EPP</span>
             </a>
           </li>
         </ul>
@@ -514,29 +660,11 @@
       </li>
 
       <li class="menu-item">
-        <a href="{{ route('insumos.dashboard') }}"
-           class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
-           aria-label="Ver módulo de insumos">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-          <span class="menu-label">Insumos</span>
-        </a>
-      </li>
-
-      <li class="menu-item">
         <a href="{{ route('contador.index') }}"
            class="menu-link {{ request()->routeIs('contador.*') ? 'active' : '' }}"
            aria-label="Ver módulo de contador">
           <span class="material-symbols-rounded" aria-hidden="true">calculate</span>
           <span class="menu-label">Contador</span>
-        </a>
-      </li>
-
-      <li class="menu-item">
-        <a href="{{ route('epp.gestion') }}"
-           class="menu-link {{ request()->routeIs('epp.*') ? 'active' : '' }}"
-           aria-label="Gestionar EPPs">
-          <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>
-          <span class="menu-label">EPPs</span>
         </a>
       </li>
       </ul>
@@ -548,38 +676,38 @@
       <span class="menu-section-title">Administración</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('users.index') }}"
-           class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
-           aria-label="Gestionar usuarios">
-          <span class="material-symbols-rounded" aria-hidden="true">group</span>
-          <span class="menu-label">Usuarios</span>
-        </a>
-      </li>
-
-      <li class="menu-item">
-        <a href="{{ route('configuracion.index') }}"
-           class="menu-link {{ request()->routeIs('configuracion.*') ? 'active' : '' }}"
-           aria-label="Configuración del sistema">
-          <span class="material-symbols-rounded" aria-hidden="true">settings</span>
-          <span class="menu-label">Configuración</span>
-        </a>
-      </li>
-      </ul>
-    </div>
-    @endif
-
-    <!-- Sección Cartera -->
-    @if(auth()->user()->role && auth()->user()->role->name === 'admin')
-    <div class="menu-section">
-      <span class="menu-section-title">Cartera</span>
-      <ul class="menu-list" role="navigation">
-      <li class="menu-item">
-        <a href="{{ route('cartera.pedidos') }}"
-           class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
-           aria-label="Pedidos Pendientes Cartera">
-          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Pedidos Pendientes</span>
-        </a>
+        <button class="menu-link submenu-toggle {{ request()->routeIs('epp.*', 'users.*', 'configuracion.*') ? 'active' : '' }}"
+                aria-label="Administración del sistema">
+          <span class="material-symbols-rounded" aria-hidden="true">admin_panel_settings</span>
+          <span class="menu-label">Administración</span>
+          <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('epp.gestion') }}"
+               class="menu-link {{ request()->routeIs('epp.*') ? 'active' : '' }}"
+               aria-label="Gestionar EPPs">
+              <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>
+              <span class="menu-label">EPPs</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('users.index') }}"
+               class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
+               aria-label="Gestionar usuarios">
+              <span class="material-symbols-rounded" aria-hidden="true">group</span>
+              <span class="menu-label">Usuarios</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('configuracion.index') }}"
+               class="menu-link {{ request()->routeIs('configuracion.*') ? 'active' : '' }}"
+               aria-label="Configuración del sistema">
+              <span class="material-symbols-rounded" aria-hidden="true">settings</span>
+              <span class="menu-label">Configuración</span>
+            </a>
+          </li>
+        </ul>
       </li>
       </ul>
     </div>
@@ -591,7 +719,7 @@
       <span class="menu-section-title">Módulos</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('insumos.dashboard') }}"
+        <a href="{{ route('insumos.materiales.index') }}"
            class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
            aria-label="Ver módulo de insumos">
           <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>

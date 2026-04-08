@@ -94,15 +94,31 @@
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->
                                     <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
-                                        <div class="font-bold text-black mb-1">
+                                        @php
+                                            // Detectar si hay EPP eliminado en el historial
+                                            $hayEppEliminado = false;
+                                            if($item['tiene_historial'] ?? false) {
+                                                $historial = $item['historial_homologaciones'] ?? [];
+                                                foreach($historial as $h) {
+                                                    if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
+                                                        $hayEppEliminado = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
                                             {{ $nombre }}
                                             @if($color)
                                                 <span class="font-bold"> - {{ strtoupper($color) }}</span>
                                             @endif
-                                            @if($deBodega)
-                                                <span class="font-bold" style="color: rgb(234, 88, 12);"> - SE SACA DE BODEGA</span>
+                                            @if($hayEppEliminado)
+                                                <span class="text-blue-600 font-semibold text-xs">(homologado)</span>
                                             @endif
                                         </div>
+                                        @if($deBodega)
+                                            <span class="font-bold" style="color: rgb(234, 88, 12);"> - SE SACA DE BODEGA</span>
+                                        @endif
                                         @if($tela)
                                             <div class="text-black text-xs mb-1">
                                                 Tela: {{ $tela }}
@@ -199,7 +215,7 @@
                                         <input
                                             type="date"
                                             class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $pedido['fecha_de_creacion_de_orden'] ? \Carbon\Carbon::parse($pedido['fecha_de_creacion_de_orden'])->format('Y-m-d') : '' }}"
+                                            value="{{ $pedido['created_at'] ? \Carbon\Carbon::parse($pedido['created_at'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >
@@ -218,6 +234,17 @@
                                     
                                     <!-- ESTADO (ESTÁTICO) -->
                                     <td class="px-4 py-3" style="width: 18%;">
+                                        @if($item['tiene_historial'] ?? false)
+                                            <div class="mb-2">
+                                                <button type="button" 
+                                                        class="w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center justify-center gap-1 relative"
+                                                        onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                    <span class="text-sm">🔽</span>
+                                                    <span>Ver cambios</span>
+                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                </button>
+                                            </div>
+                                        @endif
                                         <div class="w-full px-2 py-1 border border-slate-300 bg-slate-100 text-black text-xs font-semibold uppercase rounded" 
                                              style="background-color: rgb(254, 243, 199); color: rgb(120, 53, 15);">
                                             @php
@@ -261,7 +288,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -274,11 +301,11 @@ window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false'
 
 // Diagnóstico de CSS y estructura de tabla
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-TABLA] Analizando estructura de tabla en despacho...');
+    console.log(' [DIAGNÓSTICO-TABLA] Analizando estructura de tabla en despacho...');
     
     // Analizar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
-    console.log('📦 [DIAGNÓSTICO-TABLA] Contenedor principal:', {
+    console.log(' [DIAGNÓSTICO-TABLA] Contenedor principal:', {
         tagName: mainContainer?.tagName,
         classes: mainContainer?.className,
         computedWidth: mainContainer ? window.getComputedStyle(mainContainer).width : 'N/A',
@@ -289,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const table = document.querySelector('table');
     if (table) {
         const tableStyle = window.getComputedStyle(table);
-        console.log('📋 [DIAGNÓSTICO-TABLA] Tabla:', {
+        console.log(' [DIAGNÓSTICO-TABLA] Tabla:', {
             tagName: table.tagName,
             classes: table.className,
             computedWidth: tableStyle.width,
@@ -305,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const theadRow = thead.querySelector('tr');
             if (theadRow) {
                 const headers = theadRow.querySelectorAll('th');
-                console.log('📊 [DIAGNÓSTICO-TABLA] Headers encontrados:', headers.length);
+                console.log(' [DIAGNÓSTICO-TABLA] Headers encontrados:', headers.length);
                 headers.forEach((th, index) => {
                     const thStyle = window.getComputedStyle(th);
                     console.log(`  Header ${index + 1}:`, {
@@ -324,12 +351,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = table.querySelector('tbody');
         if (tbody) {
             const rows = tbody.querySelectorAll('tr');
-            console.log('📄 [DIAGNÓSTICO-TABLA] Filas en tbody:', rows.length);
+            console.log(' [DIAGNÓSTICO-TABLA] Filas en tbody:', rows.length);
             
             if (rows.length > 0) {
                 const firstRow = rows[0];
                 const cells = firstRow.querySelectorAll('td');
-                console.log('📊 [DIAGNÓSTICO-TABLA] Celdas en primera fila:', cells.length);
+                console.log(' [DIAGNÓSTICO-TABLA] Celdas en primera fila:', cells.length);
                 
                 cells.forEach((td, index) => {
                     const tdStyle = window.getComputedStyle(td);
@@ -364,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const overflowDiv = document.querySelector('.overflow-x-auto');
     if (overflowDiv) {
         const overflowStyle = window.getComputedStyle(overflowDiv);
-        console.log('🔄 [DIAGNÓSTICO-TABLA] Contenedor overflow:', {
+        console.log(' [DIAGNÓSTICO-TABLA] Contenedor overflow:', {
             classes: overflowDiv.className,
             computedWidth: overflowStyle.width,
             computedOverflowX: overflowStyle.overflowX,
@@ -386,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (rule.selectorText) {
                         const selector = rule.selectorText.toLowerCase();
                         if (selector.includes('table') || selector.includes('thead') || selector.includes('tbody') || selector.includes('tr') || selector.includes('td') || selector.includes('th')) {
-                            console.log(`  📋 Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
+                            console.log(`   Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
                             if (rule.style && rule.style.length > 0) {
                                 for (let i = 0; i < rule.style.length; i++) {
                                     const property = rule.style[i];
@@ -415,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="px-6 py-6">
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
@@ -491,6 +518,93 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<script>
+// Función para mostrar el historial de homologaciones de EPP
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
+        return;
+    }
+
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar EPP original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-2 py-3 text-center">
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-2 py-3 text-center">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal grande
+    Swal.fire({
+        title: ' Historial de Homologaciones',
+        html: tablaHtml,
+        icon: false,
+        width: '850px',
+        padding: '1rem',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        customClass: { title: 'text-lg font-bold text-gray-800' },
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+                popup.style.maxHeight = '85vh';
+                const htmlContainer = popup.querySelector('.swal2-html-container');
+                if (htmlContainer) {
+                    htmlContainer.style.padding = '1rem 0';
+                }
+            }
+        }
+    });
+}
+</script>
 
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endsection

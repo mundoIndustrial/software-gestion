@@ -47,7 +47,7 @@ Se ha agregado la funcionalidad para deshacer el marcado como "Entregado" en el 
 #### Estados del Botón:
 - **Verde**: `bg-green-500 hover:bg-green-600` - "Entregar"
 - **Naranja**: `bg-orange-500 hover:bg-orange-600` - `✓ Entregado (↶)`
-- **Procesando**: `⏳ Deshaciendo...` (deshabilitado)
+- **Procesando**: ` Deshaciendo...` (deshabilitado)
 
 ### 5. Validaciones y Seguridad
 
@@ -74,13 +74,13 @@ La funcionalidad se integra automáticamente con el `DespachoParcialesObserver`:
 
 - **Archivo**: `tests/Feature/DeshacerEntregadoDespachoTest.php`
 - **Casos de prueba**:
-  - ✅ Deshacer marcado como entregado (prendas)
-  - ✅ Deshacer marcado como entregado (EPP)
-  - ✅ Error si no está entregado
-  - ✅ Requiere autenticación
-  - ✅ Validación de datos
-  - ✅ Manejo de errores
-  - ✅ Integración con observer
+  -  Deshacer marcado como entregado (prendas)
+  -  Deshacer marcado como entregado (EPP)
+  -  Error si no está entregado
+  -  Requiere autenticación
+  -  Validación de datos
+  -  Manejo de errores
+  -  Integración con observer
 
 ## Uso Práctico
 
@@ -120,6 +120,6 @@ $response = $this->post(route('despacho.deshacer-entregado', $pedido), [
 
 - **Icono deshacer**: Usa `↶` (símbolo de deshacer)
 - **Colores**: Verde para acciones, naranja para estado entregado, azul pastel para filas entregadas
-- **Loading**: Muestra `⏳` durante operaciones asíncronas
+- **Loading**: Muestra `` durante operaciones asíncronas
 - **Responsive**: Funciona en móvil y escritorio
 - **Accesibilidad**: Usa confirmación nativa del navegador

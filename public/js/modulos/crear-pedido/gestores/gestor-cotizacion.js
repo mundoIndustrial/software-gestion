@@ -252,7 +252,7 @@ class CargadorCotizacion {
      * Constructor
      * @param {string} urlEndpoint - URL del endpoint de la API
      */
-    constructor(urlEndpoint = '/asesores/pedidos-produccion/obtener-datos-cotizacion') {
+    constructor(urlEndpoint = '/api/asesores/pedidos-produccion/obtener-datos-cotizacion') {
         this.urlEndpoint = urlEndpoint;
         this.csrfToken = this.obtenerCSRFToken();
     }

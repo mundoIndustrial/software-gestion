@@ -13,26 +13,26 @@
 /**
  * Adaptador para imágenes de prendas usando storage universal
  */
-window.imagenesPrendaStorage = {
+globalThis.imagenesPrendaStorage = {
     /**
      * Establecer imágenes (compatibilidad con código existente)
      * @param {Array} imagenes - Array de imágenes
      */
     establecerImagenes: function(imagenes) {
-        if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
         // Limpiar tipo 'prendas' completamente
-        window.universalImagenesStorage.limpiarTipo('prendas');
+        globalThis.universalImagenesStorage.limpiarTipo('prendas');
         
         // Agregar todas las imágenes al índice 'general'
         imagenes.forEach((imagen, index) => {
-            window.universalImagenesStorage.agregarImagen('prendas', 'general', imagen);
+            globalThis.universalImagenesStorage.agregarImagen('prendas', 'general', imagen);
         });
         
-        console.log(`[PrendaStorageAdapter] ✅ ${imagenes.length} imágenes de prendas establecidas en storage universal`);
+        console.log(`[PrendaStorageAdapter]  ${imagenes.length} imágenes de prendas establecidas en storage universal`);
     },
     
     /**
@@ -40,13 +40,13 @@ window.imagenesPrendaStorage = {
      * @returns {Array} Array de imágenes
      */
     obtenerImagenes: function() {
-        if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return [];
         }
         
-        const imagenes = window.universalImagenesStorage.obtenerImagenes('prendas', 'general');
-        console.log(`[PrendaStorageAdapter] 📸 Obteniendo ${imagenes.length} imágenes de prendas desde storage universal`);
+        const imagenes = globalThis.universalImagenesStorage.obtenerImagenes('prendas', 'general');
+        console.log(`[PrendaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de prendas desde storage universal`);
         return imagenes;
     },
     
@@ -57,28 +57,28 @@ window.imagenesPrendaStorage = {
      */
     agregarImagen: function(imagen) {
         return new Promise((resolve, reject) => {
-            if (!window.universalImagenesStorage) {
-                console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+            if (!globalThis.universalImagenesStorage) {
+                console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
                 reject(new Error('Universal storage no disponible'));
                 return;
             }
             
             try {
-                // 🔴 CRÍTICO: Si es un File object, construir el objeto completo
+                //  CRÍTICO: Si es un File object, construir el objeto completo
                 let imagenCompleta;
                 if (imagen instanceof File) {
                     imagenCompleta = {
                         file: imagen,
                         previewUrl: URL.createObjectURL(imagen),
                         nombre: imagen.name,
-                        tamaño: imagen.size,
+                        tamano: imagen.size,
                         fileType: imagen.type,
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[PrendaStorageAdapter] 📦 File object convertido a objeto completo:', {
+                    console.log('[PrendaStorageAdapter]  File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
-                        tamaño: imagenCompleta.tamaño,
+                        tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
                     });
                 } else {
@@ -86,15 +86,15 @@ window.imagenesPrendaStorage = {
                     imagenCompleta = imagen;
                 }
                 
-                const resultado = window.universalImagenesStorage.agregarImagen('prendas', 'general', imagenCompleta);
+                const resultado = globalThis.universalImagenesStorage.agregarImagen('prendas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[PrendaStorageAdapter] ✅ Imagen agregada exitosamente');
+                    console.log('[PrendaStorageAdapter]  Imagen agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen'));
                 }
             } catch (error) {
-                console.error('[PrendaStorageAdapter] ❌ Error al agregar imagen:', error);
+                console.error('[PrendaStorageAdapter]  Error al agregar imagen:', error);
                 reject(error);
             }
         });
@@ -105,25 +105,25 @@ window.imagenesPrendaStorage = {
      * @param {number} index - Índice de la imagen a eliminar
      */
     eliminarImagen: function(index) {
-        if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return false;
         }
         
-        return window.universalImagenesStorage.eliminarImagen('prendas', 'general', index);
+        return globalThis.universalImagenesStorage.eliminarImagen('prendas', 'general', index);
     },
     
     /**
      * Limpiar todas las imágenes (compatibilidad con código existente)
      */
     limpiar: function() {
-        if (!window.universalImagenesStorage) {
-            console.warn('[PrendaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[PrendaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
-        window.universalImagenesStorage.limpiarTipo('prendas');
-        console.log('[PrendaStorageAdapter] 🧹 Storage de prendas limpiado');
+        globalThis.universalImagenesStorage.limpiarTipo('prendas');
+        console.log('[PrendaStorageAdapter]  Storage de prendas limpiado');
     },
     
     /**
@@ -146,26 +146,26 @@ window.imagenesPrendaStorage = {
 /**
  * Adaptador para imágenes de telas usando storage universal
  */
-window.imagenesTelaStorage = {
+globalThis.imagenesTelaStorage = {
     /**
      * Establecer imágenes de telas
      * @param {Array} imagenes - Array de imágenes
      */
     establecerImagenes: function(imagenes) {
-        if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
         // Limpiar tipo 'telas' completamente
-        window.universalImagenesStorage.limpiarTipo('telas');
+        globalThis.universalImagenesStorage.limpiarTipo('telas');
         
         // Agregar todas las imágenes al índice 'general'
         imagenes.forEach((imagen, index) => {
-            window.universalImagenesStorage.agregarImagen('telas', 'general', imagen);
+            globalThis.universalImagenesStorage.agregarImagen('telas', 'general', imagen);
         });
         
-        console.log(`[TelaStorageAdapter] ✅ ${imagenes.length} imágenes de telas establecidas en storage universal`);
+        console.log(`[TelaStorageAdapter]  ${imagenes.length} imágenes de telas establecidas en storage universal`);
     },
     
     /**
@@ -173,13 +173,13 @@ window.imagenesTelaStorage = {
      * @returns {Array} Array de imágenes
      */
     obtenerImagenes: function() {
-        if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return [];
         }
         
-        const imagenes = window.universalImagenesStorage.obtenerImagenes('telas', 'general');
-        console.log(`[TelaStorageAdapter] 📸 Obteniendo ${imagenes.length} imágenes de telas desde storage universal`);
+        const imagenes = globalThis.universalImagenesStorage.obtenerImagenes('telas', 'general');
+        console.log(`[TelaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de telas desde storage universal`);
         return imagenes;
     },
     
@@ -190,28 +190,28 @@ window.imagenesTelaStorage = {
      */
     agregarImagen: function(imagen) {
         return new Promise((resolve, reject) => {
-            if (!window.universalImagenesStorage) {
-                console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+            if (!globalThis.universalImagenesStorage) {
+                console.warn('[TelaStorageAdapter]  Universal storage no disponible');
                 reject(new Error('Universal storage no disponible'));
                 return;
             }
             
             try {
-                // 🔴 CRÍTICO: Si es un File object, construir el objeto completo
+                //  CRÍTICO: Si es un File object, construir el objeto completo
                 let imagenCompleta;
                 if (imagen instanceof File) {
                     imagenCompleta = {
                         file: imagen,
                         previewUrl: URL.createObjectURL(imagen),
                         nombre: imagen.name,
-                        tamaño: imagen.size,
+                        tamano: imagen.size,
                         fileType: imagen.type,
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[TelaStorageAdapter] 📦 File object convertido a objeto completo:', {
+                    console.log('[TelaStorageAdapter]  File object convertido a objeto completo:', {
                         nombre: imagenCompleta.nombre,
-                        tamaño: imagenCompleta.tamaño,
+                        tamano: imagenCompleta.tamano,
                         tienePreviewUrl: !!imagenCompleta.previewUrl
                     });
                 } else {
@@ -219,15 +219,15 @@ window.imagenesTelaStorage = {
                     imagenCompleta = imagen;
                 }
                 
-                const resultado = window.universalImagenesStorage.agregarImagen('telas', 'general', imagenCompleta);
+                const resultado = globalThis.universalImagenesStorage.agregarImagen('telas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[TelaStorageAdapter] ✅ Imagen de tela agregada exitosamente');
+                    console.log('[TelaStorageAdapter]  Imagen de tela agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen de tela'));
                 }
             } catch (error) {
-                console.error('[TelaStorageAdapter] ❌ Error al agregar imagen de tela:', error);
+                console.error('[TelaStorageAdapter]  Error al agregar imagen de tela:', error);
                 reject(error);
             }
         });
@@ -238,25 +238,25 @@ window.imagenesTelaStorage = {
      * @param {number} index - Índice de la imagen a eliminar
      */
     eliminarImagen: function(index) {
-        if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return false;
         }
         
-        return window.universalImagenesStorage.eliminarImagen('telas', 'general', index);
+        return globalThis.universalImagenesStorage.eliminarImagen('telas', 'general', index);
     },
     
     /**
      * Limpiar todas las imágenes de telas
      */
     limpiarImagenes: function() {
-        if (!window.universalImagenesStorage) {
-            console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
+        if (!globalThis.universalImagenesStorage) {
+            console.warn('[TelaStorageAdapter]  Universal storage no disponible');
             return;
         }
         
-        window.universalImagenesStorage.limpiarTipo('telas');
-        console.log('[TelaStorageAdapter] 🧹 Storage de telas limpiado');
+        globalThis.universalImagenesStorage.limpiarTipo('telas');
+        console.log('[TelaStorageAdapter]  Storage de telas limpiado');
     },
     
     /**
@@ -283,4 +283,4 @@ window.imagenesTelaStorage = {
     }
 };
 
-console.log('✅ [StorageAdapters] Adaptadores de storage inicializados - prendas y telas usando storage universal');
+console.log(' [StorageAdapters] Adaptadores de storage inicializados - prendas y telas usando storage universal');

@@ -10,7 +10,7 @@
     $numeroPedido = $orden->numero_pedido ?? '45703';
     $cliente = $orden->cliente ?? 'CLIENTE';
     $asesor = $orden->asesor->nombre ?? 'No asignado';
-    $fechaCreacion = $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d \d\e F \d\e Y') : date('d \d\e F \d\e Y');
+    $fechaCreacion = $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->format('d \d\e F \d\e Y') : date('d \d\e F \d\e Y');
     $fechaEntrega = $orden->dia_de_entrega ? \Carbon\Carbon::parse($orden->dia_de_entrega)->format('d \d\e F \d\e Y') : 'Por definir';
     $estado = $orden->estado ?? 'Pendiente';
     $formaPago = $orden->forma_de_pago ?? 'No especificada';
@@ -427,7 +427,7 @@
             display: none;
         }
 
-        /* Optimizaciones de tamaño para impresión */
+        /* Optimizaciones de tamano para impresión */
         .prenda-block {
             padding: 10px;
             margin-bottom: 8px;

@@ -5,7 +5,6 @@ namespace App\Infrastructure\Repositories\Pedidos\Despacho;
 use App\Domain\Pedidos\Despacho\Entities\DesparChoParcial;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
 use App\Models\DesparChoParcialesModel;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -57,35 +56,38 @@ class DesparChoParcialesRepositoryImpl implements DesparChoParcialesRepository
     /**
      * Obtener todos los despachos de un pedido
      */
-    public function obtenerPorPedidoId(int $pedidoId): Collection
+    public function obtenerPorPedidoId(int $pedidoId): array
     {
         return DesparChoParcialesModel::porPedido($pedidoId)
             ->activo()
             ->get()
-            ->map(fn($modelo) => $this->modeloAEntidad($modelo));
+            ->map(fn($modelo) => $this->modeloAEntidad($modelo))
+            ->all();
     }
 
     /**
      * Obtener despachos de un ítem específico
      */
-    public function obtenerPorItem(string $tipoItem, int $itemId): Collection
+    public function obtenerPorItem(string $tipoItem, int $itemId): array
     {
         return DesparChoParcialesModel::porItem($tipoItem, $itemId)
             ->activo()
             ->get()
-            ->map(fn($modelo) => $this->modeloAEntidad($modelo));
+            ->map(fn($modelo) => $this->modeloAEntidad($modelo))
+            ->all();
     }
 
     /**
      * Obtener despachos de un pedido filtrados por tipo de ítem
      */
-    public function obtenerPorPedidoYTipo(int $pedidoId, string $tipoItem): Collection
+    public function obtenerPorPedidoYTipo(int $pedidoId, string $tipoItem): array
     {
         return DesparChoParcialesModel::porPedido($pedidoId)
             ->porTipo($tipoItem)
             ->activo()
             ->get()
-            ->map(fn($modelo) => $this->modeloAEntidad($modelo));
+            ->map(fn($modelo) => $this->modeloAEntidad($modelo))
+            ->all();
     }
 
     /**

@@ -15,7 +15,7 @@ class ProcesosBuilder {
     };
 
     static construir(prenda, indice) {
-        console.log('[ProcesosBuilder] 🏗️ Construyendo procesos para prenda:', {
+        console.log('[ProcesosBuilder]  Construyendo procesos para prenda:', {
             nombre: prenda.nombre_prenda,
             indice: indice,
             tieneProcesos: !!prenda.procesos,
@@ -91,13 +91,40 @@ class ProcesosBuilder {
         const icono = this.ICONOS[tipoProceso] || '<i class="fas fa-cog"></i>';
         const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
         const modoTallas = proceso.modoTallas || datos.modoTallas || datos.modo_tallas || 'generico';
-        const esPorTallas = !!(datos.datosExtendidos) || modoTallas === 'por_tallas' || modoTallas === 'especifico';
+        const esPorTallas = !!(datos.datosExtendidos) || modoTallas === 'especifico';
         const esGeneral = modoTallas === 'general' || modoTallas === 'generico';
 
         // ─── Modo POR TALLAS ESPECÍFICO ───
         if (esPorTallas && datos.datosExtendidos && !esGeneral) {
             let porTallasHTML = '';
+            let imagenesProcesoHTML = '';
             const generos = { dama: { label: 'DAMA', icon: '<i class="fas fa-female"></i>', color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8' }, caballero: { label: 'CABALLERO', icon: '<i class="fas fa-male"></i>', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' } };
+
+            const imagenesProceso = Array.isArray(datos.imagenes) ? datos.imagenes : [];
+            if (imagenesProceso.length > 0) {
+                const thumbs = imagenesProceso.map(img => {
+                    let src = '';
+                    if (typeof img === 'string') src = img;
+                    else if (img instanceof File) src = URL.createObjectURL(img);
+                    else if (img?.url || img?.ruta_webp || img?.ruta_original || img?.previewUrl || img?.blobUrl) {
+                        src = img.url || img.ruta_webp || img.ruta_original || img.previewUrl || img.blobUrl;
+                    }
+                    return src ? `<img src="${src}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;">` : '';
+                }).filter(Boolean).join('');
+
+                if (thumbs) {
+                    imagenesProcesoHTML = `
+                        <div style="margin-bottom: 0.75rem;">
+                            <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                                <i class="fas fa-images"></i>IMAGENES DEL PROCESO (${imagenesProceso.length})
+                            </strong>
+                            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                                ${thumbs}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
 
             Object.entries(generos).forEach(([genero, cfg]) => {
                 const tallasGenero = datos.datosExtendidos[genero];
@@ -159,6 +186,7 @@ class ProcesosBuilder {
                         <h4 style="margin: 0; color: #0369a1; font-size: 1.1rem; font-weight: 700;">${nombreProceso}</h4>
                         <span style="background: #7c3aed; color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 700;">Por Tallas</span>
                     </div>
+                    ${imagenesProcesoHTML}
                     <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
                         ${porTallasHTML}
                     </div>
@@ -508,7 +536,7 @@ class ProcesosBuilder {
                     }
                 }
                 
-                console.log(`[ProcesosBuilder] 🖼️ Procesando imagen ${idx}:`, {tipo: typeof img, tieneUrl: !!url, urlPreview: url ? url.substring(0, 50) : 'null'});
+                console.log(`[ProcesosBuilder]  Procesando imagen ${idx}:`, {tipo: typeof img, tieneUrl: !!url, urlPreview: url ? url.substring(0, 50) : 'null'});
                 
                 return url ? `<img src="${url}" alt="Proceso ${idx}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 2px solid #e5e7eb; cursor: pointer;" />` : '';
             })
@@ -529,4 +557,3 @@ class ProcesosBuilder {
 }
 
 window.ProcesosBuilder = ProcesosBuilder;
-

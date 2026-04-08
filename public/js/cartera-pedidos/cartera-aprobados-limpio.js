@@ -14,12 +14,12 @@ let totalPages = 1;
 let pedidosPorPagina = 10;
 
 // Exponer datos globalmente para que el sistema compartido pueda acceder
-window.pedidosDataAprobados = pedidosDataAprobados;
+globalThis.pedidosDataAprobados = pedidosDataAprobados;
 
 // ===== FUNCIONES ESPECÍFICAS DE LA VISTA =====
 
 // Función principal para cargar pedidos (será llamada por el sistema compartido)
-window.cargarPedidos = async function() {
+globalThis.cargarPedidos = async function() {
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
   
   if (!tablaPedidosBody) {
@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -62,14 +62,14 @@ window.cargarPedidos = async function() {
     }
     
     const data = await response.json();
-    console.log('📊 Datos recibidos:', data);
+    console.log(' Datos recibidos:', data);
     
     if (data.success) {
       // Corregir: los datos están en "data", no en "pedidos"
       pedidosDataAprobados = data.data || [];
       
       // Sincronizar con la variable global
-      window.pedidosDataAprobados = pedidosDataAprobados;
+      globalThis.pedidosDataAprobados = pedidosDataAprobados;
       
       // Extraer datos de paginación
       const pagination = data.pagination || {};
@@ -132,7 +132,7 @@ function renderizarPedidos(pedidos) {
 // Función para obtener la fecha correcta según el estado del pedido
 function obtenerFechaAprobacion(pedido) {
   // Debug: Ver qué datos tiene el pedido
-  console.log('🔍 DEBUG APROBADOS - Pedido:', {
+  console.log(' DEBUG APROBADOS - Pedido:', {
     id: pedido.id,
     estado: pedido.estado,
     aprobado_por_cartera_en: pedido.aprobado_por_cartera_en,
@@ -199,7 +199,7 @@ function goToPage(page) {
   if (page < 1 || page > totalPages) return;
   
   currentPage = page;
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 }
 
 function actualizarPaginacion(total) {
@@ -320,7 +320,7 @@ function formatearMoneda(monto) {
 // ===== INICIALIZACIÓN =====
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Cartera Aprobados - Inicializado');
+  console.log(' Cartera Aprobados - Inicializado');
   
   // Validar que los elementos críticos existan
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
   
   // Cargar pedidos iniciales
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 });
 
-console.log('📄 Script de Cartera Aprobados cargado correctamente');
+console.log(' Script de Cartera Aprobados cargado correctamente');

@@ -319,7 +319,6 @@
                                 <th>Área</th>
                                 <th>Talla</th>
                                 <th style="text-align: center;">Cant.</th>
-                                <th>Pendientes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -409,13 +408,6 @@
                                     <td class="px-4 py-3 text-xs text-black" style="text-align: center;">
                                         <span class="cantidad-badge">{{ $cantidad }}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-xs text-black">
-                                        @if($pendientes)
-                                            {{ $pendientes }}
-                                        @else
-                                            <span class="sin-observaciones">-</span>
-                                        @endif
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -495,7 +487,7 @@
             historial.innerHTML = '<div class="text-center text-slate-500"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>Cargando notas...</div>';
             
             // Cargar notas del pedido
-            fetch(`/asesores/pendientes/${pedidoId}/notas`)
+            fetch(`/api/asesores/pendientes/${pedidoId}/notas`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.data) {

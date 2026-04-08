@@ -17,11 +17,13 @@ class ProcesoPrenda extends Model
         'numero_pedido',
         'prenda_pedido_id',
         'numero_recibo',
+        'numero_recibo_parcial',
         'proceso',
         'fecha_inicio',
         'fecha_fin',
         'dias_duracion',
         'encargado',
+        'fecha_de_asignacion_encargado',
         'estado_proceso',
         'observaciones',
         'novedades',
@@ -31,6 +33,7 @@ class ProcesoPrenda extends Model
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
+        'fecha_de_asignacion_encargado' => 'datetime',
     ];
 
     /**

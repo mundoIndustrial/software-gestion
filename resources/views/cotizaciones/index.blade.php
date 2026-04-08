@@ -69,7 +69,7 @@
 
 <script>
 function openCotizacionModal(cotizacionId) {
-    fetch(`/asesores/cotizaciones/${cotizacionId}`)
+    fetch(`/api/asesores/cotizaciones/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -276,4 +276,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-

@@ -87,7 +87,7 @@
 
                             <div id="pendientesRows">
                                 <!-- Filas -->
-                                @if($procesosConCantidad->isEmpty())
+                                @if(empty($procesosConCantidad))
                                     <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                                         <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                                         <p style="font-size: 1rem; margin: 0;">No hay pendientes</p>
@@ -104,7 +104,7 @@
                                             min-width: min-content;
                                             background: white;
                                             transition: background 0.2s ease;
-                                        " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                                        ">
                                         <div>
                                             <span>{{ \Carbon\Carbon::parse($proceso->fecha_creacion)->format('d/m/Y H:i') }}</span>
                                         </div>
@@ -229,9 +229,8 @@
             </div>
             <div class="modal-body" id="detalles-contenido">
                 <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
+                    <div class="spinner-border" aria-hidden="true"></div>
+                    <output class="visually-hidden">Cargando...</output>
                 </div>
             </div>
             <div class="modal-footer">
@@ -262,19 +261,24 @@
     .material-symbols-rounded {
         vertical-align: middle;
     }
+
+    [data-row="proceso"]:hover,
+    [data-row="proceso"]:focus-within {
+        background: #f9fafb !important;
+    }
 </style>
 @endpush
 
 @push('scripts')
+<script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script>
 function verDetalles(procesoId, tipoRecibo) {
     // Mostrar modal con loading
     const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
     document.getElementById('detalles-contenido').innerHTML = `
         <div class="text-center">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
+            <div class="spinner-border" aria-hidden="true"></div>
+            <output class="visually-hidden">Cargando...</output>
             <p class="mt-2">Cargando detalles...</p>
         </div>
     `;
@@ -288,7 +292,7 @@ function verDetalles(procesoId, tipoRecibo) {
     modal.show();
     
     // Cargar detalles del proceso
-    fetch(`/supervisor-pedidos/procesos/${procesoId}/detalles`)
+    fetch(`/api/supervisor-pedidos/procesos/${procesoId}/detalles`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -372,8 +376,8 @@ function renderizarDetalles(data) {
         data.imagenes.forEach(imagen => {
             html += `
                 <div class="col-md-3 mb-3">
-                    <img src="/storage/${imagen.ruta_webp || imagen.ruta_original}" 
-                         class="img-fluid img-thumbnail" 
+                    <img src="/storage/${imagen.ruta_webp || imagen.ruta_original}"
+                         class="img-fluid img-thumbnail"
                          alt="Imagen del proceso"
                          onclick="window.open('/storage/${imagen.ruta_webp || imagen.ruta_original}', '_blank')"
                          style="cursor: pointer;">
@@ -396,7 +400,7 @@ function aprobarProceso(procesoId) {
         return;
     }
     
-    fetch(`/supervisor-pedidos/procesos/${procesoId}/aprobar`, {
+    fetch(`/api/supervisor-pedidos/procesos/${procesoId}/aprobar`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -439,6 +443,8 @@ function mostrarCargandoTablaPendientes() {
     `;
 }
 
+const receiptsRenderers = window.SupervisorReceiptsRenderers;
+
 async function recargarTablaPendientes() {
     const cont = document.getElementById('pendientesRows');
     if (!cont) return;
@@ -446,21 +452,23 @@ async function recargarTablaPendientes() {
     mostrarCargandoTablaPendientes();
 
     try {
-        const resp = await fetch(window.location.href, {
+        const resp = await fetch('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado', {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             }
         });
 
-        const html = await resp.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const nuevo = doc.getElementById('pendientesRows');
-        if (!nuevo) {
-            throw new Error('No se encontró el contenedor de filas en la respuesta');
+        const payload = await resp.json();
+        const procesos = payload?.data?.procesosConCantidad;
+        if (!resp.ok || !Array.isArray(procesos)) {
+            throw new Error('No se pudo recuperar la data de pendientes');
         }
-
-        cont.innerHTML = nuevo.innerHTML;
+        if (procesos.length === 0) {
+            cont.innerHTML = receiptsRenderers.emptyStateHtml();
+        } else {
+            cont.innerHTML = procesos.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml)).join('');
+        }
 
         inicializarPendientesUI();
         aplicarFiltrosEnVista();
@@ -781,7 +789,7 @@ async function guardarFechaLlegada(input) {
     const reciboId = input.getAttribute('data-recibo-id');
     const fechaLlegada = input.value;
 
-    const resp = await fetch(`/supervisor-pedidos/recibos/${reciboId}/fecha-llegada`, {
+    const resp = await fetch(`/api/supervisor-pedidos/recibos/${reciboId}/fecha-llegada`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -34,8 +34,8 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('insumos.dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+            <a href="{{ route('insumos.materiales.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Materiales
             </a>
         </div>
     </div>
@@ -115,7 +115,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
 
 // Sistema genérico de notificaciones (funciona para cualquier rol)
 (function() {
-    console.log('[🎯 IIFE INICIO] Entrando en función autoejecutable');
+    console.log('[ IIFE INICIO] Entrando en función autoejecutable');
     
     const CONFIG = window.CAMPANA_CONFIG || {};
     const nombre = CONFIG.nombre || 'CAMPANA_GENERICA';
@@ -155,10 +155,10 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
         
         // Validar configuración
         if (!CONFIG.endpoint) {
-            console.error('[❌ ' + nombre + '] FALTA ENDPOINT');
+            console.error('[ ' + nombre + '] FALTA ENDPOINT');
             return;
         }
-        console.log('[✅ ' + nombre + '] Endpoint válido:', CONFIG.endpoint);
+        console.log('[ ' + nombre + '] Endpoint válido:', CONFIG.endpoint);
 
         console.log('[🔔 ' + nombre + '] Paso 2: Obtener elementos del DOM');
         // Obtener elementos
@@ -169,19 +169,19 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
         console.log('[DOM] notificationBadge encontrado:', !!badge);
         
         if (!bellBtn || !badge) {
-            console.error('[❌ ' + nombre + '] ELEMENTOS NO ENCONTRADOS');
+            console.error('[ ' + nombre + '] ELEMENTOS NO ENCONTRADOS');
             console.error('[DOM] bellBtn:', bellBtn);
             console.error('[DOM] badge:', badge);
             return;
         }
-        console.log('[✅ ' + nombre + '] Elementos encontrados');
+        console.log('[ ' + nombre + '] Elementos encontrados');
 
         console.log('[🔔 ' + nombre + '] Paso 3: Limpiar estado previo');
         // Limpiar estado previo
         badge.textContent = '0';
         badge.style.display = 'none';
         badge.setAttribute('data-initialized', 'true');
-        console.log('[✅ ' + nombre + '] Badge limpio:', badge.textContent, 'visible:', badge.style.display);
+        console.log('[ ' + nombre + '] Badge limpio:', badge.textContent, 'visible:', badge.style.display);
 
         console.log('[🔔 ' + nombre + '] Paso 4: Obtener contador desde API');
         // Obtener contador desde API
@@ -203,23 +203,23 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
                 const data = await response.json();
                 const total = data.total || 0;
                 
-                console.log('[📊 ' + nombre + '] Respuesta API:', data);
-                console.log('[📊 ' + nombre + '] Total:', total);
-                console.log('[📊 ' + nombre + '] Debug:', data.debug);
+                console.log('[ ' + nombre + '] Respuesta API:', data);
+                console.log('[ ' + nombre + '] Total:', total);
+                console.log('[ ' + nombre + '] Debug:', data.debug);
                 
                 // Actualizar badge
                 badge.textContent = total;
                 badge.style.display = total > 0 ? 'inline-block' : 'none';
                 badge.setAttribute('data-count', total);
                 
-                console.log('[✅ ' + nombre + '] Badge actualizado');
-                console.log('[✅ ' + nombre + '] textContent:', badge.textContent);
-                console.log('[✅ ' + nombre + '] display:', badge.style.display);
+                console.log('[ ' + nombre + '] Badge actualizado');
+                console.log('[ ' + nombre + '] textContent:', badge.textContent);
+                console.log('[ ' + nombre + '] display:', badge.style.display);
             } else {
-                console.error('[❌ ' + nombre + '] Error HTTP:', response.status);
+                console.error('[ ' + nombre + '] Error HTTP:', response.status);
             }
         } catch (error) {
-            console.error('[❌ ' + nombre + '] Error en fetch API:', error);
+            console.error('[ ' + nombre + '] Error en fetch API:', error);
             console.error('[ERROR] Stack:', error.stack);
         }
 
@@ -232,16 +232,16 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
         if (CONFIG.canal && CONFIG.eventos) {
             console.log('[⏩ ' + nombre + '] Configuración de tiempo real detectada');
             if (window.EchoInstance) {
-                console.log('[✅ ' + nombre + '] Echo disponible, configurando listeners...');
+                console.log('[ ' + nombre + '] Echo disponible, configurando listeners...');
                 setupRealtimeListeners();
             } else if (window.waitForEcho) {
                 console.log('[⏳ ' + nombre + '] Usando waitForEcho callback...');
                 window.waitForEcho(() => {
-                    console.log('[✅ ' + nombre + '] waitForEcho callback ejecutado');
+                    console.log('[ ' + nombre + '] waitForEcho callback ejecutado');
                     setupRealtimeListeners();
                 });
             } else {
-                console.warn('[⚠️ ' + nombre + '] Echo no disponible ni waitForEcho');
+                console.warn('[ ' + nombre + '] Echo no disponible ni waitForEcho');
             }
         }
         
@@ -271,7 +271,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
                 }
             });
 
-            console.log('[✅ BELL CONTROLS] Configurado');
+            console.log('[ BELL CONTROLS] Configurado');
         }
 
         const clearBtn = document.getElementById('clearNotificationsBtn');
@@ -298,7 +298,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
         console.log('[REALTIME] Echo disponible:', !!echo);
         
         if (!echo) {
-            console.error('[❌ REALTIME] Echo no disponible');
+            console.error('[ REALTIME] Echo no disponible');
             return;
         }
 
@@ -317,7 +317,7 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
                 console.log('[📢 REALTIME] ¿Pasa filtro?:', pasaFiltro);
                 
                 if (pasaFiltro) {
-                    console.log('[✅ REALTIME] PROCESANDO EVENTO');
+                    console.log('[ REALTIME] PROCESANDO EVENTO');
                     
                     // Actualizar contador
                     const badge = document.getElementById('notificationBadge');
@@ -336,14 +336,14 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
             });
         });
 
-        console.log('[✅ REALTIME] ========== CONFIGURACIÓN COMPLETA ==========');
+        console.log('[ REALTIME] ========== CONFIGURACIÓN COMPLETA ==========');
     }
 
     function agregarNotificacion(notif) {
         console.log('[NOTIF] Agregando notificación:', notif);
         const list = document.getElementById('notificationsList');
         if (!list) {
-            console.error('[❌ NOTIF] Elemento notificationsList no encontrado');
+            console.error('[ NOTIF] Elemento notificationsList no encontrado');
             return;
         }
 
@@ -362,12 +362,12 @@ console.log('[CONFIG CAMPANA] window.CAMPANA_CONFIG asignado:', window.CAMPANA_C
             '<small style="color: #999; font-size: 0.85em;">' + (notif.timestamp || '') + '</small>';
         list.insertBefore(item, list.firstChild);
         
-        console.log('[✅ NOTIF] Notificación agregada');
+        console.log('[ NOTIF] Notificación agregada');
     }
 
-    console.log('[🎯 IIFE] Llamando waitForDOM()');
+    console.log('[ IIFE] Llamando waitForDOM()');
     waitForDOM();
-    console.log('[🎯 IIFE] waitForDOM() llamado');
+    console.log('[ IIFE] waitForDOM() llamado');
 })();
 
 console.log('========== SCRIPT CAMPANA TERMINADO ==========');

@@ -195,14 +195,17 @@ async function eliminarPedido(pedido) {
     }
 
     try {
-        const url = `/asesores/api/pedidos/${pedido}`;
+        const url = `/api/asesores/pedidos/${pedido}`;
         // Realizar la solicitud DELETE
         const response = await fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
+            },
+            body: JSON.stringify({
+                razon: 'Anulado desde listado de asesores'
+            })
         });
 
         console.log('%c[ELIMINAR - RESPUESTA]', 'color: #4ecdc4; font-weight: bold;', {
@@ -320,5 +323,4 @@ function mostrarToast(mensaje, tipo = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-
 

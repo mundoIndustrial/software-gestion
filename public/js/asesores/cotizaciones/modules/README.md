@@ -277,7 +277,7 @@ const state = app.getState();
 
 ---
 
-## 🔗 Relaciones entre Módulos
+##  Relaciones entre Módulos
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -315,7 +315,7 @@ const state = app.getState();
 
 ---
 
-## 🧪 Patrones de Testing
+##  Patrones de Testing
 
 ### Test del Módulo de Validación
 ```javascript

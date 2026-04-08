@@ -78,7 +78,7 @@ function _inicializarEventListeners() {
 /**
  * Funciones globales para compatibilidad
  * Nota: abrirModalAgregarEPP() y cerrarModalAgregarEPP() 
- * están definidas en el template Blade (modal-agregar-epp.blade.php)
+ * están definidas en el template Blade (modal-agregar-editar-epp.blade.php)
  * No las definimos aquí para no sobrescribir las del template
  */
 

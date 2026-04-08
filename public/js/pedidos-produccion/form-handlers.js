@@ -219,7 +219,7 @@ class PedidoFormHandlers {
                             <option value="">Seleccionar...</option>
                             <option value="dama">👩 Dama</option>
                             <option value="caballero">👨 Caballero</option>
-                            <option value="unisex">👥 Unisex</option>
+                            <option value="unisex"> Unisex</option>
                         </select>
                     </div>
 
@@ -274,7 +274,7 @@ class PedidoFormHandlers {
                             <option value="">Seleccionar...</option>
                             <option value="dama" ${prenda.genero === 'dama' ? 'selected' : ''}>👩 Dama</option>
                             <option value="caballero" ${prenda.genero === 'caballero' ? 'selected' : ''}>👨 Caballero</option>
-                            <option value="unisex" ${prenda.genero === 'unisex' ? 'selected' : ''}>👥 Unisex</option>
+                            <option value="unisex" ${prenda.genero === 'unisex' ? 'selected' : ''}> Unisex</option>
                         </select>
                     </div>
 
@@ -403,7 +403,7 @@ class PedidoFormHandlers {
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="tiene_bolsillos" name="tiene_bolsillos">
                         <label class="custom-control-label" for="tiene_bolsillos">
-                            👖 Tiene bolsillos
+                             Tiene bolsillos
                         </label>
                     </div>
                 </div>
@@ -489,7 +489,7 @@ class PedidoFormHandlers {
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="tiene_bolsillos" name="tiene_bolsillos" ${variante.tiene_bolsillos ? 'checked' : ''}>
                         <label class="custom-control-label" for="tiene_bolsillos">
-                            👖 Tiene bolsillos
+                             Tiene bolsillos
                         </label>
                     </div>
                 </div>
@@ -1060,16 +1060,16 @@ class PedidoFormHandlers {
                 <!-- ACCIONES -->
                 <div class="action-buttons mt-4">
                     <button class="btn btn-lg btn-success" data-action="add-prenda">
-                        ➕ Agregar prenda
+                         Agregar prenda
                     </button>
                     <button class="btn btn-lg btn-primary" data-action="validate-pedido">
                         ✓ Validar pedido
                     </button>
                     <button class="btn btn-lg btn-info" data-action="submit-pedido">
-                        📤 Enviar pedido
+                         Enviar pedido
                     </button>
                     <button class="btn btn-lg btn-danger" data-action="clear-pedido">
-                        🗑️ Limpiar
+                         Limpiar
                     </button>
                 </div>
             </div>

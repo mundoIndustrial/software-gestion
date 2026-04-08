@@ -207,7 +207,7 @@ class PrendaVariante extends Model
          * Cuando se elimina una variante
          */
         static::deleting(function ($variante) {
-            \Log::info("🗑️ Variante eliminada - Prenda ID: {$variante->prenda_pedido_id}");
+            \Log::info(" Variante eliminada - Prenda ID: {$variante->prenda_pedido_id}");
         });
     }
 }

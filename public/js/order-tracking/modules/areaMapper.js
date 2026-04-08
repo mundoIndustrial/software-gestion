@@ -7,7 +7,7 @@
 const AreaMapper = (() => {
     const areaFieldMappings = {
         'Creación Orden': {
-            dateField: 'fecha_de_creacion_de_orden',
+            dateField: 'created_at',
             chargeField: 'encargado_orden',
             daysField: 'dias_orden',
             icon: 'description',

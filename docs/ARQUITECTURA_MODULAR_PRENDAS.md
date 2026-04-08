@@ -1,6 +1,6 @@
-## 📦 Arquitectura Modular - Prendas Editor (REFACTORIZADO)
+##  Arquitectura Modular - Prendas Editor (REFACTORIZADO)
 
-### 🎯 Cambio Principal
+###  Cambio Principal
 
 **ANTES:**
 - 1 archivo gigante: `prenda-editor.js` (~850 líneas)
@@ -14,7 +14,7 @@
 
 ---
 
-## 📁 Estructura Nueva
+##  Estructura Nueva
 
 ```
 prendas/
@@ -41,7 +41,7 @@ lazy-loaders/
 
 ---
 
-## 🔄 Cómo Funciona
+##  Cómo Funciona
 
 ### 1️⃣ Flujo de Carga
 
@@ -84,7 +84,7 @@ Modal completamente relleno en ~500ms
 
 ---
 
-## ✨ Ventajas
+##  Ventajas
 
 ### 1. **Mantenibilidad**
 ```javascript
@@ -123,7 +123,7 @@ class CotizacionEditor {
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 ### Opción 1: Con el nuevo loader (RECOMENDADO)
 
@@ -170,7 +170,7 @@ SI TODAVÍA USAS EL VIEJO CÓDIGO:
 
 ---
 
-## 📊 Comparación Antes/Después
+##Comparación Antes/Después
 
 ### ANTES: Monolítico
 ```
@@ -200,7 +200,7 @@ prenda-editor-refactorizado.js: 120 líneas ← SOLO ORQUESTA
 
 ---
 
-## 🎯 Próximos Pasos (Opcional)
+##  Próximos Pasos (Opcional)
 
 1. **Tests Unitarios**
    ```javascript

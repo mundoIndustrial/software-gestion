@@ -24,7 +24,7 @@
         }
         
         if (esperandoServicio) {
-            console.log('⏳ [INIT-STORAGE] Ya esperando al servicio, omitiendo...');
+            console.log(' [INIT-STORAGE] Ya esperando al servicio, omitiendo...');
             return;
         }
         
@@ -45,7 +45,7 @@
                 esperandoServicio = false;
             } else {
                 esperandoServicio = true;
-                console.log('⏳ [INIT-STORAGE] Esperando a ImageStorageService...');
+                console.log(' [INIT-STORAGE] Esperando a ImageStorageService...');
                 
                 // Timeout para evitar bucles infinitos (máximo 5 segundos)
                 timeoutServicio = setTimeout(() => {

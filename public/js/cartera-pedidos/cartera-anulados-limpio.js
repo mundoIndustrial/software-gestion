@@ -14,12 +14,12 @@ let totalPages = 1;
 let pedidosPorPagina = 10;
 
 // Exponer datos globalmente para que el sistema compartido pueda acceder
-window.pedidosDataAnulados = pedidosDataAnulados;
+globalThis.pedidosDataAnulados = pedidosDataAnulados;
 
 // ===== FUNCIONES ESPECÍFICAS DE LA VISTA =====
 
 // Función principal para cargar pedidos (será llamada por el sistema compartido)
-window.cargarPedidos = async function() {
+globalThis.cargarPedidos = async function() {
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
   
   if (!tablaPedidosBody) {
@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -62,14 +62,14 @@ window.cargarPedidos = async function() {
     }
     
     const data = await response.json();
-    console.log('📊 Datos recibidos:', data);
+    console.log(' Datos recibidos:', data);
     
     if (data.success) {
       // Corregir: los datos están en "data", no en "pedidos"
       pedidosDataAnulados = data.data || [];
       
       // Sincronizar con la variable global
-      window.pedidosDataAnulados = pedidosDataAnulados;
+      globalThis.pedidosDataAnulados = pedidosDataAnulados;
       
       // Extraer datos de paginación
       const pagination = data.pagination || {};
@@ -192,7 +192,7 @@ function goToPage(page) {
   if (page < 1 || page > totalPages) return;
   
   currentPage = page;
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 }
 
 function actualizarPaginacion(total) {
@@ -289,7 +289,7 @@ function formatearMoneda(monto) {
 // ===== INICIALIZACIÓN =====
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Cartera Anulados - Inicializado');
+  console.log(' Cartera Anulados - Inicializado');
   
   // Validar que los elementos críticos existan
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
@@ -305,13 +305,13 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
   
   // Cargar pedidos iniciales
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 });
 
 // Función para obtener la fecha de anulación correcta
 function obtenerFechaAnulacion(pedido) {
   // Debug: Ver qué datos tiene el pedido
-  console.log('🔍 DEBUG ANULADOS - Pedido:', {
+  console.log(' DEBUG ANULADOS - Pedido:', {
     id: pedido.id,
     estado: pedido.estado,
     fecha_revision: pedido.fecha_revision,
@@ -340,7 +340,7 @@ function obtenerFechaAnulacion(pedido) {
 // Función para obtener quién anuló el pedido
 function obtenerQuienAnulo(pedido) {
   // Debug: Ver quién anuló
-  console.log('🔍 DEBUG QUIEN ANULO - Pedido:', {
+  console.log(' DEBUG QUIEN ANULO - Pedido:', {
     id: pedido.id,
     anulado_por_asesora_id: pedido.anulado_por_asesora_id,
     usuario_revision: pedido.usuario_revision,
@@ -414,4 +414,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-console.log('📄 Script de Cartera Anulados cargado correctamente');
+console.log(' Script de Cartera Anulados cargado correctamente');

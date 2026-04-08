@@ -18,7 +18,7 @@ INSERT INTO prenda_tela_fotos_cot (
     orden,
     ancho,
     alto,
-    tamaño,
+    tamano,
     created_at,
     updated_at
 )
@@ -30,7 +30,7 @@ SELECT
     orden,
     ancho,
     alto,
-    tamaño,
+    tamano,
     created_at,
     updated_at
 FROM prenda_fotos_cot

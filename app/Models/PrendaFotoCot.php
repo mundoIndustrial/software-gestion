@@ -15,9 +15,6 @@ class PrendaFotoCot extends Model
         'ruta_webp',
         'ruta_miniatura',
         'orden',
-        'ancho',
-        'alto',
-        'tamaño',
     ];
 
     /**

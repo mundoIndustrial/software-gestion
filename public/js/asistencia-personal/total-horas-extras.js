@@ -1346,7 +1346,7 @@ function guardarValorHoraExtra(codigoPersona, valor, btnElement, idReporte) {
 
 
     const btnText = btnElement.textContent;
-    btnElement.textContent = '⏳';
+    btnElement.textContent = '';
     btnElement.disabled = true;
 
     const payload = {

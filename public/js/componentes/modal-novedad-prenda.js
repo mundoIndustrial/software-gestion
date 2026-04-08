@@ -40,10 +40,10 @@ class ModalNovedadPrenda {
         this.pedidoId = pedidoId;
         this.prendaData = prendaData;
 
-        //  CRÍTICO: Inicializar window.imagenesPrendaStorage limpio para prenda NUEVA
-        if (window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage.limpiar();
-            console.log('[modal-novedad-prenda]  [INIT-SYNC] window.imagenesPrendaStorage limpiado para nueva prenda');
+        //  CRÍTICO: Inicializar globalThis.imagenesPrendaStorage limpio para prenda NUEVA
+        if (globalThis.imagenesPrendaStorage) {
+            globalThis.imagenesPrendaStorage.limpiar();
+            console.log('[modal-novedad-prenda]  [INIT-SYNC] globalThis.imagenesPrendaStorage limpiado para nueva prenda');
         }
 
         return new Promise((resolve) => {
@@ -172,13 +172,13 @@ class ModalNovedadPrenda {
             formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
             formData.append('novedad', novedad);  // AGREGAR NOVEDAD
             
-            //  FIX: Obtener imágenes ACTUALIZADAS desde window.imagenesPrendaStorage (que incluye eliminaciones)
+            //  FIX: Obtener imágenes ACTUALIZADAS desde globalThis.imagenesPrendaStorage (que incluye eliminaciones)
             // NO desde this.prendaData.imagenes que es estático
             let imagenesActuales = this.prendaData.imagenes || [];
             
             // Si existen imágenes en el storage (editadas por el usuario), usar esas
-            if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
-                const imagenesDelStorage = window.imagenesPrendaStorage.obtenerImagenes();
+            if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.obtenerImagenes === 'function') {
+                const imagenesDelStorage = globalThis.imagenesPrendaStorage.obtenerImagenes();
                 if (imagenesDelStorage && imagenesDelStorage.length > 0) {
                     console.log('[modal-novedad-prenda]  Usando imágenes del storage (incluye eliminaciones):', imagenesDelStorage.length);
                     imagenesActuales = imagenesDelStorage;
@@ -248,7 +248,7 @@ class ModalNovedadPrenda {
                 });
             }
             
-            const response = await fetch(`/asesores/pedidos/${this.pedidoId}/agregar-prenda`, {
+            const response = await fetch(`/api/asesores/pedidos/${this.pedidoId}/agregar-prenda`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
@@ -280,7 +280,7 @@ class ModalNovedadPrenda {
      */
     mostrarCargando() {
         Swal.fire({
-            title: '⏳ Cargando',
+            title: ' Cargando',
             html: '<div style="display: flex; align-items: center; gap: 1rem;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6;"></i><div style="text-align: left;"><p style="margin: 0; font-size: 1rem; color: #374151;">Guardando prenda en la base de datos...</p><p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Por favor espera</p></div></div>',
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -324,15 +324,15 @@ class ModalNovedadPrenda {
         }).then((result) => {
             if (result.isConfirmed) {
                 // Cerrar el modal de edición de prendas
-                if (typeof window.cerrarModalPrendaNueva === 'function') {
+                if (typeof globalThis.cerrarModalPrendaNueva === 'function') {
 
-                    window.cerrarModalPrendaNueva();
+                    globalThis.cerrarModalPrendaNueva();
                 }
                 
                 // Ir a la lista de prendas
-                if (typeof window.abrirEditarPrendas === 'function') {
+                if (typeof globalThis.abrirEditarPrendas === 'function') {
 
-                    window.abrirEditarPrendas();
+                    globalThis.abrirEditarPrendas();
                 }
             }
         });
@@ -400,4 +400,4 @@ class ModalNovedadPrenda {
 }
 
 // Instancia global reutilizable
-window.modalNovedadPrenda = new ModalNovedadPrenda();
+globalThis.modalNovedadPrenda = new ModalNovedadPrenda();

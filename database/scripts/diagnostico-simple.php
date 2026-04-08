@@ -43,7 +43,7 @@ if (file_exists($logFile)) {
 echo "\n";
 
 // ===== 2. VERIFICAR DIRECTORIOS =====
-echo "📂 2. VERIFICANDO DIRECTORIOS\n";
+echo " 2. VERIFICANDO DIRECTORIOS\n";
 echo str_repeat("─", 70) . "\n";
 
 $carpetas = [
@@ -78,7 +78,7 @@ if (is_dir($pedidosDir)) {
     if (empty($carpetas)) {
         echo "  NO HAY CARPETAS DE PEDIDOS CREADAS\n";
     } else {
-        echo "📁 Carpetas de pedidos: " . count($carpetas) . "\n\n";
+        echo " Carpetas de pedidos: " . count($carpetas) . "\n\n";
         
         // Mostrar últimas 5
         rsort($carpetas, SORT_NUMERIC);
@@ -105,9 +105,9 @@ if (is_dir($pedidosDir)) {
                 }
             }
             
-            echo "   📌 Pedido $pedidoId:\n";
+            echo "    Pedido $pedidoId:\n";
             echo "      • Archivos: $count\n";
-            echo "      • Tamaño: " . number_format($totalSize / 1024, 2) . " KB\n";
+            echo "      • tamano: " . number_format($totalSize / 1024, 2) . " KB\n";
             
             if (!empty($tipos)) {
                 echo "      • Tipos: ";
@@ -144,7 +144,7 @@ foreach ($archivos as $rel => $desc) {
         $size = filesize($full);
         $lines = count(file($full));
         echo " $desc\n";
-        echo "   • Líneas: $lines, Tamaño: " . number_format($size / 1024, 2) . " KB\n";
+        echo "   • Líneas: $lines, tamano: " . number_format($size / 1024, 2) . " KB\n";
     } else {
         echo " $desc - NO EXISTE ($rel)\n";
     }

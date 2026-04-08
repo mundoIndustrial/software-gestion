@@ -23,7 +23,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
     {
         echo "\n";
         echo "═══════════════════════════════════════════════════════\n";
-        echo "🧪 TEST: CREAR PEDIDO COMPLETO CON TODAS LAS RELACIONES\n";
+        echo " TEST: CREAR PEDIDO COMPLETO CON TODAS LAS RELACIONES\n";
         echo "═══════════════════════════════════════════════════════\n\n";
 
         DB::beginTransaction();
@@ -66,7 +66,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 'asesor_id' => $asesor->id,
                 'forma_de_pago' => 'CONTADO',
                 'estado' => 'PENDIENTE_SUPERVISOR',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'cantidad_total' => 0,
             ]);
             echo "   Pedido ID: {$pedido->id}\n";

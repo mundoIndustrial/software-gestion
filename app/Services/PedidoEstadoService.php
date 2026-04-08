@@ -215,7 +215,7 @@ class PedidoEstadoService extends BaseService
 
     /**
      * Método eliminado - ya no se asigna numero_pedido desde Supervisor
-     * El numero_pedido ahora se genera automáticamente al crear el pedido via PedidoWebService
+     * El numero_pedido ahora se genera automáticamente en la orquestación de creación del pedido
      */
 
     /**

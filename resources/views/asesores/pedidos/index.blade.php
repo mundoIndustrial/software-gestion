@@ -151,7 +151,7 @@
 <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
 
 <!-- Componente: Modal Editar Pedido -->
-@include('asesores.pedidos.components.modal-editar-pedido')
+@include('shared.pedidos.components.modal-editar-pedido')
 
 <!-- Componente: Modal Lista Prendas -->
 @include('asesores.pedidos.components.modal-prendas-lista')
@@ -163,10 +163,10 @@
 @include('asesores.pedidos.components.modal-editar-prenda')
 
 <!-- Componente: Modal Agregar EPP (mismo modal que en creación) -->
-@include('asesores.pedidos.modals.modal-agregar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')
 
 <!-- Componente: Modal Editar EPP -->
-@include('asesores.pedidos.components.modal-editar-epp')
+@include('shared.pedidos.components.modal-editar-epp')
 
 {{-- modal-agregar-prenda-nueva YA se incluye desde components/modals.blade.php --}}
 {{-- NO duplicar aquí para evitar "Identifier already declared" en todos los scripts --}}
@@ -177,6 +177,13 @@
 <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/swal-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-delete-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-save-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-edit-utils.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-agregar-pedido.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/epp-agregar-pedido.js') }}?v={{ $v }}"></script>
@@ -196,35 +203,53 @@
     window.modalContext = 'pedidos';
     window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function safeUpper(value) {
+        return escapeHtml(String(value ?? '').toUpperCase());
+    }
+
     //  REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
     function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
+        const motivoSafe = escapeHtml(motivo || 'No especificado');
+        const usuarioSafe = escapeHtml(usuario || 'Sistema');
+        const fechaSafe = escapeHtml(fecha || 'No disponible');
+        const numeroPedidoSafe = escapeHtml(numeroPedido);
+
         const html = `
             <div style="text-align: left;">
                 <div style="margin-bottom: 1.25rem;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Motivo</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #fef2f2; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #ef4444;">
-                        ${motivo || 'No especificado'}
+                        ${motivoSafe}
                     </div>
                 </div>
                 <div style="margin-bottom: 1.25rem;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Anulado por</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-user" style="color: #6b7280;"></i>
-                        ${usuario || 'Sistema'}
+                        ${usuarioSafe}
                     </div>
                 </div>
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Fecha y Hora</label>
                     <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-calendar" style="color: #6b7280;"></i>
-                        ${fecha || 'No disponible'}
+                        ${fechaSafe}
                     </div>
                 </div>
             </div>
         `;
         
         UI.contenido({
-            titulo: ` Motivo de anulación - Pedido #${numeroPedido}`,
+            titulo: ` Motivo de anulación - Pedido #${numeroPedidoSafe}`,
             html: html,
             ancho: '500px'
         });
@@ -239,7 +264,7 @@
                 UI.cargando('Cargando información...', 'Por favor espera');
             });
             
-            const response = await fetch(`/pedidos/${pedidoId}/factura-datos`);
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`);
             const result = await response.json();
             const data = result.data || result;
             
@@ -288,32 +313,32 @@
     function construirDescripcionComoPrenda(prenda, numero) {
         const lineas = [];
         if (prenda.nombre_prenda || prenda.nombre) {
-            lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${(prenda.nombre_prenda || prenda.nombre).toUpperCase()}</div>`);
+            lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${safeUpper(prenda.nombre_prenda || prenda.nombre)}</div>`);
         }
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${safeUpper(prenda.tela)}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${safeUpper(prenda.color)}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${safeUpper(prenda.ref)}`);
         if (prenda.variantes?.length > 0) {
             const manga = prenda.variantes[0].manga;
             if (manga) {
-                let mangaTexto = manga.toUpperCase();
+                let mangaTexto = safeUpper(manga);
                 if (prenda.variantes[0].manga_obs?.trim()) {
-                    mangaTexto += ` (${prenda.variantes[0].manga_obs.toUpperCase()})`;
+                    mangaTexto += ` (${safeUpper(prenda.variantes[0].manga_obs)})`;
                 }
                 partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
             }
         }
         if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
-        if (prenda.descripcion?.trim()) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${prenda.descripcion.toUpperCase()}</div>`);
+        if (prenda.descripcion?.trim()) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${safeUpper(prenda.descripcion)}</div>`);
         
         const detalles = [];
         if (prenda.variantes?.length > 0) {
             const v = prenda.variantes[0];
-            if (v.bolsillos_obs?.trim()) detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${v.bolsillos_obs.toUpperCase()}</div>`);
+            if (v.bolsillos_obs?.trim()) detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${safeUpper(v.bolsillos_obs)}</div>`);
             if (v.broche_obs?.trim()) {
-                const etiqueta = v.broche?.toUpperCase() || 'BROCHE/BOTÓN';
-                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${v.broche_obs.toUpperCase()}</div>`);
+                const etiqueta = safeUpper(v.broche || 'BROCHE/BOTÓN');
+                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${safeUpper(v.broche_obs)}</div>`);
             }
         }
         if (detalles.length > 0) lineas.push(...detalles);
@@ -328,21 +353,21 @@
     function construirDescripcionComoProceso(prenda, proceso) {
         const lineas = [];
         if (proceso.tipo_proceso || proceso.nombre_proceso) {
-            lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${(proceso.tipo_proceso || proceso.nombre_proceso).toUpperCase()}</div>`);
+            lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${safeUpper(proceso.tipo_proceso || proceso.nombre_proceso)}</div>`);
         }
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${safeUpper(prenda.tela)}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${safeUpper(prenda.color)}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${safeUpper(prenda.ref)}`);
         if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
         if (proceso.ubicaciones?.length > 0) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">UBICACIONES:</div>`);
-            proceso.ubicaciones.forEach(u => lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${u.toUpperCase()}</div>`));
+            proceso.ubicaciones.forEach(u => lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${safeUpper(u)}</div>`));
             lineas.push(`<div style="margin-bottom: 0.75rem;"></div>`);
         }
         if (proceso.observaciones?.trim()) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">OBSERVACIONES:</div>`);
-            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${proceso.observaciones.toUpperCase()}</div>`);
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${safeUpper(proceso.observaciones)}</div>`);
         }
         if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
@@ -376,11 +401,11 @@
         
         let resultado = '';
         if (Object.keys(tallasDama).length > 0) {
-            const tallasStr = Object.entries(tallasDama).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
+            const tallasStr = Object.entries(tallasDama).map(([t, c]) => `<span style="color: #dc2626;"><strong>${escapeHtml(t)}: ${escapeHtml(c)}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">DAMA: ${tallasStr}</div>`;
         }
         if (Object.keys(tallasCalballero).length > 0) {
-            const tallasStr = Object.entries(tallasCalballero).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
+            const tallasStr = Object.entries(tallasCalballero).map(([t, c]) => `<span style="color: #dc2626;"><strong>${escapeHtml(t)}: ${escapeHtml(c)}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">CABALLERO: ${tallasStr}</div>`;
         }
         return resultado;
@@ -400,14 +425,13 @@
 
     /**
      * Editar pedido - OPTIMIZADO CON LAZY LOADING
-     * 
      *  CAMBIOS:
      * - Carga módulos de edición bajo demanda (NO en la carga inicial)
      * - SIEMPRE hace fetch para obtener datos completos (modal necesita estructura completa)
      * - Tiempo: <100ms para lazy loader (cacheado), ~500ms para fetch datos
      */
     async function editarPedido(pedidoId) {
-        // 🔒 Prevenir múltiples clics simultáneos
+        //  Prevenir múltiples clics simultáneos
         if (window.edicionEnProgreso) {
             return;
         }
@@ -479,13 +503,13 @@
                 }
             } else {
                 etapas.modulosCargados = performance.now();
-                console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
+                console.log('[editarPedido]  Módulos ya precargados en background (cache)');
             }
 
             //  PASO 3: Fetch de datos mientras el modal ya está visible
             console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
 
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -547,7 +571,7 @@
 
             //  PASO 4: Reemplazar modal de carga con contenido real
             etapas.antes_modal = performance.now();
-            console.log(`[editarPedido] 🎬 Abriendo modal de edición...`);
+            console.log(`[editarPedido]  Abriendo modal de edición...`);
             
             await abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
             
@@ -589,6 +613,10 @@
                     <label for="editFormaPago" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
                     <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="editOrdenCompra" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Orden de Compra</label>
+                    <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                </div>
             </div>
         `;
         
@@ -602,7 +630,8 @@
             if (result.isConfirmed) {
                 const datosActualizados = {
                     cliente: document.getElementById('editCliente').value,
-                    forma_de_pago: document.getElementById('editFormaPago').value
+                    forma_de_pago: document.getElementById('editFormaPago').value,
+                    orden_compra: document.getElementById('editOrdenCompra').value
                 };
                 
                 // Abrir modal de justificación ANTES de guardar
@@ -620,8 +649,8 @@
             <div style="text-align: left;">
                 <div style="margin-bottom: 1rem;">
                     <label for="justificacion-cambio" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
-                    <textarea id="justificacion-cambio" 
-                        placeholder="Explica brevemente el motivo de los cambios..." 
+                    <textarea id="justificacion-cambio"
+                        placeholder="Explica brevemente el motivo de los cambios..."
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical;">
                     </textarea>
                 </div>
@@ -676,6 +705,7 @@
                 body: JSON.stringify({
                     cliente: datosActualizados.cliente || '',
                     forma_de_pago: datosActualizados.forma_de_pago || '',
+                    orden_compra: datosActualizados.orden_compra || '',
                     justificacion: datosActualizados.justificacion || ''
                 })
             });
@@ -698,6 +728,7 @@
             if (window.datosEdicionPedido) {
                 window.datosEdicionPedido.cliente = datosActualizados.cliente;
                 window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
+                window.datosEdicionPedido.orden_compra = datosActualizados.orden_compra;
                 if (data.data && data.data.novedades) {
                     window.datosEdicionPedido.novedades = data.data.novedades;
                 }
@@ -819,8 +850,8 @@
                 const numeroPedido = (row.getAttribute('data-numero-pedido') || '').toLowerCase();
                 const cliente = (row.getAttribute('data-cliente') || '').toLowerCase();
                 
-                const matches = !searchTerm || 
-                               numeroPedido.includes(searchTerm) || 
+                const matches = !searchTerm ||
+                               numeroPedido.includes(searchTerm) ||
                                cliente.includes(searchTerm);
 
                 if (matches) {
@@ -1004,24 +1035,28 @@
             let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
             htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
             lineas.forEach((linea) => {
+                const lineaSafe = escapeHtml(linea);
                 if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
-                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${lineaSafe}</div>`;
                 } else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${lineaSafe}</div>`;
                 } else if (linea.match(/^DESCRIPCIÓN:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea.startsWith('•') || linea.startsWith('-')) {
-                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${escapeHtml(linea.substring(1).trim())}</div>`;
                 } else if (linea.match(/^Tallas:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${lineaSafe}</strong></div>`;
                 } else if (linea) {
-                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${lineaSafe}</div>`;
                 }
             });
             htmlContenido += '</div>';
         });
+
+        const tituloSafe = escapeHtml(titulo);
+        const contenidoLimpioSafe = escapeHtml(contenidoLimpio);
         
         const modalHTML = `
             <div id="celdaModal" style="
@@ -1048,7 +1083,7 @@
                     animation: slideUp 0.3s ease;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">${titulo}</h2>
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">${tituloSafe}</h2>
                         <button onclick="cerrarModalCelda()" style="
                             background: #f3f4f6;
                             border: none;
@@ -1063,7 +1098,7 @@
                         </button>
                     </div>
                     <div style="color: #374151; line-height: 1.6;">
-                        ${htmlContenido || contenidoLimpio}
+                        ${htmlContenido || contenidoLimpioSafe}
                     </div>
                 </div>
             </div>
@@ -1110,7 +1145,7 @@
         let htmlContenido = '';
 
         bloques.forEach((bloque) => {
-            if (bloque.startsWith('📝')) {
+            if (bloque.startsWith('')) {
                 // Extraer información del registro [Usuario - Rol - Fecha]
                 let lineas = bloque.split('\n').filter(l => l.trim());
                 let primerLinea = lineas[0];
@@ -1120,21 +1155,26 @@
                 let match = primerLinea.match(/\[(.*?)\]/);
                 let info = match ? match[1] : '';
                 let novedad = primerLinea.replace(/\[.*?\]\n?/, '') || resto;
+                const infoSafe = escapeHtml(info);
+                const novedadSafe = escapeHtml(novedad);
+                const restoSafe = escapeHtml(resto);
                 
                 htmlContenido += `
                     <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%); border-left: 5px solid #0284c7; border-radius: 8px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);">
                         <div style="font-weight: 600; color: #0c4a6e; font-size: 0.9rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="font-size: 1.1rem;">👤</span> ${info}
+                            <span style="font-size: 1.1rem;">👤</span> ${infoSafe}
                         </div>
                         <div style="color: #1e40af; line-height: 1.6; font-size: 0.95rem;">
-                            ${resto || novedad}
+                            ${restoSafe || novedadSafe}
                         </div>
                     </div>
                 `;
             } else if (bloque.trim()) {
-                htmlContenido += `<div style="margin-bottom: 0.75rem; padding: 0.75rem; color: #374151; background: #f9fafb; border-radius: 6px; border-left: 3px solid #9ca3af;">${bloque}</div>`;
+                htmlContenido += `<div style="margin-bottom: 0.75rem; padding: 0.75rem; color: #374151; background: #f9fafb; border-radius: 6px; border-left: 3px solid #9ca3af;">${escapeHtml(bloque)}</div>`;
             }
         });
+
+        const numeroPedidoSafe = escapeHtml(numeroPedido);
 
         const modalHTML = `
             <div id="novedadesModal" style="
@@ -1161,7 +1201,7 @@
                     animation: slideUp 0.3s ease;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedido}</h2>
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedidoSafe}</h2>
                         <button onclick="cerrarModalNovedades()" style="
                             background: #f3f4f6;
                             border: none;
@@ -1327,7 +1367,6 @@
 
     /**
      *  INICIALIZACIÓN DE LAZY LOADERS
-     * 
      * Envuelve funciones de interfaz para cargar módulos bajo demanda
      */
     document.addEventListener('DOMContentLoaded', function() {
@@ -1395,14 +1434,24 @@
 
 <!-- Manejadores de procesos - Para edición de procesos desde pedidos/index -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-imagenes.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-<script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
 <script src="{{ asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}"></script>
 
 <!-- Función para actualizar estado del pedido -->
@@ -1513,4 +1562,3 @@
 
 
 @endpush
-

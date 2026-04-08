@@ -341,12 +341,12 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
         };
 
         const eliminarImagenActual = () => {
-            // 🔴 CORRECCIÓN: Detectar correctamente si estamos en modo edición o creación
+            //  CORRECCIÓN: Detectar correctamente si estamos en modo edición o creación
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             const modalVisible = modal && modal.style.display !== 'none';
             
             // Detectar si es modo edición (hay datos de edición cargados)
-            // ✅ Usar señales robustas: prenda en edición + input oculto del pedido
+            //  Usar señales robustas: prenda en edición + input oculto del pedido
             const pedidoIdDesdeDom = parseInt(document.getElementById('editarOrdenId')?.value || '0', 10);
             const esModoEdicion = !!(
                 window.modoEdicion === true ||
@@ -356,7 +356,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 (pedidoIdDesdeDom && pedidoIdDesdeDom > 0)
             );
             
-            console.log('[PrendaDragDropHandler] 🗑️ Modo detectado:', {
+            console.log('[PrendaDragDropHandler]  Modo detectado:', {
                 modalVisible,
                 esModoEdicion,
                 pedidoEditarId: window.pedidoEditarId,
@@ -366,7 +366,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             
             if (modalVisible && esModoEdicion) {
                 // Modo edición: marcar para eliminación diferida
-                console.log('[PrendaDragDropHandler] 🗑️ Modo edición detectado, marcando imagen para eliminación diferida');
+                console.log('[PrendaDragDropHandler]  Modo edición detectado, marcando imagen para eliminación diferida');
                 
                 // Inicializar array si no existe
                 if (!window.imagenesAEliminar) {
@@ -381,12 +381,12 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                     // Agregar ID al array si tiene ID y no está ya marcada
                     if (imagenAEliminar && imagenAEliminar.id && !window.imagenesAEliminar.includes(imagenAEliminar.id)) {
                         window.imagenesAEliminar.push(imagenAEliminar.id);
-                        console.log('[PrendaDragDropHandler] ✅ Imagen marcada para eliminación diferida:', {
+                        console.log('[PrendaDragDropHandler]  Imagen marcada para eliminación diferida:', {
                             id: imagenAEliminar.id,
                             totalMarcadas: window.imagenesAEliminar.length
                         });
 
-                        // 🔴 IMPORTANTE: sincronizar el STORAGE local eliminando la imagen
+                        //  IMPORTANTE: sincronizar el STORAGE local eliminando la imagen
                         // El preview y el collector leen desde imagenesPrendaStorage.
                         // Esto NO elimina del servidor; solo refleja el estado final antes de guardar.
                         try {
@@ -418,7 +418,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                         return;
                     } else if (imagenAEliminar && !imagenAEliminar.id) {
                         // Imagen nueva sin ID: eliminar inmediatamente del storage
-                        console.log('[PrendaDragDropHandler] 🗑️ Imagen nueva sin ID, eliminando inmediatamente');
+                        console.log('[PrendaDragDropHandler]  Imagen nueva sin ID, eliminando inmediatamente');
                         
                         // Eliminar del storage
                         if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.eliminarImagen) {
@@ -480,7 +480,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 if (typeof window.actualizarPreviewPrenda === 'function') {
                     window.actualizarPreviewPrenda();
                 } else if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
-                    // 🔴 ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
+                    //  ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
                     // Usar actualizarPreviewDespuesDeAgregar() en su lugar
                     PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                 }
@@ -551,7 +551,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual(conImagenes) {
-        UIHelperService.log('PrendaDragDropHandler', '🖱️ Iniciando pegado desde menú contextual...');
+        UIHelperService.log('PrendaDragDropHandler', ' Iniciando pegado desde menú contextual...');
         
         try {
             // Verificar límite de imágenes
@@ -573,7 +573,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 maxArchivos: this.maxImagenes - this.imagenesActuales.length
             });
 
-            UIHelperService.log('PrendaDragDropHandler', `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log('PrendaDragDropHandler', ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
@@ -588,7 +588,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log('PrendaDragDropHandler', '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log('PrendaDragDropHandler', ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -597,14 +597,14 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                     const archivos = [];
                     
                     for (const item of items) {
-                        UIHelperService.log('PrendaDragDropHandler', `🔍 Tipos en item: ${item.types.join(', ')}`);
+                        UIHelperService.log('PrendaDragDropHandler', ` Tipos en item: ${item.types.join(', ')}`);
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log('PrendaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log('PrendaDragDropHandler', ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log('PrendaDragDropHandler', `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log('PrendaDragDropHandler', ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `imagen-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type

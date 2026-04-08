@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,7 +15,7 @@ class TestImagenRelocalizador extends Command
     {
         $servicio = app(ImagenRelocalizadorService::class);
 
-        $this->info('🧪 Test: ImagenRelocalizadorService');
+        $this->info(' Test: ImagenRelocalizadorService');
         $this->info('');
 
         // Test 1: Formato ANTIGUO (prendas/2026/01/archivo.jfif)

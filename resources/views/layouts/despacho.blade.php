@@ -123,13 +123,45 @@
     }
 </script>
 
+<!-- CRÍTICO: Definir window.waitForEcho ANTES del resto de scripts -->
+<script>
+    window.echoReady = false;
+    window.echoReadyCallbacks = [];
+    
+    window.waitForEcho = function(callback) {
+        if (window.echoReady && window.EchoInstance) {
+            callback();
+        } else {
+            window.echoReadyCallbacks.push(callback);
+        }
+    };
+    
+    window.notifyEchoReady = function() {
+        window.echoReady = true;
+        while (window.echoReadyCallbacks.length > 0) {
+            const callback = window.echoReadyCallbacks.shift();
+            try {
+                callback();
+            } catch (error) {
+                console.error('[Layout]  Error ejecutando callback de Echo:', error);
+            }
+        }
+    };
+    
+    console.log('[Layout]  Stubs de window.waitForEcho() pre-inicializados');
+</script>
+
 <!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->
 @vite(['resources/js/app.js'])
+
+<!-- SHARED CORE - DEPENDENCY INJECTION CONTAINER (con cache compartido) -->
+<!-- DEBE CARGARSE ANTES de pedidos-realtime.js y notifications-realtime.js -->
+<script src="{{ asset('js/bundles/shared-core.min.js') }}"></script>
 
 <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para usuarios autorizados) -->
 @auth
 @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos') || auth()->user()->hasRole('despacho'))
-<script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+<script src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
 @endif
 @endauth
 
@@ -145,6 +177,7 @@
 <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
 <!-- Notifications realtime system (loaded once) -->
+<!-- REQUIERE shared-core.js que ya está cargado arriba -->
 <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
 
 @stack('scripts')

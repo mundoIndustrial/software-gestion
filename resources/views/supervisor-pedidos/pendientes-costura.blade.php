@@ -1,4 +1,4 @@
-@extends('supervisor-pedidos.layout')
+﻿@extends('supervisor-pedidos.layout')
 
 @section('title', 'Pendiente Costura')
 @section('page-title', 'Pendiente Costura')
@@ -132,6 +132,23 @@
         opacity: 1;
         transform: scale(1);
     }
+
+    [data-row="processo"] {
+        background: var(--row-bg-color, #ffffff) !important;
+        opacity: 1;
+        transition: background 0.2s ease, opacity 0.2s ease;
+    }
+
+    [data-row="processo"]:hover,
+    [data-row="processo"]:focus-within {
+        background: #f9fafb !important;
+    }
+
+    [data-row="processo"][data-color-stored]:not([data-color-stored=""]):hover,
+    [data-row="processo"][data-color-stored]:not([data-color-stored=""]):focus-within {
+        background: var(--row-bg-color, #ffffff) !important;
+        opacity: 0.9;
+    }
 </style>
 @endpush
 
@@ -141,7 +158,7 @@
         <div class="col-12">
             <div class="supervisor-pedidos-container">
                 <div id="supervisorPendientesCosturaContent">
-                <!-- Tabla de Órdenes -->
+                <!-- Tabla de Ordenes -->
                 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
                     <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
@@ -161,14 +178,14 @@
                             border-radius: 6px;
                         ">
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>Fecha de Creación</span>
-                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>Fecha de Creacion</span>
+                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>N° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>NÂ° Recibo</span>
+                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar NÂ° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
@@ -179,8 +196,8 @@
                                 </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>Área</span>
-                                <button type="button" class="btn-filter-column" data-col="area" title="Filtrar Área" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>Area</span>
+                                <button type="button" class="btn-filter-column" data-col="area" title="Filtrar Area" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
@@ -206,7 +223,7 @@
 
                         <div id="costurasRows">
                             <!-- Filas -->
-                            @if($procesosConCantidad->isEmpty())
+                            @if(empty($procesosConCantidad))
                                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                                     <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                                     <p style="font-size: 1rem; margin: 0;">No hay pendientes</p>
@@ -214,6 +231,7 @@
                             @else
                                 @foreach($procesosConCantidad as $proceso)
                                     <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
+                                        --row-bg-color: {{ $proceso['color_costura'] ?: '#ffffff' }};
                                         display: grid;
                                         grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
@@ -221,16 +239,15 @@
                                         border-bottom: 1px solid #e5e7eb;
                                         align-items: start;
                                         min-width: min-content;
-                                        background: white;
                                         transition: background 0.2s ease;
-                                    " onmouseover="mostrarHoverFila(this)" onmouseout="restaurarColorFila(this)">
+                                    ">
                                         
-                                        <!-- Fecha de Creación -->
+                                        <!-- Fecha de Creacion -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
                                         </div>
 
-                                        <!-- Número de Recibo -->
+                                        <!-- Numero de Recibo -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">
                                             {{ $proceso['numero_recibo'] }}
                                         </div>
@@ -240,7 +257,7 @@
                                             {{ $proceso['cliente'] }}
                                         </div>
 
-                                        <!-- Área -->
+                                        <!-- Area -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             @if($proceso['area'])
                                                 <span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">
@@ -248,7 +265,7 @@
                                                 </span>
                                             @else
                                                 <span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">
-                                                    Sin área
+                                                    Sin Area
                                                 </span>
                                             @endif
                                         </div>
@@ -389,7 +406,7 @@
 <!-- Modal de Novedades (mismo componente de /recibos-costura) -->
 <x-modals.novedades-edit-modal />
 
-<!-- Modal Filtro Dinámico -->
+<!-- Modal Filtro Dinamico -->
 <div id="modalFiltro" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
@@ -397,7 +414,7 @@
             <button class="btn-close" type="button" onclick="cerrarModalFiltro()">&times;</button>
         </div>
         <div class="modal-body" id="filtroContenido">
-            <!-- Contenido dinámico -->
+            <!-- Contenido Dinamico -->
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-primary" onclick="aplicarFiltroColumna(event)">Aplicar</button>
@@ -408,7 +425,8 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
+<script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
@@ -433,178 +451,6 @@ function openNovedadesModalRecibo(button) {
     }, 100);
 }
 
-function getValoresFiltroDesdeURL(columna) {
-    const url = new URL(window.location.href);
-
-    if (columna === 'fecha_creacion') {
-        const raw = url.searchParams.get('fecha_creacion') || '';
-        return raw ? [raw] : [];
-    }
-    if (columna === 'numero_recibo') {
-        const raw = url.searchParams.get('numero_recibo') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'cliente') {
-        const raw = url.searchParams.get('cliente') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'area') {
-        const raw = url.searchParams.get('area') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'prendas') {
-        const raw = url.searchParams.get('prendas') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'asesor') {
-        const raw = url.searchParams.get('asesor') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-
-    return [];
-}
-
-function asegurarBadgeEnBoton(btn) {
-    if (!btn) return null;
-    return btn.querySelector('.filter-badge');
-}
-
-function actualizarIndicadoresFiltros() {
-    document.querySelectorAll('.btn-filter-column').forEach((btn) => {
-        const col = btn.getAttribute('data-col');
-        const valores = col ? getValoresFiltroDesdeURL(col) : [];
-
-        const cantidad = valores.length;
-        let badge = asegurarBadgeEnBoton(btn);
-
-        if (cantidad > 0) {
-            btn.classList.add('has-filter');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'filter-badge';
-                btn.appendChild(badge);
-            }
-            badge.textContent = String(cantidad);
-        } else {
-            btn.classList.remove('has-filter');
-            if (badge) badge.remove();
-        }
-    });
-
-    window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
-}
-
-function abrirModalFiltro(columna) {
-    filtroActual = columna;
-    const modal = document.getElementById('modalFiltro');
-    const modalTitulo = document.getElementById('modalFiltroTitulo');
-    const filtroContenido = document.getElementById('filtroContenido');
-
-    const tituloMap = {
-        fecha_creacion: 'Filtrar Fecha de Creación',
-        numero_recibo: 'Filtrar N° Recibo',
-        cliente: 'Filtrar Cliente',
-        area: 'Filtrar Área',
-        prendas: 'Filtrar Prendas',
-        asesor: 'Filtrar Asesora'
-    };
-
-    modalTitulo.textContent = tituloMap[columna] || 'Filtrar';
-
-    if (columna === 'fecha_creacion') {
-        const actual = (getValoresFiltroDesdeURL('fecha_creacion')[0] || '');
-        filtroContenido.innerHTML = `
-            <div class="form-group">
-                <label for="filtroFecha" style="display:block; margin-bottom:0.5rem;">Fecha (YYYY-MM-DD)</label>
-                <input type="date" id="filtroFecha" class="form-control" value="${actual}">
-            </div>
-        `;
-        modal.style.display = 'flex';
-        return;
-    }
-
-    const endpoint = `/supervisor-pedidos/pendientes-costura/filtro-opciones/${columna}`;
-    filtroContenido.innerHTML = `<p style="color:#6b7280;">Cargando...</p>`;
-
-    fetch(endpoint)
-        .then(r => r.json())
-        .then(data => {
-            const opciones = Array.isArray(data.opciones) ? data.opciones : [];
-            const seleccionados = new Set(getValoresFiltroDesdeURL(columna));
-
-            filtroContenido.innerHTML = `
-                <div class="form-group">
-                    <input type="text" id="buscadorFiltro" class="form-control" placeholder="Buscar..." style="margin-bottom: 1rem;" />
-                    <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;">
-                        ${opciones.map(opcion => {
-                            const safeValue = (opcion === null || opcion === undefined) ? '' : String(opcion);
-                            const label = safeValue || '(Sin especificar)';
-                            const checked = seleccionados.has(safeValue) ? 'checked' : '';
-                            return `
-                                <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px;">
-                                    <input type="checkbox" class="filtro-checkbox" value="${escapeHtml(safeValue)}" ${checked} />
-                                    <span>${escapeHtml(label)}</span>
-                                </label>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-
-            setTimeout(() => {
-                document.getElementById('buscadorFiltro')?.addEventListener('input', function(e) {
-                    const valor = e.target.value.toLowerCase();
-                    document.querySelectorAll('#listaOpciones label').forEach(label => {
-                        const texto = label.textContent.toLowerCase();
-                        label.style.display = texto.includes(valor) ? 'flex' : 'none';
-                    });
-                });
-            }, 0);
-
-            modal.style.display = 'flex';
-        })
-        .catch(() => {
-            filtroContenido.innerHTML = `<p style="color: red;">Error cargando opciones de filtro</p>`;
-            modal.style.display = 'flex';
-        });
-}
-
-function cerrarModalFiltro() {
-    document.getElementById('modalFiltro').style.display = 'none';
-    filtroActual = null;
-}
-
-function limpiarFiltroActual() {
-    if (!filtroActual) return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete(filtroActual);
-    window.location.href = url.toString();
-    cerrarModalFiltro();
-}
-
-function aplicarFiltroColumna(event) {
-    event.preventDefault();
-    if (!filtroActual) return;
-
-    const url = new URL(window.location.href);
-
-    if (filtroActual === 'fecha_creacion') {
-        url.searchParams.delete('fecha_creacion');
-        const fecha = document.getElementById('filtroFecha')?.value;
-        if (fecha) url.searchParams.set('fecha_creacion', fecha);
-    } else {
-        const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
-        const values = Array.from(checkboxes).map(cb => cb.value);
-        url.searchParams.delete(filtroActual);
-        if (values.length > 0) {
-            url.searchParams.set(filtroActual, values.join(','));
-        }
-    }
-
-    cerrarModalFiltro();
-    navegarPendientesCostura(url.toString());
-}
-
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -614,57 +460,73 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
-document.addEventListener('click', function(e) {
-    const btn = e.target.closest('#supervisorPendientesCosturaContent .btn-filter-column');
-    if (!btn) return;
-    const col = btn.getAttribute('data-col');
-    if (!col) return;
-    e.preventDefault();
-    abrirModalFiltro(col);
+const receiptsFilters = window.SupervisorReceiptsApiFilters.create({
+    contentSelector: '#supervisorPendientesCosturaContent',
+    openButtonSelector: '#supervisorPendientesCosturaContent .btn-filter-column',
+    filterOptionsEndpoint: (columna) => `/api/supervisor-pedidos/recibos/pendientes-costura/filtro-opciones/${columna}`,
+    navigate: (url) => window.navegarPendientesCostura(url),
+    titleMap: {
+        fecha_creacion: 'Filtrar Fecha de Creación',
+        numero_recibo: 'Filtrar N° Recibo',
+        cliente: 'Filtrar Cliente',
+        area: 'Filtrar Área',
+        prendas: 'Filtrar Prendas',
+        asesor: 'Filtrar Asesora'
+    }
 });
 
-const overlay = document.getElementById('modalFiltro');
-if (overlay) {
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            cerrarModalFiltro();
-        }
-    });
+function abrirModalFiltro(columna) { receiptsFilters.open(columna); }
+function cerrarModalFiltro() { receiptsFilters.close(); }
+function aplicarFiltroColumna(event) { receiptsFilters.apply(event); }
+function limpiarFiltroActual() { receiptsFilters.clearCurrent(); }
+function actualizarIndicadoresFiltros() { receiptsFilters.refreshIndicators(); }
+
+receiptsFilters.bindUi();
+actualizarIndicadoresFiltros();
+
+function construirUrlApiPendientesCostura(urlString) {
+    const source = new URL(urlString, window.location.origin);
+    return `/api/supervisor-pedidos/recibos/pendientes-costura${source.search || ''}`;
 }
 
-actualizarIndicadoresFiltros();
+const receiptsRenderers = window.SupervisorReceiptsRenderers;
 
 window.navegarPendientesCostura = async function navegarPendientesCostura(urlString, options = {}) {
     const { pushState = true } = options;
     const container = document.getElementById('supervisorPendientesCosturaContent');
+    const rows = document.getElementById('costurasRows');
     if (!container) {
         window.location.href = urlString;
         return;
     }
+    if (!rows) return;
 
     try {
         container.style.opacity = '0.6';
         container.style.pointerEvents = 'none';
 
-        const res = await fetch(urlString, {
+        const apiUrl = construirUrlApiPendientesCostura(urlString);
+        const res = await fetch(apiUrl, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             },
             cache: 'no-store'
         });
 
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const next = doc.getElementById('supervisorPendientesCosturaContent');
-
-        if (!res.ok || !next) {
+        const payload = await res.json();
+        const procesos = payload?.data?.procesosConCantidad;
+        if (!res.ok || !Array.isArray(procesos)) {
             window.location.href = urlString;
             return;
         }
 
-        container.innerHTML = next.innerHTML;
+        if (procesos.length === 0) {
+            rows.innerHTML = receiptsRenderers.emptyStateHtml();
+        } else {
+            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml)).join('');
+        }
 
         if (pushState) {
             window.history.pushState({ url: urlString }, '', urlString);
@@ -680,14 +542,6 @@ window.navegarPendientesCostura = async function navegarPendientesCostura(urlStr
         container.style.opacity = '';
         container.style.pointerEvents = '';
     }
-}
-
-function limpiarFiltroActual() {
-    if (!filtroActual) return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete(filtroActual);
-    cerrarModalFiltro();
-    navegarPendientesCostura(url.toString());
 }
 
 window.addEventListener('popstate', function() {
@@ -717,41 +571,16 @@ document.addEventListener('click', function(e) {
     navegarPendientesCostura(urlAbs);
 });
 
-// Funcionalidad de selector de colores con persistencia en BD
-function mostrarHoverFila(elemento) {
-    const colorGuardado = elemento.getAttribute('data-color-stored');
-    if (colorGuardado && colorGuardado.trim()) {
-        // Si tiene color guardado, usar un hover más suave
-        elemento.style.background = colorGuardado;
-        elemento.style.opacity = '0.9';
-    } else {
-        // Si no tiene color, usar el hover gris
-        elemento.style.background = '#f9fafb';
-    }
-}
-
-function restaurarColorFila(elemento) {
-    const colorGuardado = elemento.getAttribute('data-color-stored');
-    if (colorGuardado && colorGuardado.trim()) {
-        // Restaurar el color guardado
-        elemento.style.background = colorGuardado;
-        elemento.style.opacity = '1';
-    } else {
-        // Si no tiene color, volver a blanco
-        elemento.style.background = 'white';
-    }
-}
-
 function inicializarSelectorColores() {
-    // Aplicar colores guardados al cargar la página
+    // Aplicar colores guardados al cargar la pagina
     document.querySelectorAll('[data-row="processo"]').forEach((fila) => {
         const color = fila.getAttribute('data-color-stored');
         
         if (color && color.trim()) {
             // Aplicar el color al fondo de la fila
-            fila.style.backgroundColor = color;
+            fila.style.setProperty('--row-bg-color', color);
             
-            // Encontrar y marcar el botón correspondiente
+            // Encontrar y marcar el boton correspondiente
             const wrapper = fila.querySelector('.color-selector-wrapper');
             if (wrapper) {
                 wrapper.querySelectorAll('.color-btn').forEach(btn => {
@@ -773,10 +602,10 @@ function inicializarSelectorColores() {
             const filaBg = wrapper.closest('[data-row="processo"]');
 
             // Aplicar color a la fila
-            filaBg.style.backgroundColor = color;
+            filaBg.style.setProperty('--row-bg-color', color);
             filaBg.setAttribute('data-color-stored', color);
             
-            // Retroalimentación visual
+            // Retroalimentacion visual
             wrapper.querySelectorAll('.color-btn').forEach(b => b.style.boxShadow = '');
             this.style.boxShadow = '0 0 0 2px #1e40af';
             
@@ -793,11 +622,11 @@ if (document.readyState === 'loading') {
     inicializarSelectorColores();
 }
 
-// Función para guardar el color en la BD
+// Funcion para guardar el color en la BD
 function guardarColorCostura(reciboId, color) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
-    fetch('/supervisor-pedidos/guardar-color-costura', {
+    fetch('/api/supervisor-pedidos/recibos/guardar-color-costura', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -814,3 +643,7 @@ function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
+
+
+
+

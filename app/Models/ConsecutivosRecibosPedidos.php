@@ -20,6 +20,8 @@ class ConsecutivosRecibosPedidos extends Model
         'area',
         'notas',
         'marcar_plooter',
+        'dia_de_entrega',
+        'fecha_estimada_de_entrega',
     ];
 
     protected $casts = [
@@ -41,6 +43,14 @@ class ConsecutivosRecibosPedidos extends Model
     public function prenda()
     {
         return $this->belongsTo(PrendaPedido::class, 'prenda_id');
+    }
+
+    /**
+     * Relación: Un consecutivo puede tener un registro en plooter
+     */
+    public function plooter()
+    {
+        return $this->hasOne(Plooter::class, 'consecutivo_recibo_pedido_id');
     }
 
     /**

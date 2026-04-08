@@ -137,7 +137,7 @@ foreach ($tiposPorPrenda as $prendaId => $tipos) {
 }
 ```
 
-## 💾 Estructura de Datos
+##  Estructura de Datos
 
 ### Tablas Involucradas
 

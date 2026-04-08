@@ -3,11 +3,10 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Validators\PedidoJSONValidator;
+use App\Application\Pedidos\Validators\PedidoJSONValidator;
 
 /**
  * Use Case: Validar Pedido desde JSON
- * 
  * Responsabilidad:
  * - Validar estructura del JSON del pedido
  * - Retornar errores si hay

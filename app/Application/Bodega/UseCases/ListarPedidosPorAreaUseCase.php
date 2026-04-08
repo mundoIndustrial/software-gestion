@@ -101,7 +101,7 @@ class ListarPedidosPorAreaUseCase
         // Estados por defecto para pedidos activos
         return [
             'ENTREGADO',
-            'EN EJECUCIÓN', 
+            'EN EJECUCIÓN',
             'NO INICIADO',
             'ANULADA',
             'PENDIENTE_SUPERVISOR',

@@ -3,7 +3,7 @@
 namespace App\Domain\Pedidos\Services;
 
 use App\Domain\Pedidos\ValueObjects\VariacionPrenda;
-use App\Application\Pedidos\DTOs\VariacionPrendaDTO;
+use App\Domain\Pedidos\DTOs\VariacionPrendaDTO;
 use App\Domain\Pedidos\Enums\TipoVariacion;
 
 /**

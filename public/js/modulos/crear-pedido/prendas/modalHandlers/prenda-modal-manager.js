@@ -1,5 +1,5 @@
 /**
- * 🎯 Módulo de Manejo del Modal
+ *  Módulo de Manejo del Modal
  * Responsabilidad: Abrir, cerrar, limpiar y gestionar el modal
  */
 
@@ -11,8 +11,8 @@ class PrendaModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             // Usar UIModalService para manejar el scroll del body
-            if (window.UI && typeof window.UI.abrirModal === 'function') {
-                window.UI.abrirModal(modalId, {
+            if (globalThis.UI && typeof globalThis.UI.abrirModal === 'function') {
+                globalThis.UI.abrirModal(modalId, {
                     display: 'flex',
                     closeOnClickOutside: false,
                     closeOnEsc: false,
@@ -37,8 +37,8 @@ class PrendaModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             // Usar UIModalService para manejar el scroll del body
-            if (window.UI && typeof window.UI.cerrarModal === 'function') {
-                window.UI.cerrarModal(modalId, {
+            if (globalThis.UI && typeof globalThis.UI.cerrarModal === 'function') {
+                globalThis.UI.cerrarModal(modalId, {
                     animate: false
                 });
             } else {
@@ -50,7 +50,7 @@ class PrendaModalManager {
             console.log(` [Modal] Cerrado: ${modalId}`);
             
             // Resetear FSM para permitir reabrir
-            const fsm = window.__MODAL_FSM__;
+            const fsm = globalThis.__MODAL_FSM__;
             if (fsm && fsm.obtenerEstado() !== 'CLOSED') {
                 fsm.estado = 'CLOSED';
             }
@@ -58,7 +58,7 @@ class PrendaModalManager {
     }
 
     /**
-     * Limpiar todo el contenido del modal
+     * Limpiar el contenido del modal
      */
     static limpiar(modalId = 'modal-agregar-prenda-nueva') {
         const modal = document.getElementById(modalId);
@@ -143,8 +143,8 @@ class PrendaModalManager {
      * Mostrar notificación
      */
     static mostrarNotificacion(mensaje, tipo = 'info') {
-        if (typeof window.Swal !== 'undefined') {
-            window.Swal.fire({
+        if (typeof globalThis.Swal !== 'undefined') {
+            globalThis.Swal.fire({
                 icon: tipo === 'error' ? 'error' : tipo === 'success' ? 'success' : 'info',
                 title: tipo === 'error' ? 'Error' : tipo === 'success' ? 'Éxito' : 'Información',
                 text: mensaje,

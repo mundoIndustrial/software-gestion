@@ -3,11 +3,11 @@
  * Gestiona las operaciones CRUD de asignaciones de colores por talla
  */
 
-window.AsignacionManager = (function() {
+globalThis.AsignacionManager = (function() {
     'use strict';
 
     // Verificar dependencias
-    if (!window.StateManager) {
+    if (!globalThis.StateManager) {
         console.error('[AsignacionManager]  StateManager no está disponible. Asegúrate de cargar StateManager.js antes que AsignacionManager.js');
         return {};
     }
@@ -159,7 +159,7 @@ window.AsignacionManager = (function() {
             
             const colorObj = asignacion.colores.find(c => c.nombre === color);
             if (colorObj) {
-                colorObj.cantidad = parseInt(nuevaCantidad) || 0;
+                colorObj.cantidad = Number(nuevaCantidad) || 0;
                 StateManager.setAsignaciones(asignaciones);
                 console.log('[AsignacionManager] Cantidad actualizada:', clave, color, colorObj.cantidad);
                 return true;
@@ -249,7 +249,7 @@ window.AsignacionManager = (function() {
             asignaciones.forEach(asignacion => {
                 if (asignacion.colores) {
                     asignacion.colores.forEach(color => {
-                        const cantidad = parseInt(color.cantidad) || 0;
+                        const cantidad = Number(color.cantidad) || 0;
                         totalUnidades += cantidad;
                     });
                 }
@@ -262,15 +262,15 @@ window.AsignacionManager = (function() {
          * Obtener colores disponibles de los arrays de telas
          */
         obtenerColoresDisponibles() {
-            console.log('[AsignacionManager] 🔵 Obteniendo colores disponibles...');
+            console.log('[AsignacionManager]  Obteniendo colores disponibles...');
             
             const colores = [];
             
-            // Primero intentar desde window.telasCreacion
-            if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                console.log('[AsignacionManager] 📖 Leyendo desde window.telasCreacion:', window.telasCreacion);
+            // Primero intentar desde globalThis.telasCreacion
+            if (globalThis.telasCreacion && Array.isArray(globalThis.telasCreacion) && globalThis.telasCreacion.length > 0) {
+                console.log('[AsignacionManager]  Leyendo desde globalThis.telasCreacion:', globalThis.telasCreacion);
                 
-                window.telasCreacion.forEach((tela, idx) => {
+                globalThis.telasCreacion.forEach((tela, idx) => {
                     const color = (tela.color || tela.color_nombre || '').trim().toUpperCase();
                     const telaName = (tela.tela || tela.nombre_tela || tela.nombre || '').trim().toUpperCase();
                     
@@ -283,11 +283,11 @@ window.AsignacionManager = (function() {
                 });
             }
             
-            // Si no hay en telasCreacion, intentar desde window.telasAgregadas
-            if (colores.length === 0 && window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                console.log('[AsignacionManager] 📖 Leyendo desde window.telasAgregadas:', window.telasAgregadas);
+            // Si no hay en telasCreacion, intentar desde globalThis.telasAgregadas
+            if (colores.length === 0 && globalThis.telasAgregadas && Array.isArray(globalThis.telasAgregadas) && globalThis.telasAgregadas.length > 0) {
+                console.log('[AsignacionManager]  Leyendo desde globalThis.telasAgregadas:', globalThis.telasAgregadas);
                 
-                window.telasAgregadas.forEach((tela, idx) => {
+                globalThis.telasAgregadas.forEach((tela, idx) => {
                     const color = (tela.color || tela.color_nombre || '').trim().toUpperCase();
                     const telaName = (tela.tela || tela.nombre_tela || tela.nombre || '').trim().toUpperCase();
                     

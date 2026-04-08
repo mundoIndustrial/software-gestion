@@ -5,7 +5,7 @@
         return '';
     }
 
-    window.__despachoObsCtx = window.__despachoObsCtx || { pedidoId: null };
+    globalThis.__despachoObsCtx = globalThis.__despachoObsCtx || { pedidoId: null };
 
     // ==================== NOVEDADES BADGE (DESPACHO) ====================
     function __countNovedadesFromText(text) {
@@ -26,7 +26,7 @@
     }
 
     function __renderNovedadesBadge(pedidoId, count) {
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         if (!isDespachoPage) return;
         const btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
         if (!btn) return;
@@ -56,7 +56,7 @@
     }
 
     function refrescarBadgesNovedadesDespacho() {
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         if (!isDespachoPage) return;
         const previews = Array.from(document.querySelectorAll('textarea.despacho-novedades-preview[data-pedido-id]'));
         previews.forEach(el => {
@@ -77,7 +77,7 @@
         try {
             const data = localStorage.getItem(BADGE_STORAGE_KEY);
             const seen = data ? JSON.parse(data) : {};
-            console.log(`[DEBUG-BADGE] 📖 getSeenBadges - badges vistos:`, seen);
+            console.log(`[DEBUG-BADGE]  getSeenBadges - badges vistos:`, seen);
             return seen;
         } catch (e) {
             console.warn('[DEBUG-BADGE] Error leyendo localStorage:', e);
@@ -91,7 +91,7 @@
             const seen = getSeenBadges();
             seen[pedidoId] = Date.now();
             localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
-            console.log(`[DEBUG-BADGE] 💾 setBadgeSeen - Pedido ${pedidoId} marcado como visto`);
+            console.log(`[DEBUG-BADGE]  setBadgeSeen - Pedido ${pedidoId} marcado como visto`);
             console.log(`[DEBUG-BADGE] - Timestamp: ${seen[pedidoId]}`);
             console.log(`[DEBUG-BADGE] - Total badges vistos: ${Object.keys(seen).length}`);
         } catch (e) {
@@ -103,7 +103,7 @@
     function isBadgeRecentlySeen(pedidoId) {
         const seen = getSeenBadges();
         const seenTime = seen[pedidoId];
-        console.log(`[DEBUG-BADGE] 🔍 isBadgeRecentlySeen - Pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE]  isBadgeRecentlySeen - Pedido ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - seenTime: ${seenTime}`);
         
         if (!seenTime) {
@@ -152,15 +152,21 @@
     }
 
     function __renderBadge(pedidoId, count) {
-        console.log(`[DEBUG-BADGE] 🎨 __renderBadge INICIADO`);
+        console.log(`[DEBUG-BADGE] __renderBadge INICIADO`);
         console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - Count (unread): ${count}`);
 
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
 
         // Buscar en botones de despacho primero
-        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        let btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
         console.log(`[DEBUG-BADGE] - Botón despacho encontrado:`, !!btn);
+        
+        if (!btn) {
+            // Buscar en botones antiguos de despacho (backward compatibility)
+            btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+            console.log(`[DEBUG-BADGE] - Botón despacho (legacy) encontrado:`, !!btn);
+        }
         
         if (!btn) {
             // Buscar en botones de asesores/pedidos
@@ -171,7 +177,7 @@
         console.log(`[DEBUG-BADGE] - Botón final a usar:`, btn);
         
         if (!btn) {
-            console.warn(`[DEBUG-BADGE] ❌ No se encontró botón para pedido ${pedidoId}`);
+            console.warn(`[DEBUG-BADGE]  No se encontró botón para pedido ${pedidoId}`);
             return;
         }
 
@@ -240,11 +246,9 @@
     }
 
     async function refrescarBadgesObservacionesDespacho() {
-        console.log(`[DEBUG] 🔄 refrescarBadgesObservacionesDespacho INICIADO`);
         
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
-            console.log(`[DEBUG] - Filas encontradas con data-pedido-id: ${rows.length}`);
             
             const ids = rows
                 .map(r => r.getAttribute('data-pedido-id'))
@@ -252,24 +256,16 @@
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
 
-            console.log(`[DEBUG] - IDs de pedidos extraídos:`, ids);
-
             if (ids.length === 0) {
-                console.log(`[DEBUG] 🚫 No hay IDs de pedidos, saliendo`);
                 return;
             }
 
             // Detectar si estamos en despacho o asesores
-            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const isDespachoPage = globalThis.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? '/despacho/observaciones/resumen'
-                : '/asesores/pedidos/observaciones-despacho/resumen';
-                
-            console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
-            console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
-            console.log(`[DEBUG] - URL a consultar: ${url}`);
+                : '/api/asesores/pedidos/observaciones-despacho/resumen';
 
-            console.log(`[DEBUG] 📡 Enviando request al servidor...`);
             const r = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -281,25 +277,17 @@
                 cache: 'no-store',
             });
 
-            console.log(`[DEBUG] - Response status: ${r.status}`);
-            console.log(`[DEBUG] - Response ok: ${r.ok}`);
-
             const data = await r.json().catch(() => null);
-            console.log(`[DEBUG] 📦 Respuesta del servidor:`, data);
             
             const map = (data && data.success && data.data) ? data.data : {};
-            console.log(`[DEBUG] - Map de unread counts:`, map);
 
-            console.log(`[DEBUG] 🎨 Renderizando badges para cada pedido...`);
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
-                console.log(`[DEBUG] - Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
             
-            console.log(`[DEBUG] ✅ Refrescado de badges completado`);
         } catch (e) {
-            console.error('[DEBUG] ❌ Error refrescando badges de observaciones despacho:', e);
+            console.error('Error refrescando badges de observaciones despacho:', e);
         }
     }
 
@@ -315,7 +303,7 @@
         console.log(`[DEBUG-BADGE] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
         
         try {
-            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const isDespachoPage = globalThis.location.pathname.includes('/despacho');
             // DESPACHO: no persistimos visto ni limpiamos badge
             if (!isDespachoPage) {
                 setBadgeSeen(pedidoId);
@@ -324,7 +312,7 @@
             // Detectar si estamos en despacho o asesores
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
-                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
                 
             console.log(`[DEBUG-BADGE] Marcando notificaciones como vistas en: ${url}`);
             
@@ -363,12 +351,10 @@
 
     async function __fetchObservacionesDespacho(pedidoId) {
         // Detectar si estamos en despacho o asesores
-        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const isDespachoPage = globalThis.location.pathname.includes('/despacho');
         const url = isDespachoPage 
             ? `/despacho/${pedidoId}/observaciones`
-            : `/asesores/pedidos/${pedidoId}/observaciones-despacho`;
-            
-        console.log(`[DEBUG] Obteniendo observaciones desde: ${url}`);
+            : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho`;
         
         const r = await fetch(url, {
             method: 'GET',
@@ -407,7 +393,7 @@
     }
 
     async function cargarObservacionesDespachoIndex() {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         const historial = document.getElementById('observacionesDespachoIndexHistorial');
         if (!pedidoId || !historial) return;
 
@@ -431,10 +417,10 @@
             items.forEach(item => {
                 const source = (item.source || 'despacho');
                 const esEditable = source === 'despacho';
-                const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
+                const puedeEditar = esEditable && (String(item.usuario_id) === String(globalThis.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
-                    <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar"></button>
+                    <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
                 const fecha = item.updated_at || item.created_at || '';
                 const rol = item.usuario_rol ? ` <span style="color:#64748b;font-weight:600;">(${item.usuario_rol})</span>` : '';
@@ -467,7 +453,7 @@
     async function abrirModalObservacionesDespachoIndex(pedidoId, numeroPedido) {
         console.log(`[DEBUG-BADGE] abrirModalObservacionesDespachoIndex llamado - pedidoId: ${pedidoId}, numeroPedido: ${numeroPedido}`);
         
-        window.__despachoObsCtx = { pedidoId };
+        globalThis.__despachoObsCtx = { pedidoId };
         const modal = document.getElementById('modalObservacionesDespachoIndex');
         const title = document.getElementById('modalObsDespachoTitle');
         if (title) title.textContent = `Observaciones - Pedido ${numeroPedido || ''}`;
@@ -499,7 +485,7 @@
     }
 
     async function guardarObservacionDespachoIndex() {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         const textarea = document.getElementById('observacionesDespachoIndexNueva');
         const contenido = (textarea?.value || '').trim();
@@ -536,7 +522,7 @@
     }
 
     function editarObservacionDespachoIndex(observacionId) {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         const card = document.querySelector(`#modalObservacionesDespachoIndex [data-obs-id="${observacionId}"]`);
         if (!card) return;
@@ -776,7 +762,7 @@
     }
 
     async function eliminarObservacionDespachoIndex(observacionId) {
-        const pedidoId = window.__despachoObsCtx?.pedidoId;
+        const pedidoId = globalThis.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
         mostrarModalConfirmacion(
             'Eliminar observación',
@@ -805,25 +791,25 @@
         );
     }
 
-    window.abrirModalObservacionesDespachoIndex = abrirModalObservacionesDespachoIndex;
-    window.cerrarModalObservacionesDespachoIndex = cerrarModalObservacionesDespachoIndex;
-    window.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
-    window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
-    window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
+    globalThis.abrirModalObservacionesDespachoIndex = abrirModalObservacionesDespachoIndex;
+    globalThis.cerrarModalObservacionesDespachoIndex = cerrarModalObservacionesDespachoIndex;
+    globalThis.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
+    globalThis.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
+    globalThis.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
 
     // Si el listado /despacho ya no incluye el modal/columna de observaciones,
     // evita dejar funciones globales expuestas que solo generan warnings.
     document.addEventListener('DOMContentLoaded', function () {
-        const enDespachoIndex = window.location.pathname === '/despacho' || window.location.pathname === '/despacho/';
+        const enDespachoIndex = globalThis.location.pathname === '/despacho' || globalThis.location.pathname === '/despacho/';
         const modal = document.getElementById('modalObservacionesDespachoIndex');
         const tienePreview = !!document.querySelector('.despacho-observaciones-preview');
         if (enDespachoIndex && !modal && !tienePreview) {
             try {
-                delete window.abrirModalObservacionesDespachoIndex;
-                delete window.cerrarModalObservacionesDespachoIndex;
-                delete window.guardarObservacionDespachoIndex;
-                delete window.editarObservacionDespachoIndex;
-                delete window.eliminarObservacionDespachoIndex;
+                delete globalThis.abrirModalObservacionesDespachoIndex;
+                delete globalThis.cerrarModalObservacionesDespachoIndex;
+                delete globalThis.guardarObservacionDespachoIndex;
+                delete globalThis.editarObservacionDespachoIndex;
+                delete globalThis.eliminarObservacionDespachoIndex;
             } catch (e) {
                 // no-op
             }
@@ -831,9 +817,9 @@
     });
     
     // Hacer funciones de localStorage disponibles globalmente
-    window.getSeenBadges = getSeenBadges;
-    window.setBadgeSeen = setBadgeSeen;
-    window.isBadgeRecentlySeen = isBadgeRecentlySeen;
+    globalThis.getSeenBadges = getSeenBadges;
+    globalThis.setBadgeSeen = setBadgeSeen;
+    globalThis.isBadgeRecentlySeen = isBadgeRecentlySeen;
 
     // ==================== INSERTAR PEDIDO EN TIEMPO REAL ====================
     function getEstadoBadgeClass(estado) {
@@ -864,7 +850,7 @@
         const cliente = orden.cliente || orden.cliente_nombre || '—';
         const estado = orden.estado || orden.state || 'Pendiente';
         const estadoDisplay = estado.replace(/_/g, ' ');
-        const fechaCreacion = orden.fecha_de_creacion_de_orden || orden.created_at || '—';
+        const fechaCreacion = orden.created_at || orden.created_at || '—';
         const fechaEntrega = orden.fecha_estimada_de_entrega || orden.fecha_estimada || '—';
 
         // Formatear fechas
@@ -936,14 +922,14 @@
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtime() {
-        if (!window.EchoInstance) {
+        if (!globalThis.EchoInstance) {
             console.warn('[Despacho] EchoInstance no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtime, 2000);
             return;
         }
 
         // Escuchar canal general de despacho (observaciones)
-        window.EchoInstance.channel('despacho.observaciones')
+        globalThis.EchoInstance.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log(`[DEBUG-BADGE] 🚨 Evento WebSocket recibido en canal despacho.observaciones:`, e);
                 console.log(`[DEBUG-BADGE] Pedido ID: ${e?.pedido_id}, Action: ${e?.action}`);
@@ -959,7 +945,7 @@
                 __renderBadge(pedidoId, 1); // Mostrar al menos 1
 
                 // Si el modal está abierto para este pedido, recargar observaciones
-                const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                const currentPedidoId = globalThis.__despachoObsCtx?.pedidoId;
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     console.log(`[DEBUG-BADGE] Modal abierto para este pedido, recargando observaciones`);
                     cargarObservacionesDespachoIndex();
@@ -972,7 +958,7 @@
             });
 
         // Escuchar canal de ordenes para nuevos pedidos aprobados
-        window.EchoInstance.channel('ordenes')
+        globalThis.EchoInstance.channel('ordenes')
             .listen('.orden.updated', (e) => {
                 console.log('[Despacho] Evento orden.updated recibido:', e);
 
@@ -1002,7 +988,7 @@
             });
 
         // Escuchar actualizaciones de pedido (incluye novedades) para actualizar badge en tiempo real
-        window.EchoInstance.channel('despacho.pedidos')
+        globalThis.EchoInstance.channel('pedidos.general')
             .listen('.pedido.actualizado', (e) => {
                 const pedidoId = e?.pedido_id || e?.pedido?.id;
                 if (!pedidoId) return;
@@ -1027,13 +1013,13 @@
             const pedidoId = row.getAttribute('data-pedido-id');
             if (!pedidoId) return;
 
-            window.EchoInstance.channel(`pedido.${pedidoId}`)
+            globalThis.EchoInstance.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
 
                     __renderBadge(pedidoId, 1);
 
-                    const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                    const currentPedidoId = globalThis.__despachoObsCtx?.pedidoId;
                     if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                         cargarObservacionesDespachoIndex();
                     }
@@ -1046,39 +1032,27 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log(`[DEBUG] 🚀 DOMContentLoaded - Iniciando sistema de badges`);
-        console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
-        console.log(`[DEBUG] - URL completa: ${window.location.href}`);
         
         try {
-            console.log(`[DEBUG] 🔍 Buscando filas con data-pedido-id...`);
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
             const ids = rows.map(r => r.getAttribute('data-pedido-id')).filter(Boolean);
-            console.log(`[DEBUG] - Filas encontradas: ${rows.length}`);
-            console.log(`[DEBUG] - IDs encontrados:`, ids);
             
             const ejecutar = async () => {
-                console.log(`[DEBUG] ⏰ Iniciando carga de previews...`);
                 for (const id of ids) {
-                    console.log(`[DEBUG] - Cargando preview para pedido ${id}...`);
                     await cargarPreviewObservacionesDespacho(id);
                     await new Promise(r => setTimeout(r, 25));
                 }
-                console.log(`[DEBUG] ✅ Previews cargados`);
                 
                 // Refresh badges after loading previews
-                console.log(`[DEBUG] 🔄 Refrescando badges después de cargar previews...`);
                 await refrescarBadgesObservacionesDespacho();
                 refrescarBadgesNovedadesDespacho();
 
                 // Setup WebSocket para tiempo real
-                console.log(`[DEBUG] 📡 Configurando WebSocket...`);
                 setupObservacionesRealtime();
-                console.log(`[DEBUG] ✅ Sistema de badges completamente inicializado`);
             };
             ejecutar();
         } catch (e) {
-            console.error('[DEBUG] ❌ Error inicializando previews de observaciones despacho:', e);
+            console.error('Error inicializando previews de observaciones despacho:', e);
         }
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
@@ -1087,28 +1061,24 @@
             const botonObs = e.target.closest('.despacho-obs-btn[data-pedido-id]');
             if (botonObs) {
                 const pedidoId = botonObs.getAttribute('data-pedido-id');
-                console.log(`[DEBUG-BADGE] 🖱️ USUARIO HIZO CLIC EN BOTÓN DE OBSERVACIONES`);
-                console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
-                console.log(`[DEBUG-BADGE] - Botón:`, botonObs);
-                console.log(`[DEBUG-BADGE] - Event target:`, e.target);
                 
                 // Verificar estado actual antes de marcar
                 const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-                console.log(`[DEBUG-BADGE] - ¿Era visto recientemente antes del clic?: ${wasRecentlySeen}`);
                 
                 // Marcar como visto en localStorage inmediatamente
-                console.log(`[DEBUG-BADGE] 📝 Marcando como visto en localStorage...`);
+                console.log(`[DEBUG-BADGE]  Marcando como visto en localStorage...`);
                 setBadgeSeen(pedidoId);
-                console.log(`[DEBUG-BADGE] ✅ Marcado como visto en localStorage`);
+                console.log(`[DEBUG-BADGE]  Marcado como visto en localStorage`);
                 
                 // También marcar como visto en el backend
-                console.log(`[DEBUG-BADGE] 📡 Marcando como visto en el backend...`);
+                console.log(`[DEBUG-BADGE]  Marcando como visto en el backend...`);
                 marcarNotificacionesComoVistas(pedidoId);
-                console.log(`[DEBUG-BADGE] ✅ Solicitado marcado como visto en backend`);
+                console.log(`[DEBUG-BADGE]  Solicitado marcado como visto en backend`);
                 
-                console.log(`[DEBUG-BADGE] 🎯 Badge ${pedidoId} marcado como visto por clic del usuario`);
-                console.log(`[DEBUG-BADGE] 🔄 El badge debería desaparecer ahora`);
+                console.log(`[DEBUG-BADGE]  Badge ${pedidoId} marcado como visto por clic del usuario`);
+                console.log(`[DEBUG-BADGE]  El badge debería desaparecer ahora`);
             }
         });
     });
 })();
+

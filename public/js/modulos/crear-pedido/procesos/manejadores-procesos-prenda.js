@@ -5,14 +5,16 @@
  * Coordina la apertura de modales genéricos y el resumen de procesos seleccionados
  */
 
-let procesosSeleccionados = {};
+let procesosSeleccionados = globalThis.procesosSeleccionados && typeof globalThis.procesosSeleccionados === 'object'
+    ? globalThis.procesosSeleccionados
+    : {};
 
-// Exponer en window para acceso global
-window.procesosSeleccionados = procesosSeleccionados;
+// Exponer en globalThis para acceso global
+globalThis.procesosSeleccionados = procesosSeleccionados;
 
-// 🆕 ALMACENAJE PERSISTENTE: Guardar procesos aunque se limpie procesosSeleccionados
+//  ALMACENAJE PERSISTENTE: Guardar procesos aunque se limpie procesosSeleccionados
 // Estructura: { 'reflectivo': { tipo: 'reflectivo', datos: {...}, indiceResultado: 1 }, ... }
-window.procesosGuardados = window.procesosGuardados || {};
+globalThis.procesosGuardados = globalThis.procesosGuardados || {};
 
 const procesosIconos = {
     reflectivo: 'light_mode',
@@ -35,39 +37,46 @@ const procesosNombres = {
  * @param {string} tipoProceso - reflectivo, bordado, estampado, dtf, sublimado
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
-window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
-
-    
-    if (estaChecked) {
-        // Registrar el proceso
-        if (!procesosSeleccionados[tipoProceso]) {
-            procesosSeleccionados[tipoProceso] = {
+function marcarProceso(tipoProceso) {
+    if (!procesosSeleccionados[tipoProceso]) {
+        procesosSeleccionados[tipoProceso] = {
+            tipo: tipoProceso,
+            datos: {
                 tipo: tipoProceso,
-                modoTallas: 'generico',  // ← Valor por defecto
-                datos: null
-            };
-            //  CRÍTICO: Sincronizar con window inmediatamente
-            window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+                modo_tallas: 'generico'
+            }
+        };
+        globalThis.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+    }
 
-        }
-        
-        // Actualizar resumen visual
-        actualizarResumenProcesos();
-        
-        // Abrir selector de modo (Para Todas / Por Tallas)
-        if (typeof window.abrirSelectorModoProceso === 'function') {
-            window.abrirSelectorModoProceso(tipoProceso);
-        } else {
-            // Fallback: abrir modal genérico directamente
-            window.abrirModalProcesoGenerico(tipoProceso);
-        }
+    actualizarResumenProcesos();
 
+    if (typeof globalThis.abrirSelectorModoProceso === 'function') {
+        globalThis.abrirSelectorModoProceso(tipoProceso);
     } else {
-        // Usuario desmarcó el checkbox
+        const controller = globalThis.ProcesoModalController;
+        if (controller?.abrir) {
+            controller.abrir(tipoProceso);
+        } else {
+            globalThis.abrirModalProcesoGenerico(tipoProceso);
+        }
+    }
+}
 
+function desmarcarProceso(tipoProceso) {
+    if (procesosSeleccionados[tipoProceso]) {
         delete procesosSeleccionados[tipoProceso];
-        delete window.procesosSeleccionados[tipoProceso];
-        actualizarResumenProcesos();
+        delete globalThis.procesosSeleccionados[tipoProceso];
+    }
+
+    actualizarResumenProcesos();
+}
+
+globalThis.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
+    if (estaChecked) {
+        marcarProceso(tipoProceso);
+    } else {
+        desmarcarProceso(tipoProceso);
     }
 };
 
@@ -103,17 +112,17 @@ function actualizarResumenProcesos() {
 /**
  * Obtiene los procesos configurados para la prenda
  */
-window.obtenerProcesosConfigurables = function() {
+globalThis.obtenerProcesosConfigurables = function() {
     return procesosSeleccionados;
 };
 
 /**
  * Limpia todos los procesos seleccionados
  */
-window.limpiarProcesosSeleccionados = function() {
+globalThis.limpiarProcesosSeleccionados = function() {
 
     procesosSeleccionados = {};
-    window.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con window
+    globalThis.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con globalThis
     
     // Desmarcar todos los checkboxes
     const checkboxes = [
@@ -135,5 +144,3 @@ window.limpiarProcesosSeleccionados = function() {
     
 
 };
-
-

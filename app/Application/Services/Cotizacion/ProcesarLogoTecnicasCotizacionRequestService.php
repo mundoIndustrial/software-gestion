@@ -5,7 +5,6 @@ namespace App\Application\Services\Cotizacion;
 use App\Models\Cotizacion;
 use App\Models\LogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
-use App\Models\LogoFotoCot;
 use App\Models\PrendaCot;
 use App\Application\Cotizacion\DTOs\SyncLogoTecnicasDTO;
 use Illuminate\Support\Facades\Log;
@@ -130,45 +129,8 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                     }
                 }
 
-                $fotoLogosExistentes = $dto->logoFotosExistentes;
-
-                if (!empty($fotoLogosExistentes) && $logoFueCreadoNuevo) {
-                    $fotoLogosExistentes = array_unique($fotoLogosExistentes);
-                    $orden = 1;
-
-                    foreach ($fotoLogosExistentes as $fotoIdExistente) {
-                        if ($fotoIdExistente && is_string($fotoIdExistente)) {
-                            $fotoExistente = LogoFotoCot::find($fotoIdExistente);
-                            if (!$fotoExistente) {
-                                continue;
-                            }
-
-                            $rutaOriginal = $fotoExistente->ruta_original;
-                            if (strpos($rutaOriginal, '/storage/') === 0) {
-                                $rutaOriginal = substr($rutaOriginal, 9);
-                            }
-
-                            $rutaWebp = $fotoExistente->ruta_webp;
-                            if (strpos($rutaWebp, '/storage/') === 0) {
-                                $rutaWebp = substr($rutaWebp, 9);
-                            }
-
-                            try {
-                                $logoCotizacion->fotos()->create([
-                                    'ruta_original' => $rutaOriginal,
-                                    'ruta_webp' => $rutaWebp,
-                                    'orden' => $orden,
-                                ]);
-                                $orden++;
-                            } catch (\Exception $e) {
-                                Log::warning('Error al reutilizar foto de logo', [
-                                    'foto_id' => $fotoIdExistente,
-                                    'error' => $e->getMessage(),
-                                ]);
-                            }
-                        }
-                    }
-                }
+                // Fotos existentes: Ya no se usan con la eliminación de las tablas logo_fotos_cot
+                // Se conserva esta lógica para compatibilidad futura si es necesario
             }
 
             if (!$logoCotizacion) {

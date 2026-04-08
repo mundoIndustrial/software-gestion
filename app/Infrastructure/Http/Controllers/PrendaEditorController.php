@@ -3,7 +3,7 @@
 namespace App\Infrastructure\Http\Controllers;
 
 use App\Application\Pedidos\Services\PrendaEditorService;
-use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
+use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\Pedidos\Services\TallaProcessorService;
 use App\Domain\Pedidos\Services\VariacionProcessorService;
 use App\Domain\Pedidos\Services\ProcesoProcessorService;
@@ -24,17 +24,20 @@ class PrendaEditorController extends Controller
     private TallaProcessorService $tallaProcessor;
     private VariacionProcessorService $variacionProcessor;
     private ProcesoProcessorService $procesoProcessor;
+    private ColorGeneroMangaBrocheService $catalogoVariacionesService;
     
     public function __construct(
         PrendaEditorService $prendaEditorService, 
         TallaProcessorService $tallaProcessor,
         VariacionProcessorService $variacionProcessor,
-        ProcesoProcessorService $procesoProcessor
+        ProcesoProcessorService $procesoProcessor,
+        ColorGeneroMangaBrocheService $catalogoVariacionesService
     ) {
         $this->prendaEditorService = $prendaEditorService;
         $this->tallaProcessor = $tallaProcessor;
         $this->variacionProcessor = $variacionProcessor;
         $this->procesoProcessor = $procesoProcessor;
+        $this->catalogoVariacionesService = $catalogoVariacionesService;
     }
     
     /**
@@ -194,6 +197,113 @@ class PrendaEditorController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error obteniendo tipos de manga: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crea (o reutiliza existente) tipo de manga
+     *
+     * POST /api/prendas/tipos-manga
+     */
+    public function crearTipoManga(Request $request): JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'nombre' => 'required|string|max:100',
+            ]);
+
+            $manga = $this->catalogoVariacionesService->obtenerOCrearManga($data['nombre']);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $manga->id,
+                    'nombre' => $manga->nombre,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos para crear tipo de manga.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('[PrendaEditorController] Error creando tipo de manga', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creando tipo de manga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtiene tipos de broche/botón disponibles
+     *
+     * GET /api/prendas/tipos-broche-boton
+     */
+    public function tiposBrocheBoton(): JsonResponse
+    {
+        try {
+            $tiposBroche = $this->catalogoVariacionesService->obtenerBroches();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tiposBroche,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[PrendaEditorController] Error obteniendo tipos de broche/botón', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error obteniendo tipos de broche/botón: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Crea (o reutiliza existente) tipo de broche/botón
+     *
+     * POST /api/prendas/tipos-broche-boton
+     */
+    public function crearTipoBrocheBoton(Request $request): JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'nombre' => 'required|string|max:100',
+            ]);
+
+            $broche = $this->catalogoVariacionesService->obtenerOCrearBroche($data['nombre']);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $broche->id,
+                    'nombre' => $broche->nombre,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos para crear tipo de broche/botón.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('[PrendaEditorController] Error creando tipo de broche/botón', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creando tipo de broche/botón: ' . $e->getMessage(),
             ], 500);
         }
     }

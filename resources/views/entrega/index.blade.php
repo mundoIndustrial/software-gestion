@@ -54,7 +54,7 @@
                     <div class="stat-label">Prendas Diferentes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="costura-costureros">0</div>
                     <div class="stat-label">Costureros Activos</div>
                 </div>
@@ -118,12 +118,12 @@
             <!-- Estadísticas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="stat-card">
-                    <div class="stat-icon">✂️</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="corte-total">0</div>
                     <div class="stat-label">Total Piezas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🏷️</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="corte-etiqueteadas">0</div>
                     <div class="stat-label">Piezas etiqueteadas</div>
                 </div>

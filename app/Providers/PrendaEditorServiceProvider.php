@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Domain\Pedidos\Services\PrendaTransformadorService;
+use App\Application\Pedidos\Services\PrendaFrontendTransformadorService;
 use App\Domain\Pedidos\Services\TallaProcessorService;
 use App\Domain\Pedidos\Services\VariacionProcessorService;
 use App\Domain\Pedidos\Services\ProcesoProcessorService;
@@ -15,7 +15,6 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider para el módulo de edición de prendas
- * 
  * Registra todos los servicios y repositorios relacionados con la edición
  * de prendas siguiendo la arquitectura DDD.
  */
@@ -26,39 +25,39 @@ class PrendaEditorServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Domain Services
-        $this->app->singleton(TallaProcessorService::class, function ($app) {
+        // ===== PRIMERO: Registrar interfaces =====
+        $this->app->bind(PrendaRepositoryInterface::class, EloquentPrendaRepository::class);
+        $this->app->bind(CotizacionRepositoryInterface::class, EloquentCotizacionRepository::class);
+
+        // ===== SEGUNDO: Domain Services =====
+        $this->app->singleton(TallaProcessorService::class, function () {
             return new TallaProcessorService();
         });
         
-        $this->app->singleton(VariacionProcessorService::class, function ($app) {
+        $this->app->singleton(VariacionProcessorService::class, function () {
             return new VariacionProcessorService();
         });
         
-        $this->app->singleton(ProcesoProcessorService::class, function ($app) {
+        $this->app->singleton(ProcesoProcessorService::class, function () {
             return new ProcesoProcessorService();
         });
         
-        $this->app->singleton(PrendaTransformadorService::class, function ($app) {
-            return new PrendaTransformadorService(
+        $this->app->singleton(PrendaFrontendTransformadorService::class, function ($app) {
+            return new PrendaFrontendTransformadorService(
                 $app->make(TallaProcessorService::class),
                 $app->make(VariacionProcessorService::class),
                 $app->make(ProcesoProcessorService::class)
             );
         });
         
-        // Application Services
+        // ===== TERCERO: Application Services (que dependen de interfaces) =====
         $this->app->singleton(PrendaEditorService::class, function ($app) {
             return new PrendaEditorService(
+                $app->make(PrendaFrontendTransformadorService::class),
                 $app->make(PrendaRepositoryInterface::class),
-                $app->make(CotizacionRepositoryInterface::class),
-                $app->make(PrendaTransformadorService::class)
+                $app->make(CotizacionRepositoryInterface::class)
             );
         });
-        
-        // Repository Interfaces
-        $this->app->bind(PrendaRepositoryInterface::class, EloquentPrendaRepository::class);
-        $this->app->bind(CotizacionRepositoryInterface::class, EloquentCotizacionRepository::class);
     }
 
     /**
@@ -73,8 +72,8 @@ class PrendaEditorServiceProvider extends ServiceProvider
             ], 'prenda-editor-config');
         }
         
-        // Cargar rutas específicas del módulo
-        $this->loadRoutesFrom(__DIR__.'/../routes/prenda-editor.php');
+        // Cargar rutas específicas del módulo (ya se cargan desde routes/api.php)
+        // $this->loadRoutesFrom(__DIR__.'/../routes/prendas-editor.php');
         
         // Cargar vistas si es necesario
         $this->loadViewsFrom(__DIR__.'/../resources/views/prenda-editor', 'prenda-editor');
@@ -88,7 +87,7 @@ class PrendaEditorServiceProvider extends ServiceProvider
     public function provides()
     {
         return [
-            PrendaTransformadorService::class,
+            PrendaFrontendTransformadorService::class,
             PrendaEditorService::class,
             PrendaRepositoryInterface::class,
             CotizacionRepositoryInterface::class,

@@ -10,10 +10,10 @@
  */
 
 // Evitar cargas múltiples del script
-if (window.prendaWrappersCargado) {
+if (globalThis.prendaWrappersCargado) {
     console.log('[prendas-wrappers]  Script ya cargado, evitando duplicación');
 } else {
-    window.prendaWrappersCargado = true;
+    globalThis.prendaWrappersCargado = true;
     
     // Cargar el nuevo sistema modular de forma síncrona para garantizar disponibilidad
     const prendaScript = document.createElement('script');
@@ -22,13 +22,13 @@ if (window.prendaWrappersCargado) {
     document.head.appendChild(prendaScript);
 
 // Definir funciones básicas inmediatamente (sin setTimeout)
-window.abrirModalPrendaNueva = function() {
+globalThis.abrirModalPrendaNueva = function() {
     console.log('[prendas-wrappers] Abriendo modal de prenda nueva');
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
         // Usar UIModalService para manejar el scroll del body
-        if (window.UI && typeof window.UI.abrirModal === 'function') {
-            window.UI.abrirModal('modal-agregar-prenda-nueva', {
+        if (globalThis.UI && typeof globalThis.UI.abrirModal === 'function') {
+            globalThis.UI.abrirModal('modal-agregar-prenda-nueva', {
                 display: 'flex',
                 closeOnClickOutside: false,
                 closeOnEsc: true,
@@ -50,13 +50,13 @@ window.abrirModalPrendaNueva = function() {
     }
 };
 
-window.cerrarModalPrendaNueva = function() {
+globalThis.cerrarModalPrendaNueva = function() {
     console.log('[prendas-wrappers] Cerrando modal de prenda nueva');
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
         // Usar UIModalService para manejar el scroll del body
-        if (window.UI && typeof window.UI.cerrarModal === 'function') {
-            window.UI.cerrarModal('modal-agregar-prenda-nueva', {
+        if (globalThis.UI && typeof globalThis.UI.cerrarModal === 'function') {
+            globalThis.UI.cerrarModal('modal-agregar-prenda-nueva', {
                 animate: false
             });
         } else {
@@ -67,9 +67,9 @@ window.cerrarModalPrendaNueva = function() {
     }
 };
 
-window.manejarImagenesPrenda = function(input) {
+globalThis.manejarImagenesPrenda = function(input) {
     if (input.files && input.files.length > 0) {
-        console.log('📸 Archivo recibido:', input.files[0].name);
+        console.log(' Archivo recibido:', input.files[0].name);
         // Lógica básica de manejo de imágenes
         const preview = document.getElementById('nueva-prenda-foto-preview');
         if (preview) {
@@ -83,9 +83,9 @@ window.manejarImagenesPrenda = function(input) {
 };
 
 // Fallback inmediato para agregarPrendaNueva (se reemplaza cuando modal-wrappers.js carga)
-window.agregarPrendaNueva = function() {
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaNueva === 'function') {
-        return window.gestionItemsUI.agregarPrendaNueva();
+globalThis.agregarPrendaNueva = function() {
+    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarPrendaNueva === 'function') {
+        return globalThis.gestionItemsUI.agregarPrendaNueva();
     }
     console.warn('[prendas-wrappers] GestionItemsUI no disponible aún para agregarPrendaNueva');
     return null;
@@ -94,26 +94,26 @@ window.agregarPrendaNueva = function() {
 // Escuchar cuando el módulo completo cargue para reemplazar con funciones avanzadas
 document.addEventListener('prendasModuleLoaded', (event) => {
     const exported = event.detail;
-    console.log('[prendas-wrappers] 📦 Módulo prendas cargado, actualizando funciones globales...');
+    console.log('[prendas-wrappers]  Módulo prendas cargado, actualizando funciones globales...');
     
     // Reemplazar funciones básicas con las avanzadas del módulo
     if (typeof exported.cerrarModalPrendaNueva === 'function') {
-        window.cerrarModalPrendaNueva = exported.cerrarModalPrendaNueva;
+        globalThis.cerrarModalPrendaNueva = exported.cerrarModalPrendaNueva;
         console.log('  cerrarModalPrendaNueva actualizada con función avanzada');
     }
     
     if (typeof exported.manejarImagenesPrenda === 'function') {
-        window.manejarImagenesPrenda = exported.manejarImagenesPrenda;
+        globalThis.manejarImagenesPrenda = exported.manejarImagenesPrenda;
         console.log('  manejarImagenesPrenda actualizada con función avanzada');
     }
     
     if (typeof exported.agregarPrendaNueva === 'function') {
-        window.agregarPrendaNueva = exported.agregarPrendaNueva;
+        globalThis.agregarPrendaNueva = exported.agregarPrendaNueva;
         console.log('  agregarPrendaNueva asignada');
     }
     
     if (typeof exported.cargarItemEnModal === 'function') {
-        window.cargarItemEnModal = exported.cargarItemEnModal;
+        globalThis.cargarItemEnModal = exported.cargarItemEnModal;
         console.log('  cargarItemEnModal asignada');
     }
     

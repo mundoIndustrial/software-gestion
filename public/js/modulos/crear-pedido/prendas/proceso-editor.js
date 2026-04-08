@@ -25,7 +25,7 @@ class ProcesosEditor {
             imagenes: null,         // Array reemplazado (no merge)
             observaciones: null,    // String
             tallas: null,           // Object
-            modo_tallas: null       // String: 'general', 'especifico', 'por_tallas'
+            modo_tallas: null       // String: 'generico', 'general', 'especifico'
         };
         
         // Flag para saber si hay cambios pendientes
@@ -111,7 +111,7 @@ class ProcesosEditor {
             return;
         }
 
-        console.log('🖼️ [PROCESO-EDITOR] Registrando cambio de imágenes:', {
+        console.log(' [PROCESO-EDITOR] Registrando cambio de imágenes:', {
             imagenesAnteriores: this.cambios.imagenes || (this.procesoOriginal.imagenes?.length || 0),
             imagenesNuevas: nuevasImagenes.length,
             imagenes: nuevasImagenes
@@ -169,7 +169,7 @@ class ProcesosEditor {
 
     /**
      * Registrar cambio de modo de tallas
-     * @param {string} nuevoModo - 'general', 'especifico', 'por_tallas'
+     * @param {string} nuevoModo - 'generico', 'general', 'especifico'
      */
     registrarCambioModoTallas(nuevoModo) {
         if (!this.procesoEnEdicion) {
@@ -226,7 +226,7 @@ class ProcesosEditor {
             cambiosFinales.modo_tallas = this.cambios.modo_tallas;
         }
 
-        console.log('📤 [PROCESO-EDITOR] Cambios a enviar:', {
+        console.log(' [PROCESO-EDITOR] Cambios a enviar:', {
             tipo: this.procesoEnEdicion?.tipo,
             cambios: Object.keys(cambiosFinales),
             cambiosFinales
@@ -327,7 +327,7 @@ class ProcesosEditor {
 
         // Actualizar el proceso en window.procesosSeleccionados
         if (window.procesosSeleccionados && window.procesosSeleccionados[tipo]) {
-            console.log('💾 [PROCESO-EDITOR] Guardando cambios en window.procesosSeleccionados:', tipo);
+            console.log(' [PROCESO-EDITOR] Guardando cambios en window.procesosSeleccionados:', tipo);
             
             // Actualizar datos del proceso
             window.procesosSeleccionados[tipo].datos = {

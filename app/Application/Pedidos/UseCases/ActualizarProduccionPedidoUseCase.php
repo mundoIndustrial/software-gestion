@@ -3,24 +3,21 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
-use App\Domain\Pedidos\Agregado\PedidosAggregate;
+use App\Application\Pedidos\Exceptions\ActualizarProduccionPedidoException;
+use App\Domain\Pedidos\Agregado\PedidoAggregate;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Events\Dispatcher;
-use Exception;
 
 /**
  * ActualizarProduccionPedidoUseCase
- * 
  * COMPLETADO: Fue refactorizado en FASE 1
- * 
  * Use Case para actualizar un pedido de producción existente
- * 
  * Cambios de FASE 1:
  * - Agregadas dependencias inyectadas (antes faltaban)
- * - Implementada actualizacion de cliente 
- * - Implementada actualizacion de prendas 
- * - Implementada persistencia de cambios 
- * - Implementada publicación de eventos 
+ * - Implementada actualizacion de cliente
+ * - Implementada actualizacion de prendas
+ * - Implementada persistencia de cambios
+ * - Implementada publicación de eventos
  */
 class ActualizarProduccionPedidoUseCase
 {
@@ -29,22 +26,19 @@ class ActualizarProduccionPedidoUseCase
         private Dispatcher $eventDispatcher
     ) {}
 
-    public function ejecutar(ActualizarProduccionPedidoDTO $dto): PedidosAggregate
+    public function ejecutar(ActualizarProduccionPedidoDTO $dto): PedidoAggregate
     {
         try {
             // 1. Obtener pedido del repositorio
-            $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
+            $pedido = $this->pedidoRepository->porId($dto->id);
             
             if (!$pedido) {
-                throw new Exception("Pedido con ID {$dto->id} no encontrado");
+                throw ActualizarProduccionPedidoException::pedidoNoEncontrado($dto->id);
             }
 
-            // 2. Validar que estÃ¡ en estado pendiente
+            // 2. Validar que está en estado pendiente
             if (!$pedido->estaPendiente()) {
-                throw new Exception(
-                    "No se puede actualizar un pedido en estado '{$pedido->getEstado()}'. " .
-                    "Solo se pueden actualizar pedidos pendientes."
-                );
+                throw ActualizarProduccionPedidoException::estadoNoPermitido($pedido->getEstado());
             }
 
             // 3.  ACTUALIZAR CLIENTE SI VIENE EN DTO
@@ -67,10 +61,10 @@ class ActualizarProduccionPedidoUseCase
 
             return $pedido;
 
-        } catch (Exception $e) {
-            throw new Exception("Error al actualizar pedido: " . $e->getMessage());
+        } catch (ActualizarProduccionPedidoException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw ActualizarProduccionPedidoException::fromThrowable($e);
         }
     }
 }
-
-

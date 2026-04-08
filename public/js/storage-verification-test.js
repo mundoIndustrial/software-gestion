@@ -1,5 +1,5 @@
 /**
- * 🧪 SCRIPT DE VERIFICACIÓN RÁPIDA
+ *  SCRIPT DE VERIFICACIÓN RÁPIDA
  * 
  * Ejecuta este script en la consola para verificar que todo está configurado correctamente
  * 
@@ -71,7 +71,7 @@
         warn('ExtensionStorageAPI NO disponible', 'Opcional - solo si usas Chrome Extension');
     }
     
-    console.log('\n📝 VERIFICANDO FUNCIONALIDADES...\n');
+    console.log('\n VERIFICANDO FUNCIONALIDADES...\n');
     
     // 5. Test localStorage.setItem
     try {
@@ -237,6 +237,6 @@
         moduleState: window.StorageModule ? window.StorageModule.getState() : null
     };
     
-    console.log('💾 Datos de verificación guardados en: window.__STORAGE_VERIFICATION__\n');
+    console.log(' Datos de verificación guardados en: window.__STORAGE_VERIFICATION__\n');
     
 })();

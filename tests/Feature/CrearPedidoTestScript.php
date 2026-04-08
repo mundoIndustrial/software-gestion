@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cliente;
 use App\Models\PedidoProduccion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -17,12 +17,12 @@ use Tests\TestCase;
  */
 class CrearPedidoTestScript extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function ejecutarPrueba()
     {
         echo "\n========================================\n";
-        echo "ðŸ§ª INICIANDO PRUEBA DE CREACIÃ“N DE PEDIDO\n";
+        echo "ðŸ§ª INICIANDO PRUEBA DE CREACION DE PEDIDO\n";
         echo "========================================\n\n";
 
         try {
@@ -51,7 +51,7 @@ class CrearPedidoTestScript extends TestCase
                 'asesor_id' => $asesora->id,
                 'forma_de_pago' => 'efectivo',
                 'estado' => 'pendiente',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'cantidad_total' => 100,
             ]);
             echo "  Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
@@ -69,13 +69,13 @@ class CrearPedidoTestScript extends TestCase
             echo " PRUEBA COMPLETADA EXITOSAMENTE\n";
             echo "========================================\n";
             echo "Pedido guardado correctamente en la base de datos\n";
-            echo "Todas las relaciones estÃ¡n configuradas correctamente\n\n";
+            echo "Todas las relaciones están configuradas correctamente\n\n";
 
         } catch (\Exception $e) {
             echo "\n ERROR EN LA PRUEBA:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}\n";
-            echo "   LÃ­nea: {$e->getLine()}\n\n";
+            echo "   linea: {$e->getLine()}\n\n";
         }
     }
 
@@ -83,14 +83,14 @@ class CrearPedidoTestScript extends TestCase
     {
         $datos = [
             'ID' => $pedido->id,
-            'NÃºmero de Pedido' => $pedido->numero_pedido,
+            'numero de Pedido' => $pedido->numero_pedido,
             'Cliente' => $pedido->cliente,
             'Cliente ID' => $pedido->cliente_id,
             'Asesor ID' => $pedido->asesor_id,
             'Forma de Pago' => $pedido->forma_de_pago,
             'Estado' => $pedido->estado,
             'Cantidad Total' => $pedido->cantidad_total,
-            'Fecha Creación' => $pedido->fecha_de_creacion_de_orden,
+            'Fecha Creación' => $pedido->created_at,
         ];
 
         foreach ($datos as $campo => $valor) {
@@ -125,12 +125,12 @@ class CrearPedidoTestScript extends TestCase
             echo "    Pedido NO existe en base de datos\n";
         }
 
-        // Verificar bÃºsqueda por nÃºmero de pedido
+        // Verificar busqueda por numero de pedido
         $pedidoPorNumero = PedidoProduccion::where('numero_pedido', $pedido->numero_pedido)->first();
         if ($pedidoPorNumero) {
-            echo "  BÃºsqueda por nÃºmero de pedido funciona\n";
+            echo "  busqueda por numero de pedido funciona\n";
         } else {
-            echo "    BÃºsqueda por nÃºmero de pedido NO funciona\n";
+            echo "    busqueda por numero de pedido NO funciona\n";
         }
     }
 }
@@ -138,4 +138,6 @@ class CrearPedidoTestScript extends TestCase
 // Ejecutar la prueba
 $prueba = new CrearPedidoTestScript();
 $prueba->ejecutarPrueba();
+
+
 

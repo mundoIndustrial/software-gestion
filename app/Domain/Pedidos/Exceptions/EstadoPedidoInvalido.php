@@ -3,7 +3,7 @@
 namespace App\Domain\Pedidos\Exceptions;
 
 /**
- * Exception: Estado Pedido InvÃ¡lido
+ * Exception: Estado Pedido Invalido
  */
 class EstadoPedidoInvalido extends \Exception
 {

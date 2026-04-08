@@ -736,7 +736,7 @@
             }
         });
         
-        console.log('📤 URL completa:', url.toString());
+        console.log(' URL completa:', url.toString());
         
         fetch(url.toString(), {
             headers: {

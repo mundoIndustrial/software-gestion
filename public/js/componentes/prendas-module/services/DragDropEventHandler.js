@@ -161,7 +161,7 @@ class DragDropEventHandler {
         this.elemento.addEventListener('paste', (e) => {
             if (!this.estaActivo) return;
             
-            UIHelperService.log('DragDropEventHandler', '📋 EVENTO PASTE LOCAL DETECTADO');
+            UIHelperService.log('DragDropEventHandler', ' EVENTO PASTE LOCAL DETECTADO');
             
             // Obtener archivos del portapapeles
             const items = e.clipboardData.items;
@@ -182,12 +182,12 @@ class DragDropEventHandler {
             
             // Si no hay imágenes, permitir el comportamiento normal del navegador
             if (!foundImage) {
-                UIHelperService.log('DragDropEventHandler', '📝 No hay imágenes en el portapapeles local, permitiendo pegado normal de texto');
+                UIHelperService.log('DragDropEventHandler', ' No hay imágenes en el portapapeles local, permitiendo pegado normal de texto');
                 return; // No interceptar, dejar que el navegador maneje el pegado
             }
             
             // Si hay imágenes, interceptar el evento para procesarlas
-            UIHelperService.log('DragDropEventHandler', '🖼️ Imágenes detectadas en portapapeles local, interceptando para procesar');
+            UIHelperService.log('DragDropEventHandler', ' Imágenes detectadas en portapapeles local, interceptando para procesar');
             e.preventDefault();
             e.stopPropagation();
             
@@ -205,7 +205,7 @@ class DragDropEventHandler {
             }
         });
 
-        // 🖱️ Evento context menu (botón derecho) - DESACTIVADO
+        //  Evento context menu (botón derecho) - DESACTIVADO
         // Solo permitimos pegado con Ctrl+V directamente, que es más intuitivo
         // y evita la confusión de un menú contextual que solo muestra instrucciones
 

@@ -175,7 +175,7 @@
                 
                 if (!fila || !fila.classList.contains('pedido-row')) return;
                 
-                console.log('[📝 Cambio de Estado] Estado:', nuevoEstado);
+                console.log('[ Cambio de Estado] Estado:', nuevoEstado);
                 
                 // Actualizar data-estado
                 fila.setAttribute('data-estado', nuevoEstado);

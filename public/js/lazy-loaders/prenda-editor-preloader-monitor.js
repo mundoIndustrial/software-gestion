@@ -38,7 +38,7 @@
         console.log(`  ${estados.preloaded}`);
         console.log(`  ${estados.error}`);
 
-        console.log('\n%c💾 CACHÉ', 'font-weight: bold; color: #e74c3c; font-size: 13px;');
+        console.log('\n%c CACHÉ', 'font-weight: bold; color: #e74c3c; font-size: 13px;');
         console.log(`  Scripts en cache: ${status.scriptCacheSize}`);
         console.log(`  Módulos en cache: ${status.moduleCacheSize}`);
 

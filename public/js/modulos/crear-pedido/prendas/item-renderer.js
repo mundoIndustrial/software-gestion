@@ -25,7 +25,7 @@ class ItemRenderer {
             return;
         }
 
-        console.log('[ItemRenderer] 🎬 actualizar() - Items recibidos:', items.length);
+        console.log('[ItemRenderer]  actualizar() - Items recibidos:', items.length);
         items.forEach((item, idx) => {
             console.log('[ItemRenderer]   Item', idx, ':', item.nombre_prenda || item.nombre_completo || item.nombre);
         });
@@ -163,12 +163,12 @@ class ItemRenderer {
     _generarTarjetaEPP(epp, index) {
         const galeriaHTML = this._generarGaleriaEPP(epp.imagenes || []);
         
-        // Calcular número de EPP (contar solo items-epp-card, no prendas)
-        const eppCount = document.querySelectorAll('.item-epp-card').length;
+        // Calcular número de EPP (contar solo items-epp-card-nuevo, no prendas)
+        const eppCount = document.querySelectorAll('.item-epp-card-nuevo').length;
         const numeroItem = eppCount + 1;
         
         return `
-            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.id || epp.pedido_epp_id || epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp-card item-epp-card-nuevo" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.id || epp.pedido_epp_id || epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
@@ -177,13 +177,13 @@ class ItemRenderer {
                     </div>
                     <!-- Contenedor del botón y menú con posicionamiento relativo -->
                     <div style="position: relative;">
-                        <button class="btn-menu-epp" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                        <button class="btn-menu-epp btn-menu-epp-nuevo" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
                         
                         <!-- Menú -->
-                        <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
+                        <div class="submenu-epp submenu-epp-nuevo" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
                             <button 
                                 type="button"
-                                class="btn-editar-epp"
+                                class="btn-editar-epp btn-editar-epp-nuevo"
                                 data-item-id="${epp.epp_id}"
                                 style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
                                 onmouseover="this.style.background = '#f9fafb';"
@@ -193,7 +193,7 @@ class ItemRenderer {
                             </button>
                             <button 
                                 type="button"
-                                class="btn-eliminar-epp"
+                                class="btn-eliminar-epp btn-eliminar-epp-nuevo"
                                 data-item-id="${epp.epp_id}"
                                 style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
                                 onmouseover="this.style.background = '#fef2f2';"
@@ -234,11 +234,20 @@ class ItemRenderer {
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;">
                 <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
-                    ${imagenes.map(img => `
-                        <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.previewUrl || img.preview || img.url || img.ruta_web || ''}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                        </div>
-                    `).join('')}
+                    ${imagenes.map(img => {
+                        let imagenUrl = img.previewUrl || img.preview || img.url || img.ruta_web || '';
+                        
+                        // Si no es blob y no comienza con /, agregar /storage/
+                        if (imagenUrl && !imagenUrl.startsWith('blob:') && !imagenUrl.startsWith('/') && !imagenUrl.startsWith('http')) {
+                            imagenUrl = `/storage/${imagenUrl}`;
+                        }
+                        
+                        return `
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                                <img src="${imagenUrl}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;

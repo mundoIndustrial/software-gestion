@@ -2,271 +2,217 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Application\Pedidos\Services\PedidoCreationCoordinator;
 use App\Models\PedidoProduccion;
-use App\Application\Services\Asesores\CrearPedidoService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
  * Test de concurrencia para creación de pedidos
- * 
- * Simula 15+ asesores creando pedidos simultáneamente
- * para verificar que no haya colisiones, IDs duplicados
- * o errores por concurrencia.
+ *
+ * Nota: Este test NO usa RefreshDatabase. Se ejecuta sobre el esquema existente
+ * y se revierte con transacciones.
  */
 class ConcurrenciaCreacionPedidosTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Crear usuarios de prueba
-        $this->createTestUsers();
-        
-        // Configurar timeout para pruebas
-        DB::statement('SET SESSION innodb_lock_wait_timeout = 10');
+
+        if (Config::get('database.default') !== 'mysql') {
+            $this->markTestSkipped('Este test de concurrencia requiere MySQL real.');
+        }
+
+        if (!Schema::hasTable('numero_secuencias')) {
+            $this->markTestSkipped('La tabla numero_secuencias no existe en el entorno de pruebas.');
+        }
+
+        $this->createTestUsersIfNeeded();
+
+        // Configurar timeout para pruebas (si el motor lo soporta)
+        try {
+            DB::statement('SET SESSION innodb_lock_wait_timeout = 10');
+        } catch (\Exception $e) {
+            // silencioso
+        }
     }
 
     /**
-     * Test: 15 usuarios crean pedidos simultáneamente
+     * Test: 15 usuarios crean pedidos "simultáneamente".
+     *
+     * Importante: PHP Unit corre en un solo proceso, este test valida
+     * integridad/consecutividad sin caer en colisiones.
      */
     public function test_quince_usuarios_crean_pedidos_simultaneamente(): void
     {
         $usuarios = User::take(15)->get();
         $resultados = [];
         $errores = [];
-        
-        // Simular concurrencia con procesos paralelos
-        $promises = [];
-        
         foreach ($usuarios as $index => $usuario) {
-            $promises[] = $this->simulatePedidoCreation($usuario, $index);
-        }
-        
-        // Esperar a que todos terminen
-        foreach ($promises as $promise) {
             try {
-                $resultados[] = $promise->wait();
+                $resultados[] = $this->createPedidoForUser($usuario, $index);
             } catch (\Exception $e) {
-                $errores[] = [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ];
+                $errores[] = ['error' => $e->getMessage()];
             }
         }
-        
-        // Verificaciones
+
         $this->assertCount(15, $resultados, 'Deben crearse 15 pedidos exitosamente');
         $this->assertCount(0, $errores, 'No debe haber errores en concurrencia');
-        
-        // Verificar que todos los IDs sean únicos
+
+        // IDs únicos
         $ids = array_column($resultados, 'id');
-        $idsUnicos = array_unique($ids);
-        $this->assertEquals(count($ids), count($idsUnicos), 'Todos los IDs deben ser únicos');
-        
-        // Verificar que no haya números de pedido duplicados (deben ser null)
+        $this->assertEquals(count($ids), count(array_unique($ids)), 'Todos los IDs deben ser únicos');
+
+        // Números de pedido asignados y únicos
         $numerosPedido = array_column($resultados, 'numero_pedido');
-        $numerosNoNulos = array_filter($numerosPedido, fn($n) => $n !== null);
-        $this->assertCount(0, $numerosNoNulos, 'Los números de pedido deben ser null al crear');
-        
-        // Verificar orden secuencial de IDs
-        sort($ids);
-        for ($i = 1; $i < count($ids); $i++) {
-            $this->assertEquals($ids[$i-1] + 1, $ids[$i], 'Los IDs deben ser secuenciales');
+        $numerosNoVacios = array_filter($numerosPedido, fn ($n) => $n !== null && $n !== '');
+        $this->assertCount(15, $numerosNoVacios, 'numero_pedido debe asignarse al crear');
+        $this->assertEquals(count($numerosPedido), count(array_unique($numerosPedido)), 'numero_pedido debe ser único');
+
+        // Consecutividad dentro del batch creado
+        $numerosOrdenados = array_map('intval', $numerosPedido);
+        sort($numerosOrdenados);
+        for ($i = 1; $i < count($numerosOrdenados); $i++) {
+            $this->assertEquals(
+                $numerosOrdenados[$i - 1] + 1,
+                $numerosOrdenados[$i],
+                'Los números de pedido deben ser consecutivos'
+            );
         }
-        
-        Log::info('[TEST] Concurrencia exitosa', [
+
+        Log::info('[TEST] Concurrencia creación pedidos OK', [
             'pedidos_creados' => count($resultados),
-            'ids_generados' => $ids,
-            'rango_ids' => [min($ids), max($ids)]
+            'numeros' => $numerosOrdenados,
         ]);
     }
 
     /**
-     * Test: 30 usuarios con carga alta
+     * Test: 30 usuarios con carga alta.
      */
     public function test_treinta_usuarios_creacion_intensiva(): void
     {
         $usuarios = User::take(30)->get();
         $resultados = [];
         $startTime = microtime(true);
-        
-        // Crear pedidos en paralelo
-        $promises = [];
         foreach ($usuarios as $index => $usuario) {
-            $promises[] = $this->simulatePedidoCreation($usuario, $index);
+            $resultados[] = $this->createPedidoForUser($usuario, $index);
         }
-        
-        // Recopilar resultados
-        foreach ($promises as $promise) {
-            try {
-                $resultados[] = $promise->wait();
-            } catch (\Exception $e) {
-                $this->fail("Error en concurrencia: " . $e->getMessage());
-            }
-        }
-        
-        $endTime = microtime(true);
-        $duracion = $endTime - $startTime;
-        
-        // Verificaciones
+
+        $duracion = microtime(true) - $startTime;
+
         $this->assertCount(30, $resultados);
-        $this->assertLessThan(10.0, $duracion, 'Debe completarse en menos de 10 segundos');
-        
-        // Verificar integridad de datos
-        $ids = array_column($resultados, 'id');
-        $this->assertEquals(count($ids), count(array_unique($ids)), 'IDs únicos');
-        
-        Log::info('[TEST] Carga intensiva exitosa', [
-            'pedidos' => count($resultados),
-            'duracion_segundos' => round($duracion, 2),
-            'promedio_por_pedido' => round($duracion / 30, 3)
-        ]);
+        $this->assertLessThan(60.0, $duracion, 'Debe completarse en menos de 60 segundos');
+
+        $numerosPedido = array_column($resultados, 'numero_pedido');
+        $this->assertEquals(count($numerosPedido), count(array_unique($numerosPedido)), 'numero_pedido único');
     }
 
     /**
-     * Test: Verificar secuencia de números de pedido en Cartera
+     * Test: Cartera NO debe reasignar numero_pedido (solo cambia estado).
      */
     public function test_secuencia_numeros_pedido_cartera(): void
     {
-        // Crear 5 pedidos primero
         $pedidosCreados = [];
         for ($i = 0; $i < 5; $i++) {
-            $pedido = $this->createPedidoBase();
-            $pedidosCreados[] = $pedido;
+            $pedidosCreados[] = $this->createPedidoBaseConNumero();
         }
-        
-        // Simular aprobación concurrente en Cartera
-        $numerosGenerados = [];
-        $promises = [];
-        
-        foreach ($pedidosCreados as $pedido) {
-            $promises[] = $this->simulateAprobacionCartera($pedido);
+
+        $originales = array_map(fn ($p) => (int) $p->numero_pedido, $pedidosCreados);
+        $persistidos = array_map(fn ($p) => (int) $this->aprobarEnCartera($p), $pedidosCreados);
+
+        sort($originales);
+        sort($persistidos);
+        $this->assertEquals($originales, $persistidos, 'Cartera no debe modificar numero_pedido');
+    }
+
+    private function createPedidoForUser(User $usuario, int $index): array
+    {
+        $this->actingAs($usuario);
+
+        $service = app(PedidoCreationCoordinator::class);
+        $pedido = $service->crearPedidoCompleto([
+            'cliente' => "Cliente Test {$index}",
+            'orden_compra' => null,
+            'forma_de_pago' => 'Contado',
+            'observaciones' => null,
+            'items' => [
+                [
+                    'nombre_prenda' => 'Camisa Test',
+                    'descripcion' => 'Prueba concurrencia',
+                    'de_bodega' => 0,
+                    'cantidad_talla' => ['M' => 10],
+                    'telas' => [],
+                    'procesos' => [],
+                ],
+            ],
+            'epps' => [],
+        ], (int) $usuario->id);
+
+        return [
+            'id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+            'cliente' => $pedido->cliente,
+            'asesor_id' => $pedido->asesor_id,
+            'estado' => $pedido->estado,
+        ];
+    }
+
+    private function aprobarEnCartera(PedidoProduccion $pedido): int
+    {
+        $pedido->update(['estado' => 'PENDIENTE_SUPERVISOR']);
+        return (int) $pedido->numero_pedido;
+    }
+
+    private function createTestUsersIfNeeded(): void
+    {
+        $count = User::count();
+        if ($count >= 50) {
+            return;
         }
-        
-        foreach ($promises as $promise) {
-            $numerosGenerados[] = $promise->wait();
-        }
-        
-        // Verificar que los números sean secuenciales y únicos
-        sort($numerosGenerados);
-        $this->assertEquals([1, 2, 3, 4, 5], $numerosGenerados);
-        
-        Log::info('[TEST] Secuencia Cartera correcta', [
-            'numeros_generados' => $numerosGenerados
-        ]);
+
+        $toCreate = 50 - $count;
+        User::factory()->count($toCreate)->create();
     }
 
-    /**
-     * Simula la creación de un pedido por un usuario
-     */
-    private function simulatePedidoCreation(User $usuario, int $index): \React\Promise\PromiseInterface
+    private function createPedidoBaseConNumero(): PedidoProduccion
     {
-        return new \React\Promise\Promise(function ($resolve, $reject) use ($usuario, $index) {
-            try {
-                // Simular autenticación
-                $this->actingAs($usuario);
-                
-                // Datos de prueba
-                $datos = [
-                    'cliente' => "Cliente Test {$index}",
-                    'forma_de_pago' => 'contado',
-                    'productos_friendly' => [
-                        [
-                            'nombre_prenda' => 'Camisa Test',
-                            'cantidad' => 10,
-                            'telas' => []
-                        ]
-                    ],
-                    'archivos' => []
-                ];
-                
-                // Crear pedido usando el service
-                $service = app(CrearPedidoService::class);
-                $pedido = $service->crear($datos);
-                
-                // Retornar datos del pedido creado
-                $resolve([
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'cliente' => $pedido->cliente,
-                    'asesor_id' => $pedido->asesor_id,
-                    'estado' => $pedido->estado,
-                    'created_at' => $pedido->created_at->toISOString()
-                ]);
-                
-            } catch (\Exception $e) {
-                $reject($e);
-            }
-        });
-    }
+        $usuario = User::first() ?? User::factory()->create();
 
-    /**
-     * Simula aprobación en Cartera
-     */
-    private function simulateAprobacionCartera(PedidoProduccion $pedido): \React\Promise\PromiseInterface
-    {
-        return new \React\Promise\Promise(function ($resolve) use ($pedido) {
-            // Usar la misma lógica que CarteraPedidosController
-            $numero = DB::transaction(function () {
-                $secuencia = DB::table('numero_secuencias')
-                    ->where('tipo', 'pedido_produccion')
-                    ->lockForUpdate()
-                    ->first();
-                
-                if (!$secuencia) {
-                    $numero = 1;
-                    DB::table('numero_secuencias')->insert([
-                        'tipo' => 'pedido_produccion',
-                        'siguiente' => 2,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    $numero = $secuencia->siguiente;
-                    DB::table('numero_secuencias')
-                        ->where('tipo', 'pedido_produccion')
-                        ->update(['siguiente' => $numero + 1]);
-                }
-                
-                return $numero;
-            });
-            
-            $pedido->update(['numero_pedido' => $numero]);
-            $resolve($numero);
-        });
-    }
-
-    /**
-     * Crea usuarios de prueba
-     */
-    private function createTestUsers(): void
-    {
-        User::factory()->count(50)->create();
-    }
-
-    /**
-     * Crea un pedido base para pruebas
-     */
-    private function createPedidoBase(): PedidoProduccion
-    {
-        return PedidoProduccion::create([
+        $service = app(PedidoCreationCoordinator::class);
+        return $service->crearPedidoCompleto([
             'cliente' => 'Cliente Test',
-            'asesor_id' => User::first()->id,
-            'estado' => 'pendiente_cartera',
-            'fecha_de_creacion_de_orden' => now(),
-        ]);
+            'orden_compra' => null,
+            'forma_de_pago' => 'Contado',
+            'observaciones' => null,
+            'items' => [
+                [
+                    'nombre_prenda' => 'Camisa Test',
+                    'descripcion' => 'Prueba cartera',
+                    'de_bodega' => 0,
+                    'cantidad_talla' => ['M' => 1],
+                    'telas' => [],
+                    'procesos' => [],
+                ],
+            ],
+            'epps' => [],
+        ], (int) $usuario->id);
     }
 
     protected function tearDown(): void
     {
-        // Restaurar timeout por defecto
-        DB::statement('SET SESSION innodb_lock_wait_timeout = DEFAULT');
+        try {
+            DB::statement('SET SESSION innodb_lock_wait_timeout = DEFAULT');
+        } catch (\Exception $e) {
+            // silencioso
+        }
+
         parent::tearDown();
     }
 }

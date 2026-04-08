@@ -58,8 +58,8 @@ class EppStateManager {
      * Eliminar imagen subida por ID
      */
     eliminarImagenSubida(imagenId) {
-        console.log('🗑️ [EppStateManager] eliminarImagenSubida() llamado con ID:', imagenId, 'tipo:', typeof imagenId);
-        console.log('🗑️ [EppStateManager] Imágenes en estado ANTES:', this.estado.imagenesSubidas.map(img => ({id: img.id, tipo: typeof img.id})));
+        console.log(' [EppStateManager] eliminarImagenSubida() llamado con ID:', imagenId, 'tipo:', typeof imagenId);
+        console.log(' [EppStateManager] Imágenes en estado ANTES:', this.estado.imagenesSubidas.map(img => ({id: img.id, tipo: typeof img.id})));
         
         const imagenesAntes = this.estado.imagenesSubidas.length;
         

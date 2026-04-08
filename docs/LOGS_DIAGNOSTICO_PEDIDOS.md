@@ -22,14 +22,14 @@ storage/logs/laravel.log
 ```
 
 **Componentes medidos:**
--  `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO]  Tallas cargadas` → tiempo_ms
 -  `[CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados` → tiempo_ms
--  `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO]  Clientes cargados` → tiempo_ms
 -  `[CREAR-DESDE-COTIZACION]  Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
 
 **Log final:**
 ```
-[CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
+[CREAR-PEDIDO-NUEVO]  PÁGINA COMPLETADA
 {
   "tiempo_total_ms": 1234.56,
   "tiempo_tallas_ms": 50,
@@ -69,7 +69,7 @@ storage/logs/laravel.log
 
 **Log final con resumen:**
 ```
-[CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL
+[CREAR-PEDIDO]  TRANSACCIÓN EXITOSA - RESUMEN TOTAL
 {
   "tiempo_total_ms": 7500,
   "desglose_pasos": {
@@ -97,7 +97,7 @@ storage/logs/laravel.log
 
 **Log inicial:**
 ```
-[RESOLVER-IMAGENES] 📸 INICIANDO EXTRACCIÓN DE IMÁGENES
+[RESOLVER-IMAGENES]  INICIANDO EXTRACCIÓN DE IMÁGENES
 {
   "archivos_en_request": 10,
   "imagenes_en_dto": 10,
@@ -137,7 +137,7 @@ storage/logs/laravel.log
 
 **Por cada imagen:**
 ```
-[IMAGE-UPLOAD] 📤 Iniciando guardado de imagen
+[IMAGE-UPLOAD]  Iniciando guardado de imagen
 {
   "pedido_id": 123,
   "tipo": "prendas",
@@ -164,7 +164,7 @@ storage/logs/laravel.log
 ### 5️⃣ MAPEO DE IMÁGENES - `MapeoImagenesService`
 
 ```
-[MAPEO-IMAGENES] 📸 INICIANDO MAPEO DE IMÁGENES
+[MAPEO-IMAGENES]  INICIANDO MAPEO DE IMÁGENES
 {
   "pedido_id": 123,
   "prendas": 5,
@@ -177,7 +177,7 @@ storage/logs/laravel.log
   "tiempo_resolver_ms": 2000
 }
 
-[MAPEO-IMAGENES] ✨ MAPEO COMPLETADO
+[MAPEO-IMAGENES]  MAPEO COMPLETADO
 {
   "tiempo_total_ms": 2150,
   "resumen": "Resolver: 2000ms | Registros BD: 150ms | TOTAL: 2150ms"
@@ -198,14 +198,14 @@ tail -f storage/logs/laravel.log | grep "CREAR-PEDIDO"
 tail -f storage/logs/laravel.log | grep "IMAGE-UPLOAD\|RESOLVER-IMAGENES\|MAPEO-IMAGENES"
 
 # Ver resumen rápido (sin debug)
-tail -100 storage/logs/laravel.log | grep "✨\|\|" | tail -20
+tail -100 storage/logs/laravel.log | grep "\|\|" | tail -20
 ```
 
 ###  Escenarios de Problemas Comunes
 
 #### 1. **Página tarda mucho en cargar inicialmente**
 ```
-Buscar: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
+Buscar: [CREAR-PEDIDO-NUEVO]  PÁGINA COMPLETADA
 Si tiempo_total_ms > 5000ms:
   → Si tiempo_cotizaciones_ms > 2000ms → Optimizar query de cotizaciones
   → Si tiempo_clientes_ms > 1000ms → Agregar índices en tabla clientes
@@ -214,9 +214,9 @@ Si tiempo_total_ms > 5000ms:
 
 #### 2. **Guardar pedido tarda mucho**
 ```
-Buscar: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA
+Buscar: [CREAR-PEDIDO]  TRANSACCIÓN EXITOSA
 Si tiempo_total_ms > 10000ms:
-  → Si paso_7_imagenes_ms > 3000ms → Reducir tamaño de imágenes
+  → Si paso_7_imagenes_ms > 3000ms → Reducir tamano de imágenes
   → Si paso_7b_epps_ms > 1500ms → Revisar procesamiento de EPPs
   → Si paso_5_pedido_base_ms > 500ms → Problema en triggers DB
 ```
@@ -254,10 +254,10 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 🛠️ Cómo Optimizar Basándose en Logs
+##  Cómo Optimizar Basándose en Logs
 
 ### Si PASO 7 (Imágenes) es lento:
-1. Verificar tamaño de archivos subidos
+1. Verificar tamano de archivos subidos
 2. Revisar `ImageUploadService.php` línea ~95 (conversión WebP)
 3. Considerar hacer procesamiento en background con Queue
 
@@ -273,13 +273,13 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 -  Los logs usan prefijo `[CREAR-PEDIDO]`, `[RESOLVER-IMAGENES]`, etc. para fácil filtrado
 -  Todos los tiempos están en **milisegundos (ms)**
 -  Los logs incluyen "resumen" en una línea para análisis rápido
 -  **NO dejar estos logs en producción** - aumentan overhead (2-5%)
-- 🔐 Después de debugging, considerar cambiar `Log::info()` a `Log::debug()` para reducir ruido
+-  Después de debugging, considerar cambiar `Log::info()` a `Log::debug()` para reducir ruido
 
 ---
 

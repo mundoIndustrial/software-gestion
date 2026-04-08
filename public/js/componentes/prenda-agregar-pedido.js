@@ -1,5 +1,5 @@
 /**
- * 🆕 Agregar Prenda Nueva a Pedido Existente
+ *  Agregar Prenda Nueva a Pedido Existente
  * 
  * Módulo independiente que permite agregar prendas nuevas a un pedido
  * ya creado, reutilizando el modal de creación de prendas (modal-agregar-prenda-nueva).
@@ -22,7 +22,7 @@
 (function() {
     'use strict';
 
-    console.log('[PrendaAgregarPedido] ✅ Cargado');
+    console.log('[PrendaAgregarPedido]  Cargado');
 
     // ====================================================
     // Utilidades privadas
@@ -35,9 +35,9 @@
     function _getUrlPrefix() {
         const path = window.location.pathname;
         if (path.startsWith('/supervisor-pedidos')) {
-            return { fetch: '/supervisor-pedidos', save: '/supervisor-pedidos', context: 'supervisor' };
+            return { fetch: '/api/supervisor-pedidos/ordenes', save: '/api/supervisor-pedidos/ordenes', context: 'supervisor' };
         }
-        return { fetch: '/asesores/pedidos-produccion', save: '/asesores/pedidos', context: 'asesor' };
+        return { fetch: '/api/asesores/pedidos-produccion', save: '/api/asesores/pedidos', context: 'asesor' };
     }
 
     /**
@@ -50,7 +50,7 @@
             // Si DragDropManager existe y ya fue inicializado, solo reconfigurar los handlers
             // (los elementos DOM se recrearon al limpiar el modal)
             if (window.DragDropManager && window.DragDropManager.inicializado) {
-                console.log('[PrendaAgregarPedido] 🔄 DragDropManager ya inicializado, reconfigurando handlers...');
+                console.log('[PrendaAgregarPedido]  DragDropManager ya inicializado, reconfigurando handlers...');
                 window.DragDropManager.reconfigurarPrendas();
                 window.DragDropManager.reconfigurarTelas();
                 window.DragDropManager.reconfigurarProcesos();
@@ -65,9 +65,9 @@
             // Inicializar si existe
             if (window.DragDropManager && typeof window.DragDropManager.inicializar === 'function') {
                 window.DragDropManager.inicializar();
-                console.log('[PrendaAgregarPedido] ✅ DragDropManager inicializado para modal agregar');
+                console.log('[PrendaAgregarPedido]  DragDropManager inicializado para modal agregar');
             } else {
-                console.warn('[PrendaAgregarPedido] ⚠️ DragDropManager no disponible');
+                console.warn('[PrendaAgregarPedido]  DragDropManager no disponible');
             }
         } catch (e) {
             console.error('[PrendaAgregarPedido] Error inicializando DragDropManager:', e);
@@ -117,7 +117,7 @@
                 inputPlaceholder: 'Describe brevemente el motivo...',
                 inputAttributes: { 'aria-label': 'Novedad del cambio' },
                 showCancelButton: true,
-                confirmButtonText: '💾 Agregar',
+                confirmButtonText: ' Agregar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#10b981',
                 customClass: { container: 'swal-galeria-container' },
@@ -249,7 +249,7 @@
             return;
         }
 
-        console.log('[PrendaAgregarPedido] 🆕 Abriendo modal para AGREGAR nueva prenda al pedido:', pedidoId);
+        console.log('[PrendaAgregarPedido]  Abriendo modal para AGREGAR nueva prenda al pedido:', pedidoId);
 
         // Marcar contexto como "agregar nueva prenda" (sin prendaId)
         window._editandoPrendaDePedido = {
@@ -343,7 +343,7 @@
                 tituloModal.textContent = 'Agregar Prenda Nueva';
             }
 
-            console.log('[PrendaAgregarPedido] 🆕 Modal abierto en modo AGREGAR para pedido:', pedidoId);
+            console.log('[PrendaAgregarPedido]  Modal abierto en modo AGREGAR para pedido:', pedidoId);
 
             // Inicializar drag & drop (prenda, telas, procesos) para que funcione arrastrar y Ctrl+V
             _inicializarDragDropEnModal();
@@ -545,7 +545,7 @@
             // Enviar
             const urlPrefix = _getUrlPrefix();
             const saveUrl = `${urlPrefix.save}/${pedidoId}/agregar-prenda`;
-            console.log('[PrendaAgregarPedido] 📤 POST', saveUrl);
+            console.log('[PrendaAgregarPedido]  POST', saveUrl);
 
             const response = await fetch(saveUrl, {
                 method: 'POST',
@@ -573,7 +573,7 @@
             }
 
             const result = await response.json();
-            console.log('[PrendaAgregarPedido] ✅ Prenda agregada:', result);
+            console.log('[PrendaAgregarPedido]  Prenda agregada:', result);
 
             // Agregar a datos locales
             if (window.datosEdicionPedido && result.prenda) {
@@ -587,7 +587,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: '✅ Prenda agregada',
+                    title: ' Prenda agregada',
                     text: 'La prenda se agregó correctamente al pedido',
                     timer: 1800,
                     showConfirmButton: false,
@@ -627,7 +627,7 @@
 
             // Si estamos en modo AGREGAR, redirigir a nuestro flujo
             if (editContext && editContext.modoAgregar) {
-                console.log('[PrendaAgregarPedido] 🆕 Interceptado → guardando NUEVA prenda para pedido:', editContext.pedidoId);
+                console.log('[PrendaAgregarPedido]  Interceptado → guardando NUEVA prenda para pedido:', editContext.pedidoId);
                 _enviarNuevaPrendaAPI(editContext.pedidoId);
                 return;
             }
@@ -638,7 +638,7 @@
             }
         };
 
-        console.log('[PrendaAgregarPedido] ✅ agregarPrendaNueva interceptada');
+        console.log('[PrendaAgregarPedido]  agregarPrendaNueva interceptada');
     }
 
     // Interceptar cuando el DOM esté listo (después de que el adapter defina agregarPrendaNueva)

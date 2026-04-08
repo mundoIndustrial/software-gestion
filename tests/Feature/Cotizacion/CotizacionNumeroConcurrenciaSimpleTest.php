@@ -6,22 +6,22 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 /**
- * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de numeros funciona con pessimistic lock
  * 
- * Este test NO usa RefreshDatabase porque MySQL estÃ¡ causando timeout
+ * Este test NO usa RefreshDatabase porque MySQL está causando timeout
  * En su lugar, usa directamente MySQLi para testing de BD
  */
 class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
 {
     /**
-     *  TEST: Generar nÃºmero con pessimistic lock
+     *  TEST: Generar numero con pessimistic lock
      * 
      * Valida que el lock funciona sin timeout
      */
     public function test_genera_numero_con_lock()
     {
         try {
-            // Generar un nÃºmero
+            // Generar un numero
             $numero = DB::transaction(function () {
                 $secuencia = DB::table('numero_secuencias')
                     ->lockForUpdate()
@@ -32,10 +32,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     $this->fail('Secuencia no encontrada. Â¿Ejecutaste el seeder?');
                 }
 
-                $proximoNumero = $secuencia->proximo_numero;
+                $proximoNumero = $secuencia->siguiente;
                 DB::table('numero_secuencias')
                     ->where('tipo', 'cotizaciones_prenda')
-                    ->update(['proximo_numero' => $proximoNumero + 1]);
+                    ->update(['siguiente' => $proximoNumero + 1]);
 
                 return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
             });
@@ -43,10 +43,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
             $this->assertNotNull($numero);
             $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
             
-            echo "\n NÃšMERO GENERADO: $numero\n";
+            echo "\n NUMERO GENERADO: $numero\n";
             
         } catch (\Throwable $e) {
-            $this->fail("Error al generar nÃºmero: " . $e->getMessage());
+            $this->fail("Error al generar numero: " . $e->getMessage());
         }
     }
 
@@ -61,12 +61,12 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         
         echo "\n SECUENCIAS ENCONTRADAS:\n";
         foreach ($secuencias as $sec) {
-            echo "  - {$sec->tipo}: próximo_numero = {$sec->proximo_numero}\n";
+            echo "  - {$sec->tipo}: siguiente = {$sec->siguiente}\n";
         }
     }
 
     /**
-     *  TEST: Generar 3 nÃºmeros secuenciales
+     *  TEST: Generar 3 numeros secuenciales
      */
     public function test_genera_tres_numeros_secuenciales()
     {
@@ -79,10 +79,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     ->where('tipo', 'cotizaciones_bordado')
                     ->first();
 
-                $proximoNumero = $secuencia->proximo_numero;
+                $proximoNumero = $secuencia->siguiente;
                 DB::table('numero_secuencias')
                     ->where('tipo', 'cotizaciones_bordado')
-                    ->update(['proximo_numero' => $proximoNumero + 1]);
+                    ->update(['siguiente' => $proximoNumero + 1]);
 
                 return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
             });
@@ -91,9 +91,9 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         }
         
         $this->assertCount(3, $numeros);
-        $this->assertEquals(3, count(array_unique($numeros)), 'Los nÃºmeros no son Ãºnicos');
+        $this->assertEquals(3, count(array_unique($numeros)), 'Los numeros no son unicos');
         
-        echo "\n NÃšMEROS GENERADOS:\n";
+        echo "\n NUMEROS GENERADOS:\n";
         foreach ($numeros as $i => $n) {
             echo "  " . ($i + 1) . ". $n\n";
         }
@@ -104,10 +104,9 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
      */
     public function test_cotizaciones_existen_en_bd()
     {
-        $count = DB::table('cotizacions')->count();
+        $count = DB::table('cotizaciones')->count();
         echo "\n COTIZACIONES EN BD: $count\n";
         
         $this->assertGreaterThan(0, $count, 'No hay cotizaciones. Crea algunas primero.');
     }
 }
-

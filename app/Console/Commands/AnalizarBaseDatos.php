@@ -131,7 +131,7 @@ class AnalizarBaseDatos extends Command
 
         if (!empty($fks)) {
             $this->line('');
-            $this->line('🔗 FOREIGN KEYS:');
+            $this->line(' FOREIGN KEYS:');
             $this->table(
                 ['Restricción', 'Columna', 'Tabla Referenciada', 'Columna Referenciada'],
                 array_map(function ($fk) {

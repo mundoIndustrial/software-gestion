@@ -42,6 +42,9 @@ final class PrendaTecnica
         ?int $puntosEstimados = null
     ) {
         $this->validar($nombrePrenda, $descripcion, $ubicaciones);
+        if (is_array($tallas) && empty($tallas)) {
+            throw new \InvalidArgumentException('Debe especificar al menos una talla');
+        }
 
         $this->id = $id;
         $this->nombrePrenda = trim($nombrePrenda);
@@ -88,6 +91,14 @@ final class PrendaTecnica
     public function nombrePrenda(): string
     {
         return $this->nombrePrenda;
+    }
+
+    /**
+     * Alias legacy para compatibilidad con tests antiguos.
+     */
+    public function obtenerNombre(): string
+    {
+        return $this->nombrePrenda();
     }
 
     public function descripcion(): string

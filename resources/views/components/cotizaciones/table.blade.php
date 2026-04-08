@@ -121,7 +121,7 @@
                                             <!-- Botones PDF dinámicos según tipo y relaciones -->
                                             <?php
                                                 $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
-                                                $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
+                                                $tieneLogo = (bool) ($cot->tiene_logo ?? false);
                                                 
                                                 // Verificar si es LOGO por tipo_cotizacion_id (2 = L) o código tipo
                                                 $esLogo = $cot->tipo_cotizacion_id == 2 || $cot->tipo === 'L';
@@ -228,7 +228,7 @@
         </div>
     @else
         <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
-            <p style="margin: 0; color: #666;">📭 {{ $emptyMessage ?? 'No hay registros' }}</p>
+            <p style="margin: 0; color: #666;"> {{ $emptyMessage ?? 'No hay registros' }}</p>
         </div>
     @endif
 </div>

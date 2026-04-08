@@ -28,7 +28,7 @@ class CorteServiceTest extends TestCase
         $reflection = new ReflectionClass(CorteService::class);
         $methods = $reflection->getMethods();
         
-        // Verificar que tiene mÃ©todos
+        // Verificar que tiene metodos
         $this->assertGreaterThan(1, count($methods));
     }
 
@@ -42,7 +42,7 @@ class CorteServiceTest extends TestCase
             return strpos($m->getName(), '__') === false;
         });
         
-        // Corte service debe tener mÃ©todos pÃºblicos
+        // Corte service debe tener metodos públicos
         $this->assertGreaterThanOrEqual(0, count($publicMethods));
     }
 

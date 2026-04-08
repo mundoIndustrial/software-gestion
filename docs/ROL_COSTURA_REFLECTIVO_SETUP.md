@@ -1,4 +1,4 @@
-# 🪡 Setup Rol Costura-Reflectivo
+#  Setup Rol Costura-Reflectivo
 
 ## Descripción
 

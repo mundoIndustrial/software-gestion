@@ -3,12 +3,12 @@
  * Similar a prenda-editor-pedidos-adapter.js pero para EPPs
  */
 
-window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
+globalThis.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
     const eppId = epp.id || epp.pedido_epp_id;
     const nombreEpp = epp.nombre || epp.epp?.nombre || 'EPP Sin nombre';
     const cantidad = epp.cantidad || 1;
     
-    console.log('[EPPAdapter] 🗑️ Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+    console.log('[EPPAdapter]  Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
 
     if (!pedidoId || !eppId) {
         console.error('[EPPAdapter] Faltan pedidoId o eppId para eliminar');
@@ -59,7 +59,7 @@ window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
         inputPlaceholder: 'Ej: EPP no requerido, cambio en especificaciones, etc.',
         inputAttributes: { 'aria-label': 'Motivo de eliminación' },
         showCancelButton: true,
-        confirmButtonText: '🗑️ Sí, eliminar',
+        confirmButtonText: ' Sí, eliminar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',
@@ -111,9 +111,9 @@ async function _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, motivo) {
             });
         }
 
-        console.log('[EPPAdapter] 📤 Enviando DELETE a: /asesores/pedidos/' + pedidoId + '/eliminar-epp');
+        console.log('[EPPAdapter] Enviando DELETE a: /api/asesores/pedidos/' + pedidoId + '/eliminar-epp');
         
-        const response = await fetch(`/asesores/pedidos/${pedidoId}/eliminar-epp`, {
+        const response = await fetch(`/api/asesores/pedidos/${pedidoId}/eliminar-epp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ async function _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, motivo) {
         const data = await response.json();
 
         if (data.success) {
-            console.log('[EPPAdapter] ✅ EPP eliminado correctamente:', data);
+            console.log('[EPPAdapter]  EPP eliminado correctamente:', data);
             
             if (typeof Swal !== 'undefined') {
                 Swal.fire({

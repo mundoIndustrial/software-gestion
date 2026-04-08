@@ -50,7 +50,7 @@ window.ColoresPorTalla = (function() {
      * Configurar eventos globales
      */
     function configurarEventosGlobales() {
-        console.log('[ColoresPorTalla] 🔹 Configurando eventos globales...');
+        console.log('[ColoresPorTalla]  Configurando eventos globales...');
         
         // Botones principales
         const btnAsignarColores = document.getElementById('btn-asignar-colores-tallas');
@@ -477,7 +477,7 @@ window.ColoresPorTalla = (function() {
      * Actualizar tallas disponibles según el género seleccionado
      */
     function actualizarTallasDisponibles() {
-        console.log('[ColoresPorTalla] 🔵 Actualizando tallas disponibles...');
+        console.log('[ColoresPorTalla]  Actualizando tallas disponibles...');
         
         const generoSelect = document.getElementById('asignacion-genero-select');
         const tallaSelect = document.getElementById('asignacion-talla-select');
@@ -556,7 +556,7 @@ window.ColoresPorTalla = (function() {
      * Actualizar colores disponibles cuando se selecciona una talla
      */
     function actualizarColoresDisponibles() {
-        console.log('[ColoresPorTalla] 🔵 Actualizando colores disponibles...');
+        console.log('[ColoresPorTalla]  Actualizando colores disponibles...');
         
         const generoSelect = document.getElementById('asignacion-genero-select');
         const tallaSelect = document.getElementById('asignacion-talla-select');
@@ -766,7 +766,7 @@ window.ColoresPorTalla = (function() {
         console.log('[wizardGuardarAsignacion]  Asignaciones agrupadas:', asignacionesPorTalla);
         
         // Guardar asignaciones
-        console.log('[wizardGuardarAsignacion] 💾 Llamando a AsignacionManager...');
+        console.log('[wizardGuardarAsignacion]  Llamando a AsignacionManager...');
         const resultado = AsignacionManager.guardarAsignacionesMultiples(genero, tallas, tipo, tela, asignacionesPorTalla);
         
         console.log('[wizardGuardarAsignacion] Resultado:', resultado);

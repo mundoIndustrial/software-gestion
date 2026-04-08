@@ -72,7 +72,7 @@ function displayBodegaDetailModal(orden) {
             clearInterval(checkElements);
             
             // Llenar fecha
-            const fecha = new Date(orden.fecha_de_creacion_de_orden);
+            const fecha = new Date(orden.created_at);
             if (!isNaN(fecha.getTime())) {
                 const dia = String(fecha.getDate()).padStart(2, '0');
                 const mes = String(fecha.getMonth() + 1).padStart(2, '0');

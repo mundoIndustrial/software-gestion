@@ -27,17 +27,26 @@ const nombresSelectorProceso = {
     sublimado: 'Sublimado'
 };
 
+function abrirModalProcesoGenericoSeguro(tipoProceso, esEdicion = false) {
+    const controller = globalThis.ProcesoModalController;
+    if (controller?.abrir) {
+        controller.abrir(tipoProceso, esEdicion);
+        return;
+    }
+    globalThis.abrirModalProcesoGenerico?.(tipoProceso, esEdicion);
+}
+
 /**
  * Abre el modal selector de modo para un proceso.
  * Se llama desde manejarCheckboxProceso en lugar de abrirModalProcesoGenerico.
  */
-window.abrirSelectorModoProceso = function(tipoProceso) {
+globalThis.abrirSelectorModoProceso = function(tipoProceso) {
     procesoEnSelector = tipoProceso;
     
     const modal = document.getElementById('modal-selector-modo-proceso');
     if (!modal) {
         console.warn('[selector-modo] Modal selector no encontrado, abriendo modal genérico como fallback');
-        window.abrirModalProcesoGenerico(tipoProceso);
+        abrirModalProcesoGenericoSeguro(tipoProceso);
         return;
     }
     
@@ -56,7 +65,7 @@ window.abrirSelectorModoProceso = function(tipoProceso) {
  * Cierra el modal selector.
  * @param {boolean} cancelado - Si es true, desmarca el checkbox del proceso
  */
-window.cerrarSelectorModoProceso = function(cancelado) {
+globalThis.cerrarSelectorModoProceso = function(cancelado) {
     const modal = document.getElementById('modal-selector-modo-proceso');
     if (modal) {
         modal.style.display = 'none';
@@ -72,7 +81,7 @@ window.cerrarSelectorModoProceso = function(cancelado) {
         }
         
         // Eliminar de procesosSeleccionados
-        delete window.procesosSeleccionados[procesoEnSelector];
+        delete globalThis.procesosSeleccionados[procesoEnSelector];
         
         // Actualizar resumen si existe la función
         if (typeof actualizarResumenProcesos === 'function') {
@@ -87,7 +96,7 @@ window.cerrarSelectorModoProceso = function(cancelado) {
  * Modo "Para Todas": Aplica proceso a todas las tallas y abre modal genérico.
  * El modal genérico ya tiene campos de ubicación, observaciones y fotos.
  */
-window.seleccionarModoProcesoTodas = function() {
+globalThis.seleccionarModoProcesoTodas = function() {
     if (!procesoEnSelector) return;
     
     const tipoProceso = procesoEnSelector;
@@ -97,32 +106,34 @@ window.seleccionarModoProcesoTodas = function() {
     if (modal) modal.style.display = 'none';
     procesoEnSelector = null;
     
-    // Guardar el modo seleccionado en el proceso
-    if (window.procesosSeleccionados[tipoProceso]) {
-        window.procesosSeleccionados[tipoProceso].modoTallas = 'generico';
+    // Guardar el modo seleccionado en la fuente única canónica
+    if (globalThis.procesosSeleccionados[tipoProceso]) {
+        if (!globalThis.procesosSeleccionados[tipoProceso].datos || typeof globalThis.procesosSeleccionados[tipoProceso].datos !== 'object') {
+            globalThis.procesosSeleccionados[tipoProceso].datos = { tipo: tipoProceso };
+        }
+        globalThis.procesosSeleccionados[tipoProceso].datos.modo_tallas = 'generico';
     }
     
     // Abrir modal genérico (que tiene ubicaciones, observaciones y fotos)
-    window.abrirModalProcesoGenerico(tipoProceso);
+    abrirModalProcesoGenericoSeguro(tipoProceso);
     
     // Auto-asignar todas las tallas
     setTimeout(function() {
-        if (typeof window.aplicarProcesoParaTodasTallas === 'function') {
-            window.aplicarProcesoParaTodasTallas();
+        if (typeof globalThis.aplicarProcesoParaTodasTallas === 'function') {
+            globalThis.aplicarProcesoParaTodasTallas();
         }
         
         // Ocultar la sección de botones de tallas ya que son "para todas"
         const btnTodas = document.getElementById('btn-aplicar-todas-tallas');
-        // const btnEditar = document.getElementById('btn-editar-tallas-especificas'); // COMENTADO
         if (btnTodas) btnTodas.style.display = 'none';
-        // if (btnEditar) btnEditar.style.display = 'none'; // COMENTADO
     }, 100);
 };
 
 /**
  * Modo "Por Tallas": Abre el modal dedicado de proceso por tallas.
+ * Contrato de dominio persistente: modo_tallas = "especifico".
  */
-window.seleccionarModoProcesoTallas = function() {
+globalThis.seleccionarModoProcesoTallas = function() {
     if (!procesoEnSelector) return;
     
     const tipoProceso = procesoEnSelector;
@@ -132,15 +143,17 @@ window.seleccionarModoProcesoTallas = function() {
     if (modal) modal.style.display = 'none';
     procesoEnSelector = null;
     
-    // Guardar el modo seleccionado en el proceso
-    if (window.procesosSeleccionados[tipoProceso]) {
-        window.procesosSeleccionados[tipoProceso].modoTallas = 'por_tallas';
-    }
-    
-    // Abrir modal dedicado de proceso por tallas
-    if (typeof window.abrirModalProcesoPorTallas === 'function') {
-        window.abrirModalProcesoPorTallas(tipoProceso);
+    // Guardar el modo seleccionado en la fuente única canónica
+    if (globalThis.procesosSeleccionados[tipoProceso]) {
+        if (!globalThis.procesosSeleccionados[tipoProceso].datos || typeof globalThis.procesosSeleccionados[tipoProceso].datos !== 'object') {
+            globalThis.procesosSeleccionados[tipoProceso].datos = { tipo: tipoProceso };
+        }
+        // Por defecto, cuando el usuario elige "Por Tallas" en la creación, se abre en modo general.
+        globalThis.procesosSeleccionados[tipoProceso].datos.modo_tallas = 'general';
+        if (globalThis.ProcesoPorTallasController?.abrirModalProcesoPorTallas) {
+            globalThis.ProcesoPorTallasController.abrirModalProcesoPorTallas(tipoProceso);
+        }
     } else {
-        console.error('[selector-modo] abrirModalProcesoPorTallas no encontrada');
+        console.error('[selector-modo] ProcesoPorTallasController.abrirModalProcesoPorTallas no encontrada');
     }
 };

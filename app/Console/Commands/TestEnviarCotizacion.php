@@ -18,7 +18,7 @@ class TestEnviarCotizacion extends Command
 
     public function handle()
     {
-        $this->info('🧪 TEST: Enviar cotización con número secuencial');
+        $this->info(' TEST: Enviar cotización con número secuencial');
         
         // Obtener un usuario (asesor)
         $usuario = User::first();

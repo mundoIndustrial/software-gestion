@@ -137,7 +137,7 @@
                                 🏭 Producción
                                 @break
                             @case('clientes')
-                                👥 Clientes
+                                 Clientes
                                 @break
                             @default
                                  General
@@ -166,7 +166,7 @@
                              Editar
                         </button>
                         <button type="button" class="btn-eliminar" onclick="eliminarReporte({{ $reporte->id }})">
-                            🗑️ Eliminar
+                             Eliminar
                         </button>
                     </div>
                 </div>
@@ -182,7 +182,7 @@
     @else
         <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 60px 20px; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 1.1rem; margin-bottom: 20px;">
-                📭 No hay reportes creados aún
+                 No hay reportes creados aún
             </p>
             <button type="button" class="btn-add-product-friendly" onclick="abrirModalReporte()">
                 <i class="fas fa-plus-circle"></i> CREAR PRIMER REPORTE
@@ -215,7 +215,7 @@
                     <option value="">Seleccionar tipo</option>
                     <option value="ventas">📈 Ventas</option>
                     <option value="produccion">🏭 Producción</option>
-                    <option value="clientes">👥 Clientes</option>
+                    <option value="clientes"> Clientes</option>
                     <option value="general"> General</option>
                 </select>
             </div>

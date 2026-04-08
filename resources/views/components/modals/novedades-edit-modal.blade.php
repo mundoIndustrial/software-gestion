@@ -8,7 +8,7 @@
         <div class="px-6 py-6">
             <div id="novedadesHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando novedades...</span>
+                    <span class="text-slate-500"> Cargando novedades...</span>
                 </div>
             </div>
             

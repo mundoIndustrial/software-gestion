@@ -9,8 +9,8 @@ use Tests\TestCase;
 /**
  * TestCotizacionNumeroConcurrencia
  *
- * Verifica que dos o mÃ¡s asesores creando cotizaciones simultÃ¡neamente
- * reciban nÃºmeros Ãºnicos y consecutivos
+ * Verifica que dos o mas asesores creando cotizaciones simultaneamente
+ * reciban numeros unicos y consecutivos
  */
 class TestCotizacionNumeroConcurrencia extends TestCase
 {
@@ -23,7 +23,7 @@ class TestCotizacionNumeroConcurrencia extends TestCase
     }
 
     /**
-     * Test: Verificar que cada asesor obtiene nÃºmeros secuenciales sin duplicados
+     * Test: Verificar que cada asesor obtiene numeros secuenciales sin duplicados
      */
     public function test_cada_asesor_obtiene_numeros_secuenciales_unicos()
     {
@@ -35,23 +35,23 @@ class TestCotizacionNumeroConcurrencia extends TestCase
         $usuarioId1 = \App\Domain\Shared\ValueObjects\UserId::crear($asesor1->id);
         $usuarioId2 = \App\Domain\Shared\ValueObjects\UserId::crear($asesor2->id);
 
-        // Generar 5 nÃºmeros para asesor 1
+        // Generar 5 numeros para asesor 1
         $numeros1 = [];
         for ($i = 0; $i < 5; $i++) {
             $numeros1[] = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId1);
         }
 
-        // Generar 5 nÃºmeros para asesor 2
+        // Generar 5 numeros para asesor 2
         $numeros2 = [];
         for ($i = 0; $i < 5; $i++) {
             $numeros2[] = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId2);
         }
 
-        // Verificar que los nÃºmeros del asesor 1 son Ãºnicos
-        $this->assertEquals(5, count(array_unique($numeros1)), 'Asesor 1 tiene nÃºmeros duplicados');
+        // Verificar que los numeros del asesor 1 son unicos
+        $this->assertEquals(5, count(array_unique($numeros1)), 'Asesor 1 tiene numeros duplicados');
         
-        // Verificar que los nÃºmeros del asesor 2 son Ãºnicos
-        $this->assertEquals(5, count(array_unique($numeros2)), 'Asesor 2 tiene nÃºmeros duplicados');
+        // Verificar que los numeros del asesor 2 son unicos
+        $this->assertEquals(5, count(array_unique($numeros2)), 'Asesor 2 tiene numeros duplicados');
 
         // Verificar que son consecutivos para asesor 1
         $this->assertEquals('COT-00001', $numeros1[0]);
@@ -69,7 +69,7 @@ class TestCotizacionNumeroConcurrencia extends TestCase
     }
 
     /**
-     * Test: Verificar el formateo de nÃºmeros
+     * Test: Verificar el formateo de numeros
      */
     public function test_formatear_numero_cotizacion()
     {
@@ -81,7 +81,7 @@ class TestCotizacionNumeroConcurrencia extends TestCase
     }
 
     /**
-     * Test: Simular 20 asesores solicitando nÃºmeros simultÃ¡neamente
+     * Test: Simular 20 asesores solicitando numeros simultaneamente
      * Simula una concurrencia moderada sin crear threads reales
      */
     public function test_20_asesores_obtienen_numeros_unicos()
@@ -90,7 +90,7 @@ class TestCotizacionNumeroConcurrencia extends TestCase
         $asesores = User::factory()->count(20)->create();
         $todosLosNumeros = [];
 
-        // Cada asesor obtiene 3 nÃºmeros
+        // Cada asesor obtiene 3 numeros
         foreach ($asesores as $asesor) {
             $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear($asesor->id);
             $numerosDelAsesor = [];
@@ -101,12 +101,12 @@ class TestCotizacionNumeroConcurrencia extends TestCase
                 $todosLosNumeros[$asesor->id][] = $numero;
             }
 
-            // Verificar que cada asesor tiene 3 nÃºmeros Ãºnicos
+            // Verificar que cada asesor tiene 3 numeros unicos
             $this->assertEquals(3, count(array_unique($numerosDelAsesor)), 
-                "Asesor {$asesor->id} tiene nÃºmeros duplicados");
+                "Asesor {$asesor->id} tiene numeros duplicados");
         }
 
-        // Verificar que TODOS los nÃºmeros en la BD son Ãºnicos (no hay duplicados entre asesores)
+        // Verificar que TODOS los numeros en la BD son unicos (no hay duplicados entre asesores)
         $todosLosCombinados = [];
         foreach ($todosLosNumeros as $asesor_id => $numeros) {
             foreach ($numeros as $numero) {
@@ -116,9 +116,9 @@ class TestCotizacionNumeroConcurrencia extends TestCase
         }
 
         $this->assertEquals(60, count(array_unique($todosLosCombinados)), 
-            'Hay nÃºmeros duplicados entre los 20 asesores');
+            'Hay numeros duplicados entre los 20 asesores');
 
-        // Verificar que cada asesor tiene sus nÃºmeros consecutivos desde 1
+        // Verificar que cada asesor tiene sus numeros consecutivos desde 1
         foreach ($todosLosNumeros as $asesor_id => $numeros) {
             $this->assertEquals('COT-00001', $numeros[0], "Asesor $asesor_id no comienza en 1");
             $this->assertEquals('COT-00002', $numeros[1], "Asesor $asesor_id no es secuencial");

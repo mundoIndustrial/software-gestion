@@ -6,7 +6,7 @@ namespace App\Application\Pedidos\DTOs;
  * DTO para actualizar prenda COMPLETA con todas sus relaciones
  * 
  * Maneja:
- * - prendas_pedido (campos bÃ¡sicos)
+ * - prendas_pedido (campos basicos)
  * - prenda_pedido_tallas
  * - prenda_pedido_variantes
  * - prenda_pedido_colores_telas
@@ -51,6 +51,19 @@ final class ActualizarPrendaCompletaDTO
             
             // Si el JSON decodificado es vacío ({} → []), no tocar tallas
             if (is_array($tallasArray) && !empty($tallasArray)) {
+                // Guard rail: si llega ["L","M"] u otro array plano de strings/números,
+                // considerarlo payload inválido para update y NO tocar tallas existentes.
+                $esArrayPlanoEscalar = !empty($tallasArray)
+                    && array_keys($tallasArray) === range(0, count($tallasArray) - 1)
+                    && is_scalar(reset($tallasArray));
+
+                if ($esArrayPlanoEscalar) {
+                    \Log::warning('[ActualizarPrendaCompletaDTO] Formato de tallas invalido (array plano). Se ignora para evitar borrado accidental.', [
+                        'prenda_id' => $prendaId,
+                        'tallas_recibidas' => $tallasArray,
+                    ]);
+                    $cantidadTalla = null;
+                } else {
                 // Detectar formato: si tiene keys numéricas con sub-arrays que tienen 'genero' → Formato B
                 // Si tiene keys como DAMA/CABALLERO/UNISEX → Formato A (ya es cantidadTalla)
                 $primeraKey = array_key_first($tallasArray);
@@ -81,6 +94,7 @@ final class ActualizarPrendaCompletaDTO
                 } else {
                     // Fallback: asumir formato A
                     $cantidadTalla = $tallasArray;
+                }
                 }
             }
             // Si tallasArray es vacío → cantidadTalla queda null → no tocar tallas existentes
@@ -174,7 +188,7 @@ final class ActualizarPrendaCompletaDTO
         }
 
         // Parsear asignaciones_colores si viene como JSON string
-        // 🔴 NUEVO: Usar array_key_exists para distinguir "no enviado" (null) de "enviado vacío" ([])
+        //  NUEVO: Usar array_key_exists para distinguir "no enviado" (null) de "enviado vacío" ([])
         $asignacionesColores = null;
         if (array_key_exists('asignaciones_colores', $data)) {
             $raw = $data['asignaciones_colores'];
@@ -231,4 +245,3 @@ final class ActualizarPrendaCompletaDTO
         );
     }
 }
-

@@ -47,8 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Configurar listeners de contadores
   configurarContadores();
   
-  // Configurar auto-refresh cada 5 minutos
-  setInterval(cargarPedidos, 5 * 60 * 1000);
+  // Sin polling: actualizacion por eventos WebSocket/manual
   
   // Configurar WebSockets en tiempo real para nuevos pedidos
   // Esperar 1 segundo para asegurar que Echo esté listo
@@ -162,7 +161,7 @@ function renderizarTabla(pedidos) {
     const numero = pedido.numero_pedido || pedido.numero || 'N/A';
     const cliente = pedido.cliente || pedido.nombre_cliente || 'N/A';
     const estado = pedido.estado || 'Pendiente cartera';
-    const fecha = formatearFecha(pedido.fecha_de_creacion_de_orden || pedido.fecha_creacion || new Date());
+    const fecha = formatearFecha(pedido.created_at || pedido.fecha_creacion || new Date());
     
     html += `
       <div class="table-row" data-pedido-id="${pedido.id}">
@@ -285,7 +284,7 @@ function abrirModalAprobacion(pedidoId, numeroPedido) {
       </div>
       <div class="resumen-item">
         <span class="label">Fecha:</span>
-        <span class="value">${formatearFecha(pedido.fecha_de_creacion_de_orden)}</span>
+        <span class="value">${formatearFecha(pedido.created_at)}</span>
       </div>
       <div class="resumen-item">
         <span class="label">Estado Actual:</span>
@@ -659,7 +658,7 @@ function configurarWebSocketsPedidos() {
     return;
   }
 
-  console.log('🔌 [CarteraPedidos] Intentando conectar a WebSockets...');
+  console.log(' [CarteraPedidos] Intentando conectar a WebSockets...');
 
   try {
     // Escuchar en el canal 'pedidos.creados'
@@ -743,3 +742,4 @@ document.addEventListener('keydown', function(event) {
 });
 
 console.log(' Script de Cartera Pedidos cargado correctamente');
+

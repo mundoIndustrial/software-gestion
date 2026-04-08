@@ -79,6 +79,14 @@ final class ListPedidosLogoUseCase
             // Verificar si está completado (solo para bordador)
             $completado = $isBordador && in_array($proceso->id, $recibosCompletadosIds);
 
+            // Extract pedido_parcial_id safely - could be from attribute or property
+            $pedidoParcialId = null;
+            if (isset($proceso->pedido_parcial_id)) {
+                $pedidoParcialId = $proceso->pedido_parcial_id;
+            } elseif (is_array($proceso) && isset($proceso['pedido_parcial_id'])) {
+                $pedidoParcialId = $proceso['pedido_parcial_id'];
+            }
+
             if ($isMinimalLogoRole) {
                 return [
                     'id' => $proceso->id,
@@ -91,7 +99,8 @@ final class ListPedidosLogoUseCase
                     'tipo_proceso' => $proceso->tipoProceso?->nombre,
                     'tipo_proceso_id' => $proceso->tipo_proceso_id,
                     'es_parcial' => (bool)($proceso->es_parcial ?? false),
-                    'pedido_parcial_id' => $proceso->pedido_parcial_id ?? null,
+                    'pedido_parcial_id' => $pedidoParcialId,
+                    'fecha_activacion' => $proceso->fecha_activacion ?? null,
                     'completado' => $completado,
                 ];
             }
@@ -113,7 +122,8 @@ final class ListPedidosLogoUseCase
                 'total_dias' => (int) $totalDias,
                 'asesora' => $asesoraNombre,
                 'es_parcial' => (bool)($proceso->es_parcial ?? false),
-                'pedido_parcial_id' => $proceso->pedido_parcial_id ?? null,
+                'pedido_parcial_id' => $pedidoParcialId,
+                'fecha_activacion' => $proceso->fecha_activacion ?? null,
             ];
         });
 

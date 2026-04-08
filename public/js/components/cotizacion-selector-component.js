@@ -151,7 +151,7 @@
          * Cargar datos de la cotización desde el servidor
          */
         _cargarDatosCotizacion(id) {
-            fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${id}`, {
+            fetch(`/api/asesores/pedidos-produccion/obtener-datos-cotizacion/${id}`, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'

@@ -30,4 +30,5 @@ class PedidoEppImagen extends Model
     {
         return $this->belongsTo(PedidoEpp::class);
     }
+
 }

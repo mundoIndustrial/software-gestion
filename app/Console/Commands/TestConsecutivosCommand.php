@@ -20,7 +20,7 @@ class TestConsecutivosCommand extends Command
 
     public function handle()
     {
-        $this->info('🧪 Probando generación de consecutivos...');
+        $this->info(' Probando generación de consecutivos...');
 
         try {
             // 1. Buscar un pedido en estado PENDIENTE_SUPERVISOR
@@ -99,7 +99,7 @@ class TestConsecutivosCommand extends Command
         } catch (\Exception $e) {
             $this->error(" Error: " . $e->getMessage());
             $this->error(" Línea: " . $e->getLine());
-            $this->error("📁 Archivo: " . $e->getFile());
+            $this->error(" Archivo: " . $e->getFile());
             return 1;
         }
 

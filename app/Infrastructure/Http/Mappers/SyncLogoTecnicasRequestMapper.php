@@ -50,16 +50,6 @@ final class SyncLogoTecnicasRequestMapper
             $this->flattenFiles($imagenesPaso3Files, $imagenesPaso3Archivos, 'logo[imagenes_paso3]');
         }
 
-        $logoFotosGuardadas = $request->input('logo_fotos_guardadas', []);
-        if (!is_array($logoFotosGuardadas)) {
-            $logoFotosGuardadas = $logoFotosGuardadas ? [$logoFotosGuardadas] : [];
-        }
-
-        $logoFotosExistentes = $request->input('logo_fotos_existentes', []);
-        if (!is_array($logoFotosExistentes)) {
-            $logoFotosExistentes = $logoFotosExistentes ? [$logoFotosExistentes] : [];
-        }
-
         return new SyncLogoTecnicasDTO(
             cotizacionId: $cotizacionId,
             tipoCotizacion: is_string($tipoCotizacion) ? $tipoCotizacion : null,
@@ -69,8 +59,6 @@ final class SyncLogoTecnicasRequestMapper
             tecnicasAgregadasPresent: $tecnicasAgregadasPresent,
             logoArchivos: $logoArchivos,
             imagenesPaso3Archivos: $imagenesPaso3Archivos,
-            logoFotosGuardadas: $logoFotosGuardadas,
-            logoFotosExistentes: $logoFotosExistentes,
         );
     }
 

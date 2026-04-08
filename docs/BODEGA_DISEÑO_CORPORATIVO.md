@@ -4,7 +4,7 @@
 
 Sistema de gestión de pedidos para bodegueros con interfaz corporativa, industrial y profesional. Estructura jerárquica con agrupación por número de pedido.
 
-## ✨ Características del Diseño
+##  Características del Diseño
 
 ###  Visual Corporativo
 - **Colores Slate/Gris** para sensación industrial
@@ -13,7 +13,7 @@ Sistema de gestión de pedidos para bodegueros con interfaz corporativa, industr
 - **No sombras exageradas** - Bordes visuales claros
 - **Sensación de control administrativo**
 
-### 🏗️ Estructura Jerárquica (3 Niveles)
+###  Estructura Jerárquica (3 Niveles)
 
 ```
 ENCABEZADO (THEAD)
@@ -37,11 +37,11 @@ FILAS DE ARTÍCULOS
 └─ Si está entregado: fondo azul claro
 ```
 
-## 🎯 Estados Visuales
+##  Estados Visuales
 
 | Estado | Badge | Color | Botón |
 |--------|-------|-------|-------|
-| **PENDIENTE** | ⏳ PENDIENTE | Ámbar (#f59e0b) | ENTREGAR (border-black) |
+| **PENDIENTE** |  PENDIENTE | Ámbar (#f59e0b) | ENTREGAR (border-black) |
 | **ENTREGADO** | ✓ OK | Azul (#2563eb) | Deshabilitado (badge azul) |
 | **RETRASADO** | ⚠ RETRASADO | Rojo (#dc2626) | ENTREGAR (borde rojo) |
 
@@ -129,7 +129,7 @@ En `resources/views/layouts/app.blade.php`:
 <meta name="csrf-token" content="{{ csrf_token() }}">
 ```
 
-## 📂 Archivos Generados
+##  Archivos Generados
 
 ```
 resources/views/bodega/
@@ -184,7 +184,7 @@ body {
 }
 ```
 
-## 🔐 Seguridad
+##  Seguridad
 
  **CSRF Protection** - Todos los POST llevan token
  **Autorización** - Requiere rol `bodeguero`
@@ -213,7 +213,7 @@ POST /bodega/pedidos/fecha
 Body: { id: 1, fecha_entrega: "2026-02-15" }
 ```
 
-## 🧪 Testing
+##  Testing
 
 Ejecutar tests:
 ```bash
@@ -234,7 +234,7 @@ Se actualizan al filtrar o cambiar estados.
 ### Detección Automática de Retrasados
 Si fecha < hoy, automáticamente marca como "RETRASADO".
 
-## 🐛 Solución de Problemas
+## Solución de Problemas
 
 ### "Meta CSRF token not found"
 En `layouts/app.blade.php`, dentro de `<head>`:
@@ -261,7 +261,7 @@ Cargar datos de prueba:
 php artisan db:seed ReciboPrendaSeeder
 ```
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 1. **No usa sombras** - Solo bordes. Más industrial.
 2. **Tipografía pesada** - Font-black, uppercase, tracking-widest

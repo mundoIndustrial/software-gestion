@@ -57,7 +57,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
                         'orden' => $index + 1,
                         'ancho' => $info['ancho'] ?? null,
                         'alto' => $info['alto'] ?? null,
-                        'tamaño' => $info['tamaño'] ?? null,
+                        'tamano' => $info['tamano'] ?? null,
                     ]);
 
                     \Log::info(' Imagen procesada', [

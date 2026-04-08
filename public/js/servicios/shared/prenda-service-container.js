@@ -1,5 +1,5 @@
 /**
- * 🔒 PrendaServiceContainer
+ *  PrendaServiceContainer
  * 
  * Contenedor de inyección de dependencias para servicios de prendas
  * 
@@ -208,8 +208,8 @@ class PrendaServiceContainer {
 }
 
 // Crear instancia global UNA SOLA VEZ
-if (!window.prendasServiceContainer) {
-    window.prendasServiceContainer = new PrendaServiceContainer({
+if (!globalThis.prendasServiceContainer) {
+    globalThis.prendasServiceContainer = new PrendaServiceContainer({
         debug: false, // Cambiar a true para debugging
         apiBaseUrl: '/api/prendas',
         storageEndpoint: '/api/storage/prendas',
@@ -219,5 +219,5 @@ if (!window.prendasServiceContainer) {
 }
 
 // Exportar
-window.PrendaServiceContainer = PrendaServiceContainer;
+globalThis.PrendaServiceContainer = PrendaServiceContainer;
 Logger.debug('Contenedor cargado', 'PrendaServiceContainer');

@@ -15,7 +15,7 @@ class TestTransformacion extends Command
 
     public function handle()
     {
-        $this->info('🧪 Probando transformación de datos...');
+        $this->info(' Probando transformación de datos...');
         
         // Buscar el pedido para saber su asesor
         $pedido = PedidoProduccion::find(2596);
@@ -42,7 +42,7 @@ class TestTransformacion extends Command
         if (isset($datos['pedido']) && isset($datos['pedido']->prendas)) {
             $this->info("\n Prendas transformadas:");
             foreach ($datos['pedido']->prendas as $prenda) {
-                $this->line("  📌 " . $prenda['nombre_prenda']);
+                $this->line("   " . $prenda['nombre_prenda']);
                 $this->line("     telaFotos: " . json_encode($prenda['telaFotos'] ?? []));
                 $this->line("     telasAgregadas: " . json_encode($prenda['telasAgregadas'] ?? []));
             }

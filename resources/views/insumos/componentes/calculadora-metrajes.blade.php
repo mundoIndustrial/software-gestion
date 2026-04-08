@@ -27,7 +27,7 @@
                     <h2 class="text-xl font-bold text-gray-900">Largo x Ancho</h2>
                 </div>
                 <p class="text-gray-600 text-sm mb-4">Calcula metraje por dimensiones</p>
-                <button onclick="abrirCalculadora('largoAncho')" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">
+                <button data-calculadora-action="open" data-calculadora-tipo="largoAncho" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">
                     Abrir Calculadora
                 </button>
             </div>
@@ -41,7 +41,7 @@
                     <h2 class="text-xl font-bold text-gray-900">Cantidad x Metraje</h2>
                 </div>
                 <p class="text-gray-600 text-sm mb-4">Calcula metraje por cantidad de prendas</p>
-                <button onclick="abrirCalculadora('cantidadMetraje')" class="w-full bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700 transition">
+                <button data-calculadora-action="open" data-calculadora-tipo="cantidadMetraje" class="w-full bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700 transition">
                     Abrir Calculadora
                 </button>
             </div>
@@ -55,7 +55,7 @@
                     <h2 class="text-xl font-bold text-gray-900">Personalizada</h2>
                 </div>
                 <p class="text-gray-600 text-sm mb-4">Crea tu propia fórmula de cálculo</p>
-                <button onclick="abrirCalculadora('personalizada')" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition">
+                <button data-calculadora-action="open" data-calculadora-tipo="personalizada" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition">
                     Abrir Calculadora
                 </button>
             </div>
@@ -77,7 +77,7 @@
         {{-- Header --}}
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
             <h3 class="text-xl font-bold" id="modalTitle">Calculadora</h3>
-            <button onclick="cerrarCalculadora()" class="text-white hover:bg-blue-800 p-2 rounded">
+            <button data-calculadora-action="close" class="text-white hover:bg-blue-800 p-2 rounded">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -89,10 +89,10 @@
 
         {{-- Footer --}}
         <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
-            <button onclick="cerrarCalculadora()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">
+            <button data-calculadora-action="close" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">
                 Cerrar
             </button>
-            <button onclick="guardarCalculo()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <button data-calculadora-action="save" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                 Guardar Cálculo
             </button>
         </div>
@@ -229,7 +229,7 @@
                         <p class="text-sm text-gray-500">${calc.fecha}</p>
                         <p class="text-lg font-bold text-blue-600 mt-2">${calc.resultado}</p>
                     </div>
-                    <button onclick="eliminarCalculo(${idx})" class="text-red-600 hover:text-red-800">
+                    <button data-calculadora-action="delete" data-calculo-index="${idx}" class="text-red-600 hover:text-red-800">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -243,6 +243,34 @@
         localStorage.setItem('historialCalculos', JSON.stringify(historial));
         cargarHistorial();
     }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('[data-calculadora-action]');
+        if (!trigger) return;
+
+        const action = trigger.getAttribute('data-calculadora-action');
+
+        if (action === 'open') {
+            const tipo = trigger.getAttribute('data-calculadora-tipo');
+            if (tipo) abrirCalculadora(tipo);
+            return;
+        }
+
+        if (action === 'close') {
+            cerrarCalculadora();
+            return;
+        }
+
+        if (action === 'save') {
+            guardarCalculo();
+            return;
+        }
+
+        if (action === 'delete') {
+            const index = Number(trigger.getAttribute('data-calculo-index'));
+            if (Number.isFinite(index)) eliminarCalculo(index);
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', cargarHistorial);
 </script>

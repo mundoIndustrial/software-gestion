@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
-use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
-use App\Http\Controllers\Api_temp\PedidoController;
+use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
+use App\Infrastructure\Http\Controllers\PedidoController;
 
 class AnalizarTrackingDatos extends Command
 {
@@ -34,7 +34,7 @@ class AnalizarTrackingDatos extends Command
             $this->newLine();
             $this->line("Campos principales:");
             $this->line("  • estado: " . ($pedidoDb->estado ?? 'NULL'));
-            $this->line("  • fecha_de_creacion_de_orden: " . ($pedidoDb->fecha_de_creacion_de_orden ?? 'NULL'));
+            $this->line("  • created_at: " . ($pedidoDb->created_at ?? 'NULL'));
             $this->line("  • fecha_estimada_de_entrega: " . ($pedidoDb->fecha_estimada_de_entrega ?? 'NULL'));
             $this->line("  • cliente: " . ($pedidoDb->cliente ?? 'NULL'));
             $this->line("  • area: " . ($pedidoDb->area ?? 'NULL'));
@@ -76,7 +76,7 @@ class AnalizarTrackingDatos extends Command
             $this->line("  • numero_pedido: " . ($resultado->numero_pedido ?? 'NULL'));
             $this->line("  • cliente: " . ($resultado->cliente ?? 'NULL'));
             $this->line("  • estado: " . ($resultado->estado ?? 'NULL'));
-            $this->line("  • fecha_de_creacion_de_orden: " . ($resultado->fecha_de_creacion_de_orden ?? 'NULL'));
+            $this->line("  • created_at: " . ($resultado->created_at ?? 'NULL'));
             $this->line("  • procesos (count): " . count($resultado->procesos ?? []));
             
             if (!empty($resultado->procesos)) {
@@ -97,7 +97,7 @@ class AnalizarTrackingDatos extends Command
         $this->line("─────────────────────────────────────────────────────────────────");
 
         try {
-            $controller = app(PedidosProduccionController::class);
+            $controller = app(ProcesosPedidoController::class);
             $response = $controller->getProcesos($pedidoId);
             $apiData = json_decode($response->getContent(), true);
             

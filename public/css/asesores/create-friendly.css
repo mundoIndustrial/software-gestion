@@ -111,7 +111,7 @@
     font-size: 0.72rem;
 }
 
-/* EXCEPCIÓN: Menú flotante debe mantener su tamaño */
+/* EXCEPCIÓN: Menú flotante debe mantener su tamano */
 .friendly-form-fullscreen #menuFlotante button {
     font-size: 13px !important;
 }

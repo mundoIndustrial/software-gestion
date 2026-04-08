@@ -20,7 +20,7 @@ class RegistroOrdenQueryService
      * Columnas que son de fecha (para formatting)
      */
     protected $dateColumns = [
-        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+        'created_at', 'fecha_estimada_de_entrega', 'inventario', 
         'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
         'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega'
     ];
@@ -35,7 +35,7 @@ class RegistroOrdenQueryService
         return PedidoProduccion::query()
             ->select([
                 'id', 'numero_pedido', 'estado', 'area', 'cliente', 'cliente_id',
-                'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega',
+                'created_at', 'fecha_estimada_de_entrega',
                 'fecha_ultimo_proceso',
                 'dia_de_entrega', 'asesor_id', 'forma_de_pago',
                 'novedades', 'cotizacion_id', 'numero_cotizacion', 'aprobado_por_supervisor_en'
@@ -80,7 +80,7 @@ class RegistroOrdenQueryService
      * Columnas que son de fecha (para formatting)
      */
     protected $dateColumnsOld = [
-        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+        'created_at', 'fecha_estimada_de_entrega', 'inventario', 
         'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
         'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega'
     ];
@@ -95,7 +95,7 @@ class RegistroOrdenQueryService
     {
         $allowedColumns = [
             'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
-            'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
+            'novedades', 'dia_de_entrega', 'created_at',
             'fecha_estimada_de_entrega', 'fecha_ultimo_proceso', 'descripcion_prendas',
             'asesora', 'encargado_orden'
         ];

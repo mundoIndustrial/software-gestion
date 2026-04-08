@@ -1,5 +1,5 @@
 /**
- * 📦 Servicio de Carga de Módulos
+ *  Servicio de Carga de Módulos
  * Responsabilidad: Garantizar que todos los módulos estén disponibles globalmente
  */
 
@@ -90,7 +90,7 @@ class PrendaEditorLoaderService {
             document.head.appendChild(script);
         });
 
-        console.log('[LoaderService] 📦 Carga solicitada para ' + modulesToLoad.length + ' módulos');
+        console.log('[LoaderService]  Carga solicitada para ' + modulesToLoad.length + ' módulos');
     }
 
     /**

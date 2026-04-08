@@ -30,7 +30,7 @@ class GestorEditacionProcesos {
 
         // Si hay un proceso en edición, guardarlo antes
         if (this.procesoEnEdicionActual && this.procesoEnEdicionActual.tipo !== tipo) {
-            console.log('📌 [GESTOR-EDICION] Hay otro proceso en edición, guardando cambios...');
+            console.log(' [GESTOR-EDICION] Hay otro proceso en edición, guardando cambios...');
             this.guardarCambiosActuales();
         }
 
@@ -62,7 +62,7 @@ class GestorEditacionProcesos {
         const tipo = this.procesoEnEdicionActual.tipo;
         const esNuevo = this.procesoEnEdicionActual.esNuevo;
 
-        console.log('💾 [GESTOR-EDICION] Guardando cambios del proceso:', {
+        console.log(' [GESTOR-EDICION] Guardando cambios del proceso:', {
             tipo,
             esNuevo,
             hayEditor: !!window.procesosEditor
@@ -73,7 +73,7 @@ class GestorEditacionProcesos {
         const tieneImagenesExistentes = window.imagenesProcesoExistentes?.length > 0;
         const tieneImagenes = tieneImagenesNuevas || tieneImagenesExistentes;
 
-        console.log('📸 [GESTOR-EDICION] Verificación de imágenes:', {
+        console.log(' [GESTOR-EDICION] Verificación de imágenes:', {
             tieneImagenesNuevas,
             tieneImagenesExistentes,
             tieneImagenes
@@ -141,7 +141,7 @@ class GestorEditacionProcesos {
      * Se llama después de guardar la prenda exitosamente
      */
     limpiar() {
-        console.log('🧹 [GESTOR-EDICION] Limpiando registro de procesos editados');
+        console.log(' [GESTOR-EDICION] Limpiando registro de procesos editados');
         this.procesosEditados.clear();
         this.procesoEnEdicionActual = null;
     }

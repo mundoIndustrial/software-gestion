@@ -23,7 +23,7 @@ class PrendaEditorCotizacionService {
         // Si es Reflectivo o Logo → forzar origen = 'bodega'
         if (this._esReflectivoOLogo(tipoNombre, tipoId)) {
             prenda.origen = 'bodega';
-            console.log('🔒 [Cotización] Origen forzado a bodega');
+            console.log(' [Cotización] Origen forzado a bodega');
         }
 
         return prenda;

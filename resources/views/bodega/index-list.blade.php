@@ -9,21 +9,21 @@
         <!-- Buscador -->
         <div class="px-6 py-4 border-b border-slate-200">
             <form method="GET" class="flex gap-2">
-                <input 
-                    type="text" 
-                    name="search" 
+                <input
+                    type="text"
+                    name="search"
                     placeholder="Buscar por número de pedido o cliente..."
                     value="{{ $search ?? '' }}"
                     class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                 >
-                <button 
+                <button
                     type="submit"
                     class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
                 >
                     Buscar
                 </button>
                 @if($search ?? false)
-                    <a 
+                    <a
                         href="{{ route('gestion-bodega.pedidos') }}"
                         class="px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
                     >
@@ -41,107 +41,44 @@
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-24">
-                                    Visto
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
+                                    Revisado
                                 </th>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
                                     Acción
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Nº Pedido
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('numero_pedido')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por número de pedido"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Nº Pedido
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Cliente
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('cliente')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por cliente"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Cliente
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Asesor
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('asesor')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por asesor"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Estado
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('estado')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por estado"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Asesor
                                 </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
-                                    <div class="flex items-center justify-center gap-2">
-                                        Creación
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('fecha')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por fecha de creación"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Creación
+                                </th>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700">
+                                    Última Actualización
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidosPorPagina as $pedidoData)
-                                <tr class="hover:opacity-75 transition-opacity @if(auth()->user()->hasRole('EPP-Bodega') && !empty($pedidoData['viewed_at'])) bg-green-100 @elseif($pedidoData['tiene_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
+                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
                                     <td class="px-6 py-4 text-center">
-                                        @if(auth()->user()->hasRole('EPP-Bodega'))
-                                            <input type="checkbox" 
-                                                   class="w-6 h-6 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer transform hover:scale-110 transition-all duration-200" 
-                                                   @if(!empty($pedidoData['viewed_at'])) checked @endif
-                                                   onchange="marcarComoVisto({{ $pedidoData['id'] }}, this.checked)">
-                                        @else
-                                            <!-- Para otros roles, no mostrar nada -->
-                                        @endif
+                                        <input type="checkbox"
+                                               class="w-5 h-5 rounded cursor-pointer"
+                                               @if(!empty($pedidoData['pedido_revisado'])) checked @endif
+                                               onchange="guardarCheckPedido({{ $pedidoData['id'] }}, this.checked)"
+                                               title="Marcar pedido como revisado">
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <div class="flex gap-1 justify-center">
-                                            <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
-                                               class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
-                                                Ver
-                                            </a>
-                                            @if(!empty($pedidoData['viewed_at']) && !($pedidoData['tiene_pendientes'] ?? false) && !($pedidoData['todos_entregados'] ?? false))
-                                                <button type="button"
-                                                        onclick="desmarcarPedido({{ $pedidoData['id'] }}, this)"
-                                                        class="inline-block px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded transition-colors"
-                                                        title="Desmarcar como no visto">
-                                                    ↶
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
+                                           class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
+                                            Ver
+                                        </a>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-black">
                                         {{ $pedidoData['numero_pedido'] }}
@@ -152,26 +89,11 @@
                                     <td class="px-6 py-4 text-black">
                                         {{ $pedidoData['asesor'] ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $estado = strtoupper(trim($pedidoData['estado'] ?? ''));
-                                            $colorClase = match($estado) {
-                                                'ENTREGADO' => 'bg-green-50 text-green-700',
-                                                'EN EJECUCIÓN' => 'bg-blue-50 text-blue-700',
-                                                'PENDIENTE_SUPERVISOR' => 'bg-amber-50 text-amber-700',
-                                                'PENDIENTE_INSUMOS' => 'bg-orange-50 text-orange-700',
-                                                'NO INICIADO' => 'bg-slate-50 text-slate-700',
-                                                'ANULADA' => 'bg-red-50 text-red-700',
-                                                'DEVUELTO_A_ASESORA' => 'bg-purple-50 text-purple-700',
-                                                default => 'bg-slate-50 text-slate-700'
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded {{ $colorClase }}">
-                                            {{ str_replace('_', ' ', $estado) }}
-                                        </span>
-                                    </td>
                                     <td class="px-6 py-4 text-center text-black">
                                         {{ \Carbon\Carbon::parse($pedidoData['fecha_pedido'])->format('d/m/Y h:i:s A') }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-black">
+                                        {{ \Carbon\Carbon::parse($pedidoData['fecha_actualizacion'])->format('d/m/Y h:i:s A') }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -186,21 +108,37 @@
                             Mostrando <span class="font-medium">{{ count($pedidosPorPagina) }}</span> de <span class="font-medium">{{ $totalPedidos }}</span> pedidos
                         </div>
                         <div class="flex gap-2">
+                            @php
+                                $totalPaginas = ceil($totalPedidos / $porPagina);
+                                $routeName = $routeName ?? 'gestion-bodega.pedidos';
+                                $queryParams = $search ? ['search' => $search] : [];
+                            @endphp
+                            
                             @if($paginaActual > 1)
-                                <a href="{{ route('gestion-bodega.pedidos', ['page' => $paginaActual - 1] + request()->query()) }}"
+                                <a href="{{ route($routeName, ['page' => 1] + $queryParams) }}"
+                                   class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                                   title="Primera página">
+                                    « Primero
+                                </a>
+                                <a href="{{ route($routeName, ['page' => $paginaActual - 1] + $queryParams) }}"
                                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
                                     ← Anterior
                                 </a>
                             @endif
                             
                             <span class="px-3 py-1 text-sm text-slate-600">
-                                Página {{ $paginaActual }} de {{ ceil($totalPedidos / $porPagina) }}
+                                Página {{ $paginaActual }} de {{ $totalPaginas }}
                             </span>
                             
-                            @if($paginaActual < ceil($totalPedidos / $porPagina))
-                                <a href="{{ route('gestion-bodega.pedidos', ['page' => $paginaActual + 1] + request()->query()) }}"
+                            @if($paginaActual < $totalPaginas)
+                                <a href="{{ route($routeName, ['page' => $paginaActual + 1] + $queryParams) }}"
                                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
                                     Siguiente →
+                                </a>
+                                <a href="{{ route($routeName, ['page' => $totalPaginas] + $queryParams) }}"
+                                   class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                                   title="Última página">
+                                    Último »
                                 </a>
                             @endif
                         </div>
@@ -217,7 +155,7 @@
 
 <!-- Botón flotante para limpiar filtros -->
 <div id="btnLimpiarFiltros" class="fixed bottom-6 right-6 z-50 hidden">
-    <button 
+    <button
         type="button"
         onclick="limpiarTodosLosFiltros()"
         class="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:scale-105"
@@ -234,7 +172,7 @@
         <div class="p-6 border-b border-slate-200 flex-shrink-0">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-slate-900">Filtrar Pedidos</h3>
-                <button 
+                <button
                     type="button"
                     onclick="cerrarModalFiltros()"
                     class="p-1 hover:bg-slate-100 rounded transition-colors"
@@ -245,14 +183,14 @@
             
             <!-- Buscador dentro del modal -->
             <div class="relative">
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     id="buscadorModal"
                     placeholder="Buscar para filtrar resultados..."
                     class="w-full px-4 py-2 pl-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                 >
                 <span class="material-symbols-rounded absolute left-3 top-2.5 text-slate-400">search</span>
-                <button 
+                <button
                     type="button"
                     onclick="buscarEnModal()"
                     class="absolute right-2 top-2 p-1 hover:bg-slate-100 rounded transition-colors"
@@ -270,7 +208,7 @@
                     <span class="text-sm text-slate-600">
                         <span id="contadorSeleccionados">0</span> seleccionados
                     </span>
-                    <button 
+                    <button
                         id="btnSeleccionarTodo"
                         type="button"
                         onclick="toggleSeleccionarTodo()"
@@ -294,14 +232,14 @@
         <!-- Botones de acción -->
         <div class="p-6 border-t border-slate-200 bg-slate-50 flex-shrink-0">
             <div class="flex gap-3">
-                <button 
+                <button
                     type="button"
                     onclick="aplicarFiltroSeleccionado()"
                     class="flex-1 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
                 >
                     Aplicar Filtro
                 </button>
-                <button 
+                <button
                     type="button"
                     onclick="cerrarModalFiltros()"
                     class="flex-1 px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
@@ -425,7 +363,7 @@ function renderizarContenidoModal(datos) {
         const cantidad = item.cantidad || 0;
         
         html += `
-            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors" 
+            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                  onclick="seleccionarValor('${valor}')">
                 <div class="flex items-center gap-3">
                     <input type="checkbox" id="valor_${valor.replace(/[^a-zA-Z0-9]/g, '_')}" class="rounded border-slate-300">
@@ -465,7 +403,7 @@ function renderizarPaginacionModal(paginacion) {
     // Botón anterior
     if (paginacion.current_page > 1) {
         html += `
-            <button onclick="cambiarPagina(${paginacion.current_page - 1})" 
+            <button onclick="cambiarPagina(${paginacion.current_page - 1})"
                     class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
                 ← Anterior
             </button>
@@ -482,7 +420,7 @@ function renderizarPaginacionModal(paginacion) {
     // Botón siguiente
     if (paginacion.current_page < paginacion.total_pages) {
         html += `
-            <button onclick="cambiarPagina(${paginacion.current_page + 1})" 
+            <button onclick="cambiarPagina(${paginacion.current_page + 1})"
                     class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
                 Siguiente →
             </button>
@@ -659,7 +597,7 @@ function verificarFiltrosActivos() {
     // Verificar si hay algún parámetro de filtro activo
     const filtrosActivos = [
         'filtro_numero_pedido',
-        'filtro_cliente', 
+        'filtro_cliente',
         'filtro_asesor',
         'filtro_estado',
         'filtro_fecha_desde',
@@ -718,12 +656,40 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Función para guardar el check de revisión del pedido
+async function guardarCheckPedido(pedidoId, revisado) {
+    try {
+        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/revisar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ revisado: revisado })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`Pedido ${pedidoId} marcado como ${revisado ? 'revisado' : 'no revisado'}`);
+            // Recargar la página para mostrar el estado guardado en la DB
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            console.error('Error al guardar revisión:', data.message);
+        }
+    } catch (error) {
+        console.error('Error en la petición:', error);
+    }
+}
+
 // Función para desmarcar un pedido como no visto
 async function desmarcarPedido(pedidoId, button) {
     // Deshabilitar botón y mostrar estado de carga
     const originalContent = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = '⏳';
+    button.innerHTML = '';
     
     try {
         const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/desmarcar`, {
@@ -822,14 +788,14 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('[Bodega Realtime] Escuchando actualizaciones de pedidos...');
         
         // Escuchar actualizaciones de pedidos desde cartera
-        window.EchoInstance.channel('despacho.pedidos')
+        window.EchoInstance.channel('pedidos.general')
             .listen('.pedido.actualizado', function(e) {
                 console.log('[Bodega Realtime] Pedido actualizado:', e);
                 
                 // Verificar si changedFields es un array o un objeto
                 const changedFields = e.changedFields || [];
-                const hasEstadoChange = Array.isArray(changedFields) 
-                    ? changedFields.includes('estado') 
+                const hasEstadoChange = Array.isArray(changedFields)
+                    ? changedFields.includes('estado')
                     : (changedFields.estado !== undefined);
                 
                 // Si el pedido fue aprobado, recargar la página para mostrarlo
@@ -840,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const notificacion = document.createElement('div');
                     notificacion.innerHTML = `
                         <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                            📋 Pedido #${e.pedido.numero_pedido} actualizado
+                             Pedido #${e.pedido.numero_pedido} actualizado
                         </div>
                     `;
                     document.body.appendChild(notificacion);
@@ -860,9 +826,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('[Bodega Realtime] Error en WebSocket:', error);
             });
             
-        console.log('[Bodega Realtime] ✅ Conectado al canal despacho.pedidos');
+        console.log('[Bodega Realtime]  Conectado al canal pedidos.general');
     } else {
-        console.log('[Bodega Realtime] ⚠️ Echo no disponible, usando fallback de polling');
+        console.log('[Bodega Realtime]  Echo no disponible, usando fallback de polling');
         
         // Fallback: verificar actualizaciones cada 30 segundos
         setInterval(function() {
@@ -873,3 +839,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+

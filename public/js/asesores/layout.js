@@ -79,21 +79,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationMenu = document.getElementById('notificationMenu');
     
     if (notificationBtn && notificationMenu) {
+        console.log('[Asesores Layout] Notification dropdown ready', {
+            btn: !!notificationBtn,
+            menu: !!notificationMenu
+        });
+
         notificationBtn.addEventListener('click', function(e) {
+            console.log('[Asesores Layout] Click en campana', {
+                target: e.target?.tagName,
+                className: e.target?.className
+            });
+            e.preventDefault();
+            e.stopImmediatePropagation();
             e.stopPropagation();
             notificationMenu.classList.toggle('show');
+            console.log('[Asesores Layout] Menu show:', notificationMenu.classList.contains('show'));
             
             // Cerrar menú de usuario si está abierto
             const userMenu = document.getElementById('userMenu');
             if (userMenu) {
                 userMenu.classList.remove('show');
             }
-        });
+        }, true);
         
         // Cerrar al hacer click fuera
         document.addEventListener('click', function(event) {
-            if (!notificationBtn.contains(event.target) && !notificationMenu.contains(event.target)) {
+            const inBtn = notificationBtn.contains(event.target);
+            const inMenu = notificationMenu.contains(event.target);
+            if (!inBtn && !inMenu) {
                 notificationMenu.classList.remove('show');
+                console.log('[Asesores Layout] Cerrar menú por click fuera');
             }
         });
     }
@@ -150,4 +165,3 @@ window.fetchAPI = async function(url, options = {}) {
         throw error;
     }
 };
-

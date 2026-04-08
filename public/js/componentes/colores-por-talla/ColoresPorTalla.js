@@ -75,7 +75,7 @@ window.ColoresPorTalla = (function() {
             
             if (!window.StateManager || !window.AsignacionManager || 
                 !window.WizardManager || !window.UIRenderer) {
-                console.error('[ColoresPorTalla] ❌ Módulos dependientes no cargados:', {
+                console.error('[ColoresPorTalla]  Módulos dependientes no cargados:', {
                     StateManager: !!window.StateManager,
                     AsignacionManager: !!window.AsignacionManager,
                     WizardManager: !!window.WizardManager,
@@ -149,7 +149,7 @@ window.ColoresPorTalla = (function() {
                     }
                 }
                 
-                // 🔄 Inicializar wizard al paso correcto (previene que se quede en el paso anterior)
+                //  Inicializar wizard al paso correcto (previene que se quede en el paso anterior)
                 if (window.WizardManager && typeof window.WizardManager.inicializarWizard === 'function') {
                     window.WizardManager.inicializarWizard();
                 }
@@ -616,7 +616,7 @@ window.ColoresPorTalla = (function() {
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asignacionesArray = Object.entries(asignaciones);
         
-        // 🔴 FIX: Si ya no hay asignaciones wizard, limpiar telas que fueron agregadas
+        //  FIX: Si ya no hay asignaciones wizard, limpiar telas que fueron agregadas
         // automáticamente por el wizard (no tienen color/referencia/imágenes propias)
         if (asignacionesArray.length === 0 && window.telasCreacion && window.telasCreacion.length > 0) {
             // Filtrar: solo mantener telas que tienen datos propios (color, referencia o imágenes)
@@ -628,7 +628,7 @@ window.ColoresPorTalla = (function() {
                 return tieneColor || tieneRef || tieneImgs || tieneObs;
             });
             if (telasConDatos.length < window.telasCreacion.length) {
-                console.log('[ColoresPorTalla] 🧹 Limpiando', window.telasCreacion.length - telasConDatos.length, 'telas huérfanas del wizard');
+                console.log('[ColoresPorTalla]  Limpiando', window.telasCreacion.length - telasConDatos.length, 'telas huérfanas del wizard');
                 window.telasCreacion = telasConDatos;
             }
         }
@@ -642,7 +642,7 @@ window.ColoresPorTalla = (function() {
             if (seccionResumen) seccionResumen.style.display = 'none';
             if (seccionTallasOriginal) seccionTallasOriginal.style.display = 'block';
             tablaBody.innerHTML = '';
-            console.log('[ColoresPorTalla] 📭 Sin datos - tabla limpia, sección oculta');
+            console.log('[ColoresPorTalla]  Sin datos - tabla limpia, sección oculta');
             return;
         }
 
@@ -682,13 +682,13 @@ window.ColoresPorTalla = (function() {
                 return `<span style="display:inline-block;background:#dbeafe;color:#1e40af;padding:0.15rem 0.5rem;border-radius:12px;font-size:0.73rem;font-weight:500;margin:0.1rem;white-space:nowrap;">${nombre} (${cant})</span>`;
             }).join('');
             
-            // 🔴 FIX: Buscar referencia en colores (para wizard con multi-refs) O en asignación (para cotización simple)
+            //  FIX: Buscar referencia en colores (para wizard con multi-refs) O en asignación (para cotización simple)
             const refsDesdoColores = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
             const refDesdeAsignacion = referencia ? [referencia] : [];
             const allRefs = [...new Set([...refsDesdoColores, ...refDesdeAsignacion])];
             const refHtml = allRefs.length > 0 ? allRefs.join(', ') : '-';
             
-            // 🔴 FIX: Buscar imágenes en colores (para wizard) O en asignación (para cotización)
+            //  FIX: Buscar imágenes en colores (para wizard) O en asignación (para cotización)
             let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             
             // Primero intentar con imagenes de asignación (cotización simple con múltiples colores)
@@ -719,7 +719,7 @@ window.ColoresPorTalla = (function() {
                 if (imgHTML) {
                     imgsHtml = imgHTML;
                     imagenEncontrada = true;
-                    console.log('[ColoresPorTalla] ✅ Imagen desde asignación:', clave);
+                    console.log('[ColoresPorTalla]  Imagen desde asignación:', clave);
                 }
             }
             
@@ -788,7 +788,7 @@ window.ColoresPorTalla = (function() {
 
         // --- 2) Filas de telas simples (sin wizard) ---
         telasSimples.forEach((t, idx) => {
-            // 🔴 FIX: Buscar tanto 'tela' como 'nombre_tela' (compatibilidad cotización + prendas nuevas)
+            //  FIX: Buscar tanto 'tela' como 'nombre_tela' (compatibilidad cotización + prendas nuevas)
             const telaName = (t.nombre_tela || t.tela || '').toUpperCase();
             // Saltar si esta tela ya está representada por wizard
             if (telasEnWizard.has(telaName)) return;
@@ -805,14 +805,22 @@ window.ColoresPorTalla = (function() {
                 if (img instanceof File || img instanceof Blob) {
                     imgHtml = '<img src="' + URL.createObjectURL(img) + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'string') {
-                    imgHtml = '<img src="' + img + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                    const src = (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:'))
+                        ? img
+                        : '/storage/' + img;
+                    imgHtml = '<img src="' + src + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'object' && img !== null) {
-                    // 🔴 FIX: Manejar objetos con ruta y ruta_webp (desde backend cotización)
-                    const rutaFinal = img.ruta || img.ruta_webp || img.url || img.src;
+                    //  FIX: Manejar objetos temporales del modal y objetos desde backend
+                    let rutaFinal = '';
+                    if (img.file instanceof File) {
+                        rutaFinal = URL.createObjectURL(img.file);
+                    } else {
+                        rutaFinal = img.previewUrl || img.blobUrl || img.dataURL || img.ruta || img.ruta_webp || img.url || img.src || img.ruta_original;
+                    }
                     if (rutaFinal) {
                         // Normalizar ruta si es necesaria
                         let urlFinal = rutaFinal;
-                        if (!urlFinal.startsWith('/') && !urlFinal.startsWith('http')) {
+                        if (!urlFinal.startsWith('/') && !urlFinal.startsWith('http') && !urlFinal.startsWith('blob:') && !urlFinal.startsWith('data:')) {
                             urlFinal = '/storage/' + urlFinal;
                         }
                         imgHtml = '<img src="' + urlFinal + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
@@ -861,7 +869,7 @@ window.ColoresPorTalla = (function() {
             btn.addEventListener('click', function(e) {
                 e.preventDefault(); e.stopPropagation();
                 const clave = btn.getAttribute('data-clave');
-                if (clave) _abrirModalEditarWizard(clave);
+                if (clave) _abrirModalEditarWizard(clave, btn);
             });
         });
 
@@ -875,10 +883,10 @@ window.ColoresPorTalla = (function() {
                     delete asignaciones[clave];
                     window.StateManager.setAsignaciones(asignaciones);
                     
-                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                    //  FIX: Si no quedan más asignaciones, limpiar estado completo
                     const restantes = Object.keys(asignaciones);
                     if (restantes.length === 0) {
-                        console.log('[ColoresPorTalla] 🧹 Última asignación eliminada, limpiando estado...');
+                        console.log('[ColoresPorTalla]  Última asignación eliminada, limpiando estado...');
                         // Limpiar tallasRelacionales
                         if (window.tallasRelacionales) {
                             Object.keys(window.tallasRelacionales).forEach(g => {
@@ -933,7 +941,7 @@ window.ColoresPorTalla = (function() {
             totalElement.textContent = totalAsignaciones;
         }
         
-        console.log('[ColoresPorTalla] ✅ Tabla unificada actualizada - wizard:', asignacionesArray.length, 'asignaciones, simples:', telasSimples.length, 'telas, total:', totalAsignaciones);
+        console.log('[ColoresPorTalla]  Tabla unificada actualizada - wizard:', asignacionesArray.length, 'asignaciones, simples:', telasSimples.length, 'telas, total:', totalAsignaciones);
     }
 
     /**
@@ -952,7 +960,40 @@ window.ColoresPorTalla = (function() {
     /**
      * Abre el modal de edición para una asignación wizard (agrupada)
      */
-    function _abrirModalEditarWizard(clave) {
+    function _desenfocarActivoDentroDeModal(modal) {
+        if (!modal) return;
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && modal.contains(active)) {
+            active.blur();
+        }
+    }
+
+    function _cerrarModalWizardConFoco(modal, focusReturnEl = null) {
+        if (!modal) return;
+
+        _desenfocarActivoDentroDeModal(modal);
+
+        const fallbackFocus = document.getElementById('btn-asignar-colores-prenda');
+        const destinoFoco = (
+            focusReturnEl instanceof HTMLElement &&
+            focusReturnEl.isConnected &&
+            !focusReturnEl.disabled
+        ) ? focusReturnEl : fallbackFocus;
+
+        if (destinoFoco) {
+            jQuery(modal).one('hidden.bs.modal.focusRestoreWizard', () => {
+                requestAnimationFrame(() => {
+                    if (destinoFoco.isConnected && !destinoFoco.disabled) {
+                        destinoFoco.focus({ preventScroll: true });
+                    }
+                });
+            });
+        }
+
+        jQuery(modal).modal('hide');
+    }
+
+    function _abrirModalEditarWizard(clave, focusReturnEl = null) {
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asig = asignaciones[clave];
         if (!asig) return;
@@ -964,7 +1005,11 @@ window.ColoresPorTalla = (function() {
 
         // Eliminar modal previo si existe
         const existing = document.getElementById('modal-editar-asignacion-wizard');
-        if (existing) { jQuery(existing).modal('hide'); existing.remove(); }
+        if (existing) {
+            _desenfocarActivoDentroDeModal(existing);
+            jQuery(existing).modal('hide');
+            existing.remove();
+        }
 
         // Construir tarjetas de color
         const coloresCardsHtml = asig.colores.map((color, idx) => {
@@ -1119,19 +1164,19 @@ window.ColoresPorTalla = (function() {
                     if (previewImg) previewImg.src = imgData.blobUrl;
                     if (dropzone) dropzone.style.display = 'none';
                     if (preview) preview.style.display = 'block';
-                    console.log(`[ColoresPorTalla] ✅ Imagen pegada via DragDropManager en color idx=${targetIdx}`);
+                    console.log(`[ColoresPorTalla]  Imagen pegada via DragDropManager en color idx=${targetIdx}`);
                 }
             });
         }
 
         // Cerrar
         modal.querySelectorAll('.btn-cerrar-wizard-edit').forEach(btn => {
-            btn.addEventListener('click', () => jQuery(modal).modal('hide'));
+            btn.addEventListener('click', () => _cerrarModalWizardConFoco(modal, focusReturnEl));
         });
 
         // Guardar
         modal.querySelector('.btn-guardar-wizard-edit').addEventListener('click', () => {
-            _guardarEdicionWizard(clave, modal);
+            _guardarEdicionWizard(clave, modal, focusReturnEl);
         });
 
         // Limpieza al cerrar
@@ -1231,12 +1276,16 @@ window.ColoresPorTalla = (function() {
     /**
      * Guarda los cambios del modal de edición wizard
      */
-    function _guardarEdicionWizard(claveOriginal, modal) {
+    function _guardarEdicionWizard(claveOriginal, modal, focusReturnEl = null) {
         const nTela = (modal.querySelector('#wz-edit-tela').value || '').trim().toUpperCase();
         const nGenero = modal.querySelector('#wz-edit-genero').value;
         const nTalla = (modal.querySelector('#wz-edit-talla').value || '').trim().toUpperCase();
+        const asignacionesActuales = window.StateManager ? window.StateManager.getAsignaciones() : {};
+        const asignacionOriginal = asignacionesActuales[claveOriginal] || {};
+        const telaOriginal = (asignacionOriginal?.tela || '').trim().toUpperCase();
+        const telaCambio = !!(telaOriginal && telaOriginal !== nTela);
         
-        // 🔴 FIX: Leer referencia común (si existe)
+        //  FIX: Leer referencia común (si existe)
         const refComun = modal.querySelector('#wz-edit-referencia-comun') 
             ? (modal.querySelector('#wz-edit-referencia-comun').value || '').trim().toUpperCase()
             : '';
@@ -1250,8 +1299,9 @@ window.ColoresPorTalla = (function() {
         cards.forEach((card, idx) => {
             const colorNombre = (card.querySelector('.wz-edit-color').value || '').trim().toUpperCase();
             const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
-            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  // 🔴 FIX: Usar referencia común
+            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  //  FIX: Usar referencia común
             const observaciones = ''; // (card.querySelector('.wz-edit-obs').value || '').trim();
+            const colorOriginal = Array.isArray(asignacionOriginal?.colores) ? asignacionOriginal.colores[idx] : null;
 
             if (!colorNombre) return; // omitir colores vacíos
 
@@ -1269,6 +1319,30 @@ window.ColoresPorTalla = (function() {
                 // Preservar imagen del servidor si no se cambió
                 colorData.imagen_ruta = window._wizardEditImagenesRuta[idx];
             }
+
+            const colorOriginalNombre = (colorOriginal?.nombre || '').trim().toUpperCase();
+            const colorCambio = !!(colorOriginalNombre && colorOriginalNombre !== colorNombre);
+            if (!telaCambio && !colorCambio) {
+                const colorTelaId =
+                    colorOriginal?.prenda_pedido_colores_telas_id ||
+                    colorOriginal?.color_tela_id ||
+                    asignacionOriginal?.prenda_pedido_colores_telas_id ||
+                    asignacionOriginal?.color_tela_id ||
+                    null;
+                const colorId = colorOriginal?.color_id || asignacionOriginal?.color_id || null;
+                const telaId = colorOriginal?.tela_id || asignacionOriginal?.tela_id || null;
+
+                if (colorTelaId) {
+                    colorData.prenda_pedido_colores_telas_id = colorTelaId;
+                }
+                if (colorId) {
+                    colorData.color_id = colorId;
+                }
+                if (telaId) {
+                    colorData.tela_id = telaId;
+                }
+            }
+
             nuevosColores.push(colorData);
         });
 
@@ -1279,24 +1353,32 @@ window.ColoresPorTalla = (function() {
 
         // Actualizar StateManager
         if (window.StateManager) {
-            const asignaciones = window.StateManager.getAsignaciones();
+            const asignaciones = asignacionesActuales;
             delete asignaciones[claveOriginal];
 
             const tipo = 'Letra';
             const nuevaClave = `${nGenero.toLowerCase()}-${tipo}-${nTalla}`;
+            const primerColor = nuevosColores[0] || null;
+            const relacionUnica = (nuevosColores.length === 1 && primerColor)
+                ? (primerColor.prenda_pedido_colores_telas_id || primerColor.color_tela_id || null)
+                : null;
+
             asignaciones[nuevaClave] = {
                 genero: nGenero.toLowerCase(),
                 tela: nTela,
                 tipo: tipo,
                 talla: nTalla,
+                tela_id: telaCambio ? null : (asignacionOriginal?.tela_id || primerColor?.tela_id || null),
+                color_id: (nuevosColores.length === 1 && !telaCambio) ? (primerColor?.color_id || asignacionOriginal?.color_id || null) : null,
+                prenda_pedido_colores_telas_id: telaCambio ? null : relacionUnica,
                 colores: nuevosColores
             };
             window.StateManager.setAsignaciones(asignaciones);
         }
 
-        jQuery(modal).modal('hide');
+        _cerrarModalWizardConFoco(modal, focusReturnEl);
         actualizarTablaResumen();
-        console.log('[ColoresPorTalla] ✅ Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
+        console.log('[ColoresPorTalla]  Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
     }
 
     /**

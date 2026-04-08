@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  * Cumple:
  * - SRP: Solo guarda logos
  * - DIP: Inyecta dependencias
- * - OCP: FÃ¡cil de extender
+ * - OCP: facil de extender
  */
 class PedidoLogoService
 {
@@ -77,7 +77,7 @@ class PedidoLogoService
                 'orden' => $index + 1,
                 'ancho' => $foto['ancho'] ?? null,
                 'alto' => $foto['alto'] ?? null,
-                'tamaÃ±o' => $foto['tamaÃ±o'] ?? null,
+                'tamano' => $foto['tamano'] ?? null,
             ]);
         }
     }

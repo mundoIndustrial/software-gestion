@@ -2,31 +2,28 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\AgregarTallaProcesoPrendaUseCaseContract;
+
 use App\Application\Pedidos\DTOs\AgregarTallaProcesoPrendaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Models\ProcesosPrendaDetalle;
+use App\Models\ProcesoPrendaDetalle;
 
 /**
  * Use Case para agregar talla a un proceso de prenda
- * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
- * 
  * Maneja la creación de registro en pedidos_procesos_prenda_tallas
  * que contiene el desglose de cantidades por talla para cada proceso
- * 
- * Antes: 20 lÃ­neas | DespuÃ©s: ~15 lÃ­neas | Reducción: ~25%
+ * Antes: 20 lineas | despues: ~15 lineas | Reducción: ~25%
  */
-final class AgregarTallaProcesoPrendaUseCase
+final class AgregarTallaProcesoPrendaUseCase implements AgregarTallaProcesoPrendaUseCaseContract
 {
     use ManejaPedidosUseCase;
 
     public function execute(AgregarTallaProcesoPrendaDTO $dto)
     {
         // CENTRALIZADO: Validar proceso existe (trait)
-        $proceso = $this->validarObjetoExiste(
-            ProcesosPrendaDetalle::find($dto->procesoId),
-            "Proceso con ID {$dto->procesoId}"
-        );
+        $proceso = ProcesoPrendaDetalle::find($dto->procesoId);
+        $this->validarObjetoExiste($proceso, 'Proceso', $dto->procesoId);
 
         return $proceso->tallas()->create([
             'genero' => $dto->genero,
@@ -34,5 +31,17 @@ final class AgregarTallaProcesoPrendaUseCase
             'cantidad' => $dto->cantidad,
         ]);
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {AgregarTallaProcesoPrendaUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
 

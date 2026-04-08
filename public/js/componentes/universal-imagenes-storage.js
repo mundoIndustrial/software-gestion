@@ -17,7 +17,7 @@
 /**
  * Storage universal completamente separado por tipo
  */
-window.universalImagenesStorage = {
+globalThis.universalImagenesStorage = {
     // Almacenamiento interno separado por tipo
     _storage: {
         prendas: {},
@@ -48,7 +48,7 @@ window.universalImagenesStorage = {
             indice: indice
         });
         
-        console.log(`[UniversalStorage] ✅ Imagen agregada: ${tipo}[${indice}] - Total: ${this._storage[tipo][indice].length}`);
+        console.log(`[UniversalStorage]  Imagen agregada: ${tipo}[${indice}] - Total: ${this._storage[tipo][indice].length}`);
         return true;
     },
     
@@ -68,7 +68,7 @@ window.universalImagenesStorage = {
         }
         
         const imagenEliminada = this._storage[tipo][indice].splice(imagenIndex, 1)[0];
-        console.log(`[UniversalStorage] 🗑️ Imagen eliminada: ${tipo}[${indice}][${imagenIndex}]`);
+        console.log(`[UniversalStorage]  Imagen eliminada: ${tipo}[${indice}][${imagenIndex}]`);
         return imagenEliminada;
     },
     
@@ -84,7 +84,7 @@ window.universalImagenesStorage = {
         
         const cantidad = this._storage[tipo][indice]?.length || 0;
         this._storage[tipo][indice] = [];
-        console.log(`[UniversalStorage] 🧹 Todas las imágenes eliminadas: ${tipo}[${indice}] - (${cantidad} imágenes)`);
+        console.log(`[UniversalStorage]  Todas las imágenes eliminadas: ${tipo}[${indice}] - (${cantidad} imágenes)`);
     },
     
     /**
@@ -100,7 +100,7 @@ window.universalImagenesStorage = {
         }
         
         const imagenes = this._storage[tipo][indice] || [];
-        console.log(`[UniversalStorage] 📸 Obteniendo imágenes: ${tipo}[${indice}] - ${imagenes.length} imágenes`);
+        console.log(`[UniversalStorage]  Obteniendo imágenes: ${tipo}[${indice}] - ${imagenes.length} imágenes`);
         return imagenes;
     },
     
@@ -136,11 +136,11 @@ window.universalImagenesStorage = {
         
         const totalImagenes = Object.values(this._storage[tipo]).reduce((total, arr) => total + arr.length, 0);
         this._storage[tipo] = {};
-        console.log(`[UniversalStorage] 🧹 Tipo '${tipo}' limpiado - ${totalImagenes} imágenes eliminadas`);
+        console.log(`[UniversalStorage]  Tipo '${tipo}' limpiado - ${totalImagenes} imágenes eliminadas`);
     },
     
     /**
-     * Limpiar TODO el storage (todos los tipos)
+     * Limpiar el storage (todos los tipos)
      */
     limpiarTodo: function() {
         const totalPorTipo = {};
@@ -154,7 +154,7 @@ window.universalImagenesStorage = {
             procesos: {}
         };
         
-        console.log(`[UniversalStorage] 🧹 Todo el storage limpiado:`, totalPorTipo);
+        console.log(`[UniversalStorage]  Todo el storage limpiado:`, totalPorTipo);
     },
     
     /**
@@ -212,11 +212,11 @@ window.universalImagenesStorage = {
      * Debug: Mostrar estado actual del storage
      */
     debug: function() {
-        console.group('🔍 [UniversalStorage] ESTADO ACTUAL');
+        console.group(' [UniversalStorage] ESTADO ACTUAL');
         console.log('Resumen completo:', this.obtenerResumen());
         
         Object.keys(this._storage).forEach(tipo => {
-            console.group(`📁 ${tipo.toUpperCase()}`);
+            console.group(` ${tipo.toUpperCase()}`);
             Object.keys(this._storage[tipo]).forEach(indice => {
                 const imagenes = this._storage[tipo][indice];
                 console.log(`  [${indice}] ${imagenes.length} imágenes:`, 
@@ -230,4 +230,4 @@ window.universalImagenesStorage = {
 };
 
 // Inicializar con logging
-console.log('✅ [UniversalStorage] Storage universal inicializado - Tipos: prendas, telas, procesos');
+console.log(' [UniversalStorage] Storage universal inicializado - Tipos: prendas, telas, procesos');

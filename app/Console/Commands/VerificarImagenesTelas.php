@@ -85,8 +85,8 @@ class VerificarImagenesTelas extends Command
                     // Verificar en disco
                     $rutaCompleta = "public/{$foto->ruta_webp}";
                     if (Storage::exists($rutaCompleta)) {
-                        $tamaño = Storage::size($rutaCompleta);
-                        $this->line("│  │  │   En disco ({$tamaño} bytes)");
+                        $tamano = Storage::size($rutaCompleta);
+                        $this->line("│  │  │   En disco ({$tamano} bytes)");
                         $imagenesEnDisco++;
                     } else {
                         $this->error("│  │  │   NO en disco");
@@ -107,7 +107,7 @@ class VerificarImagenesTelas extends Command
         ");
 
         $this->line(" Total de telas (color-tela): {$totalTelas}");
-        $this->line("📸 Total de imágenes en BD: {$totalImagenes}");
+        $this->line(" Total de imágenes en BD: {$totalImagenes}");
         $this->line(" Total de imágenes en disco: {$imagenesEnDisco}");
 
         if ($totalImagenes === $imagenesEnDisco) {
@@ -120,7 +120,7 @@ class VerificarImagenesTelas extends Command
         $carpetaTelas = "public/pedidos/{$pedidoId}/telas";
         if (Storage::exists($carpetaTelas)) {
             $archivos = Storage::files($carpetaTelas);
-            $this->info("\n📁 Archivos en {$carpetaTelas}:");
+            $this->info("\n Archivos en {$carpetaTelas}:");
             $this->line("   Total: " . count($archivos));
             foreach (array_slice($archivos, 0, 5) as $archivo) {
                 $this->line("   - " . basename($archivo));
@@ -129,7 +129,7 @@ class VerificarImagenesTelas extends Command
                 $this->line("   ... y " . (count($archivos) - 5) . " más");
             }
         } else {
-            $this->warn("\n📁 Carpeta {$carpetaTelas} no existe");
+            $this->warn("\n Carpeta {$carpetaTelas} no existe");
         }
 
         // Query SQL alternativa
@@ -145,7 +145,7 @@ class VerificarImagenesTelas extends Command
         ");
 
         $query = "
-        SELECT 
+        SELECT
             pp.id as prenda_id,
             pp.nombre_prenda,
             pct.id as color_tela_id,

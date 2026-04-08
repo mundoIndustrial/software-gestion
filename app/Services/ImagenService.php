@@ -55,7 +55,7 @@ class ImagenService
             
             if (!File::exists($rutaCarpeta)) {
                 File::makeDirectory($rutaCarpeta, 0755, true);
-                \Log::info("📁 Carpeta creada", ['ruta' => $rutaCarpeta]);
+                \Log::info(" Carpeta creada", ['ruta' => $rutaCarpeta]);
             }
             
             // Generar nombre único
@@ -145,7 +145,7 @@ class ImagenService
             
             if (File::exists($rutaCompleta)) {
                 File::delete($rutaCompleta);
-                \Log::info("🗑️ Imagen eliminada", ['ruta' => $rutaCompleta]);
+                \Log::info(" Imagen eliminada", ['ruta' => $rutaCompleta]);
                 return true;
             }
             
@@ -173,7 +173,7 @@ class ImagenService
             
             if (File::exists($rutaCarpeta)) {
                 File::deleteDirectory($rutaCarpeta);
-                \Log::info("🗑️ Carpeta de cotización eliminada", ['ruta' => $rutaCarpeta]);
+                \Log::info(" Carpeta de cotización eliminada", ['ruta' => $rutaCarpeta]);
                 return true;
             }
             

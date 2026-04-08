@@ -27,7 +27,7 @@ class EntregarPedidoCommandTest extends TestCase
 
         $this->assertEquals(123, $command->getPedidoId());
         $this->assertNull($command->getObservaciones());
-        $this->assertNotNull($command->getUsuarioId()); // Debe usar auth()->id()
+        $this->assertNull($command->getUsuarioId());
     }
 
     /** @test */

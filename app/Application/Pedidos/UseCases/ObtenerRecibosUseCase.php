@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerRecibosDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Support\Facades\Log;
 
 class ObtenerRecibosUseCase
@@ -12,7 +12,7 @@ class ObtenerRecibosUseCase
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoProduccionRepository
+        private PedidoProduccionReadRepository $pedidoProduccionRepository
     ) {}
 
     public function ejecutar(ObtenerRecibosDTO $dto): array
@@ -41,5 +41,4 @@ class ObtenerRecibosUseCase
         }
     }
 }
-
 

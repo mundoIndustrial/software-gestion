@@ -35,6 +35,7 @@ class OrdenUpdated implements ShouldBroadcastNow
         $channels = [
             new Channel('supervisor-pedidos'),
             new Channel('ordenes'),
+            new Channel('pedidos.general'),
         ];
         
         \Log::info('[OrdenUpdated] Canales de broadcast', [
@@ -68,9 +69,7 @@ class OrdenUpdated implements ShouldBroadcastNow
         ]);
 
         // Asegurar que el objeto orden tenga el atributo correcto para el frontend
-        $ordenData = $this->orden instanceof \Illuminate\Database\Eloquent\Model 
-            ? $this->orden->toArray() 
-            : (is_array($this->orden) ? $this->orden : (array) $this->orden);
+        $ordenData = $this->convertirOrdenAArray();
         
         // Añadir ambos campos para compatibilidad
         if (!isset($ordenData['pedido']) && isset($ordenData['numero_pedido'])) {
@@ -97,5 +96,22 @@ class OrdenUpdated implements ShouldBroadcastNow
             'action' => $this->action,
             'changedFields' => $this->changedFields
         ];
+    }
+
+    /**
+     * Convierte el objeto orden a un array
+     * @return array
+     */
+    private function convertirOrdenAArray(): array
+    {
+        if ($this->orden instanceof \Illuminate\Database\Eloquent\Model) {
+            return $this->orden->toArray();
+        }
+
+        if (is_array($this->orden)) {
+            return $this->orden;
+        }
+
+        return (array) $this->orden;
     }
 }

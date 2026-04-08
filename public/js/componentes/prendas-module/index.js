@@ -118,11 +118,11 @@ if (document.readyState === 'loading') {
 
 // Exportar información del módulo
 console.log(' Prendas Module v2.0.0 - Sistema modular de gestión de prendas');
-console.log('📁 Estructura del módulo:');
-console.log('  📁 prendas-module/');
-console.log('    📄 index.js (este archivo)');
-console.log('    📄 ui-helpers.js');
-console.log('    📄 image-management.js');
-console.log('    📄 modal-wrappers.js');
-console.log('    📄 prendas-wrappers-v2.js');
-console.log('    📄 README.md');
+console.log(' Estructura del módulo:');
+console.log('   prendas-module/');
+console.log('     index.js (este archivo)');
+console.log('     ui-helpers.js');
+console.log('     image-management.js');
+console.log('     modal-wrappers.js');
+console.log('     prendas-wrappers-v2.js');
+console.log('     README.md');

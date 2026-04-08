@@ -20,6 +20,6 @@ class GestorEppRoleSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        $this->command->info('✅ Rol "gestor_epp" creado exitosamente');
+        $this->command->info(' Rol "gestor_epp" creado exitosamente');
     }
 }

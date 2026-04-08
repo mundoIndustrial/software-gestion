@@ -7,7 +7,7 @@
 // ============ COMPRESIÓN DE IMÁGENES PARA EVITAR ERROR 413 ============
 
 /**
- * Comprimir imagen para reducir tamaño
+ * Comprimir imagen para reducir tamano
  * @param {File} file - Archivo de imagen
  * @param {number} calidad - Calidad de compresión (0-1, default 0.7)
  * @returns {Promise<File>} Archivo comprimido
@@ -334,7 +334,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
     }
     
     //  NO convertir a Base64 - enviar archivos directamente como File objects
-    // Base64 es ineficiente (aumenta tamaño 33%) y mala práctica
+    // Base64 es ineficiente (aumenta tamano 33%) y mala práctica
 
     
     // Obtener tipo de venta
@@ -716,7 +716,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
         }
         
         
-        console.log('📤 FORMDATA A ENVIAR:', {
+        console.log(' FORMDATA A ENVIAR:', {
             tipo: 'enviada',
             cliente: datos.cliente,
             tipo_venta: tipoVentaValue,
@@ -764,7 +764,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
         // Diagnóstico útil para 4xx/5xx (especialmente 422)
         try {
             if (!response.ok) {
-                console.error('❌ Error HTTP al guardar cotización', {
+                console.error(' Error HTTP al guardar cotización', {
                     status: response.status,
                     statusText: response.statusText,
                     response: data

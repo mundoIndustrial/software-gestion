@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS prenda_tela_fotos_cot (
     orden INT DEFAULT 0,
     ancho INT,
     alto INT,
-    tamaño INT,
+    tamano INT,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS logo_fotos_cot (
     orden INT DEFAULT 0,
     ancho INT,
     alto INT,
-    tamaño INT,
+    tamano INT,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     

@@ -2,13 +2,12 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Eliminar Item de Pedido
- * 
  * Responsabilidad:
- * - Validar Ã­ndice del item
+ * - Validar indice del item
  * - Eliminar item de la sesión
  * - Retornar estado actualizado
  */
@@ -23,9 +22,9 @@ class EliminarItemPedidoUseCase
      */
     public function ejecutar(int $index): array
     {
-        // Validar Ã­ndice
+        // Validar indice
         if ($index < 0 || $index >= $this->gestionItems->contar()) {
-            throw new \InvalidArgumentException('Ãndice de Ã­tem invÃ¡lido');
+            throw new \InvalidArgumentException('indice de item invalido');
         }
 
         // Eliminar item
@@ -34,10 +33,9 @@ class EliminarItemPedidoUseCase
         // Retornar estado actualizado
         return [
             'success' => true,
-            'message' => 'Ãtem eliminado correctamente',
+            'message' => 'item eliminado correctamente',
             'items' => $this->gestionItems->obtenerItemsArray(),
             'count' => $this->gestionItems->contar(),
         ];
     }
 }
-

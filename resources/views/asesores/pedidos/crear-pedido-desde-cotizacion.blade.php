@@ -1,5 +1,7 @@
 @extends('layouts.asesores')
 
+@section('body-class', 'crear-pedido-view')
+
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
@@ -211,17 +213,17 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+@include('shared.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
-@include('asesores.pedidos.modals.modal-agregar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')
 @include('asesores.pedidos.modals.modal-editar-epp')
 
 @push('scripts')
-    <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
+    <!--  Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
     <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
 
-    <!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS -->
+    <!--  SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS -->
     <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
@@ -259,7 +261,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tarjeta.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ time() }}"></script>
     
@@ -267,7 +269,8 @@
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-tabla.js') }}?v={{ time() }}"></script>
     
     <!-- EPP Templates e Interfaces -->
     <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ time() }}"></script>
@@ -284,16 +287,26 @@
     
     <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-imagenes.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
     
     <!-- STORAGE Y MANEJO DE IMÁGENES DE PROCESOS -->
     <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-    <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
     
     <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/proceso-editor.js') }}?v={{ time() }}"></script>
@@ -304,7 +317,7 @@
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
@@ -337,12 +350,20 @@
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
-    <!-- 🆕 PrendaEditor sin legacy -->
+    <!--  PrendaEditor sin legacy -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
     
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/items-sync-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/item-removal-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Logo -->
@@ -350,7 +371,7 @@
     
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/config-pedido-editable.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
     
@@ -388,6 +409,13 @@
     
     <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
     <script src="{{ asset('js/componentes/services/image-converter-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-context.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-normalizers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-renderers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-data-utils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-variations-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-sizing-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-process-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ time() }}"></script>
     
@@ -438,7 +466,7 @@
         function setupUpperCaseInput(inputId) {
             const input = document.getElementById(inputId);
             if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
+                console.log(' Configurando input para mayúsculas:', inputId);
                 
                 // Función para convertir a mayúsculas preservando posición del cursor
                 function forceUpperCase() {
@@ -455,7 +483,7 @@
                         // Restaurar posición del cursor
                         input.setSelectionRange(start, end);
                         
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
+                        console.log(' Convertido a mayúsculas:', currentValue, '→', upperValue);
                     }
                 }
                 
@@ -471,7 +499,7 @@
                 // Convertir valor inicial si existe
                 if (input.value) {
                     input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
+                    console.log(' Valor inicial convertido:', input.value);
                 }
                 
                 // Forzar mayúsculas cada segundo por si acaso
@@ -480,7 +508,7 @@
                 // Limpiar intervalo después de 10 segundos para no consumir recursos
                 setTimeout(() => clearInterval(intervalId), 10000);
             } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
+                console.warn(' Input no encontrado:', inputId);
             }
         }
         
@@ -595,7 +623,7 @@
             );
 
             try {
-                const res = await fetch(`/asesores/pedidos-editable/cotizaciones/${cotId}/epp-items`, {
+                const res = await fetch(`/asesores/pedidos/cotizaciones/${cotId}/epp-items`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                 });
@@ -770,7 +798,7 @@
 <!-- Script para modal de prendas y autocomplete -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
 
-<!-- 🧪 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
+<!--  TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
 <script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 <!-- Script para ocultar loading cuando todo está listo -->

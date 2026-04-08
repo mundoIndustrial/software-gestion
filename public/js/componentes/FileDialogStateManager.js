@@ -159,22 +159,22 @@ class FileDialogStateManager {
 // ════════════════════════════════════════════════════════════════
 
 // Contenedor global para los managers de cada input
-window._fileDialogManagers = window._fileDialogManagers || {};
+globalThis._fileDialogManagers = globalThis._fileDialogManagers || {};
 
 /**
  * Inicializar todos los FileDialogStateManagers para los inputs de proceso
  * Se llama cuando el documento está listo
  */
 function inicializarFileDialogStateManagers() {
-    console.log('[inicializarFileDialogStateManagers] 🚀 Inicializando...');
+    console.log('[inicializarFileDialogStateManagers]  Inicializando...');
     
     for (let i = 1; i <= 3; i++) {
         const inputId = `proceso-foto-input-${i}`;
         
         try {
             // Crear manager solo si no existe ya
-            if (!window._fileDialogManagers[inputId]) {
-                window._fileDialogManagers[inputId] = new FileDialogStateManager(inputId);
+            if (!globalThis._fileDialogManagers[inputId]) {
+                globalThis._fileDialogManagers[inputId] = new FileDialogStateManager(inputId);
             }
         } catch (e) {
             console.error(

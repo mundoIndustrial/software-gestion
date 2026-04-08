@@ -43,9 +43,6 @@
         <!-- Botón de navegación de procesos (esquina superior derecha) -->
         <div id="process-navigation-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>
         
-        <!-- Botón de navegación de prendas (esquina superior derecha, debajo de procesos) -->
-        <div id="arrow-container-mobile" style="position: absolute; top: 55px; right: 15px; display: none; z-index: 100;"></div>
-        
         <!-- Fecha -->
         <div id="order-date" class="order-date">
             <div class="fec-label">FECHA</div>
@@ -119,14 +116,12 @@ let currentPedidoNumeroMobile = null;
 // Esta función será llamada desde ver-pedido.blade.php cuando se carguen las fotos
 function loadGaleriaMobile(container) {
     // Obtener número de pedido
-    const pedidoElement = document.getElementById('mobile-numero-pedido');
+    const pedidoElement = document.getElementById('factura-container-mobile');
     if (!pedidoElement) {
         return;
     }
     
-    const pedidoText = pedidoElement.textContent;
-    const pedidoMatch = pedidoText.match(/\d+/);
-    const pedido = pedidoMatch ? pedidoMatch[0] : null;
+    const pedido = String(pedidoElement.getAttribute('data-numero-pedido') || '').trim();
     if (!pedido) {
         return;
     }
@@ -388,10 +383,17 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
         console.log(' [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
         
         // Hacer fetch a la API para obtener datos actualizados
-        const url = `/api/operario/pedido/${pedidoId}`;
+        const url = `/operario/api/pedido/${pedidoId}${window.location.search}`;
         console.log(' [CARGAR DINAMICO] URL API:', url);
+        console.log(' [CARGAR DINAMICO] window.location.search:', window.location.search);
         
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         
         console.log(' [CARGAR DINAMICO] Respuesta HTTP:', {
             ok: response.ok,
@@ -454,6 +456,9 @@ window.llenarReciboCosturaMobile = function(data) {
 
     const tipoReciboDataset = document.getElementById('factura-container-mobile')?.getAttribute('data-tipo-recibo') || '';
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
+    const urlParams = new URLSearchParams(window.location.search);
+    const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+    const esReciboParcial = tipoReciboUpper === 'PARCIAL' && consecutivoParcialParam !== '';
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
         if (tipoReciboUpper) {
@@ -541,7 +546,7 @@ window.llenarReciboCosturaMobile = function(data) {
     };
     
     /**
-     * 🎨 Transformar array de variantes a estructura compatible con renderizado
+     * Transformar array de variantes a estructura compatible con renderizado
      * Input: [{talla, genero, cantidad, ...}, ...]
      * Output: { DAMA: { TALLA: cantidad }, CABALLERO: { TALLA: cantidad }, UNISEX: { TALLA: cantidad } }
      */
@@ -624,7 +629,7 @@ window.llenarReciboCosturaMobile = function(data) {
     };
     
     /**
-     * 🎨 Transformar array de talla_colores a estructura compatible con renderizado
+     * Transformar array de talla_colores a estructura compatible con renderizado
      * Input: [{genero, talla, color_nombre, cantidad, ...}, ...]
      * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
      */
@@ -693,6 +698,45 @@ window.llenarReciboCosturaMobile = function(data) {
         console.log('[OPERARIO] Estructura final:', JSON.stringify(estructura, null, 2));
         return estructura;
     };
+
+    const transformarTallasListaParcialAEstructura = (tallasArray) => {
+        if (!Array.isArray(tallasArray) || tallasArray.length === 0) {
+            return {};
+        }
+
+        const registros = tallasArray
+            .map((registro) => ({
+                genero: (registro?.genero || 'CABALLERO').toString().trim().toUpperCase(),
+                talla: (registro?.talla || '').toString().trim().toUpperCase(),
+                color_nombre: (registro?.color_nombre || '').toString().trim().toUpperCase(),
+                cantidad: parseInt(registro?.cantidad || 0, 10) || 0,
+            }))
+            .filter((registro) => registro.talla !== '' && registro.cantidad > 0);
+
+        if (registros.length === 0) {
+            return {};
+        }
+
+        const tieneColores = registros.some((registro) => registro.color_nombre !== '');
+        if (tieneColores) {
+            return transformarTallaColoresAEstructura(registros);
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {}
+        };
+
+        registros.forEach((registro) => {
+            if (!estructura[registro.genero]) {
+                estructura[registro.genero] = {};
+            }
+            estructura[registro.genero][registro.talla] = (estructura[registro.genero][registro.talla] || 0) + registro.cantidad;
+        });
+
+        return estructura;
+    };
     
     // ===== NAVEGACIÓN DE PROCESOS =====
     // Inicializar índice de proceso si no existe
@@ -717,16 +761,11 @@ window.llenarReciboCosturaMobile = function(data) {
             processNavContainer.style.display = 'none';
             processNavContainer.innerHTML = '';
         }
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            arrowContainer.style.display = 'none';
-            arrowContainer.innerHTML = '';
-        }
         
         // IMPORTANTE: Aún sin navegación, debemos guardar los procesos disponibles
         // para que el filtrado de prendas funcione correctamente con el tipo_recibo seleccionado
-        const tieneCostu = todosProcesos.includes('COSTURA');
-        const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
+        const tieneCostu = todosProcesos.some((proceso) => String(proceso).trim().toUpperCase() === 'COSTURA');
+        const tieneReflectivo = todosProcesos.some((proceso) => String(proceso).trim().toUpperCase() === 'REFLECTIVO');
         let procesosCC = [];
         if (tieneCostu) procesosCC.push('COSTURA');
         if (tieneReflectivo) procesosCC.push('REFLECTIVO');
@@ -778,8 +817,8 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log(' [FILTRO PROCESOS] Es vista operario:', esVistaOperario);
     console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
     
-    if (userRole === 'costura-reflectivo' || userRole === 'vista-costura') {
-        // Para costura-reflectivo y vista-costura, mostrar COSTURA y REFLECTIVO en ese orden
+    if (userRole === 'costura-reflectivo' || userRole === 'vista-costura' || userRole === 'lider-reflectivo') {
+        // Para costura-reflectivo, lider-reflectivo y vista-costura, mostrar COSTURA y REFLECTIVO en ese orden
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
         procesosFiltrados = [];
@@ -1359,14 +1398,14 @@ window.llenarReciboCosturaMobile = function(data) {
                 }
             }
         } catch (e) {
-            console.warn('⚠️ [TALLAS OVERRIDE] Error forzando tallas por color:', e);
+            console.warn(' [TALLAS OVERRIDE] Error forzando tallas por color:', e);
         }
 
         // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas o prenda.talla_colores
         if (!tallasExtraidas && todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
             const prendaRef = todasLasPrendas[0];
             
-            // 🎨 PRIORIZAR talla_colores si está disponible
+            // PRIORIZAR talla_colores si está disponible
             let tallasParaUsar = null;
             if (prendaRef.talla_colores && Array.isArray(prendaRef.talla_colores) && prendaRef.talla_colores.length > 0) {
                 console.log('📱 [FALLBACK] Usando talla_colores de la prenda:', prendaRef.talla_colores);
@@ -1650,7 +1689,7 @@ window.llenarReciboCosturaMobile = function(data) {
                 // se deben mostrar SOLO las tallas del anexo.
                 let tallasFuente = prenda.tallas;
                 
-                // 🎨 PRIORIZAR talla_colores si está disponible (como en recibos de costura)
+                // PRIORIZAR talla_colores si está disponible (como en recibos de costura)
                 // Si viene vacío pero las variantes tienen `colores_detalle`, derivarlo para agrupar por color.
                 const tallaColoresDerivada = (!prenda?.talla_colores || (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length === 0))
                     ? derivarTallaColoresDesdeVariantes(prenda?.variantes)
@@ -1915,17 +1954,26 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                         
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
-                        // 🎨 NEW: Enriquecer con talla_colores si disponibles
+                        // NEW: Enriquecer con talla_colores si disponibles
                         let tallasObj = proceso.tallas;
+                        if (esReciboParcial) {
+                            if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando talla_colores del parcial:', prenda.talla_colores);
+                                tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                            } else if (Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando tallas del parcial:', prenda.tallas);
+                                tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
+                            }
+                        }
                         
-                        // 🎨 Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
-                        if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
+                        // Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
+                        if ((!tallasObj || Object.keys(tallasObj).length === 0) && proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
                             console.log('📱 [OPERARIO] Transformando talla_colores a estructura enriquecida:', proceso.talla_colores);
                             tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
                         } else if ((!tallasObj || Object.keys(tallasObj).length === 0) && !proceso.es_parcial) {
                             // Si no hay tallas en el proceso y NO es anexo, usar fallback de la prenda
                             // Para anexos solo deben mostrarse tallas del anexo.
-                            // 🎨 PRIORIZAR talla_colores de la prenda si está disponible
+                            // PRIORIZAR talla_colores de la prenda si está disponible
                             if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                 console.log('📱 [OPERARIO] Usando talla_colores de la prenda como fallback:', prenda.talla_colores);
                                 tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
@@ -1934,75 +1982,87 @@ window.llenarReciboCosturaMobile = function(data) {
                             }
                         }
                         
+                        // OVERRIDE: si la prenda trae talla_colores, preferir este detalle para agrupar por color,
+                        // incluso si el proceso trae tallas genéricas (ej: REFLECTIVO).
+                        if (
+                            !esReciboParcial &&
+                            (!proceso.talla_colores || !Array.isArray(proceso.talla_colores) || proceso.talla_colores.length === 0) &&
+                            prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0
+                        ) {
+                            tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                        }
+
                         if (tallasObj && typeof tallasObj === 'object') {
                             const tallasLineas = [];
-                            ['dama', 'caballero', 'unisex'].forEach((genero) => {
-                                if (tallasObj[genero] && typeof tallasObj[genero] === 'object') {
-                                    const tallasGenero = tallasObj[genero];
-                                    const items = [];
-                                    
-                                    // 🎨 Detectar si hay colores (datos son arrays de objetos)
-                                    const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
-                                    
-                                    if (tieneColores) {
-                                        // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
-                                        const porColor = {};
-                                        Object.entries(tallasGenero).forEach(([talla, datos]) => {
-                                            if (Array.isArray(datos)) {
-                                                datos.forEach(d => {
-                                                    const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
-                                                    const color = esColorValido ? d.color.toUpperCase() : '__SIN_COLOR__';
-                                                    if (!porColor[color]) porColor[color] = [];
-                                                    porColor[color].push({ talla, cantidad: d.cantidad || 0 });
-                                                });
-                                            } else {
-                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                                porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
-                                            }
-                                        });
-                                        
-                                        // Renderizar agrupado por color
-                                        const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
-                                        const sinColor = porColor['__SIN_COLOR__'] || [];
-                                        
-                                        if (coloresReales.length > 0) {
-                                            let colorTexto = `<strong>${genero.toUpperCase()}:</strong>`;
-                                            coloresReales.forEach(([color, tallasArr]) => {
-                                                const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                                colorTexto += `<br><span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`;
-                                            });
-                                            items.push(colorTexto);
-                                        } else if (sinColor.length > 0) {
-                                            const tallasStr = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`).join(', ');
-                                            items.push(`<strong>${genero.toUpperCase()}:</strong> ${tallasStr}`);
-                                        }
-                                    } else {
-                                        // Sin colores - formato simple
-                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
-                                            let cantidad = 0;
-                                            if (Array.isArray(val)) {
-                                                cantidad = val.reduce((acc, item) => {
-                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
-                                                    return acc + c;
-                                                }, 0);
-                                            } else if (val && typeof val === 'object') {
-                                                cantidad = parseInt(val.cantidad) || 0;
-                                            } else {
-                                                cantidad = parseInt(val) || 0;
-                                            }
-                                            if (cantidad > 0) {
-                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-                                            }
-                                        });
-                                        if (items.length > 0) {
-                                            tallasLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
-                                        }
-                                    }
-                                    if (items.length > 0 && !tieneColores) {
-                                        tallasLineas.push(items.join('<br>'));
-                                    }
-                                }
-                            });
+	                            ['dama', 'caballero', 'unisex'].forEach((generoBase) => {
+	                                const generoKey = (tallasObj && typeof tallasObj === 'object' && tallasObj[generoBase])
+	                                    ? generoBase
+	                                    : generoBase.toUpperCase();
+
+	                                if (tallasObj[generoKey] && typeof tallasObj[generoKey] === 'object') {
+	                                    const tallasGenero = tallasObj[generoKey];
+	                                    const generoLabel = generoKey.toString().toUpperCase();
+	                                    
+	                                    // Detectar si hay colores (datos son arrays de objetos)
+	                                    const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
+	                                    
+	                                    if (tieneColores) {
+	                                        // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
+	                                        const porColor = {};
+	                                        Object.entries(tallasGenero).forEach(([talla, datos]) => {
+	                                            if (Array.isArray(datos)) {
+	                                                datos.forEach(d => {
+	                                                    const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
+	                                                    const color = esColorValido ? d.color.toUpperCase() : '__SIN_COLOR__';
+	                                                    if (!porColor[color]) porColor[color] = [];
+	                                                    porColor[color].push({ talla, cantidad: d.cantidad || 0 });
+	                                                });
+	                                            } else {
+	                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+	                                                porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
+	                                            }
+	                                        });
+	                                        
+	                                        // Renderizar agrupado por color
+	                                        const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+	                                        const sinColor = porColor['__SIN_COLOR__'] || [];
+	                                        
+	                                        if (coloresReales.length > 0) {
+	                                            let colorTexto = `<strong>${generoLabel}:</strong>`;
+	                                            coloresReales.forEach(([color, tallasArr]) => {
+	                                                const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+	                                                colorTexto += `<br><span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`;
+	                                            });
+	                                            tallasLineas.push(colorTexto);
+	                                        } else if (sinColor.length > 0) {
+	                                            const tallasStr = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`).join(', ');
+	                                            tallasLineas.push(`<strong>${generoLabel}:</strong> ${tallasStr}`);
+	                                        }
+	                                    } else {
+	                                        // Sin colores - formato simple
+	                                        const items = [];
+	                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
+	                                            let cantidad = 0;
+	                                            if (Array.isArray(val)) {
+	                                                cantidad = val.reduce((acc, item) => {
+	                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+	                                                    return acc + c;
+	                                                }, 0);
+	                                            } else if (val && typeof val === 'object') {
+	                                                cantidad = parseInt(val.cantidad) || 0;
+	                                            } else {
+	                                                cantidad = parseInt(val) || 0;
+	                                            }
+	                                            if (cantidad > 0) {
+	                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+	                                            }
+	                                        });
+	                                        if (items.length > 0) {
+	                                            tallasLineas.push(`<strong>${generoLabel}:</strong> ${items.join(', ')}`);
+	                                        }
+	                                    }
+	                                }
+	                            });
                             
                             // Also check top-level keys that look like sizes (for non-nested formats)
                             if (tallasLineas.length === 0) {
@@ -2077,6 +2137,17 @@ window.llenarReciboCosturaMobile = function(data) {
         // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
         // FIX: Usar la prenda actualmente visible en el carousel, no la primera del array
         const numeroPedidoElement = document.getElementById('mobile-numero-pedido');
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+            const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+            if (numeroPedidoElement && tipoReciboParam === 'PARCIAL' && consecutivoParcialParam) {
+                numeroPedidoElement.textContent = '#' + consecutivoParcialParam;
+                return;
+            }
+        } catch (e) {
+            // noop
+        }
         if (numeroPedidoElement && todasLasPrendas && todasLasPrendas.length > 0) {
             let reciboBuscado = null;
             
@@ -2168,77 +2239,7 @@ window.llenarReciboCosturaMobile = function(data) {
         }
     }
     
-    // Implementar carousel de prendas basado en bloques (igual que asesores)
-    const totalBloques = window.totalBloquesPrendas || 0;
-    const totalPaginas = Math.ceil(totalBloques / PRENDAS_POR_PAGINA);
-    const userRoleLocal = document.getElementById('factura-container-mobile')?.getAttribute('data-user-role');
-    const esVistaControlCalidadLocal = (window.location?.pathname || '').toString().includes('/control-calidad/');
-    const esRolControlCalidadLocal = (userRoleLocal || '').toString().trim().toLowerCase() === 'control de calidad';
-    const disableNavigationLocal = esVistaControlCalidadLocal || esRolControlCalidadLocal;
-
-    if (!disableNavigationLocal && totalBloques > PRENDAS_POR_PAGINA) {
-        // Obtener o crear el contenedor de flechas en la esquina superior derecha
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            // Limpiar botones anteriores
-            arrowContainer.innerHTML = '';
-            arrowContainer.style.display = 'flex';
-            arrowContainer.style.justifyContent = 'center';
-            arrowContainer.style.alignItems = 'center';
-            arrowContainer.style.gap = '10px';
-            
-            const currentPage = Math.floor((window.prendaCarouselIndex || 0) / PRENDAS_POR_PAGINA);
-            
-            // Determinar si mostrar botón anterior
-            const puedeRetroceder = currentPage > 0;
-            
-            // Botón anterior (< izquierda)
-            if (puedeRetroceder) {
-                const prevBtn = document.createElement('button');
-                prevBtn.id = 'prev-arrow-mobile';
-                prevBtn.style.background = 'none';
-                prevBtn.style.border = 'none';
-                prevBtn.style.color = 'red';
-                prevBtn.style.cursor = 'pointer';
-                prevBtn.style.padding = '5px';
-                prevBtn.style.transition = 'all 0.2s ease';
-                prevBtn.style.display = 'inline-flex';
-                prevBtn.style.alignItems = 'center';
-                prevBtn.style.justifyContent = 'center';
-                prevBtn.style.borderRadius = '50%';
-                prevBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-                prevBtn.onmouseover = function() {
-                    this.style.transform = 'scale(1.15)';
-                    this.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-                };
-                prevBtn.onmouseout = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.backgroundColor = 'transparent';
-                };
-                prevBtn.onclick = function() {
-                    window.prendaCarouselIndex = Math.max(0, window.prendaCarouselIndex - PRENDAS_POR_PAGINA);
-                    window.llenarReciboCosturaMobile(data);
-                    // Actualizar fotos para la nueva prenda
-                    if (window.actualizarFotosPrenda) {
-                        window.actualizarFotosPrenda();
-                    }
-                    // Actualizar número de recibo en el header
-                    if (window.actualizarNumeroPrendaHeader) {
-                        window.actualizarNumeroPrendaHeader();
-                    }
-                };
-                
-                arrowContainer.appendChild(prevBtn);
-            }
-        }
-    } else {
-        // Ocultar el contenedor de flechas si no hay más de 2 bloques o si está en Control de Calidad
-        const arrowContainer = document.getElementById('arrow-container-mobile');
-        if (arrowContainer) {
-            arrowContainer.style.display = 'none';
-        }
-        console.log('🎪 Carousel no requerido - solo', totalBloques, 'bloque(s)');
-    }
+    // La navegación por flechas de prendas fue removida (UX: evitar overlays/botones flotantes en mobile).
     
     console.log('📱 [RECIBO MOBILE]  ========== FIN llenarReciboCosturaMobile ==========');
 };

@@ -271,11 +271,20 @@ class GestorPedidoSinCotizacion {
     }
 
     /**
+     * Obtener orden de compra
+     * @returns {string} Orden de compra
+     */
+    obtenerOrdenCompra() {
+        return this.ordenCompra;
+    }
+
+    /**
      * Recopilar datos del DOM
      * Obtiene información de campos del formulario
      */
     recopilarDatosDelDOM() {
         this.cliente = document.getElementById('cliente_editable')?.value || '';
+        this.ordenCompra = document.getElementById('orden_compra_editable')?.value || '';
         this.asesora = document.getElementById('asesora_editable')?.value || '';
         this.formaPago = document.getElementById('forma_de_pago_editable')?.value || '';
         
@@ -414,7 +423,7 @@ class GestorPedidoSinCotizacion {
 
 
 
-            fetch('/asesores/pedidos-editable/crear', {
+            fetch('/api/asesores/pedidos/crear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

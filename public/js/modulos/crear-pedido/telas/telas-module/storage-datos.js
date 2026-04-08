@@ -37,7 +37,7 @@ window.obtenerTelasParaEdicion = function() {
  * @returns {Array} Array de imágenes de la tela
  */
 window.obtenerImagenesTelaParaEnvio = function(telaIndex) {
-    console.log('[obtenerImagenesTelaParaEnvio] 📸 Obteniendo imágenes de tela para envío');
+    console.log('[obtenerImagenesTelaParaEnvio]  Obteniendo imágenes de tela para envío');
     
     const telas = window.telasCreacion;
     if (!telas || telaIndex < 0 || telaIndex >= telas.length) {
@@ -81,7 +81,7 @@ window.establecerImagenesTemporales = function(imagenes) {
  * Limpiar todas las telas (FLUJO CREACIÓN)
  */
 window.limpiarTelas = function() {
-    console.log('[limpiarTelas] 🧹 Limpiando todas las telas');
+    console.log('[limpiarTelas]  Limpiando todas las telas');
     
     window.telasCreacion = [];
     
@@ -103,7 +103,7 @@ window.limpiarTelas = function() {
  * Limpiar imágenes temporales
  */
 window.limpiarImagenesTemporales = function() {
-    console.log('[limpiarImagenesTemporales] 🧹 Limpiando imágenes temporales');
+    console.log('[limpiarImagenesTemporales]  Limpiando imágenes temporales');
     window.imagenesTelaModalNueva = [];
     
     // Actualizar preview si es necesario

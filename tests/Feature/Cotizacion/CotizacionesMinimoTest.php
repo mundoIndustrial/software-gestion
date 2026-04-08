@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class CotizacionesMinimoTest extends TestCase
 {
     /**
-     * Test: Verificar que la BD estÃ¡ disponible
+     * Test: Verificar que la BD está disponible
      */
     public function test_database_connection()
     {

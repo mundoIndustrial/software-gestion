@@ -52,4 +52,9 @@ interface CotizacionRepositoryInterface
      * Contar borradores del usuario
      */
     public function countBorradoresByUserId(UserId $usuarioId): int;
+
+    /**
+     * Contar cotizaciones por estado
+     */
+    public function countByEstado(string $estado): int;
 }

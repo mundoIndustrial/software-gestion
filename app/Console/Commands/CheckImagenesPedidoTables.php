@@ -18,7 +18,6 @@ class CheckImagenesPedidoTables extends Command
         $tablas = [
             'prenda_fotos_pedido',
             'prenda_fotos_tela_pedido',
-            'prenda_fotos_logo_pedido'
         ];
 
         foreach ($tablas as $tabla) {

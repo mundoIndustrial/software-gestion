@@ -41,17 +41,17 @@ class PrendaCardService {
             }
 
             // 2. Obtener elementos visuales
-            console.log('[PrendaCardService.generar] 🖼️ OBTENIENDO ELEMENTOS VISUALES...');
+            console.log('[PrendaCardService.generar]  OBTENIENDO ELEMENTOS VISUALES...');
             const fotoPrincipal = PrendaDataTransformer.obtenerFotoPrincipal(prenda);
             const fotoTela = PrendaDataTransformer.obtenerFotoTela(prenda);
             const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
             
-            console.log('[PrendaCardService.generar] 📸 Foto principal:', fotoPrincipal);
-            console.log('[PrendaCardService.generar] 🧵 Foto tela:', fotoTela);
+            console.log('[PrendaCardService.generar]  Foto principal:', fotoPrincipal);
+            console.log('[PrendaCardService.generar]  Foto tela:', fotoTela);
             console.log('[PrendaCardService.generar]  Info tela:', infoTela);
 
             // 3. Construir secciones expandibles
-            console.log('[PrendaCardService.generar] 🏗️ CONSTRUYENDO SECCIONES...');
+            console.log('[PrendaCardService.generar]  CONSTRUYENDO SECCIONES...');
             console.log('[PrendaCardService.generar]  Verificando builders:');
             console.log('[PrendaCardService.generar]   - VariacionesBuilder:', !!VariacionesBuilder);
             console.log('[PrendaCardService.generar]   - TallasBuilder:', !!TallasBuilder);
@@ -61,7 +61,7 @@ class PrendaCardService {
             const tallasHTML = TallasBuilder.construir(prenda, indice);
             const procesosHTML = ProcesosBuilder.construir(prenda, indice);
             
-            console.log('[PrendaCardService.generar] 📄 HTML de secciones:');
+            console.log('[PrendaCardService.generar]  HTML de secciones:');
             console.log('[PrendaCardService.generar]   - Variaciones HTML length:', variacionesHTML ? variacionesHTML.length : 0);
             console.log('[PrendaCardService.generar]   - Tallas HTML length:', tallasHTML ? tallasHTML.length : 0);
             console.log('[PrendaCardService.generar]   - Procesos HTML length:', procesosHTML ? procesosHTML.length : 0);

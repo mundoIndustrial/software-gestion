@@ -31,7 +31,7 @@ class AsistenciaPersonalController extends Controller
             // Log de información del archivo
             \Log::info('Procesando PDF', [
                 'nombre' => $file->getClientOriginalName(),
-                'tamaño' => $file->getSize(),
+                'tamano' => $file->getSize(),
                 'ruta' => $file->getPathname(),
                 'tipo' => $file->getClientMimeType(),
                 'extensión' => $file->getClientOriginalExtension()

@@ -6,7 +6,7 @@
  */
 
 (async function validateSystem() {
-    console.log('\n🔍 ===== SYSTEM VALIDATION TEST =====\n');
+    console.log('\n ===== SYSTEM VALIDATION TEST =====\n');
     
     const results = {
         passed: 0,
@@ -154,7 +154,7 @@
     
     // Test 10: Initialize system
     try {
-        console.log('\n📌 Intentando inicializar el sistema...');
+        console.log('\n Intentando inicializar el sistema...');
         const editor = await PrendasEditorHelper.inicializar();
         
         if (editor && window.editorPrendas) {
@@ -173,7 +173,7 @@
     }
     
     // Resumen final
-    console.log('\n📊 ===== RESUMEN FINAL =====');
+    console.log('\n ===== RESUMEN FINAL =====');
     console.log(` Exitosos: ${results.passed}`);
     console.log(` Fallos: ${results.failed}`);
     if (results.warnings > 0) {

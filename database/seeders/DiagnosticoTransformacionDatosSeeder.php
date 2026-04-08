@@ -75,7 +75,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
                             [
                                 'file' => null,
                                 'nombre' => 'CODIGO DE TELA.png',
-                                'tamaño' => 11291
+                                'tamano' => 11291
                             ]
                         ]
                     ],
@@ -87,7 +87,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
                             [
                                 'file' => null,
                                 'nombre' => 'CODIGO DE TELA.png',
-                                'tamaño' => 11291
+                                'tamano' => 11291
                             ]
                         ]
                     ]
@@ -97,7 +97,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
                         'file' => null,
                         'previewUrl' => 'blob:http://servermi:8000/34b0d377-b1bf-4388-9631-74acc5ce6782',
                         'nombre' => 'CAMISA DRILL.png',
-                        'tamaño' => 27952
+                        'tamano' => 27952
                     ]
                 ]
             ];
@@ -149,7 +149,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
                         // Problema: file es null, no hay ruta
                         echo "     Imagen de tela: {$img['nombre']}\n";
                         echo "       - File: " . (is_null($img['file']) ? 'NULL' : 'OBJECT') . "\n";
-                        echo "       - Tamaño: {$img['tamaño']}\n";
+                        echo "       - tamano: {$img['tamano']}\n";
                         
                         // Si file es null, no se puede procesar
                         if (is_null($img['file'])) {
@@ -166,10 +166,10 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
             echo "7️⃣  TRANSFORMANDO imágenes de prenda:\n";
             if (!empty($datosDelFrontend['imagenes'])) {
                 foreach ($datosDelFrontend['imagenes'] as $img) {
-                    echo "   📸 Imagen: {$img['nombre']}\n";
+                    echo "    Imagen: {$img['nombre']}\n";
                     echo "       - File: " . (is_null($img['file']) ? 'NULL' : 'OBJECT') . "\n";
                     echo "       - PreviewUrl: " . substr($img['previewUrl'], 0, 50) . "...\n";
-                    echo "       - Tamaño: {$img['tamaño']}\n";
+                    echo "       - tamano: {$img['tamano']}\n";
                     
                     if (is_null($img['file'])) {
                         echo "        NO SE PUEDE PROCESAR - file es NULL\n";

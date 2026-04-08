@@ -96,7 +96,7 @@ class ImagenProcesadorService
             throw new Exception("MIME type no válido");
         }
 
-        // Validar tamaño (máximo 5MB)
+        // Validar tamano (máximo 5MB)
         if ($archivo->getSize() > 5 * 1024 * 1024) {
             throw new Exception("Archivo demasiado grande. Máximo 5MB");
         }
@@ -215,7 +215,7 @@ class ImagenProcesadorService
             return [
                 'ancho' => $imagen->width(),
                 'alto' => $imagen->height(),
-                'tamaño' => strlen($contenido),
+                'tamano' => strlen($contenido),
                 'formato' => 'webp',
             ];
         } catch (Exception $e) {

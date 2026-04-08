@@ -101,6 +101,7 @@ const DOM_SELECTORS = {
     // Formulario general
     prendasContainer: '#prendas-container-editable',
     clienteInput: '#cliente_editable',
+    ordenCompraInput: '#orden_compra_editable',
     asesoraInput: '#asesora_editable',
     formaPagoInput: '#forma_de_pago_editable',
     numeroCotizacionInput: '#numero_cotizacion_editable',

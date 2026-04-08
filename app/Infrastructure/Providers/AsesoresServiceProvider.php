@@ -11,7 +11,8 @@ use App\Application\Services\Asesores\PerfilService;
 
 // Repositories
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 
 // Use Cases (DDD)
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -31,22 +32,35 @@ use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
 use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
 use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerNotasPedidoUseCase;
+use App\Application\Asesores\UseCases\ContarPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerDatosCotizacionEditarUseCase;
+use App\Application\Asesores\UseCases\GuardarPedidoUseCase;
+use App\Application\Services\Asesores\GuardarPedidoLogoService;
+use App\Application\Services\Asesores\ProcesarFotosTelasService;
+
+// Infrastructure Services (Image Mapping - DDD Refactored)
+use App\Infrastructure\Services\Pedidos\ImagenesService;
+use App\Infrastructure\Mappers\Imagenes\PrendaImagenesMapper;
+use App\Infrastructure\Mappers\Imagenes\TelaImagenesMapper;
+use App\Infrastructure\Mappers\Imagenes\ImagenDTOToPrendaArrayMapper;
+use App\Infrastructure\Mappers\Imagenes\ImagenDTOToTelaArrayMapper;
+use App\Application\Services\ColorTelaService;
 
 /**
  * AsesoresServiceProvider
- * 
- * Registra todos los servicios y dependencias para el módulo de Asesores
- * 
+ * Registra todos los servicios y dependencias para el modulo de Asesores
  * Responsabilidades:
  * - Inyectar repositorios en Use Cases
  * - Registrar servicios legacy (gradualmente siendo reemplazados)
- * - Centralizar configuración de dependencias
+ * - Centralizar configuracion de dependencias
  * 
  * Beneficios:
- * - Constructor limpio (12 parámetros vs 23 anteriores)
- * - Fácil testing (inyección clara)
- * - Fácil mantenimiento (cambios centralizados)
- * - Explícito (se ve qué depende de qué)
+ * - Constructor limpio (12 parametrs vs 23 anteriores)
+ * - Facil testing (inyeccion clara)
+ * - Facil mantenimiento (cambios centralizados)
+ * - Explicito (se ve aqui depende de aqui)
  */
 class AsesoresServiceProvider extends ServiceProvider
 {
@@ -58,7 +72,7 @@ class AsesoresServiceProvider extends ServiceProvider
     public function register()
     {
         // ===== REPOSITORIES =====
-        $this->app->singleton(PedidoProduccionRepository::class);
+        $this->app->singleton(PedidoProduccionReadRepository::class, EloquentPedidoProduccionRepository::class);
 
         // ===== LEGACY SERVICES (Gradualmente siendo eliminados) =====
         $this->app->singleton(DashboardService::class, function ($app) {
@@ -73,13 +87,41 @@ class AsesoresServiceProvider extends ServiceProvider
             return new PerfilService();
         });
 
+        // ===== INFRASTRUCTURE SERVICES (DDD - Image Mapping) =====
+        
+        $this->app->singleton(ImagenDTOToPrendaArrayMapper::class, function ($app) {
+            return new ImagenDTOToPrendaArrayMapper();
+        });
+
+        $this->app->singleton(ImagenDTOToTelaArrayMapper::class, function ($app) {
+            return new ImagenDTOToTelaArrayMapper();
+        });
+
+        $this->app->singleton(PrendaImagenesMapper::class, function ($app) {
+            return new PrendaImagenesMapper(
+                $app->make(ImagenDTOToPrendaArrayMapper::class)
+            );
+        });
+
+        $this->app->singleton(TelaImagenesMapper::class, function ($app) {
+            return new TelaImagenesMapper(
+                $app->make(ImagenDTOToTelaArrayMapper::class),
+                $app->make(ColorTelaService::class)
+            );
+        });
+
+        $this->app->singleton(ImagenesService::class, function ($app) {
+            return new ImagenesService(
+                $app->make(PrendaImagenesMapper::class),
+                $app->make(TelaImagenesMapper::class)
+            );
+        });
+
         // ===== USE CASES (DDD - NUEVA ARQUITECTURA) =====
         
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
-            return new CrearProduccionPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return $app->build(CrearProduccionPedidoUseCase::class);
         });
 
         // Confirmar Pedido
@@ -113,13 +155,13 @@ class AsesoresServiceProvider extends ServiceProvider
         // Listar Pedidos
         $this->app->singleton(ListarProduccionPedidosUseCase::class, function ($app) {
             return new ListarProduccionPedidosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 
-        // Preparar Creación Pedido
+        // Preparar Creacion Pedido
         $this->app->singleton(PrepararCreacionProduccionPedidoUseCase::class, function ($app) {
-            return new PrepararCreacionProduccionPedidoUseCase();
+            return $app->build(PrepararCreacionProduccionPedidoUseCase::class);
         });
 
         // Agregar Prenda Simple
@@ -129,37 +171,35 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // Obtener Próximo Número Pedido
+        // Obtener Proximo Numero Pedido
         $this->app->singleton(ObtenerProximoNumeroPedidoUseCase::class, function ($app) {
-            return new ObtenerProximoNumeroPedidoUseCase(
-                $app->make(PedidoRepository::class)
-            );
+            return new ObtenerProximoNumeroPedidoUseCase();
         });
 
         // Obtener Factura
         $this->app->singleton(ObtenerFacturaUseCase::class, function ($app) {
             return new ObtenerFacturaUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 
         // Obtener Recibos
         $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
             return new ObtenerRecibosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 
-        // ===== USE CASES PRESENTACIÓN (DDD - NUEVA ARQUITECTURA) =====
+        // ===== USE CASES PRESENTACION (DDD - NUEVA ARQUITECTURA) =====
 
-        // Obtener Estadísticas Dashboard
+        // Obtener estadisticas Dashboard
         $this->app->singleton(ObtenerEstadisticasDashboardUseCase::class, function ($app) {
             return new ObtenerEstadisticasDashboardUseCase(
                 $app->make(DashboardService::class)
             );
         });
 
-        // Obtener Datos Gráficas Dashboard
+        // Obtener Datos graficas Dashboard
         $this->app->singleton(ObtenerDatosGraficasDashboardUseCase::class, function ($app) {
             return new ObtenerDatosGraficasDashboardUseCase(
                 $app->make(DashboardService::class)
@@ -173,7 +213,7 @@ class AsesoresServiceProvider extends ServiceProvider
             );
         });
 
-        // Marcar Notificación Leída
+        // Marcar Notificacion Leida
         $this->app->singleton(MarcarNotificacionLeidaUseCase::class, function ($app) {
             return new MarcarNotificacionLeidaUseCase(
                 $app->make(NotificacionesService::class)
@@ -191,6 +231,24 @@ class AsesoresServiceProvider extends ServiceProvider
                 $app->make(PerfilService::class)
             );
         });
+
+        // Registrar servicios que GuardarPedidoUseCase necesita
+        $this->app->singleton(GuardarPedidoLogoService::class, function ($app) {
+            return new GuardarPedidoLogoService();
+        });
+
+        $this->app->singleton(ProcesarFotosTelasService::class, function ($app) {
+            return new ProcesarFotosTelasService();
+        });
+
+        // Guardar Pedido (con transaccion)
+        $this->app->singleton(GuardarPedidoUseCase::class, function ($app) {
+            return new GuardarPedidoUseCase(
+                $app->make(CrearProduccionPedidoUseCase::class),
+                $app->make(GuardarPedidoLogoService::class),
+                $app->make(ProcesarFotosTelasService::class)
+            );
+        });
     }
 
     /**
@@ -200,6 +258,9 @@ class AsesoresServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Aquí irían eventos, listeners, etc.
+        // aqui iran eventos, listeners, etc.
     }
 }
+
+
+

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Application\Services\PrendaTallaService;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -98,7 +99,7 @@ class PedidoService
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
                 'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             \Log::info('Pedido de producción creado', [
@@ -249,8 +250,7 @@ class PedidoService
             
             // Guardar tallas en la tabla relacional prenda_pedido_tallas
             if (!empty($cantidadesPorTalla)) {
-                $prendaTallaRepository = new \App\Domain\Pedidos\Repositories\PedidoProduccionRepository();
-                $prendaTallaRepository->guardarTallas($prenda->id, $cantidadesPorTalla);
+                app(PrendaTallaService::class)->guardarTallasPrenda($prenda->id, $cantidadesPorTalla);
             }
 
             \Log::info('Prenda del pedido creada', [
@@ -380,7 +380,7 @@ class PedidoService
 
     /**
      * Método eliminado - ya no se genera numero_pedido al crear
-     * El numero_pedido ahora se genera automáticamente al crear el pedido via PedidoWebService
+     * El numero_pedido ahora se genera automáticamente en la orquestación de creación del pedido
      */
 
     /**

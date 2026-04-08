@@ -3,7 +3,7 @@
 namespace App\Domain\Pedidos\Services;
 
 use App\Domain\Pedidos\ValueObjects\ProcesoPrenda;
-use App\Application\Pedidos\DTOs\ProcesoPrendaDTO;
+use App\Domain\Pedidos\DTOs\ProcesoPrendaDTO;
 
 /**
  * Servicio de dominio para procesamiento de procesos de prendas

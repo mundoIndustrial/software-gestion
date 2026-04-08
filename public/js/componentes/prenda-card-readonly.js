@@ -20,19 +20,25 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     console.log('[generarTarjetaPrendaReadOnly]', prenda);
     
     // Verificar que servicios estén disponibles
-    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaCardService existe?', !!window.PrendaCardService);
-    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaDataTransformer existe?', !!window.PrendaDataTransformer);
-    console.log('[generarTarjetaPrendaReadOnly]  ¿TallasBuilder existe?', !!window.TallasBuilder);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaCardService existe?', !!globalThis.PrendaCardService);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaDataTransformer existe?', !!globalThis.PrendaDataTransformer);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿TallasBuilder existe?', !!globalThis.TallasBuilder);
     
-    if (!window.PrendaCardService) {
+    if (!globalThis.PrendaCardService) {
         console.log('[generarTarjetaPrendaReadOnly]  ERROR: PrendaCardService NO está disponible');
         return `<div class="error">Error: servicios no cargados</div>`;
     }
 
     // Usar PrendaCardService para generar HTML
     try {
-        console.log('[generarTarjetaPrendaReadOnly] ⚡ Llamando PrendaCardService.generar()');
-        const htmlTarjeta = window.PrendaCardService.generar(prenda, indice);
+        console.log('[generarTarjetaPrendaReadOnly]  Llamando PrendaCardService.generar()');
+        const ctx = {
+            imageConverter: globalThis.ImageConverterService,
+            coloresPorTallaStore: globalThis.ColoresPorTalla,
+            gestionItemsUI: globalThis.gestionItemsUI,
+            showProcessImage: globalThis.mostrarImagenProcesoGrande,
+        };
+        const htmlTarjeta = globalThis.PrendaCardService.generar(prenda, indice, ctx);
         console.log('[generarTarjetaPrendaReadOnly]  HTML generado exitosamente');
         return htmlTarjeta;
     } catch (error) {
@@ -44,13 +50,13 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
 // Inicializar handlers cuando el documento esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        if (window.PrendaCardHandlers) {
-            window.PrendaCardHandlers.inicializar();
+        if (globalThis.PrendaCardHandlers) {
+            globalThis.PrendaCardHandlers.inicializar();
         }
     });
 } else {
-    if (window.PrendaCardHandlers) {
-        window.PrendaCardHandlers.inicializar();
+    if (globalThis.PrendaCardHandlers) {
+        globalThis.PrendaCardHandlers.inicializar();
     }
 }
 
@@ -64,13 +70,13 @@ if (document.readyState === 'loading') {
 function inicializarTarjetaReadOnly(tarjeta, prenda, indice, callbacks = {}) {
 
     
-    if (!window.PrendaCardHandlers) {
+    if (!globalThis.PrendaCardHandlers) {
 
         return;
     }
     
     // Delegar toda la gestión de eventos al servicio
-    window.PrendaCardHandlers.inicializar(tarjeta, prenda, indice, callbacks);
+    globalThis.PrendaCardHandlers.inicializar(tarjeta, prenda, indice, callbacks);
     
     // Agregar listener para actualizar tarjeta cuando las asignaciones cambien
     agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice);
@@ -102,12 +108,12 @@ function agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice) {
             }
             
             // Reconstruir usando TallasBuilder
-            if (window.TallasBuilder && prenda) {
+            if (globalThis.TallasBuilder && prenda) {
                 // El prenda object tiene asignacionesColores actualizado por PrendaDataTransformer
                 // Recargar desde StateManager
-                prenda.asignacionesColores = (window.StateManager && window.StateManager.getAsignaciones()) || {};
+                prenda.asignacionesColores = (globalThis.StateManager && globalThis.StateManager.getAsignaciones()) || {};
                 
-                const htmlTallas = window.TallasBuilder.construir(prenda, indice);
+                const htmlTallas = globalThis.TallasBuilder.construir(prenda, indice);
                 
                 // Reemplazar solo la sección de tallas
                 seccionTallas.outerHTML = htmlTallas;
@@ -126,5 +132,4 @@ function agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice) {
         tarjeta.__asignacionesListener = handleActualizacion;
     }
 }
-
 

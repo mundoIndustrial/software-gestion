@@ -77,6 +77,9 @@ function cargarDatosEdicion() {
             cargarEPPs(datosCompletos.epps);
         }
 
+        // 2.6. Renderizar tarjetas registradas en gestionItemsUI
+        renderizarItemsRegistrados();
+
         // 3. Actualizar título
         const titulo = `Editando Pedido #${window.pedidoEditarId}`;
         const pageHeader = document.querySelector('.page-header h1');
@@ -98,6 +101,7 @@ function cargarInformacionGeneral(pedido) {
     try {
         const campos = {
             'cliente_editable': pedido.cliente,
+            'orden_compra_editable': pedido.orden_compra,
             'forma_de_pago_editable': pedido.forma_de_pago,
         };
 
@@ -151,13 +155,14 @@ function cargarPrendas(prendas) {
             }
 
             
-            let variaciones = prenda.variaciones;
-            if (typeof variaciones === 'string') {
+            // Buscar variantes (nombre correcto desde backend MapearPedidoEdicionService)
+            let variantes = prenda.variantes || prenda.variaciones || {};
+            if (typeof variantes === 'string') {
                 try {
-                    variaciones = JSON.parse(variaciones);
+                    variantes = JSON.parse(variantes);
                 } catch (e) {
 
-                    variaciones = {};
+                    variantes = {};
                 }
             }
             
@@ -176,6 +181,61 @@ function cargarPrendas(prendas) {
             if (typeof genero === 'string' && (genero === '' || genero === '[]')) {
                 genero = [];
             }
+
+            // Contrato estricto de edición: no usar alias legacy ni inferencias.
+            let asignacionesColoresPorTalla = prenda.asignacionesColoresPorTalla || {};
+            if (typeof asignacionesColoresPorTalla === 'string') {
+                try {
+                    asignacionesColoresPorTalla = JSON.parse(asignacionesColoresPorTalla);
+                } catch (e) {
+                    asignacionesColoresPorTalla = {};
+                }
+            }
+            if (!asignacionesColoresPorTalla || typeof asignacionesColoresPorTalla !== 'object' || Array.isArray(asignacionesColoresPorTalla)) {
+                asignacionesColoresPorTalla = {};
+            }
+
+            let tallaColores = prenda.talla_colores || [];
+            if (typeof tallaColores === 'string') {
+                try {
+                    tallaColores = JSON.parse(tallaColores);
+                } catch (e) {
+                    tallaColores = [];
+                }
+            }
+            if (!Array.isArray(tallaColores)) {
+                tallaColores = [];
+            }
+
+            const coloresTelas = Array.isArray(prenda.colores_telas) ? prenda.colores_telas : [];
+            const telasAgregadasDesdeFuenteOficial = coloresTelas.map((ct) => {
+                const fotosTela = Array.isArray(ct.fotos_tela) ? ct.fotos_tela : [];
+                const imagenes = fotosTela.map((f) => ({
+                    ruta: f?.url || f?.ruta_original || f?.ruta_webp || '',
+                    ruta_original: f?.ruta_original || f?.url || '',
+                    ruta_webp: f?.ruta_webp || f?.url || '',
+                    prenda_pedido_colores_telas_id: ct?.id || null,
+                })).filter((img) => img.ruta || img.ruta_original || img.ruta_webp);
+
+                return {
+                    id: ct?.id || null,
+                    tela_id: ct?.tela_id || null,
+                    color_id: ct?.color_id || null,
+                    tela: ct?.tela_nombre || ct?.tela || '',
+                    nombre_tela: ct?.tela_nombre || ct?.tela || '',
+                    color: ct?.color_nombre || ct?.color || '',
+                    referencia: ct?.tela_referencia || ct?.referencia || '',
+                    imagenes,
+                };
+            });
+
+            const tipoFlujoTallas = String(prenda.tipo_flujo_tallas || '').toLowerCase();
+            if (!['normal', 'talla_color', 'sin_tallas'].includes(tipoFlujoTallas)) {
+                console.error('[cargar-datos-edicion] Contrato inválido: tipo_flujo_tallas ausente o inválido', {
+                    prendaId: prenda.id || null,
+                    tipo_flujo_tallas: prenda.tipo_flujo_tallas,
+                });
+            }
             //  Extraer tallas de generosConTallas
             const tallas = [];
             if (generosConTallas && typeof generosConTallas === 'object') {
@@ -192,22 +252,34 @@ function cargarPrendas(prendas) {
 
             
             // Agregar la prenda al gestor con datos correctos
-            const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda({
+            const datosPrenda = {
+                id: prenda.id || null,
                 nombre_producto: prenda.nombre_prenda || '',
+                nombre_prenda: prenda.nombre_prenda || '',
                 descripcion: prenda.descripcion || '',
                 genero: genero,
-                generosConTallas: generosConTallas,
-                tallas: tallas,  //  Pasar tallas extraídas
-                cantidadesPorTalla: prenda.cantidadesPorTalla || {},
-                telas: prenda.telas || [],
-                telasAgregadas: prenda.telasAgregadas || [],
+                // cantidad_talla es el formato que usa PrendaCardService._construirTallasYCantidades
+                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } } — misma estructura
+                // FIX: Backend envía [] (PHP empty array) cuando no hay tallas — [] es truthy en JS
+                cantidad_talla: (Array.isArray(generosConTallas) ? {} : generosConTallas) || {},
+                // generosConTallas vacío para que el renderer lo construya desde cantidad_talla
+                generosConTallas: {},
+                tallas: tallas,
+                cantidadesPorTalla: {},
+                telas: telasAgregadasDesdeFuenteOficial.length > 0 ? telasAgregadasDesdeFuenteOficial : (prenda.telas || []),
+                telasAgregadas: telasAgregadasDesdeFuenteOficial.length > 0 ? telasAgregadasDesdeFuenteOficial : (prenda.telasAgregadas || []),
+                colores_telas: coloresTelas,
                 fotos: prenda.fotos || [],
                 telaFotos: prenda.telaFotos || [],
-                imagenes: prenda.imagenes || prenda.fotos || [],  //  Asegurar imagenes
+                imagenes: prenda.imagenes || prenda.fotos || [],
                 origen: prenda.origen || 'bodega',
                 de_bodega: prenda.de_bodega || 1,
                 procesos: procesos,
-                variaciones: variaciones,
+                talla_colores: Array.isArray(tallaColores) ? tallaColores : [],
+                asignacionesColoresPorTalla: (asignacionesColoresPorTalla && typeof asignacionesColoresPorTalla === 'object') ? asignacionesColoresPorTalla : {},
+                tipo_flujo_tallas: tipoFlujoTallas,
+                variantes: variantes,
+                variaciones: variantes,
                 tipo_manga: prenda.tipo_manga,
                 obs_manga: prenda.obs_manga,
                 tipo_broche: prenda.tipo_broche,
@@ -216,7 +288,16 @@ function cargarPrendas(prendas) {
                 obs_bolsillos: prenda.obs_bolsillos,
                 tiene_reflectivo: prenda.tiene_reflectivo,
                 obs_reflectivo: prenda.obs_reflectivo,
-            });
+            };
+            const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda(datosPrenda);
+
+            // Registrar también en gestionItemsUI para renderizado unificado con EPPs
+            if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaAlOrden === 'function') {
+                const prendaAlmacenada = window.gestorPrendaSinCotizacion.prendas[prendasIndex];
+                if (prendaAlmacenada) {
+                    window.gestionItemsUI.agregarPrendaAlOrden(prendaAlmacenada);
+                }
+            }
 
 
 
@@ -335,6 +416,34 @@ function cargarPrendas(prendas) {
 
 
 /**
+ * Renderizar items (prendas + EPPs) que ya fueron registrados en gestionItemsUI
+ * Usa reintentos porque gestionItemsUI.renderer puede no estar listo aún (scripts defer)
+ */
+function renderizarItemsRegistrados(intentos = 0) {
+    const MAX_INTENTOS = 30;
+    
+    if (window.gestionItemsUI && window.gestionItemsUI.renderer) {
+        const items = window.gestionItemsUI.obtenerItemsOrdenados();
+        console.log('[cargar-datos-edicion] renderizarItemsRegistrados - items:', items.length);
+        
+        if (items.length > 0) {
+            window.gestionItemsUI.renderer.actualizar(items);
+            console.log('[cargar-datos-edicion] Tarjetas renderizadas correctamente');
+        } else {
+            console.warn('[cargar-datos-edicion] No hay items para renderizar');
+        }
+        return;
+    }
+    
+    if (intentos < MAX_INTENTOS) {
+        console.log('[cargar-datos-edicion] Esperando gestionItemsUI.renderer... intento', intentos + 1);
+        setTimeout(() => renderizarItemsRegistrados(intentos + 1), 200);
+    } else {
+        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible después de', MAX_INTENTOS, 'intentos');
+    }
+}
+
+/**
  * Cargar EPPs al pedido
  */
 function cargarEPPs(epps) {
@@ -372,6 +481,36 @@ function cargarEPPs(epps) {
                 }
             });
         }
+        
+        // Registrar EPPs en eppAgregadosList e itemsPedido para que el modal de edición pueda encontrarlos
+        if (!window.eppAgregadosList) {
+            window.eppAgregadosList = [];
+        }
+        if (!window.itemsPedido) {
+            window.itemsPedido = [];
+        }
+        
+        epps.forEach((epp) => {
+            const eppNormalizado = {
+                id: epp.epp_id,
+                epp_id: epp.epp_id,
+                tarjetaId: String(epp.epp_id),
+                nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+                nombre_completo: epp.nombre_completo || epp.nombre_epp || epp.nombre || '',
+                cantidad: epp.cantidad || 0,
+                observaciones: epp.observaciones || '',
+                imagenes: epp.imagenes || [],
+                imagen: '',
+                tipo: 'epp'
+            };
+            
+            window.eppAgregadosList.push(eppNormalizado);
+            window.itemsPedido.push(eppNormalizado);
+        });
+        
+        console.log('[cargar-datos-edicion] EPPs registrados en eppAgregadosList:', window.eppAgregadosList.length);
+        console.log('[cargar-datos-edicion] EPPs registrados en itemsPedido:', window.itemsPedido.length);
         
         // Si el gestor tiene método para agregar EPPs
         if (window.gestorPrendaSinCotizacion && typeof window.gestorPrendaSinCotizacion.agregarEpp === 'function') {
@@ -471,26 +610,12 @@ function inicializarEventListenersEpp() {
             });
         }
         
-        // Botón EDITAR EPP
-        if (e.target.closest('.btn-editar-epp')) {
-            e.stopPropagation();
-            const btn = e.target.closest('.btn-editar-epp');
-            const eppIndex = parseInt(btn.dataset.eppIndex);
-            
-            console.log('[EPP] Editando EPP con índice:', eppIndex);
-            
-            // Obtener EPP desde window.eppsPedido (donde se almacenan)
-            if (window.eppsPedido && window.eppsPedido[eppIndex]) {
-                const epp = window.eppsPedido[eppIndex];
-                console.log('[EPP]  EPP encontrado:', epp);
-                
-                // TODO: Abrir modal para editar EPP
-                // Por ahora solo log
-                alert(`Editar EPP: ${epp.nombre} (ID: ${epp.id || 'nuevo'})`);
-            } else {
-                console.warn('[EPP]  EPP no encontrado en índice:', eppIndex);
-                alert('EPP no encontrado');
-            }
+        // Botón EDITAR EPP - MANEJADO POR ARQUITECTURA NUEVA DE HERENCIA
+        // El nuevo EppMenuHandlerTarjeta/Tabla maneja esto automáticamente
+        // a través de window.abrirModalEditarEPP() - no procesar aquí
+        if (e.target.closest('.btn-editar-epp-nuevo') || e.target.closest('.btn-editar-epp')) {
+            // El nuevo handler ya procesó el evento, ignorar
+            return;
         }
         
         // Botón ELIMINAR EPP
@@ -499,7 +624,7 @@ function inicializarEventListenersEpp() {
             const btn = e.target.closest('.btn-eliminar-epp');
             const eppIndex = parseInt(btn.dataset.eppIndex);
             
-            console.log('[EPP] 🗑️ Eliminando EPP con índice:', eppIndex);
+            console.log('[EPP]  Eliminando EPP con índice:', eppIndex);
             
             // Confirmar eliminación
             if (confirm('¿Estás seguro de que deseas eliminar este EPP?')) {
@@ -529,7 +654,7 @@ window.addEventListener('prendaActualizada', (event) => {
         
         // Preservar los EPPs actuales ANTES de actualizar
         const eppsPersistentes = window.eppsPedido ? JSON.parse(JSON.stringify(window.eppsPedido)) : [];
-        console.log('[cargar-datos-edicion-nuevo] 💾 EPPs a preservar:', eppsPersistentes.length);
+        console.log('[cargar-datos-edicion-nuevo]  EPPs a preservar:', eppsPersistentes.length);
         
         // Recargar los datos del pedido para obtener la prenda actualizada
         if (pedidoId && window.datosEdicionPedido) {
@@ -574,5 +699,3 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
-
-

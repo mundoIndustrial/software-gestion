@@ -24,7 +24,7 @@ class AgregarPrendaAlPedidoCommand implements Command
         private string $tipo = 'sin_cotizacion',
     ) {
         if (!in_array($tipo, self::TIPOS_VALIDOS)) {
-            throw new \InvalidArgumentException("Tipo de prenda invÃ¡lido: {$tipo}");
+            throw new \InvalidArgumentException("Tipo de prenda invalido: {$tipo}");
         }
     }
 

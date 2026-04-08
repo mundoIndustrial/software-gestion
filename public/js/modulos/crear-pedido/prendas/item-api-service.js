@@ -11,7 +11,7 @@
 
 class ItemAPIService {
     constructor(options = {}) {
-        this.baseUrl = options.baseUrl || '/asesores/pedidos-editable';
+        this.baseUrl = options.baseUrl || '/api/asesores/pedidos';
         this.csrfToken = options.csrfToken || this.obtenerCSRFToken();
         
         //  Registro global de archivos File por UID
@@ -136,20 +136,20 @@ class ItemAPIService {
             this.registrarArchivosEnGlobal(pedidoData);
             
             // PASO 1: Preparar datos para envío (JSON limpio + FormData para imágenes)
-            console.debug('[validarPedido] 📦 Preparando datos para envío...');
+            console.debug('[validarPedido]  Preparando datos para envío...');
             let datosParaEnvio;
             
-            // Verificar si existe la función prepararDatosParaEnvio (nuestro sistema EPP)
-            if (typeof window.prepararDatosParaEnvio === 'function') {
-                datosParaEnvio = window.prepararDatosParaEnvio([pedidoData]);
-                console.debug('[validarPedido] 📸 Usando prepararDatosParaEnvio para EPPs');
+            // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
+            if (typeof window.prepararDatosEppParaFormData === 'function') {
+                datosParaEnvio = window.prepararDatosEppParaFormData([pedidoData]);
+                console.debug('[validarPedido]  Usando prepararDatosEppParaFormData para EPPs');
             } else {
                 // Fallback para prendas (sin imágenes)
                 datosParaEnvio = {
                     jsonData: [pedidoData],
                     formData: new FormData()
                 };
-                console.debug('[validarPedido] 📦 Fallback para prendas sin imágenes');
+                console.debug('[validarPedido]  Fallback para prendas sin imágenes');
             }
             
             // PASO 2: Serializar JSON limpio
@@ -161,8 +161,8 @@ class ItemAPIService {
             const formData = datosParaEnvio.formData;
             formData.append('pedido', jsonString);
             
-            console.debug('[validarPedido] 📤 Enviando a /validar con FormData...');
-            console.debug('[validarPedido] 📤 Archivos en FormData:', formData.getAll('files').length);
+            console.debug('[validarPedido]  Enviando a /validar con FormData...');
+            console.debug('[validarPedido]  Archivos en FormData:', formData.getAll('files').length);
             
             const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
@@ -243,7 +243,7 @@ class ItemAPIService {
                                 prenda_proceso_keys: Object.keys(prenda.procesos[procesoKey])
                             });
                             
-                            // CASO 1: Procesar imagenes (modo para_todas)
+                            // CASO 1: Procesar imagenes (modo generico/general)
                             if (procesoExtraido.imagenes && Array.isArray(procesoExtraido.imagenes)) {
                                 procesoExtraido.imagenes.forEach((imgEnriquecida, imgIdx) => {
                                     // Intentar inyectar en datos.imagenes PRIMERO
@@ -271,7 +271,7 @@ class ItemAPIService {
                                 });
                             }
                             
-                            // CASO 2: Procesar imagenes_por_talla (modo por_tallas)
+                            // CASO 2: Procesar imagenes_por_talla (modo especifico)
                             if (procesoExtraido.imagenes_por_talla && typeof procesoExtraido.imagenes_por_talla === 'object') {
                                 Object.entries(procesoExtraido.imagenes_por_talla).forEach(([tallaKey, imagesArray]) => {
                                     if (Array.isArray(imagesArray)) {
@@ -341,7 +341,7 @@ class ItemAPIService {
                 console.debug('[crearPedido] PASO 2 completo - Prendas:', pedidoNormalizado.prendas.length, '- EPPs:', pedidoNormalizado.epps.length);
                 
                 // DIAGNÓSTICO: Verificar prendas normalizadas
-                console.log('[crearPedido] 🔍 DIAGNÓSTICO - Primera prenda normalizada:');
+                console.log('[crearPedido]  DIAGNÓSTICO - Primera prenda normalizada:');
                 if (pedidoNormalizado.prendas.length > 0) {
                     const prendaNorm = pedidoNormalizado.prendas[0];
                     console.log('[crearPedido]   - nombre:', prendaNorm.nombre_prenda);
@@ -730,7 +730,7 @@ class ItemAPIService {
                 // 1. IMÁGENES DE PRENDA
                 // ==========================================
                 if (Array.isArray(item.imagenes)) {
-                    console.log(`[extraerFiles] 📸 Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
+                    console.log(`[extraerFiles]  Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
                         tiene_ruta: !!img.ruta,
                         ruta: img.ruta,
                         uid: img.uid,
@@ -918,7 +918,7 @@ class ItemAPIService {
                                     uid: file.uid || null
                                 });
                                 estructura.archivosMap[formdataKey] = file;
-                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].fotosGeneralesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].fotosGeneralesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
                                 imagenIndex++;
                             }
                         });
@@ -947,7 +947,7 @@ class ItemAPIService {
                                     uid: file.uid || null
                                 });
                                 estructura.archivosMap[formdataKey] = file;
-                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].imagenesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].imagenesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
                                 imagenIndex++;
                             }
                         });
@@ -992,9 +992,9 @@ class ItemAPIService {
                                             });
                                             estructura.archivosMap[formdataKey] = imgFile;
                                             
-                                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
+                                            console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
                                         } else {
-                                            console.debug(`[extraerFiles] ⚠️ imgFile NO es File, es:`, typeof imgFile, imgFile);
+                                            console.debug(`[extraerFiles]  imgFile NO es File, es:`, typeof imgFile, imgFile);
                                         }
                                     });
                                 });
@@ -1025,7 +1025,8 @@ class ItemAPIService {
                 if (Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: img,
                                 formdata_key: formdataKey,
@@ -1037,7 +1038,8 @@ class ItemAPIService {
                             //  RECUPERAR File desde el registro global por UID
                             const fileOriginal = this.fileRegistry.get(img.file.uid);
                             console.log(`[extraerFiles]  Recuperando File de EPP desde registry para uid:`, img.file.uid);
-                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: fileOriginal,
                                 formdata_key: formdataKey,
@@ -1442,7 +1444,7 @@ class ItemAPIService {
     limpiarFileRegistry() {
         const cantidadAntes = this.fileRegistry.size;
         this.fileRegistry.clear();
-        console.log(`[limpiarFileRegistry] 🧹 Registry limpiado: ${cantidadAntes} archivos liberados`);
+        console.log(`[limpiarFileRegistry]  Registry limpiado: ${cantidadAntes} archivos liberados`);
     }
 }
 

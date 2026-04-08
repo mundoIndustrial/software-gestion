@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * NotificacionesService
- * 
  * Servicio para gestionar notificaciones del asesor.
  * Encapsula la lógica de obtención y marcado de notificaciones.
  */
@@ -17,125 +16,106 @@ class NotificacionesService
     /**
      * Obtener todas las notificaciones del asesor
      */
-    public function obtenerNotificaciones(): array
+    public function obtenerNotificaciones(?int $asesorId = null): array
     {
-        $userId = Auth::id();
+        $userId = $asesorId ?? Auth::id();
+
+        $viewedPedidosDevueltos = session('viewed_pedidos_devueltos_' . $userId, []);
+        $viewedRecibosDevueltos = session('viewed_recibos_devueltos_' . $userId, []);
 
         // ============================================
-        // NOTIFICACIONES: Fecha Estimada de Entrega
+        // NOTIFICACIONES: Pedido devuelto a asesora
         // ============================================
-        $notificacionesFechaEstimada = DB::table('notifications')
-            ->where('notifiable_id', $userId)
-            ->where('notifiable_type', 'App\\Models\\User')
-            ->where('type', 'App\\Notifications\\FechaEstimadaAsignada')
-            ->whereNull('read_at')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($notif) {
-                $data = json_decode($notif->data, true);
-                return [
-                    'id' => $notif->id,
-                    'tipo' => 'fecha_estimada',
-                    'titulo' => 'ðŸ“… Fecha Estimada Asignada',
-                    'pedido_id' => $data['pedido_id'],
-                    'numero_pedido' => $data['numero_pedido'],
-                    'fecha_estimada' => $data['fecha_estimada'],
-                    'usuario_que_genero' => $data['usuario_que_genero_nombre'] ?? 'Sistema',
-                    'created_at' => $notif->created_at,
-                ];
-            });
-
-        // Obtener IDs de pedidos ya vistos por el usuario
-        $viewedPedidoIds = session('viewed_pedidos_' . $userId, []);
-        
-        // ============================================
-        // NUEVO: Pedidos/Cotizaciones de OTROS asesores
-        // ============================================
-        $pedidosOtrosAsesores = PedidoProduccion::where('asesor_id', '!=', $userId)
-            ->whereNotNull('asesor_id')
-            ->where('created_at', '>=', now()->subHours(24))
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->with('asesora')
+        $pedidosDevueltos = PedidoProduccion::where('asesor_id', $userId)
+            ->where('estado', 'DEVUELTO_A_ASESORA')
+            ->whereNotIn('id', $viewedPedidosDevueltos)
+            ->orderByDesc('updated_at')
             ->get()
             ->map(function($pedido) {
                 return [
                     'id' => $pedido->id,
+                    'tipo' => 'pedido_devuelto',
                     'numero_pedido' => $pedido->numero_pedido,
-                    'numero_cotizacion' => $pedido->numero_cotizacion,
                     'cliente' => $pedido->cliente,
-                    'asesor_nombre' => $pedido->asesora?->name ?? 'Desconocido',
-                    'estado' => $pedido->estado,
-                    'created_at' => $pedido->created_at,
+                    'motivo_revision' => $pedido->motivo_revision,
+                    'fecha_revision' => $pedido->fecha_revision,
+                    'updated_at' => $pedido->updated_at,
                 ];
             });
 
         // ============================================
-        // ANTERIOR: Pedidos propios próximos a vencer
+        // NOTIFICACIONES: Recibo devuelto a asesora
         // ============================================
-        $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
-            ->whereIn('estado', ['No iniciado', 'En Ejecución'])
-            ->where('created_at', '<=', now()->addDays(7))
-            ->whereNotIn('id', $viewedPedidoIds)
-            ->orderBy('created_at')
-            ->get();
+        $recibosDevueltos = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
+            ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'crp.prenda_id')
+            ->where('pp.asesor_id', $userId)
+            ->where('crp.estado', 'DEVUELTO_ASESOR')
+            ->whereNotIn('crp.id', $viewedRecibosDevueltos)
+            ->orderByDesc('crp.updated_at')
+            ->select([
+                'crp.id',
+                'crp.pedido_produccion_id',
+                'pp.numero_pedido',
+                'crp.consecutivo_actual as numero_recibo',
+                'crp.prenda_id',
+                'pr.nombre_prenda',
+                'crp.tipo_recibo',
+                'crp.notas as motivo',
+                'crp.updated_at',
+            ])
+            ->get()
+            ->map(function($recibo) {
+                return [
+                    'id' => $recibo->id,
+                    'tipo' => 'recibo_devuelto',
+                    'pedido_id' => $recibo->pedido_produccion_id,
+                    'numero_pedido' => $recibo->numero_pedido,
+                    'numero_recibo' => $recibo->numero_recibo,
+                    'prenda_id' => $recibo->prenda_id,
+                    'prenda_nombre' => $recibo->nombre_prenda,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'motivo' => $recibo->motivo,
+                    'updated_at' => $recibo->updated_at,
+                ];
+            });
 
-        // Pedidos propios en ejecución
-        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
-            ->where('estado', 'En Ejecución')
-            ->whereNotIn('id', $viewedPedidoIds)
-            ->count();
-
-        $totalNotificaciones = $notificacionesFechaEstimada->count() + 
-                              $pedidosOtrosAsesores->count() + 
-                              $pedidosProximosEntregar->count() + 
-                              $pedidosEnEjecucion;
+        $totalNotificaciones = $pedidosDevueltos->count() + $recibosDevueltos->count();
 
         return [
-            'notificaciones_fecha_estimada' => $notificacionesFechaEstimada,
-            'pedidos_otros_asesores' => $pedidosOtrosAsesores,
-            'pedidos_proximos_entregar' => $pedidosProximosEntregar,
-            'pedidos_en_ejecucion' => $pedidosEnEjecucion,
+            'pedidos_devueltos' => $pedidosDevueltos,
+            'recibos_devueltos' => $recibosDevueltos,
             'total_notificaciones' => $totalNotificaciones
         ];
     }
 
     /**
-     * Marcar todas las notificaciones como leÃ­das
+     * Marcar todas las notificaciones como leidas
      */
     public function marcarTodosLeidosPedidos(): void
     {
         $userId = Auth::id();
-        
-        // Marcar todas las notificaciones de fecha estimada como leÃ­das
-        DB::table('notifications')
-            ->where('notifiable_id', $userId)
-            ->where('notifiable_type', 'App\\Models\\User')
-            ->where('type', 'App\\Notifications\\FechaEstimadaAsignada')
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-        
-        // Obtener todos los pedidos que generan notificaciones
-        $pedidosProximos = PedidoProduccion::where('asesor_id', $userId)
-            ->whereIn('estado', ['No iniciado', 'En Ejecución'])
-            ->where('created_at', '<=', now()->addDays(7))
+
+        $pedidoIds = PedidoProduccion::where('asesor_id', $userId)
+            ->where('estado', 'DEVUELTO_A_ASESORA')
             ->pluck('id')
             ->toArray();
-        
-        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
-            ->where('estado', 'En Ejecución')
-            ->pluck('id')
+
+        $reciboIds = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
+            ->where('pp.asesor_id', $userId)
+            ->where('crp.estado', 'DEVUELTO_ASESOR')
+            ->pluck('crp.id')
             ->toArray();
-        
-        // Combinar todos los IDs de pedidos a marcar como vistos
-        $allPedidoIds = array_merge($pedidosProximos, $pedidosEnEjecucion);
-        
-        // Guardar en sesión del usuario
-        session(['viewed_pedidos_' . $userId => $allPedidoIds]);
+
+        session([
+            'viewed_pedidos_devueltos_' . $userId => $pedidoIds,
+            'viewed_recibos_devueltos_' . $userId => $reciboIds,
+        ]);
     }
 
     /**
-     * Marcar una notificación especÃ­fica como leÃ­da
+     * Marcar una notificación especifica como leida
      */
     public function marcarNotificacionLeida(string $notificationId): void
     {
@@ -152,10 +132,9 @@ class NotificacionesService
             throw new \Exception('Notificación no encontrada', 404);
         }
         
-        // Marcar como leÃ­da
+        // Marcar como leida
         DB::table('notifications')
             ->where('id', $notificationId)
             ->update(['read_at' => now()]);
     }
 }
-

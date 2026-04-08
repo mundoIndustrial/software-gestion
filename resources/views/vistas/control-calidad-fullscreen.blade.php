@@ -399,8 +399,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($orden->fecha_de_creacion_de_orden)
-                                        {{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}
+                                    @if($orden->created_at)
+                                        {{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif
@@ -460,8 +460,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($orden->fecha_de_creacion_de_orden)
-                                        {{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}
+                                    @if($orden->created_at)
+                                        {{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif
@@ -561,8 +561,8 @@
             // Formatear estado sin guiones bajos
             const estadoFormato = (orden.estado || '-').replace(/_/g, ' ');
             const estadoBadge = estadoFormato ? estadoFormato.toLowerCase().replace(/ /g, '-') : 'default';
-            const fechaCreacion = orden.fecha_de_creacion_de_orden 
-                ? new Date(orden.fecha_de_creacion_de_orden).toLocaleDateString('es-ES')
+            const fechaCreacion = orden.created_at 
+                ? new Date(orden.created_at).toLocaleDateString('es-ES')
                 : '-';
             const fechaControlCalidad = orden.control_de_calidad
                 ? new Date(orden.control_de_calidad).toLocaleString('es-ES')
@@ -669,6 +669,9 @@
             if (typeof window.Echo !== 'undefined') {
                 window.Echo.channel('control-calidad')
                     .listen('ControlCalidadUpdated', (e) => {
+                        if (e.tipo === 'parcial') {
+                            return;
+                        }
                         if (e.action === 'added') {
                             // Agregar nueva orden a la tabla correspondiente
                             agregarOrden(e.orden, e.tipo);
@@ -682,4 +685,3 @@
     </script>
 </body>
 </html>
-

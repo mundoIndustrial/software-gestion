@@ -32,10 +32,10 @@ window.PrendaEditorPreloader = (function() {
      * @returns {void}
      */
     function startAutoPreload() {
-        // ⚡ ESPERAR A QUE PrendaEditorLoader esté disponible
+        //  ESPERAR A QUE PrendaEditorLoader esté disponible
         // El loader se carga dinámicamente, así que necesitamos polling
         if (!window.PrendaEditorLoader) {
-            console.log('[PrendaEditorPreloader] ⏳ Esperando PrendaEditorLoader...');
+            console.log('[PrendaEditorPreloader]  Esperando PrendaEditorLoader...');
             
             // Polling: intentar cada 100ms hasta que esté disponible
             const checkLoader = setInterval(() => {
@@ -162,14 +162,14 @@ window.PrendaEditorPreloader = (function() {
 
             // Verificar si ya está precargado (fast path)
             if (config.isPreloaded) {
-                console.log('[PrendaEditorPreloader] 💾 ¡Ya precargado! Abriendo inmediatamente...');
+                console.log('[PrendaEditorPreloader]  ¡Ya precargado! Abriendo inmediatamente...');
                 resolve();
                 return;
             }
 
             // Si ya está cargando, esperar
             if (config.isPreloading) {
-                console.log('[PrendaEditorPreloader] ⏳ Esperando precarguía en background...');
+                console.log('[PrendaEditorPreloader]  Esperando precarguía en background...');
                 
                 // Mostrar Swal con loader
                 showLoaderModal(opts);
@@ -296,7 +296,7 @@ window.PrendaEditorPreloader = (function() {
     function clearCache() {
         config.scriptCache.clear();
         config.moduleCache.clear();
-        console.log('[PrendaEditorPreloader] 🗑️ Cache limpiado');
+        console.log('[PrendaEditorPreloader]  Cache limpiado');
     }
 
     /**

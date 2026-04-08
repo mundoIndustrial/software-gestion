@@ -325,7 +325,7 @@
     <!-- ESTADO DE CARGA -->
     <div id="loadingState" style="display: none;">
         <div class="empty-state">
-            <div class="empty-icon">⏳</div>
+            <div class="empty-icon"></div>
             <h3 class="empty-title">Cargando pedidos...</h3>
         </div>
     </div>

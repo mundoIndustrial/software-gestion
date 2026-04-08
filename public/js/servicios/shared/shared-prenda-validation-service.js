@@ -1,5 +1,5 @@
 /**
- * 🔒 SharedPrendaValidationService
+ *  SharedPrendaValidationService
  * 
  * IMPORTANTE: AISLADO DE COTIZACIONES
  * - Solo reglas de validación genéricas para prendas
@@ -93,7 +93,7 @@ class SharedPrendaValidationService {
         // Verificar que al menos UNA talla tenga cantidad > 0
         return tallas.some(t => {
             const cantidad = typeof t.cantidad === 'string' 
-                ? parseInt(t.cantidad) 
+                ? Number(t.cantidad) 
                 : t.cantidad;
             return cantidad > 0;
         });
@@ -237,5 +237,5 @@ class SharedPrendaValidationService {
 }
 
 // Exportar
-window.SharedPrendaValidationService = SharedPrendaValidationService;
+globalThis.SharedPrendaValidationService = SharedPrendaValidationService;
 Logger.debug('ValidationService cargado', 'SharedPrendaValidation');

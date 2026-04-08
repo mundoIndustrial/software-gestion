@@ -12,7 +12,7 @@ Sistema completo de actualización en tiempo real para tabla de pedidos que util
 -  **Mantener lógica existente** - Sin eliminar código, solo refactorización
 -  **Experiencia fluida** - Sin recargas completas, actualizaciones parciales
 
-## 🏗️ Arquitectura
+##  Arquitectura
 
 ### Backend Components
 
@@ -107,7 +107,7 @@ REVERB_SCHEME=http
 @endauth
 ```
 
-## 🧪 Testing y Debugging
+##  Testing y Debugging
 
 ### Página de Pruebas
 - **URL**: `/websocket-test.html`
@@ -139,7 +139,7 @@ curl -i -N -H "Connection: Upgrade" \
 
 ### Indicadores Visuales
 - **🟢 WebSocket**: Conexión directa en tiempo real
-- **🟡 Polling**: Fallback activo
+- ** Polling**: Fallback activo
 - ** Desconectado**: Sin conexión
 
 ### Logs Importantes
@@ -157,7 +157,7 @@ curl -i -N -H "Connection: Upgrade" \
  [PedidosRealtime] Actualización de pedido por WebSocket: 123
 ```
 
-## 🔒 Seguridad
+##  Seguridad
 
 ### Autorización de Canales
 - Solo usuarios autenticados pueden conectarse
@@ -199,7 +199,7 @@ curl -i -N -H "Connection: Upgrade" \
 -  Edge 12+
 -  IE 11 (sin WebSockets, usa fallback)
 
-## 📝 Ejemplos de Uso
+##  Ejemplos de Uso
 
 ### 1. Actualización Manual
 ```javascript
@@ -232,7 +232,7 @@ const realtime = new PedidosRealtimeRefresh({
 realtime.start();
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Problemas Comunes
 

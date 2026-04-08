@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\DTOs;
 /**
  * MarcarNotificacionLeidaDTO
  * 
- * DTO para marcar notificaciones como leÃ­das
+ * DTO para marcar notificaciones como leidas
  */
 class MarcarNotificacionLeidaDTO
 {
@@ -15,7 +15,7 @@ class MarcarNotificacionLeidaDTO
     ) {}
 
     /**
-     * Crear para marcar una notificación especÃ­fica
+     * Crear para marcar una notificación especifica
      */
     public static function fromRequest(string $notificacionId): self
     {

@@ -5,6 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * LogoCotizacionTecnicaPrendaFoto Model
+ * @property int $id
+ * @property int $logo_cotizacion_tecnica_prenda_id
+ * @property string $ruta_original
+ * @property string $ruta_webp
+ * @property int $orden
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class LogoCotizacionTecnicaPrendaFoto extends Model
 {
     protected $table = 'logo_cotizacion_tecnica_prendas_fotos';
@@ -13,18 +23,11 @@ class LogoCotizacionTecnicaPrendaFoto extends Model
         'logo_cotizacion_tecnica_prenda_id',
         'ruta_original',
         'ruta_webp',
-        'ruta_miniatura',
         'orden',
-        'ancho',
-        'alto',
-        'tamaño',
     ];
 
     protected $casts = [
         'orden' => 'integer',
-        'ancho' => 'integer',
-        'alto' => 'integer',
-        'tamaño' => 'integer',
     ];
 
     /**

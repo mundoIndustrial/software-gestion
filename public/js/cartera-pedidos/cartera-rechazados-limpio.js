@@ -14,12 +14,12 @@ let totalPages = 1;
 let pedidosPorPagina = 10;
 
 // Exponer datos globalmente para que el sistema compartido pueda acceder
-window.pedidosDataRechazados = pedidosDataRechazados;
+globalThis.pedidosDataRechazados = pedidosDataRechazados;
 
 // ===== FUNCIONES ESPECÍFICAS DE LA VISTA =====
 
 // Función principal para cargar pedidos (será llamada por el sistema compartido)
-window.cargarPedidos = async function() {
+globalThis.cargarPedidos = async function() {
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
   
   if (!tablaPedidosBody) {
@@ -53,7 +53,7 @@ window.cargarPedidos = async function() {
       url += '?' + params.toString();
     }
     
-    console.log('🔍 Cargando pedidos desde:', url);
+    console.log(' Cargando pedidos desde:', url);
     
     const response = await fetch(url);
     
@@ -62,14 +62,14 @@ window.cargarPedidos = async function() {
     }
     
     const data = await response.json();
-    console.log('📊 Datos recibidos:', data);
+    console.log(' Datos recibidos:', data);
     
     if (data.success) {
       // Corregir: los datos están en "data", no en "pedidos"
       pedidosDataRechazados = data.data || [];
       
       // Sincronizar con la variable global
-      window.pedidosDataRechazados = pedidosDataRechazados;
+      globalThis.pedidosDataRechazados = pedidosDataRechazados;
       
       // Extraer datos de paginación
       const pagination = data.pagination || {};
@@ -142,7 +142,7 @@ function obtenerFechaRechazo(pedido) {
 
 // Ver motivo de rechazo completo
 function verMotivoRechazo(motivo) {
-  console.log('🔍 INICIANDO verMotivoRechazo:', {motivo});
+  console.log(' INICIANDO verMotivoRechazo:', {motivo});
   
   // Crear modal para mostrar el motivo completo
   const modalWrapper = document.createElement('div');
@@ -199,7 +199,7 @@ function verMotivoRechazo(motivo) {
     }
   });
   
-  console.log('🔍 Modal de motivo abierto');
+  console.log(' Modal de motivo abierto');
 }
 
 // Cerrar modal de motivo
@@ -207,7 +207,7 @@ function cerrarModalMotivo() {
   const modal = document.getElementById('motivo-rechazo-modal-wrapper');
   if (modal) {
     document.body.removeChild(modal);
-    console.log('🔍 Modal de motivo cerrado');
+    console.log(' Modal de motivo cerrado');
   }
 }
 
@@ -265,7 +265,7 @@ function goToPage(page) {
   if (page < 1 || page > totalPages) return;
   
   currentPage = page;
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 }
 
 function actualizarPaginacion(total) {
@@ -386,7 +386,7 @@ function formatearMoneda(monto) {
 // ===== INICIALIZACIÓN =====
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Cartera Rechazados - Inicializado');
+  console.log(' Cartera Rechazados - Inicializado');
   
   // Validar que los elementos críticos existan
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
   
   // Cargar pedidos iniciales
-  window.cargarPedidos();
+  globalThis.cargarPedidos();
 });
 
-console.log('📄 Script de Cartera Rechazados cargado correctamente');
+console.log(' Script de Cartera Rechazados cargado correctamente');

@@ -16,7 +16,7 @@ class MigrarProcesosCorrectamente extends Command
     protected $procesosMap = [
         'creacion_de_orden' => [
             'proceso' => 'Creación de Orden',
-            'fecha' => 'fecha_de_creacion_de_orden',  // ← La fecha real de inicio
+            'fecha' => 'created_at',  // ← La fecha real de inicio
             'encargado' => 'encargado_orden',          // ← El encargado asignado
             'dias' => 'dias_orden',
         ],
@@ -274,7 +274,7 @@ class MigrarProcesosCorrectamente extends Command
                             ->where('id', $pedido->id)
                             ->update([
                                 'area' => $areaNueva,
-                                'fecha_ultimo_proceso' => $pedido->fecha_de_creacion_de_orden,
+                                'fecha_ultimo_proceso' => $pedido->created_at,
                                 'updated_at' => now(),
                             ]);
                     }

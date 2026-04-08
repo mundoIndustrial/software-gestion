@@ -36,7 +36,7 @@ class GuardarPedidoLogoService
                 'asesora' => Auth::user()?->name,
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
                 'encargado_orden' => Auth::user()?->name,
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'estado' => 'pendiente',
                 'area' => 'creacion_de_orden',
                 'descripcion' => $validated['logo.descripcion'] ?? null,
@@ -88,7 +88,7 @@ class GuardarPedidoLogoService
                 'ruta_original' => $imagen['ruta_original'],
                 'ruta_webp' => $imagen['ruta_webp'] ?? null,
                 'tipo_archivo' => $imagen['tipo_archivo'],
-                'tamaño_archivo' => $imagen['tamaño_archivo'],
+                'tamano_archivo' => $imagen['tamano_archivo'],
                 'orden' => $index,
                 'created_at' => now(),
                 'updated_at' => now()

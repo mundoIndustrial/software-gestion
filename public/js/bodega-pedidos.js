@@ -176,7 +176,7 @@ if (typeof window.cargarNotas !== 'function') {
 
             const historial = document.getElementById('notasHistorial');
             if (historial && debeRenderizarHistorial) {
-                historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">⏳ Cargando notas...</span></div>';
+                historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500"> Cargando notas...</span></div>';
             }
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -659,7 +659,7 @@ async function actualizarTabla() {
     const btnActualizar = document.getElementById('btnActualizar');
     if (btnActualizar) {
         btnActualizar.disabled = true;
-        btnActualizar.innerHTML = '⏳ Actualizando...';
+        btnActualizar.innerHTML = ' Actualizando...';
     }
 
     try {
@@ -841,7 +841,7 @@ async function guardarPedidoCompleto(numeroPedido) {
         }
         
         // DEBUG: Log de data que se envía
-        console.log('📤 ENVIANDO DETALLES:', detalles);
+        console.log(' ENVIANDO DETALLES:', detalles);
         
         // Preparar URL
         const url = `/gestion-bodega/pedidos/${numeroPedido}/guardar-completo`;
@@ -903,7 +903,7 @@ async function abrirModalFactura(pedidoId) {
     
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
-    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500"> Cargando factura...</span></div>';
     
     try {
         const response = await fetch(`${basePedido}/${pedidoId}/factura-datos`, {
@@ -1014,15 +1014,15 @@ function imprimirModalFactura() {
  */
 function generarHTMLFactura(datos) {
     // DEBUG: Ver estructura de datos
-    console.log('📋 [BODEGA-FACTURA] Estructura completa:', datos);
-    console.log('📋 [BODEGA-FACTURA] Prendas:', datos.prendas);
+    console.log(' [BODEGA-FACTURA] Estructura completa:', datos);
+    console.log(' [BODEGA-FACTURA] Prendas:', datos.prendas);
     if (datos.prendas && datos.prendas[0]) {
-        console.log('📋 [BODEGA-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
-        console.log('📋 [BODEGA-FACTURA] Tallas:', datos.prendas[0].tallas);
-        console.log('📋 [BODEGA-FACTURA] Descripción:', datos.prendas[0].descripcion);
-        console.log('📋 [BODEGA-FACTURA] Variantes:', datos.prendas[0].variantes);
-        console.log('📋 [BODEGA-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
-        console.log('📋 [BODEGA-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
+        console.log(' [BODEGA-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log(' [BODEGA-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log(' [BODEGA-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log(' [BODEGA-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log(' [BODEGA-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log(' [BODEGA-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
     }
     
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
@@ -1052,7 +1052,7 @@ function generarHTMLFactura(datos) {
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
-        console.log(`📦 [BODEGA-FACTURA] Procesando prenda ${idx}:`, { 
+        console.log(` [BODEGA-FACTURA] Procesando prenda ${idx}:`, { 
             nombre: prenda.descripcion,
             tallas: prenda.tallas,
             cantidad_talla: prenda.cantidad_talla,
@@ -1060,14 +1060,14 @@ function generarHTMLFactura(datos) {
         });
         
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            //  NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const generosEnTallas = Object.keys(prenda.tallas);
-            console.log(`📦 [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
+            console.log(` [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
             
             const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
             
-            console.log(`📦 [BODEGA-FACTURA] tieneGenerico=${tieneGenerico}, soloGenerico=${soloGenerico}, generosEnTallas.length=${generosEnTallas.length}`);
+            console.log(` [BODEGA-FACTURA] tieneGenerico=${tieneGenerico}, soloGenerico=${soloGenerico}, generosEnTallas.length=${generosEnTallas.length}`);
             
             if (soloGenerico) {
                 // Extraer cantidad de GENERICO
@@ -1099,7 +1099,7 @@ function generarHTMLFactura(datos) {
                 // Convertir objeto de géneros a array de tallas con género y colores
                 let todasLasTallas = [];
                 Object.keys(prenda.tallas).forEach(genero => {
-                    // 🔴 NUEVO: Excluir GENERICO completamente
+                    //  NUEVO: Excluir GENERICO completamente
                     if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
                         return; // Saltar GENERICO
                     }
@@ -1190,7 +1190,7 @@ function generarHTMLFactura(datos) {
                         `;
                     }
                 } else {
-                    // 🔴 NUEVO: Si todasLasTallas está vacío (porque filtramos GENERICO), mostrar badge de cantidad
+                    //  NUEVO: Si todasLasTallas está vacío (porque filtramos GENERICO), mostrar badge de cantidad
                     // Esto es SOLO CANTIDAD disfrazado
                     let cantidadSOLO = 0;
                     const generericoObj = prenda.tallas.GENERICO;
@@ -1215,7 +1215,7 @@ function generarHTMLFactura(datos) {
                 }
             }
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // 🔴 NUEVO: Filtrar GENERICO de variantes también
+            //  NUEVO: Filtrar GENERICO de variantes también
             const variantesFiltradas = prenda.variantes.filter(v => {
                 return !v.genero || String(v.genero).toUpperCase().trim() !== 'GENERICO';
             });
@@ -1372,7 +1372,7 @@ function generarHTMLFactura(datos) {
             <div style="padding: 12px; space-y: 8px;">
                 ${datos.epps.map(epp => {
                     // Debug logging para EPPs
-                    console.log('🖼️ [BODEGA-FACTURA] EPP con imágenes:', {
+                    console.log(' [BODEGA-FACTURA] EPP con imágenes:', {
                         nombre: epp.nombre_completo || epp.nombre,
                         cantidad: epp.cantidad,
                         imagenes_existe: !!epp.imagenes,
@@ -1384,7 +1384,7 @@ function generarHTMLFactura(datos) {
                     // Generar HTML para imágenes si existen
                     const imagenesHTML = (epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) ? `
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes.length})</div>
+                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes.length})</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
                                 ${epp.imagenes.map((imagen, index) => {
                                     let imgUrl = '';
@@ -1403,7 +1403,7 @@ function generarHTMLFactura(datos) {
                                             <img src="${imgUrl}" 
                                                  alt="Imagen EPP" 
                                                  style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='⚠️';">
+                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='';">
                                         </div>
                                     ` : '';
                                 }).join('')}
@@ -1688,7 +1688,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     const fila = btnGuardar.closest('tr');
     const rowHash = fila ? fila.getAttribute('data-row-hash') : null;
     
-    console.log('🔍 [GUARDAR-FILA] Buscando elementos:', { 
+    console.log(' [GUARDAR-FILA] Buscando elementos:', { 
         rowHash, 
         numeroPedido, 
         talla, 
@@ -1709,7 +1709,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     
     // Fallback: Si no hay row-hash o no se encontraron elementos, usar método antiguo
     if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
-        console.warn('⚠️ [GUARDAR-FILA] Row-hash no funcionó, usando fallback');
+        console.warn(' [GUARDAR-FILA] Row-hash no funcionó, usando fallback');
         
         const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
             ? String(tallaColorId).trim()
@@ -1761,7 +1761,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
 
     // Validar que se encontraron los elementos necesarios
     if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
-        console.error('❌ [GUARDAR-FILA] No se encontraron todos los elementos necesarios:', {
+        console.error(' [GUARDAR-FILA] No se encontraron todos los elementos necesarios:', {
             pendientes: !!pendientesInput,
             fechaPedido: !!fechaPedidoInput,
             fechaEntrega: !!fechaEntregaInput,
@@ -1846,7 +1846,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         observaciones: observaciones || null
     };
 
-    console.log('📤 Guardando fila:', datos);
+    console.log(' Guardando fila:', datos);
 
     // Deshabilitar botón mientras se guarda
     btnGuardar.disabled = true;
@@ -1863,11 +1863,11 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     })
     .then(response => response.json())
     .then(data => {
-        console.log('✅ Respuesta:', data);
+        console.log(' Respuesta:', data);
         
         // Habilitar botón
         btnGuardar.disabled = false;
-        btnGuardar.textContent = '💾 Guardar';
+        btnGuardar.textContent = ' Guardar';
         
         if (data.success) {
             mostrarModalExito(data.message || 'Fila guardada correctamente');
@@ -1888,7 +1888,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         }
     })
     .catch(error => {
-        console.error('❌ Error:', error);
+        console.error(' Error:', error);
         btnGuardar.disabled = false;
         btnGuardar.textContent = 'Guardar';
         alert('Error: ' + error.message);

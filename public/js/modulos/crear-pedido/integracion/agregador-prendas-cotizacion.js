@@ -57,7 +57,7 @@
      * @param {number} index - Índice de la prenda a eliminar
      */
     window.eliminarPrendaDesdeCotizacion = function(index) {
-        console.log(`[agregador-prendas-cotizacion] 🗑️ Eliminando prenda ${index}`);
+        console.log(`[agregador-prendas-cotizacion]  Eliminando prenda ${index}`);
         
         if (window.gestorPedidoSinCotizacion) {
             window.gestorPedidoSinCotizacion.eliminarPrenda(index);
@@ -74,7 +74,7 @@
      * @param {number} index - Índice de la prenda a editar
      */
     window.editarPrendaDesdeCotizacion = function(index) {
-        console.log(`[agregador-prendas-cotizacion] ✏️ Editando prenda ${index}`);
+        console.log(`[agregador-prendas-cotizacion]  Editando prenda ${index}`);
         // Aquí se puede agregar la lógica para editar la prenda
     };
 

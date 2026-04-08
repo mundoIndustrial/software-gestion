@@ -103,7 +103,7 @@ function cambiarEstadoCotizacion(selectElement) {
     }).then((result) => {
         if (result.isConfirmed) {
             // Enviar PATCH request
-            fetch(`/contador/cotizacion/${cotizacionId}/estado`, {
+            fetch(`/asesores/contador/cotizacion/${cotizacionId}/estado`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

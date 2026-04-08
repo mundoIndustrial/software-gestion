@@ -23,7 +23,7 @@ class TestSecuenciaCartera extends Command
         
         try {
             // Crear pedidos en estado pendiente_cartera
-            $this->line("\n📝 Creando {$numeroPedidos} pedidos pendientes...");
+            $this->line("\n Creando {$numeroPedidos} pedidos pendientes...");
             $pedidosCreados = [];
             
             for ($i = 0; $i < $numeroPedidos; $i++) {
@@ -31,7 +31,7 @@ class TestSecuenciaCartera extends Command
                     'cliente' => " Cliente Test Cartera " . ($i + 1),
                     'asesor_id' => User::first()->id,
                     'estado' => 'pendiente_cartera',
-                    'fecha_de_creacion_de_orden' => now(),
+                    'created_at' => now(),
                 ]);
                 
                 $pedidosCreados[] = $pedido;

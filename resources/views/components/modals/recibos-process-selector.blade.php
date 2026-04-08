@@ -383,7 +383,7 @@
     };
     
     // DEBUG: Mostrar roles en consola
-    console.log('🔐 User Roles:', window.selectorRecibosState.usuarioRoles);
+    console.log(' User Roles:', window.selectorRecibosState.usuarioRoles);
     window.activarReciboCosturaBase = async function(prendaId) {
         try {
             const pedidoId = window.selectorRecibosState?.pedidoId;
@@ -397,7 +397,7 @@
             const colorBoton = '#10b981';
 
             mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
-                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/activar-recibo`, {
+                const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/activar-recibo`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -433,7 +433,7 @@
         }
     };
 
-    console.log('🔐 esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
+    console.log(' esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
     
     // Contadores de clics para debugging
     let prendaAccordionClickCount = 0;
@@ -472,15 +472,10 @@
 
         // Cargar datos de recibos
         try {
-            // Determinar la ruta correcta según la página actual
-            let apiUrl;
-            if (window.location.pathname.includes('/registros')) {
-                // Usar la ruta de registros recibos-datos
-                apiUrl = `/registros/${pedidoId}/recibos-datos`;
-            } else {
-                // Usar la ruta que incluye los consecutivos (obtenerDetalleCompleto)
-                apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
-            }
+            // Usar siempre la ruta completa que retorna procesos pendientes
+            // /pedidos-public/{id}/recibos-datos retorna datos completos (ObtenerDetalleCompletoUseCase)
+            // /registros/{id}/recibos-datos retorna solo procesos aprobados (GetRecibosDatosUseCase)
+            const apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
             
             console.log('[abrirSelectorRecibos] Fetching URL:', apiUrl);
             
@@ -894,7 +889,15 @@
                     // Para recibos base (costura), no usar el botón general de activación
                     const esReciboBaseCostura = recibo.es_base && (tipoStringLower === 'costura' || tipoStringLower === 'costura-bodega');
                     const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor && !esReciboBaseCostura;
+                    
+                    // Verificar si este proceso base tiene anexos/parciales creados
+                    const tieneAnexos = !esParcial && recibos.some(r => r.es_parcial && String(r.tipo).toLowerCase() === tipoStringLower);
+                    const puedeModificarReciboFinal = puedeModificarRecibo && !tieneAnexos;
+                    
                     const puedeDesactivarRecibo = estaActivo && usuarioEsSupervisor;
+                    
+                    // Botón Anular aparece cuando estado es APROBADO (independientemente de numero_recibo)
+                    const puedeAnularRecibo = recibo.estado === 'APROBADO' && usuarioEsSupervisor;
                     
                     const reciboClass = estaActivo ? 'recibo-activo' : '';
                     
@@ -902,8 +905,8 @@
                     const esSupervisorRecibos = window.selectorRecibosState?.usuarioRoles?.includes('supervisor_pedidos') ||
                                                window.selectorRecibosState?.esSupervisorPedidos === 'true';
 
-                    // No permitir recibo por talla en Costura (ni costura-bodega)
-                    const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega');
+                    // No permitir recibo por talla en Costura (ni costura-bodega) ni si el proceso ya está APROBADO
+                    const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega') && recibo.estado !== 'APROBADO';
 
                     const pedidoEstado = window.selectorRecibosState?.pedidoEstado;
                     const pedidoYaAprobado = pedidoEstado && String(pedidoEstado).toUpperCase() !== 'PENDIENTE_SUPERVISOR';
@@ -937,7 +940,7 @@
                                         Por Talla
                                     </button>
                                 ` : ''}
-                                ${puedeModificarRecibo ? `
+                                ${puedeModificarReciboFinal ? `
                                     <button class="btn-activar-recibo" 
                                             onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo}, ${esParcial ? parcialId : 'null'})"
                                             title="Activar recibo">
@@ -953,7 +956,7 @@
                                         Activar
                                     </button>
                                 ` : ''}
-                                ${puedeDesactivarRecibo ? `
+                                ${puedeAnularRecibo ? `
                                     <button class="btn-anular-recibo" 
                                             onclick="event.stopPropagation(); anularRecibo(${prenda.id}, '${tipoString}', ${esParcial ? parcialId : 'null'})"
                                             title="Anular recibo">
@@ -1270,7 +1273,7 @@
                 // Para recibos base (costura), usar el endpoint específico
                 console.log('[ejecutarAnularRecibo] Anulando recibo base (costura)');
                 
-                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/anular-recibo`, {
+                const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/anular-recibo`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1313,7 +1316,7 @@
                     return;
                 }
 
-                const response = await fetch(`/api/procesos/${procesoId}/anular-recibo`, {
+                const response = await fetch(`/procesos/${procesoId}/anular-recibo`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1396,92 +1399,103 @@
      */
     async function ejecutarActivarRecibo(prendaId, tipoProceso, activar) {
         try {
-            // Buscar el proceso ID en los datos cargados
-            let procesoId = null;
-            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
-            
-            if (prenda && prenda.procesos) {
-                const proceso = prenda.procesos.find(p => 
-                    String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
-                );
-                if (proceso) {
-                    procesoId = proceso.id;
-                }
-            }
-
-            if (!procesoId) {
-                alert('Error: No se encontró el proceso para actualizar');
-                return;
-            }
-
-            // Llamar a la API
-            console.log('[DEBUG] Enviando petición:', {
-                url: `/procesos/${procesoId}/activar-recibo`,
-                procesoId: procesoId,
-                activar: activar,
-                csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-            });
-
-            const response = await fetch(`/procesos/${procesoId}/activar-recibo`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
-                    activar: activar
-                })
-            });
-
-            console.log('[DEBUG] Respuesta recibida:', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-
-            // Verificar si la respuesta es JSON antes de parsear
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const textResponse = await response.text();
-                console.error('[DEBUG] Respuesta no es JSON:', textResponse.substring(0, 200));
-                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
-            }
-
-            const result = await response.json();
-            console.log('[DEBUG] Respuesta JSON:', result);
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Error al actualizar el recibo');
-            }
-
-            // Mostrar mensaje de éxito
-            mostrarMensajeExito(result.message);
-
-            // Recargar los datos para actualizar la vista
             const pedidoId = window.selectorRecibosState.pedidoId;
+            
+            console.log('[ejecutarActivarRecibo] Iniciando activación:', {
+                prendaId,
+                tipoProceso,
+                activar,
+                pedidoId
+            });
+            
+            // Determinar si es un recibo base (costura/costura-bodega) o un proceso
+            const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
+            const esReciboBase = tipoProcesoLower === 'costura' || tipoProcesoLower === 'costura-bodega';
+            
+            if (esReciboBase) {
+                // Para recibos base (costura), usar el endpoint específico de supervisor-pedidos
+                console.log('[ejecutarActivarRecibo] Activando recibo base (costura)');
+                
+                const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/activar-recibo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const textResponse = await response.text();
+                    console.error('[ejecutarActivarRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
+                    throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+                }
+                
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Error al activar el recibo de costura');
+                }
+                
+                mostrarMensajeExito(result.message);
+                
+            } else {
+                // Para procesos adicionales, buscar el proceso ID
+                console.log('[ejecutarActivarRecibo] Activando proceso adicional');
+                
+                let procesoId = null;
+                const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+
+                if (prenda && prenda.procesos) {
+                    const proceso = prenda.procesos.find(p =>
+                        String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
+                    );
+                    if (proceso) {
+                        procesoId = proceso.id;
+                    }
+                }
+
+                if (!procesoId) {
+                    alert('Error: No se encontró el proceso para activar');
+                    return;
+                }
+
+                const response = await fetch(`/procesos/${procesoId}/activar-recibo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        activar: activar
+                    })
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const textResponse = await response.text();
+                    console.error('[ejecutarActivarRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
+                    throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+                }
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Error al activar el recibo');
+                }
+
+                mostrarMensajeExito(result.message);
+            }
+
+            // Recargar datos en ambos casos
             try {
                 await cargarDatosRecibos(pedidoId);
             } catch (recargaError) {
                 console.warn('Error al recargar datos (pero la operación principal tuvo éxito):', recargaError);
-                // No mostrar alert de error porque la operación principal funcionó
-                mostrarMensajeExito('Recibo actualizado correctamente (la vista se actualizará en la próxima recarga)');
+                mostrarMensajeExito('Recibo activado correctamente (la vista se actualizará en la próxima recarga)');
             }
 
         } catch (error) {
-            console.error('Error al actualizar recibo:', error);
-            console.error('Detalles del error:', {
-                message: error.message,
-                stack: error.stack,
-                name: error.name
-            });
-            
-            // Solo mostrar alert si es un error real de la API, no de recarga
-            if (error.message && !error.message.includes('Error al recargar datos')) {
-                alert('Error al actualizar el recibo: ' + error.message);
-            } else {
-                mostrarMensajeExito('Recibo actualizado correctamente');
-            }
+            console.error('[ejecutarActivarRecibo] Error:', error);
+            alert('Error al actualizar recibo: ' + error.message);
         }
     }
 
@@ -1756,4 +1770,3 @@
 
 <!-- Incluir modal de recibos parciales por talla -->
 @include('components.modals.recibos-parcial-por-talla')
-

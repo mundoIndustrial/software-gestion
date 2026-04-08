@@ -160,7 +160,7 @@ class VerificarRelacionesImagenes extends Command
 
     private function verificarForeignKeys()
     {
-        $this->line('🔗 VERIFICACIÓN DE FOREIGN KEYS');
+        $this->line(' VERIFICACIÓN DE FOREIGN KEYS');
 
         $fks = DB::select("
             SELECT 

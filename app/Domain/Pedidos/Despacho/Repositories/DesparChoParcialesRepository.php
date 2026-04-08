@@ -3,7 +3,6 @@
 namespace App\Domain\Pedidos\Despacho\Repositories;
 
 use App\Domain\Pedidos\Despacho\Entities\DesparChoParcial;
-use Illuminate\Support\Collection;
 
 /**
  * DesparChoParcialesRepository (Interfaz Domain)
@@ -35,17 +34,17 @@ interface DesparChoParcialesRepository
     /**
      * Obtener todos los despachos de un pedido
      */
-    public function obtenerPorPedidoId(int $pedidoId): Collection;
+    public function obtenerPorPedidoId(int $pedidoId): array;
 
     /**
      * Obtener despachos de un ítem específico
      */
-    public function obtenerPorItem(string $tipoItem, int $itemId): Collection;
+    public function obtenerPorItem(string $tipoItem, int $itemId): array;
 
     /**
      * Obtener despachos de un pedido filtrados por tipo de ítem
      */
-    public function obtenerPorPedidoYTipo(int $pedidoId, string $tipoItem): Collection;
+    public function obtenerPorPedidoYTipo(int $pedidoId, string $tipoItem): array;
 
     /**
      * Actualizar un despacho parcial

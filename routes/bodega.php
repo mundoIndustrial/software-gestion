@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Bodega\PedidosController;
+use App\Infrastructure\Http\Controllers\Bodega\PedidosController;
 
 /**
  * Rutas del módulo de Bodega
@@ -91,6 +91,10 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     // Marcar pedido como visto (solo para rol EPP-Bodega)
     Route::post('/pedidos/{id}/marcar-visto', [PedidosController::class, 'marcarVisto'])
         ->name('marcar-visto');
+
+    // Marcar pedido como revisado
+    Route::post('/pedidos/{id}/revisar', [PedidosController::class, 'revisar'])
+        ->name('revisar-pedido');
     
     // Marcar detalle de bodega como visto
     Route::post('/bodega-detalles/{id}/marcar-visto', [PedidosController::class, 'marcarVistoDetalle'])
@@ -154,6 +158,10 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     // API para filtros dinámicos
     Route::get('/filtro-datos/{tipo}', [PedidosController::class, 'obtenerDatosFiltro'])
         ->name('obtener-datos-filtro');
+
+    // API para obtener datos de homologación de EPP
+    Route::get('/epp/{eppId}/homologacion', [PedidosController::class, 'obtenerDatosHomologacion'])
+        ->name('obtener-datos-homologacion');
 
     // Notificaciones (campana)
     Route::get('/notificaciones', [PedidosController::class, 'getNotifications'])

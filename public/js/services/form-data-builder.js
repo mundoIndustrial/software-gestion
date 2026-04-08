@@ -163,6 +163,9 @@ class FormDataBuilder {
         // Procesar EPPs
         if (metadata.epps && Array.isArray(metadata.epps)) {
             metadata.epps.forEach((epp, eppIdx) => {
+                let tieneArchivosNuevos = false;
+                let tieneImagenesExistentes = false;
+
                 if (!epp.uid) {
                     epp.uid = this._generateUUID();
                 }
@@ -170,6 +173,7 @@ class FormDataBuilder {
                 if (epp.imagenes && Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
+                            tieneArchivosNuevos = true;
                             const imgUID = this._generateUUID();
                             const formKey = `files_epp_${eppIdx}_${imgIdx}`;
                             
@@ -183,6 +187,7 @@ class FormDataBuilder {
                             };
                         } else if (img && typeof img === 'object' && img.is_existing_from_cotizacion) {
                             // Imagen existente de cotización
+                            tieneImagenesExistentes = true;
                             epp.imagenes[imgIdx] = {
                                 uid: img.uid || this._generateUUID(),
                                 ruta_webp: img.ruta_webp,
@@ -191,6 +196,13 @@ class FormDataBuilder {
                             };
                         }
                     });
+                }
+
+                // Definir modo_imagenes según la fuente
+                if (tieneArchivosNuevos) {
+                    epp.modo_imagenes = 'upload';
+                } else if (tieneImagenesExistentes) {
+                    epp.modo_imagenes = 'reuse';
                 }
             });
         }

@@ -4,16 +4,13 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Obtener Producción Pedido
- * 
  * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
- * 
- * Antes: 22 lÃ­neas (7 lÃ­neas de lógica actual + 15 lÃ­neas duplicadas)
- * DespuÃ©s: 12 lÃ­neas (solo implementa personalización)
+ * Antes: 22 lineas (7 lineas de lógica actual + 15 lineas duplicadas)
+ * despues: 12 lineas (solo implementa personalización)
  * Reducción: 45%
  */
 class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
@@ -37,11 +34,11 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
      */
     protected function obtenerOpciones(): array
     {
-        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true, incluirPrendas = true');
+        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true, incluirPrendas = true, incluirEpps = true');
         
         return [
             'incluirPrendas' => true,  // ← AHORA INCLUYE PRENDAS PARA LA FACTURA EDITABLE
-            'incluirEpps' => false,
+            'incluirEpps' => true,      // ← INCLUIR EPPs CON IMÁGENES PARA LA RECARGA DESPUÉS DE GUARDAR
             'incluirProcesos' => true,
             'incluirImagenes' => false,
         ];

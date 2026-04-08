@@ -117,7 +117,7 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
     costosTodasPrendas = {};
     
     // Obtener las prendas de la cotización
-    fetch(`/contador/cotizacion/${cotizacionId}`)
+    fetch(`/asesores/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
             // El endpoint retorna {cotizacion: {...}, prendas_cotizaciones: [...]}
@@ -406,7 +406,7 @@ window.agregarFilaItem = function() {
                 onmouseover="this.style.background='#dc2626'"
                 onmouseout="this.style.background='#ef4444'"
                 title="Eliminar fila">
-            🗑️
+            
         </button>
     `;
     

@@ -1,3 +1,8 @@
+if (window.__invoiceFromListInitialized) {
+    console.debug('[InvoiceFromList] Init omitido: ya estaba inicializado');
+} else {
+    window.__invoiceFromListInitialized = true;
+
 /**
  * Vista de Factura desde Lista de Pedidos - Versión con Lazy Loading
  * Este archivo ahora es mínimo y depende del InvoiceLazyLoader
@@ -189,4 +194,5 @@ window.precargarTodosModulosInvoiceFromList = function() {
     }
 };
 
-console.log('[InvoiceFromList] 📦 Sistema con lazy loading inicializado');
+console.log('[InvoiceFromList]  Sistema con lazy loading inicializado');
+}

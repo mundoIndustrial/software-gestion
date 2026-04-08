@@ -8,7 +8,6 @@ use App\Events\OrdenUpdated;
 
 /**
  * AnularPedidoService
- * 
  * Servicio para anular pedidos con registro de novedad.
  * Encapsula la lógica de negocio de anulación.
  */

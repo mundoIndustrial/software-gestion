@@ -8,6 +8,7 @@ class InvoiceLazyLoader {
         this.modulosCargados = new Set();
         this.modulosCargando = new Set();
         this.callbacksPendientes = new Map();
+        this.precargaInteligenteEjecutada = false;
         this.init();
     }
 
@@ -154,14 +155,36 @@ class InvoiceLazyLoader {
 
     /**
      * Carga un script dinámicamente
+     * Verifica si el script ya está en el DOM para evitar duplicados
      */
     cargarScript(url, modulo) {
         return new Promise((resolve, reject) => {
+            // Verificar si el script ya existe en el DOM
+            const scriptExistente = Array.from(document.querySelectorAll('script')).find(
+                script => script.src.includes(`/${modulo}.js`)
+            );
+            
+            if (scriptExistente) {
+                console.log(`[InvoiceLazyLoader] Script ${modulo} ya está en el DOM, usando existente`);
+                resolve();
+                return;
+            }
+
+            // Marcar el módulo en window para evitar re-declaraciones
+            if (window[`_loaded_${modulo}`]) {
+                console.log(`[InvoiceLazyLoader] Módulo ${modulo} ya fue cargado previamente`);
+                resolve();
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = url;
             script.async = true;
+            script.setAttribute('data-module', modulo);
             
             script.onload = () => {
+                // Marcar como cargado
+                window[`_loaded_${modulo}`] = true;
                 console.log(`[InvoiceLazyLoader] Script ${modulo} cargado desde ${url}`);
                 resolve();
             };
@@ -188,7 +211,7 @@ class InvoiceLazyLoader {
     inicializarOrquestador() {
         if (typeof InvoiceFromListOrchestrator !== 'undefined' && !window.invoiceFromListOrchestrator) {
             window.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
-            console.log('[InvoiceLazyLoader] 🎯 Orquestador inicializado');
+            console.log('[InvoiceLazyLoader]  Orquestador inicializado');
         }
     }
 
@@ -245,7 +268,7 @@ class InvoiceLazyLoader {
         delete window.notificationManager;
         delete window.componentLoader;
         
-        console.log('[InvoiceLazyLoader] 🧹 Módulos limpiados');
+        console.log('[InvoiceLazyLoader]  Módulos limpiados');
     }
 
     /**
@@ -266,6 +289,11 @@ class InvoiceLazyLoader {
      * Precarga inteligente basada en la página actual
      */
     precargaInteligente() {
+        if (this.precargaInteligenteEjecutada) {
+            return;
+        }
+        this.precargaInteligenteEjecutada = true;
+
         if (!this.necesitaFactura()) {
             return;
         }
@@ -291,29 +319,25 @@ class InvoiceLazyLoader {
     }
 }
 
-// Inicializar el lazy loader
-document.addEventListener('DOMContentLoaded', () => {
-    window.invoiceLazyLoader = new InvoiceLazyLoader();
-    
-    // Iniciar precarga inteligente
-    setTimeout(() => {
-        window.invoiceLazyLoader.precargaInteligente();
-    }, 1000);
-});
+function initInvoiceLazyLoaderOnce() {
+    if (window.__invoiceLazyLoaderInitialized) {
+        return;
+    }
+    window.__invoiceLazyLoaderInitialized = true;
 
-// También permitir inicialización manual
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    if (!window.invoiceLazyLoader) {
         window.invoiceLazyLoader = new InvoiceLazyLoader();
-        setTimeout(() => {
-            window.invoiceLazyLoader.precargaInteligente();
-        }, 1000);
-    });
-} else {
-    window.invoiceLazyLoader = new InvoiceLazyLoader();
+    }
+
     setTimeout(() => {
         window.invoiceLazyLoader.precargaInteligente();
     }, 1000);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInvoiceLazyLoaderOnce, { once: true });
+} else {
+    initInvoiceLazyLoaderOnce();
 }
 
 // Funciones globales para debugging

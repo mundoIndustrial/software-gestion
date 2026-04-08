@@ -81,7 +81,7 @@ class LogoCotizacionCompartidaTest extends TestCase
                             'nombreCompartido' => $clave,
                             'tecnicasCompartidas' => [],
                             'archivoNombre' => $archivo->name ?? 'archivo',
-                            'tamaño' => $archivo->size ?? 0
+                            'tamano' => $archivo->size ?? 0
                         ];
                     }
                 }
@@ -114,7 +114,7 @@ class LogoCotizacionCompartidaTest extends TestCase
         echo " Metadata formado correctamente:";
         echo "\n   - Clave: {$metadata['nombreCompartido']}";
         echo "\n   - Técnicas: " . implode(' + ', $metadata['tecnicasCompartidas']);
-        echo "\n   - Archivo: {$metadata['archivoNombre']} ({$metadata['tamaño']} bytes)";
+        echo "\n   - Archivo: {$metadata['archivoNombre']} ({$metadata['tamano']} bytes)";
         echo "\n TEST 1 PASÓ\n";
     }
 
@@ -233,7 +233,7 @@ class LogoCotizacionCompartidaTest extends TestCase
                             'nombreCompartido' => $clave,
                             'tecnicasCompartidas' => [],
                             'archivoNombre' => 'logo.jpg',
-                            'tamaño' => 5000
+                            'tamano' => 5000
                         ];
                     }
                 }

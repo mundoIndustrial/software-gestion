@@ -43,17 +43,17 @@ window.mostrarNotificacion = function(mensaje, tipo = 'info') {
 
 // Función global para abrir modales de filtro
 window.abrirModalFiltro = function(tipo, event) {
-  console.log('🔍 INICIANDO abrirModalFiltro (global):', { tipo, event });
+  console.log(' INICIANDO abrirModalFiltro (global):', { tipo, event });
   
   if (event) {
     event.stopPropagation();
   }
   
   const modal = document.getElementById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
-  console.log('🔍 Modal encontrado:', !!modal, 'ID:', `modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+  console.log(' Modal encontrado:', !!modal, 'ID:', `modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
   
   if (modal) {
-    console.log('🔍 Abriendo modal...');
+    console.log(' Abriendo modal...');
     modal.classList.add('active');
     modal.style.display = 'block';
     
@@ -62,7 +62,7 @@ window.abrirModalFiltro = function(tipo, event) {
     if (input) {
       input.value = '';
       input.focus();
-      console.log('🔍 Input limpiado y enfocado');
+      console.log(' Input limpiado y enfocado');
     }
     
     // Cerrar al hacer clic fuera
@@ -80,7 +80,7 @@ window.abrirModalFiltro = function(tipo, event) {
 
 // Función global para limpiar todos los filtros
 window.limpiarTodosLosFiltros = function() {
-  console.log('🧹 INICIANDO limpiarTodosLosFiltros (global)');
+  console.log(' INICIANDO limpiarTodosLosFiltros (global)');
   
   // Limpiar variables de filtro
   filtroFechaActual = '';
@@ -102,7 +102,7 @@ window.limpiarTodosLosFiltros = function() {
   const btnLimpiar = document.getElementById('btnLimpiarFiltros');
   if (btnLimpiar) {
     btnLimpiar.style.display = 'none';
-    console.log('🔍 Botón de limpiar filtros ocultado');
+    console.log(' Botón de limpiar filtros ocultado');
   }
   
   // Recargar pedidos sin filtros
@@ -119,7 +119,7 @@ window.limpiarTodosLosFiltros = function() {
 // Función global para verificar si hay filtros activos
 window.verificarFiltrosActivos = function() {
   const tieneFiltros = filtroFechaActual || filtroClienteActual || filtroNumeroActual;
-  console.log('🔍 Verificando filtros activos (global):', {
+  console.log(' Verificando filtros activos (global):', {
     fecha: filtroFechaActual,
     cliente: filtroClienteActual,
     numero: filtroNumeroActual,
@@ -130,13 +130,13 @@ window.verificarFiltrosActivos = function() {
     const btnLimpiar = document.getElementById('btnLimpiarFiltros');
     if (btnLimpiar) {
       btnLimpiar.style.display = 'flex';
-      console.log('🔍 Mostrando botón de limpiar filtros');
+      console.log(' Mostrando botón de limpiar filtros');
     }
   } else {
     const btnLimpiar = document.getElementById('btnLimpiarFiltros');
     if (btnLimpiar) {
       btnLimpiar.style.display = 'none';
-      console.log('🔍 Ocultando botón de limpiar filtros');
+      console.log(' Ocultando botón de limpiar filtros');
     }
   }
 };
@@ -145,13 +145,13 @@ window.verificarFiltrosActivos = function() {
 
 // Buscar sugerencias de cliente
 function buscarSugerenciasCliente() {
-  console.log('🔍 INICIANDO buscarSugerenciasCliente');
+  console.log(' INICIANDO buscarSugerenciasCliente');
   
   const input = document.getElementById('filtroClienteInput');
   const contenedor = document.getElementById('sugerenciasCliente');
 
-  console.log('🔍 Input encontrado:', !!input);
-  console.log('🔍 Contenedor encontrado:', !!contenedor);
+  console.log(' Input encontrado:', !!input);
+  console.log(' Contenedor encontrado:', !!contenedor);
 
   if (!input || !contenedor) {
     console.error(' ERROR: Input o contenedor no encontrado');
@@ -159,12 +159,12 @@ function buscarSugerenciasCliente() {
   }
 
   const textoBusqueda = input.value.toLowerCase().trim();
-  console.log('🔍 Texto de búsqueda:', textoBusqueda);
+  console.log(' Texto de búsqueda:', textoBusqueda);
 
   if (busquedaTimeout) clearTimeout(busquedaTimeout);
 
   if (textoBusqueda.length === 0) {
-    console.log('🔍 Búsqueda vacía, ocultando sugerencias');
+    console.log(' Búsqueda vacía, ocultando sugerencias');
     contenedor.classList.remove('active');
     contenedor.style.display = 'none';
     sugerenciasCliente = [];
@@ -172,9 +172,9 @@ function buscarSugerenciasCliente() {
     return;
   }
 
-  console.log('🔍 Configurando timeout para cargar sugerencias...');
+  console.log(' Configurando timeout para cargar sugerencias...');
   busquedaTimeout = setTimeout(() => {
-    console.log('🔍 Ejecutando cargarSugerenciasDesdeBD...');
+    console.log(' Ejecutando cargarSugerenciasDesdeBD...');
     cargarSugerenciasDesdeBD('cliente', textoBusqueda);
   }, 300);
 }
@@ -277,8 +277,8 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
       }
     }
     
-    console.log('🔍 Endpoint:', endpoint);
-    console.log('🔍 Contenedor encontrado:', !!contenedor);
+    console.log(' Endpoint:', endpoint);
+    console.log(' Contenedor encontrado:', !!contenedor);
     
     if (!contenedor) {
       console.warn(' Contenedor no encontrado para tipo:', tipo);
@@ -290,7 +290,7 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
     
     // Obtener token CSRF
     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    console.log('🔍 Token CSRF: encontrado:', !!token);
+    console.log(' Token CSRF: encontrado:', !!token);
     
     // Hacer llamada a la API
     const response = await fetch(endpoint, {
@@ -306,22 +306,22 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
       })
     });
     
-    console.log('🔍 Respuesta recibida: ' + response.status);
+    console.log(' Respuesta recibida: ' + response.status);
     
     if (!response.ok) {
       throw new Error('Error en la llamada a la API');
     }
     
     const data = await response.json();
-    console.log('🔍 Datos recibidos de API:', data);
+    console.log(' Datos recibidos de API:', data);
     
     // Procesar sugerencias
     if (data.success && data.sugerencias) {
-      console.log('🔍 Procesando sugerencias:', data.sugerencias);
+      console.log(' Procesando sugerencias:', data.sugerencias);
       
       if (tipo === 'cliente') {
         sugerenciasCliente = data.sugerencias;
-        console.log('🔍 Llamando a renderizarSugerenciasCliente...');
+        console.log(' Llamando a renderizarSugerenciasCliente...');
         renderizarSugerenciasCliente(textoBusqueda);
       } else if (tipo === 'numero') {
         sugerenciasNumero = data.sugerencias;
@@ -332,7 +332,7 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
         renderizarSugerenciasFecha(textoBusqueda);
       }
     } else {
-      console.log('🔍 No hay resultados en la respuesta');
+      console.log(' No hay resultados en la respuesta');
       // Si no hay resultados, ocultar
       contenedor.classList.remove('active');
       contenedor.style.display = 'none';
@@ -360,31 +360,31 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
 
 // Renderizar sugerencias de cliente
 function renderizarSugerenciasCliente(textoBusqueda) {
-  console.log('🔍 INICIANDO renderizarSugerenciasCliente:', {textoBusqueda, sugerenciasCliente});
+  console.log(' INICIANDO renderizarSugerenciasCliente:', {textoBusqueda, sugerenciasCliente});
   
   const contenedor = document.getElementById('sugerenciasCliente');
-  console.log('🔍 Contenedor encontrado:', !!contenedor);
-  console.log('🔍 SugerenciasCliente array:', sugerenciasCliente);
-  console.log('🔍 Longitud de sugerencias:', sugerenciasCliente.length);
+  console.log(' Contenedor encontrado:', !!contenedor);
+  console.log(' SugerenciasCliente array:', sugerenciasCliente);
+  console.log(' Longitud de sugerencias:', sugerenciasCliente.length);
   
   if (!contenedor) {
-    console.log('🔍 Contenedor no encontrado');
+    console.log(' Contenedor no encontrado');
     return;
   }
   
   if (sugerenciasCliente.length === 0) {
-    console.log('🔍 No hay sugerencias de cliente, mostrando mensaje...');
+    console.log(' No hay sugerencias de cliente, mostrando mensaje...');
     contenedor.innerHTML = '<div class="sugerencia-item sin-resultados">No hay resultados</div>';
     contenedor.classList.add('active');
     contenedor.style.display = 'block';
     return;
   }
   
-  console.log('🔍 Construyendo HTML para sugerencias...');
+  console.log(' Construyendo HTML para sugerencias...');
   let html = '';
   
   sugerenciasCliente.forEach((cliente, index) => {
-    console.log(`🔍 Procesando sugerencia ${index}: ${cliente}`);
+    console.log(` Procesando sugerencia ${index}: ${cliente}`);
     
     const clienteLower = cliente.toLowerCase();
     const busquedaLower = textoBusqueda.toLowerCase();
@@ -410,8 +410,8 @@ function renderizarSugerenciasCliente(textoBusqueda) {
     `;
   });
   
-  console.log('🔍 HTML construido:', html);
-  console.log('🔍 Insertando HTML en contenedor...');
+  console.log(' HTML construido:', html);
+  console.log(' Insertando HTML en contenedor...');
   
   contenedor.innerHTML = html;
   contenedor.classList.add('active');
@@ -429,7 +429,7 @@ function renderizarSugerenciasNumero(textoBusqueda) {
   }
   
   if (sugerenciasNumero.length === 0) {
-    console.log('🔍 No hay sugerencias de número, mostrando mensaje...');
+    console.log(' No hay sugerencias de número, mostrando mensaje...');
     contenedor.innerHTML = '<div class="sugerencia-item sin-resultados">No hay resultados</div>';
     contenedor.classList.add('active');
     contenedor.style.display = 'block';
@@ -477,7 +477,7 @@ function renderizarSugerenciasFecha(textoBusqueda) {
   }
   
   if (sugerenciasFecha.length === 0) {
-    console.log('🔍 No hay sugerencias de fecha, mostrando mensaje...');
+    console.log(' No hay sugerencias de fecha, mostrando mensaje...');
     contenedor.innerHTML = '<div class="sugerencia-item sin-resultados">No hay resultados</div>';
     contenedor.classList.add('active');
     contenedor.style.display = 'block';
@@ -520,26 +520,26 @@ function renderizarSugerenciasFecha(textoBusqueda) {
 
 // Seleccionar sugerencia de cliente
 function seleccionarSugerenciaCliente(index, valor) {
-  console.log('🔍 INICIANDO seleccionarSugerenciaCliente:', { index, valor });
+  console.log(' INICIANDO seleccionarSugerenciaCliente:', { index, valor });
   
   const input = document.getElementById('filtroClienteInput');
-  console.log('🔍 Input encontrado:', !!input);
+  console.log(' Input encontrado:', !!input);
   
   if (input) {
-    console.log('🔍 Valor actual del input:', input.value);
-    console.log('🔍 Asignando nuevo valor:', valor);
+    console.log(' Valor actual del input:', input.value);
+    console.log(' Asignando nuevo valor:', valor);
     
     input.value = valor;
     sugerenciaSeleccionada = index;
     
-    console.log('🔍 Valor asignado exitosamente:', input.value);
+    console.log(' Valor asignado exitosamente:', input.value);
     
     // Ocultar sugerencias después de seleccionar
     const contenedor = document.getElementById('sugerenciasCliente');
-    console.log('🔍 Contenedor encontrado:', !!contenedor);
+    console.log(' Contenedor encontrado:', !!contenedor);
     
     if (contenedor) {
-      console.log('🔍 Ocultando contenedor de sugerencias');
+      console.log(' Ocultando contenedor de sugerencias');
       contenedor.classList.remove('active');
       contenedor.style.display = 'none';
     } else {
@@ -548,10 +548,10 @@ function seleccionarSugerenciaCliente(index, valor) {
 
     // Limpiar sugerencias
     sugerenciasCliente = [];
-    console.log('🔍 Sugerencias limpiadas');
+    console.log(' Sugerencias limpiadas');
     
     // Aplicar filtro
-    console.log('🔍 Aplicando filtro...');
+    console.log(' Aplicando filtro...');
     aplicarFiltroCliente();
     
     console.log(' seleccionarSugerenciaCliente completado exitosamente');
@@ -809,8 +809,8 @@ window.verFactura = function(pedidoId, numeroPedido) {
 // Detectar clics en botones de filtro (fallback)
 document.addEventListener('click', function(e) {
   if (e.target.classList.contains('btn-filter-column')) {
-    console.log('🔍 CLIC EN BOTÓN btn-filter-column:', e.target);
-    console.log('🔍 onclick attribute:', e.target.onclick ? 'tiene onclick' : 'sin onclick');
+    console.log(' CLIC EN BOTÓN btn-filter-column:', e.target);
+    console.log(' onclick attribute:', e.target.onclick ? 'tiene onclick' : 'sin onclick');
     
     if (!e.target.onclick) {
       // Extraer el tipo del onclick si existe
@@ -832,7 +832,7 @@ document.addEventListener('click', function(e) {
 
 // Aplicar filtro de cliente
 function aplicarFiltroCliente() {
-  console.log('🔍 APLICAR FILTRO CLIENTE');
+  console.log(' APLICAR FILTRO CLIENTE');
   const input = document.getElementById('filtroClienteInput');
   const valor = input ? input.value.trim() : '';
   
@@ -860,7 +860,7 @@ function aplicarFiltroCliente() {
 
 // Aplicar filtro de número
 function aplicarFiltroNumero() {
-  console.log('🔍 APLICAR FILTRO NÚMERO');
+  console.log(' APLICAR FILTRO NÚMERO');
   const input = document.getElementById('filtroNumeroInput');
   const valor = input ? input.value.trim() : '';
   
@@ -888,7 +888,7 @@ function aplicarFiltroNumero() {
 
 // Aplicar filtro de fecha
 function aplicarFiltroFecha() {
-  console.log('🔍 APLICAR FILTRO FECHA');
+  console.log(' APLICAR FILTRO FECHA');
   const input = document.getElementById('filtroFechaInput');
   const valor = input ? input.value.trim() : '';
   
@@ -914,4 +914,4 @@ function aplicarFiltroFecha() {
   cerrarModalFiltro('fecha');
 }
 
-console.log('🎯 Sistema de Filtros Compartidos cargado correctamente');
+console.log(' Sistema de Filtros Compartidos cargado correctamente');

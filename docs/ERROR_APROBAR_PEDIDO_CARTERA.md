@@ -4,7 +4,7 @@
 
 El error `500 (Internal Server Error)` al aprobar pedidos en producción está causado por múltiples factores en el método `aprobarPedido` del `CarteraPedidosController`.
 
-## 🔍 Causas Raíz Identificadas
+##  Causas Raíz Identificadas
 
 ### 1. **Broadcast de WebSockets (Causa Principal)**
 - **Problema**: `broadcast(new OrdenUpdated(...))` se ejecuta sincrónicamente
@@ -26,7 +26,7 @@ El error `500 (Internal Server Error)` al aprobar pedidos en producción está c
 - **Impacto**: Si el broadcast falla, puede afectar la transacción
 - **Síntoma**: Datos inconsistentes o rollback inesperado
 
-## ✅ Solución Implementada
+##  Solución Implementada
 
 ### 1. **Broadcast Asíncrono y No Bloqueante**
 ```php
@@ -110,7 +110,7 @@ catch (\Exception $e) {
 }
 ```
 
-## 📊 Mejoras de Rendimiento
+##Mejoras de Rendimiento
 
 ### Antes de la Solución:
 - **Tiempo de aprobación**: ~10 segundos (timeout WebSocket)
@@ -163,7 +163,7 @@ catch (\Exception $e) {
 }
 ```
 
-## 🔧 Configuración Adicional Recomendada
+##  Configuración Adicional Recomendada
 
 ### 1. **Timeout de Broadcasting**
 En `config/broadcasting.php`:
@@ -183,14 +183,14 @@ En `config/broadcasting.php`:
 tail -f storage/logs/laravel.log | grep "\[CARTERA\]"
 ```
 
-## 🚀 Implementación
+##  Implementación
 
 ### Cambios Realizados:
-1. ✅ **Broadcast asíncrono** con manejo de errores
-2. ✅ **Validación de estado** antes de procesar
-3. ✅ **Logging detallado** con métricas de tiempo
-4. ✅ **Manejo por capas** de excepciones
-5. ✅ **Información de debug** en respuestas de error
+1.  **Broadcast asíncrono** con manejo de errores
+2.  **Validación de estado** antes de procesar
+3.  **Logging detallado** con métricas de tiempo
+4.  **Manejo por capas** de excepciones
+5.  **Información de debug** en respuestas de error
 
 ### Archivos Modificados:
 - `app/Http/Controllers/CarteraPedidosController.php`
@@ -199,18 +199,18 @@ tail -f storage/logs/laravel.log | grep "\[CARTERA\]"
 ## 📈 Resultados Esperados
 
 ### Inmediatos:
-- ✅ Sin más errores 500 por timeout de WebSocket
-- ✅ Aprobaciones en menos de 100ms
-- ✅ Logging detallado para debugging
-- ✅ Mensajes de error claros para usuarios
+-  Sin más errores 500 por timeout de WebSocket
+-  Aprobaciones en menos de 100ms
+-  Logging detallado para debugging
+-  Mensajes de error claros para usuarios
 
 ### Largo Plazo:
-- 📊 Métricas de rendimiento disponibles
-- 🔍 Facilidad para identificar problemas
+-Métricas de rendimiento disponibles
+-  Facilidad para identificar problemas
 - 🛡️ Mejor experiencia de usuario
 - 📈 Mayor estabilidad del sistema
 
-## 🧪 Pruebas Recomendadas
+##  Pruebas Recomendadas
 
 ### 1. **Flujo Normal**
 ```bash
@@ -240,7 +240,7 @@ POST /api/cartera/pedidos/125/aprobar
 # Esperar: 200 OK (aprobación exitosa, broadcast falló pero no crítico)
 ```
 
-## 🎯 Conclusión
+##  Conclusión
 
 El error 500 estaba causado principalmente por el **timeout de broadcasting de WebSockets** que bloqueaba la aprobación de pedidos. La solución implementada:
 

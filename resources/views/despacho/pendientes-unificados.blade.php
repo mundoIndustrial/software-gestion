@@ -1236,7 +1236,7 @@ function actualizarPaginacion(pagination) {
 
 @push('scripts')
 <script>
-console.log('🚀 SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
+console.log(' SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
 
 // WebSocket para actualizaciones en tiempo real
 let socket = null;
@@ -1244,35 +1244,35 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log('🔌 Iniciando conexión WebSocket para despacho...');
+    console.log(' Iniciando conexión WebSocket para despacho...');
     
     try {
         // Usar la instancia existente de Echo en lugar de crear una nueva
         if (!window.EchoInstance) {
-            console.error('❌ EchoInstance no está disponible');
+            console.error(' EchoInstance no está disponible');
             return;
         }
         
         socket = window.EchoInstance;
         
-        console.log('🔍 Usando EchoInstance existente');
-        console.log('🔧 Creando canal despacho.pedidos...');
+        console.log(' Usando EchoInstance existente');
+        console.log(' Creando canal pedidos.general...');
         
         // Escuchar eventos de pedidos en el canal público de despacho
-        const despachoChannel = socket.channel('despacho.pedidos');
+        const despachoChannel = socket.channel('pedidos.general');
         
         if (!despachoChannel) {
-            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            console.error(' No se pudo crear el canal pedidos.general');
             return;
         }
         
-        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            console.log(' Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
-            console.log('🔍 Debug evento recibido:', {
+            console.log(' Debug evento recibido:', {
                 'pedido_id': event.pedido_id,
                 'numero_pedido': event.numero_pedido,
                 'nuevo_estado': event.nuevo_estado,
@@ -1283,21 +1283,21 @@ function connectWebSocket() {
             });
             
             // Mostrar notificación de que se recibió un evento
-            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
             // Si hay cambios relevantes, recargar la lista
             if (event.changedFields && Object.keys(event.changedFields).length > 0) {
-                console.log('🔄 Hay cambios en el pedido, recargando lista...');
+                console.log(' Hay cambios en el pedido, recargando lista...');
                 cargarPedidos(); // Recargar la lista en lugar de la página completa
             }
         })
         .error((error) => {
-            console.error('❌ Error en WebSocket (despacho):', error);
+            console.error(' Error en WebSocket (despacho):', error);
         });
 
-        console.log('✅ WebSocket conectado para lista de despacho');
+        console.log(' WebSocket conectado para lista de despacho');
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -1305,24 +1305,38 @@ function connectWebSocket() {
     }
 }
 
+// Esperar a que waitForEcho esté disponible (definido en bootstrap.js)
+function initializeWebSocket() {
+    // Verificar si waitForEcho está disponible
+    if (typeof window.waitForEcho === 'function') {
+        console.log(' waitForEcho disponible, iniciando...');
+        // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+        window.waitForEcho(function() {
+            console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
+            connectWebSocket();
+        });
+    } else {
+        console.log(' waitForEcho aún no disponible, reintentando en 100ms...');
+        setTimeout(initializeWebSocket, 100);
+    }
+}
+
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
-    console.log('🔍 URL actual:', window.location.href);
-    console.log('🔍 Pathname:', window.location.pathname);
+    console.log(' DOM cargado - Iniciando WebSocket de despacho...');
+    console.log(' URL actual:', window.location.href);
+    console.log(' Pathname:', window.location.pathname);
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log('✅ Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la página de despacho pendientes');
     } else {
-        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+        console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
-    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
-    window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
-        connectWebSocket();
-    });
+    // Intentar inicializar WebSocket (con reintentos si waitForEcho no está listo)
+    initializeWebSocket();
 });
 </script>
 @endpush
+

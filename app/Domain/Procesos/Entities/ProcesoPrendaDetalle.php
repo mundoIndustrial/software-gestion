@@ -30,6 +30,7 @@ class ProcesoPrendaDetalle extends Entity
     public const ESTADO_EN_PRODUCCION = 'EN_PRODUCCION';
     public const ESTADO_COMPLETADO = 'COMPLETADO';
     public const ESTADO_RECHAZADO = 'RECHAZADO';
+    public const ESTADO_ANULADO = 'ANULADO';
 
     private static $estadosValidos = [
         self::ESTADO_PENDIENTE,
@@ -38,6 +39,7 @@ class ProcesoPrendaDetalle extends Entity
         self::ESTADO_EN_PRODUCCION,
         self::ESTADO_COMPLETADO,
         self::ESTADO_RECHAZADO,
+        self::ESTADO_ANULADO,
     ];
 
     public function __construct(
@@ -172,6 +174,28 @@ class ProcesoPrendaDetalle extends Entity
         }
 
         $this->estado = self::ESTADO_COMPLETADO;
+    }
+
+    public function revertirAPendiente(): void
+    {
+        if (!in_array($this->estado, [self::ESTADO_APROBADO, self::ESTADO_RECHAZADO])) {
+            throw new \DomainException('Solo se puede revertir a pendiente un proceso aprobado o rechazado');
+        }
+
+        $this->estado = self::ESTADO_PENDIENTE;
+        $this->aprobadoPor = null;
+        $this->fechaAprobacion = null;
+    }
+
+    public function anular(): void
+    {
+        if ($this->estado === self::ESTADO_ANULADO) {
+            throw new \DomainException('El proceso ya está anulado');
+        }
+
+        $this->estado = self::ESTADO_ANULADO;
+        $this->aprobadoPor = null;
+        $this->fechaAprobacion = null;
     }
 
     public function getNotasRechazo(): ?string

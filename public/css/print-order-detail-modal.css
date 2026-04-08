@@ -70,7 +70,7 @@
         /* Margen para que el borde redondeado no se recorte */
         margin: 4mm auto 0 auto !important;
 
-        /* Forzar 1 sola página: tamaño fijo dentro de A4 (considerando márgenes) */
+        /* Forzar 1 sola página: tamano fijo dentro de A4 (considerando márgenes) */
         width: 180mm !important;
         max-width: 180mm !important;
         height: var(--receipt-print-height, 287mm) !important;

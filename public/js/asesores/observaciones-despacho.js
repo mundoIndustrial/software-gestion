@@ -15,7 +15,6 @@
             const data = localStorage.getItem(BADGE_STORAGE_KEY);
             return data ? JSON.parse(data) : {};
         } catch (e) {
-            console.warn('[Asesores] Error leyendo localStorage:', e);
             return {};
         }
     }
@@ -26,9 +25,7 @@
             const seen = getSeenBadges();
             seen[pedidoId] = Date.now();
             localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
-            console.log(`[Asesores] Badge ${pedidoId} marcado como visto en localStorage`);
         } catch (e) {
-            console.warn('[Asesores] Error guardando en localStorage:', e);
         }
     }
     
@@ -36,20 +33,14 @@
     function isBadgeRecentlySeen(pedidoId) {
         const seen = getSeenBadges();
         const seenTime = seen[pedidoId];
-        console.log(`[Asesores] isBadgeRecentlySeen - pedidoId: ${pedidoId}, seenTime: ${seenTime}`);
         
         if (!seenTime) {
-            console.log(`[Asesores] Badge ${pedidoId} nunca fue visto`);
             return false;
         }
         
         // Considerar como visto si fue marcado en las últimas 24 horas
         const twentyFourHours = 24 * 60 * 60 * 1000;
         const isRecent = (Date.now() - seenTime) < twentyFourHours;
-        const timeDiff = Date.now() - seenTime;
-        const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
-        
-        console.log(`[Asesores] Badge ${pedidoId} visto hace ${hoursAgo} horas, es reciente: ${isRecent}`);
         return isRecent;
     }
 
@@ -61,56 +52,37 @@
     }
 
     function __renderBadge(pedidoId, count) {
-        console.log(`[Asesores] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
-        
         // Lógica principal: Si hay observaciones no leídas, mostrar badge
         // El localStorage solo se usa para persistencia cuando el usuario hace clic
         if (count > 0) {
-            console.log(`[Asesores] 🆕 Hay ${count} observaciones no leídas - MOSTRAR badge`);
-            console.log(`[Asesores] - El badge debe aparecer siempre que haya observaciones no leídas`);
         } else {
             // Si no hay observaciones no leídas, verificar localStorage
             const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-            console.log(`[Asesores] - No hay observaciones no leídas, verificando localStorage...`);
-            console.log(`[Asesores] isBadgeRecentlySeen - pedidoId: ${pedidoId}, seenTime: ${getSeenBadges()[pedidoId]}`);
-            console.log(`[Asesores] Badge ${pedidoId} visto hace ${Math.floor((Date.now() - getSeenBadges()[pedidoId]) / (1000 * 60 * 60))} horas, es reciente: ${wasRecentlySeen}`);
             
             if (wasRecentlySeen) {
-                console.log(`[Asesores] 🚫 Badge ${pedidoId} fue visto recientemente y no hay nuevas observaciones, no mostrar`);
                 __clearBadge(pedidoId);
                 return;
-            } else {
-                console.log(`[Asesores] ✅ Badge ${pedidoId} no fue visto recientemente, se podría mostrar si hubiera observaciones`);
             }
         }
         
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
-        console.log(`[Asesores] Botón encontrado para render:`, btn);
         
         if (!btn) {
             // Buscar en botones de asesores/pedidos
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
-            console.log(`[Asesores] Botón encontrado para render:`, btn);
         }
         
-        console.log(`[Asesores] Botón final a usar:`, btn);
-        
         if (!btn) {
-            console.warn(`[Asesores] No se encontró botón para pedido ${pedidoId}`);
             return;
         }
         
-        console.log(`[Asesores] Limpiando badge existente antes de renderizar`);
         __clearBadge(pedidoId);
         
         if (!count || count <= 0) {
-            console.log(`[Asesores] No hay badge para mostrar - count: ${count}`);
             return;
         }
 
-        console.log(`[Asesores] Creando badge para pedido ${pedidoId} con count: ${count}`);
-        
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
         badge.textContent = count > 99 ? '99+' : String(count);
@@ -131,17 +103,11 @@
             'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
         ].join(';');
         btn.appendChild(badge);
-        
-        console.log(`[Asesores] Badge agregado exitosamente para pedido ${pedidoId}`);
-        console.log(`[Asesores] Badge HTML:`, badge.outerHTML);
     }
 
     async function refrescarBadgesObservacionesDespachoAsesores() {
-        console.log('[Asesores] Iniciando refrescarBadgesObservacionesDespachoAsesores');
-        
         try {
             const rows = Array.from(document.querySelectorAll('[data-pedido-row][data-pedido-id]'));
-            console.log('[Asesores] Filas encontradas:', rows.length);
             
             const ids = rows
                 .map(r => r.getAttribute('data-pedido-id'))
@@ -149,15 +115,11 @@
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
 
-            console.log('[Asesores] IDs de pedidos encontrados:', ids);
-
             if (ids.length === 0) {
-                console.log('[Asesores] No se encontraron IDs de pedidos, saliendo');
                 return;
             }
 
-            console.log('[Asesores] Obteniendo resumen de observaciones...');
-            const r = await fetch('/asesores/pedidos/observaciones-despacho/resumen', {
+            const r = await fetch('/api/asesores/pedidos/observaciones-despacho/resumen', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -169,27 +131,21 @@
             });
 
             const data = await r.json().catch(() => null);
-            console.log('[Asesores] Respuesta del servidor:', data);
             
             const map = (data && data.success && data.data) ? data.data : {};
-            console.log('[Asesores] Map de unread counts:', map);
 
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
-                console.log(`[Asesores] Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
-            
-            console.log('[Asesores] Refrescado de badges completado');
         } catch (e) {
-            console.error('[Asesores] Error refrescando badges de observaciones despacho:', e);
         }
     }
 
     window.__asesoresObsDespachoCtx = window.__asesoresObsDespachoCtx || { pedidoId: null, pedidoNumero: null };
 
     async function __fetchObservaciones(pedidoId) {
-        const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
+        const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -221,7 +177,7 @@
 
         // Marcar notas de bodega como vistas al abrir el modal
         try {
-            await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+            await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -235,11 +191,7 @@
             // Refrescar badges para que desaparezcan si ya se vieron las notas
             refrescarBadgesObservacionesDespachoAsesores();
         } catch (e) {
-            console.warn('[Asesores] No se pudo marcar notas de bodega como vistas:', e);
         }
-
-        console.log('[Asesores] Modal abierto - NO se marcan notificaciones como vistas automáticamente');
-        console.log('[Asesores] Las notificaciones se marcarán como vistas solo cuando el usuario haga clic en el botón');
     }
 
     function cerrarModalObservacionesDespachoAsesores() {
@@ -252,16 +204,12 @@
 
     // Marcar notificaciones como vistas cuando el usuario hace clic
     async function marcarNotificacionesComoVistas(pedidoId) {
-        console.log(`[Asesores] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
-        
         try {
             // Detectar si estamos en despacho o asesores
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
-                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
-                
-            console.log(`[Asesores] Marcando notificaciones como vistas en: ${url}`);
+                : `/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
             
             const r = await fetch(url, {
                 method: 'POST',
@@ -275,21 +223,14 @@
             });
 
             const data = await r.json().catch(() => null);
-            console.log(`[Asesores] Respuesta del servidor al marcar como vistas:`, data);
             
             if (data && data.success) {
-                console.log(`[Asesores] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
-                console.log(`[Asesores] Llamando a __clearBadge para pedido ${pedidoId}`);
                 // Ahora sí limpiar el badge
                 __clearBadge(pedidoId);
                 // Refrescar para confirmar
-                console.log(`[Asesores] Refrescando badges después de marcar como vistas`);
                 refrescarBadgesObservacionesDespachoAsesores();
-            } else {
-                console.warn(`[Asesores] Error marcando notificaciones como vistas para pedido ${pedidoId}:`, data);
             }
         } catch (e) {
-            console.error(`[Asesores] Error en marcarNotificacionesComoVistas:`, e);
         }
     }
 
@@ -318,8 +259,8 @@
                 const esEditable = source === 'despacho';
                 const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
-                    <button onclick="editarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    <button onclick="editarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar"></button>
+                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
 
                 const fecha = item.updated_at || item.created_at || '';
@@ -346,7 +287,6 @@
             html += '</div>';
             historial.innerHTML = html;
         } catch (e) {
-            console.error('Error cargando observaciones despacho asesores:', e);
             historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar</div>';
         }
     }
@@ -366,7 +306,7 @@
         if (btn) btn.disabled = true;
 
         try {
-            const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/guardar`, {
+            const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -385,7 +325,6 @@
             await cargarObservacionesDespachoAsesores();
             cerrarModalObservacionesDespachoAsesores();
         } catch (e) {
-            console.error('Error guardando observación despacho asesores:', e);
             mostrarNotificacion('Error al guardar la observación', 'error');
         } finally {
             if (btn) btn.disabled = false;
@@ -480,8 +419,8 @@
             btnCancelar.disabled = true;
 
             try {
-                const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/actualizar`, {
-                    method: 'POST',
+                const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': __csrfToken(),
@@ -498,7 +437,6 @@
 
                 await cargarObservacionesDespachoAsesores();
             } catch (e) {
-                console.error('Error actualizando observación despacho asesores:', e);
                 alert('Error al actualizar la observación');
                 btnGuardar.disabled = false;
                 btnCancelar.disabled = false;
@@ -645,8 +583,8 @@
             '¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.',
             async () => {
                 try {
-                    const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/eliminar`, {
-                        method: 'POST',
+                    const r = await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}`, {
+                        method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': __csrfToken(),
@@ -660,7 +598,6 @@
                     mostrarNotificacion('Observación eliminada correctamente', 'success');
                     await cargarObservacionesDespachoAsesores();
                 } catch (e) {
-                    console.error('Error eliminando observación despacho asesores:', e);
                     mostrarNotificacion('Error al eliminar la observación', 'error');
                 }
             }
@@ -681,7 +618,6 @@
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtimeAsesores() {
         if (!window.EchoInstance) {
-            console.warn('[Asesores] EchoInstance no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtimeAsesores, 2000);
             return;
         }
@@ -689,7 +625,6 @@
         // Escuchar canal general de asesores
         window.EchoInstance.channel('asesores.observaciones')
             .listen('.observacion.despacho', (e) => {
-                console.log('[Asesores] Evento recibido:', e);
                 const pedidoId = e?.pedido_id;
                 if (!pedidoId) return;
 
@@ -701,7 +636,7 @@
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     cargarObservacionesDespachoAsesores();
                     // Marcar como leídas automáticamente
-                    fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
+                    fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -719,7 +654,6 @@
         // Escuchar notas de bodega (para refrescar badges en tiempo real)
         window.EchoInstance.channel('asesores.observaciones')
             .listen('.bodega.nota', async (e) => {
-                console.log('[Asesores] Evento nota de bodega recibido:', e);
                 const pedidoId = e?.pedido_id;
                 if (!pedidoId) return;
 
@@ -731,7 +665,7 @@
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     await cargarObservacionesDespachoAsesores();
                     try {
-                        await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+                        await fetch(`/api/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -743,7 +677,6 @@
                         });
                         refrescarBadgesObservacionesDespachoAsesores();
                     } catch (err) {
-                        console.warn('[Asesores] No se pudo marcar bodega vistas tras evento realtime:', err);
                     }
                 }
             });
@@ -756,8 +689,6 @@
 
             window.EchoInstance.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
-                    console.log(`[Asesores] Evento en pedido ${pedidoId}:`, e);
-
                     // Actualizar badge
                     refrescarBadgesObservacionesDespachoAsesores();
 
@@ -768,16 +699,26 @@
                     }
                 });
         });
-
-        console.log('[Asesores] WebSocket configurado para observaciones');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initObservacionesDespacho() {
+        if (window.__observacionesDespachoInitialized) {
+            return;
+        }
+        window.__observacionesDespachoInitialized = true;
+
         refrescarBadgesObservacionesDespachoAsesores();
-        setInterval(refrescarBadgesObservacionesDespachoAsesores, 30000);
 
         // Setup WebSocket para tiempo real
         setupObservacionesRealtimeAsesores();
+
+        // Refresco por eventos de ciclo de vida (sin polling)
+        window.addEventListener('focus', refrescarBadgesObservacionesDespachoAsesores);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                refrescarBadgesObservacionesDespachoAsesores();
+            }
+        });
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
         // Marcar como visto solo cuando el usuario hace clic en el botón 💬 o dropdown
@@ -794,7 +735,6 @@
                 // También marcar como visto en el backend
                 marcarNotificacionesComoVistas(pedidoId);
                 
-                console.log(`[Asesores] Badge ${pedidoId} marcado como visto por clic del usuario`);
                 return;
             }
             
@@ -806,19 +746,22 @@
                 const match = onclickStr.match(/abrirModalObservacionesDespachoAsesores\((\d+)/);
                 if (match) {
                     const pedidoId = match[1];
-                    console.log(`[Asesores] Usuario hizo clic en opción dropdown de observaciones - Pedido ${pedidoId}`);
                     
                     // Marcar como visto en localStorage inmediatamente
                     setBadgeSeen(pedidoId);
                     
                     // También marcar como visto en el backend
                     marcarNotificacionesComoVistas(pedidoId);
-                    
-                    console.log(`[Asesores] Badge ${pedidoId} marcado como visto por clic en dropdown`);
                 }
             }
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initObservacionesDespacho);
+    } else {
+        initObservacionesDespacho();
+    }
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
 })();

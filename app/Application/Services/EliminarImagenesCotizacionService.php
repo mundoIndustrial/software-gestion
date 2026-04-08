@@ -4,7 +4,6 @@ namespace App\Application\Services;
 
 use App\Models\PrendaFotoCot;
 use App\Models\PrendaTelaFotoCot;
-use App\Models\LogoFotoCot;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -80,56 +79,6 @@ class EliminarImagenesCotizacionService
         } catch (\Exception $e) {
             Log::error('Error al eliminar imágenes de tela', [
                 'prenda_id' => $prendaId,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Eliminar imágenes de logo que no están en la lista actual
-     */
-    public function eliminarImagenesLogoNoIncluidas(int $logoCotizacionId, array $fotosActuales): void
-    {
-        try {
-            // Obtener todas las fotos del logo guardadas
-            $fotosGuardadas = LogoFotoCot::where('logo_cotizacion_id', $logoCotizacionId)->get();
-
-            Log::info('DEBUG - Eliminación de fotos de logo:', [
-                'logo_id' => $logoCotizacionId,
-                'fotos_guardadas_count' => $fotosGuardadas->count(),
-                'fotos_a_conservar_count' => count($fotosActuales),
-                'fotos_a_conservar' => $fotosActuales
-            ]);
-
-            foreach ($fotosGuardadas as $fotoGuardada) {
-                // Verificar si esta foto está en la lista actual
-                $estaEnLista = collect($fotosActuales)->contains(function ($fotoActual) use ($fotoGuardada) {
-                    return $fotoActual === $fotoGuardada->ruta_original || 
-                           $fotoActual === $fotoGuardada->ruta_webp ||
-                           (is_array($fotoActual) && ($fotoActual['ruta'] === $fotoGuardada->ruta_original || $fotoActual['id'] === $fotoGuardada->id));
-                });
-
-                // Si no está en la lista, eliminarla
-                if (!$estaEnLista) {
-                    $this->eliminarFoto($fotoGuardada->ruta_original);
-                    $fotoGuardada->delete();
-                    
-                    Log::info(' Foto de logo ELIMINADA', [
-                        'logo_id' => $logoCotizacionId,
-                        'foto_id' => $fotoGuardada->id,
-                        'ruta' => $fotoGuardada->ruta_original
-                    ]);
-                } else {
-                    Log::info(' Foto de logo CONSERVADA', [
-                        'logo_id' => $logoCotizacionId,
-                        'foto_id' => $fotoGuardada->id,
-                        'ruta' => $fotoGuardada->ruta_original
-                    ]);
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('Error al eliminar imágenes de logo', [
-                'logo_id' => $logoCotizacionId,
                 'error' => $e->getMessage()
             ]);
         }

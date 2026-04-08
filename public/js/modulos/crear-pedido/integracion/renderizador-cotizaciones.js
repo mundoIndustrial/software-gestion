@@ -13,7 +13,7 @@
      * @param {Array} prendas - Array de prendas desde cotización
      */
     window.renderizarPrendasDesdeCotizacion = function(prendas) {
-        console.log('[renderizador-cotizaciones] 🎬 Iniciando renderizado de prendas desde cotización:', prendas.length);
+        console.log('[renderizador-cotizaciones]  Iniciando renderizado de prendas desde cotización:', prendas.length);
         
         const container = document.getElementById('prendas-container-editable');
         if (!container) {
@@ -22,7 +22,7 @@
         }
 
         //  LIMPIAR COMPLETAMENTE el container ANTES de agregar nuevos elementos
-        console.log('[renderizador-cotizaciones] 🧹 Limpiando container...');
+        console.log('[renderizador-cotizaciones]  Limpiando container...');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
@@ -233,12 +233,12 @@
      * Funciones globales para interactuar con las prendas
      */
     window.editarPrendaCotizacion = function(index) {
-        console.log('[renderizador-cotizaciones] ✏️ Editando prenda:', index);
+        console.log('[renderizador-cotizaciones]  Editando prenda:', index);
         // Aquí se puede agregar la lógica para editar la prenda
     };
 
     window.eliminarPrendaCotizacion = function(index) {
-        console.log('[renderizador-cotizaciones] 🗑️ Eliminando prenda:', index);
+        console.log('[renderizador-cotizaciones]  Eliminando prenda:', index);
         // Aquí se puede agregar la lógica para eliminar la prenda
     };
 

@@ -2,25 +2,24 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Domain\Pedidos\Services\PrendaTransformadorService;
+use App\Application\Pedidos\Services\PrendaFrontendTransformadorService;
 use App\Domain\Pedidos\Repositories\PrendaRepositoryInterface;
 use App\Domain\Pedidos\Repositories\CotizacionRepositoryInterface;
 use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
 
 /**
  * Application Service: PrendaEditorService
- * 
  * Orquesta el flujo de edición de prendas
  * Coordina entre el dominio y la infraestructura
  */
 class PrendaEditorService
 {
-    private PrendaTransformadorService $transformador;
+    private PrendaFrontendTransformadorService $transformador;
     private PrendaRepositoryInterface $prendaRepository;
     private CotizacionRepositoryInterface $cotizacionRepository;
     
     public function __construct(
-        PrendaTransformadorService $transformador,
+        PrendaFrontendTransformadorService $transformador,
         PrendaRepositoryInterface $prendaRepository,
         CotizacionRepositoryInterface $cotizacionRepository
     ) {
@@ -250,5 +249,17 @@ class PrendaEditorService
         }
         
         return $errores;
+    }
+    
+    /**
+     * Obtiene una prenda por su ID
+     */
+    public function obtenerPrenda(int $id): ?object
+    {
+        try {
+            return $this->prendaRepository->findById($id);
+        } catch (\Exception $e) {
+            throw new \Exception("Error obteniendo prenda: {$e->getMessage()}");
+        }
     }
 }

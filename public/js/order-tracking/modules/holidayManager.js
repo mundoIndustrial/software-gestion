@@ -13,38 +13,74 @@ const HolidayManager = (() => {
         '2025-11-17', '2025-12-08', '2025-12-25'
     ];
     
-    let festivosCache = null;
+    const DEFAULT_TTL = 12 * 60 * 60 * 1000; // 12 horas
+    const CACHE_KEY = 'festivos_año';
+    let cacheRepository = null;
     
     /**
-     * Obtiene los festivos de Colombia desde API o usa fallback
+     * Obtiene instancia de SessionStorageCacheRepository
+     * Fallback: null si no está disponible
      */
-    async function obtenerFestivos() {
-        if (festivosCache) {
-            return festivosCache;
+    function _getCacheRepository() {
+        if (!cacheRepository && window.SessionStorageCacheRepository) {
+            cacheRepository = new window.SessionStorageCacheRepository({
+                keyPrefix: 'holiday_'
+            });
         }
-        
-        try {
-            const year = new Date().getFullYear();
-            const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/CO`);
-            if (response.ok) {
-                const data = await response.json();
-                festivosCache = data.map(h => h.date);
-
-                return festivosCache;
-            }
-        } catch (error) {
-
-        }
-        
-        festivosCache = FESTIVOS_COLOMBIA_2025;
-        return festivosCache;
+        return cacheRepository;
     }
     
     /**
-     * Limpia el cache de festivos
+     * Obtiene festivos desde API externa (Nager.Date)
+     * @param {number} year - Año a consultar
+     * @returns {Promise<Array>} Array de fechas YYYY-MM-DD
+     */
+    async function _fetchFromAPI(year) {
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/CO`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.map(h => h.date);
+        }
+        throw new Error('API no disponible');
+    }
+    
+    /**
+     * Obtiene los festivos de Colombia desde cache o API
+     * Con fallback a festivos locales si todo falla
+     * @returns {Promise<Array>} Array de fechas YYYY-MM-DD
+     */
+    async function obtenerFestivos() {
+        const cache = _getCacheRepository();
+        const year = new Date().getFullYear();
+        const cacheKey = `${CACHE_KEY}_${year}`;
+        
+        if (cache) {
+            return await cache.getOrFetch(
+                cacheKey,
+                () => _fetchFromAPI(year).catch(() => FESTIVOS_COLOMBIA_2025),
+                DEFAULT_TTL
+            );
+        }
+        
+        // Fallback si SessionStorageCacheRepository no disponible
+        try {
+            return await _fetchFromAPI(year);
+        } catch (error) {
+            console.warn('[HolidayManager] API falla, usando festivos locales');
+            return FESTIVOS_COLOMBIA_2025;
+        }
+    }
+    
+    /**
+     * Limpia el cache de festivos del año actual
      */
     function clearCache() {
-        festivosCache = null;
+        const cache = _getCacheRepository();
+        const year = new Date().getFullYear();
+        const cacheKey = `${CACHE_KEY}_${year}`;
+        if (cache) {
+            cache.remove(cacheKey);
+        }
     }
     
     // Interfaz pública

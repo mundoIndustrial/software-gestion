@@ -212,7 +212,7 @@ window.obtenerResumenPrendasTipoPrendaSinCotizacion = function() {
                 <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
                     <div> Tallas: ${tallas}</div>
                     <div> Telas: ${telas}</div>
-                    <div>📸 Fotos: ${fotos}</div>
+                    <div> Fotos: ${fotos}</div>
                 </div>
             </div>
         `;
@@ -317,7 +317,7 @@ window.enviarPrendaSinCotizacion = function() {
             // Enviar al servidor
 
             
-            const response = await fetch('/asesores/pedidos-editable/crear', {
+            const response = await fetch('/api/asesores/pedidos/crear', {
                 method: 'POST',
                 body: formData,
                 headers: {

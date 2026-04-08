@@ -66,8 +66,8 @@ async function cargarTiposMangaDisponibles() {
     // Crear nueva petición
     tiposMangaPromise = (async () => {
         try {
-            // Usar ruta pública accesible para todos los roles
-            const response = await fetch('/api/public/tipos-manga');
+            // Usar endpoint real del catálogo de mangas
+            const response = await fetch('/api/asesores/tipos-manga');
             const result = await response.json();
             
             if (result.success && result.data) {
@@ -133,7 +133,7 @@ async function cargarTiposBrocheBotonDisponibles() {
     // Crear nueva petición
     tiposBrochePromise = (async () => {
         try {
-            const response = await fetch('/api/public/tipos-broche-boton');
+            const response = await fetch('/api/asesores/tipos-broche-boton');
             const result = await response.json();
             
             if (result.success && result.data) {
@@ -178,7 +178,7 @@ window.limpiarCacheTiposBroche = limpiarCacheTiposBroche;
 
 /**
  * Procesar input de manga cuando pierde el foco
- * Si no existe en la BD, lo crea automáticamente
+ * Si no existe en la BD, lo crea automáticamente.
  */
 async function procesarMangaInput(input) {
     const valor = input.value.trim();
@@ -194,9 +194,8 @@ async function procesarMangaInput(input) {
         );
         
         if (!existe) {
-            
             // Crear el nuevo tipo de manga
-            const response = await fetch('/api/public/tipos-manga', {
+            const response = await fetch('/api/asesores/tipos-manga', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -204,12 +203,12 @@ async function procesarMangaInput(input) {
                 },
                 body: JSON.stringify({ nombre: valor })
             });
-            
+
             const result = await response.json();
             if (result.success && result.data) {
                 // Invalidar caché para que se recargue la próxima vez
                 tiposMangaCache = null;
-                
+
                 // Agregar al datalist
                 const datalist = document.getElementById('opciones-manga');
                 if (datalist) {
@@ -233,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 🔄 Catálogos se cargan bajo demanda cuando se abre el modal
+    //  Catálogos se cargan bajo demanda cuando se abre el modal
 });
 
 /**
@@ -241,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function cargarTelasDisponibles() {
     try {
-        const response = await fetch('/api/public/telas');
+        const response = await fetch('/api/asesores/telas');
         const result = await response.json();
         
         if (result.success && result.data) {
@@ -276,7 +275,7 @@ async function cargarTelasDisponibles() {
  */
 async function cargarColoresDisponibles() {
     try {
-        const response = await fetch('/api/public/colores');
+        const response = await fetch('/api/asesores/colores');
         const result = await response.json();
         
         if (result.success && result.data) {

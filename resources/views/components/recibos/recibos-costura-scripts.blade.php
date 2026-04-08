@@ -3,7 +3,21 @@
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
 <!-- Script para el modal de seguimiento -->
-<script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
+<!-- Sistema de Tracking Modular -->
+<!-- DAYS SELECTOR HANDLER - DEBE cargarse PRIMERO (ANTES de data-loader y ui-components) -->
+<script src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
+<!-- TRACKING MODAL HANDLER - DEBE cargarse ANTES de ui-components.js -->
+<script type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para la funcionalidad de Día de Entrega -->
 <script src="{{ asset('js/ordersjs/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
@@ -77,7 +91,7 @@ function abrirModalCeldaConFormato(titulo, prendas) {
         htmlContenido = '<div style="text-align: center; color: #9ca3af;">No hay prendas disponibles</div>';
     } else {
         prendas.forEach((prenda, idx) => {
-            console.log(`[abrirModalCeldaConFormato] ⚡ Procesando prenda ${idx}:`, prenda);
+            console.log(`[abrirModalCeldaConFormato]  Procesando prenda ${idx}:`, prenda);
             
             // Convertir objeto Eloquent a objeto simple si es necesario
             let prendaData = prenda.toJSON ? prenda.toJSON() : prenda;
@@ -93,10 +107,10 @@ function abrirModalCeldaConFormato(titulo, prendas) {
             try {
                 // Intentar usar Formatters si está disponible
                 if (window.Formatters && typeof window.Formatters.construirDescripcionCostura === 'function') {
-                    console.log(`[abrirModalCeldaConFormato] 🎯 Usando window.Formatters.construirDescripcionCostura`);
+                    console.log(`[abrirModalCeldaConFormato]  Usando window.Formatters.construirDescripcionCostura`);
                     prendaHtml = window.Formatters.construirDescripcionCostura(prendaData);
                 } else if (typeof Formatters !== 'undefined' && typeof Formatters.construirDescripcionCostura === 'function') {
-                    console.log(`[abrirModalCeldaConFormato] 🎯 Usando Formatters.construirDescripcionCostura (module)`);
+                    console.log(`[abrirModalCeldaConFormato]  Usando Formatters.construirDescripcionCostura (module)`);
                     prendaHtml = Formatters.construirDescripcionCostura(prendaData);
                 } else {
                     // Fallback si Formatters no disponible - generar HTML simple
@@ -109,7 +123,7 @@ function abrirModalCeldaConFormato(titulo, prendas) {
                 prendaHtml = generarDescripcionSimple(prendaData);
             }
             
-            console.log(`[abrirModalCeldaConFormato] 📄 HTML generado:`, prendaHtml);
+            console.log(`[abrirModalCeldaConFormato]  HTML generado:`, prendaHtml);
             
             htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
                 ${prendaHtml}
@@ -216,7 +230,7 @@ function generarDescripcionSimple(prenda) {
     
     // Descripción - Limpiar basura del inicio
     if (prenda.descripcion) {
-        console.log('[generarDescripcionSimple] 📝 Descripción RAW:', prenda.descripcion);
+        console.log('[generarDescripcionSimple]  Descripción RAW:', prenda.descripcion);
         let desc = String(prenda.descripcion);
         // Limpiar líneas de basura del inicio (DSFSDFS, etc)
         desc = desc.split('\n').filter(linea => {
@@ -225,7 +239,7 @@ function generarDescripcionSimple(prenda) {
             if (!trimmed) return false;
             if (trimmed.match(/^[A-Z]{5,}[A-Z\s]{0,10}$/i) && 
                 !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE)/i)) {
-                console.log('[generarDescripcionSimple] 🚫 Línea basura filtrada:', trimmed);
+                console.log('[generarDescripcionSimple]  Línea basura filtrada:', trimmed);
                 return false;
             }
             return true;
@@ -237,7 +251,7 @@ function generarDescripcionSimple(prenda) {
         }
     }
     
-    console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
+    console.log('[generarDescripcionSimple]  OUTPUT HTML:', html);
 }
 
 // Función para normalizar datos de prenda
@@ -293,7 +307,7 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             return response.json();
         })
         .then(datosRecibo => {
-            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datosRecibo);
+            console.log(`[obtenerDatosPrendaRecibo]  Datos del recibo recibidos:`, datosRecibo);
             
             if (!datosRecibo.success || !datosRecibo.data || !datosRecibo.data.prendas) {
                 console.error('No se encontraron datos del recibo:', pedidoId);
@@ -302,15 +316,15 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             }
             
             const todasLasPrendas = datosRecibo.data.prendas;
-            console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${todasLasPrendas.length}`);
+            console.log(`[obtenerDatosPrendaRecibo]  Prendas encontradas: ${todasLasPrendas.length}`);
             
             // Filtrar para mostrar solo la prenda asociada al recibo
             const prendaFiltrada = todasLasPrendas.filter(prenda => {
-                console.log(`[obtenerDatosPrendaRecibo] 🔍 Comparando prenda.id=${prenda.id} con prendaId=${prendaId}`);
+                console.log(`[obtenerDatosPrendaRecibo]  Comparando prenda.id=${prenda.id} con prendaId=${prendaId}`);
                 return prenda.id == prendaId; // Comparación flexible para manejar string/int
             });
             
-            console.log(`[obtenerDatosPrendaRecibo] 📋 Prendas filtradas: ${prendaFiltrada.length}`);
+            console.log(`[obtenerDatosPrendaRecibo]  Prendas filtradas: ${prendaFiltrada.length}`);
             
             if (prendaFiltrada.length === 0) {
                 console.warn('No se encontró la prenda asociada al recibo:', prendaId);
@@ -334,7 +348,7 @@ function openNovedadesModalRecibo(button) {
     const numeroRecibo = button.getAttribute('data-numero-recibo');
     const novedadesActuales = button.getAttribute('data-novedades') || '';
     
-    console.log(`[openNovedadesModalRecibo] 📝 Abriendo modal para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+    console.log(`[openNovedadesModalRecibo]  Abriendo modal para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
     console.log(`[openNovedadesModalRecibo] Novedades actuales:`, novedadesActuales);
     
     // Esperar a que el script de novedades esté disponible
@@ -1345,7 +1359,11 @@ function createReciboRow(recibo) {
             <button class="btn-ver-dropdown" title="Ver Opciones"
                 data-menu-id="menu-recibo-${recibo.id}"
                 data-pedido-id="${recibo.pedido_produccion_id}"
-                data-prenda-id="${recibo.prenda_id || ''}">
+                data-prenda-id="${recibo.prenda_id || ''}"
+                data-recibo-id="${recibo.id}"
+                data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
+                data-total-parciales="${recibo.total_parciales || 0}">
                 <i class="fas fa-eye"></i>
             </button>
         </td>
@@ -1362,7 +1380,7 @@ function createReciboRow(recibo) {
         </td>
         <td>
             <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); console.log('[ONCLICK TABLE CELL] 📌 Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
+                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); console.log('[ONCLICK TABLE CELL]  Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                         <span class="descripcion-prenda-texto">${recibo.nombre_prenda || 'Sin prendas'}</span> <span style="color: #3b82f6; font-weight: 600;">...</span>
                     </span>
@@ -1697,7 +1715,11 @@ document.addEventListener('click', function(e) {
                 <button class="btn-ver-dropdown" title="Ver Opciones"
                     data-menu-id="menu-recibo-${recibo.id}"
                     data-pedido-id="${recibo.pedido_produccion_id}"
-                    data-prenda-id="${recibo.prenda_id || ''}">
+                    data-prenda-id="${recibo.prenda_id || ''}"
+                    data-recibo-id="${recibo.id}"
+                    data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                    data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
+                    data-total-parciales="${recibo.total_parciales || 0}">
                     <i class="fas fa-eye"></i>
                 </button>
             </td>

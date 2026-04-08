@@ -78,7 +78,7 @@ class TablaOriginal extends Model
      */
     public function scopeDelDia($query)
     {
-        return $query->whereDate('fecha_de_creacion_de_orden', today());
+        return $query->whereDate('created_at', today());
     }
 
     /**
@@ -86,8 +86,8 @@ class TablaOriginal extends Model
      */
     public function scopeDelMes($query)
     {
-        return $query->whereMonth('fecha_de_creacion_de_orden', now()->month)
-                     ->whereYear('fecha_de_creacion_de_orden', now()->year);
+        return $query->whereMonth('created_at', now()->month)
+                     ->whereYear('created_at', now()->year);
     }
 
     /**
@@ -95,7 +95,7 @@ class TablaOriginal extends Model
      */
     public function scopeDelAnio($query)
     {
-        return $query->whereYear('fecha_de_creacion_de_orden', now()->year);
+        return $query->whereYear('created_at', now()->year);
     }
 
     public function setFestivos(array $festivos)
@@ -105,7 +105,7 @@ class TablaOriginal extends Model
 
     public function getTotalDeDiasAttribute(): int
     {
-        $fechaCreacion = Carbon::parse($this->fecha_de_creacion_de_orden);
+        $fechaCreacion = Carbon::parse($this->created_at);
         $festivos = $this->festivos ?: Festivo::pluck('fecha')->toArray();
 
         if ($this->estado === 'Entregado') {
@@ -166,11 +166,11 @@ class TablaOriginal extends Model
      */
     public function calcularFechaEstimadaEntrega(): ?Carbon
     {
-        if (!$this->fecha_de_creacion_de_orden || !$this->dia_de_entrega) {
+        if (!$this->created_at || !$this->dia_de_entrega) {
             return null;
         }
 
-        $fechaInicio = Carbon::parse($this->fecha_de_creacion_de_orden);
+        $fechaInicio = Carbon::parse($this->created_at);
         $diasRequeridos = intval($this->dia_de_entrega);
         
         // Usar FestivosColombiaService en lugar de tabla BD para consistencia
@@ -179,7 +179,7 @@ class TablaOriginal extends Model
         
         \Log::info("[MODELO] calcularFechaEstimadaEntrega - Iniciando cálculo", [
             'pedido' => $this->pedido,
-            'fecha_creacion' => $this->fecha_de_creacion_de_orden,
+            'fecha_creacion' => $this->created_at,
             'dias_requeridos' => $diasRequeridos,
             'cantidad_festivos_api' => count($festivos),
             'festivos_api' => $festivos

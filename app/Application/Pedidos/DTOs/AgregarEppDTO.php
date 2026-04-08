@@ -7,8 +7,8 @@ namespace App\Application\Pedidos\DTOs;
  * 
  * Maneja campos de pedido_epp:
  * - epp_id: referencia a tabla de EPP disponibles
- * - cantidad: nÃºmero de unidades
- * - observaciones: notas especÃ­ficas para este EPP en este pedido
+ * - cantidad: numero de unidades
+ * - observaciones: notas especificas para este EPP en este pedido
  */
 final class AgregarEppDTO
 {

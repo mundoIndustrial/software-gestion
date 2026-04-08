@@ -45,7 +45,7 @@ class EppImagenManager {
                 return;
             }
 
-            // Validar tamaño (máximo 5MB)
+            // Validar tamano (máximo 5MB)
             const maxSize = 5 * 1024 * 1024;
             if (archivo.size > maxSize) {
                 alert('El archivo es demasiado grande (máximo 5MB)');
@@ -81,7 +81,7 @@ class EppImagenManager {
     async eliminarImagen(imagenId) {
         // Mostrar confirmación elegante con SweetAlert
         const result = await Swal.fire({
-            title: '🗑️ Eliminar Imagen',
+            title: ' Eliminar Imagen',
             text: '¿Estás seguro de que deseas eliminar esta imagen?',
             icon: 'warning',
             showCancelButton: true,
@@ -142,21 +142,21 @@ class EppImagenManager {
             const esDOMFormat = typeof imagenId === 'string' && imagenId.includes('-img-');
             const esIdTemporal = esTimestamp || esDOMFormat;
             
-            console.log('🗑️ [EppImagenManager] Analizando imagenId:', imagenId);
-            console.log('🗑️ [EppImagenManager] - Es timestamp?:', esTimestamp);
-            console.log('🗑️ [EppImagenManager] - Es DOM format (XXX-img-X)?:', esDOMFormat);
-            console.log('🗑️ [EppImagenManager] - Es temporal?:', esIdTemporal);
+            console.log(' [EppImagenManager] Analizando imagenId:', imagenId);
+            console.log(' [EppImagenManager] - Es timestamp?:', esTimestamp);
+            console.log(' [EppImagenManager] - Es DOM format (XXX-img-X)?:', esDOMFormat);
+            console.log(' [EppImagenManager] - Es temporal?:', esIdTemporal);
             
             if (!esIdTemporal) {
                 // Solo llamar al API si es una imagen guardada en BD
-                console.log('🗑️ [EppImagenManager] Imagen de BD, eliminando del servidor');
+                console.log(' [EppImagenManager] Imagen de BD, eliminando del servidor');
                 try {
                     await this.apiService.eliminarImagen(imagenId);
                 } catch (apiError) {
                     console.warn(' [EppImagenManager] Error al eliminar de BD, pero continuando con UI:', apiError.message);
                 }
             } else {
-                console.log('🗑️ [EppImagenManager] Imagen local/temporal, eliminando solo del cliente');
+                console.log(' [EppImagenManager] Imagen local/temporal, eliminando solo del cliente');
             }
 
             this.stateManager.eliminarImagenSubida(imagenId);

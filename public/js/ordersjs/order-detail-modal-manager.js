@@ -252,7 +252,7 @@ function renderOrderDetail(orden) {
     const yearBox = document.querySelector('.year-box');
     
     if (dayBox && monthBox && yearBox) {
-        const fecha = new Date(orden.fecha_de_creacion_de_orden);
+        const fecha = new Date(orden.created_at);
         if (!isNaN(fecha.getTime())) {
             const dia = String(fecha.getDate()).padStart(2, '0');
             const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -803,8 +803,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             
             // Fecha
-            if (orden.fecha_de_creacion_de_orden) {
-                const fecha = new Date(orden.fecha_de_creacion_de_orden);
+            if (orden.created_at) {
+                const fecha = new Date(orden.created_at);
                 const dayBox = document.querySelector('#order-detail-modal-wrapper-logo .day-box');
                 const monthBox = document.querySelector('#order-detail-modal-wrapper-logo .month-box');
                 const yearBox = document.querySelector('#order-detail-modal-wrapper-logo .year-box');

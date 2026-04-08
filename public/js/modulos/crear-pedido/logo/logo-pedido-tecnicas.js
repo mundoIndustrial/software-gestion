@@ -226,7 +226,7 @@ function renderizarLogoPrendasTecnicas() {
             html += `
                 <tr style="background: #f0f7ff; border: 2px solid #0284c7;">
                     <td style="padding: 1.2rem; vertical-align: top; color: #0c4a6e; font-weight: 700; font-size: 1rem;">
-                        <div style="margin-bottom: 0.5rem;">🔗 COMBINADA</div>
+                        <div style="margin-bottom: 0.5rem;"> COMBINADA</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                             ${tecnicasHTML}
                         </div>
@@ -587,7 +587,7 @@ window.abrirModalEditarPrendaTecnica = function(index) {
                         cursor: pointer;
                         transition: all 0.3s;
                     ">
-                        <div style="font-size: 1.4rem; margin-bottom: 0.3rem;">📸</div>
+                        <div style="font-size: 1.4rem; margin-bottom: 0.3rem;"></div>
                         <div style="font-weight: 600; color: ${colorTecnica}; font-size: 0.8rem;">
                             Arrastra fotos aquí
                         </div>

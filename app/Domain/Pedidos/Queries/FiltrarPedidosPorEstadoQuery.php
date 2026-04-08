@@ -8,11 +8,11 @@ use App\Domain\Shared\CQRS\Query;
  * FiltrarPedidosPorEstadoQuery
  * 
  * Query para filtrar pedidos por estado
- * Estados vÃ¡lidos: activo, pendiente, cancelado, completado
+ * Estados validos: activo, pendiente, cancelado, completado
  * 
  * @param string $estado Estado a filtrar
- * @param int $page NÃºmero de pÃ¡gina (default 1)
- * @param int $perPage Registros por pÃ¡gina (default 15)
+ * @param int $page numero de pagina (default 1)
+ * @param int $perPage Registros por pagina (default 15)
  */
 class FiltrarPedidosPorEstadoQuery implements Query
 {
@@ -24,7 +24,7 @@ class FiltrarPedidosPorEstadoQuery implements Query
         private int $perPage = 15,
     ) {
         if (!in_array(strtolower($this->estado), self::ESTADOS_VALIDOS)) {
-            throw new \InvalidArgumentException("Estado invÃ¡lido: {$estado}");
+            throw new \InvalidArgumentException("Estado invalido: {$estado}");
         }
     }
 

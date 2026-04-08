@@ -20,16 +20,10 @@ class PrendaTelaFoto extends Model
         'ruta_webp',
         'ruta_miniatura',
         'orden',
-        'ancho',
-        'alto',
-        'tamaño',
     ];
 
     protected $casts = [
         'orden' => 'integer',
-        'ancho' => 'integer',
-        'alto' => 'integer',
-        'tamaño' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -58,15 +52,5 @@ class PrendaTelaFoto extends Model
         return $this->ruta_webp ?? $this->ruta_original ?? '';
     }
 
-    /**
-     * Obtener dimensiones
-     */
-    public function getDimensionesAttribute(): array
-    {
-        return [
-            'ancho' => $this->ancho,
-            'alto' => $this->alto,
-            'tamaño' => $this->tamaño,
-        ];
-    }
+
 }

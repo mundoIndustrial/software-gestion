@@ -31,7 +31,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_generales' => []
         ];
 
-        // Usar reflexión para acceder al mÃ©todo privado
+        // Usar reflexión para acceder al Metodo privado
         $reflection = new \ReflectionClass($this->cotizacionService);
         $method = $reflection->getMethod('determinarTipoCotizacion');
         $method->setAccessible(true);
@@ -39,7 +39,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Prenda/Logo', $resultado);
-        echo "\n Test Prenda/Logo PASÃ“\n";
+        echo "\n Test Prenda/Logo PAsi“\n";
     }
 
     /**
@@ -63,7 +63,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n Test Solo Logo PASÃ“\n";
+        echo "\n Test Solo Logo PAsi“\n";
     }
 
     /**
@@ -75,7 +75,7 @@ class CotizacionServiceTest extends TestCase
             'productos' => [
                 ['nombre_producto' => 'Pantalón']
             ],
-            'tecnicas' => [], // SIN tÃ©cnicas
+            'tecnicas' => [], // SIN tecnicas
             'imagenes' => [],
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
@@ -89,7 +89,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('General', $resultado);
-        echo "\n Test General PASÃ“\n";
+        echo "\n Test General PAsi“\n";
     }
 
     /**
@@ -100,7 +100,7 @@ class CotizacionServiceTest extends TestCase
         $datos = [
             'productos' => [], // SIN prendas
             'tecnicas' => [],
-            'imagenes' => ['imagen1.jpg'], // CON imÃ¡genes
+            'imagenes' => ['imagen1.jpg'], // CON imagenes
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
             'observaciones_generales' => []
@@ -113,7 +113,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n Test Con ImÃ¡genes PASÃ“\n";
+        echo "\n Test Con imagenes PAsi“\n";
     }
 
     /**
@@ -138,9 +138,9 @@ class CotizacionServiceTest extends TestCase
         
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
-        // Con observaciones generales pero sin prendas, deberÃ­a ser General
+        // Con observaciones generales pero sin prendas, deberia ser General
         $this->assertEquals('General', $resultado);
-        echo "\n Test Con Observaciones PASÃ“\n";
+        echo "\n Test Con Observaciones PAsi“\n";
     }
 }
 

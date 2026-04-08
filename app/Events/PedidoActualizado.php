@@ -42,15 +42,14 @@ class PedidoActualizado implements ShouldBroadcastNow
             new Channel('pedidos.' . $this->asesor->id)
         ];
         
-        // También broadcast al canal público de despacho para actualizaciones en tiempo real
-        // Usar Channel público para que todos puedan escuchar sin autenticación
-        $channels[] = new Channel('despacho.pedidos');
-        
+        // Canal general de pedidos (nuevo nombre semántico compartido)
+        $channels[] = new Channel('pedidos.general');
+
         \Log::info('[PedidoActualizado] Canales de broadcast', [
             'pedido_id' => $this->pedido->id,
             'numero_pedido' => $this->pedido->numero_pedido,
             'canal_privado' => 'pedidos.' . $this->asesor->id,
-            'canal_despacho' => 'despacho.pedidos',
+            'canal_general' => 'pedidos.general',
             'total_canales' => count($channels)
         ]);
         

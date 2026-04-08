@@ -26,6 +26,8 @@ class FilaDespachoDTO
         public ?array $objetoPrenda = null,     // Datos completos
         public ?array $objetoTalla = null,
         public ?array $objetoEpp = null,
+        public bool $tiene_historial = false,   // Flag si tiene historial
+        public ?array $historial_homologaciones = null,  // Historial de cambios
     ) {}
 
     /**
@@ -44,6 +46,8 @@ class FilaDespachoDTO
             'objeto_prenda' => $this->objetoPrenda,
             'objeto_talla' => $this->objetoTalla,
             'objeto_epp' => $this->objetoEpp,
+            'tiene_historial' => $this->tiene_historial,
+            'historial_homologaciones' => $this->historial_homologaciones,
         ];
     }
 }

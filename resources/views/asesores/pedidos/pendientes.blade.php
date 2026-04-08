@@ -48,7 +48,7 @@
         }
 
         .search-box::before {
-            content: '🔍';
+            content: '';
             position: absolute;
             left: 15px;
             top: 50%;
@@ -273,12 +273,12 @@
 
 @push('scripts')
     <script>
-        console.log('🔵 Script de pendientes iniciando...');
+        console.log(' Script de pendientes iniciando...');
         
         let currentPage = 1;
         let searchTimeout = null;
 
-        console.log('🔵 Variables inicializadas');
+        console.log(' Variables inicializadas');
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🟢 DOMContentLoaded disparado');
@@ -318,7 +318,7 @@
                 per_page: 20
             });
 
-            const url = `/asesores/api/pendientes-asesor?${params}`;
+            const url = `/api/asesores/pendientes-asesor?${params}`;
             console.log('Llamando a:', url);
 
             fetch(url)
@@ -347,7 +347,7 @@
             if (pedidos.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📭</div>
+                        <div class="empty-icon"></div>
                         <h3>No hay pedidos pendientes</h3>
                         <p>No se encontraron pedidos que coincidan con tus filtros</p>
                     </div>
@@ -399,7 +399,7 @@
                     </td>
                     <td>
                         <button class="btn-ver" onclick="verDetallePedido(${pedido.id})">
-                            👁️ Ver
+                             Ver
                         </button>
                     </td>
                 </tr>
@@ -466,7 +466,7 @@
             const container = document.getElementById('pedidosContainer');
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">❌</div>
+                    <div class="empty-icon"></div>
                     <h3>Error al cargar pendientes</h3>
                     <p>${mensaje}</p>
                 </div>

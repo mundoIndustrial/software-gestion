@@ -48,7 +48,7 @@
     /* Transiciones */
     --transition: all 0.2s ease-in-out;
     
-    /* Tamaños */
+    /* tamanos */
     --max-width: 1200px;
     --header-height: 64px;
     --sidebar-width: 240px;

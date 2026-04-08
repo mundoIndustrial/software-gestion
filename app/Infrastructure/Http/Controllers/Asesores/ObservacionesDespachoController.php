@@ -2,331 +2,169 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use App\Models\PedidoObservacionesDespacho;
-use App\Models\PedidoProduccion;
-use App\Models\BodegaNota;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use App\Application\Services\Asesores\ObservacionesDespachoApplicationService;
 use App\Events\ObservacionDespachoCreada;
-use Illuminate\Support\Str;
-
+use App\Infrastructure\Http\Requests\Asesores\GuardarObservacionDespachoRequest;
+use App\Infrastructure\Http\Requests\Asesores\ResumenObservacionesDespachoRequest;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ObservacionesDespachoController extends Controller
 {
-    private function assertPuedeAccederPedido(PedidoProduccion $pedido): ?JsonResponse
-    {
-        $usuario = auth()->user();
-        if (!$usuario) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autenticado',
-            ], 401);
-        }
-
-        if ($usuario->hasRole('asesor')) {
-            if ((string) $pedido->asesor_id !== (string) $usuario->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No tienes permiso para ver este pedido',
-                ], 403);
-            }
-        }
-
-        return null;
+    public function __construct(
+        private readonly ObservacionesDespachoApplicationService $service
+    ) {
     }
 
-    public function obtener(Request $request, PedidoProduccion $pedido): JsonResponse
+    private function json(mixed $payload, int $status = 200): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
-        }
-
-        $rows = PedidoObservacionesDespacho::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->orderByDesc('created_at')
-            ->get();
-
-        $bodegaRows = BodegaNota::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->orderByDesc('created_at')
-            ->get();
-
-        $observacionesDespacho = $rows->map(function ($row) {
-            return [
-                'source' => 'despacho',
-                'id' => (string) $row->uuid,
-                'contenido' => $row->contenido,
-                'talla' => null,
-                'usuario_id' => $row->usuario_id,
-                'usuario_nombre' => $row->usuario_nombre,
-                'usuario_rol' => $row->usuario_rol,
-                'ip_address' => $row->ip_address,
-                'estado' => (int) $row->estado,
-                'created_at' => optional($row->created_at)->toISOString(),
-                'updated_at' => optional($row->updated_at)->toISOString(),
-            ];
-        });
-
-        $observacionesBodega = $bodegaRows->map(function ($row) {
-            return [
-                'source' => 'bodega',
-                'id' => 'bodega-' . (string) $row->id,
-                'contenido' => $row->contenido,
-                'talla' => $row->talla,
-                'usuario_id' => $row->usuario_id,
-                'usuario_nombre' => $row->usuario_nombre,
-                'usuario_rol' => $row->usuario_rol,
-                'ip_address' => $row->ip_address,
-                'estado' => null,
-                'created_at' => optional($row->created_at)->toISOString(),
-                'updated_at' => optional($row->updated_at)->toISOString(),
-            ];
-        });
-
-        $unificado = $observacionesDespacho
-            ->concat($observacionesBodega)
-            ->sortByDesc(function ($item) {
-                return $item['updated_at'] ?: $item['created_at'] ?: '';
-            })
-            ->values()
-            ->all();
-
-        return response()->json([
-            'success' => true,
-            'data' => $unificado,
-        ]);
+        return response()->json($payload, $status);
     }
 
-    public function resumen(Request $request): JsonResponse
+    private function failure(string $message, int $status, array $extra = []): JsonResponse
     {
-        $validated = $request->validate([
-            'pedido_ids' => 'required|array',
-            'pedido_ids.*' => 'integer',
-        ]);
-
-        $ids = array_values(array_unique($validated['pedido_ids']));
-
-        $usuario = auth()->user();
-        if (!$usuario) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autenticado',
-            ], 401);
-        }
-
-        $permitidos = $ids;
-        if ($usuario->hasRole('asesor')) {
-            $permitidos = PedidoProduccion::query()
-                ->whereIn('id', $ids)
-                ->where('asesor_id', $usuario->id)
-                ->pluck('id')
-                ->map(fn ($v) => (int) $v)
-                ->all();
-        }
-
-        $conteos = PedidoObservacionesDespacho::query()
-            ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
-            ->whereIn('pedido_produccion_id', $permitidos)
-            ->where('usuario_rol', 'Despacho')
-            ->whereNull('visto_at')
-            ->groupBy('pedido_produccion_id')
-            ->pluck('unread', 'pedido_produccion_id');
-
-        $conteosBodega = BodegaNota::query()
-            ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
-            ->whereIn('pedido_produccion_id', $permitidos)
-            ->whereNull('visto_at')
-            ->groupBy('pedido_produccion_id')
-            ->pluck('unread', 'pedido_produccion_id');
-
-        $map = [];
-        foreach ($permitidos as $pedidoId) {
-            $unreadDespacho = (int) ($conteos[(int) $pedidoId] ?? 0);
-            $unreadBodega = (int) ($conteosBodega[(int) $pedidoId] ?? 0);
-            $map[(int) $pedidoId] = [
-                'unread' => $unreadDespacho + $unreadBodega,
-                'unread_despacho' => $unreadDespacho,
-                'unread_bodega' => $unreadBodega,
-            ];
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $map,
-        ]);
+        return $this->json(array_merge([
+            'success' => false,
+            'message' => $message,
+        ], $extra), $status);
     }
 
-    public function marcarBodegaVistas(Request $request, PedidoProduccion $pedido): JsonResponse
+    private function handleAccessException(\Throwable $e): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
+        if ($e instanceof AuthenticationException) {
+            return $this->failure('No autenticado', 401);
         }
 
-        BodegaNota::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->whereNull('visto_at')
-            ->update(['visto_at' => now()]);
+        if ($e instanceof NotFoundHttpException) {
+            return $this->failure($e->getMessage(), 404);
+        }
 
-        return response()->json([
-            'success' => true,
-        ]);
+        if ($e instanceof AccessDeniedHttpException) {
+            return $this->failure($e->getMessage(), 403);
+        }
+
+        return $this->failure('Error interno', 500);
     }
 
-    public function marcarLeidas(Request $request, PedidoProduccion $pedido): JsonResponse
+    public function obtener(int|string $id): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+
+            return $this->json([
+                'success' => true,
+                'data' => $this->service->obtenerObservacionesUnificadas($pedidoId),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
-
-        PedidoObservacionesDespacho::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->where('usuario_rol', 'Despacho')
-            ->whereNull('visto_at')
-            ->update(['visto_at' => now()]);
-
-        return response()->json([
-            'success' => true,
-        ]);
     }
 
-    public function guardar(Request $request, PedidoProduccion $pedido): JsonResponse
+    public function resumen(ResumenObservacionesDespachoRequest $request): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
+        try {
+            $validated = $request->validated();
+
+            return $this->json([
+                'success' => true,
+                'data' => $this->service->obtenerResumen($validated['pedido_ids'], auth()->user()),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
-
-        $validated = $request->validate([
-            'contenido' => 'required|string|max:5000',
-        ]);
-
-        $usuario = auth()->user();
-
-        $uuid = (string) Str::uuid();
-        $row = PedidoObservacionesDespacho::create([
-            'pedido_produccion_id' => $pedido->id,
-            'uuid' => $uuid,
-            'contenido' => $validated['contenido'],
-            'usuario_id' => $usuario?->id,
-            'usuario_nombre' => $usuario?->name,
-            'usuario_rol' => $usuario?->getCurrentRole()?->name ?? null,
-            'ip_address' => $request->ip(),
-            'estado' => 0,
-        ]);
-
-        // Broadcast event
-        broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
-
-        $observacion = [
-            'id' => (string) $row->uuid,
-            'contenido' => $row->contenido,
-            'usuario_id' => $row->usuario_id,
-            'usuario_nombre' => $row->usuario_nombre,
-            'usuario_rol' => $row->usuario_rol,
-            'ip_address' => $row->ip_address,
-            'estado' => (int) $row->estado,
-            'created_at' => optional($row->created_at)->toISOString(),
-            'updated_at' => optional($row->updated_at)->toISOString(),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Observación guardada exitosamente',
-            'data' => $observacion,
-        ]);
     }
 
-    public function actualizar(Request $request, PedidoProduccion $pedido, string $observacionId): JsonResponse
+    public function marcarBodegaVistas(int|string $id): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+            $this->service->marcarBodegaVistas($pedidoId);
+
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
-
-        $validated = $request->validate([
-            'contenido' => 'required|string|max:5000',
-        ]);
-
-        $row = PedidoObservacionesDespacho::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->where('uuid', $observacionId)
-            ->first();
-
-        if (!$row) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Observación no encontrada',
-            ], 404);
-        }
-
-        $usuario = auth()->user();
-        $ownerId = $row->usuario_id;
-        if ((string) $ownerId !== (string) ($usuario?->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para editar esta observación',
-            ], 403);
-        }
-
-        $row->contenido = $validated['contenido'];
-        $row->save();
-
-        // Broadcast event
-        broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
-
-        $payload = [
-            'id' => (string) $row->uuid,
-            'contenido' => $row->contenido,
-            'usuario_id' => $row->usuario_id,
-            'usuario_nombre' => $row->usuario_nombre,
-            'usuario_rol' => $row->usuario_rol,
-            'ip_address' => $row->ip_address,
-            'estado' => (int) $row->estado,
-            'created_at' => optional($row->created_at)->toISOString(),
-            'updated_at' => optional($row->updated_at)->toISOString(),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Observación actualizada correctamente',
-            'data' => $payload,
-        ]);
     }
 
-    public function eliminar(Request $request, PedidoProduccion $pedido, string $observacionId): JsonResponse
+    public function marcarLeidas(int|string $id): JsonResponse
     {
-        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
-            return $resp;
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+            $this->service->marcarDespachoLeidas($pedidoId);
+
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
+    }
 
-        $row = PedidoObservacionesDespacho::query()
-            ->where('pedido_produccion_id', $pedido->id)
-            ->where('uuid', $observacionId)
-            ->first();
+    public function guardar(GuardarObservacionDespachoRequest $request, int|string $id): JsonResponse
+    {
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+            $validated = $request->validated();
 
-        if (!$row) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Observación no encontrada',
-            ], 404);
+            $row = $this->service->guardar(
+                $pedidoId,
+                (string) $validated['contenido'],
+                auth()->user(),
+                $request->ip()
+            );
+
+            broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Observacion guardada exitosamente',
+                'data' => $this->service->mapPayload($row),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
+    }
 
-        $usuario = auth()->user();
-        $ownerId = $row->usuario_id;
-        if ((string) $ownerId !== (string) ($usuario?->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para eliminar esta observación',
-            ], 403);
+    public function actualizar(GuardarObservacionDespachoRequest $request, int|string $id, string $observacionId): JsonResponse
+    {
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+            $validated = $request->validated();
+
+            $row = $this->service->actualizar(
+                $pedidoId,
+                $observacionId,
+                (string) $validated['contenido'],
+                auth()->user()
+            );
+
+            broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Observacion actualizada correctamente',
+                'data' => $this->service->mapPayload($row),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
         }
+    }
 
-        $row->delete();
+    public function eliminar(int|string $id, string $observacionId): JsonResponse
+    {
+        try {
+            $pedidoId = $this->service->validarAccesoPedidoPorId(auth()->user(), (int) $id);
+            $row = $this->service->eliminar($pedidoId, $observacionId, auth()->user());
 
-        // Broadcast event
-        broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
+            broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Observación eliminada correctamente',
-        ]);
+            return $this->json([
+                'success' => true,
+                'message' => 'Observacion eliminada correctamente',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleAccessException($e);
+        }
     }
 }

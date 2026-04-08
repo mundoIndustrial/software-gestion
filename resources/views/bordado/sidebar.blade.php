@@ -109,7 +109,7 @@
 
         // Restaurar estado
         const savedState = localStorage.getItem('bordado-sidebar-collapsed');
-        console.log('📂 [SIDEBAR-INIT] Estado guardado en localStorage:', savedState);
+        console.log(' [SIDEBAR-INIT] Estado guardado en localStorage:', savedState);
         
         if (savedState === 'true') {
             sidebar.classList.add('collapsed');

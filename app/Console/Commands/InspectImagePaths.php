@@ -28,7 +28,7 @@ class InspectImagePaths extends Command
         }
 
         foreach ($prendas as $prenda) {
-            $this->info("📌 Prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
+            $this->info(" Prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
             
             // Fotos de prenda
             $fotosPrenda = DB::table('prenda_fotos_pedido')
@@ -36,7 +36,7 @@ class InspectImagePaths extends Command
                 ->get(['id', 'ruta_webp', 'ruta_original', 'ruta_miniatura']);
 
             if ($fotosPrenda->isNotEmpty()) {
-                $this->line('  📸 Fotos de Prenda:');
+                $this->line('   Fotos de Prenda:');
                 foreach ($fotosPrenda as $foto) {
                     $this->line("    - ID: {$foto->id}");
                     $this->line("      ruta_webp: {$foto->ruta_webp}");
@@ -53,7 +53,7 @@ class InspectImagePaths extends Command
                 ->get(['id', 'ruta_webp', 'ruta_original', 'ruta_miniatura']);
 
             if ($fotosTela->isNotEmpty()) {
-                $this->line('  🧵 Fotos de Tela:');
+                $this->line('   Fotos de Tela:');
                 foreach ($fotosTela as $foto) {
                     $this->line("    - ID: {$foto->id}");
                     $this->line("      ruta_webp: {$foto->ruta_webp}");

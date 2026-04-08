@@ -4,6 +4,110 @@
 @section('page-title', 'Despacho')
 
 @section('content')
+<script>
+// Definir funciones ANTES de renderizar el HTML para que estén disponibles en los onclick
+window.entregarTodo = function(pedidoId, numeroPedido) {
+    Swal.fire({
+        title: '¿Marcar como entregado?',
+        html: `¿Estás seguro de marcar <strong>TODOS los ítems del pedido #${numeroPedido}</strong> como entregados?<br><br><span style="color: #ef4444; font-weight: bold;">Esta acción marcará el pedido como completado.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, marcar como entregado',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            _procesarEntregarTodo(pedidoId, numeroPedido);
+        }
+    });
+};
+
+// Función para procesar la entrega (separada para reutilizar)
+window._procesarEntregarTodo = function(pedidoId, numeroPedido) {
+    // Mostrar indicador de carga
+    const btn = event?.target;
+    const originalText = btn?.innerHTML;
+    if (btn) {
+        btn.innerHTML = ' Procesando...';
+        btn.disabled = true;
+    }
+    
+    fetch(`/despacho/${pedidoId}/entregar-todo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar notificación de éxito
+            window.mostrarNotificacionExito(numeroPedido);
+            
+            // Eliminar la fila de la tabla con animación
+            const row = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-20px)';
+                
+                row.addEventListener('transitionend', function() {
+                    row.remove();
+                    
+                    // Verificar si no quedan pedidos
+                    const tbody = document.querySelector('tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center py-8 text-slate-500">
+                                    No hay pedidos pendientes
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }, { once: true });
+            }
+        } else {
+            // Restaurar botón y mostrar error
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            alert('Error: ' + (data.message || 'No se pudo procesar la solicitud'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        alert('Error de conexión. Por favor intenta nuevamente.');
+    });
+};
+
+window.mostrarNotificacionExito = function(numeroPedido) {
+    // Crear notificación flotante
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+    notificacion.innerHTML = ` Pedido #${numeroPedido} marcado como entregado`;
+    
+    document.body.appendChild(notificacion);
+    
+    // Animar entrada
+    setTimeout(() => notificacion.style.transform = 'translateX(0)', 10);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(full)';
+        setTimeout(() => notificacion.remove(), 300);
+    }, 3000);
+};
+</script>
+
 <div class="despacho-index min-h-screen bg-white">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
@@ -81,9 +185,6 @@
                                 </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
                                     Creación
-                                </th>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700">
-                                    Entrega
                                 </th>
                             </tr>
                         </thead>
@@ -168,10 +269,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
-                                        {{ $pedido->fecha_de_creacion_de_orden?->format('d/m/Y h:i A') ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center text-slate-600 text-xs">
-                                        {{ $pedido->fecha_entrega_prendas ?? '—' }}
+                                        {{ $pedido->created_at?->format('d/m/Y h:i A') ?? '—' }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -195,7 +293,7 @@
 @include('components.modals.novedades-advanced-modal')
 
 <script>
-console.log('🚀 SCRIPT DESPACHO CARGADO - Iniciando configuración...');
+console.log(' SCRIPT DESPACHO CARGADO - Iniciando configuración...');
 window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
 
@@ -267,96 +365,7 @@ function abrirModalNovedadesDespachoIndex(pedidoId, numeroPedido) {
     });
 })();
 
-function entregarTodo(pedidoId, numeroPedido) {
-    if (!confirm(`¿Estás seguro de marcar TODOS los ítems del pedido #${numeroPedido} como entregados? Esta acción marcará el pedido como completado.`)) {
-        return;
-    }
-    
-    // Mostrar indicador de carga
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Procesando...';
-    btn.disabled = true;
-    
-    fetch(`/despacho/${pedidoId}/entregar-todo`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Mostrar notificación de éxito
-            mostrarNotificacionExito(numeroPedido);
-            
-            // Eliminar la fila de la tabla con animación
-            const row = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
-            if (row) {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'translateX(-20px)';
-                
-                row.addEventListener('transitionend', function() {
-                    row.remove();
-                    
-                    // Verificar si no quedan pedidos
-                    const tbody = document.querySelector('tbody');
-                    if (tbody && tbody.children.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="8" class="text-center py-8 text-slate-500">
-                                    No hay pedidos pendientes
-                                </td>
-                            </tr>
-                        `;
-                    }
-                }, { once: true });
-            }
-        } else {
-            // Restaurar botón y mostrar error
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            alert('Error: ' + (data.message || 'No se pudo procesar la solicitud'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert('Error de conexión. Por favor intenta nuevamente.');
-    });
-}
-
-function mostrarNotificacionExito(numeroPedido) {
-    // Crear notificación flotante
-    const notificacion = document.createElement('div');
-    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
-    notificacion.innerHTML = `
-        <div class="flex items-center gap-2">
-            <span>✅</span>
-            <span>Pedido #${numeroPedido} marcado como entregado completamente</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Mostrar notificación
-    setTimeout(() => {
-        notificacion.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Ocultar después de 3 segundos
-    setTimeout(() => {
-        notificacion.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            document.body.removeChild(notificacion);
-        }, 300);
-    }, 3000);
-}
-
-console.log('🔍 Variables globales configuradas:');
+console.log(' Variables globales configuradas:');
 console.log('  - Usuario ID:', window.__despachoObsUsuarioActualId);
 console.log('  - Es Admin:', window.__despachoObsUsuarioEsAdmin);
 
@@ -366,39 +375,37 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log('🔌 Iniciando conexión WebSocket para despacho...');
-    console.log('🔍 Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
+    console.log(' Iniciando conexión WebSocket para despacho...');
     
+    if (!window.Echo || !window.EchoInstance) {
+        console.error('❌ Echo no está inicializado. Reintentando...');
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+        }
+        return;
+    }
+
     try {
-        // Usar WebSocket de Reverb con clave desde meta tags
-        socket = new window.Echo({
-            broadcaster: 'reverb',
-            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
-            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
-            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
-            enabledTransports: ['ws', 'wss'],
-        });
+        // Usar la instancia de Echo ya inicializada en bootstrap.js
+        socket = window.Echo || window.EchoInstance;
 
         // Escuchar eventos de pedidos en el canal público de despacho
-        console.log('🔧 Creando canal despacho.pedidos...');
-        const despachoChannel = socket.channel('despacho.pedidos');
+        console.log(' Creando canal pedidos.general...');
+        const despachoChannel = socket.channel('pedidos.general');
         
         if (!despachoChannel) {
-            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            console.error(' No se pudo crear el canal pedidos.general');
             return;
         }
         
-        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            console.log(' Pedido actualizado en tiempo real (despacho):', event);
             
             // Log adicional para debugging
-            console.log('🔍 Debug evento recibido:', {
+            console.log(' Debug evento recibido:', {
                 'pedido_id': event.pedido_id,
                 'numero_pedido': event.numero_pedido,
                 'nuevo_estado': event.nuevo_estado,
@@ -409,11 +416,11 @@ function connectWebSocket() {
             });
             
             // Mostrar notificación de que se recibió un evento
-            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
             // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
             if (event.nuevo_estado === 'Entregado') {
-                    console.log('🔄 Eliminando pedido entregado de la lista:', event.numero_pedido);
+                    console.log(' Eliminando pedido entregado de la lista:', event.numero_pedido);
                     
                     // Buscar el pedido en la tabla y eliminarlo con animación
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
@@ -446,38 +453,38 @@ function connectWebSocket() {
                 }
                 // Si el pedido cambió a "Pendiente" y no está en la lista, agregarlo o recargar
                 else if (event.nuevo_estado === 'Pendiente') {
-                    console.log('🔄 Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
+                    console.log(' Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
                     
                     // Verificar si el pedido NO está en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (!pedidoRow) {
-                        console.log('📋 Pedido no encontrado en lista, recargando para mostrarlo...');
-                        console.log('🔄 Recargando página por cambio en bodega...');
+                        console.log(' Pedido no encontrado en lista, recargando para mostrarlo...');
+                        console.log(' Recargando página por cambio en bodega...');
                         // Recargar la página para mostrar el nuevo pedido pendiente
                         window.location.reload();
                     } else {
-                        console.log('✅ Pedido ya está en la lista');
+                        console.log(' Pedido ya está en la lista');
                     }
                 }
                 // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
                 else if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
-                    console.log('🔄 Hay cambios en bodega, verificando si hay que recargar...');
-                    console.log('📊 Info de bodega:', event.changedFields);
+                    console.log(' Hay cambios en bodega, verificando si hay que recargar...');
+                    console.log(' Info de bodega:', event.changedFields);
                     
                     // Si hay items pendientes y el pedido no está en la lista, recargar
                     if (event.changedFields.bodega_pendientes_count > 0) {
                         const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                         if (!pedidoRow) {
-                            console.log('🔄 Hay items pendientes pero el pedido no está en lista, recargando...');
+                            console.log(' Hay items pendientes pero el pedido no está en lista, recargando...');
                             window.location.reload();
                         } else {
-                            console.log('✅ Pedido con items pendientes ya está en lista');
+                            console.log(' Pedido con items pendientes ya está en lista');
                         }
                     }
                 }
                 // Si el pedido volvió a "Pendiente" desde "Entregado" y no está en la lista, recargar la página
                 else if (event.nuevo_estado === 'Pendiente' && event.anterior_estado === 'Entregado') {
-                    console.log('🔄 Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
+                    console.log(' Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
                     
                     // Verificar si el pedido NO está en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
@@ -488,21 +495,21 @@ function connectWebSocket() {
                 }
             })
             .error((error) => {
-                console.error('❌ Error en WebSocket (despacho):', error);
+                console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log('✅ WebSocket conectado para lista de despacho');
-        console.log('🔍 Verificando canal público de despacho...');
+        console.log(' WebSocket conectado para lista de despacho');
+        console.log(' Verificando canal público de despacho...');
         
         // Verificar si podemos suscribirnos al canal público
-        const channel = socket.channel('despacho.pedidos');
+        const channel = socket.channel('pedidos.general');
         if (channel) {
-            console.log('✅ Canal público despacho.pedidos creado correctamente');
+            console.log(' Canal público pedidos.general creado correctamente');
         } else {
-            console.error('❌ Error al crear canal público despacho.pedidos');
+            console.error(' Error al crear canal público pedidos.general');
         }
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -539,23 +546,24 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
 
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
-    console.log('🔍 URL actual:', window.location.href);
-    console.log('🔍 Pathname:', window.location.pathname);
+    console.log(' DOM cargado - Iniciando WebSocket de despacho...');
+    console.log(' URL actual:', window.location.href);
+    console.log(' Pathname:', window.location.pathname);
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log('✅ Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la página de despacho pendientes');
     } else {
-        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+        console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+        console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
         connectWebSocket();
     });
 });
 </script>
 <script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection
+

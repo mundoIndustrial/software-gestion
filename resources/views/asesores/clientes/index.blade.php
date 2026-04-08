@@ -7,7 +7,7 @@
 <div class="container-fluid">
     <!-- HEADER -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="margin: 0; font-size: 2rem; color: #333;">👥 Clientes</h1>
+        <h1 style="margin: 0; font-size: 2rem; color: #333;"> Clientes</h1>
         <button onclick="abrirModalCliente()" class="btn btn-primary" style="background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer;">
             <i class="fas fa-plus"></i> Nuevo Cliente
         </button>
@@ -38,7 +38,7 @@
                                      Editar
                                 </button>
                                 <button onclick="eliminarCliente({{ $cliente->id }})" class="btn" style="background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
-                                    🗑️ Eliminar
+                                     Eliminar
                                 </button>
                             </td>
                         </tr>
@@ -54,7 +54,7 @@
     @else
         <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 40px; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 1.1rem;">
-                📭 No hay clientes registrados aún
+                 No hay clientes registrados aún
             </p>
             <button onclick="abrirModalCliente()" style="display: inline-block; margin-top: 15px; background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer;">
                 Crear Primer Cliente

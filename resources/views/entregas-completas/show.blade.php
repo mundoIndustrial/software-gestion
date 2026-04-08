@@ -67,7 +67,7 @@
                         </tr>
                         <tr>
                             <td><strong>Fecha Creación:</strong></td>
-                            <td>{{ \Carbon\Carbon::parse($entrega->fecha_de_creacion_de_orden)->format('d/m/Y H:i') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($entrega->created_at)->format('d/m/Y H:i') }}</td>
                         </tr>
                         <tr>
                             <td><strong>Fecha Estimada Entrega:</strong></td>

@@ -30,7 +30,7 @@ async function openOrderTracking(orderId) {
             numero_pedido: pedidoData.numero || pedidoData.numero_pedido || orderId,
             cliente: pedidoData.cliente || '-',
             estado: pedidoData.estado || '-',
-            fecha_inicio: pedidoData.fecha_creacion || pedidoData.fecha_de_creacion_de_orden || new Date().toISOString(),
+            fecha_inicio: pedidoData.fecha_creacion || pedidoData.created_at || new Date().toISOString(),
             fecha_estimada_de_entrega: pedidoData.fecha_estimada_de_entrega || null,
             procesos: Array.isArray(procesosData) ? procesosData : (procesosData.procesos || [])
         };
@@ -262,7 +262,7 @@ async function displayOrderTracking(order) {
     TrackingUI.fillOrderHeader({
         numero_pedido: order.numero_pedido || order.pedido,
         cliente: order.cliente || '-',
-        fecha_creacion: order.fecha_creacion || order.fecha_de_creacion_de_orden || order.created_at,
+        fecha_creacion: order.fecha_creacion || order.created_at || order.created_at,
         fecha_estimada_de_entrega: order.fecha_estimada_de_entrega
     });
     

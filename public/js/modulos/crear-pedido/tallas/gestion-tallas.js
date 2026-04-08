@@ -39,11 +39,11 @@ window.sincronizarTallasConModalProceso = function() {
         // Solo sincronizar si el modal del proceso está visible
         const modalProceso = document.getElementById('modal-proceso-generico');
         if (!modalProceso || modalProceso.style.display === 'none') {
-            console.log('[sincronizarTallasConModalProceso] ℹ️ Modal de proceso no visible, sincronización saltada');
+            console.log('[sincronizarTallasConModalProceso]  Modal de proceso no visible, sincronización saltada');
             return;
         }
         
-        console.log('[sincronizarTallasConModalProceso] 🔄 Iniciando sincronización...');
+        console.log('[sincronizarTallasConModalProceso]  Iniciando sincronización...');
         
         // DETECTAR MODO: ¿Hay datos existentes en tallasCantidadesProceso?
         const hayDatosExistentes = (
@@ -53,7 +53,7 @@ window.sincronizarTallasConModalProceso = function() {
         );
         const esEdicion = hayDatosExistentes;
         
-        console.log(`[sincronizarTallasConModalProceso] 🔍 Modo detectado: ${esEdicion ? 'EDICIÓN' : 'CREACIÓN'}`);
+        console.log(`[sincronizarTallasConModalProceso]  Modo detectado: ${esEdicion ? 'EDICIÓN' : 'CREACIÓN'}`);
         
         // 1. SINCRONIZAR window.tallasCantidadesProceso desde window.tallasRelacionales
         // En CREACIÓN: reemplazar todo
@@ -156,13 +156,13 @@ window.sincronizarTallasConModalProceso = function() {
         // 3. ACTUALIZAR EL RESUMEN EN EL MODAL DEL PROCESO
         if (typeof window.actualizarResumenTallasProceso === 'function') {
             window.actualizarResumenTallasProceso();
-            console.log('[sincronizarTallasConModalProceso] ✅ Resumen de tallas del proceso actualizado');
+            console.log('[sincronizarTallasConModalProceso]  Resumen de tallas del proceso actualizado');
         } else {
-            console.warn('[sincronizarTallasConModalProceso] ⚠️ Función actualizarResumenTallasProceso no disponible');
+            console.warn('[sincronizarTallasConModalProceso]  Función actualizarResumenTallasProceso no disponible');
         }
         
     } catch (error) {
-        console.error('[sincronizarTallasConModalProceso] ❌ Error durante sincronización:', error);
+        console.error('[sincronizarTallasConModalProceso]  Error durante sincronización:', error);
     }
 };
 window.tipoTallaSeleccionado = null;
@@ -193,7 +193,7 @@ window.cargarCatálogoTallas = async function() {
         // Obtener CSRF token del meta tag o del DOM
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         
-        const response = await fetch('/api/tallas-disponibles', {
+        const response = await fetch('/api/asesores/tallas-disponibles', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -252,7 +252,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
         console.log(`[gestion-tallas]  Talla guardada: ${genero} - ${talla}: ${cantInt}`);
     } else {
         delete window.tallasRelacionales[genero][talla];
-        console.log(`[gestion-tallas] 🗑️ Talla eliminada: ${genero} - ${talla}`);
+        console.log(`[gestion-tallas]  Talla eliminada: ${genero} - ${talla}`);
     }
     
     // Log del estado actual de todas las tallas
@@ -640,7 +640,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
     
-    // 🔴 NUEVO: Si es "GENERICO" (UNISEX), no crear tarjeta visual
+    //  NUEVO: Si es "GENERICO" (UNISEX), no crear tarjeta visual
     // La tarjeta de unisex se muestra en su propio contenedor via crearTarjetaUnisex()
     if (genero === 'GENERICO') {
         console.log('[crearTarjetaGenero]  GENERICO detectado - No creando tarjeta visual (se muestra via crearTarjetaUnisex)');
@@ -732,11 +732,11 @@ window.crearTarjetaGenero = function(genero, tallas) {
             // DETECTAR si es SOBREMEDIDA o tallas normales
             if (tallasDelGenero && typeof tallasDelGenero === 'object' && tallasDelGenero.SOBREMEDIDA) {
                 //  ES SOBREMEDIDA - Abrir modal especial de sobremedida
-                console.log(`[crearTarjetaGenero] 📐 Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
+                console.log(`[crearTarjetaGenero]  Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
                 abrirModalSobremedida();
             } else {
                 //  SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)
-                console.log(`[crearTarjetaGenero] 📏 Tallas normales en ${genero}, abriendo selector`);
+                console.log(`[crearTarjetaGenero]  Tallas normales en ${genero}, abriendo selector`);
                 abrirModalSeleccionarTallas(genero);
             }
         };
@@ -784,7 +784,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
         // Actualizar total
         actualizarTotalPrendas();
         
-        // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
+        //  SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
         window.sincronizarTallasConModalProceso();
     };
     btnGroupAcciones.appendChild(btnEliminar);
@@ -815,12 +815,12 @@ window.crearTarjetaGenero = function(genero, tallas) {
             console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
-            // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
+            //  SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
             window.sincronizarTallasConModalProceso();
         };
         input.onkeyup = () => {
             actualizarTotalPrendas();
-            // 🔄 SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
+            //  SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
             window.sincronizarTallasConModalProceso();
         };
         
@@ -1248,4 +1248,3 @@ window.obtenerTallasYCantidades = function() {
     
     return resultado;
 };
-

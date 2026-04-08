@@ -13,7 +13,7 @@
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="cliente">Cliente:</label>
-                    <input type="text" id="cliente" name="cliente" placeholder="Buscar por cliente..." 
+                    <input type="text" id="cliente" name="cliente" placeholder="Buscar por cliente..."
                            value="{{ request('cliente') }}" class="filter-input">
                 </div>
                 <div class="filter-actions">

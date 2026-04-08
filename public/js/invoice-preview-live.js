@@ -14,7 +14,8 @@
 class InvoicePreviewOrchestrator {
     constructor() {
         this.modulosCargados = false;
-        this.fallbackWarningMostrado = false;
+        this.resuelto = false;
+        this.reintentos = 0;
         this.init();
     }
 
@@ -23,10 +24,13 @@ class InvoicePreviewOrchestrator {
         this.verificarModulos();
         
         // Hacer función principal disponible globalmente
-        window.abrirPreviewFacturaEnVivo = this.abrirPreviewFacturaEnVivo.bind(this);
+        globalThis.abrirPreviewFacturaEnVivo = this.abrirPreviewFacturaEnVivo.bind(this);
     }
 
     verificarModulos() {
+        // Si ya se resolvió, no seguir
+        if (this.resuelto) return;
+
         const modulosRequeridos = [
             'imageGalleryManager',
             'formDataCaptureService', 
@@ -35,37 +39,24 @@ class InvoicePreviewOrchestrator {
             'invoiceExportService'
         ];
 
-        const modulosFaltantes = modulosRequeridos.filter(modulo => !window[modulo]);
+        const modulosFaltantes = modulosRequeridos.filter(modulo => !globalThis[modulo]);
 
-        if (modulosFaltantes.length > 0) {
-            // Limitar reintentos para evitar bucle infinito
-            if (!this.reintentos) this.reintentos = 0;
-            this.reintentos++;
-            
-            if (this.reintentos < 20) {
-                // Reintentar con un intervalo más largo
-                setTimeout(() => this.verificarModulos(), 300);
-            } else {
-                console.error('[InvoicePreview] No se pudieron cargar los módulos después de varios intentos');
-                console.error('[InvoicePreview] Intentando inicialización manual...');
-                
-                // Intentar inicialización manual como último recurso
-                this.inicializarModulosManualmente();
-                
-                // Si la inicialización manual también falla, activar fallbacks
-                setTimeout(() => {
-                    if (!this.modulosCargados) {
-                        this.crearFallbacks();
-                    }
-                }, 1000);
-            }
-        } else {
-            // Solo mostrar el éxito una vez para evitar spam
-            if (!this.modulosCargados) {
-                // Módulos cargados correctamente
-            }
+        if (modulosFaltantes.length === 0) {
             this.modulosCargados = true;
-            this.reintentos = 0; // Resetear contador
+            this.resuelto = true;
+            return;
+        }
+
+        this.reintentos++;
+
+        if (this.reintentos < 30) {
+            // Aún hay tiempo, reintentar en 500ms
+            setTimeout(() => this.verificarModulos(), 500);
+        } else {
+            // 15 segundos sin éxito - parar sin sobreescribir funciones globales
+            this.resuelto = true;
+            console.warn('[InvoicePreview] Módulos de preview en vivo no disponibles:', modulosFaltantes.join(', '));
+            console.warn('[InvoicePreview] La función abrirPreviewFacturaEnVivo no estará disponible en esta página.');
         }
     }
 
@@ -80,7 +71,7 @@ class InvoicePreviewOrchestrator {
         
         try {
             // Capturar datos del formulario usando el servicio especializado
-            const datosFormulario = window.formDataCaptureService.capturarDatosFormulario();
+            const datosFormulario = globalThis.formDataCaptureService.capturarDatosFormulario();
             
             if (!datosFormulario) {
                 alert('Por favor completa los datos básicos del pedido');
@@ -88,7 +79,7 @@ class InvoicePreviewOrchestrator {
             }
             
             // Crear modal con la vista previa usando el gestor de modales
-            window.modalManager.crearModalPreviewFactura(datosFormulario);
+            globalThis.modalManager.crearModalPreviewFactura(datosFormulario);
             
         } catch (error) {
             console.error('[InvoicePreview] Error al abrir vista previa:', error);
@@ -96,53 +87,7 @@ class InvoicePreviewOrchestrator {
         }
     }
 
-    /**
-     * Método de compatibilidad para versiones antiguas
-     */
-    inicializarCompatibilidad() {
-        // Mantener compatibilidad con variables globales antiguas
-        if (!window._galeríasPreview) window._galeríasPreview = {};
-        if (!window._idGaleriaPreview) window._idGaleriaPreview = 0;
-        
-        // No crear fallbacks aquí - esperar a que el proceso de carga complete
-        // Los fallbacks se crearán solo si realmente falla la carga de módulos
-    }
 
-    crearFallbacks() {
-        // Solo mostrar warning si ya pasó suficiente tiempo y los módulos no cargaron
-        if (!this.fallbackWarningMostrado) {
-            console.warn('[InvoicePreview] Activando modo compatibilidad - módulos no disponibles');
-            this.fallbackWarningMostrado = true;
-        }
-        
-        // Fallbacks básicos si los módulos no están disponibles
-        window._extraerURLImagen = function(img) {
-            if (!img) return '';
-            if (typeof img === 'string') return img;
-            return img.url || img.ruta || img.src || '';
-        };
-
-        window._registrarGalería = function(imagenes, titulo) {
-            return null;
-        };
-
-        window._abrirGaleriaImagenesDesdeID = function(id) {
-            console.warn('Galería no disponible - módulo ImageGalleryManager no cargado');
-        };
-
-        window.capturarDatosFormulario = function() {
-            console.warn('Captura de datos no disponible - módulo FormDataCaptureService no cargado');
-            return null;
-        };
-
-        window.generarHTMLFactura = function(datos) {
-            return '<div style="color: #dc2626; padding: 1rem;">Error: Módulos no cargados</div>';
-        };
-
-        window.crearModalPreviewFactura = function(datos) {
-            alert('Error: Módulos de vista previa no cargados. Por favor recarga la página.');
-        };
-    }
 
     /**
      * Obtiene estado de los módulos
@@ -150,11 +95,11 @@ class InvoicePreviewOrchestrator {
     getEstadoModulos() {
         return {
             modulosCargados: this.modulosCargados,
-            imageGalleryManager: !!window.imageGalleryManager,
-            formDataCaptureService: !!window.formDataCaptureService,
-            invoiceRenderer: !!window.invoiceRenderer,
-            modalManager: !!window.modalManager,
-            invoiceExportService: !!window.invoiceExportService
+            imageGalleryManager: !!globalThis.imageGalleryManager,
+            formDataCaptureService: !!globalThis.formDataCaptureService,
+            invoiceRenderer: !!globalThis.invoiceRenderer,
+            modalManager: !!globalThis.modalManager,
+            invoiceExportService: !!globalThis.invoiceExportService
         };
     }
 
@@ -168,81 +113,28 @@ class InvoicePreviewOrchestrator {
         setTimeout(() => this.verificarModulos(), 500);
     }
 
-    /**
-     * Inicialización manual de módulos (fallback)
-     */
-    inicializarModulosManualmente() {
-        console.log('[InvoicePreview] Inicializando módulos manualmente...');
-        
-        try {
-            // Intentar inicializar cada módulo manualmente
-            if (!window.imageGalleryManager && typeof ImageGalleryManager !== 'undefined') {
-                window.imageGalleryManager = new ImageGalleryManager();
-                console.log('[InvoicePreview]  ImageGalleryManager inicializado manualmente');
+}
+
+// Inicializar el orquestador (una sola vez)
+if (!globalThis.invoicePreviewOrchestrator) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!globalThis.invoicePreviewOrchestrator) {
+                globalThis.invoicePreviewOrchestrator = new InvoicePreviewOrchestrator();
             }
-            
-            if (!window.formDataCaptureService && typeof FormDataCaptureService !== 'undefined') {
-                window.formDataCaptureService = new FormDataCaptureService();
-                console.log('[InvoicePreview]  FormDataCaptureService inicializado manualmente');
-            }
-            
-            if (!window.invoiceRenderer && typeof InvoiceRenderer !== 'undefined') {
-                window.invoiceRenderer = new InvoiceRenderer();
-                console.log('[InvoicePreview]  InvoiceRenderer inicializado manualmente');
-            }
-            
-            if (!window.modalManager && typeof ModalManager !== 'undefined') {
-                window.modalManager = new ModalManager();
-                console.log('[InvoicePreview]  ModalManager inicializado manualmente');
-            }
-            
-            if (!window.invoiceExportService && typeof InvoiceExportService !== 'undefined') {
-                window.invoiceExportService = new InvoiceExportService();
-                console.log('[InvoicePreview]  InvoiceExportService inicializado manualmente');
-            }
-            
-            // Verificar después de inicialización manual
-            setTimeout(() => this.verificarModulos(), 100);
-            
-        } catch (error) {
-            console.error('[InvoicePreview] Error en inicialización manual:', error);
-        }
+        });
+    } else {
+        globalThis.invoicePreviewOrchestrator = new InvoicePreviewOrchestrator();
     }
-}
-
-// Inicializar el orquestador
-document.addEventListener('DOMContentLoaded', () => {
-    window.invoicePreviewOrchestrator = new InvoicePreviewOrchestrator();
-});
-
-// También permitir inicialización manual
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.invoicePreviewOrchestrator = new InvoicePreviewOrchestrator();
-    });
-} else {
-    window.invoicePreviewOrchestrator = new InvoicePreviewOrchestrator();
-}
-
-// Inicializar compatibilidad inmediatamente
-if (typeof window !== 'undefined') {
-    const orchestrator = new InvoicePreviewOrchestrator();
-    orchestrator.inicializarCompatibilidad();
-    
-    // Hacer disponible globalmente para debugging
-    window.invoicePreviewOrchestrator = orchestrator;
-    window.inicializarModulosInvoicePreview = () => orchestrator.inicializarModulosManualmente();
-    window.recargarModulosInvoicePreview = () => orchestrator.recargarModulos();
-    window.estadoModulosInvoicePreview = () => orchestrator.getEstadoModulos();
 }
 
 /**
  * Función de compatibilidad para mantener la API original
  * Esta función ahora delega al orquestador
  */
-window.abrirPreviewFacturaEnVivo = function() {
-    if (window.invoicePreviewOrchestrator) {
-        return window.invoicePreviewOrchestrator.abrirPreviewFacturaEnVivo();
+globalThis.abrirPreviewFacturaEnVivo = function() {
+    if (globalThis.invoicePreviewOrchestrator) {
+        return globalThis.invoicePreviewOrchestrator.abrirPreviewFacturaEnVivo();
     } else {
         console.error('[InvoicePreview] Orquestador no disponible');
         alert('Error: Sistema de vista previa no inicializado. Por favor recarga la página.');

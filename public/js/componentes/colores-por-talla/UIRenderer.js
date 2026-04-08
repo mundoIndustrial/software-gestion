@@ -760,7 +760,7 @@ window.UIRenderer = (function() {
                             window.StateManager.setAsignaciones(asignaciones);
                         }
                         self.actualizarResumenAsignaciones();
-                        console.log('[UIRenderer] ✅ Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
+                        console.log('[UIRenderer]  Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
                     });
 
                     tdAccion.querySelector('.btn-cancelar-edicion').addEventListener('click', function(ev) {
@@ -863,7 +863,7 @@ window.UIRenderer = (function() {
          * Cargar y mostrar colores disponibles para asignación
          */
         cargarColoresDispAsignacion() {
-            console.log('[UIRenderer] 🔵 Cargando colores disponibles...');
+            console.log('[UIRenderer]  Cargando colores disponibles...');
             
             try {
                 const contenedor = document.getElementById('lista-colores-checkboxes');

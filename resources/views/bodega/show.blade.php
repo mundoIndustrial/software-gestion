@@ -250,7 +250,7 @@
                                                         <!-- DESCRIPCIÓN (PRENDA) - once per color group -->
                                                         @if($isFirstRowOfColor)
                                                         <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $totalRowsColor }}" style="width: 22%;">
-                                                            <div class="font-bold text-black mb-1">
+                                                            <div class="font-bold text-black mb-2 flex items-center gap-2">
                                                                 {{ $nombre }}
                                                                 @if($colorLabel)
                                                                     <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
@@ -259,6 +259,17 @@
                                                                     <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                                 @endif
                                                             </div>
+                                                            @if(($baseItem['tipo'] ?? null) === 'EPP' || ($baseItem['area'] ?? null) === 'EPP')
+                                                                @if($baseItem['tiene_historial'] ?? false)
+                                                                <button type="button" 
+                                                                        onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
+                                                                        title="Ver historial completo de cambios"
+                                                                        class="w-full px-2 py-1 mb-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition toggle-homologacion-btn relative">
+                                                                    🔽 Ver cambios
+                                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($baseItem['historial_homologaciones']) - 1 }}</span>
+                                                                </button>
+                                                                @endif
+                                                            @endif
                                                             @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
                                                                 <div class="text-slate-600 text-xs mb-2 italic">
                                                                     {{ $desc['descripcion'] }}
@@ -354,7 +365,9 @@
 
                                                     <!-- TALLA -->
                                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                        @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                        @if(($baseItem['tipo'] ?? null) === 'epp' || ($baseItem['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $baseItem['talla'] ?? ''))
+                                                            —
+                                                        @elseif(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                                             —
                                                         @else
                                                             {{ $t['talla'] ?? '—' }}
@@ -509,13 +522,23 @@
                                                                 @endif
                                                             </select>
 
+                                                            @if(($baseItem['tiene_historial'] ?? false))
+                                                            <button type="button" 
+                                                                    onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
+                                                                    title="Ver historial completo de cambios"
+                                                                    class="w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded transition toggle-homologacion-btn relative">
+                                                                🔽 Ver cambios
+                                                                <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($baseItem['historial_homologaciones']) - 1 }}</span>
+                                                            </button>
+                                                            @endif
+
                                                             @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
                                                             <button
                                                                 type="button"
                                                                 onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}', '{{ $baseItem['prenda_id'] ?? '' }}')"
                                                                 class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                             >
-                                                                💾 Guardar
+                                                                 Guardar
                                                             </button>
                                                             @elseif(auth()->user()->hasRole('supervisor_gerencia'))
                                                             <button
@@ -524,7 +547,7 @@
                                                                 class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
                                                                 title="Solo usuarios autorizados pueden guardar cambios"
                                                             >
-                                                                💾 Guardar
+                                                                 Guardar
                                                             </button>
                                                             @else
                                                             <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -582,8 +605,19 @@
                                                             'tipoBroche_value' => $primeraVariante['tipoBroche_value'] ?? 'NULL'
                                                         ]);
                                                     @endphp
-                                                    <div class="font-bold text-black mb-1">
+                                                    <div class="font-bold text-black mb-1 flex items-center gap-2">
                                                         {{ $nombre }}
+                                                        @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
+                                                            @if($item['tiene_historial'] ?? false)
+                                                                <button type="button" 
+                                                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                                        onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                                    <span class="text-sm">🔽</span>
+                                                                    <span>Ver cambios</span>
+                                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                                </button>
+                                                            @endif
+                                                        @endif
                                                         @if(($item['de_bodega'] ?? ($desc['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false))) )
                                                             <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                         @endif
@@ -710,7 +744,7 @@
                                                 
                                                 <!-- TALLA -->
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $item['talla'] ?? ''))
                                                         —
                                                     @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                                         —
@@ -867,7 +901,7 @@
                                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '', '{{ $item['prenda_id'] ?? '' }}')"
                                                             class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                         >
-                                                            💾 Guardar
+                                                             Guardar
                                                         </button>
                                                         @elseif(auth()->user()->hasRole('supervisor_gerencia'))
                                                         <button
@@ -876,7 +910,7 @@
                                                             class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
                                                             title="Solo usuarios autorizados pueden guardar cambios"
                                                         >
-                                                            💾 Guardar
+                                                             Guardar
                                                         </button>
                                                         @else
                                                         <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -929,7 +963,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -945,7 +979,7 @@
         <div class="px-6 py-6">
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
@@ -999,18 +1033,18 @@ window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false'
  * Logs de diagnóstico para el diseño de la tabla
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    console.log(`📏 [DIAGNÓSTICO] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    console.log(` [DIAGNÓSTICO] Viewport: ${viewportWidth}x${viewportHeight}px`);
     
     // Verificar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -1039,7 +1073,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (table) {
         const tableRect = table.getBoundingClientRect();
         const tableStyle = window.getComputedStyle(table);
-        console.log(`📊 [DIAGNÓSTICO] Tabla:`, {
+        console.log(` [DIAGNÓSTICO] Tabla:`, {
             width: tableRect.width,
             height: tableRect.height,
             computedWidth: tableStyle.width,
@@ -1055,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.querySelector('tbody');
     if (tbody) {
         const tbodyRect = tbody.getBoundingClientRect();
-        console.log(`📋 [DIAGNÓSTICO] Tbody:`, {
+        console.log(` [DIAGNÓSTICO] Tbody:`, {
             width: tbodyRect.width,
             height: tbodyRect.height,
             scrollWidth: tbody.scrollWidth,
@@ -1068,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,
@@ -1079,31 +1113,250 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
     
-    // Monitorear cambios de tamaño
+    // Monitorear cambios de tamano
     window.addEventListener('resize', () => {
-        console.log(`📏 [DIAGNÓSTICO] Resize - Nuevo viewport: ${window.innerWidth}x${window.innerHeight}px`);
+        console.log(` [DIAGNÓSTICO] Resize - Nuevo viewport: ${window.innerWidth}x${window.innerHeight}px`);
     });
 });
 
 /**
- * Auto-resize textareas para Pendientes y Observaciones
+ * Abre modal mostrando detalles de la homologación
  */
-document.addEventListener('DOMContentLoaded', function() {
-    const textareas = document.querySelectorAll('.pendientes-input, .observaciones-input');
-    
-    function autoResizeTextarea(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-    }
-    
-    textareas.forEach(textarea => {
-        autoResizeTextarea(textarea);
-        
-        textarea.addEventListener('input', function() {
-            autoResizeTextarea(this);
+function abrirModalHomologacionBodega(eppId) {
+    fetch(`/gestion-bodega/epp/${eppId}/homologacion`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al obtener datos de homologación');
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success || !data.data) {
+                Swal.fire('Error', 'No se encontraron datos de homologación', 'error');
+                return;
+            }
+
+            const { epp_anterior, epp_nuevo, cambios } = data.data;
+
+            let htmlContenido = `
+                <div class="space-y-6">
+                    <!-- EPP Anterior -->
+                    <div class="border border-red-300 bg-red-50 rounded-lg p-4">
+                        <h3 class="font-bold text-red-900 mb-3 text-lg"> EPP Anterior (Eliminado)</h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">ID:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.id}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Nombre:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.nombre_epp || epp_anterior.nombre || 'N/A'}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Cantidad:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.cantidad}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Eliminado:</span>
+                                <p class="font-bold text-red-900">${new Date(epp_anterior.deleted_at).toLocaleString('es-ES')}</p>
+                            </div>
+                            ${epp_anterior.observaciones ? `
+                            <div class="bg-white p-2 rounded border border-red-200 col-span-2">
+                                <span class="text-slate-600">Observaciones:</span>
+                                <p class="font-semibold text-red-900 text-xs mt-1">${epp_anterior.observaciones}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- EPP Nuevo -->
+                    <div class="border border-green-300 bg-green-50 rounded-lg p-4">
+                        <h3 class="font-bold text-green-900 mb-3 text-lg"> EPP Nuevo (Actual)</h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">ID:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.id}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Nombre:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.nombre_epp || epp_nuevo.nombre || 'N/A'}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Cantidad:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.cantidad}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Creado:</span>
+                                <p class="font-bold text-green-900">${new Date(epp_nuevo.created_at).toLocaleString('es-ES')}</p>
+                            </div>
+                            ${epp_nuevo.observaciones ? `
+                            <div class="bg-white p-2 rounded border border-green-200 col-span-2">
+                                <span class="text-slate-600">Observaciones:</span>
+                                <p class="font-semibold text-green-900 text-xs mt-1">${epp_nuevo.observaciones}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Cambios Realizados -->
+                    <div class="border border-blue-300 bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-bold text-blue-900 mb-3 text-lg"> Cambios Realizados</h3>
+                        <div class="space-y-2 text-sm">
+                            ${cambios.cantidad_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">change_circle</span>
+                                <div>
+                                    <span class="text-slate-600">Cantidad: </span>
+                                    <span class="font-bold text-blue-900">${cambios.cantidad_anterior} → ${cambios.cantidad_nueva}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${cambios.epp_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">swap_horiz</span>
+                                <div>
+                                    <span class="text-slate-600">EPP Modificado</span>
+                                    <p class="text-xs text-slate-500">Se cambió el EPP seleccionado</p>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${cambios.observaciones_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">edit_note</span>
+                                <div>
+                                    <span class="text-slate-600">Observaciones Modificadas</span>
+                                    <p class="text-xs text-slate-500">Se actualizaron las observaciones</p>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${!cambios.cantidad_cambio && !cambios.epp_cambio && !cambios.observaciones_cambio ? `
+                            <div class="text-center py-2 text-slate-500">
+                                <span class="material-symbols-rounded text-gray-400 text-lg">check_circle</span>
+                                <p class="text-xs mt-1">No se detectaron cambios significativos</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            Swal.fire({
+                title: ' Detalles de Homologación',
+                html: htmlContenido,
+                icon: 'info',
+                width: '700px',
+                allowOutsideClick: false,
+                allowEscapeKey: true,
+                confirmButtonText: '✓ Entendido',
+                confirmButtonColor: '#3b82f6',
+                didOpen: () => {
+                    const popup = Swal.getPopup();
+                    if (popup) {
+                        popup.style.maxHeight = '90vh';
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'Error al cargar datos de homologación: ' + error.message, 'error');
         });
+}
+
+/**
+ * Alternar visibilidad de la fila de homologación
+ * @param {HTMLElement} btn - El botón de alternancia
+ * @param {Object} datosHomologacion - Datos del EPP homologado
+ */
+/**
+ * Mostrar historial completo de homologaciones en un modal amigable
+ * @param {HTMLElement} btn - El botón de alternancia
+ * @param {Array} historialHomologaciones - Array con todos los cambios en la cadena
+ */
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
+        return;
+    }
+
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar EPP original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-2 py-3 text-center">
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-2 py-3 text-center">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal grande
+    Swal.fire({
+        title: ' Historial de Homologaciones',
+        html: tablaHtml,
+        icon: false,
+        width: '850px',
+        padding: '1rem',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        customClass: { title: 'text-lg font-bold text-gray-800' },
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+                popup.style.maxHeight = '85vh';
+                const htmlContainer = popup.querySelector('.swal2-html-container');
+                if (htmlContainer) {
+                    htmlContainer.style.padding = '1rem 0';
+                }
+            }
+        }
     });
-});
+}
 </script>
 
 <!-- Modal de Confirmación (Eliminar Nota) -->

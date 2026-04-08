@@ -24,7 +24,7 @@ class ObtenerPerfilAsesorDTO
     }
 
     /**
-     * Crear instancia estÃ¡tica
+     * Crear instancia estática
      */
     public static function crear(): self
     {

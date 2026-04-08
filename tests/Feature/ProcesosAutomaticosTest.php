@@ -6,7 +6,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Services\RegistroOrdenCreationService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 /**
@@ -14,7 +14,7 @@ use Tests\TestCase;
  */
 class ProcesosAutomaticosTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test 1: Verificar que el proceso "Creación de Orden" se crea automáticamente
@@ -24,7 +24,7 @@ class ProcesosAutomaticosTest extends TestCase
         $service = app(RegistroOrdenCreationService::class);
 
         $data = [
-            'pedido' => 1001,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Test',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Contado',
@@ -59,7 +59,7 @@ class ProcesosAutomaticosTest extends TestCase
         $service = app(RegistroOrdenCreationService::class);
 
         $data = [
-            'pedido' => 1002,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Test 2',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Crédito',
@@ -99,7 +99,7 @@ class ProcesosAutomaticosTest extends TestCase
         // Crear 3 pedidos
         for ($i = 1; $i <= 3; $i++) {
             $data = [
-                'pedido' => 2000 + $i,
+                'pedido' => $service->getNextPedidoNumber(),
                 'cliente' => "Cliente {$i}",
                 'fecha_creacion' => '2024-01-15',
                 'forma_pago' => 'Contado',
@@ -133,7 +133,7 @@ class ProcesosAutomaticosTest extends TestCase
         $service = app(RegistroOrdenCreationService::class);
 
         $data = [
-            'pedido' => 3001,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Estado Test',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Contado',
@@ -164,7 +164,7 @@ class ProcesosAutomaticosTest extends TestCase
 
         // Crear pedido inicial
         $data = [
-            'pedido' => 4001,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Adicional',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Contado',
@@ -210,7 +210,7 @@ class ProcesosAutomaticosTest extends TestCase
 
         // Datos inválidos que causarán error
         $data = [
-            'pedido' => 5001,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Error Test',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Contado',
@@ -232,7 +232,7 @@ class ProcesosAutomaticosTest extends TestCase
             $this->assertNotNull($pedido);
         } catch (\Exception $e) {
             // Si falló, verificar que no dejó datos incompletos
-            $pedidosIncompletos = PedidoProduccion::where('numero_pedido', 5001)->count();
+            $pedidosIncompletos = PedidoProduccion::where('numero_pedido', $data['pedido'])->count();
             $this->assertEquals(0, $pedidosIncompletos);
         }
     }
@@ -245,7 +245,7 @@ class ProcesosAutomaticosTest extends TestCase
         $service = app(RegistroOrdenCreationService::class);
 
         $data = [
-            'pedido' => 6001,
+            'pedido' => $service->getNextPedidoNumber(),
             'cliente' => 'Cliente Referencia',
             'fecha_creacion' => '2024-01-15',
             'forma_pago' => 'Contado',

@@ -1106,7 +1106,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     
     const action = submitButton.value;
     
-    console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
+    console.log(' Botón presionado:', submitButton?.textContent?.trim());
 
 
 
@@ -1117,11 +1117,11 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     if (window.location.search.includes('editar=')) {
         // Editando borrador
         const cotizacionId = new URLSearchParams(window.location.search).get('editar');
-        url = `/cotizaciones-bordado/${cotizacionId}/borrador`;
+        url = `/asesores/cotizaciones-bordado/${cotizacionId}/borrador`;
         method = 'PUT';
     } else {
         // Creando nueva cotización
-        url = `/cotizaciones-bordado`;
+        url = `/asesores/cotizaciones-bordado`;
         method = 'POST';
     }
 
@@ -1295,7 +1295,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                         });
                     }
                     
-                    // 🆕 PROCESAR ARCHIVOS DE TELAS DE ESTA PRENDA
+                    //  PROCESAR ARCHIVOS DE TELAS DE ESTA PRENDA
                     if (prenda.telas && Array.isArray(prenda.telas)) {
                         prenda.telas.forEach((tela, telaIdx) => {
                             if (tela.archivo && tela.archivo instanceof File) {
@@ -1351,8 +1351,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                             logosCompartidosMetadata[clave] = {
                                 nombreCompartido: clave,
                                 tecnicasCompartidas: [],
-                                archivoNombre: archivo.name,
-                                tamaño: archivo.size
+                                archivoNombre: archivo.name
                             };
                         }
                     }
@@ -1410,7 +1409,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         
         // Agregar IDs de imágenes a borrar DIRECTAMENTE al FormData
         formData.append('imagenes_a_borrar', JSON.stringify(imagenesABorrar));
-        console.log('📤 FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
+        console.log(' FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
 
         // Enviar IDs de imágenes existentes para preservarlas
         const imagenesExistentesIds = imagenesSeleccionadas
@@ -1445,7 +1444,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         }
     } else {
         // Si NO hay imágenes nuevas, enviar como JSON
-        console.log('📤 Enviando como JSON (sin imágenes nuevas)');
+        console.log(' Enviando como JSON (sin imágenes nuevas)');
         
         // Agregar datos adicionales al objeto data
         data.imagenes_a_borrar = imagenesABorrar;

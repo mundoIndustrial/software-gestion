@@ -32,7 +32,7 @@ class RegistrosPorOrdenBodega extends Model
 
     public function getTotalDeDiasAttribute(): int
     {
-        $fechaCreacion = Carbon::parse($this->fecha_de_creacion_de_orden);
+        $fechaCreacion = Carbon::parse($this->created_at);
         $festivos = $this->festivos ?: Festivo::pluck('fecha')->toArray();
 
         if ($this->estado === 'Entregado') {

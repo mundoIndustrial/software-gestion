@@ -1,4 +1,4 @@
-## 🚀 Sistema de Auto-Carga de Módulos - PrendaEditor
+##  Sistema de Auto-Carga de Módulos - PrendaEditor
 
 ### El Problema
 El archivo `prenda-editor.js` depende de varios módulos especializados:
@@ -25,7 +25,7 @@ ReferenceError: PrendaModalManager is not defined
 </script>
 ```
 
-#### ⚡ NIVEL 2: Auto-Carga (AUTOMÁTICO)
+####  NIVEL 2: Auto-Carga (AUTOMÁTICO)
 Si el loader NO está incluido, `PrendaEditor` lo detecta automáticamente y:
 
 ```javascript
@@ -137,7 +137,7 @@ PrendaEditor._modulosEnCarga
 // Busca líneas como:
 // "[PrendaEditor]  Módulos ya disponibles"
 // "[PrendaEditor]  Usando PrendaEditorLoader"
-// "[PrendaEditor] 📦 Cargando N módulos..."
+// "[PrendaEditor]  Cargando N módulos..."
 ```
 
 ### Recomendaciones de Integración
@@ -156,7 +156,7 @@ PrendaEditor._modulosEnCarga
 - Mejor debugging
 - Sin sorpresas
 
-#### ⚡ OPCIÓN 2: Confiar en el Fallback
+####  OPCIÓN 2: Confiar en el Fallback
 Si no incluyes el loader, simplemente:
 
 ```html

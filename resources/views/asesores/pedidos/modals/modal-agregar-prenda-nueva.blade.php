@@ -56,7 +56,7 @@
                     <!-- COLUMNA DERECHA: Fotos de la Prenda -->
                     <div class="foto-panel" id="panel-fotos-prenda" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1rem; background: #f0f7ff;">
                         <label for="nueva-prenda-foto-input" class="foto-panel-label" style="color: #0066cc;">
-                            <span class="material-symbols-rounded">photo_camera</span>📸 FOTOS DE PRENDA
+                            <span class="material-symbols-rounded">photo_camera</span> FOTOS DE PRENDA
                         </label>
                         
                         <!-- Imagen principal preview -->
@@ -109,10 +109,10 @@
                     <!-- Datalists ocultos (necesarios para autocompletar en otros JS) -->
                     <div style="display: none;">
                         <datalist id="opciones-telas">
-                            <!-- Opciones cargadas desde /asesores/api/telas -->
+                            <!-- Opciones cargadas desde /api/asesores/telas -->
                         </datalist>
                         <datalist id="opciones-colores">
-                            <!-- Opciones cargadas desde /asesores/api/colores -->
+                            <!-- Opciones cargadas desde /api/asesores/colores -->
                         </datalist>
                     </div>
                     
@@ -275,7 +275,7 @@
                     </div>
                 </div>
 
-                <!-- Variaciones -->
+                {{-- <!-- Variaciones -->
                 <div class="form-section" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1.25rem; margin-top: 1.5rem; background: rgba(0, 102, 204, 0.02);">
                     <label class="form-label-primary" style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                         <span class="material-symbols-rounded" style="color: #0066cc; font-size: 1.5rem;">tune</span>
@@ -312,7 +312,7 @@
                                                 <label for="manga-input" class="sr-only">Tipo de Manga</label>
                                                 <input type="text" id="manga-input" placeholder="Ej: Larga, Corta, 3/4..." disabled list="opciones-manga" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
                                                 <datalist id="opciones-manga">
-                                                    <!-- Las opciones se cargarán dinámicamente desde /asesores/api/tipos-manga -->
+                                                    <!-- Las opciones se cargarán dinámicamente desde /api/asesores/tipos-manga -->
                                                 </datalist>
                                             </div>
                                             <div>
@@ -368,6 +368,7 @@
                         </table>
                     </div>
                 </div>
+                --}}
                 
                 <!-- Procesos -->
                 <div class="form-section">
@@ -839,10 +840,10 @@ document.addEventListener('paste', function(event) {
 @php $v = config('app.asset_version'); @endphp
 
 <!-- NUEVA ARQUITECTURA: Máquina de Estados y Event Bus -->
-<script defer src="{{ js_asset('js/arquitectura/WizardStateMachine.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardEventBus.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardLifecycleManager.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardBootstrap.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/prenda-color-wizard/WizardStateMachine.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardEventBus.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardLifecycleManager.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardBootstrap.js') }}?v={{ $v }}"></script>
 
 <!-- MÓDULOS EXISTENTES -->
 <script defer src="{{ js_asset('js/componentes/colores-por-talla/StateManager.js') }}?v={{ $v }}"></script>
@@ -1103,7 +1104,7 @@ document.addEventListener('paste', function(event) {
             const refInput = document.getElementById('simple-referencia-input');
             // const obsInput = document.getElementById('simple-observaciones-input');
 
-            // 🔴 FIX: Buscar 'nombre_tela' primero (desde cotización), luego 'tela' (desde creación nueva)
+            //  FIX: Buscar 'nombre_tela' primero (desde cotización), luego 'tela' (desde creación nueva)
             if (telaInput) telaInput.value = (t.nombre_tela || t.tela || '').toUpperCase();
             if (colorInput) colorInput.value = (t.color || t.color_nombre || '').toUpperCase();
             if (refInput) refInput.value = (t.referencia || '').toUpperCase();
@@ -1125,6 +1126,13 @@ document.addEventListener('paste', function(event) {
                     if (pvImg) pvImg.src = img;
                     if (dz) dz.style.display = 'none';
                     if (pv) pv.style.display = 'block';
+                } else if (img && typeof img === 'object') {
+                    const src = img.ruta || img.ruta_original || img.ruta_webp || img.url || img.previewUrl || '';
+                    if (src) {
+                        if (pvImg) pvImg.src = src;
+                        if (dz) dz.style.display = 'none';
+                        if (pv) pv.style.display = 'block';
+                    }
                 }
             }
         }
@@ -1286,14 +1294,19 @@ document.addEventListener('paste', function(event) {
 
         if (isEdit) {
             // --- Modo Edición: actualizar registro existente ---
-            // 🔴 FIX: Guardar en AMBAS propiedades (tela y nombre_tela) para compatibilidad
+            //  FIX: Guardar en AMBAS propiedades (tela y nombre_tela) para compatibilidad
             window.telasCreacion[editIdx].tela = tela;
             window.telasCreacion[editIdx].nombre_tela = tela;
             window.telasCreacion[editIdx].color = color;
             window.telasCreacion[editIdx].color_nombre = color;
             window.telasCreacion[editIdx].referencia = referencia;
             window.telasCreacion[editIdx].observaciones = observaciones;
-            window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple ? [window._imagenTelaSimple] : [];
+            const imagenesExistentes = Array.isArray(window.telasCreacion[editIdx].imagenes)
+                ? window.telasCreacion[editIdx].imagenes
+                : [];
+            window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple
+                ? [window._imagenTelaSimple]
+                : imagenesExistentes;
             console.log('[agregarTelaSimple] Tela editada idx:', editIdx, window.telasCreacion[editIdx]);
         } else {
             // --- Modo Agregar: crear nuevo registro ---
@@ -1400,13 +1413,13 @@ document.addEventListener('paste', function(event) {
                 if (btnLimpiarAsignaciones) {
                     btnLimpiarAsignaciones.addEventListener('click', function(e) {
                         e.preventDefault();
-                        // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                        //  NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
                         const asesorWrapper = document.querySelector('.asesores-wrapper');
                         if (asesorWrapper) {
                             asesorWrapper.removeAttribute('aria-hidden');
                         }
                         
-                        // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                        //  NUEVO: Remover cualquier overlay existente antes de abrir el modal
                         const overlayExistente = document.getElementById('overlay-confirmar-limpiar');
                         if (overlayExistente) {
                             overlayExistente.remove();
@@ -1440,14 +1453,14 @@ document.addEventListener('paste', function(event) {
                             const ov = document.getElementById('overlay-confirmar-limpiar');
                             if (ov) ov.remove();
                             
-                            // 🔴 NUEVO: Remover aria-hidden del modal cuando se cierre
+                            //  NUEVO: Remover aria-hidden del modal cuando se cierre
                             if (modalLimpiar) {
                                 modalLimpiar.removeAttribute('aria-hidden');
                             }
                         });
                     }
                     
-                    // 🔴 NUEVO: Listener para remover aria-hidden cuando se cierre el modal
+                    //  NUEVO: Listener para remover aria-hidden cuando se cierre el modal
                     jQuery('#modal-confirmar-limpiar').on('hidden.bs.modal', function() {
                         const asesorWrapper = document.querySelector('.asesores-wrapper');
                         if (asesorWrapper) {
@@ -1478,13 +1491,13 @@ document.addEventListener('paste', function(event) {
                                 detalleEl.textContent = `Color: ${colorNombre} — Clave: ${clave}`;
                             }
                             
-                            // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                            //  NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
                             const asesorWrapper = document.querySelector('.asesores-wrapper');
                             if (asesorWrapper) {
                                 asesorWrapper.removeAttribute('aria-hidden');
                             }
                             
-                            // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                            //  NUEVO: Remover cualquier overlay existente antes de abrir el modal
                             const overlayExistente = document.getElementById('overlay-confirmar-eliminar');
                             if (overlayExistente) {
                                 overlayExistente.remove();
@@ -1535,10 +1548,10 @@ document.addEventListener('paste', function(event) {
                                         console.warn('[TablaResumen] No se pudo sincronizar eliminación con servidor:', e);
                                     }
                                     
-                                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                                    //  FIX: Si no quedan más asignaciones, limpiar estado completo
                                     const asignacionesRestantes = Object.keys(asignaciones);
                                     if (asignacionesRestantes.length === 0) {
-                                        console.log('[TablaResumen] 🧹 No quedan asignaciones, limpiando estado...');
+                                        console.log('[TablaResumen]  No quedan asignaciones, limpiando estado...');
                                         
                                         // Limpiar tallasRelacionales para evitar que crearTarjetaGenero recree tarjetas
                                         if (window.tallasRelacionales) {
@@ -1582,7 +1595,7 @@ document.addEventListener('paste', function(event) {
                                     }
                                     if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
                                     
-                                    console.log('✅ Asignación eliminada');
+                                    console.log(' Asignación eliminada');
                                 }
                             }
                             
@@ -1605,7 +1618,7 @@ document.addEventListener('paste', function(event) {
             
             if (intentos >= maxIntentos) {
                 clearInterval(verificarJQuery);
-                console.warn('⚠️ jQuery o Bootstrap Modal no disponibles después de 5 segundos');
+                console.warn(' jQuery o Bootstrap Modal no disponibles después de 5 segundos');
             }
         }, 100);
     });
@@ -1651,4 +1664,3 @@ document.addEventListener('paste', function(event) {
         if (ov) ov.style.display = 'none';
     });
 </script>
-

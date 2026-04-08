@@ -53,7 +53,7 @@ export class GalleryManager {
         // Cerrar galería existente si hay una
         const galeriaExistente = document.getElementById('galeria-modal-costura');
         if (galeriaExistente) {
-            console.log('[GalleryManager] 🗑️ Eliminando galería existente');
+            console.log('[GalleryManager]  Eliminando galería existente');
             galeriaExistente.remove();
         }
         
@@ -63,7 +63,7 @@ export class GalleryManager {
             const state = modalManager.getState();
             const { imagenesActuales, prendaPedidoId, prendaData, pedidoId, procesoPrendaDetalleId } = state;
             
-            console.log('[GalleryManager.abrirGaleria] 🖼️ ABRIENDO GALERÍA');
+            console.log('[GalleryManager.abrirGaleria]  ABRIENDO GALERÍA');
             console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
 
             

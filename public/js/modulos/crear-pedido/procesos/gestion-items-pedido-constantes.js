@@ -201,12 +201,12 @@ const TARJETA_PROCESO_HEADER = `
             <strong style="color: #111827; font-size: 1rem;">Proceso Personalizado</strong>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <button type="button" onclick="window.editarProcesoEdicion('{{tipo}}')" 
+            <button type="button" onclick="globalThis.editarProcesoEdicion('{{tipo}}')" 
                 style="background: #f3f4f6; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
                 title="Editar proceso">
                 <i class="fas fa-edit" style="font-size: 1rem; color: #6b7280;"></i>
             </button>
-            <button type="button" onclick="window.eliminarTarjetaProceso('{{tipo}}')" 
+            <button type="button" onclick="globalThis.eliminarTarjetaProceso('{{tipo}}')" 
                 style="background: #fee2e2; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
                 title="Eliminar proceso">
                 <i class="fas fa-trash-alt" style="font-size: 1rem; color: #dc2626;"></i>

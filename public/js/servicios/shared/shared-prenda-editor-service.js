@@ -1,8 +1,8 @@
 /**
- * 🔒 SharedPrendaEditorService
+ *  SharedPrendaEditorService
  * 
  * IMPORTANTE: Este servicio es AGNÓSTICO de cotizaciones
- * - NO toca window.cotizacionActual
+ * - NO toca globalThis.cotizacionActual
  * - NO tiene lógica de tipo_cotizacion_id
  * - NO interfiere con CotizacionEditorService
  * - COMPLETAMENTE AISLADO de módulo de cotizaciones
@@ -35,7 +35,7 @@ class SharedPrendaEditorService {
     }
 
     /**
-     * 🎯 MÉTODO PRINCIPAL - Abrir editor
+     *  MÉTODO PRINCIPAL - Abrir editor
      * 
      * NOTA: Este método IGNORA cotizaciones completamente
      * Si necesitas lógica de cotización, usa CotizacionEditorService en su lugar
@@ -61,7 +61,7 @@ class SharedPrendaEditorService {
         };
 
         // Validar que es un contexto permitido (NO cotización)
-        const contextosPermitidos = ['crear-nuevo', 'pedidos-editable', 'crear-desde-cotizacion', 'otros-pedidos'];
+        const contextosPermitidos = ['crear-nuevo', 'pedidos', 'crear-desde-cotizacion', 'otros-pedidos'];
         if (config.contexto && !contextosPermitidos.includes(config.contexto)) {
             Logger.warn(`Contexto inusual: ${config.contexto}`, 'SharedPrendaEditor');
         }
@@ -236,10 +236,10 @@ class SharedPrendaEditorService {
             nombre: nombreInput?.value || '',
             descripcion: descInput?.value || '',
             origen: origenSelect?.value || 'confeccion',
-            tallas: window.tallasRelacionales || [],
-            telas: window.telasCotizacion || [], // TODO: cambiar a nombre genérico
-            procesos: window.procesosSeleccionados || [],
-            imagenes: window.imagenesCreacion || []
+            tallas: globalThis.tallasRelacionales || [],
+            telas: globalThis.telasCotizacion || [], 
+            procesos: globalThis.procesosSeleccionados || [],
+            imagenes: globalThis.imagenesCreacion || []
         };
     }
 
@@ -293,5 +293,5 @@ class SharedPrendaEditorService {
 }
 
 // Exportar
-window.SharedPrendaEditorService = SharedPrendaEditorService;
+globalThis.SharedPrendaEditorService = SharedPrendaEditorService;
 Logger.debug('EditorService cargado', 'SharedPrendaEditor');

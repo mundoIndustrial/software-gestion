@@ -11,12 +11,12 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
  * en Use Cases que trabajan con pedidos.
  * 
  * ELIMINA:
- * - 50-60 lÃ­neas de validación duplicada
+ * - 50-60 lineas de validación duplicada
  * - Mensajes de error inconsistentes (throw new Exception vs InvalidArgumentException vs DomainException)
- * - Lógica de bÃºsqueda/validación esparcida
+ * - Lógica de busqueda/validación esparcida
  * - if (!$pedido) throw new... (repetida 20+ veces)
  * 
- * ANTES: Cada Use Case tenÃ­a:
+ * ANTES: Cada Use Case tenia:
  *   $pedido = $this->repo->buscar($id);
  *   if (!$pedido) throw new InvalidArgumentException("Pedido... no encontrado");
  * 
@@ -28,8 +28,8 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
  *       use ManejaPedidosUseCase;
  *       
  *       public function ejecutar(int $pedidoId) {
- *           $pedido = $this->validarPedidoExiste($pedidoId);  // â† Todo validado
- *           $this->validarEstadoPermitido($pedido, 'EN_PRODUCCION');  // â† Valida estado
+ *           $pedido = $this->validarPedidoExiste($pedidoId);  // â† Todo validado
+ *           $this->validarEstadoPermitido($pedido, 'EN_PRODUCCION');  // â† Valida estado
  *       }
  *   }
  */
@@ -38,7 +38,7 @@ trait ManejaPedidosUseCase
     /**
      * Validar que el pedido existe, sino lanza excepción
      * 
-     * @param int|string $pedidoIdentificador ID o nÃºmero del pedido
+     * @param int|string $pedidoIdentificador ID o numero del pedido
      * @param mixed $repository Repository a usar (inyectado como propiedad)
      * @return mixed Pedido validado
      * @throws \DomainException Si pedido no existe
@@ -52,7 +52,7 @@ trait ManejaPedidosUseCase
             throw new \InvalidArgumentException('No hay repository disponible para validar pedido');
         }
 
-        // Intentar obtener por ID o bÃºsqueda personalizada
+        // Intentar obtener por ID o busqueda personalizada
         $pedido = method_exists($repo, 'obtenerPorId')
             ? $repo->obtenerPorId($pedidoIdentificador)
             : (method_exists($repo, 'porId')
@@ -72,11 +72,11 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que el pedido estÃ¡ en un estado permitido
+     * Validar que el pedido está en un estado permitido
      * 
      * @param mixed $pedido Modelo del pedido (puede ser agregado o Eloquent)
      * @param string|array $estadoPermitido Estado(s) permitido(s)
-     * @throws \DomainException Si pedido no estÃ¡ en estado permitido
+     * @throws \DomainException Si pedido no está en estado permitido
      */
     protected function validarEstadoPermitido($pedido, $estadoPermitido): void
     {
@@ -119,10 +119,10 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que el estado es vÃ¡lido
+     * Validar que el estado es valido
      * 
      * @param string $estado Estado a validar
-     * @throws \InvalidArgumentException Si estado no es vÃ¡lido
+     * @throws \InvalidArgumentException Si estado no es valido
      */
     protected function validarEstadoValido(string $estado): void
     {
@@ -189,18 +189,18 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que un valor no estÃ¡ vacÃ­o
+     * Validar que un valor no está vacio
      * 
      * @param mixed $valor Valor a validar
      * @param string $nombreCampo Nombre del campo (para mensaje de error)
-     * @throws \InvalidArgumentException Si valor estÃ¡ vacÃ­o
+     * @throws \InvalidArgumentException Si valor está vacio
      */
     protected function validarNoVacio($valor, string $nombreCampo): void
     {
         if (empty($valor)) {
             throw new \InvalidArgumentException(
                 EstadoPedidoCatalog::obtenerMensajeError('validacion_fallida', [
-                    'razon' => "$nombreCampo no puede estar vacÃ­o"
+                    'razon' => "$nombreCampo no puede estar vacio"
                 ]),
                 400
             );
@@ -208,7 +208,7 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que un valor numÃ©rico es positivo
+     * Validar que un valor numerico es positivo
      * 
      * @param int|float $valor Valor a validar
      * @param string $nombreCampo Nombre del campo
@@ -219,7 +219,7 @@ trait ManejaPedidosUseCase
         if (!is_numeric($valor) || $valor <= 0) {
             throw new \InvalidArgumentException(
                 EstadoPedidoCatalog::obtenerMensajeError('validacion_fallida', [
-                    'razon' => "$nombreCampo debe ser un nÃºmero positivo"
+                    'razon' => "$nombreCampo debe ser un numero positivo"
                 ]),
                 400
             );

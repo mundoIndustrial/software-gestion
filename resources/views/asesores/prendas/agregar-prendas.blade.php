@@ -6,7 +6,7 @@
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                ➕ Agregar Prendas a Cotización
+                 Agregar Prendas a Cotización
             </h1>
             <p class="text-gray-600 dark:text-gray-400">
                 Completa los datos de la prenda con especificaciones, color, tela y variaciones
@@ -34,8 +34,8 @@
                         <div class="prenda-suggestions mt-2 space-y-1">
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda(' CAMISETA', this)"> CAMISETA</div>
-                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('🎽 POLO', this)">🎽 POLO</div>
-                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👖 PANTALÓN', this)">👖 PANTALÓN</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda(' POLO', this)"> POLO</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda(' PANTALÓN', this)"> PANTALÓN</div>
                         </div>
                     </div>
                 </div>
@@ -425,7 +425,7 @@
                         onclick="agregarPrenda()"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
                     >
-                        ➕ Agregar Prenda
+                         Agregar Prenda
                     </button>
                 </div>
             </div>
@@ -449,7 +449,7 @@
                      Guardar Cotización
                 </button>
                 <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors">
-                    📤 Enviar Cotización
+                     Enviar Cotización
                 </button>
             </div>
         </div>
@@ -843,7 +843,7 @@ function actualizarTabla() {
                     ${index + 1}️⃣ ${prenda.nombre}
                 </h3>
                 <button onclick="eliminarPrenda(${prenda.id})" class="text-red-600 hover:text-red-700 font-semibold">
-                    🗑️ Eliminar
+                     Eliminar
                 </button>
             </div>
             

@@ -13,17 +13,15 @@ use App\Models\Cliente;
 use Carbon\Carbon;
 
 /**
- * COMANDO ÚNICO DE MIGRACIÓN COMPLETA
- * 
- * Migra TODA la información de tabla_original + registros_por_orden
+ * COMANDO
+ * Migra TODA la informacion de tabla_original + registros_por_orden
  * a la nueva arquitectura normalizada en 6 pasos:
  * 1. Crear usuarios (asesoras)
  * 2. Crear clientes
  * 3. Migrar pedidos
  * 4. Migrar prendas
  * 5. Migrar procesos
- * 6. Calcular área y fecha_ultimo_proceso
- * 
+ * 6. Calcular Area y fecha_ultimo_proceso
  * Uso:
  * php artisan migrate:tabla-original-completo
  * php artisan migrate:tabla-original-completo --dry-run
@@ -33,7 +31,7 @@ class MigrateTablaOriginalCompleto extends Command
 {
     protected $signature = 'migrate:tabla-original-completo {--dry-run : Simular sin guardar} {--reset : Limpiar datos migrados primero}';
 
-    protected $description = 'MIGRACIÓN UNIFICADA COMPLETA: tabla_original → Nueva Arquitectura Normalizada';
+    protected $description = 'MIGRACION UNIFICADA COMPLETA: tabla_original â†’ Nueva Arquitectura Normalizada';
 
     protected $stats = [
         'usuarios_creados' => 0,
@@ -52,8 +50,8 @@ class MigrateTablaOriginalCompleto extends Command
     protected $procesosMap = [
         'creacion_de_orden' => [
             'proceso' => 'Creación de Orden',
-            'fecha' => 'fecha_de_creacion_de_orden',  // ← La fecha real de inicio
-            'encargado' => 'encargado_orden',          // ← El encargado asignado
+            'fecha' => 'created_at',  // â† La fecha real de inicio
+            'encargado' => 'encargado_orden',          // â† El encargado asignado
             'dias' => 'dias_orden',
         ],
         'insumos_y_telas' => [
@@ -134,14 +132,14 @@ class MigrateTablaOriginalCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 140));
-        $this->info("MIGRACIÓN UNIFICADA COMPLETA: tabla_original + registros_por_orden → Nueva Arquitectura");
+        $this->info("MIGRACION UNIFICADA COMPLETA: tabla_original + registros_por_orden â†’ Nueva Arquitectura");
         $this->info(str_repeat("=", 140) . "\n");
 
         $dryRun = $this->option('dry-run');
         $reset = $this->option('reset');
 
         if ($dryRun) {
-            $this->warn("  MODO DRY-RUN: Los datos NO se guardarán en la base de datos\n");
+            $this->warn("  MODO DRY-RUN: Los datos NO se guardaron en la base de datos\n");
         }
 
         try {
@@ -150,11 +148,11 @@ class MigrateTablaOriginalCompleto extends Command
             $this->limpiarDatos($dryRun);
 
             // PASO 1: Crear Usuarios (Asesoras)
-            $this->info("👥 PASO 1: Migrando Usuarios (Asesoras)...\n");
+            $this->info("ðŸ‘¥ PASO 1: Migrando Usuarios (Asesoras)...\n");
             $this->migrarUsuarios($dryRun);
 
             // PASO 2: Crear Clientes
-            $this->info("🏢 PASO 2: Migrando Clientes...\n");
+            $this->info("ðŸ¢ PASO 2: Migrando Clientes...\n");
             $this->migrarClientes($dryRun);
 
             // PASO 3: Migrar Pedidos
@@ -173,8 +171,8 @@ class MigrateTablaOriginalCompleto extends Command
             $this->mostrarResumen($dryRun);
 
         } catch (\Exception $e) {
-            $this->error("\n Error en la migración: " . $e->getMessage());
-            \Log::error('Migración error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            $this->error("\n Error en la migracion: " . $e->getMessage());
+            \Log::error('Migracion error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return 1;
         }
 
@@ -197,27 +195,15 @@ class MigrateTablaOriginalCompleto extends Command
             try {
                 $countProc = DB::table('procesos_prenda')->count();
                 DB::table('procesos_prenda')->truncate();
-                $this->line("   ✓ Procesos eliminados: $countProc");
+                $this->line("    Procesos eliminados: $countProc");
             } catch (\Exception $e) {
                 $this->line("     Error eliminando procesos: " . $e->getMessage());
             }
-            
-            // 1b. Eliminar historial de procesos
-            try {
-                if (Schema::hasTable('procesos_historial')) {
-                    $countHist = DB::table('procesos_historial')->count();
-                    DB::table('procesos_historial')->truncate();
-                    $this->line("   ✓ Historial de procesos eliminado: $countHist");
-                }
-            } catch (\Exception $e) {
-                $this->line("     Error eliminando historial: " . $e->getMessage());
-            }
-            
             // 2. Eliminar TODAS las prendas
             try {
                 $countPren = DB::table('prendas_pedido')->count();
                 DB::table('prendas_pedido')->truncate();
-                $this->line("   ✓ Prendas eliminadas: $countPren");
+                $this->line("    Prendas eliminadas: $countPren");
             } catch (\Exception $e) {
                 $this->line("     Error eliminando prendas: " . $e->getMessage());
             }
@@ -226,7 +212,7 @@ class MigrateTablaOriginalCompleto extends Command
             try {
                 $countPed = DB::table('pedidos_produccion')->count();
                 DB::table('pedidos_produccion')->truncate();
-                $this->line("   ✓ Pedidos eliminados: $countPed");
+                $this->line("    Pedidos eliminados: $countPed");
             } catch (\Exception $e) {
                 $this->line("     Error eliminando pedidos: " . $e->getMessage());
             }
@@ -234,7 +220,7 @@ class MigrateTablaOriginalCompleto extends Command
             // Reactivar checks de integridad referencial
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
         } else {
-            $this->line("   [DRY-RUN] Se limpiarían TODOS los procesos, prendas y pedidos");
+            $this->line("   [DRY-RUN] Se limpiaron TODOS los procesos, prendas y pedidos");
         }
         $this->newLine();
     }
@@ -274,7 +260,7 @@ class MigrateTablaOriginalCompleto extends Command
                     $this->mapeoAsesoras[$nombreAsesora] = 0; // Placeholder
                 }
                 $this->stats['usuarios_creados']++;
-                $this->line("   ✓ Usuario creado: {$nombreAsesora}");
+                $this->line("    Usuario creado: {$nombreAsesora}");
             }
         }
 
@@ -316,7 +302,7 @@ class MigrateTablaOriginalCompleto extends Command
                     $this->mapeoClientes[$nombreCliente] = 0; // Placeholder
                 }
                 $this->stats['clientes_creados']++;
-                $this->line("   ✓ Cliente creado: {$nombreCliente}");
+                $this->line("    Cliente creado: {$nombreCliente}");
             }
         }
 
@@ -335,7 +321,7 @@ class MigrateTablaOriginalCompleto extends Command
                 'pedido as numero_pedido',
                 'asesora',
                 'cliente',
-                'fecha_de_creacion_de_orden',
+                'created_at',
                 'dia_de_entrega',
                 'fecha_estimada_de_entrega',
                 'estado',
@@ -363,7 +349,7 @@ class MigrateTablaOriginalCompleto extends Command
                         'cliente_id' => $clienteId,
                         'cliente' => $pedidoOrig->cliente,
                         'estado' => $this->normalizarEstado($pedidoOrig->estado),
-                        'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
+                        'created_at' => $this->parsearFecha($pedidoOrig->created_at),
                         'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
                         'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
                         'area' => $pedidoOrig->area ?? 'Creación Orden',
@@ -411,7 +397,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         foreach ($prendas as $prenda) {
             try {
-                // VALIDAR: ¿Tiene nombre_prenda?
+                // VALIDAR: Â¿Tiene nombre_prenda?
                 if (empty(trim($prenda->nombre_prenda ?? ''))) {
                     $prendasSaltadas++;
                     $bar->advance();
@@ -556,7 +542,7 @@ class MigrateTablaOriginalCompleto extends Command
                     }
                 }
 
-                // Actualizar área y fecha_ultimo_proceso del pedido
+                // Actualizar Area y fecha_ultimo_proceso del pedido
                 if (!$dryRun && $ultimaFecha && $ultimoProceso) {
                     $pedido->update([
                         'area' => $ultimoProceso,
@@ -583,7 +569,7 @@ class MigrateTablaOriginalCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 140));
-        $this->info(" RESUMEN DE MIGRACIÓN");
+        $this->info(" RESUMEN DE MIGRACION");
         $this->info(str_repeat("=", 140) . "\n");
 
         $tabla = [
@@ -600,11 +586,11 @@ class MigrateTablaOriginalCompleto extends Command
 
         if ($dryRun) {
             $this->warn("\n  MODO DRY-RUN: Los datos NO fueron guardados en la base de datos");
-            $this->info("✓ Ejecuta sin --dry-run para realizar la migración real\n");
+            $this->info(" Ejecuta sin --dry-run para realizar la MIGRACION real\n");
         } else {
-            $this->info("\n MIGRACIÓN COMPLETADA EXITOSAMENTE");
-            $this->info("✓ Ejecuta: php artisan validate:migracion-completa");
-            $this->info("✓ Para validar la integridad de los datos migrados\n");
+            $this->info("\n MIGRACION COMPLETADA EXITOSAMENTE");
+            $this->info(" Ejecuta: php artisan validate:migracion-completa");
+            $this->info(" Para validar la integridad de los datos migrados\n");
         }
 
         $this->info(str_repeat("=", 140) . "\n");

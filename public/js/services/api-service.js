@@ -11,7 +11,7 @@
 
 class ApiService {
     constructor() {
-        this.baseUrl = '/asesores/pedidos-produccion';
+        this.baseUrl = '/api/asesores/pedidos-produccion';
         this.csrfToken = this.getCsrfToken();
     }
 

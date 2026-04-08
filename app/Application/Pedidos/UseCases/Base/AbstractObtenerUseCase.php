@@ -8,17 +8,17 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 /**
  * AbstractObtenerUseCase
  * 
- * Clase base reutilizable para todos los Use Cases de OBTENCIÃ“N (queries)
+ * Clase base reutilizable para todos los Use Cases de Obtencion (queries)
  * 
  * Patrón: Template Method para estandarizar:
  * - Obtención y validación del pedido
  * - Enriquecimiento condicional de datos
  * - Respuesta estandarizada
  * 
- * Reduce ~70 lÃ­neas de código duplicado en cada Use Case
+ * Reduce ~70 lineas de código duplicado en cada Use Case
  * 
- * Antes: 4 Use Cases Ã— 80 lÃ­neas = 320 lÃ­neas
- * DespuÃ©s: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
+ * Antes: 4 Use Cases  80 lineas = 320 lineas
+ * despues: 1 base + 4 concretas  15 lineas = 80 lineas
  * Reducción: 75% menos código
  */
 abstract class AbstractObtenerUseCase
@@ -34,15 +34,15 @@ abstract class AbstractObtenerUseCase
      * Template Method - Define el flujo de obtención
      * 
      * Cada subclase solo necesita sobrescribir:
-     * - obtenerOpciones() - QuÃ© datos incluir (prendas, epps, etc)
-     * - construirRespuesta() - QuÃ© estructura retornar
+     * - obtenerOpciones() - que datos incluir (prendas, epps, etc)
+     * - construirRespuesta() - que estructura retornar
      */
     protected function obtenerYEnriquecer(int $pedidoId): mixed
     {
-        // 1. PASO COMÃšN: Obtener y validar pedido (retorna agregado)
+        // 1. PASO comun: Obtener y validar pedido (retorna agregado)
         $pedido = $this->obtenerPedidoValidado($pedidoId);
 
-        // 2. PASO COMÃšN: Obtener opciones de enriquecimiento
+        // 2. PASO comun: Obtener opciones de enriquecimiento
         $opciones = $this->obtenerOpciones();
 
         // 3. PASO PERSONALIZABLE: Enriquecer pedido
@@ -53,7 +53,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 1 (COMÃšN): Obtener y validar que el pedido existe
+     * PASO 1 (comun): Obtener y validar que el pedido existe
      */
     private function obtenerPedidoValidado(int $pedidoId)
     {
@@ -67,9 +67,9 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 2 (PERSONALIZABLE): QuÃ© opciones de enriquecimiento usar
+     * PASO 2 (PERSONALIZABLE): que opciones de enriquecimiento usar
      * 
-     * Subclases pueden sobrescribir para incluir/excluir datos especÃ­ficos
+     * Subclases pueden sobrescribir para incluir/excluir datos especificos
      */
     protected function obtenerOpciones(): array
     {
@@ -82,14 +82,18 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 3 (COMÃšN): Enriquecer el pedido con datos opcionales
+     * PASO 3 (comun): Enriquecer el pedido con datos opcionales
      */
     protected function enriquecerPedido($pedido, array $opciones): array
     {
         // Para obtener el estado original de BD, cargar el modelo Eloquent
         $modeloEloquent = null;
         if (method_exists($pedido, 'id') && $pedido->id()) {
-            $modeloEloquent = \App\Models\PedidoProduccion::find($pedido->id());
+            try {
+                $modeloEloquent = \App\Models\PedidoProduccion::find($pedido->id());
+            } catch (\Throwable $e) {
+                $modeloEloquent = null;
+            }
         }
         
         $datos = [
@@ -107,19 +111,35 @@ abstract class AbstractObtenerUseCase
 
         // Enriquecimiento condicional - Solo si se especifica
         if ($opciones['incluirPrendas'] ?? false) {
-            $datos['prendas'] = $this->obtenerPrendas($pedido->id());
+            try {
+                $datos['prendas'] = $this->obtenerPrendas($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['prendas'] = [];
+            }
         }
 
         if ($opciones['incluirEpps'] ?? false) {
-            $datos['epps'] = $this->obtenerEpps($pedido->id());
+            try {
+                $datos['epps'] = $this->obtenerEpps($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['epps'] = [];
+            }
         }
 
         if ($opciones['incluirProcesos'] ?? false) {
-            $datos['procesos'] = $this->obtenerProcesos($pedido->id());
+            try {
+                $datos['procesos'] = $this->obtenerProcesos($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['procesos'] = [];
+            }
         }
 
         if ($opciones['incluirImagenes'] ?? false) {
-            $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
+            try {
+                $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['imagenes'] = [];
+            }
         }
 
         return $datos;
@@ -373,7 +393,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * Obtener imÃ¡genes del pedido
+     * Obtener imagenes del pedido
      */
     protected function obtenerImagenes(int $pedidoId): array
     {
@@ -391,9 +411,16 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerFormaDePago(int $pedidoId): ?string
     {
-        $pedido = \App\Models\PedidoProduccion::find($pedidoId);
-        return $pedido ? ($pedido->forma_de_pago ?? null) : null;
+        try {
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+            return $pedido ? ($pedido->forma_de_pago ?? null) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }
+
+
+
 
 

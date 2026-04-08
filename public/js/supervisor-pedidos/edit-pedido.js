@@ -2,82 +2,16 @@
  * =====================================================
  * MODAL EDITAR PEDIDO - FUNCIONALIDAD
  * =====================================================
+ *
+ * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
  */
 
-/**
- * Mostrar toast notification
- */
-function showToast(message, type = 'success') {
-    // Remover toast anterior si existe
-    const existingToast = document.querySelector('.toast-notification');
-    if (existingToast) {
-        existingToast.remove();
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 16px 24px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 99999;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 14px;
-        font-weight: 500;
-        animation: slideIn 0.3s ease-out;
-        max-width: 400px;
-    `;
-
-    const icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
-    toast.innerHTML = `
-        <span class="material-symbols-rounded" style="font-size: 20px;">${icon}</span>
-        <span>${message}</span>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Agregar animación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    if (!document.querySelector('style[data-toast-styles]')) {
-        style.setAttribute('data-toast-styles', 'true');
-        document.head.appendChild(style);
-    }
-
-    // Auto-remover después de 4 segundos
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+if (!window.supervisorPedidos?.isReady) {
+    throw new Error('[edit-pedido] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
 }
+
+const _editService = window.supervisorPedidos.orderEditService;
+const _editNotify = window.shared.notify;
 
 // Variable para rastrear si se eliminaron imágenes
 let imagenesEliminadas = false;
@@ -104,28 +38,21 @@ function cerrarModalEditar() {
 let coloresDisponibles = [];
 let telasDisponibles = [];
 
-function cargarDatosPedido(ordenId) {
-    fetch(`/ordenes/${ordenId}/editar-pedido`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const orden = data.orden;
-                coloresDisponibles = data.colores || [];
-                telasDisponibles = data.telas || [];
-                
-                document.getElementById('editarCliente').value = orden.cliente || '';
-                document.getElementById('editarFormaPago').value = orden.forma_de_pago || '';
-                document.getElementById('editarDiaEntrega').value = orden.dia_de_entrega || '';
-                document.getElementById('editarNovedades').value = orden.novedades || '';
-                cargarPrendas(orden.prendas);
-            } else {
-                alert('Error al cargar datos del pedido: ' + data.message);
-            }
-        })
-        .catch(error => {
+async function cargarDatosPedido(ordenId) {
+    try {
+        const { orden, colores, telas } = await _editService.loadOrderData(ordenId);
+        coloresDisponibles = colores;
+        telasDisponibles = telas;
 
-            showToast('Error al cargar datos del pedido', 'error');
-        });
+        document.getElementById('editarCliente').value = orden.cliente || '';
+        document.getElementById('editarFormaPago').value = orden.forma_de_pago || '';
+        document.getElementById('editarDiaEntrega').value = orden.dia_de_entrega || '';
+        document.getElementById('editarNovedades').value = orden.novedades || '';
+        cargarPrendas(orden.prendas);
+    } catch (error) {
+        console.error('[cargarDatosPedido] Error:', error);
+        _editNotify.error(error.message || 'Error al cargar datos del pedido');
+    }
 }
 
 function cargarPrendas(prendas) {
@@ -396,122 +323,57 @@ function eliminarImagen(tipo, id, button) {
         return;
     }
 
-    // Debug: Verificar condiciones
-    console.log('[eliminarImagen] 🔍 DIAGNÓSTICO:', {
-        pathname: window.location.pathname,
-        includesPrenda: window.location.pathname.includes('/prenda/'),
-        modalExists: !!document.getElementById('modal-agregar-prenda-nueva'),
-        modalVisible: document.getElementById('modal-agregar-prenda-nueva')?.style.display !== 'none',
-        id: id
-    });
-
     // Si estamos en el modal de edición de prendas, marcar para eliminación en lugar de eliminar inmediatamente
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     const modalVisible = modal && modal.style.display !== 'none';
     
     if (modalVisible) {
-        console.log('[eliminarImagen] 🗑️ Modal de prendas detectado, marcando imagen para eliminación:', id);
-        
-        // Inicializar array si no existe
-        if (!window.imagenesAEliminar) {
-            window.imagenesAEliminar = [];
-        }
-        
-        // Agregar ID al array si no está ya
-        if (!window.imagenesAEliminar.includes(id)) {
-            window.imagenesAEliminar.push(id);
-            console.log('[eliminarImagen] ✅ Imagen marcada para eliminación:', {
-                id: id,
-                totalMarcadas: window.imagenesAEliminar.length,
-                todasLasMarcadas: window.imagenesAEliminar
-            });
-        }
-        
+        _editService.markImageForDeletion(id);
+
         // Ocultar visualmente la imagen del preview
         button.closest('.foto-item').style.opacity = '0.3';
         button.closest('.foto-item').style.border = '2px dashed #e74c3c';
         button.textContent = '✓';
         button.style.background = '#27ae60';
         
-        showToast('Imagen marcada para eliminación. Se eliminará al guardar los cambios.', 'info');
+        _editNotify.info('Imagen marcada para eliminación. Se eliminará al guardar los cambios.');
         return;
     }
 
-    console.log('[eliminarImagen] ⚠️ No se detectó modal de prendas, usando eliminación inmediata');
-
-    // Comportamiento original para otros casos (eliminación inmediata)
-    fetch(`/supervisor-pedidos/imagen/${tipo}/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    // Eliminación inmediata para otros casos
+    _editService.deleteImageNow(tipo, id)
+        .then(() => {
             button.closest('.foto-item').remove();
-            showToast('Imagen eliminada correctamente', 'success');
-            imagenesEliminadas = true; // Marcar que se eliminó una imagen
+            _editNotify.success('Imagen eliminada correctamente');
+            imagenesEliminadas = true;
             
-            // Recargar los datos del pedido en el modal de edición
             const ordenId = document.getElementById('editarOrdenId').value;
             if (ordenId) {
                 cargarDatosPedido(ordenId);
             }
-        } else {
-            showToast('Error al eliminar imagen: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showToast('Error al eliminar la imagen', 'error');
-    });
+        })
+        .catch(error => {
+            _editNotify.error(error.message || 'Error al eliminar la imagen');
+        });
 }
 
-function calcularFechaEstimada() {
+async function calcularFechaEstimada() {
     const diaEntrega = document.getElementById('editarDiaEntrega').value;
     const ordenId = document.getElementById('editarOrdenId').value;
 
-    if (!diaEntrega || diaEntrega <= 0) {
-        alert('Por favor ingresa un número válido de días de entrega');
-        return;
+    try {
+        const result = await _editService.calculateEstimatedDate(ordenId, parseInt(diaEntrega));
+
+        const container = document.getElementById('fechaEstimadaContainer');
+        const mostrada = document.getElementById('fechaEstimadaMostrada');
+        const fieldOculto = document.getElementById('fechaEstimadaOculta');
+
+        container.style.display = 'block';
+        mostrada.textContent = result.fecha_estimada;
+        fieldOculto.value = result.fecha_estimada_iso;
+    } catch (error) {
+        _editNotify.error(error.message || 'Error al calcular la fecha estimada');
     }
-
-    // Llamar al servidor para calcular la fecha estimada
-    fetch(`/api/registros/${ordenId}/calcular-fecha-estimada`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-        },
-        body: JSON.stringify({
-            dia_de_entrega: parseInt(diaEntrega)
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.fecha_estimada) {
-            // Mostrar la fecha estimada calculada
-            const container = document.getElementById('fechaEstimadaContainer');
-            const mostrada = document.getElementById('fechaEstimadaMostrada');
-            const fieldOculto = document.getElementById('fechaEstimadaOculta');
-            
-            container.style.display = 'block';
-            mostrada.textContent = data.fecha_estimada;
-            
-            // Guardar la fecha ISO en el campo oculto para enviar al servidor
-            fieldOculto.value = data.fecha_estimada_iso;
-            
-
-
-        } else {
-            alert('Error al calcular la fecha estimada: ' + (data.message || 'Error desconocido'));
-        }
-    })
-    .catch(error => {
-
-        alert('Error al calcular la fecha estimada');
-    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -529,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const formEditarPedido = document.getElementById('formEditarPedido');
     if (formEditarPedido) {
-        formEditarPedido.addEventListener('submit', function(e) {
+        formEditarPedido.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const ordenId = document.getElementById('editarOrdenId').value;
@@ -539,33 +401,18 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Guardando...';
 
-            fetch(`/supervisor-pedidos/${ordenId}/actualizar`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Pedido actualizado correctamente', 'success');
-                    setTimeout(() => {
-                        cerrarModalEditar();
-                        location.reload();
-                    }, 1000);
-                } else {
-                    showToast('Error al actualizar pedido: ' + data.message, 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-
-                showToast('Error al actualizar el pedido', 'error');
+            try {
+                await _editService.saveOrder(ordenId, formData);
+                _editNotify.success('Pedido actualizado correctamente');
+                setTimeout(() => {
+                    cerrarModalEditar();
+                    location.reload();
+                }, 1000);
+            } catch (error) {
+                _editNotify.error(error.message || 'Error al actualizar el pedido');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
-            });
+            }
         });
     }
 

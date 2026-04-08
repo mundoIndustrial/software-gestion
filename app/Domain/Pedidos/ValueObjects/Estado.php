@@ -5,7 +5,7 @@ namespace App\Domain\Pedidos\ValueObjects;
 /**
  * Value Object: Estado
  * 
- * Estados vÃ¡lidos de un pedido
+ * Estados validos de un pedido
  * Define transiciones permitidas
  */
 class Estado
@@ -54,7 +54,7 @@ class Estado
     {
         if (!in_array($valor, self::$estadosValidos)) {
             throw new \InvalidArgumentException(
-                "Estado '$valor' invÃ¡lido. VÃ¡lidos: " . implode(', ', self::$estadosValidos)
+                "Estado '$valor' invalido. validos: " . implode(', ', self::$estadosValidos)
             );
         }
     }

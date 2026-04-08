@@ -8,7 +8,7 @@ use Tests\TestCase;
 class CotizacionBorradorTest extends TestCase
 {
     /**
-     * Test: Verificar que Cotizacion permite guardar sin nÃºmero
+     * Test: Verificar que Cotizacion permite guardar sin numero
      */
     public function test_cotizacion_modelo_permite_numero_nulo()
     {
@@ -21,7 +21,7 @@ class CotizacionBorradorTest extends TestCase
     }
 
     /**
-     * Test: Verificar que PrendaCot permite guardar sin relación a nÃºmero
+     * Test: Verificar que PrendaCot permite guardar sin relación a numero
      */
     public function test_prenda_cot_modelo_permite_cualquier_cotizacion()
     {
@@ -79,24 +79,23 @@ class CotizacionBorradorTest extends TestCase
     public function test_resumen_sincronizacion_borradores()
     {
         echo "\n";
-        echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
-        echo "â•‘  SINCRONIZACIÃ“N - COTIZACIONES EN BORRADOR                 â•‘\n";
-        echo "â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£\n";
-        echo "â•‘   Cotizacion sin nÃºmero (borrador)                       â•‘\n";
-        echo "â•‘     - numero_cotizacion: NULL                              â•‘\n";
-        echo "â•‘     - es_borrador: true                                    â•‘\n";
-        echo "â•‘     - estado: BORRADOR                                     â•‘\n";
-        echo "â•‘   Prendas con todas las relaciones                       â•‘\n";
-        echo "â•‘     - PrendaCot (nombre, descripción, cantidad)            â•‘\n";
-        echo "â•‘     - PrendaFotoCot (fotos con rutas)                      â•‘\n";
-        echo "â•‘     - PrendaTallaCot (tallas y cantidades)                 â•‘\n";
-        echo "â•‘     - PrendaVarianteCot (variantes completas)              â•‘\n";
-        echo "â•‘   ImÃ¡genes guardadas en ambas ubicaciones                â•‘\n";
-        echo "â•‘     - storage/app/public/cotizaciones/...                  â•‘\n";
-        echo "â•‘     - public/storage/cotizaciones/...                      â•‘\n";
-        echo "â•‘   Especificaciones guardadas como JSON                   â•‘\n";
-        echo "â•‘     - disponibilidad, forma_pago, rÃ©gimen, etc             â•‘\n";
-        echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
+        echo "  SINCRONIZACION - COTIZACIONES EN BORRADOR                 \n";
+        echo "\n";
+        echo "   Cotizacion sin numero (borrador)                       \n";
+        echo "     - numero_cotizacion: NULL                              \n";
+        echo "     - es_borrador: true                                    \n";
+        echo "     - estado: BORRADOR                                     \n";
+        echo "   Prendas con todas las relaciones                       \n";
+        echo "     - PrendaCot (nombre, descripción, cantidad)            \n";
+        echo "     - PrendaFotoCot (fotos con rutas)                      \n";
+        echo "     - PrendaTallaCot (tallas y cantidades)                 \n";
+        echo "     - PrendaVarianteCot (variantes completas)              \n";
+        echo "   imagenes guardadas en ambas ubicaciones                \n";
+        echo "     - storage/app/public/cotizaciones/...                  \n";
+        echo "     - public/storage/cotizaciones/...                      \n";
+        echo "   Especificaciones guardadas como JSON                   \n";
+        echo "     - disponibilidad, forma_pago, regimen, etc             \n";
+        echo "\n";
         echo "\n";
         
         $this->assertTrue(true);

@@ -90,7 +90,7 @@ class VerificarTipoCotizacionGuardado extends Command
         $this->newLine();
 
         // Verificación de integridad
-        $this->line('🔗 VERIFICACIÓN DE INTEGRIDAD:');
+        $this->line(' VERIFICACIÓN DE INTEGRIDAD:');
         $cotizacionesSinTipoValido = DB::table('cotizaciones')
             ->whereNotNull('tipo_cotizacion_id')
             ->leftJoin('tipos_cotizacion', 'cotizaciones.tipo_cotizacion_id', '=', 'tipos_cotizacion.id')

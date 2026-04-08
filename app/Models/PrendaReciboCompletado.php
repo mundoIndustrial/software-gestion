@@ -15,6 +15,7 @@ class PrendaReciboCompletado extends Model
 
     protected $fillable = [
         'id_recibo',
+        'id_parcial',
         'numero_recibo',
         'area',
         'nombre_operario',
@@ -24,6 +25,7 @@ class PrendaReciboCompletado extends Model
     protected $casts = [
         'fecha_completado' => 'datetime',
         'id_recibo' => 'integer',
-        'numero_recibo' => 'integer',
+        'id_parcial' => 'integer',
+        'numero_recibo' => 'decimal:2',
     ];
 }

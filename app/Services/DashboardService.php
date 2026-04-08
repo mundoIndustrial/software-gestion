@@ -160,7 +160,7 @@ class DashboardService extends BaseService
             $query = $model::query();
             $this->filtracion->aplicarFiltroFecha($query, $request);
 
-            // ⚡ OPTIMIZACIÓN: Si no hay filtro específico, limitar a último día o últimos 500 registros
+            //  OPTIMIZACIÓN: Si no hay filtro específico, limitar a último día o últimos 500 registros
             // para evitar procesar 7000+ registros que bloquean el servidor
             if (!$filterType) {
                 $query = $query->latest()->limit(500);

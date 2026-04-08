@@ -41,9 +41,25 @@ final class UbicacionPrenda
         return new self('MANGA DERECHA');
     }
 
+    /**
+     * Alias legacy para compatibilidad.
+     */
+    public static function manga(): self
+    {
+        return new self('MANGA');
+    }
+
     public function nombre(): string
     {
         return $this->nombre;
+    }
+
+    /**
+     * Alias legacy para compatibilidad.
+     */
+    public function obtenerValor(): string
+    {
+        return $this->nombre();
     }
 
     public function equals(self $other): bool

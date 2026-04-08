@@ -10,7 +10,7 @@
  * - Manejadores de menús y formularios
  * - Modales de agregar EPP
  * 
- * Tamaño: ~90KB sin minify, ~25KB minificado
+ * tamano: ~90KB sin minify, ~25KB minificado
  * Tiempo de carga: ~150-300ms en conexión lenta
  */
 
@@ -18,6 +18,21 @@ window.EPPManagerLoader = (function() {
     let isLoading = false;
     let isLoaded = false;
     let loadError = null;
+
+    function getScriptPath(src) {
+        try {
+            return new URL(src, window.location.origin).pathname;
+        } catch (error) {
+            return String(src || '').split('?')[0];
+        }
+    }
+
+    function getGlobalLoadedScriptsRegistry() {
+        if (!(window.__spLoadedScriptPaths instanceof Set)) {
+            window.__spLoadedScriptPaths = new Set();
+        }
+        return window.__spLoadedScriptPaths;
+    }
 
     const scriptsToLoad = [
         // ========== SERVICIOS BASE (Orden crítico) ==========
@@ -27,13 +42,15 @@ window.EPPManagerLoader = (function() {
         
         // ========== SERVICIOS ESPECIALIZADOS ==========
         '/js/modulos/crear-pedido/epp/services/epp-modal-manager.js',
-        '/js/modulos/crear-pedido/epp/services/epp-item-manager.js',
+        '/js/modulos/crear-pedido/epp/services/epp-item-manager-tabla.js',
+        '/js/modulos/crear-pedido/epp/services/epp-item-manager-tarjeta.js',
         '/js/modulos/crear-pedido/epp/services/epp-imagen-manager.js',
         
         // ========== SERVICIOS DE NEGOCIO ==========
         '/js/modulos/crear-pedido/epp/services/epp-creation-service.js',
         '/js/modulos/crear-pedido/epp/services/epp-form-manager.js',
-        '/js/modulos/crear-pedido/epp/services/epp-menu-handlers.js',
+        '/js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js',
+        '/js/modulos/crear-pedido/epp/services/epp-menu-handlers-tabla.js',
         '/js/modulos/crear-pedido/epp/services/epp-service.js',
         
         // ========== TEMPLATES E INTERFACES ==========
@@ -63,11 +80,33 @@ window.EPPManagerLoader = (function() {
                 
                 const src = scriptsToLoad[loaded];
                 const filename = src.split('/').pop();
+                const scriptPath = getScriptPath(src);
+                const registry = getGlobalLoadedScriptsRegistry();
+
+                if (registry.has(scriptPath)) {
+                    loaded++;
+                    loadNext();
+                    return;
+                }
+
+                const existente = Array.from(document.scripts || []).find((scriptTag) => {
+                    const rawSrc = scriptTag.getAttribute('src') || '';
+                    const normalizedSrc = scriptTag.src || '';
+                    return getScriptPath(rawSrc || normalizedSrc) === scriptPath;
+                });
+
+                if (existente) {
+                    registry.add(scriptPath);
+                    loaded++;
+                    loadNext();
+                    return;
+                }
                 
                 const script = document.createElement('script');
                 script.src = src;
                 script.defer = true;
                 script.type = 'text/javascript';
+                registry.add(scriptPath);
                 
                 // Timeout por script
                 const timeout = setTimeout(() => {
@@ -85,6 +124,7 @@ window.EPPManagerLoader = (function() {
                     clearTimeout(timeout);
                     const error = `Failed to load: ${filename}`;
                     console.error(`[EPPManagerLoader]  ${error}`);
+                    registry.delete(scriptPath);
                     reject(new Error(error));
                 };
                 
@@ -142,7 +182,7 @@ window.EPPManagerLoader = (function() {
             
             // Si ya está en progreso, esperar
             if (isLoading) {
-                console.log('[EPPManagerLoader] ⏳ Carga en progreso, esperando...');
+                console.log('[EPPManagerLoader]  Carga en progreso, esperando...');
                 return new Promise((resolve, reject) => {
                     const checkInterval = setInterval(() => {
                         if (isLoaded) {
@@ -180,7 +220,7 @@ window.EPPManagerLoader = (function() {
                 isLoading = false;
                 
                 console.log('[EPPManagerLoader]  TODOS LOS MÓDULOS CARGADOS EXITOSAMENTE');
-                console.log('[EPPManagerLoader]  Tamaño cargado: ~25KB (minificado)');
+                console.log('[EPPManagerLoader]  tamano cargado: ~25KB (minificado)');
                 
                 // Disparar evento personalizado
                 const event = new CustomEvent('eppManagerLoaded', {

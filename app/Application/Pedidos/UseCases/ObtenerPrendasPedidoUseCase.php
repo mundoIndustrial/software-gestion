@@ -4,16 +4,13 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Application\Pedidos\DTOs\ObtenerPrendasPedidoDTO;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Obtener Prendas del Pedido
- * 
  * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
- * 
- * Antes: 33 lÃ­neas (10 lÃ­neas de lógica actual + 23 lÃ­neas duplicadas)
- * DespuÃ©s: 18 lÃ­neas (solo implementa personalización)
+ * Antes: 33 lineas (10 lineas de lógica actual + 23 lineas duplicadas)
+ * despues: 18 lineas (solo implementa personalización)
  * Reducción: 45%
  */
 final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase

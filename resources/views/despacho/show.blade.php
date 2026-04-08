@@ -10,38 +10,39 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
+    if (!window.Echo || !window.EchoInstance) {
+        console.error('❌ Echo no está inicializado.');
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+        }
+        return;
+    }
+
     try {
-        // Usar WebSocket de Reverb con clave desde meta tags
-        socket = new window.Echo({
-            broadcaster: 'reverb',
-            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
-            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
-            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
-            enabledTransports: ['ws', 'wss'],
-        });
+        // Usar la instancia de Echo ya inicializada en bootstrap.js
+        socket = window.Echo || window.EchoInstance;
 
         // Unirse al canal público de despacho
-        socket.channel('despacho.pedidos')
+        socket.channel('pedidos.general')
             .listen('.pedido.actualizado', (event) => {
-                console.log('🔄 Pedido actualizado en tiempo real (despacho):', event);
+                console.log(' Pedido actualizado en tiempo real (despacho):', event);
                 
                 // Si el pedido cambió a "Entregado" y es el pedido actual, mostrar notificación
                 if (event.nuevo_estado === 'Entregado' && event.pedido_id == window.pedidoId) {
-                    console.log('📦 Pedido actual marcado como entregado');
+                    console.log(' Pedido actual marcado como entregado');
                     
                     // Mostrar notificación local
                     mostrarNotificacionPedidoEntregadoLocal(event.numero_pedido);
                 }
             })
             .error((error) => {
-                console.error('❌ Error en WebSocket (despacho):', error);
+                console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log('✅ WebSocket conectado para pedido:', window.pedidoId);
+        console.log(' WebSocket conectado para pedido:', window.pedidoId);
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -79,15 +80,132 @@ function mostrarNotificacionPedidoEntregadoLocal(numeroPedido) {
     }, 3000);
 }
 
+// Función para mostrar historial de homologaciones
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    console.log('🔽 [toggleHistorialEpp] Botón "Ver cambios" clickeado', {
+        historialLength: historialHomologaciones?.length,
+        historial: historialHomologaciones,
+    });
+    
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        console.warn(' [toggleHistorialEpp] Sin historial o historial vacío');
+        // Si Swal no está disponible, usar alert
+        if (window.Swal) {
+            Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
+        } else {
+            alert('Sin cambios registrados para este EPP');
+        }
+        return;
+    }
+
+    console.log(' [toggleHistorialEpp] Mostrando historial con', historialHomologaciones.length, 'versiones');
+
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar elemento original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-2 py-3 text-center">
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || original.nombre_completo || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-2 py-3 text-center">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || cambio.nombre_completo || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal si Swal está disponible, sino usar un alert mejorado
+    if (window.Swal) {
+        console.log(' Usando Swal para mostrar modal');
+        Swal.fire({
+            title: ' Historial de Cambios',
+            html: tablaHtml,
+            icon: false,
+            width: '850px',
+            padding: '1rem',
+            allowOutsideClick: false,
+            allowEscapeKey: true,
+            showConfirmButton: false,
+            showCloseButton: true,
+            customClass: { title: 'text-lg font-bold text-gray-800' },
+            didOpen: () => {
+                const popup = Swal.getPopup();
+                if (popup) {
+                    popup.style.maxHeight = '85vh';
+                    const htmlContainer = popup.querySelector('.swal2-html-container');
+                    if (htmlContainer) {
+                        htmlContainer.style.padding = '1rem 0';
+                    }
+                }
+            }
+        });
+    } else {
+        // Fallback: crear un modal simple
+        console.log('ℹ️ Swal no disponible, usando modal simple');
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 800px; max-height: 80vh; overflow-y: auto; position: relative;">
+                <button style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" onclick="this.parentElement.parentElement.remove();">✕</button>
+                <h2 style="margin-bottom: 1rem; font-size: 1.5rem; font-weight: bold;">Historial de Cambios</h2>
+                ${tablaHtml}
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+}
+
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
+    console.log(' [DOMContentLoaded] Despacho show.blade.php cargado');
+    
     // Pasar datos del pedido a JavaScript
     window.pedidoId = {{ $pedido->id }};
     window.numeroPedido = '{{ $pedido->numero_pedido }}';
+    console.log(' [DOMContentLoaded] Pedido ID:', window.pedidoId, 'Número:', window.numeroPedido);
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket...');
+        console.log(' Echo está listo, conectando WebSocket...');
         connectWebSocket();
     });
 });
@@ -293,13 +411,46 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del color --}}
                                                 @if($isFirstRowOfColor)
                                                     <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $totalRowsColor }}">
-                                                        <div class="font-semibold text-slate-900 mb-1">
+                                                        <div class="font-semibold text-slate-900 mb-1 flex items-center gap-2 flex-wrap">
                                                             {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
                                                             @if($colorLabel)
                                                                 <span class="text-slate-900"> - <strong>{{ $colorLabel }}</strong></span>
                                                             @endif
                                                             @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
                                                                 <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                            @endif
+                                                            {{-- DEBUG LOGS PRENDAS --}}
+                                                            @php
+                                                                \Log::debug('[DESPACHO-BLADE-PRENDA] Renderizando prenda en vista', [
+                                                                    'prenda_id' => $primeraFila->id,
+                                                                    'nombre' => $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion,
+                                                                    'tiene_historial' => $primeraFila->tiene_historial ?? false,
+                                                                    'historial_count' => $primeraFila->historial_homologaciones ? count($primeraFila->historial_homologaciones) : 0,
+                                                                ]);
+                                                            @endphp
+                                                            @if($primeraFila->tiene_historial ?? false)
+                                                                {{-- BOTÓN RENDERIZADO --}}
+                                                                <button type="button" 
+                                                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                                        onclick="toggleHistorialEpp(this, {{ json_encode($primeraFila->historial_homologaciones ?? []) }})">
+                                                                    <span class="text-sm">🔽</span>
+                                                                    <span>Ver cambios</span>
+                                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }}</span>
+                                                                </button>
+                                                                <script type="text/javascript">
+                                                                    console.log(' [BLADE] Botón "Ver cambios" renderizado para PRENDA ID: {{ $primeraFila->id }}', {
+                                                                        historialLength: {{ count($primeraFila->historial_homologaciones ?? []) }},
+                                                                        badge: {{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }},
+                                                                    });
+                                                                </script>
+                                                            @else
+                                                                <script type="text/javascript">
+                                                                    console.log('ℹ️ [BLADE] PRENDA SIN botón (no tiene_historial)', {
+                                                                        prenda_id: {{ $primeraFila->id }},
+                                                                        nombre: '{{ $primeraFila->objetoPrenda["nombre"] ?? $primeraFila->descripcion }}',
+                                                                        tiene_historial: {{ $primeraFila->tiene_historial ?? false ? 'true' : 'false' }},
+                                                                    });
+                                                                </script>
                                                             @endif
                                                         </div>
 
@@ -580,10 +731,47 @@ document.addEventListener('DOMContentLoaded', function() {
                                     data-cantidad="{{ $fila->cantidadTotal }}">
                                     
                                     <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
-                                        <div class="font-semibold text-slate-900"> {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}</div>
+                                        <div class="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                                            {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}
+                                            {{-- DEBUG LOGS --}}
+                                            @php
+                                                \Log::debug('[DESPACHO-BLADE-EPP] Renderizando EPP en vista', [
+                                                    'epp_id' => $fila->id,
+                                                    'nombre' => $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? 'N/A',
+                                                    'tiene_historial' => $fila->tiene_historial ?? false,
+                                                    'historial_count' => $fila->historial_homologaciones ? count($fila->historial_homologaciones) : 0,
+                                                ]);
+                                            @endphp
+                                        </div>
                                         @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== '—' && $fila->objetoEpp['observaciones'] !== '-')
                                             <div class="text-slate-600 mt-1 text-xs">{{ $fila->objetoEpp['observaciones'] }}</div>
                                         @endif
+                                        <div class="mt-2">
+                                            @if($fila->tiene_historial ?? false)
+                                                {{-- BOTÓN RENDERIZADO --}}
+                                                <button type="button" 
+                                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                        onclick="toggleHistorialEpp(this, {{ json_encode($fila->historial_homologaciones ?? []) }})">
+                                                    <span class="text-sm">🔽</span>
+                                                    <span>Ver cambios</span>
+                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }}</span>
+                                                </button>
+                                                <script type="text/javascript">
+                                                    console.log(' [BLADE] Botón "Ver cambios" renderizado para EPP ID: {{ $fila->id }}', {
+                                                        historialLength: {{ count($fila->historial_homologaciones ?? []) }},
+                                                        badge: {{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }},
+                                                    });
+                                                </script>
+                                            @else
+                                                <script type="text/javascript">
+                                                    console.log(' [BLADE] EPP SIN botón (no tiene_historial)', {
+                                                        epp_id: {{ $fila->id }},
+                                                        nombre: '{{ $fila->objetoEpp["nombre"] ?? $fila->objetoEpp["nombre_completo"] ?? "N/A" }}',
+                                                        tiene_historial: {{ $fila->tiene_historial ?? false ? 'true' : 'false' }},
+                                                    });
+                                                </script>
+                                            @endif
+                                        </div>
                                     </td>
                                     
                                     <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs">
@@ -683,7 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Body -->
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
         
@@ -712,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="p-6">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
-                    <span class="text-orange-500 text-xl">⚠️</span>
+                    <span class="text-orange-500 text-xl"></span>
                 </div>
                 <div>
                     <h3 class="text-lg font-medium text-slate-900 mb-1">¿Deshacer marcado como entregado?</h3>
@@ -737,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- JavaScript para despacho -->
 <script>
-console.log('✅ Script de despacho cargado correctamente');
+console.log(' Script de despacho cargado correctamente');
 
 async function cargarPendientesBodeguero() {
     const elBodega = document.getElementById('pendientesBodegueroHistorial');
@@ -844,11 +1032,11 @@ async function marcarEntregado(button) {
     
     // Mostrar la URL para debugging
     const url = '{{ route("despacho.marcar-entregado", $pedido->id) }}';
-    console.log('🔍 URL de marcarEntregado:', url);
+    console.log(' URL de marcarEntregado:', url);
     
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
-    button.textContent = '⏳ Guardando...';
+    button.textContent = ' Guardando...';
     
     try {
         const response = await fetch(url, {
@@ -891,7 +1079,7 @@ async function marcarEntregado(button) {
             // Agregar efecto visual a la fila: color azul pastel
             fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
             
-            console.log('✅ Ítem marcado como entregado:', data);
+            console.log(' Ítem marcado como entregado:', data);
         } else {
             // Error: restaurar botón
             button.textContent = 'Entregar';
@@ -966,7 +1154,7 @@ async function confirmarDeshacerEntregado() {
     
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
-    button.innerHTML = '⏳ Deshaciendo...';
+    button.innerHTML = ' Deshaciendo...';
     
     try {
         const response = await fetch('{{ route("despacho.deshacer-entregado", $pedido->id) }}', {
@@ -1003,7 +1191,7 @@ async function confirmarDeshacerEntregado() {
             // Quitar efecto visual de la fila
             fila.style.backgroundColor = '';
             
-            console.log('✅ Marcado como entregado deshecho:', data);
+            console.log(' Marcado como entregado deshecho:', data);
         } else {
             // Error: restaurar botón a estado entregado
             button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
@@ -1071,7 +1259,7 @@ async function cargarEstadoEntregas() {
                 }
             });
             
-            console.log('✅ Estado de entregas cargado:', data.entregas.length, 'ítems entregados');
+            console.log(' Estado de entregas cargado:', data.entregas.length, 'ítems entregados');
         }
     } catch (error) {
         console.error('Error al cargar estado de entregas:', error);
@@ -1094,7 +1282,7 @@ async function abrirModalFactura(pedidoId) {
     const contenido = document.getElementById('facturaContenido');
     
     modal.classList.remove('hidden');
-    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500"> Cargando factura...</span></div>';
     
     try {
         const response = await fetch(`/despacho/${pedidoId}/factura-datos`, {
@@ -1121,12 +1309,12 @@ async function abrirModalFactura(pedidoId) {
 
         if (data) {
             // DEBUG: Ver qué datos estamos recibiendo
-            console.log('🔍 [DESPACHO] Datos recibidos del backend:', data);
-            console.log('🔍 [DESPACHO] Estructura:', Object.keys(data));
+            console.log(' [DESPACHO] Datos recibidos del backend:', data);
+            console.log(' [DESPACHO] Estructura:', Object.keys(data));
             
             // Extraer datos como lo hace bodega
             const payload = (data && typeof data === 'object' && data.data) ? data.data : data;
-            console.log('🔍 [DESPACHO] Payload final:', payload);
+            console.log(' [DESPACHO] Payload final:', payload);
             
             // Generar HTML de la factura
             const htmlFactura = generarHTMLFactura(payload);
@@ -1153,15 +1341,15 @@ function cerrarModalFactura() {
  */
 function generarHTMLFactura(datos) {
     // DEBUG: Ver estructura de datos
-    console.log('📋 [DESPACHO-FACTURA] Estructura completa:', datos);
-    console.log('📋 [DESPACHO-FACTURA] Prendas:', datos.prendas);
+    console.log(' [DESPACHO-FACTURA] Estructura completa:', datos);
+    console.log(' [DESPACHO-FACTURA] Prendas:', datos.prendas);
     if (datos.prendas && datos.prendas[0]) {
-        console.log('📋 [DESPACHO-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
-        console.log('📋 [DESPACHO-FACTURA] Tallas:', datos.prendas[0].tallas);
-        console.log('📋 [DESPACHO-FACTURA] Descripción:', datos.prendas[0].descripcion);
-        console.log('📋 [DESPACHO-FACTURA] Variantes:', datos.prendas[0].variantes);
-        console.log('📋 [DESPACHO-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
-        console.log('📋 [DESPACHO-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
+        console.log(' [DESPACHO-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log(' [DESPACHO-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log(' [DESPACHO-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log(' [DESPACHO-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log(' [DESPACHO-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log(' [DESPACHO-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
     }
     
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
@@ -1173,7 +1361,7 @@ function generarHTMLFactura(datos) {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // 🔴 Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            //  Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const generosEnTallas = Object.keys(prenda.tallas);
             const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
@@ -1204,7 +1392,7 @@ function generarHTMLFactura(datos) {
             // Convertir objeto de géneros a array de tallas con género y colores
             let todasLasTallas = [];
             Object.keys(prenda.tallas).forEach(genero => {
-                // 🔴 Excluir GENERICO completamente
+                //  Excluir GENERICO completamente
                 if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
                     return; // Saltar GENERICO
                 }
@@ -1246,6 +1434,9 @@ function generarHTMLFactura(datos) {
                 // Verificar si hay colores para decidir qué tabla mostrar
                 const tieneColores = todasLasTallas.some(t => t.colores && t.colores.length > 0);
                 
+                // Verificar si todas las tallas son "—" (UNISEX sin talla específica)
+                const todasSinTalla = todasLasTallas.every(t => t.talla === '—');
+                
                 if (tieneColores) {
                     // Tabla con colores
                     variantesHTML = `
@@ -1253,7 +1444,7 @@ function generarHTMLFactura(datos) {
                             <thead>
                                 <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                                     <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                    ${!todasSinTalla ? '<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>' : ''}
                                     <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                                     <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Color</th>
                                 </tr>
@@ -1262,7 +1453,7 @@ function generarHTMLFactura(datos) {
                                 ${todasLasTallas.map((talla_item, varIdx) => `
                                     <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
                                         <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                        ${!todasSinTalla ? `<td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>` : ''}
                                         <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
                                         <td style="padding: 6px 8px; color: #374151;">
                                             ${talla_item.colores && talla_item.colores.length > 0 
@@ -1282,7 +1473,7 @@ function generarHTMLFactura(datos) {
                             <thead>
                                 <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                                     <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                    ${!todasSinTalla ? '<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>' : ''}
                                     <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                                 </tr>
                             </thead>
@@ -1290,7 +1481,7 @@ function generarHTMLFactura(datos) {
                                 ${todasLasTallas.map((talla_item, varIdx) => `
                                     <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
                                         <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                        ${!todasSinTalla ? `<td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>` : ''}
                                         <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
                                     </tr>
                                 `).join('')}
@@ -1301,7 +1492,7 @@ function generarHTMLFactura(datos) {
             }
             } // cierre del else de soloGenerico
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // 🔴 Filtrar GENERICO de variantes
+            //  Filtrar GENERICO de variantes
             const variantesFiltradas = prenda.variantes.filter(v => 
                 !(v.genero && String(v.genero).toUpperCase().trim() === 'GENERICO')
             );
@@ -1470,7 +1661,7 @@ function generarHTMLFactura(datos) {
             <div style="padding: 12px; space-y: 8px;">
                 ${datos.epps.map(epp => {
                     // Debug logging para EPPs en despacho
-                    console.log('🖼️ [DESPACHO-FACTURA] EPP con imágenes:', {
+                    console.log(' [DESPACHO-FACTURA] EPP con imágenes:', {
                         nombre: epp.nombre_completo || epp.nombre,
                         cantidad: epp.cantidad,
                         imagenes_existe: !!epp.imagenes,
@@ -1482,7 +1673,7 @@ function generarHTMLFactura(datos) {
                     // Generar HTML para imágenes si existen
                     const imagenesHTML = (epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) ? `
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes.length})</div>
+                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes.length})</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
                                 ${epp.imagenes.map((imagen, index) => {
                                     let imgUrl = '';
@@ -1501,7 +1692,7 @@ function generarHTMLFactura(datos) {
                                             <img src="${imgUrl}" 
                                                  alt="Imagen EPP" 
                                                  style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='⚠️';">
+                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='';">
                                         </div>
                                     ` : '';
                                 }).join('')}
@@ -1847,3 +2038,4 @@ function imprimirTablaVacia() {
 </script>
 
 @endsection
+

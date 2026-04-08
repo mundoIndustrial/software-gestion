@@ -6,13 +6,13 @@ use App\Models\PedidoProduccion;
 use App\Models\LogoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 
 class ObtenerDatosFacturaService
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoProduccionRepository
+        private PedidoProduccionReadRepository $pedidoProduccionRepository
     ) {}
 
     /**
@@ -136,4 +136,3 @@ class ObtenerDatosFacturaService
         ];
     }
 }
-

@@ -8,14 +8,11 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
  * Use Case: Actualizar Descripción del Pedido
- * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
- * 
- * Antes: 46 lÃ­neas (20 lÃ­neas de lógica + 26 de validación)
- * DespuÃ©s: 30 lÃ­neas (solo lógica de negocio)
+ * Antes: 46 lineas (20 lineas de lógica + 26 de validación)
+ * despues: 30 lineas (solo lógica de negocio)
  * Reducción: 35%
- * 
- * Permite actualizar la descripción de un pedido que no estÃ© finalizado
+ * Permite actualizar la descripción de un pedido que no está finalizado
  */
 class ActualizarDescripcionPedidoUseCase
 {
@@ -27,7 +24,7 @@ class ActualizarDescripcionPedidoUseCase
 
     public function ejecutar(int $pedidoId, string $nuevaDescripcion): PedidoResponseDTO
     {
-        // CENTRALIZADO: Validar descripción no vacÃ­a (trait)
+        // CENTRALIZADO: Validar descripción no vacia (trait)
         $this->validarNoVacio($nuevaDescripcion, 'Descripción');
 
         // CENTRALIZADO: Validar pedido existe (trait)
@@ -40,6 +37,8 @@ class ActualizarDescripcionPedidoUseCase
             id: $pedido->id(),
             numero: (string)$pedido->numero(),
             clienteId: $pedido->clienteId(),
+            cliente: null,
+            asesor: null,
             estado: $pedido->estado()->valor(),
             descripcion: $pedido->descripcion(),
             totalPrendas: $pedido->totalPrendas(),
@@ -50,4 +49,3 @@ class ActualizarDescripcionPedidoUseCase
         );
     }
 }
-

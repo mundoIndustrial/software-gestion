@@ -10,29 +10,110 @@
  */
 
 class GestionItemsUI {
+    prendaEditIndex = null;
+    items = [];
+    itemsState = null;
+    notificationService = null;
+    apiService = null;
+    formCollector = null;
+    renderer = null;
+    prendaEditor = null;
+    submitController = null;
+    feedbackUIService = null;
+    successModalService = null;
+    prendaModalService = null;
+    prendaFlowService = null;
+    eppFlowService = null;
+    itemRemovalService = null;
+    itemsSyncService = null;
+
     constructor(options = {}) {
-        this.prendaEditIndex = null;
-        this.items = [];
-        this.prendas = [];      // Array separado para prendas
-        this.epps = [];         // Array separado para EPPs
-        this.ordenItems = [];   // Orden de inserción: [{tipo: 'prenda', index: 0}, {tipo: 'epp', index: 0}, ...]
-        
         // Inicializar servicios con validación de disponibilidad
         try {
-            this.notificationService = options.notificationService || (typeof NotificationService !== 'undefined' ? new NotificationService() : null);
-            this.apiService = options.apiService || (typeof ItemAPIService !== 'undefined' ? new ItemAPIService() : null);
-            this.formCollector = options.formCollector || (typeof ItemFormCollector !== 'undefined' ? new ItemFormCollector() : null);
-            this.renderer = options.renderer || (typeof ItemRenderer !== 'undefined' && this.apiService ? new ItemRenderer({ apiService: this.apiService }) : null);
-            this.prendaEditor = options.prendaEditor || (typeof PrendaEditor !== 'undefined' && this.notificationService ? new PrendaEditor({ notificationService: this.notificationService }) : null);
+            this.notificationService = options.notificationService || (typeof NotificationService === 'undefined' ? null : new NotificationService());
+            this.apiService = options.apiService || (typeof ItemAPIService === 'undefined' ? null : new ItemAPIService());
+            this.formCollector = options.formCollector || (typeof ItemFormCollector === 'undefined' ? null : new ItemFormCollector());
+            this.itemsState = options.itemsState || (typeof PedidoItemsState === 'undefined' ? null : new PedidoItemsState());
+
+            this.renderer = options.renderer || null;
+            if (!this.renderer && typeof ItemRenderer !== 'undefined' && this.apiService) {
+                this.renderer = new ItemRenderer({ apiService: this.apiService });
+            }
+
+            this.prendaEditor = options.prendaEditor || null;
+            if (!this.prendaEditor && typeof PrendaEditor !== 'undefined' && this.notificationService) {
+                this.prendaEditor = new PrendaEditor({ notificationService: this.notificationService });
+            }
             
             // Solo inicializar si los servicios esenciales están disponibles
             if (this.formCollector && this.notificationService) {
                 this.inicializar();
-            } else {
-
             }
         } catch (error) {
+            console.error('[GestionItemsUI] Error inicializando servicios:', error);
+            throw error;
+        }
+    }
 
+    get prendas() { return this.itemsState?.prendas || []; }
+    set prendas(value) { if (this.itemsState) this.itemsState.prendas = Array.isArray(value) ? value : []; }
+
+    get epps() { return this.itemsState?.epps || []; }
+    set epps(value) { if (this.itemsState) this.itemsState.epps = Array.isArray(value) ? value : []; }
+
+    get ordenItems() { return this.itemsState?.ordenItems || []; }
+    set ordenItems(value) { if (this.itemsState) this.itemsState.ordenItems = Array.isArray(value) ? value : []; }
+
+    get prendasEliminadas() { return this.itemsState?.prendasEliminadas || []; }
+    set prendasEliminadas(value) {
+        if (this.itemsState) this.itemsState.prendasEliminadas = Array.isArray(value) ? value : [];
+    }
+
+    _stateCollection(tipo) {
+        return this.itemsState?.getCollection(tipo) || null;
+    }
+
+    _stateAddItem(tipo, item) {
+        if (!this.itemsState) return -1;
+        return this.itemsState.addItem(tipo, item);
+    }
+
+    _stateRemoveItem(tipo, index) {
+        if (!this.itemsState) return false;
+        return this.itemsState.removeItem(tipo, index);
+    }
+
+    _ctx(key) {
+        return globalThis[key];
+    }
+
+    _setCtx(key, value) {
+        globalThis[key] = value;
+    }
+
+    _tienePedidoEdicion() {
+        const datosEdicionPedido = this._ctx('datosEdicionPedido');
+        return !!(datosEdicionPedido && (datosEdicionPedido.id || datosEdicionPedido.numero_pedido));
+    }
+
+    _obtenerPedidoEdicionId() {
+        return this._ctx('datosEdicionPedido')?.id || null;
+    }
+
+    _obtenerImagenesPrendaStorage() {
+        return this._ctx('imagenesPrendaStorage')?.obtenerImagenes?.() || [];
+    }
+
+    _obtenerTelasFuente() {
+        const telasAgregadas = this._ctx('telasAgregadas') || [];
+        const telasCreacion = this._ctx('telasCreacion') || [];
+        return telasAgregadas.length > 0 ? telasAgregadas : telasCreacion;
+    }
+
+    _sincronizarPrendasEnDatosEdicion() {
+        const datosEdicionPedido = this._ctx('datosEdicionPedido');
+        if (datosEdicionPedido) {
+            datosEdicionPedido.prendas = this.prendas;
         }
     }
 
@@ -40,24 +121,11 @@ class GestionItemsUI {
      * Obtener todos los items en orden de inserción
      */
     obtenerItemsOrdenados() {
-        const itemsOrdenados = [];
-        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.ordenItems:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.prendas:', this.prendas.length, 'items');
-        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.epps:', this.epps.length, 'items');
-        
-        this.ordenItems.forEach(({ tipo, index }) => {
-            if (tipo === 'prenda' && this.prendas[index]) {
-                itemsOrdenados.push(this.prendas[index]);
-                console.log('[gestionItemsUI]  Agregado PRENDA index:', index);
-            } else if (tipo === 'epp' && this.epps[index]) {
-                itemsOrdenados.push(this.epps[index]);
-                console.log('[gestionItemsUI]  Agregado EPP index:', index);
-            } else {
-                console.log('[gestionItemsUI]  ITEM NO ENCONTRADO - tipo:', tipo, 'index:', index);
-            }
-        });
-        
-        console.log('[gestionItemsUI]  Total items a renderizar:', itemsOrdenados.length);
+        const itemsOrdenados = this.itemsState?.obtenerItemsOrdenados() || [];
+        debugLog('[gestionItemsUI]  obtenerItemsOrdenados() - this.ordenItems:', JSON.stringify(this.ordenItems));
+        debugLog('[gestionItemsUI]  obtenerItemsOrdenados() - this.prendas:', this.prendas.length, 'items');
+        debugLog('[gestionItemsUI]  obtenerItemsOrdenados() - this.epps:', this.epps.length, 'items');
+        debugLog('[gestionItemsUI]  Total items a renderizar:', itemsOrdenados.length);
         return itemsOrdenados;
     }
 
@@ -65,32 +133,20 @@ class GestionItemsUI {
      * Agregar prenda y registrar en orden
      */
     agregarPrendaAlOrden(prenda) {
-        const index = this.prendas.length;
+        const index = this._stateAddItem('prenda', prenda);
         
-        this.prendas.push(prenda);
-        this.ordenItems.push({ tipo: 'prenda', index });
-        
-        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
-        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
-        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
-        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
     }
 
     /**
      * Agregar EPP y registrar en orden
      */
     agregarEPPAlOrden(epp) {
-        const index = this.epps.length;
-        this.epps.push(epp);
-        this.ordenItems.push({ tipo: 'epp', index });
-        
-        console.log('[gestionItemsUI]  agregarEPPAlOrden() - EPP agregado:', epp.nombre_completo || epp.nombre);
-        console.log('[gestionItemsUI]  agregarEPPAlOrden() - Nuevo index EPP:', index);
-        console.log('[gestionItemsUI]  agregarEPPAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI]  agregarEPPAlOrden() - Total EPPs:', this.epps.length);
-
-        return index;
+        return this._getEppFlowService().agregarEPPAlOrden(epp);
     }
 
     /**
@@ -98,104 +154,18 @@ class GestionItemsUI {
      * Se llama desde epp-item-manager-nuevo.js al eliminar una tarjeta EPP
      */
     eliminarEPPPorTarjetaId(tarjetaId) {
-        try {
-            // Encontrar la posición visual de esta tarjeta ANTES de que se elimine del DOM
-            const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
-            let posicionVisual = -1;
-            todasLasTarjetas.forEach((tarjeta, idx) => {
-                if (tarjeta.getAttribute('data-epp-id') === tarjetaId) {
-                    posicionVisual = idx;
-                }
-            });
-            
-            console.log(`[gestionItemsUI] 🗑️ eliminarEPPPorTarjetaId - tarjetaId: ${tarjetaId}, posicionVisual: ${posicionVisual}`);
-            
-            if (posicionVisual < 0) {
-                // Tarjeta ya eliminada del DOM, intentar por índice en arrays
-                // Buscar en ordenItems los EPPs y eliminar el último que coincida
-                console.warn('[gestionItemsUI] Tarjeta no encontrada en DOM, eliminando último EPP del array');
-                const lastEppIdx = this.ordenItems.map((item, i) => item.tipo === 'epp' ? i : -1).filter(i => i >= 0);
-                if (lastEppIdx.length > 0) {
-                    posicionVisual = lastEppIdx.length - 1; // Última posición
-                }
-            }
-            
-            if (posicionVisual >= 0 && posicionVisual < this.epps.length) {
-                // Eliminar del array de epps
-                this.epps.splice(posicionVisual, 1);
-                console.log(`[gestionItemsUI] 🗑️ EPP eliminado del array. Quedan: ${this.epps.length}`);
-                
-                // Eliminar de ordenItems - buscar el epp en la posición correcta
-                let eppCount = 0;
-                let ordenIdx = -1;
-                for (let i = 0; i < this.ordenItems.length; i++) {
-                    if (this.ordenItems[i].tipo === 'epp') {
-                        if (eppCount === posicionVisual) {
-                            ordenIdx = i;
-                            break;
-                        }
-                        eppCount++;
-                    }
-                }
-                
-                if (ordenIdx >= 0) {
-                    this.ordenItems.splice(ordenIdx, 1);
-                }
-                
-                // Reconstruir índices
-                let prendaIdx = 0, eppIdx = 0;
-                this.ordenItems.forEach(item => {
-                    if (item.tipo === 'prenda') {
-                        item.index = prendaIdx++;
-                    } else if (item.tipo === 'epp') {
-                        item.index = eppIdx++;
-                    }
-                });
-                
-                console.log(`[gestionItemsUI] 🗑️ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
-                console.log(`[gestionItemsUI] 🗑️ EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
-                return true;
-            }
-            
-            console.warn('[gestionItemsUI] No se pudo eliminar EPP - posición inválida:', posicionVisual);
-            return false;
-        } catch (error) {
-            console.error('[gestionItemsUI] Error eliminando EPP:', error);
-            return false;
-        }
+        return this._getEppFlowService().eliminarEPPPorTarjetaId(tarjetaId);
+    }
+
+    _rebuildOrdenIndices() {
+        this.itemsState?.rebuildOrdenIndices?.();
     }
 
     /**
      * Método público para agregar EPP desde modal externo
      */
     async agregarEPPDesdeModal(eppData) {
-        try {
-
-            console.log('[gestionItemsUI] 📥 agregarEPPDesdeModal() iniciado con EPP:', eppData.nombre_completo || eppData.nombre);
-            
-            // Agregar al orden
-            this.agregarEPPAlOrden(eppData);
-            
-            console.log('[gestionItemsUI] 📥 Después de agregarEPPAlOrden()');
-            console.log('[gestionItemsUI] 📥 this.epps:', this.epps.length);
-            console.log('[gestionItemsUI] 📥 this.ordenItems:', JSON.stringify(this.ordenItems));
-            
-            // Notificar éxito
-            this.notificationService?.exito('EPP agregado correctamente');
-            
-            // Actualizar visualización en orden
-            if (this.renderer) {
-                const itemsOrdenados = this.obtenerItemsOrdenados();
-                console.log('[gestionItemsUI] 📥 Renderizando', itemsOrdenados.length, 'items');
-                await this.renderer.actualizar(itemsOrdenados);
-            }
-            
-            return true;
-        } catch (error) {
-
-            this.notificationService?.error('Error al agregar EPP: ' + error.message);
-            return false;
-        }
+        return this._getEppFlowService().agregarEPPDesdeModal(eppData);
     }
 
     inicializar() {
@@ -221,149 +191,175 @@ class GestionItemsUI {
             (e) => this.manejarSubmitFormulario(e));
     }
 
-    async cargarItems() {
-        try {
-            if (!this.apiService || !this.renderer || !this.notificationService) {
+    _tieneServiciosBase() {
+        return !!(this.apiService && this.renderer && this.notificationService);
+    }
 
-                return;
-            }
-            const resultado = await this.apiService.obtenerItems();
-            this.items = resultado.items;
-            //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
-            const itemsOrdenados = this.obtenerItemsOrdenados();
-            await this.renderer.actualizar(itemsOrdenados);
-        } catch (error) {
+    async _actualizarRenderItemsOrdenados() {
+        if (!this.renderer) return;
+        const itemsOrdenados = this.obtenerItemsOrdenados();
+        await this.renderer.actualizar(itemsOrdenados);
+    }
 
-            if (this.notificationService) {
-                this.notificationService.error('Error al cargar ítems');
-            }
+    _actualizarRenderItemsOrdenadosSinBloquear() {
+        this._actualizarRenderItemsOrdenados().catch(err => {
+            console.error('[gestionItemsUI] Error renderizando:', err);
+        });
+    }
+
+    _getSubmitController() {
+        if (!this.submitController) {
+            this.submitController = new PedidoSubmitController();
         }
+
+        this.submitController.formCollector = this.formCollector;
+        this.submitController.apiService = this.apiService;
+        this.submitController.notificationService = this.notificationService;
+        this.submitController.ui = {
+            mostrarCargando: (mensaje) => this.mostrarCargando(mensaje),
+            ocultarCargando: () => this.ocultarCargando(),
+            mostrarModalExito: () => this.mostrarModalExito(),
+            setDatosPedidoCreado: (datos) => {
+                this.datosPedidoCreado = datos;
+            }
+        };
+
+        return this.submitController;
+    }
+
+    _getFeedbackUIService() {
+        if (!this.feedbackUIService) {
+            this.feedbackUIService = new PedidoFeedbackUIService();
+        }
+        return this.feedbackUIService;
+    }
+
+    _getSuccessModalService() {
+        if (!this.successModalService) {
+            this.successModalService = new PedidoSuccessModalService();
+        }
+        return this.successModalService;
+    }
+
+    _getPrendaModalService() {
+        if (!this.prendaModalService) {
+            this.prendaModalService = new PrendaModalService();
+        }
+        return this.prendaModalService;
+    }
+
+    _getPrendaFlowService() {
+        if (!this.prendaFlowService) {
+            this.prendaFlowService = new PrendaFlowService({ ui: this });
+        } else {
+            this.prendaFlowService.ui = this;
+        }
+        return this.prendaFlowService;
+    }
+
+    _getEppFlowService() {
+        if (!this.eppFlowService) {
+            this.eppFlowService = new EppFlowService({ ui: this });
+        } else {
+            this.eppFlowService.ui = this;
+        }
+        return this.eppFlowService;
+    }
+
+
+
+    _getItemRemovalService() {
+        if (!this.itemRemovalService) {
+            this.itemRemovalService = new ItemRemovalService({ ui: this });
+        } else {
+            this.itemRemovalService.ui = this;
+        }
+        return this.itemRemovalService;
+    }
+
+    _getItemsSyncService() {
+        if (!this.itemsSyncService) {
+            this.itemsSyncService = new ItemsSyncService({ ui: this });
+        } else {
+            this.itemsSyncService.ui = this;
+        }
+        return this.itemsSyncService;
+    }
+
+    async cargarItems() {
+        return this._getItemsSyncService().cargarItems();
     }
 
     async agregarItem(itemData) {
-        try {
-            if (!this.apiService || !this.renderer || !this.notificationService) {
-
-                return false;
-            }
-            const resultado = await this.apiService.agregarItem(itemData);
-            if (resultado.success) {
-                this.items = resultado.items;
-                //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
-                const itemsOrdenados = this.obtenerItemsOrdenados();
-                await this.renderer.actualizar(itemsOrdenados);
-                this.notificationService.exito('Ítem agregado correctamente');
-                return true;
-            }
-        } catch (error) {
-            if (this.notificationService) {
-                this.notificationService.error('Error: ' + error.message);
-            }
-            return false;
-        }
+        return this._getItemsSyncService().agregarItem(itemData);
     }
 
     async eliminarItem(index) {
-        // Mostrar confirmación con SweetAlert
-        const result = await Swal.fire({
-            title: '¿Eliminar este ítem?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc3545'
-        });
-
-        if (!result.isConfirmed) return;
-
-        try {
-            if (!this.apiService || !this.renderer || !this.notificationService) {
-
-                return;
-            }
-            
-            //  Buscar qué tipo de item es (prenda o epp)
-            const itemAEliminar = this.ordenItems.find((item, posicion) => {
-                if (item.tipo === 'prenda') {
-                    return this.prendas[item.index] && this.prendas[item.index]._id === undefined && posicion === index;
-                } else if (item.tipo === 'epp') {
-                    return this.epps[item.index] && this.epps[item.index]._id === undefined && posicion === index;
-                }
-                return false;
-            });
-            
-            //  ALTERNATIVA: buscar por posición en itemsOrdenados
-            const itemsOrdenados = this.obtenerItemsOrdenados();
-            if (index >= 0 && index < itemsOrdenados.length) {
-                const itemEnPosicion = itemsOrdenados[index];
-                
-                // Encontrar qué array y qué índice tiene este item
-                let tipoBuscado, indiceBuscado;
-                
-                if (itemEnPosicion.nombre_prenda) {
-                    // Es una prenda - buscar en this.prendas
-                    tipoBuscado = 'prenda';
-                    indiceBuscado = this.prendas.findIndex(p => p === itemEnPosicion);
-                } else if (itemEnPosicion.nombre_completo || itemEnPosicion.nombre) {
-                    // Es un EPP - buscar en this.epps
-                    tipoBuscado = 'epp';
-                    indiceBuscado = this.epps.findIndex(e => e === itemEnPosicion);
-                }
-                
-                console.log(`[eliminarItem]  Eliminando item en posición ${index}:`, {
-                    tipo: tipoBuscado,
-                    indiceEnArray: indiceBuscado,
-                    item: itemEnPosicion
-                });
-                
-                // Eliminar de los arrays correspondientes
-                if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
-                    this.prendas.splice(indiceBuscado, 1);
-                    console.log(`[eliminarItem]  Prenda eliminada del array. Quedan: ${this.prendas.length}`);
-                } else if (tipoBuscado === 'epp' && indiceBuscado >= 0) {
-                    this.epps.splice(indiceBuscado, 1);
-                    console.log(`[eliminarItem]  EPP eliminado del array. Quedan: ${this.epps.length}`);
-                }
-                
-                // Eliminar de ordenItems por posición
-                this.ordenItems.splice(index, 1);
-                
-                // Reconstruir índices en ordenItems después de la eliminación
-                let prendaIdx = 0, eppIdx = 0;
-                this.ordenItems.forEach(item => {
-                    if (item.tipo === 'prenda') {
-                        item.index = prendaIdx;
-                        prendaIdx++;
-                    } else if (item.tipo === 'epp') {
-                        item.index = eppIdx;
-                        eppIdx++;
-                    }
-                });
-                
-                console.log(`[eliminarItem]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
-                
-                //  SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
-                if (tipoBuscado === 'prenda' && window.gestorPrendaSinCotizacion?.eliminar) {
-                    console.log(`[eliminarItem]  Sincronizando eliminación en gestorPrendaSinCotizacion (índice original: ${indiceBuscado})`);
-                    window.gestorPrendaSinCotizacion.eliminar(indiceBuscado);
-                }
-            }
-            
-            // Renderizar items actualizados
-            const itemsActualizados = this.obtenerItemsOrdenados();
-            await this.renderer.actualizar(itemsActualizados);
-            this.notificationService.exito('Ítem eliminado');
-        } catch (error) {
-            if (this.notificationService) {
-                this.notificationService.error('Error: ' + error.message);
-            }
-        }
+        return this._getItemRemovalService().eliminarItem(index);
     }
 
     abrirModalSeleccionPrendas() {
-        if (window.abrirModalSeleccionPrendas) {
-            window.abrirModalSeleccionPrendas();
+        const abrirModalSeleccionPrendas = this._ctx('abrirModalSeleccionPrendas');
+        if (abrirModalSeleccionPrendas) {
+            abrirModalSeleccionPrendas();
+        }
+    }
+
+    _actualizarBtnGuardarPrenda(esEdicion) {
+        const btnGuardar = document.getElementById('btn-guardar-prenda');
+        if (!btnGuardar) return;
+
+        const spanCheck = btnGuardar.querySelector('.material-symbols-rounded');
+        const textoBase = esEdicion ? 'Guardar Cambios' : 'Agregar Prenda';
+
+        if (spanCheck) {
+            btnGuardar.innerHTML = `<span class="material-symbols-rounded">check</span>${textoBase}`;
+        } else {
+            btnGuardar.textContent = textoBase;
+        }
+    }
+
+    async _cargarCatalogosModal() {
+        const cargarCatalogosModal = this._ctx('cargarCatalogosModal');
+        if (typeof cargarCatalogosModal === 'function') {
+            await cargarCatalogosModal();
+        }
+    }
+
+    _cargarModoEdicion() {
+        const prendaAEditar = this.prendas[this.prendaEditIndex];
+        
+        //  DIAGNOSTIC: Verificar que procesos están en this.prendas[index]
+        debugLog('[_cargarModoEdicion]  SEGUNDA EDICIÓN - Verificando estado:');
+        debugLog('[_cargarModoEdicion]   this.prendaEditIndex:', this.prendaEditIndex);
+        debugLog('[_cargarModoEdicion]   prendaAEditar.nombre_prenda:', prendaAEditar?.nombre_prenda);
+        debugLog('[_cargarModoEdicion]   prendaAEditar.procesos EXISTS:', !!prendaAEditar?.procesos);
+        debugLog('[_cargarModoEdicion]   prendaAEditar.procesos TYPE:', typeof prendaAEditar?.procesos);
+        debugLog('[_cargarModoEdicion]   prendaAEditar.procesos KEYS:', Object.keys(prendaAEditar?.procesos || {}));
+        debugLog('[_cargarModoEdicion]   COMPLETO:', prendaAEditar?.procesos);
+        
+        if (prendaAEditar && this.prendaEditor) {
+            this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
+        }
+    }
+
+    _cargarModoCreacion() {
+        debugLog('[abrirModalAgregarPrendaNueva]  RESET - Limpiando globalThis.telasCreacion para NUEVA prenda');
+        debugLog('[abrirModalAgregarPrendaNueva]   ANTES:', this._ctx('telasCreacion'));
+
+        this._setCtx('telasCreacion', []);
+        this._setCtx('telasAgregadas', []);
+        this._setCtx('imagenesTelaModalNueva', []);
+
+        debugLog('[abrirModalAgregarPrendaNueva]   DESPUÉS:', this._ctx('telasCreacion'));
+
+        const renderizarTelasChips = this._ctx('renderizarTelasChips');
+        if (typeof renderizarTelasChips === 'function') {
+            renderizarTelasChips();
+        }
+
+        if (this.prendaEditor) {
+            this.prendaEditor.abrirModal(false, null);
         }
     }
 
@@ -373,105 +369,63 @@ class GestionItemsUI {
      * Flujo: FSM guard → OPENING → catálogos → shown.bs.modal({once}) → DragDrop → OPEN
      */
     async abrirModalAgregarPrendaNueva() {
-        const fsm = window.__MODAL_FSM__;
+        const fsm = this._ctx('__MODAL_FSM__');
+        const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
 
-        // Guard: FSM previene doble apertura
-        if (fsm && !fsm.puedeAbrir()) {
-            console.warn('[abrirModal] Bloqueado por FSM (estado:', fsm.obtenerEstado(), ')');
+        return this._getPrendaModalService().abrirModal({
+            fsm,
+            puedeAbrir: () => !fsm || fsm.puedeAbrir(),
+            cargarCatalogos: async () => this._cargarCatalogosModal(),
+            actualizarBotonGuardar: (flagEsEdicion) => this._actualizarBtnGuardarPrenda(flagEsEdicion),
+            esEdicion,
+            cargarModoEdicion: () => this._cargarModoEdicion(),
+            cargarModoCreacion: () => this._cargarModoCreacion(),
+            onModalShown: () => {
+                if (this._ctx('DragDropManager')) {
+                    this._ctx('DragDropManager').inicializar();
+                }
+            },
+            onError: (error) => {
+                if (typeof NotificationService !== 'undefined' && NotificationService) {
+                    NotificationService.error('Error abriendo modal: ' + error.message);
+                }
+            }
+        });
+    }
+
+
+
+    _limpiarEditorFlags() {
+        if (this.prendaEditor) {
+            this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
+        }
+    }
+
+    _limpiarModalUI() {
+        if (typeof ModalCleanup !== 'undefined') {
+            ModalCleanup.limpiarDespuésDeGuardar();
             return;
         }
 
-        try {
-            // FSM → OPENING
-            if (fsm) fsm.cambiarEstado('OPENING', { origen: 'abrirModalAgregarPrendaNueva' });
+        this.prendaEditIndex = null;
+        if (this.prendaEditor) {
+            this.prendaEditor.prendaEditIndex = null;
+        }
+        this._setCtx('prendaEditIndex', null);
 
-            // Timeout de seguridad: si la FSM queda stuck en OPENING, forzar reset
-            if (fsm) {
-                clearTimeout(fsm._openingTimeout);
-                fsm._openingTimeout = setTimeout(() => {
-                    if (fsm.obtenerEstado() === 'OPENING') {
-                        console.warn('[abrirModal] Timeout: FSM stuck en OPENING, forzando CLOSED');
-                        fsm.estado = 'CLOSED';
-                    }
-                }, 5000);
-            }
+        const modal = document.getElementById('modal-agregar-prenda-nueva');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
 
-            // 1. Cargar catálogos (deduplicado automáticamente)
-            if (typeof window.cargarCatalogosModal === 'function') {
-                await window.cargarCatalogosModal();
-            }
+    _limpiarComponentes() {
+        if (this.prendaEditor) {
+            this.prendaEditor.resetearEdicion();
+        }
 
-            // 2. Registrar listener shown ANTES de abrir (se auto-elimina con {once})
-            const modal = document.getElementById('modal-agregar-prenda-nueva');
-            if (modal) {
-                modal.addEventListener('shown.bs.modal', () => {
-                    // DragDrop init (guard interno previene doble init)
-                    if (window.DragDropManager) {
-                        window.DragDropManager.inicializar();
-                    }
-                    // FSM → OPEN
-                    if (fsm) fsm.cambiarEstado('OPEN', { origen: 'shown.bs.modal' });
-                    console.log('[abrirModal]  Modal OPEN — DragDrop inicializado');
-                }, { once: true });
-            }
-
-            // 3. Abrir modal (dispara shown.bs.modal sincrónicamente)
-            const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
-
-            // Actualizar texto del botón según modo
-            const btnGuardar = document.getElementById('btn-guardar-prenda');
-            if (btnGuardar) {
-                const spanCheck = btnGuardar.querySelector('.material-symbols-rounded');
-                if (esEdicion) {
-                    // Modo edición: "Guardar Cambios"
-                    if (spanCheck) {
-                        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Guardar Cambios';
-                    } else {
-                        btnGuardar.textContent = 'Guardar Cambios';
-                    }
-                } else {
-                    // Modo creación: "Agregar Prenda"
-                    if (spanCheck) {
-                        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
-                    } else {
-                        btnGuardar.textContent = 'Agregar Prenda';
-                    }
-                }
-            }
-
-            if (esEdicion) {
-                const prendaAEditar = this.prendas[this.prendaEditIndex];
-                if (prendaAEditar && this.prendaEditor) {
-                    this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
-                }
-            } else {
-                // 🔴 CRÍTICO: RESETEAR window.telasCreacion para NUEVA PRENDA (modo creación)
-                // Esto evita que telas de prenda anterior contaminen la nueva prenda
-                console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando window.telasCreacion para NUEVA prenda');
-                console.log('[abrirModalAgregarPrendaNueva]   ANTES:', window.telasCreacion);
-                window.telasCreacion = [];
-                window.telasAgregadas = [];
-                window.imagenesTelaModalNueva = [];
-                console.log('[abrirModalAgregarPrendaNueva]   DESPUÉS:', window.telasCreacion);
-                
-                // Actualizar chips de telas (vaciar)
-                if (typeof window.renderizarTelasChips === 'function') {
-                    window.renderizarTelasChips();
-                }
-                
-                if (this.prendaEditor) {
-                    this.prendaEditor.abrirModal(false, null);
-                }
-            }
-
-        } catch (error) {
-            console.error('[abrirModalAgregarPrendaNueva] ERROR:', error);
-            // Reset de emergencia
-            if (fsm) fsm.cambiarEstado('CLOSED', { error: error.message });
-
-            if (typeof NotificationService !== 'undefined' && NotificationService) {
-                NotificationService.error('Error abriendo modal: ' + error.message);
-            }
+        if (this._ctx('DragDropManager')) {
+            this._ctx('DragDropManager').destruir();
         }
     }
 
@@ -479,60 +433,15 @@ class GestionItemsUI {
      * Cerrar modal de agregar/editar prenda
      */
     cerrarModalAgregarPrendaNueva() {
-        const fsm = window.__MODAL_FSM__;
-
-        try {
-            // Limpiar timeout de seguridad
-            if (fsm) clearTimeout(fsm._openingTimeout);
-
-            // FSM → CLOSING (forzar desde cualquier estado)
-            if (fsm) {
-                const estadoActual = fsm.obtenerEstado();
-                if (estadoActual !== 'CLOSED') {
-                    if (estadoActual === 'OPEN') {
-                        fsm.cambiarEstado('CLOSING', { origen: 'cerrarModalAgregarPrendaNueva' });
-                    } else {
-                        // Si está en OPENING u otro estado, forzar directamente a CLOSED
-                        fsm.estado = 'CLOSED';
-                        console.log('[cerrarModal] FSM forzada a CLOSED desde:', estadoActual);
-                    }
-                }
-            }
-
-            // Resetear bandera de nueva prenda desde cotización
-            if (this.prendaEditor) {
-                this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
-            }
-
-            // Limpiar modal (oculta + limpia campos)
-            if (typeof ModalCleanup !== 'undefined') {
-                ModalCleanup.limpiarDespuésDeGuardar();
-            } else {
-                this.prendaEditIndex = null;
-                if (this.prendaEditor) this.prendaEditor.prendaEditIndex = null;
-                window.prendaEditIndex = null;
-                const modal = document.getElementById('modal-agregar-prenda-nueva');
-                if (modal) modal.style.display = 'none';
-            }
-
-            // Resetear editor
-            if (this.prendaEditor) {
-                this.prendaEditor.resetearEdicion();
-            }
-
-            // Destruir DragDrop (resetea inicializado=false para próxima apertura)
-            if (window.DragDropManager) {
-                window.DragDropManager.destruir();
-            }
-
-            // FSM → CLOSED
-            if (fsm) fsm.cambiarEstado('CLOSED', { origen: 'cerrarModalAgregarPrendaNueva' });
-
-        } catch (error) {
-            console.error('[cerrarModal] ERROR:', error);
-            if (fsm) fsm.cambiarEstado('CLOSED', { error: error.message });
-        }
+        const fsm = this._ctx('__MODAL_FSM__');
+        return this._getPrendaModalService().cerrarModal({
+            fsm,
+            limpiarEditorFlags: () => this._limpiarEditorFlags(),
+            limpiarModalUI: () => this._limpiarModalUI(),
+            limpiarComponentes: () => this._limpiarComponentes()
+        });
     }
+
 
 
     /**
@@ -547,712 +456,28 @@ class GestionItemsUI {
      * Agregar prenda nueva - Recolectar datos del formulario modal y guardar
      */
     async agregarPrendaNueva() {
-        try {
-            //  🎬 PUNTO DE PARTIDA: Registrar estado COMPLETO de storages al hacer click "Guardar Cambios"
-            console.log('\n\n═══════════════════════════════════════════════════════════════');
-            console.log('🔴 [agregarPrendaNueva] ⏱️ CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
-            console.log('═══════════════════════════════════════════════════════════════');
-            
-            // ESTADO DE STORAGES ANTES DE PROCESAR
-            const estadoImagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-            const estadoImagenesTela = window.imagenesTelaStorage?.obtenerImagenes?.() || [];
-            const estadoTelasCreacion = window.telasCreacion || [];
-            const estadoProcesos = window.procesosSeleccionados || {};
-            
-            console.log('[agregarPrendaNueva] 📸 ESTADO INICIAL DE STORAGES:');
-            console.log('[agregarPrendaNueva]   🖼️ imagenesPrendaStorage:', estadoImagenesPrenda.length, 'imágenes');
-            console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesPrenda.map(img => ({
-                tipo: typeof img,
-                previewUrl: img?.previewUrl?.substring(0, 50),
-                ruta: img?.ruta,
-                constructor: img?.constructor?.name
-            })));
-            
-            console.log('[agregarPrendaNueva]   🧵 imagenesTelaStorage:', estadoImagenesTela.length, 'imágenes');
-            console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesTela.map(img => ({
-                tipo: typeof img,
-                previewUrl: img?.previewUrl?.substring(0, 50),
-                ruta: img?.ruta,
-                constructor: img?.constructor?.name
-            })));
-            
-            console.log('[agregarPrendaNueva]   🧵 window.telasCreacion:', estadoTelasCreacion.length, 'telas');
-            console.log('[agregarPrendaNueva]      Primera tela imagenes:', estadoTelasCreacion[0]?.imagenes?.length || 0);
-            console.log('[agregarPrendaNueva]      Contenido primera tela imágenes:', estadoTelasCreacion[0]?.imagenes);
-            
-            console.log('[agregarPrendaNueva]   ⚙️ procesosSeleccionados types:', Object.keys(estadoProcesos));
-            console.log('[agregarPrendaNueva]      procesosSeleccionados imagenes:', 
-                Object.entries(estadoProcesos).map(([tipo, proc]) => ({
-                    tipo: tipo,
-                    tieneImagenes: proc?.imagenes?.length || 0
-                }))
-            );
-            
-            console.log('═══════════════════════════════════════════════════════════════\n');
-            
-            //  CRÍTICO: Verificar estado ANTES de hacer nada
-            console.log('[agregarPrendaNueva]  INICIO - Estado actual:');
-            console.log('[agregarPrendaNueva]   - this.prendaEditIndex:', this.prendaEditIndex);
-            console.log('[agregarPrendaNueva]   - this.prendas.length:', this.prendas.length);
-            console.log('[agregarPrendaNueva]   - ¿Es edición?:', this.prendaEditIndex !== null && this.prendaEditIndex !== undefined);
-            
-            // Verificar si el servicio de notificaciones está disponible
-            if (!this.notificationService) {
-                console.warn('[GestionItemsUI]  notificationService no disponible, usando fallback');
-                // Crear servicio de notificaciones temporal para este caso
-                this.notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : {
-                    success: (msg) => console.log('', msg),
-                    error: (msg) => console.error('', msg),
-                    warning: (msg) => console.warn('', msg)
-                };
-            }
-
-            // Recolectar datos del formulario modal usando el componente extraído
-            window.prendaFormCollector.setNotificationService(this.notificationService);
-            const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
-                this.prendaEditIndex,
-                this.prendas
-            );
-            
-            // � IMPORTANTE: Agregar imágenes marcadas para eliminación
-            // Solo se eliminarán cuando se guarden los cambios
-            if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
-                prendaData.imagenes_a_eliminar = window.imagenesAEliminar;
-                console.log('[agregarPrendaNueva] 📝 Imágenes marcadas para eliminación:', {
-                    cantidad: window.imagenesAEliminar.length,
-                    ids: window.imagenesAEliminar
-                });
-            }
-            
-            // �🔍 LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
-            console.log('\n═══════════════════════════════════════════════════════════════');
-            console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
-            console.log('═══════════════════════════════════════════════════════════════');
-            console.log('[agregarPrendaNueva]   📸 prendaData.imagenes:', prendaData?.imagenes?.length || 0);
-            console.log('[agregarPrendaNueva]      Contenido:', prendaData?.imagenes?.map(img => ({
-                tipo: typeof img,
-                previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
-                ruta: typeof img === 'object' ? img?.ruta : undefined,
-                constructor: typeof img === 'object' ? img?.constructor?.name : 'string'
-            })));
-            
-            console.log('[agregarPrendaNueva]   🧵 prendaData.telasAgregadas:', prendaData?.telasAgregadas?.length || 0);
-            if (prendaData?.telasAgregadas?.length > 0) {
-                console.log('[agregarPrendaNueva]      Primera tela:');
-                const primeraTela = prendaData.telasAgregadas[0];
-                console.log('[agregarPrendaNueva]        - tela:', primeraTela.tela);
-                console.log('[agregarPrendaNueva]        - imagenes:', primeraTela.imagenes?.length || 0);
-                console.log('[agregarPrendaNueva]        - contenido imagenes:', primeraTela.imagenes?.map(img => ({
-                    tipo: typeof img,
-                    previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
-                    ruta: typeof img === 'object' ? img?.ruta : undefined,
-                    constructor: typeof img === 'object' ? img?.constructor?.name : 'string'
-                })));
-            }
-            
-            console.log('[agregarPrendaNueva]   ⚙️ prendaData.procesos types:', Object.keys(prendaData?.procesos || {}));
-            console.log('[agregarPrendaNueva]      procesos imagenes:', Object.entries(prendaData?.procesos || {}).map(([tipo, proc]) => ({
-                tipo: tipo,
-                tieneImagenes: proc?.imagenes?.length || 0
-            })));
-            console.log('═══════════════════════════════════════════════════════════════\n');
-            
-            if (!prendaData) {
-
-                this.notificationService?.error('Por favor completa los datos de la prenda');
-                return;
-            }
-
-            // Validar que al menos haya seleccionado tallas O "UNISEX"
-            const tieneTallas = prendaData.cantidad_talla && 
-                Object.values(prendaData.cantidad_talla).some(genero => 
-                    Object.keys(genero).length > 0
-                );
-            
-            const tieneSoloCantidad = window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0;
-
-            console.log('[gestion-items-pedido]  Validación de tallas:');
-            console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
-            console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
-            console.log('[gestion-items-pedido]   - tieneSoloCantidad (UNISEX):', tieneSoloCantidad);
-
-            if (!tieneTallas && !tieneSoloCantidad) {
-                this.notificationService?.advertencia('Por favor selecciona al menos una talla o utiliza la opción "UNISEX"');
-                console.log('[gestion-items-pedido]  Validación FALLIDA: No hay tallas ni cantidad');
-                return;
-            }
-            
-            // Si solo tiene cantidad, agregar a los datos
-            if (tieneSoloCantidad) {
-                prendaData.cantidad_solo = window.cantidadSoloSeleccionada;
-                console.log('[gestion-items-pedido] Cantidad sin talla agregada:', window.cantidadSoloSeleccionada);
-            }
-
-            console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas o cantidad, procediendo a guardar');
-
-            // PROCESAR TIPO DE MANGA: Crear si no existe
-            if (prendaData.variantes?.tipo_manga_crear && prendaData.variantes?.tipo_manga) {
-                console.log('[gestion-items-pedido]  Creando tipo de manga:', prendaData.variantes.tipo_manga);
-                
-                try {
-                    const response = await fetch('/api/public/tipos-manga', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                        },
-                        body: JSON.stringify({ nombre: prendaData.variantes.tipo_manga })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success && result.data) {
-                        // Guardar el ID recién creado
-                        prendaData.variantes.tipo_manga_id = result.data.id;
-                        
-                        // Agregar al datalist para futuras búsquedas
-                        const datalist = document.getElementById('opciones-manga');
-                        if (datalist) {
-                            const newOption = document.createElement('option');
-                            newOption.value = result.data.nombre;
-                            newOption.dataset.id = result.data.id;
-                            datalist.appendChild(newOption);
-                        }
-                        
-                        console.log('[gestion-items-pedido] Tipo de manga creado:', {
-                            id: result.data.id,
-                            nombre: result.data.nombre
-                        });
-                        
-                        // Limpiar flag de creación
-                        delete prendaData.variantes.tipo_manga_crear;
-                    } else {
-                        console.warn('[gestion-items-pedido]  No se pudo crear tipo de manga:', result);
-                        this.notificationService?.advertencia('No se pudo crear el tipo de manga, se guardará solo el nombre');
-                    }
-                } catch (error) {
-                    console.error('[gestion-items-pedido]  Error creando tipo de manga:', error);
-                    this.notificationService?.advertencia('Error al crear tipo de manga, se guardará solo el nombre');
-                }
-            }
-
-
-            // Verificar si estamos en un pedido existente
-            const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);
-            // IMPORTANTE: Usar SIEMPRE el .id de la BD, nunca numero_pedido
-            // El numero_pedido es solo para mostrar en UI, no para rutas de API
-            const pedidoId = enPedidoExistente ? window.datosEdicionPedido.id : null;
-            
-            if (!pedidoId && enPedidoExistente) {
-
-                // Solo si realmente no hay id, usar numero_pedido (pero esto NO debería pasar en producción)
-            }
-
-            // Si es edición (prendaEditIndex !== null), actualizar; si no, agregar nueva
-            //  NUEVO: Detectar si es nueva prenda desde cotización
-            const esNuevaDesdeCotz = this.prendaEditor?.esNuevaPrendaDesdeCotizacion === true;
-            const esEdicionReal = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
-            
-            console.log('[guardarPrenda]  DETECCIÓN CRÍTICA:', {
-                esNuevaDesdeCotz: esNuevaDesdeCotz,
-                esEdicionReal: esEdicionReal,
-                prendaEditIndex: this.prendaEditIndex,
-                esNuevaPrendaDesdeCotizacion: this.prendaEditor?.esNuevaPrendaDesdeCotizacion
-            });
-            
-            // Determinar si vamos a editar o crear nueva
-            const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
-            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? '✏️ EDITAR' : ' AGREGAR NUEVA');
-            
-            if (vamosAEditar) {
-
-                
-                // SI ESTAMOS EDITANDO EN UN PEDIDO EXISTENTE, MOSTRAR MODAL DE NOVEDADES
-                if (enPedidoExistente) {
-
-                    
-                    // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
-                    const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
-
-                    //  DEBUG: Verificar qué contiene window.prendaEnEdicion
-                    console.log('[gestion-items-pedido]  DEBUG window.prendaEnEdicion:', {
-                        existe: !!window.prendaEnEdicion,
-                        prendaOriginal: window.prendaEnEdicion?.prendaOriginal,
-                        prendaOriginalId: window.prendaEnEdicion?.prendaOriginal?.prenda_pedido_id || window.prendaEnEdicion?.prendaOriginal?.id,
-                        pedidoId: window.prendaEnEdicion?.pedidoId,
-                        prendasIndex: window.prendaEnEdicion?.prendasIndex
-                    });
-
-                    
-                    // Agregar el ID de la prenda original a prendaData
-                    prendaData.prenda_pedido_id = prendaOriginal?.prenda_pedido_id || prendaOriginal?.id;
-
-                    //  DEBUG: Verificar qué se asignó
-                    console.log('[gestion-items-pedido]  DEBUG asignación de ID:', {
-                        prendaOriginalId: prendaOriginal?.prenda_pedido_id || prendaOriginal?.id,
-                        prendaDataPrendaPedidoId: prendaData.prenda_pedido_id,
-                        prendaDataId: prendaData.id
-                    });
-
-                    //  CRÍTICO: Incluir telas nuevas si fueron agregadas
-                    // Si hay telas en window.telasAgg o window.telasCreacion, incluirlas en prendaData
-                    if ((window.telasAgregadas && window.telasAgregadas.length > 0) || 
-                        (window.telasCreacion && window.telasCreacion.length > 0)) {
-                        
-                        const telasAIncluir = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
-                        prendaData.telasAgregadas = telasAIncluir;
-                        
-                        console.log('[gestion-items-pedido]  Telas nuevas incluidas en prendaData:', {
-                            cantidad: telasAIncluir.length,
-                            origen: window.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
-                            telas: telasAIncluir.map(t => ({ color: t.color, tela: t.tela, imagenes: t.imagenes?.length }))
-                        });
-                    }
-                    
-                    await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
-                    // El modal de novedades maneja todo: actualización, cierre, etc.
-                    // NO continuamos aquí
-                    return;
-                } else {
-                    // Solo en memoria - sin novedades
-                    console.log('[guardarPrenda] 💾 MODO CREACIÓN: Actualizando prenda en memoria');
-                    console.log('[guardarPrenda]   - this.prendaEditIndex:', this.prendaEditIndex);
-                    console.log('[guardarPrenda]   - this.prendas.length:', this.prendas.length);
-                    console.log('[guardarPrenda]   - ¿Existe prenda en este index?:', !!this.prendas[this.prendaEditIndex]);
-
-                    if (this.prendas[this.prendaEditIndex]) {
-                        //  MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
-                        // Si estamos en modo CREATE (no edición desde backend) y se eliminaron todas las imágenes
-                        const esModoCreate = !window.datosEdicionPedido || (!window.datosEdicionPedido.id && !window.datosEdicionPedido.numero_pedido);
-                        const imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-                        const seEliminaronTodasLasImagenes = imagenesStorage.length === 0;
-                        
-                        if (esModoCreate && seEliminaronTodasLasImagenes) {
-                            console.log('🗑️ [GESTION-ITEMS] Modo CREATE: Todas las imágenes eliminadas, actualizando array a []');
-                            
-                            // Forzar que prendaData.imagenes sea array vacío
-                            prendaData.imagenes = [];
-                            
-                            // Actualizar directamente en memoria también
-                            this.prendas[this.prendaEditIndex].imagenes = [];
-                            
-                            console.log(' [GESTION-ITEMS] Array de imágenes actualizado a [] en memoria y en prendaData');
-                        }
-                        
-                        //  ANTES: Estado de la prenda antes de actualizar
-                        const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
-                        
-                        console.log('[guardarPrenda] 📋 ESTADO ANTES DE ACTUALIZAR:');
-                        console.log('[guardarPrenda]   telasAgregadas:', prendaAnterior.telasAgregadas?.length || 'undefined');
-                        if (prendaAnterior.telasAgregadas?.length > 0) {
-                            console.log('[guardarPrenda]     Primera tela imagenes:', prendaAnterior.telasAgregadas[0].imagenes?.length || 0);
-                        }
-                        
-                        // Actualizar prenda con los datos modificados
-                        this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
-                        
-                        // 🟢 DESPUÉS: Verificar que se actualizó
-                        const prendaActualizada = this.prendas[this.prendaEditIndex];
-                        console.log('[guardarPrenda] ✏️ PRENDA ACTUALIZADA:');
-                        console.log('[guardarPrenda]   - Nombre ANTES:', prendaAnterior.nombre_prenda);
-                        console.log('[guardarPrenda]   - Nombre DESPUÉS:', prendaActualizada.nombre_prenda);
-                        console.log('[guardarPrenda]   - Descripción ANTES:', prendaAnterior.descripcion);
-                        console.log('[guardarPrenda]   - Descripción DESPUÉS:', prendaActualizada.descripcion);
-                        
-                        // 🔴 CRÍTICO: LOG DE IMÁGENES DE PRENDA
-                        console.log('[guardarPrenda] 🔴 IMÁGENES DE PRENDA:');
-                        console.log('[guardarPrenda]   ANTES:', prendaAnterior.imagenes?.length || 0, 'imágenes');
-                        console.log('[guardarPrenda]   DESPUÉS:', prendaActualizada.imagenes?.length || 0, 'imágenes');
-                        console.log('[guardarPrenda]   prendaData.imagenes durante actualización:', prendaData.imagenes?.length || 0, 'imágenes');
-                        
-                        if (prendaActualizada.imagenes?.length > 0) {
-                            console.log('[guardarPrenda]   DETALLE IMÁGENES ACTUALIZADAS:');
-                            prendaActualizada.imagenes.forEach((img, idx) => {
-                                console.log('[guardarPrenda]     Imagen ' + idx + ':', {
-                                    tipo: img instanceof File ? 'File' : typeof img,
-                                    esFile: img instanceof File,
-                                    id: img?.id,
-                                    previewUrl: img?.previewUrl?.substring(0, 50),
-                                    ruta: img?.ruta,
-                                    propiedades: typeof img === 'object' ? Object.keys(img || {}).slice(0, 5) : 'N/A'
-                                });
-                            });
-                        } else {
-                            console.log('[guardarPrenda]   ⚠️ SIN IMÁGENES DESPUÉS DE ACTUALIZAR!');
-                            console.log('[guardarPrenda]   imagenesCopia pasado a prendaData tenía:', prendaData.imagenes?.length || 0);
-                            console.log('[guardarPrenda]   Verificando si prendaData.imagenes es referencia válida...');
-                        }
-                        
-                        console.log('[guardarPrenda]   - telasAgregadas ANTES:', prendaAnterior.telasAgregadas?.length || 'undefined');
-                        console.log('[guardarPrenda]   - telasAgregadas DESPUÉS:', prendaActualizada.telasAgregadas?.length || 'undefined');
-                        
-                        if (prendaActualizada.telasAgregadas?.length > 0) {
-                            console.log('[guardarPrenda]     DETALLE TELAS ACTUALIZADAS:');
-                            prendaActualizada.telasAgregadas.forEach((tela, idx) => {
-                                console.log('[guardarPrenda]       Tela ' + idx + ' (' + tela.tela + '): ' + (tela.imagenes?.length || 0) + ' imagenes');
-                                if (tela.imagenes?.length > 0) {
-                                    console.log('[guardarPrenda]         IMG[0]:', {
-                                        tipo: typeof tela.imagenes[0],
-                                        previewUrl: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].previewUrl?.substring(0, 50) : 'N/A',
-                                        constructor: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].constructor?.name : 'string'
-                                    });
-                                }
-                            });
-                        }
-                        
-                        //  CRÍTICO: Renderizar inmediatamente después de actualizar
-                        console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');
-                        if (this.renderer) {
-                            const itemsOrdenados = this.obtenerItemsOrdenados();
-                            this.renderer.actualizar(itemsOrdenados).catch(err => {
-                                console.error('[gestionItemsUI] Error renderizando:', err);
-                            });
-                        }
-
-                        this.notificationService?.exito('Prenda actualizada correctamente');
-                    } else {
-                        console.error('[guardarPrenda]  ERROR: No existe prenda en index', this.prendaEditIndex);
-                    }
-                    
-//  🔴 CRÍTICO: FINAL CHECK ANTES DE RESETEAR prendaEditIndex
-                    const indexAntesDeLimpiar = this.prendaEditIndex;
-                    console.log('[guardarPrenda] 🔴 ANTES DE CERRAR MODAL - FINAL CHECK CON ÍNDICE VÁLIDO:');
-                    console.log('[guardarPrenda]   prendaEditIndex ANTES de limpiar:', indexAntesDeLimpiar);
-                    const prendaFinalAntesDeReset = this.prendas[indexAntesDeLimpiar];
-                    console.log('[guardarPrenda]   📸 imagenes en this.prendas[' + indexAntesDeLimpiar + ']:', prendaFinalAntesDeReset?.imagenes?.length || 0, 'imágenes');
-                    if (prendaFinalAntesDeReset?.imagenes?.length > 0) {
-                        prendaFinalAntesDeReset.imagenes.forEach((img, idx) => {
-                            console.log('[guardarPrenda]     IMG[' + idx + ']: tipo=' + typeof img + ', esFile=' + (img instanceof File) + ', previewUrl=' + (img?.previewUrl?.substring(0, 40) || 'undefined'));
-                        });
-                    } else {
-                        console.log('[guardarPrenda]   ❌ CRÍTICO: NO HAY IMÁGENES EN LA PRENDA FINAL!');
-                    }
-                    console.log('[guardarPrenda]   🧵 telasAgregadas:', prendaFinalAntesDeReset?.telasAgregadas?.length || 0);
-                    if (prendaFinalAntesDeReset?.telasAgregadas?.length > 0) {
-                        console.log('[guardarPrenda]     Primera tela imagenes:', prendaFinalAntesDeReset.telasAgregadas[0].imagenes?.length || 0);
-                    }
-                    
-                    //  Cerrar modal AQUÍ en modo edición
-                    this.cerrarModalAgregarPrendaNueva();
-                    
-                    //  IMPORTANTE: Salir completamente para evitar que se agregue nueva prenda
-                    return;
-                }
-            } else {
-
-                
-                // GUARDAR EN LA BASE DE DATOS SI ESTAMOS EN EDICIÓN DE PEDIDO EXISTENTE
-                if (enPedidoExistente) {
-
-                    
-                    // PASO 1: MOSTRAR MODAL DE NOVEDAD USANDO COMPONENTE EXTRAÍDO
-                    await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
-                    // El modal de novedades maneja todo: guardado, cierre, etc.
-                    // NO continuamos aquí
-                    return;
-                    
-                } else {
-
-                    this.notificationService?.exito('Prenda agregada correctamente');
-                    
-                    //  NORMALIZAR: cambiar tipo de 'prenda_nueva' a 'prenda' para que ItemFormCollector lo procese
-                    if (prendaData.tipo === 'prenda_nueva') {
-                        prendaData.tipo = 'prenda';
-                    }
-                    
-                    console.log('[gestionItemsUI]  Prenda normalizada antes de agregar:', {
-                        tipo: prendaData.tipo,
-                        nombre_prenda: prendaData.nombre_prenda,
-                        cantidad_talla: prendaData.cantidad_talla,
-                        telas: prendaData.telas?.length || 0,
-                        telasAgregadas: prendaData.telasAgregadas?.length || 0,
-                        contenido_telasAgregadas: prendaData.telasAgregadas,
-                        asignacionesColoresPorTalla: prendaData.asignacionesColoresPorTalla
-                    });
-                    
-                    // Agregar prenda al orden
-                    this.agregarPrendaAlOrden(prendaData);
-
-                }
-            }
-
-            // Cerrar el modal
-            this.cerrarModalAgregarPrendaNueva();
-            
-            console.log('[gestionItemsUI] 📤 PUNTO CRÍTICO: Después de agregar prenda');
-            console.log('[gestionItemsUI] 📤 this.prendas:', this.prendas.length);
-            console.log('[gestionItemsUI] 📤 this.epps:', this.epps.length);
-            console.log('[gestionItemsUI] 📤 this.ordenItems:', JSON.stringify(this.ordenItems));
-            
-            //  Solo en modo CREACIÓN: renderizar
-            // En modo EDICIÓN ya salimos arriba con return
-            if (this.renderer) {
-                const itemsOrdenados = this.obtenerItemsOrdenados();
-                console.log('[gestionItemsUI] 📤 Llamando renderer.actualizar() con', itemsOrdenados.length, 'items (CREACIÓN)');
-                await this.renderer.actualizar(itemsOrdenados);
-            }
-
-            // IMPORTANTE: Actualizar window.datosEdicionPedido.prendas (sin reabrirse automáticamente)
-            if (window.datosEdicionPedido) {
-
-                window.datosEdicionPedido.prendas = this.prendas;
-
-                // El modal de éxito se mostrará y el usuario decidirá si ver la lista
-            }
-
-        } catch (error) {
-
-            this.notificationService?.error('Error al agregar prenda: ' + error.message);
-        }
+        return this._getPrendaFlowService().agregarPrendaNueva();
     }
 
-    /**
-     * Construir objeto de prenda desde el formulario modal
-     * Recolecta: nombre, descripción, origen, imágenes, telas, tallas, variaciones, procesos
-     * @private
-     */
-    /**
-     * Actualizar prenda existente
-     */
     async actualizarPrendaExistente() {
         await this.prendaEditor.actualizarPrendaExistente();
         this.prendaEditIndex = null;
     }
 
     async manejarSubmitFormulario(e) {
-        e.preventDefault();
-
-        try {
-            if (!this.formCollector || !this.apiService || !this.notificationService) {
-
-                return;
-            }
-            
-            const clienteInput = document.getElementById('cliente_editable');
-            if (!clienteInput?.value || clienteInput.value.trim() === '') {
-                this.notificationService.error('El cliente es requerido');
-                clienteInput?.focus();
-                return;
-            }
-
-            const pedidoData = this.formCollector.recolectarDatosPedido();
-            
-            console.log('[gestion-items-pedido]  PEDIDO DATA RECOLECTADA:', {
-                prendas_total: pedidoData.prendas?.length || 0,
-                epps_total: pedidoData.epps?.length || 0,
-                primer_prenda_telas: pedidoData.prendas?.[0]?.telas?.length || 0,
-                primer_prenda_procesos: pedidoData.prendas?.[0]?.procesos ? Object.keys(pedidoData.prendas[0].procesos) : [],
-                primer_prenda_contenido: pedidoData.prendas?.[0]
-            });
-            
-            // DEBUG: Verificar si datosExtendidos está presente en procesos
-            if (pedidoData.prendas?.[0]?.procesos) {
-                Object.entries(pedidoData.prendas[0].procesos).forEach(([procesoKey, proceso]) => {
-                    if (proceso.datos?.datosExtendidos) {
-                        console.log(`[gestion-items-pedido] 📊 Proceso "${procesoKey}" TIENE datosExtendidos:`, {
-                            generos: Object.keys(proceso.datos.datosExtendidos),
-                            datosExtendidos: proceso.datos.datosExtendidos
-                        });
-                    } else {
-                        console.log(`[gestion-items-pedido] ⚠️ Proceso "${procesoKey}" NO tiene datosExtendidos`);
-                    }
-                });
-            }
-
-            // Permitir prendas O epps (al menos uno debe tener items)
-            const tienePrendas = pedidoData.prendas && pedidoData.prendas.length > 0;
-            const tieneEpps = pedidoData.epps && pedidoData.epps.length > 0;
-            const tieneItemsLegacy = pedidoData.items && pedidoData.items.length > 0;
-            
-            if (!tienePrendas && !tieneEpps && !tieneItemsLegacy) {
-                this.notificationService.error('Debe agregar al menos una prenda o un EPP');
-                return;
-            }
-
-            // Mostrar indicador de carga
-            this.mostrarCargando('Validando pedido...');
-
-            const validacion = await this.apiService.validarPedido(pedidoData);
-            console.log('[gestion-items-pedido]  Validación recibida:', validacion);
-            
-            // El backend retorna "success", no "valid"
-            if (!validacion.success) {
-                this.ocultarCargando();
-                console.log('[gestion-items-pedido]  Validación falló:', validacion.errores);
-                const errores = validacion.errores || [];
-                if (Array.isArray(errores) && errores.length > 0) {
-                    alert('Errores en el pedido:\n' + errores.join('\n'));
-                } else {
-                    alert('Error en validación: ' + (validacion.message || JSON.stringify(validacion)));
-                }
-                return;
-            }
-            
-            console.log('[gestion-items-pedido] Validación exitosa, procediendo a crear pedido');
-
-            this.mostrarCargando('Creando pedido...');
-            const resultado = await this.apiService.crearPedido(pedidoData);
-            console.log('[gestion-items-pedido]  Resultado recibido:', resultado);
-            console.log('[gestion-items-pedido] ¿resultado.success?', resultado.success);
-            console.log('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
-
-            if (resultado.success) {
-                console.log('[gestion-items-pedido]  ENTRANDO AL IF - Pedido creado exitosamente');
-                this.datosPedidoCreado = {
-                    pedido_id: resultado.pedido_id,
-                    numero_pedido: resultado.numero_pedido
-                };
-                console.log('[gestion-items-pedido] 📌 datosPedidoCreado:', this.datosPedidoCreado);
-                
-                // Ocultar loader y mostrar modal de éxito existente
-                this.ocultarCargando();
-                console.log('[gestion-items-pedido] 🎬 Llamando mostrarModalExito()...');
-                setTimeout(() => {
-                    console.log('[gestion-items-pedido] 🎬 EN TIMEOUT - Ejecutando mostrarModalExito()');
-                    this.mostrarModalExito();
-                }, 300);
-            } else {
-                console.warn('[gestion-items-pedido]  resultado.success es FALSE o undefined');
-            }
-        } catch (error) {
-            console.error('[gestion-items-pedido]  ERROR CAPTURADO:', error);
-            console.error('[gestion-items-pedido]  Stack:', error.stack);
-            console.error('[gestion-items-pedido]  Message:', error.message);
-            
-            this.ocultarCargando();
-            if (this.notificationService) {
-                const mensajeError = error.message || 'Error desconocido al crear el pedido';
-                this.notificationService.error('Error: ' + mensajeError);
-            }
-        }
+        return this._getSubmitController().manejarSubmitFormulario(e);
     }
 
     mostrarCargando(mensaje = 'Cargando...') {
-        // Remover loader anterior si existe
-        this.ocultarCargando();
-        
-        const loader = document.createElement('div');
-        loader.id = 'pedido-loader';
-        loader.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        `;
-        
-        const contenido = document.createElement('div');
-        contenido.style.cssText = `
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        `;
-        
-        const spinner = document.createElement('div');
-        spinner.style.cssText = `
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        `;
-        
-        const texto = document.createElement('p');
-        texto.textContent = mensaje;
-        texto.style.cssText = `
-            margin: 0;
-            color: #333;
-            font-size: 16px;
-            font-weight: 500;
-        `;
-        
-        // Agregar animación CSS
-        if (!document.getElementById('pedido-loader-style')) {
-            const style = document.createElement('style');
-            style.id = 'pedido-loader-style';
-            style.textContent = `
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        contenido.appendChild(spinner);
-        contenido.appendChild(texto);
-        loader.appendChild(contenido);
-        document.body.appendChild(loader);
+        this._getFeedbackUIService().mostrarCargando(mensaje);
     }
 
     ocultarCargando() {
-        const loader = document.getElementById('pedido-loader');
-        if (loader) {
-            loader.remove();
-        }
+        this._getFeedbackUIService().ocultarCargando();
     }
 
     mostrarExito(mensaje) {
-        const exito = document.createElement('div');
-        exito.id = 'pedido-exito';
-        exito.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 10000;
-            animation: slideIn 0.3s ease-out;
-        `;
-        
-        const texto = document.createElement('p');
-        texto.textContent = mensaje;
-        texto.style.cssText = `
-            margin: 0;
-            color: #27ae60;
-            font-size: 18px;
-            font-weight: 600;
-        `;
-        
-        // Agregar animación CSS si no existe
-        if (!document.getElementById('pedido-exito-style')) {
-            const style = document.createElement('style');
-            style.id = 'pedido-exito-style';
-            style.textContent = `
-                @keyframes slideIn {
-                    from {
-                        opacity: 0;
-                        transform: translate(-50%, -60%);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translate(-50%, -50%);
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        exito.appendChild(texto);
-        document.body.appendChild(exito);
-        
-        // Remover después de 2 segundos
-        setTimeout(() => {
-            exito.remove();
-        }, 2000);
+        this._getFeedbackUIService().mostrarExito(mensaje);
     }
 
     recolectarDatosPedido() {
@@ -1268,234 +493,35 @@ class GestionItemsUI {
     }
 
     mostrarModalExito() {
-        console.log('[mostrarModalExito] 🎬 INICIANDO');
-        console.log('[mostrarModalExito] ¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
-        console.log('[mostrarModalExito] ¿datosPedidoCreado?', this.datosPedidoCreado);
-        
-        // LIMPIAR asignaciones de colores tras crear el pedido
-        console.log('[mostrarModalExito] 🧹 LIMPIANDO asignaciones de colores tras creación exitosa...');
-        if (typeof limpiarAsignacionesColores === 'function') {
-            limpiarAsignacionesColores();
-            console.log('[mostrarModalExito] ✓ Asignaciones limpiadas');
-        } else if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
-            window.StateManager.limpiarAsignaciones();
-            console.log('[mostrarModalExito] ✓ Asignaciones limpiadas (StateManager)');
-        }
-        
-        let modalElement = document.getElementById('modalExitoPedido');
-        console.log('[mostrarModalExito] ¿modalElement existe?', !!modalElement);
-        
-        if (!modalElement) {
-            console.log('[mostrarModalExito]  Creando modal desde HTML...');
-            if (typeof MODAL_EXITO_PEDIDO_HTML === 'undefined') {
-                console.error('[mostrarModalExito]  CRÍTICO: MODAL_EXITO_PEDIDO_HTML no está definido');
-                throw new Error('MODAL_EXITO_PEDIDO_HTML no está disponible');
-            }
-            document.body.insertAdjacentHTML('beforeend', MODAL_EXITO_PEDIDO_HTML);
-            modalElement = document.getElementById('modalExitoPedido');
-            console.log('[mostrarModalExito]  Modal creado, elemento encontrado?', !!modalElement);
-        }
-
-        const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
-        console.log('[mostrarModalExito] ¿btnVolverAPedidos encontrado?', !!btnVolverAPedidos);
-        
-        if (btnVolverAPedidos) {
-            console.log('[mostrarModalExito] 🔗 Asignando onclick');
-            btnVolverAPedidos.onclick = () => {
-                console.log('[mostrarModalExito] 👉 Botón presionado, redirigiendo...');
-                window.location.href = '/asesores/pedidos';
-            };
-        }
-
-        console.log('[mostrarModalExito]  Mostrando modal');
-        modalElement.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        console.log('[mostrarModalExito]  COMPLETADO');
+        this._getSuccessModalService().mostrarModalExito({
+            datosPedidoCreado: this.datosPedidoCreado,
+            ctx: (key) => this._ctx(key)
+        });
     }
+
 
     renderizarProcesosDirectos() {
         this.renderer.renderizarProcesosDirectos();
     }
 }
 
-/**
- * Wrapper para editarProceso que funciona en contexto de edición
- */
-window.editarProcesoEdicion = function(tipo) {
-
-    
-    // Asegurar que el modal de proceso esté encima
-    const modalProceso = document.getElementById('modal-proceso-generico');
-    if (modalProceso) {
-        modalProceso.style.zIndex = '10000';
-
-    }
-    
-    // Usar la función global si existe
-    if (window.editarProceso && window.editarProceso !== window.editarProcesoEdicion) {
-        window.editarProceso(tipo);
-        return;
-    }
-    
-    // Si no existe, detectar modo y abrir el modal correcto
-    const procesoData = window.procesosSeleccionados?.[tipo];
-    if (procesoData?.datos?.datosExtendidos || procesoData?.modoTallas === 'por_tallas') {
-        if (window.abrirModalProcesoPorTallas) {
-            window.abrirModalProcesoPorTallas(tipo);
-        }
-    } else if (window.abrirModalProcesoGenerico) {
-        window.abrirModalProcesoGenerico(tipo);
-        
-        // Asegurar nuevamente que el z-index esté alto después de abrir
-        if (modalProceso) {
-            setTimeout(() => {
-                modalProceso.style.zIndex = '10000';
-            }, 100);
-        }
-        
-        // Cargar datos en el modal
-        if (procesoData?.datos) {
-            cargarDatosProcesoEnModalEdicion(tipo, procesoData.datos);
-        }
-    } else {
-
-    }
-};
-
-/**
- * Cargar datos de un proceso en el modal para editar (fallback)
- */
-function cargarDatosProcesoEnModalEdicion(tipo, datos) {
-
-    
-    // Limpiar imágenes anteriores
-    if (window.imagenesProcesoActual) {
-        window.imagenesProcesoActual = [null, null, null];
-    }
-    if (!window.imagenesProcesoExistentes) {
-        window.imagenesProcesoExistentes = [];
-    }
-    window.imagenesProcesoExistentes = [];
-    
-    // Cargar imágenes
-    const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
-    imagenes.forEach((img, idx) => {
-        if (img && idx < 3) {
-            const indice = idx + 1;
-            const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-            
-            if (preview) {
-                const imgUrl = img instanceof File ? URL.createObjectURL(img) : img;
-                const htmlImg = IMAGEN_PROCESO_EDICION_TEMPLATE
-                    .replace('{{imgUrl}}', imgUrl)
-                    .replace('{{indice}}', indice);
-                preview.innerHTML = htmlImg;
-            }
-            
-            if (window.imagenesProcesoActual) {
-                window.imagenesProcesoActual[idx] = img;
-            }
-        }
-    });
-    
-    // Cargar ubicaciones
-    if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
-        window.ubicacionesProcesoSeleccionadas.length = 0;
-        window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
-        if (window.renderizarListaUbicaciones) {
-            window.renderizarListaUbicaciones();
-        }
-    }
-    
-    // Cargar observaciones
-    const obsInput = document.getElementById('proceso-observaciones');
-    if (obsInput && datos.observaciones) {
-        obsInput.value = datos.observaciones;
-    }
-    
-    // Cargar tallas
-    if (datos.tallas && window.tallasSeleccionadasProceso) {
-        let damaTallas = datos.tallas.dama || {};
-        let caballeroTallas = datos.tallas.caballero || {};
-        let sobremedidaTallas = datos.tallas.sobremedida || {};
-        
-        //  FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada (número u objeto), EXTRAERLA
-        const damaTallasLimpias = {};
-        for (const [talla, valor] of Object.entries(damaTallas)) {
-            if (talla === 'SOBREMEDIDA') {
-                if (typeof valor === 'number') {
-                    sobremedidaTallas['DAMA'] = valor;
-                } else if (typeof valor === 'object' && valor !== null) {
-                    // SOBREMEDIDA anidada: extraer a sobremedidaTallas
-                    for (const [genero, cantidad] of Object.entries(valor)) {
-                        sobremedidaTallas[genero] = cantidad;
-                    }
-                }
-            } else {
-                damaTallasLimpias[talla] = valor;
-            }
-        }
-        damaTallas = damaTallasLimpias;
-        
-        const caballeroTallasLimpias = {};
-        for (const [talla, valor] of Object.entries(caballeroTallas)) {
-            if (talla === 'SOBREMEDIDA') {
-                if (typeof valor === 'number') {
-                    sobremedidaTallas['CABALLERO'] = valor;
-                } else if (typeof valor === 'object' && valor !== null) {
-                    // SOBREMEDIDA anidada: extraer a sobremedidaTallas
-                    for (const [genero, cantidad] of Object.entries(valor)) {
-                        sobremedidaTallas[genero] = cantidad;
-                    }
-                }
-            } else {
-                caballeroTallasLimpias[talla] = valor;
-            }
-        }
-        caballeroTallas = caballeroTallasLimpias;
-        
-        window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
-        window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
-        window.tallasSeleccionadasProceso.sobremedida = sobremedidaTallas;
-        
-        // Actualizar tallasCantidadesProceso también
-        if (!window.tallasCantidadesProceso) {
-            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
-        }
-        window.tallasCantidadesProceso.dama = damaTallas;
-        window.tallasCantidadesProceso.caballero = caballeroTallas;
-        window.tallasCantidadesProceso.sobremedida = sobremedidaTallas;
-        
-        if (window.actualizarResumenTallasProceso) {
-            window.actualizarResumenTallasProceso();
-        }
-    }
-}
 
 // Inicializar cuando el DOM esté listo O inmediatamente si el script se carga dinámicamente
 
+function initializeGestionItemsUI() {
+    if (globalThis.gestionItemsUI) return;
+    const notificationService = typeof NotificationService === 'undefined' ? null : new NotificationService();
+    globalThis.gestionItemsUI = new GestionItemsUI({ notificationService });
+}
+
 if (document.readyState === 'loading') {
-    // Si aún está cargando el DOM, esperar
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!window.gestionItemsUI) {
-            // Inicializar con servicios disponibles
-            const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
-            
-            window.gestionItemsUI = new GestionItemsUI({
-                notificationService: notificationService
-            });
-        }
-    });
+    document.addEventListener('DOMContentLoaded', initializeGestionItemsUI);
 } else {
-    // Si el DOM ya está cargado (carga dinámica de script), inicializar inmediatamente
-    if (!window.gestionItemsUI) {
-        // Inicializar con servicios disponibles
-        const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
-        
-        window.gestionItemsUI = new GestionItemsUI({
-            notificationService: notificationService
-        });
-        
-    }
+    initializeGestionItemsUI();
 }
  
+
+
+
+
+

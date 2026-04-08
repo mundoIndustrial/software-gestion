@@ -29,9 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withProviders([
-        // Domain providers
+        // Domain providers - SupervisorPedidos primero
+        \App\Providers\SupervisorPedidosServiceProvider::class,
         \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
         \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
+        \App\Providers\PrendaEditorServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -49,7 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'block-costura-reflectivo-dashboard' => \App\Http\Middleware\BlockCosturaReflectivoDashboard::class,
         ]);
         
-        // ⚡ TESTING: Deshabilitar CSRF para Postman
+        //  TESTING: Deshabilitar CSRF para Postman
         $middleware->validateCsrfTokens(except: [
             'pedidos-produccion/crear-sin-cotizacion',
             'api/pedidos/*/epp/agregar',

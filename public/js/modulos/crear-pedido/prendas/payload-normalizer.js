@@ -37,12 +37,13 @@
             categoria: eppRaw.categoria || '',
             cantidad: eppRaw.cantidad || 1,
             observaciones: eppRaw.observaciones || '',
+            modo_imagenes: eppRaw.modo_imagenes || 'upload',
             imagenes: normalizarImagenes(eppRaw.imagenes || [])
         };
     }
 
     function normalizarTallas(tallasRaw) {
-        if (!tallasRaw || typeof tallasRaw !== 'object') return {};
+        if (!tallasRaw || typeof tallasRaw !== 'object' || Array.isArray(tallasRaw)) return {};
         const tallasNorm = {};
         Object.entries(tallasRaw).forEach(function([genero, tallasCant]) {
             if (!tallasCant || typeof tallasCant !== 'object') {
@@ -128,6 +129,12 @@
             // Si viene anidado en 'datos', extrae de ahí; si no, usa el nivel superior
             const datosReales = datoProceso.datos || datoProceso;
             
+            // FIX: Si la clave es numérica (procesos viene como array), usar el campo 'tipo' como clave
+            let claveReal = tipoProceso;
+            if (/^\d+$/.test(tipoProceso)) {
+                claveReal = (datosReales.tipo || datoProceso.tipo || datosReales.nombre || datoProceso.nombre || tipoProceso).toString().toLowerCase();
+            }
+            
             // Extraer ubicaciones de forma robusta
             let ubicaciones = datosReales.ubicaciones || datoProceso.ubicaciones || [];
             if (!Array.isArray(ubicaciones)) {
@@ -137,18 +144,18 @@
             // Extraer observaciones y limpiar
             let observaciones = (datosReales.observaciones || datoProceso.observaciones || '').trim();
             
-            procesosNorm[tipoProceso] = {
+            procesosNorm[claveReal] = {
                 uid: datoProceso.uid || null,  // ← NUEVO: Preservar UID del proceso
                 tipo: datosReales.tipo || datoProceso.tipo || tipoProceso,
                 ubicaciones: ubicaciones,
                 observaciones: observaciones,
                 tallas: normalizarTallas(datosReales.tallas || datoProceso.tallas || {}),
                 imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || []),
-                modo_tallas: datosReales.modoTallas || datosReales.modo_tallas || datoProceso.modoTallas || datoProceso.modo_tallas || 'generico',  // ← NUEVO: Normalizar a snake_case para backend
+                modo_tallas: datosReales.modo_tallas || 'generico',
                 datos_extendidos: datosReales.datosExtendidos || datosReales.datos_extendidos || null  // ← PRESERVAR datos por talla (normalizando key también)
             };
             
-            // ⚡ OPTIMIZADO: Removido console.log masivo - impacta 30-50ms
+            //  OPTIMIZADO: Removido console.log masivo - impacta 30-50ms
         });
         return procesosNorm;
     }
@@ -194,7 +201,7 @@
 
     function validarNoHayFiles(jsonString) {
         if (typeof jsonString !== 'string') return true;
-        // ⚡ OPTIMIZADO: indexOf es más rápido que regex para búsqueda simple
+        //  OPTIMIZADO: indexOf es más rápido que regex para búsqueda simple
         return jsonString.indexOf('[object File]') === -1 && jsonString.indexOf('[object Blob]') === -1;
     }
 
@@ -205,13 +212,13 @@
         const jsonLimpio = limpiarFiles(pedidoNormalizado);
         formData.append('pedido', JSON.stringify(jsonLimpio)); // ← 'pedido', no 'payload'
         
-        // ⚡ OPTIMIZADO: Removida variable archivosDebug (no se usaba)
+        //  OPTIMIZADO: Removida variable archivosDebug (no se usaba)
         let archivosAgregados = 0;
         
         // CRÍTICO: Obtener el mapa de archivos desde filesExtraidos
         const archivosMap = filesExtraidos?.archivosMap || {};
         
-        // ⚡ OPTIMIZADO: Removido console.log masivo - impacta 50-100ms en tiempo de carga
+        //  OPTIMIZADO: Removido console.log masivo - impacta 50-100ms en tiempo de carga
         
         // Agregar archivos desde la estructura extraída
         if (filesExtraidos && typeof filesExtraidos === 'object') {
@@ -230,7 +237,7 @@
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;
-                                // ⚡ OPTIMIZADO: Removido archivosDebug
+                                //  OPTIMIZADO: Removido archivosDebug
                             }
                         });
                     }
@@ -246,7 +253,7 @@
                                     if (file instanceof File) {
                                         formData.append(formdataKey, file);
                                         archivosAgregados++;
-                                        // ⚡ OPTIMIZADO: Removido archivosDebug
+                                        //  OPTIMIZADO: Removido archivosDebug
                                     }
                                 });
                             }
@@ -271,7 +278,7 @@
                             } else if (procesoData && typeof procesoData === 'object') {
                                 // CASO 2: Objeto con propiedades imagenes e imagenes_por_talla
                                 
-                                // Procesar imagenes array (modo para_todas)
+                                // Procesar imagenes array (modo generico/general)
                                 if (Array.isArray(procesoData.imagenes)) {
                                     procesoData.imagenes.forEach(function(imgObj, imgIdx) {
                                         const file = imgObj.file || imgObj;
@@ -284,7 +291,7 @@
                                     });
                                 }
                                 
-                                // Procesar imagenes_por_talla (modo por_tallas)
+                                // Procesar imagenes_por_talla (modo especifico)
                                 if (procesoData.imagenes_por_talla && typeof procesoData.imagenes_por_talla === 'object') {
                                     Object.entries(procesoData.imagenes_por_talla).forEach(function([tallaKey, imagesArray]) {
                                         if (Array.isArray(imagesArray)) {
@@ -309,12 +316,12 @@
             // ==========================================
             // PROCESAR IMÁGENES DE ASIGNACIONES DE COLORES (WIZARD)
             // ==========================================
-            console.log('[PayloadNormalizer] 🔍 Verificando asignaciones de colores...');
+            console.log('[PayloadNormalizer]  Verificando asignaciones de colores...');
             
             if (pedidoNormalizado && Array.isArray(pedidoNormalizado.prendas)) {
                 pedidoNormalizado.prendas.forEach(function(prenda, prendaIdx) {
                     if (prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
-                        console.log('[PayloadNormalizer] 📸 Encontradas asignaciones de colores para prenda ' + prendaIdx, {
+                        console.log('[PayloadNormalizer]  Encontradas asignaciones de colores para prenda ' + prendaIdx, {
                             asignaciones_count: Object.keys(prenda.asignacionesColoresPorTalla).length,
                             coloresPorTallaExists: !!window.ColoresPorTalla,
                             hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function'
@@ -342,9 +349,9 @@
                                                     }));
                                                     archivosAgregados++;
                                                     colorImgIdx++;
-                                                    console.log('[PayloadNormalizer] ✅ Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
+                                                    console.log('[PayloadNormalizer]  Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
                                                 } else {
-                                                    console.warn('[PayloadNormalizer] ⚠️ imgData no es File:', {
+                                                    console.warn('[PayloadNormalizer]  imgData no es File:', {
                                                         imagen_id: colorItem.imagen_id,
                                                         color: colorItem.nombre,
                                                         tipo: typeof imgData,
@@ -352,15 +359,15 @@
                                                     });
                                                 }
                                             } else {
-                                                console.warn('[PayloadNormalizer] ⚠️ getImage() retornó null para: ' + colorItem.imagen_id);
+                                                console.warn('[PayloadNormalizer]  getImage() retornó null para: ' + colorItem.imagen_id);
                                             }
                                         }
                                     });
                                 }
                             });
-                            console.log('[PayloadNormalizer] 📊 Total imágenes de colores agregadas: ' + colorImgIdx);
+                            console.log('[PayloadNormalizer]Total imágenes de colores agregadas: ' + colorImgIdx);
                         } else {
-                            console.warn('[PayloadNormalizer] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                            console.warn('[PayloadNormalizer]  ColoresPorTalla no disponible o sin método getImage');
                         }
                     }
                 });
@@ -374,12 +381,10 @@
                     if (Array.isArray(epp.imagenes)) {
                         epp.imagenes.forEach(function(imgObj, imgIdx) {
                             const file = imgObj.file || imgObj;
-                            const formdataKey = imgObj.formdata_key || ('epps[' + eppIdx + '][imagenes][' + imgIdx + ']');
-                            
+                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;
-                                // ⚡ OPTIMIZADO: Removido archivosDebug
                             }
                         });
                     }
@@ -387,7 +392,7 @@
             }
         }
         
-        // ⚡ OPTIMIZADO: Removido console.log masivo - no es necesario en tiempo de carga
+        //  OPTIMIZADO: Removido console.log masivo - no es necesario en tiempo de carga
         
         return formData;
     }
@@ -404,7 +409,8 @@
             forma_de_pago: pedidoRaw.forma_de_pago || '',
             observaciones: pedidoRaw.observaciones || '',
             prendas: [],
-            epps: []
+            epps: [],
+            borrador_pedido_id: pedidoRaw.borrador_pedido_id || null,
         };
 
         // Normalizar prendas
@@ -412,7 +418,7 @@
             pedidoRaw.prendas.forEach(function(prenda, idx) {
                 const prendaNorm = normalizarItem(prenda);
                 pedidoNorm.prendas.push(prendaNorm);
-                // ⚡ OPTIMIZADO: Removido console.log
+                //  OPTIMIZADO: Removido console.log
             });
         }
 
@@ -421,7 +427,7 @@
             pedidoRaw.epps.forEach(function(epp, idx) {
                 const eppNorm = normalizarEpp(epp);
                 pedidoNorm.epps.push(eppNorm);
-                // ⚡ OPTIMIZADO: Removido console.log
+                //  OPTIMIZADO: Removido console.log
             });
         }
         return pedidoNorm;
@@ -472,6 +478,6 @@
     // ========================================================================
     // PASO 6: VALIDACIÓN FINAL (OPTIMIZADA - REMOVIDO PARA PERFORMANCE)
     // ========================================================================
-    // ⚡ REMOVIDO: setTimeout bloqueaba carga - no es necesario en IIFE
+    //  REMOVIDO: setTimeout bloqueaba carga - no es necesario en IIFE
 
 })(); // FIN DEL IIFE

@@ -58,7 +58,7 @@ class ProcesarEnvioCotizacionJob implements ShouldQueue
      */
     public function handle(EnviarCotizacionHandler $handler): void
     {
-        Log::info('🔵 ProcesarEnvioCotizacionJob - Iniciando procesamiento', [
+        Log::info(' ProcesarEnvioCotizacionJob - Iniciando procesamiento', [
             'cotizacion_id' => $this->cotizacionId,
             'tipo_cotizacion_id' => $this->tipoCotizacionId,
             'job_id' => $this->job->getJobId() ?? 'unknown'

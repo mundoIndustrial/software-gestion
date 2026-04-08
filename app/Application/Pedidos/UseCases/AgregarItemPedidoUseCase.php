@@ -4,11 +4,10 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\DTOs\ItemPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Agregar Item a Pedido
- * 
  * Responsabilidad:
  * - Validar datos del item
  * - Agregar item a la sesión de construcción
@@ -34,10 +33,9 @@ class AgregarItemPedidoUseCase
 
         return [
             'success' => true,
-            'message' => 'Ãtem agregado correctamente',
+            'message' => 'item agregado correctamente',
             'items' => $this->gestionItems->obtenerItemsArray(),
             'count' => $this->gestionItems->contar(),
         ];
     }
 }
-

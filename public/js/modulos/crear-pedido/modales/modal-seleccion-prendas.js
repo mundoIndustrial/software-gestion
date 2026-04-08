@@ -41,7 +41,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
     }
     
     // Cargar datos de la cotización desde el backend
-    fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacion.id}`)
+    fetch(`/api/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacion.id}`)
         .then(response => response.json())
         .then(data => {
 
@@ -154,7 +154,7 @@ function renderizarPrendasModal() {
                                        onchange="window.actualizarOrigenPrenda(${index}, 'confeccion')"
                                        ${prenda.prenda_bodega === 0 || prenda.prenda_bodega === false ? 'checked' : ''}
                                        style="width: 18px; height: 18px; cursor: pointer;">
-                                <span>✂️ Confección</span>
+                                <span> Confección</span>
                             </label>
                         </div>
                     </div>
@@ -468,7 +468,7 @@ function renderizarItemsCotizacionEnDOM() {
         // Información básica de la prenda
         const nombrePrenda = item.prenda?.nombre || 'Prenda sin nombre';
         const cantidad = item.prenda?.cantidad || 0;
-        const origen = item.origen === 'bodega' ? '🏪 Bodega' : '✂️ Confección';
+        const origen = item.origen === 'bodega' ? '🏪 Bodega' : ' Confección';
         const procesosTexto = item.procesos && item.procesos.length > 0 ? item.procesos.join(', ') : 'Sin procesos';
         const tipoItem = item.es_proceso ? ' Proceso' : 'Prenda Base';
         
@@ -513,10 +513,10 @@ function renderizarItemsCotizacionEnDOM() {
                 htmlVariaciones += `<li style="color: #374151;"> Bolsillos: ${variaciones.obs_bolsillos}</li>`;
             }
             if (variaciones.aplica_broche && variaciones.obs_broche) {
-                htmlVariaciones += `<li style="color: #374151;">🔗 Broche: ${variaciones.obs_broche}</li>`;
+                htmlVariaciones += `<li style="color: #374151;"> Broche: ${variaciones.obs_broche}</li>`;
             }
             if (variaciones.tiene_reflectivo && variaciones.obs_reflectivo) {
-                htmlVariaciones += `<li style="color: #374151;">✨ Reflectivo: ${variaciones.obs_reflectivo}</li>`;
+                htmlVariaciones += `<li style="color: #374151;"> Reflectivo: ${variaciones.obs_reflectivo}</li>`;
             }
             
             htmlVariaciones += '</ul></div>';
@@ -556,7 +556,7 @@ function renderizarItemsCotizacionEnDOM() {
                         style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
                         onmouseover="this.style.backgroundColor='#dc2626'"
                         onmouseout="this.style.backgroundColor='#ef4444'">
-                    🗑️ Eliminar
+                     Eliminar
                 </button>
             </div>
         `;

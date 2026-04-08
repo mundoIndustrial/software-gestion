@@ -427,7 +427,7 @@
         position: relative !important;
     }
     
-    /* Forzar tamaño completo de página */
+    /* Forzar tamano completo de página */
     @page {
         size: A4 portrait;
         margin: 0.2cm;

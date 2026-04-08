@@ -92,7 +92,7 @@ const TableRenderer = (() => {
                 } else if (key === 'asesor') {
                     // Manejar asesor que viene del servidor
                     cellText.textContent = value || '';
-                } else if (key === 'fecha_de_creacion_de_orden' || key === 'fecha_estimada_de_entrega') {
+                } else if (key === 'created_at' || key === 'fecha_estimada_de_entrega') {
                     // Formatear fechas
                     if (value) {
                         try {

@@ -7,11 +7,11 @@ use App\Models\Cotizacion;
 use App\Models\User;
 use App\Services\CotizacionEstadoService;
 use App\Enums\EstadoCotizacion;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class CotizacionEstadoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private CotizacionEstadoService $service;
     private User $asesor;
@@ -31,11 +31,11 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero de cotización
+     * Test: Obtener siguiente numero de cotización
      */
     public function test_obtener_siguiente_numero_cotizacion()
     {
-        // Crear una cotización con nÃºmero
+        // Crear una cotización con numero
         Cotizacion::factory()->create(['numero_cotizacion' => 100]);
         
         $siguiente = $this->service->obtenerSiguienteNumeroCotizacion();
@@ -44,7 +44,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero cuando no hay cotizaciones
+     * Test: Obtener siguiente numero cuando no hay cotizaciones
      */
     public function test_obtener_siguiente_numero_cotizacion_sin_registros()
     {
@@ -88,7 +88,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transición invÃ¡lida
+     * Test: Rechazar transición invalida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -121,7 +121,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar nÃºmero de cotización
+     * Test: Asignar numero de cotización
      */
     public function test_asignar_numero_cotizacion()
     {
@@ -138,7 +138,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: NÃºmeros Ãºnicos no duplicados
+     * Test: numeros unicos no duplicados
      */
     public function test_numeros_cotizacion_son_unicos()
     {
@@ -197,7 +197,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo BORRADOR â†’ APROBADA_COTIZACIONES
+     * Test: Flujo completo BORRADOR  APROBADA_COTIZACIONES
      */
     public function test_flujo_completo_cotizacion()
     {
@@ -218,7 +218,7 @@ class CotizacionEstadoServiceTest extends TestCase
         $cotizacion->refresh();
         $this->assertEquals(EstadoCotizacion::APROBADA_CONTADOR->value, $cotizacion->estado);
 
-        // Verificar que se asignó nÃºmero
+        // Verificar que se asignó numero
         $this->assertNotNull($cotizacion->numero_cotizacion);
 
         // Paso 3: Aprobar como aprobador
@@ -245,4 +245,6 @@ class CotizacionEstadoServiceTest extends TestCase
         $this->service->aprobarComoContador($cotizacion);
     }
 }
+
+
 

@@ -82,9 +82,9 @@ class CrearPedidoProduccionJob
             $numeroPedido = null;
             
             if (!$this->dto->esLogoPedido()) {
-                $numeroPedido = null; // Se genera automáticamente en PedidoWebService
+                $numeroPedido = null; // Se genera automáticamente en la orquestación de creación del pedido
                 \Log::info(' [CrearPedidoProduccionJob] numero_pedido establecido como NULL', [
-                    'motivo' => 'Se genera automáticamente al crear el pedido via PedidoWebService'
+                    'motivo' => 'Se genera automáticamente al crear el pedido via el coordinator de aplicación'
                 ]);
             } else {
                 \Log::info('  [CrearPedidoProduccionJob] Es pedido LOGO, NO se asigna número en pedidos_produccion');
@@ -119,7 +119,7 @@ class CrearPedidoProduccionJob
                 'forma_de_pago' => $this->dto->formaDePago,
                 'prendas' => $prendasProcesadas,
                 'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             \Log::info(' [CrearPedidoProduccionJob] Pedido creado exitosamente', [

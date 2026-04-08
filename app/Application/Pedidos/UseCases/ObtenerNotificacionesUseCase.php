@@ -7,7 +7,6 @@ use App\Application\Services\Asesores\NotificacionesService;
 
 /**
  * ObtenerNotificacionesUseCase
- * 
  * Use Case para obtener notificaciones del asesor
  * Encapsula la lógica de obtención de notificaciones
  */
@@ -19,7 +18,6 @@ class ObtenerNotificacionesUseCase
 
     public function ejecutar(ObtenerNotificacionesDTO $dto): array
     {
-        return $this->notificacionesService->obtenerNotificaciones();
+        return $this->notificacionesService->obtenerNotificaciones($dto->asesorId);
     }
 }
-

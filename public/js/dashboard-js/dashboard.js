@@ -377,9 +377,9 @@ const DataLoader = {
         
         // Mapeo de tipos de eventos a badges y estilos
         const eventTypeConfig = {
-            'record_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '🆕' },
+            'record_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
             'record_updated': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
-            'record_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '🗑️' },
+            'record_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '' },
             'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
             'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
             'area_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },

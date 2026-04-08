@@ -9,21 +9,21 @@ use InvalidArgumentException;
  * EstadoValidator - Valida transiciones de estado
  * 
  * Responsabilidad:
- * - Validar valores de estado vÃ¡lidos
+ * - Validar valores de estado validos
  * - Validar transiciones permitidas
  * - Validar reglas de negocio por estado
  * 
  * Estados permitidos:
- * - activo: Pedido reciÃ©n creado, se pueden agregar prendas
+ * - activo: Pedido recien creado, se pueden agregar prendas
  * - pendiente: Esperando aprobación o pago
  * - completado: Pedido finalizado (no se puede cambiar)
  * - cancelado: Pedido cancelado (no se puede cambiar)
  * 
  * Transiciones permitidas:
- * - activo â†’ pendiente, completado, cancelado
- * - pendiente â†’ activo, completado
- * - completado â†’ NO PERMITIDO
- * - cancelado â†’ NO PERMITIDO
+ * - activo  pendiente, completado, cancelado
+ * - pendiente  activo, completado
+ * - completado  NO PERMITIDO
+ * - cancelado  NO PERMITIDO
  */
 class EstadoValidator implements Validator
 {
@@ -58,7 +58,7 @@ class EstadoValidator implements Validator
     }
 
     /**
-     * Validar campo especÃ­fico
+     * Validar campo especifico
      * 
      * @param string $field
      * @param mixed $value
@@ -75,7 +75,7 @@ class EstadoValidator implements Validator
     }
 
     /**
-     * Validar estado vÃ¡lido
+     * Validar estado valido
      * 
      * @throws InvalidArgumentException
      */
@@ -87,7 +87,7 @@ class EstadoValidator implements Validator
 
         if (!in_array($estado, self::ESTADOS_PERMITIDOS)) {
             throw new InvalidArgumentException(
-                "Estado invÃ¡lido: '{$estado}'. Permitidos: " . 
+                "Estado invalido: '{$estado}'. Permitidos: " . 
                 implode(', ', self::ESTADOS_PERMITIDOS)
             );
         }
@@ -111,7 +111,7 @@ class EstadoValidator implements Validator
             return;
         }
 
-        // Verificar si la transición estÃ¡ permitida
+        // Verificar si la transición está permitida
         $transicionesPermitidas = self::TRANSICIONES_PERMITIDAS[$estadoActual] ?? [];
         
         if (!in_array($nuevoEstado, $transicionesPermitidas)) {

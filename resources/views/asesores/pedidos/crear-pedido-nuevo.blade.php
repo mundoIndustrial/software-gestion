@@ -1,5 +1,7 @@
 @extends('layouts.asesores')
 
+@section('body-class', 'crear-pedido-view')
+
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
@@ -17,7 +19,7 @@
     <h1>
         <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">description</span>
         @if($modoEdicion ?? false)
-            Editar Pedido #{{ $pedidoEditarId }}
+            Editando pedido de: {{ $pedido->cliente_nombre_display ?? 'Pedido #'.$pedidoEditarId }}
         @else
             Crear Nuevo Pedido de Producción
         @endif
@@ -35,7 +37,18 @@
         window.pedidoEditarId = {{ $pedidoEditarId }};
         // Pasar datos completos con pedido, prendas, EPPs, etc.
         window.pedidoEditarData = {!! json_encode([
-            'pedido' => $pedido ?? [],
+            'pedido' => [
+                'id' => $pedido->id ?? null,
+                'numero_pedido' => $pedido->numero_pedido ?? null,
+                'orden_compra' => $pedido->orden_compra ?? '',
+                'cliente' => $pedido->cliente_nombre_display ?? '',
+                'forma_de_pago' => $pedido->forma_de_pago ?? '',
+                'observaciones' => $pedido->observaciones ?? '',
+                'estado' => $pedido->estado ?? '',
+                // Contrato explícito: payload ya mapeado por MapearPedidoEdicionService.
+                // No remapear aquí para evitar pérdidas de campos del flujo talla_color.
+                'prendas' => ($pedido->prendas ?? collect())->values()->toArray(),
+            ],
             'epps' => $epps ?? [],
             'estados' => $estados ?? [],
             'areas' => $areas ?? []
@@ -60,7 +73,12 @@
                         Cliente
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="cliente_editable" name="cliente" value="{{ $pedido->cliente ?? '' }}">
+                    <input type="text" id="cliente_editable" name="cliente" value="{{ ($modoEdicion ?? false) ? ($pedido->cliente_nombre_display ?? '') : '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="orden_compra_editable">Orden de Compra</label>
+                    <input type="text" id="orden_compra_editable" name="orden_compra" value="{{ ($modoEdicion ?? false) ? ($pedido->orden_compra ?? '') : '' }}" placeholder="Opcional: Ingrese el número de orden de compra">
                 </div>
 
                 <div class="form-group">
@@ -70,14 +88,14 @@
 
                 <div class="form-group">
                     <label for="forma_de_pago_editable">Forma de Pago</label>
-                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
+                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ ($modoEdicion ?? false) ? ($pedido->forma_de_pago ?? '') : '' }}">
                 </div>
             </div>
 
             <div style="width: 100%; margin-top: 1rem;">
                 <div class="form-group">
                     <label for="observaciones_editable">Observaciones</label>
-                    <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido...">{{ $pedido->observaciones ?? '' }}</textarea>
+                    <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido...">{{ ($modoEdicion ?? false) ? ($pedido->observaciones ?? '') : '' }}</textarea>
                 </div>
             </div>
         </div>
@@ -148,6 +166,10 @@
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
                 Crear Pedido
             </button>
+            <button type="button" id="btn-guardar-borrador" class="btn btn-warning" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(251, 146, 60, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(251, 146, 60, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(251, 146, 60, 0.2)'">
+                <span class="material-symbols-rounded" style="font-size: 1.1rem;">save</span>
+                Guardar Borrador
+            </button>
             <a href="{{ route('asesores.pedidos.index') }}" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">close</span>
                 Cancelar
@@ -160,10 +182,10 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+@include('shared.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
-@include('asesores.pedidos.modals.modal-agregar-epp')
+@include('shared.pedidos.modals.modal-agregar-editar-epp')
 @include('asesores.pedidos.modals.modal-editar-epp')
 
 @endsection
@@ -174,7 +196,7 @@
 
     @php $v = config('app.asset_version'); @endphp
 
-    <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
+    <!--  Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
     <script defer src="{{ js_asset('js/utilidades/logger-app.js') }}?v={{ $v }}"></script>
 
     <!-- ─── Shared Services ─── -->
@@ -203,39 +225,26 @@
     <script defer src="{{ js_asset('js/services/epp/EppHttpService.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ $v }}"></script>
 
-    <!-- Inicializar storages cuando scripts defer hayan cargado -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!window.imagenesPrendaStorage) {
-                window.imagenesPrendaStorage = new ImageStorageService(3);
-            }
-            if (!window.imagenesTelaStorage) {
-                window.imagenesTelaStorage = new ImageStorageService(3);
-            }
-            if (!window.imagenesReflectivoStorage) {
-                window.imagenesReflectivoStorage = new ImageStorageService(3);
-            }
-        });
-    </script>
+    <!-- ─── Inicialización de Image Storage (Fase 3) ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/image-storage-init.js') }}?v={{ $v }}"></script>
 
     <!-- ─── EPP Services ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tabla.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ $v }}"></script>
 
     <!-- ─── Core: tallas, telas, utilidades, procesos ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/dom-utils.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/modal-cleanup.js') }}?v={{ $v }}"></script>
@@ -243,14 +252,24 @@
     <script defer src="{{ js_asset('js/utilidades/prenda-data-builder.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/validador-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-imagenes.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-tallas.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/procesos-imagenes-storage.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/componentes/manejo-imagenes-proceso.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 
@@ -259,21 +278,20 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
 
     <!-- EPP Services exclusivos para vista de nuevo pedido (solo los que no están duplicados) -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-nuevo.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-nuevo.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tarjeta.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-tarjeta.js') }}?v={{ time() }}"></script>
     
     <!-- Inicializar EPP Menu Handlers para vista nuevo pedido -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('[crear-pedido-nuevo] Inicializando EPP Menu Handlers...');
             
-            // Crear instancia del manejador de menús EPP
-            if (typeof EppMenuHandlersNuevo !== 'undefined') {
-                window.eppMenuHandlersNuevo = new EppMenuHandlersNuevo();
-                window.eppMenuHandlersNuevo.inicializar();
+            // El handler se instancia automáticamente en el archivo JS
+            if (typeof window.eppMenuHandlerTarjeta !== 'undefined') {
                 console.log('[crear-pedido-nuevo] EPP Menu Handlers inicializado correctamente');
             } else {
-                console.error('[crear-pedido-nuevo] EppMenuHandlersNuevo no está disponible');
+                console.error('[crear-pedido-nuevo] eppMenuHandlerTarjeta no está disponible');
             }
         });
     </script>
@@ -293,12 +311,23 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/items-sync-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/item-removal-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prendas-wrappers.js') }}?v={{ $v }}"></script>
 
+    <!-- ─── Validación y envío ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/validacion/validacion-envio-fase3.js') }}?v={{ $v }}"></script>
+
     <!-- ─── Gestores, Builders, Card Services ─── -->
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}?v={{ $v }}"></script>
@@ -310,189 +339,76 @@
     <script defer src="{{ js_asset('js/prendas/utils/image-processor.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/prendas/builders/procesos-builder.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/image-converter-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-context.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-normalizers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-renderers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-data-utils.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-variations-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-sizing-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/services/prenda-card-process-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/prenda-card-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-card-readonly.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/modal-prenda-dinamico-constantes.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/modal-prenda-dinamico.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-card-editar-simple.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-serializer.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-serializer-helpers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-builder.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-save-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-orchestrator.js') }}?v={{ $v }}"></script>
+    @if($modoEdicion ?? false)
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ $v }}"></script>
+    @endif
+
+    <!-- ─── Inicialización UI: Formatters, Buttons, Dropdowns, Handlers ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/input-formatter-init.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/leave-button-setup.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/items-dropdown-init.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/item-type-handlers.js') }}?v={{ $v }}"></script>
 
 <script>
+    window.routeGuardarBorradorUrl = '{{ url("/api/asesores/pedidos/borrador") }}';
+    window.routePedidosIndexUrl = '{{ route("asesores.pedidos.index") }}';
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Configurar asesora
-        document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
+        console.log('[crear-pedido-nuevo] Inicializando componentes de la página...');
         
-        // ========== CONFIGURAR INPUTS EN MAYÚSCULAS ==========
-        function setupUpperCaseInput(inputId) {
-            const input = document.getElementById(inputId);
-            if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
-                
-                // Función para convertir a mayúsculas preservando posición del cursor
-                function forceUpperCase() {
-                    const currentValue = input.value;
-                    const upperValue = currentValue.toUpperCase();
-                    if (currentValue !== upperValue) {
-                        // Guardar posición del cursor
-                        const start = input.selectionStart;
-                        const end = input.selectionEnd;
-                        
-                        // Actualizar valor
-                        input.value = upperValue;
-                        
-                        // Restaurar posición del cursor
-                        input.setSelectionRange(start, end);
-                        
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
-                    }
-                }
-                
-                // Eventos para cubrir todos los casos
-                input.addEventListener('input', forceUpperCase);
-                input.addEventListener('keyup', forceUpperCase);
-                input.addEventListener('change', forceUpperCase);
-                input.addEventListener('paste', function(e) {
-                    setTimeout(forceUpperCase, 10);
-                });
-                input.addEventListener('blur', forceUpperCase);
-                
-                // Convertir valor inicial si existe
-                if (input.value) {
-                    input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
-                }
-                
-                // Forzar mayúsculas cada segundo por si acaso
-                const intervalId = setInterval(forceUpperCase, 1000);
-                
-                // Limpiar intervalo después de 10 segundos para no consumir recursos
-                setTimeout(() => clearInterval(intervalId), 10000);
-            } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
-            }
+        // Inicializar image storage (Fase 3)
+        if (typeof InitializeImageStorages === 'function') {
+            InitializeImageStorages();
         }
         
-        // Aplicar a los inputs especificados
-        setupUpperCaseInput('cliente_editable');
-        setupUpperCaseInput('asesora_editable');
-        setupUpperCaseInput('forma_de_pago_editable');
-        setupUpperCaseInput('observaciones_editable');
-        
-        // Mostrar botones
-        const btnSubmit = document.getElementById('btn-submit');
-        btnSubmit.textContent = '✓ Crear Pedido';
-        btnSubmit.style.display = 'block';
-
-        // ========== OCULTAR LOADING Y MOSTRAR SELECT DE TIPO DE PEDIDO ==========
-        const tipoPedidoLoading = document.getElementById('tipo-pedido-loading');
-        const tipoPedidoSelect = document.getElementById('tipo_pedido_nuevo');
-        
-        if (tipoPedidoLoading && tipoPedidoSelect) {
-            setTimeout(() => {
-                tipoPedidoLoading.style.display = 'none';
-                tipoPedidoSelect.style.display = 'block';
-                tipoPedidoSelect.removeAttribute('disabled');
-            }, 500);
+        // Inicializar componentes modularizados (Fase 2 - Refactoring)
+        if (typeof InitializeInputFormatters === 'function') {
+            InitializeInputFormatters();
         }
-
-        // ========== GESTIÓN DE ÍTEMS ==========
-        const selectTipoPedidoNuevo = document.getElementById('tipo_pedido_nuevo');
-        const seccionItems = document.getElementById('seccion-items-pedido');
         
-        if (seccionItems) {
-            seccionItems.style.display = 'block';
+        if (typeof InitializeLeaveButtons === 'function') {
+            InitializeLeaveButtons();
         }
-
-        // Agregar ítem de tipo nuevo desde el botón inline
-        const btnAgregarItemTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
-        if (btnAgregarItemTipoInline) {
-            btnAgregarItemTipoInline.addEventListener('click', function(e) {
-                e.preventDefault();
-                const tipoPedido = selectTipoPedidoNuevo.value;
-                
-                if (!tipoPedido) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: ' Tipo de Ítem Requerido',
-                        text: 'Por favor selecciona un ítem primero',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#0066cc'
-                    });
-                    return;
-                }
-                
-                // Feedback visual: deshabilitar y mostrar estado cargando
-                btnAgregarItemTipoInline.disabled = true;
-                btnAgregarItemTipoInline.style.opacity = '0.6';
-                const textoOriginal = btnAgregarItemTipoInline.innerHTML;
-                btnAgregarItemTipoInline.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem; animation: spin 0.8s linear infinite;">refresh</span>';
-                
-                // Auto-habilitar después de 600ms
-                setTimeout(() => {
-                    btnAgregarItemTipoInline.disabled = false;
-                    btnAgregarItemTipoInline.style.opacity = '1';
-                    btnAgregarItemTipoInline.innerHTML = textoOriginal;
-                }, 600);
-                
-                // Manejar diferentes tipos de pedido
-                if (tipoPedido === 'P') {
-                    window.abrirModalPrendaNueva();
-                } else if (tipoPedido === 'EPP') {
-                    window.abrirModalAgregarEPP();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: ' Tipo Desconocido',
-                        text: 'Tipo de pedido "' + tipoPedido + '" desconocido',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#ef4444'
-                    });
-                }
-            });
+        
+        if (typeof InitializeItemsDropdown === 'function') {
+            InitializeItemsDropdown();
         }
-
-        // Manejar cambio de tipo de pedido nuevo
-        window.manejarCambiaTipoPedido = function() {
-            const tipoPedido = selectTipoPedidoNuevo.value;
-            if (!tipoPedido) return;
-            const btnAgregarTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
-            if (btnAgregarTipoInline) {
-                btnAgregarTipoInline.style.display = 'flex';
-            }
-        };
+        
+        if (typeof InitializeItemTypeHandlers === 'function') {
+            InitializeItemTypeHandlers();
+        }
+        
+        console.log('[crear-pedido-nuevo] Componentes inicializados ✓');
     });
 </script>
 
-<!-- Script para cargar datos en modo edición -->
-@if($modoEdicion ?? false)
-<script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ $v }}"></script>
-@endif
-
-<!-- Invoice Preview: Lazy-loaded cuando se necesite -->
+<!-- Script para manejar Guardar Borrador -->
 <script>
-    window._invoiceScriptsLoaded = false;
-    window.cargarModulosInvoice = function() {
-        if (window._invoiceScriptsLoaded) return Promise.resolve();
-        return new Promise(function(resolve) {
-            var scripts = [
-                '{{ asset("js/modulos/invoice/ImageGalleryManager.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/FormDataCaptureService.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/InvoiceRenderer.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/ModalManager.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/InvoiceExportService.js") }}?v={{ $v }}',
-                '{{ asset("js/invoice-preview-live.js") }}?v={{ $v }}'
-            ];
-            var loaded = 0;
-            scripts.forEach(function(src) {
-                var s = document.createElement('script');
-                s.src = src;
-                s.onload = function() { if (++loaded === scripts.length) { window._invoiceScriptsLoaded = true; resolve(); } };
-                document.head.appendChild(s);
-            });
-        });
-    };
+    // Asignar evento al botón cuando se cargue el DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.DraftPedidoOrchestrator && typeof window.DraftPedidoOrchestrator.registrarBotonGuardarBorrador === 'function') {
+            window.DraftPedidoOrchestrator.registrarBotonGuardarBorrador();
+        }
+    });
 </script>
 
 <!-- ─── Final UI Scripts ─── -->
@@ -500,9 +416,8 @@
 <script defer src="{{ js_asset('js/componentes/prenda-editor-modal.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ $v }}"></script>
 
-<!-- 🧪 TEST SUITE: Solo en desarrollo -->
+<!--  TEST SUITE: Solo en desarrollo -->
 @if(config('app.debug'))
 <script defer src="{{ js_asset('js/tests/prenda-editor-test.js') }}?v={{ $v }}"></script>
 @endif
 @endpush
-

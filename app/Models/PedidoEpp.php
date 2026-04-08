@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo Eloquent: PedidoEpp
@@ -13,19 +14,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class PedidoEpp extends Model
 {
+    use SoftDeletes;
+
+    private array $transientTallasMedidas = [];
     protected $table = 'pedido_epp';
 
     protected $fillable = [
         'pedido_produccion_id',
         'epp_id',
         'cantidad',
-        'tallas_medidas',
         'observaciones',
+        'homologado_de',
     ];
 
     protected $casts = [
-        'tallas_medidas' => 'array',
         'cantidad' => 'integer',
+        'homologado_de' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -47,6 +51,22 @@ class PedidoEpp extends Model
     }
 
     /**
+     * Relación: El EPP anterior que fue homologado
+     */
+    public function homologadoDe(): BelongsTo
+    {
+        return $this->belongsTo(PedidoEpp::class, 'homologado_de');
+    }
+
+    /**
+     * Relación: Los EPP que fueron homologados desde este
+     */
+    public function homologaciones()
+    {
+        return $this->hasMany(PedidoEpp::class, 'homologado_de');
+    }
+
+    /**
      * Relación: Un PedidoEpp tiene muchas imágenes
      */
     public function imagenes()
@@ -59,6 +79,19 @@ class PedidoEpp extends Model
      */
     public function imagenPrincipal()
     {
-        return $this->hasOne(PedidoEppImagen::class)->where('principal', true);
+        return $this->hasOne(PedidoEppImagen::class)->where('principal', true)->first();
+    }
+
+    /**
+     * Compatibilidad: columna ya no existe en BD, exponerla como arreglo en runtime.
+     */
+    public function getTallasMedidasAttribute(): array
+    {
+        return $this->transientTallasMedidas;
+    }
+
+    public function setTransientTallasMedidas(?array $value): void
+    {
+        $this->transientTallasMedidas = is_array($value) ? $value : [];
     }
 }

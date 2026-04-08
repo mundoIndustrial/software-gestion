@@ -9,9 +9,6 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('mundo_icon.png') }}" sizes="any">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     
@@ -59,9 +56,14 @@
         }
     </style>
     
-    @stack('styles')
+    @php
+        $userRoles = auth()->user()->roles->pluck('name')->toArray();
+        $esVisualizador = in_array('visualizador_plooter', $userRoles) && count($userRoles) === 1;
+    @endphp
+
 </head>
 <body class="light-theme">
+
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -79,17 +81,42 @@
         </div>
 
         <div class="sidebar-content">
+            @if($esVisualizador)
+                <!-- Menú simplificado para visualizador_plooter -->
+                <div class="menu-section">
+                    <span class="menu-section-title">Gestionar Órdenes</span>
+                    <nav aria-label="Menú de recibos">
+                        <ul class="menu-list">
+                            <li class="menu-item">
+                                <a href="{{ route('operario.dashboard') }}" 
+                                   class="menu-link {{ request()->routeIs('operario.dashboard') ? 'active' : '' }}">
+                                    <span class="material-symbols-rounded">receipt_long</span>
+                                    <span class="menu-label">Recibos Asignados</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="menu-section">
+                    <span class="menu-section-title">Insumos</span>
+                    <nav aria-label="Menú de plooter">
+                        <ul class="menu-list">
+                            <li class="menu-item">
+                                <a href="{{ route('insumos.plooter.index') }}" 
+                                   class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}">
+                                    <span class="material-symbols-rounded">description</span>
+                                    <span class="menu-label">Gestion Plooter</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            @else
+                <!-- Menú completo para otros usuarios -->
             <div class="menu-section">
                 <span class="menu-section-title">Principal</span>
                 <nav aria-label="Menú principal">
                     <ul class="menu-list">
-                        <li class="menu-item">
-                            <a href="{{ route('insumos.dashboard') }}" 
-                               class="menu-link {{ request()->routeIs('insumos.dashboard') ? 'active' : '' }}">
-                                <span class="material-symbols-rounded">dashboard</span>
-                                <span class="menu-label">Dashboard</span>
-                            </a>
-                        </li>
                     </ul>
                 </nav>
             </div>
@@ -106,17 +133,17 @@
                             </a>
                         </li>
                         <li class="menu-item">
+                            <a href="{{ route('insumos.plooter.index') }}" 
+                               class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}">
+                                <span class="material-symbols-rounded">description</span>
+                                <span class="menu-label">Gestion Plooter</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
                             <a href="{{ route('inventario-telas.index') }}" 
                                class="menu-link {{ request()->routeIs('inventario-telas.*') ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">checkroom</span>
                                 <span class="menu-label">Inventario de Telas</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{{ route('insumos.metrajes.index') }}" 
-                               class="menu-link {{ request()->routeIs('insumos.metrajes.*') ? 'active' : '' }}">
-                                <span class="material-symbols-rounded">straighten</span>
-                                <span class="menu-label">Cálculo de Metrajes</span>
                             </a>
                         </li>
                     </ul>
@@ -138,6 +165,7 @@
                     </ul>
                 </nav>
             </div>
+            @endif
             @endif
         </div>
 
@@ -186,6 +214,40 @@
                             <span class="user-role">Insumos</span>
                         </div>
                     </button>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-menu-header">
+                            <div class="user-avatar-large">
+                                @if(Auth::user()->avatar)
+                                    <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                                @else
+                                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.8rem; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);">
+                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    </div>
+                                @endif
+                            </div>
+                            <div>
+                                <p class="user-menu-name">{{ Auth::user()->name }}</p>
+                                <p class="user-menu-email">{{ Auth::user()->email }}</p>
+                            </div>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <a href="#" class="menu-item">
+                            <span class="material-symbols-rounded">person</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a href="#" class="menu-item">
+                            <span class="material-symbols-rounded">settings</span>
+                            <span>Configuración</span>
+                        </a>
+                        <div class="menu-divider"></div>
+                        <form method="POST" action="{{ route('logout') }}" style="width: 100%;">
+                            @csrf
+                            <button type="submit" class="menu-item logout" style="border: none; background: none; cursor: pointer; width: 100%; text-align: left; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; color: var(--danger-color);">
+                                <span class="material-symbols-rounded">logout</span>
+                                <span>Cerrar Sesión</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </header>
@@ -198,6 +260,42 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/insumos/layout.js') }}"></script>
+    
+    <!-- Toggle user menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('userBtn')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const menu = document.getElementById('userMenu');
+                menu?.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.user-dropdown')) {
+                    document.getElementById('userMenu')?.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    
+    <!-- CORE ARCHITECTURE LAYER - Hybrid DDD Implementation -->
+    <!--   CRITICAL: Order matters! Load in this sequence:
+         1. Shared Cache (base class)
+         2. HttpClient (no dependencies)
+         3. Domain Repository (interface)
+         4. Shared Infrastructure Cache Repository (depends on CacheRepository)
+         5. Infrastructure Repository (depends on HttpClient + SessionStorageCacheRepository)
+         6. Application Service (depends on Repository)
+         7. Bootstrap DI Container (depends on all above)
+    -->
+    <script src="{{ asset('js/shared/CacheRepository.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/infrastructure/HttpClient.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/domain/InsumoRepository.js') }}"></script>
+    <script src="{{ asset('js/shared/infrastructure/SessionStorageCacheRepository.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/infrastructure/SessionStorageInsumoRepository.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/application/InsumoService.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/bootstrap.js') }}"></script>
+    
     @stack('scripts')
 </body>
 </html>

@@ -522,7 +522,7 @@ window.filterCheckboxOptions = function(filterType) {
 
 // Cargar nombres de prendas al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-reflectivo');
+    console.log('[DOMContentLoaded]  Cargando nombres de prendas en recibos-reflectivo');
     
     const filasRecibos = document.querySelectorAll('#tablaRecibosBody tr[data-orden-id]');
     
@@ -655,8 +655,8 @@ function abrirModalSeguimiento(pedidoId, prendaIdTarget) {
             if (prendas && prendas.length > 0) {
                 let prendaSeleccionada = null;
                 if (prendaIdTarget) {
-                    prendaSeleccionada = prendas.find(p => 
-                        String(p.id) === String(prendaIdTarget) || 
+                    prendaSeleccionada = prendas.find(p =>
+                        String(p.id) === String(prendaIdTarget) ||
                         String(p.prenda_pedido_id) === String(prendaIdTarget)
                     );
                 }
@@ -749,15 +749,15 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
         return;
     }
     
-    // ✅ Cargar datos ANTES de abrir el modal (esperar a que termine)
+    //  Cargar datos ANTES de abrir el modal (esperar a que termine)
     cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada)
         .then(() => {
-            // ✅ Verificar que los datos se cargaron correctamente
+            //  Verificar que los datos se cargaron correctamente
             if (!window.currentOrderData || !window.currentPrendaData) {
                 throw new Error('No se pudieron cargar los datos necesarios');
             }
             
-            // ✅ AHORA sí, abrir el modal
+            //  AHORA sí, abrir el modal
             const modal = document.getElementById('addProcesoModal');
             if (!modal) {
                 alert('Modal de agregar proceso no disponible');
@@ -782,7 +782,7 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
                 inputEncargado.focus();
             }
             
-            // ✅ Configurar evento del botón guardar
+            //  Configurar evento del botón guardar
             const btnConfirm = document.getElementById('btnConfirmAddProceso');
             if (btnConfirm) {
                 btnConfirm.removeEventListener('click', handleAgregarProcesoDesdeBadge);
@@ -862,7 +862,12 @@ async function handleAgregarProcesoDesdeBadge() {
             return;
         }
 
-        if (!encargado.trim()) {
+        // Validar encargado solo para áreas que lo requieren
+        const areaLower = area.toLowerCase();
+        const needsEncargado = ['corte', 'costura', 'control de calidad'];
+        const areaRequiresEncargado = needsEncargado.some(reqArea => areaLower.includes(reqArea));
+        
+        if (areaRequiresEncargado && !encargado.trim()) {
             showError('Por favor ingresa el nombre del encargado');
             if (btnContent && btnLoading && btnConfirm) {
                 btnContent.style.display = 'flex';
@@ -901,9 +906,9 @@ async function handleAgregarProcesoDesdeBadge() {
 
         const result = await response.json();
         
-        // ✅ Mostrar mensaje diferente según si fue creado o actualizado
-        const mensaje = result.action === 'actualizado' 
-            ? 'Proceso actualizado correctamente' 
+        //  Mostrar mensaje diferente según si fue creado o actualizado
+        const mensaje = result.action === 'actualizado'
+            ? 'Proceso actualizado correctamente'
             : 'Proceso agregado correctamente';
         showSuccess(mensaje);
         
@@ -997,7 +1002,7 @@ function clearAllToasts() {
 
 async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada) {
     try {
-        // ⚠️ VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
+        //  VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
         if (!prendaId || prendaId === 'null' || prendaId === null) {
             throw new Error('CRÍTICO: No se proporcionó una prenda específica. No se puede asignar encargado sin prenda definida.');
         }
@@ -1022,9 +1027,9 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
         if (data.prendas && Array.isArray(data.prendas)) {
             let prendaEncontrada = null;
             
-            // 🔒 SER ESTRICTO: Buscar EXACTAMENTE la prenda especificada, SIN FALLBACK
-            prendaEncontrada = data.prendas.find(p => 
-                String(p.id) === String(prendaId) || 
+            //  SER ESTRICTO: Buscar EXACTAMENTE la prenda especificada, SIN FALLBACK
+            prendaEncontrada = data.prendas.find(p =>
+                String(p.id) === String(prendaId) ||
                 String(p.prenda_pedido_id) === String(prendaId)
             );
             
@@ -1141,7 +1146,7 @@ function crearDropdownRecibos(button) {
 
 // Ocultar el botón Volver y activar dropdowns
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Inicializando dropdowns en recibos-reflectivo');
+    console.log('[DOMContentLoaded]  Inicializando dropdowns en recibos-reflectivo');
 
     if (window.location.pathname.includes('/recibos-reflectivo')) {
         const botonVolver = document.getElementById('backToPrendasBtn');

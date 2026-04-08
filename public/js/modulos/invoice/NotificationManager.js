@@ -3,18 +3,19 @@
  * Maneja la visualización de mensajes y alertas al usuario
  */
 
-class NotificationManager {
-    constructor() {
-        this.init();
-    }
+if (typeof NotificationManager === 'undefined') {
+    class NotificationManager {
+        constructor() {
+            this.init();
+        }
 
-    init() {
-        // Hacer métodos disponibles globalmente para compatibilidad
-        window.mostrarErrorNotificacion = this.mostrarError.bind(this);
-        window.mostrarExitoNotificacion = this.mostrarExito.bind(this);
-        window.mostrarInfoNotificacion = this.mostrarInfo.bind(this);
-        window.mostrarAdvertenciaNotificacion = this.mostrarAdvertencia.bind(this);
-    }
+        init() {
+            // Hacer métodos disponibles globalmente para compatibilidad
+            window.mostrarErrorNotificacion = this.mostrarError.bind(this);
+            window.mostrarExitoNotificacion = this.mostrarExito.bind(this);
+            window.mostrarInfoNotificacion = this.mostrarInfo.bind(this);
+            window.mostrarAdvertenciaNotificacion = this.mostrarAdvertencia.bind(this);
+        }
 
     /**
      * Muestra una notificación de error
@@ -403,17 +404,24 @@ class NotificationManager {
 
 // Inicializar el gestor y agregar estilos
 document.addEventListener('DOMContentLoaded', () => {
-    window.notificationManager = new NotificationManager();
-    window.notificationManager.agregarEstilosCSS();
+    if (!window.notificationManager) {
+        window.notificationManager = new NotificationManager();
+        window.notificationManager.agregarEstilosCSS();
+    }
 });
 
 // También permitir inicialización manual
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.notificationManager = new NotificationManager();
-        window.notificationManager.agregarEstilosCSS();
+        if (!window.notificationManager) {
+            window.notificationManager = new NotificationManager();
+            window.notificationManager.agregarEstilosCSS();
+        }
     });
 } else {
-    window.notificationManager = new NotificationManager();
-    window.notificationManager.agregarEstilosCSS();
+    if (!window.notificationManager) {
+        window.notificationManager = new NotificationManager();
+        window.notificationManager.agregarEstilosCSS();
+    }
 }
+} // Cierre del if(typeof NotificationManager === 'undefined')

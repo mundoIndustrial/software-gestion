@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
+use App\Models\PrendaPedido;
 
 class ConsecutivoReciboPedido extends Model
 {
@@ -20,12 +21,16 @@ class ConsecutivoReciboPedido extends Model
         'estado',
         'area',
         'notas',
+        'dia_de_entrega',
+        'fecha_estimada_de_entrega',
     ];
 
     protected $casts = [
         'consecutivo_actual' => 'integer',
         'consecutivo_inicial' => 'integer',
         'activo' => 'boolean',
+        'dia_de_entrega' => 'integer',
+        'fecha_estimada_de_entrega' => 'datetime',
     ];
 
     /**

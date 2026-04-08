@@ -85,7 +85,7 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
     {
         try {
             $modelos = CotizacionModel::where('asesor_id', $usuarioId->valor())
-                ->with('tipoCotizacion')
+                ->with(['tipoCotizacion', 'cliente', 'prendas', 'logoCotizacion'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -95,6 +95,9 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                 // Obtener el código del tipo desde la relación
                 if ($m->tipoCotizacion) {
                     $array['tipo'] = $m->tipoCotizacion->codigo;
+                }
+                if (array_key_exists('logo_cotizacion', $array)) {
+                    $array['logo'] = $array['logo_cotizacion'];
                 }
                 return $array;
             })->toArray();
@@ -116,7 +119,7 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
         try {
             $modelos = CotizacionModel::where('asesor_id', $usuarioId->valor())
                 ->where('es_borrador', true)
-                ->with('tipoCotizacion')
+                ->with(['tipoCotizacion', 'cliente', 'prendas', 'logoCotizacion'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -124,6 +127,9 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                 $array = $m->toArray();
                 if ($m->tipoCotizacion) {
                     $array['tipo'] = $m->tipoCotizacion->codigo;
+                }
+                if (array_key_exists('logo_cotizacion', $array)) {
+                    $array['logo'] = $array['logo_cotizacion'];
                 }
                 return $array;
             })->toArray();
@@ -145,7 +151,7 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
         try {
             $modelos = CotizacionModel::where('asesor_id', $usuarioId->valor())
                 ->where('es_borrador', false)
-                ->with('tipoCotizacion')
+                ->with(['tipoCotizacion', 'cliente', 'prendas', 'logoCotizacion'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -153,6 +159,9 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                 $array = $m->toArray();
                 if ($m->tipoCotizacion) {
                     $array['tipo'] = $m->tipoCotizacion->codigo;
+                }
+                if (array_key_exists('logo_cotizacion', $array)) {
+                    $array['logo'] = $array['logo_cotizacion'];
                 }
                 return $array;
             })->toArray();
@@ -203,6 +212,14 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
         return CotizacionModel::where('asesor_id', $usuarioId->valor())
             ->where('es_borrador', true)
             ->count();
+    }
+
+    /**
+     * Contar cotizaciones por estado
+     */
+    public function countByEstado(string $estado): int
+    {
+        return CotizacionModel::where('estado', $estado)->count();
     }
 
     /**

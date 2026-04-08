@@ -55,18 +55,15 @@
             <!-- Sección de Fotos -->
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <label class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
+                    <label for="modalEditarEPPInputFotos" class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
                     <span class="text-xs text-gray-500">(<span id="modalEditarEPPFotosCount">0</span> foto/s)</span>
                 </div>
 
                 <!-- Zona de carga -->
                 <div class="space-y-3">
-                    <!-- Zona Drag & Drop -->
+                <!-- Zona Drag & Drop -->
                     <div id="modalEditarEPPFotoZona" 
-                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition"
-                        ondrop="manejarDropEnModalEditar(event)" 
-                        ondragover="event.preventDefault(); event.currentTarget.classList.add('bg-blue-50', 'border-blue-400')"
-                        ondragleave="event.currentTarget.classList.remove('bg-blue-50', 'border-blue-400')">
+                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition">
                         
                         <div class="flex flex-col items-center gap-2">
                             <i class="material-symbols-rounded text-3xl text-gray-400">cloud_upload</i>
@@ -169,7 +166,7 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...window.itemsPedido[indiceEPPEnEdicion] };
-            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+            console.log('[abrirModalEditarEPP]  EPP encontrado en window.itemsPedido:', eppEncontrado);
         }
     }
     
@@ -193,7 +190,7 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...eppAgregadosList[indiceEPPEnEdicion] };
-            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en eppAgregadosList:', eppEncontrado);
+            console.log('[abrirModalEditarEPP]  EPP encontrado en eppAgregadosList:', eppEncontrado);
         }
     }
     
@@ -228,7 +225,7 @@ function abrirModalEditarEPP(eppData) {
             fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
                 // Validar que la imagen tiene una URL válida
                 if (!img) return false;
-                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
                 return !!hasValidUrl;
             });
             console.log('[abrirModalEditarEPP] Imágenes cargadas:', fotosEnEdicionIndividual.length, '/', eppEncontrado.imagenes.length);
@@ -254,7 +251,7 @@ function abrirModalEditarEPP(eppData) {
         if (eppData.imagenes && Array.isArray(eppData.imagenes)) {
             fotosEnEdicionIndividual = eppData.imagenes.filter(img => {
                 if (!img) return false;
-                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
                 return !!hasValidUrl;
             });
         }
@@ -272,56 +269,88 @@ function abrirModalEditarEPP(eppData) {
     // Mostrar modal
     document.getElementById('modalEditarEPP').classList.remove('hidden');
     
-    // Agregar listener de paste para la zona de fotos de este modal
+    // Configurar zona de fotos para recibir paste events
     const fotoZona = document.getElementById('modalEditarEPPFotoZona');
-    if (fotoZona && !window.__pasteListenerEditarEPP__) {
-        // Dar focus a la zona para que pueda recibir eventos
+    if (fotoZona) {
+        // Hacer que la zona sea focuseable (para paste events)
         fotoZona.setAttribute('tabindex', '0');
+        // NO hacer focus automático - deja que el usuario dicte dónde escribir
         
-        // Crear listener único para este modal
-        window.__pasteListenerEditarEPP__ = function(e) {
-            const modal = document.getElementById('modalEditarEPP');
-            if (!modal || modal.classList.contains('hidden')) return;
-            
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            
-            let pegadasOk = 0;
-            for (let item of items) {
-                if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    if (!file) continue;
-                    
-                    const previewUrl = URL.createObjectURL(file);
-                    
-                    const imagen = {
-                        id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
-                        file: file,
-                        previewUrl: previewUrl,
-                        nombre: file.name || 'pegado_' + Date.now() + '.png',
-                        extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
-                        tamaño: file.size,
-                        pedido_epp_id: null,
-                        ruta_original: null,
-                        ruta_webp: null,
-                        principal: 0,
-                        orden: 0
-                    };
-                    
-                    if (!fotosEnEdicionIndividual) fotosEnEdicionIndividual = [];
-                    fotosEnEdicionIndividual.push(imagen);
-                    pegadasOk++;
+        // Agregar listener de paste DIRECTAMENTE en la zona
+        if (!fotoZona.__hasPasteListener) {
+            function handlePasteInFotoZona(e) {
+                // Solo procesar si el modal está visible
+                const modal = document.getElementById('modalEditarEPP');
+                if (!modal || modal.classList.contains('hidden')) return;
+                
+                e.preventDefault();
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                
+                let pegadasOk = 0;
+                for (let item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (!file) continue;
+                        
+                        const previewUrl = URL.createObjectURL(file);
+                        
+                        const imagen = {
+                            id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
+                            file: file,
+                            previewUrl: previewUrl,
+                            nombre: file.name || 'pegado_' + Date.now() + '.png',
+                            extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
+                            pedido_epp_id: null,
+                            ruta_original: null,
+                            ruta_webp: null,
+                            principal: 0,
+                            orden: 0
+                        };
+                        
+                        if (!fotosEnEdicionIndividual) fotosEnEdicionIndividual = [];
+                        fotosEnEdicionIndividual.push(imagen);
+                        pegadasOk++;
+                    }
+                }
+                
+                if (pegadasOk > 0) {
+                    console.log('[modalEditarEPP]  Imágenes pegadas via Ctrl+V:', pegadasOk);
+                    mostrarFotosEnModalEditar();
                 }
             }
             
-            if (pegadasOk > 0) {
-                console.log('[paste] ✅ Imágenes pegadas en modal editar EPP:', pegadasOk);
-                mostrarFotosEnModalEditar();
-            }
-        };
+            // Agregar listener en el DOCUMENT para capturar paste global cuando modal esté abierto
+            document.addEventListener('paste', handlePasteInFotoZona);
+            fotoZona.__hasPasteListener = true;
+            fotoZona.__pasteHandler = handlePasteInFotoZona;
+            console.log('[abrirModalEditarEPP] Paste listener agregado globalmente (activo cuando modal visible)');
+        }
         
-        document.addEventListener('paste', window.__pasteListenerEditarEPP__);
-        console.log('[abrirModalEditarEPP] Paste listener agregado para modal de edición');
+        // Agregar listeners de drag & drop
+        if (!fotoZona.__hasDragDropListener) {
+            fotoZona.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.add('bg-blue-50', 'border-blue-400');
+            });
+            
+            fotoZona.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+            });
+            
+            fotoZona.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+                manejarDropEnModalEditar(e);
+            });
+            
+            fotoZona.__hasDragDropListener = true;
+            console.log('[abrirModalEditarEPP] Drag & drop listeners agregados');
+        }
     }
     
     console.log('[abrirModalEditarEPP] Modal abierto, EPP en edición:', eppEnEdicionIndividual, 'Índice:', indiceEPPEnEdicion, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
@@ -398,13 +427,13 @@ function seleccionarEPPEnEdicion(epp) {
         
         if (indiceEncontrado !== -1) {
             eppEncontrado = window.itemsPedido[indiceEncontrado];
-            console.log('[seleccionarEPPEnEdicion] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+            console.log('[seleccionarEPPEnEdicion]  EPP encontrado en window.itemsPedido:', eppEncontrado);
         }
     }
     
     // Si el EPP NO está en el pedido, mostrar error
     if (!eppEncontrado) {
-        console.warn('[seleccionarEPPEnEdicion] ❌ El EPP seleccionado no está agregado al pedido');
+        console.warn('[seleccionarEPPEnEdicion]  El EPP seleccionado no está agregado al pedido');
         
         // Mostrar alerta amigable
         if (window.Swal) {
@@ -434,7 +463,7 @@ function seleccionarEPPEnEdicion(epp) {
     if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes)) {
         fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
             if (!img) return false;
-            const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+            const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
             return !!hasValidUrl;
         });
     }
@@ -464,17 +493,26 @@ function cerrarModalEditarEPP() {
     console.log('[cerrarModalEditarEPP] Cerrando modal');
     document.getElementById('modalEditarEPP').classList.add('hidden');
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
+    
+    // Remover listeners de la fotoZona
+    const fotoZona = document.getElementById('modalEditarEPPFotoZona');
+    if (fotoZona) {
+        if (fotoZona.__pasteHandler) {
+            document.removeEventListener('paste', fotoZona.__pasteHandler);
+            fotoZona.__hasPasteListener = false;
+            fotoZona.__pasteHandler = null;
+            console.log('[cerrarModalEditarEPP] Paste listener removido del document');
+        }
+        // Los drag & drop listeners se quitan limpiando las referencias
+        fotoZona.__hasDragDropListener = false;
+        fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+    }
+    
+    // Limpiar referencias
     eppEnEdicionIndividual = null;
     fotosEnEdicionIndividual = [];
     indiceEPPEnEdicion = -1;
     tarjetaEppIdEnEdicion = null;
-    
-    // Remover listener de paste del modal de edición
-    if (window.__pasteListenerEditarEPP__) {
-        document.removeEventListener('paste', window.__pasteListenerEditarEPP__);
-        window.__pasteListenerEditarEPP__ = null;
-        console.log('[cerrarModalEditarEPP] Paste listener removido');
-    }
 }
 
 /**
@@ -488,7 +526,7 @@ function mostrarFotosEnModalEditar() {
     
     fotosEnEdicionIndividual.forEach((foto, index) => {
         // Obtener URL válida de la foto
-        const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
+        const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_web || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
         
         // Validar que la URL sea válida
         if (!fotoUrl) {
@@ -496,12 +534,24 @@ function mostrarFotosEnModalEditar() {
             return;
         }
         
+        // Normalizar URL: agregar /storage/ si es una ruta relativa sin protocolo (blob: o http://)
+        let finalUrl = fotoUrl;
+        if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && !fotoUrl.startsWith('/')) {
+            // Es una ruta relativa sin /storage/, agregar el prefijo
+            finalUrl = '/storage/' + fotoUrl;
+        } else if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && fotoUrl.startsWith('/')) {
+            // Es una ruta absoluta que no comienza con /storage/, revisar si necesita agregarse
+            if (!fotoUrl.startsWith('/storage/')) {
+                finalUrl = '/storage' + fotoUrl;
+            }
+        }
+        
         const div = document.createElement('div');
         div.className = 'relative group rounded-lg overflow-hidden bg-gray-100 aspect-square';
         
         // Crear la imagen
         const img = document.createElement('img');
-        img.src = fotoUrl;
+        img.src = finalUrl;
         img.alt = `Foto ${index + 1}`;
         img.className = 'w-full h-full object-cover transition-opacity duration-200';
         img.style.width = '100%';
@@ -512,7 +562,7 @@ function mostrarFotosEnModalEditar() {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'absolute inset-0 flex items-center justify-center bg-red-50';
         errorDiv.style.display = 'none';
-        errorDiv.innerHTML = '<div style="text-center;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">❌</div><div style="font-size: 0.75rem; color: #666;">Error cargando</div></div>';
+        errorDiv.innerHTML = '<div style="text-center;"><div style="font-size: 2rem; margin-bottom: 0.5rem;"></div><div style="font-size: 0.75rem; color: #666;">Error cargando</div></div>';
         
         // Evento cuando la imagen carga exitosamente
         img.onload = function() {
@@ -700,7 +750,7 @@ function guardarEdicionEnModalEditarEPP() {
             
             index = indiceEPPEnEdicion;
             targetList = window.itemsPedido;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ Usando índice guardado:', index, '- EPP verificado');
+            console.log('[guardarEdicionEnModalEditarEPP]  Usando índice guardado:', index, '- EPP verificado');
         }
     }
     
@@ -744,7 +794,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = eppAgregadosList;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, índice:', index);
         } else {
             console.log('[guardarEdicionEnModalEditarEPP] EPP no encontrado en eppAgregadosList, buscando en window.itemsPedido...');
         }
@@ -789,7 +839,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = window.itemsPedido;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en window.itemsPedido, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en window.itemsPedido, índice:', index);
         }
     }
     
@@ -817,7 +867,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = eppAgregadosList;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, índice:', index);
         }
     }
     
@@ -844,7 +894,7 @@ function guardarEdicionEnModalEditarEPP() {
             targetList[index].nombre_completo = eppEnEdicionIndividual.nombre_completo;
         }
         
-        console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente:', {
+        console.log('[guardarEdicionEnModalEditarEPP]  EPP actualizado correctamente:', {
             lista: targetList === window.itemsPedido ? 'window.itemsPedido' : 'eppAgregadosList',
             indice: index,
             antes: eppAntes,
@@ -890,7 +940,7 @@ function guardarEdicionEnModalEditarEPP() {
             }
             
             if (eppEnLista) {
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, sincronizando...');
+                console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, sincronizando...');
                 eppEnLista.cantidad = cantidad;
                 eppEnLista.observaciones = observaciones;
                 eppEnLista.imagenes = fotosEnEdicionIndividual;
@@ -899,13 +949,36 @@ function guardarEdicionEnModalEditarEPP() {
                     eppEnLista.nombre_epp = eppEnEdicionIndividual.nombre_completo;
                     eppEnLista.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                 }
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ eppAgregadosList sincronizado');
+                console.log('[guardarEdicionEnModalEditarEPP]  eppAgregadosList sincronizado');
+                
+                // SINCRONIZACIÓN CRÍTICA: También actualizar window.gestionItemsUI.epps (usado por el renderer)
+                if (window.gestionItemsUI && window.gestionItemsUI.epps && Array.isArray(window.gestionItemsUI.epps)) {
+                    const eppEnGestión = window.gestionItemsUI.epps.find(e => {
+                        if (e.epp_id === eppActualizado.epp_id) return true;
+                        if (e.id === eppActualizado.id) return true;
+                        if (e.nombre_epp === eppActualizado.nombre_epp) return true;
+                        return false;
+                    });
+                    
+                    if (eppEnGestión) {
+                        eppEnGestión.cantidad = cantidad;
+                        eppEnGestión.observaciones = observaciones;
+                        eppEnGestión.imagenes = fotosEnEdicionIndividual;
+                        if (eppEnEdicionIndividual.nombre_completo) {
+                            eppEnGestión.nombre = eppEnEdicionIndividual.nombre_completo;
+                            eppEnGestión.nombre_epp = eppEnEdicionIndividual.nombre_completo;
+                            eppEnGestión.nombre_completo = eppEnEdicionIndividual.nombre_completo;
+                        }
+                        console.log('[guardarEdicionEnModalEditarEPP]  window.gestionItemsUI.epps sincronizado');
+                    }
+                }
+                
                 // Actualizar tabla visual
                 if (typeof renderizarTablaEPPAgregados === 'function') {
                     renderizarTablaEPPAgregados();
                 }
             } else {
-                console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No se encontró EPP en eppAgregadosList para sincronizar');
+                console.warn('[guardarEdicionEnModalEditarEPP]  No se encontró EPP en eppAgregadosList para sincronizar');
             }
         }
         
@@ -929,7 +1002,7 @@ function guardarEdicionEnModalEditarEPP() {
                     eppEnItemsPedido.nombre_epp = eppEnEdicionIndividual.nombre_completo;
                     eppEnItemsPedido.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                 }
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ window.itemsPedido sincronizado');
+                console.log('[guardarEdicionEnModalEditarEPP]  window.itemsPedido sincronizado');
             }
         }
         
@@ -941,9 +1014,9 @@ function guardarEdicionEnModalEditarEPP() {
                 observaciones: observaciones,
                 imagenes: fotosEnEdicionIndividual
             });
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
+            console.log('[guardarEdicionEnModalEditarEPP]  Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
         } else {
-            console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No hay tarjetaId para actualizar la tarjeta visual');
+            console.warn('[guardarEdicionEnModalEditarEPP]  No hay tarjetaId para actualizar la tarjeta visual');
         }
         
         // RE-RENDERIZAR TARJETAS: Actualizar la UI con el ItemRenderer
@@ -952,7 +1025,7 @@ function guardarEdicionEnModalEditarEPP() {
                 console.log('[guardarEdicionEnModalEditarEPP] Llamando a itemRenderer para re-renderizar tarjetas...');
                 const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                 window.gestionItemsUI.renderer.actualizar(itemsOrdenados).then(() => {
-                    console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjetas re-renderizadas exitosamente');
+                    console.log('[guardarEdicionEnModalEditarEPP]  Tarjetas re-renderizadas exitosamente');
                     cerrarModalEditarEPP();
                 }).catch(error => {
                     console.error('[guardarEdicionEnModalEditarEPP] Error al re-renderizar:', error);
@@ -967,7 +1040,7 @@ function guardarEdicionEnModalEditarEPP() {
             cerrarModalEditarEPP();
         }
     } else {
-        console.error('[guardarEdicionEnModalEditarEPP] ❌ No se encontró el EPP en ninguna lista', {
+        console.error('[guardarEdicionEnModalEditarEPP]  No se encontró el EPP en ninguna lista', {
             indiceCalculado: index,
             eppEnEdicion: eppEnEdicionIndividual,
             eppAgregadosListLength: eppAgregadosList.length,
@@ -996,7 +1069,7 @@ function guardarEdicionEnModalEditarEPP() {
             });
             
             if (index !== -1) {
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en reintento por nombre flexible');
+                console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en reintento por nombre flexible');
                 targetList = window.itemsPedido;
                 
                 // Actualizar datos en la lista encontrada
@@ -1007,7 +1080,7 @@ function guardarEdicionEnModalEditarEPP() {
                     targetList[index].observaciones = observaciones;
                     targetList[index].imagenes = fotosEnEdicionIndividual;
                     
-                    console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente en reintento:', {
+                    console.log('[guardarEdicionEnModalEditarEPP]  EPP actualizado correctamente en reintento:', {
                         lista: 'window.itemsPedido',
                         indice: index,
                         antes: eppAntes,
@@ -1021,7 +1094,7 @@ function guardarEdicionEnModalEditarEPP() {
                         console.log('[guardarEdicionEnModalEditarEPP] Llamando a itemRenderer para re-renderizar tarjetas (reintento)...');
                         const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                         window.gestionItemsUI.renderer.actualizar(itemsOrdenados).then(() => {
-                            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjetas re-renderizadas exitosamente (reintento)');
+                            console.log('[guardarEdicionEnModalEditarEPP]  Tarjetas re-renderizadas exitosamente (reintento)');
                             cerrarModalEditarEPP();
                         }).catch(error => {
                             console.error('[guardarEdicionEnModalEditarEPP] Error al re-renderizar (reintento):', error);
@@ -1077,7 +1150,7 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             nombreElemento.textContent = datos.nombre || '-';
             console.log('[actualizarTarjetaEPPEnDOM] Nombre actualizado a:', datos.nombre);
         } else {
-            console.warn('[actualizarTarjetaEPPEnDOM] ⚠️ No se encontró elemento h4 para el nombre');
+            console.warn('[actualizarTarjetaEPPEnDOM]  No se encontró elemento h4 para el nombre');
         }
         
         // Actualizar cantidad y observaciones
@@ -1153,7 +1226,7 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             }
         }
         
-        console.log('[actualizarTarjetaEPPEnDOM] ✅ Tarjeta actualizada correctamente');
+        console.log('[actualizarTarjetaEPPEnDOM]  Tarjeta actualizada correctamente');
     } catch (error) {
         console.error('[actualizarTarjetaEPPEnDOM] Error actualizando tarjeta:', error);
     }

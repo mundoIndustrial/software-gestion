@@ -51,7 +51,7 @@ Cantidad     → Cantidad total (visible en tabla)
 
 ---
 
-## 🏗️ Arquitectura Implementada
+##  Arquitectura Implementada
 
 ### Stack Técnico
 - **Frontend**: Blade + JavaScript Vanilla (sin librerías externas)
@@ -299,7 +299,7 @@ id  │ pedido_id │ tipo_item │ item_id │ talla_id │ pendiente_inicial �
 
 ---
 
-## 🧪 Validación de Requisitos
+##  Validación de Requisitos
 
 | Requisito |  | Detalles |
 |-----------|----|-|
@@ -362,7 +362,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 - Usuario ve cambios inmediatamente
 
 ###  Feedback Visual
-- Botón muestra "⏳ Guardando..." durante proceso
+- Botón muestra " Guardando..." durante proceso
 - Vuelve a estado normal después
 - Inputs se limpian después de guardar
 - Datos guardados se cargan automáticamente
@@ -435,13 +435,13 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 
 ---
 
-## ✨ Características Principales
+##  Características Principales
 
 | Característica | Descripción |
 |---|---|
 | ** Precisión** | Cada valor se guarda exactamente como se digita |
-| **⚡ Velocidad** | Actualización en tiempo real sin recarga |
-| **🔒 Seguridad** | Transacciones DB, auditoría de usuario |
+| ** Velocidad** | Actualización en tiempo real sin recarga |
+| ** Seguridad** | Transacciones DB, auditoría de usuario |
 | ** Escalabilidad** | Fácil agregar más parciales si es necesario |
 | ** UX** | Modal elegante, feedback visual claro |
 | **📱 Responsive** | Funciona en desktop y mobile |

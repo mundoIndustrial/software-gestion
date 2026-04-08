@@ -63,7 +63,7 @@ window.EventManager = (function() {
         try {
             elemento.removeEventListener(evento, callback);
             listenersConfigurados.delete(clave);
-            console.log(`[EventManager] 🗑️ Event listener removido: ${clave}`);
+            console.log(`[EventManager]  Event listener removido: ${clave}`);
             return true;
         } catch (error) {
             console.error(`[EventManager]  Error removiendo listener ${clave}:`, error);
@@ -92,7 +92,7 @@ window.EventManager = (function() {
             }
         }
         
-        console.log(`[EventManager] 🧹 Elemento limpiado: ${eliminados} listeners eliminados`);
+        console.log(`[EventManager]  Elemento limpiado: ${eliminados} listeners eliminados`);
         return eliminados > 0;
     }
     
@@ -112,7 +112,7 @@ window.EventManager = (function() {
         }
         
         listenersConfigurados.clear();
-        console.log(`[EventManager] 🧹 Todos los listeners limpiados: ${eliminados} eliminados`);
+        console.log(`[EventManager]  Todos los listeners limpiados: ${eliminados} eliminados`);
         return eliminados;
     }
     
@@ -150,7 +150,7 @@ window.EventManager = (function() {
      * Configurar listeners para botones del wizard
      */
     function configurarBotonesWizard() {
-        console.log('[EventManager] 🎯 Configurando botones del wizard...');
+        console.log('[EventManager]  Configurando botones del wizard...');
         
         const botones = {
             'btn-asignar-colores-tallas': () => window.ColoresPorTalla.toggleVistaAsignacion(),
@@ -236,7 +236,7 @@ window.EventManager = (function() {
      * Configurar listeners para selects
      */
     function configurarSelects() {
-        console.log('[EventManager] 🎯 Configurando selects...');
+        console.log('[EventManager]  Configurando selects...');
         
         const selects = {
             'asignacion-genero-select': () => window.ColoresPorTalla.actualizarTallasDisponibles(),
@@ -264,7 +264,7 @@ window.EventManager = (function() {
      * Configurar listeners para colores personalizados
      */
     function configurarColoresPersonalizados() {
-        console.log('[EventManager] 🎯 Configurando colores personalizados...');
+        console.log('[EventManager]  Configurando colores personalizados...');
         
         const botonColor = document.getElementById('btn-agregar-color-personalizado');
         if (botonColor) {

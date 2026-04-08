@@ -28,7 +28,7 @@ const UpdatesModule = {
                         dropdown.value = newStatus;
                         dropdown.setAttribute('data-value', newStatus);
                         
-                        // 🆕 Actualizar clases de color del dropdown
+                        //  Actualizar clases de color del dropdown
                         this._updateDropdownColorClass(dropdown, newStatus);
                     }
                     
@@ -77,16 +77,16 @@ const UpdatesModule = {
                     dropdown.dataset.value = newArea;
 
                     
-                    // 🆕 CRÍTICO: Marcar como cambio programático para evitar loop
+                    //  CRÍTICO: Marcar como cambio programático para evitar loop
                     dropdown.dataset.programmaticChange = 'true';
                     
-                    // 🆕 CRÍTICO: Dispatchear evento change para activar listeners
+                    //  CRÍTICO: Dispatchear evento change para activar listeners
                     const changeEvent = new Event('change', { bubbles: true, cancelable: true });
                     dropdown.dispatchEvent(changeEvent);
 
                 }
                 
-                // 🆕 Actualizar clase de color del dropdown de área si existe
+                //  Actualizar clase de color del dropdown de área si existe
                 if (dropdown && typeof this._updateDropdownColorClass === 'function') {
                     this._updateDropdownColorClass(dropdown, newArea);
                 }
@@ -97,7 +97,7 @@ const UpdatesModule = {
                 //
                 // await this._updateProcessStates(orderId, oldArea, newArea);
                 
-                // 🆕 Actualizar color de fila con colores condicionales
+                //  Actualizar color de fila con colores condicionales
                 const row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
                 if (row && typeof applyRowConditionalColors === 'function') {
                     applyRowConditionalColors(row);
@@ -120,7 +120,7 @@ const UpdatesModule = {
                     StorageModule.broadcastUpdate('area_update', orderId, 'area', newArea, oldArea);
                 }
                 
-                // 🆕 CRÍTICO: Asegurar que el dropdown está visible y actualizado en la tabla
+                //  CRÍTICO: Asegurar que el dropdown está visible y actualizado en la tabla
                 if (dropdown && dropdown.closest('table') !== null) {
                     // Está en la tabla, hacer un pequeño refresh visual
                     dropdown.blur();
@@ -128,7 +128,7 @@ const UpdatesModule = {
 
                 }
                 
-                // 🆕 CRÍTICO: Forzar refrescamiento de la fila en la tabla desde el servidor
+                //  CRÍTICO: Forzar refrescamiento de la fila en la tabla desde el servidor
                 // Esto asegura que la tabla se vea actualizada incluso si el modal estaba abierto
                 this._refreshRowInTable(orderId, newArea);
                 
@@ -147,7 +147,7 @@ const UpdatesModule = {
     },
 
     /**
-     * 🆕 Marca el proceso anterior como Completado y el nuevo como Pendiente
+     *  Marca el proceso anterior como Completado y el nuevo como Pendiente
      */
     async _updateProcessStates(orderId, oldArea, newArea) {
         try {
@@ -180,7 +180,7 @@ const UpdatesModule = {
     },
 
     /**
-     * 🆕 Actualiza el estado de un proceso individual
+     *  Actualiza el estado de un proceso individual
      */
     async _updateProcessState(proceso, nuevoEstado) {
         try {
@@ -305,7 +305,7 @@ const UpdatesModule = {
     },
 
     /**
-     * 🆕 Refrescar fila en la tabla actualizando el dropdown de área
+     *  Refrescar fila en la tabla actualizando el dropdown de área
      */
     _refreshRowInTable(orderId, newArea) {
         try {
@@ -331,11 +331,11 @@ const UpdatesModule = {
             
 
             
-            // 🆕 Actualizar el value y dataset
+            //  Actualizar el value y dataset
             dropdown.value = newArea;
             dropdown.dataset.value = newArea;
             
-            // 🆕 CRÍTICO: Marcar como actualizado para que se vea en la tabla
+            //  CRÍTICO: Marcar como actualizado para que se vea en la tabla
             // Esto dispara el cambio visual en el navegador
             const event = new Event('input', { bubbles: true });
             dropdown.dispatchEvent(event);
@@ -360,7 +360,7 @@ const UpdatesModule = {
     },
 
     /**
-     * 🆕 Actualizar clases de color del dropdown según el estado
+     *  Actualizar clases de color del dropdown según el estado
      */
     _updateDropdownColorClass(dropdown, newStatus) {
         // Remover todas las clases de estado

@@ -88,7 +88,7 @@ class PrendaEditorTest {
         
         try {
             // Obtener datos del servidor
-            console.log(`📡 Obteniendo datos del pedido ${pedidoId}...`);
+            console.log(` Obteniendo datos del pedido ${pedidoId}...`);
             const response = await fetch(`/pedidos-public/${pedidoId}/factura-datos`);
             
             if (!response.ok) {
@@ -127,7 +127,7 @@ class PrendaEditorTest {
             }
 
             // IMPORTANTE: Cargar la prenda en modal para verificar que se renderiza con todos los datos
-            console.log('📂 Cargando prenda en modal...');
+            console.log(' Cargando prenda en modal...');
             
             if (!window.gestionItemsUI || !window.gestionItemsUI.prendaEditor) {
                 throw new Error('GestionItemsUI.prendaEditor no disponible');
@@ -160,7 +160,7 @@ class PrendaEditorTest {
             
             // Debug: buscar otros posibles contenedores
             if (procesosCargados === 0) {
-                console.log('🔍 [CASO 2] Debug procesos - buscando contenedores alternativos...');
+                console.log(' [CASO 2] Debug procesos - buscando contenedores alternativos...');
                 const alternativas = [
                     document.getElementById('procesos'),
                     document.querySelector('[id*="proceso"]'),
@@ -172,7 +172,7 @@ class PrendaEditorTest {
                 });
             }
             
-            console.log('📊 Datos cargados en modal:', {
+            console.log(' Datos cargados en modal:', {
                 telasCargadas,
                 tallasCargadas,
                 procesosCargados,
@@ -272,7 +272,7 @@ class PrendaEditorTest {
      */
     async ejecutarTodos() {
         console.clear();
-        console.log('🚀 INICIANDO TEST SUITE: EDICIÓN DE PRENDAS');
+        console.log(' INICIANDO TEST SUITE: EDICIÓN DE PRENDAS');
         console.log('=' .repeat(60));
         console.log('Página actual: ' + window.location.pathname);
 
@@ -287,7 +287,7 @@ class PrendaEditorTest {
 
         // Mostrar resumen
         console.log('\n' + '='.repeat(60));
-        console.log('📊 RESUMEN DE RESULTADOS');
+        console.log(' RESUMEN DE RESULTADOS');
         console.log('='.repeat(60));
         
         this.resultados.forEach((r, idx) => {

@@ -66,7 +66,7 @@
             });
         });
 
-        // Cerrar al cambiar tamaño de ventana a desktop
+        // Cerrar al cambiar tamano de ventana a desktop
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
                 closeSidebar();

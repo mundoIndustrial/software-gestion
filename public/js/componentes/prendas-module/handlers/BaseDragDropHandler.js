@@ -34,11 +34,11 @@ class BaseDragDropHandler {
      * @private
      */
     async _pegarDesdeMenuContextual() {
-        UIHelperService.log(`${this.constructor.name}`, `🖱️ Iniciando pegado desde menú contextual (${this.tipo})...`);
+        UIHelperService.log(`${this.constructor.name}`, ` Iniciando pegado desde menú contextual (${this.tipo})...`);
         
         try {
             // Verificar si ClipboardService está disponible
-            if (!window.ClipboardService) {
+            if (!globalThis.ClipboardService) {
                 UIHelperService.log(`${this.constructor.name}`, ' ClipboardService no disponible', 'error');
                 throw new Error('ClipboardService no disponible');
             }
@@ -48,7 +48,7 @@ class BaseDragDropHandler {
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: this.maxArchivos });
 
-            UIHelperService.log(`${this.constructor.name}`, `📁 Archivos obtenidos: ${archivos.length}`);
+            UIHelperService.log(`${this.constructor.name}`, ` Archivos obtenidos: ${archivos.length}`);
 
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
@@ -63,7 +63,7 @@ class BaseDragDropHandler {
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
-                UIHelperService.log(`${this.constructor.name}`, '🔄 Intentando fallback con navigator.clipboard...');
+                UIHelperService.log(`${this.constructor.name}`, ' Intentando fallback con navigator.clipboard...');
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
@@ -72,14 +72,14 @@ class BaseDragDropHandler {
                     const archivos = [];
                     
                     for (const item of items) {
-                        UIHelperService.log(`${this.constructor.name}`, `🔍 Tipos en item: ${item.types.join(', ')}`);
+                        UIHelperService.log(`${this.constructor.name}`, ` Tipos en item: ${item.types.join(', ')}`);
                         
                         for (const type of item.types) {
                             if (type.startsWith('image/')) {
-                                UIHelperService.log(`${this.constructor.name}`, `🖼️ Procesando tipo de imagen: ${type}`);
+                                UIHelperService.log(`${this.constructor.name}`, ` Procesando tipo de imagen: ${type}`);
                                 
                                 const blob = await item.getType(type);
-                                UIHelperService.log(`${this.constructor.name}`, `📦 Blob obtenido: ${blob.size} bytes`);
+                                UIHelperService.log(`${this.constructor.name}`, ` Blob obtenido: ${blob.size} bytes`);
                                 
                                 const file = new File([blob], `${this.tipo}-${Date.now()}.${type.split('/')[1]}`, {
                                     type: type
@@ -150,7 +150,7 @@ class BaseDragDropHandler {
      */
     _configurarHandlerBase(elemento, opcionesEspecificas = {}) {
         UIHelperService.log(`${this.constructor.name}`, ` _configurarHandlerBase llamado para ${this.tipo}...`);
-        UIHelperService.log(`${this.constructor.name}`, `📌 Elemento: ${elemento.id || elemento.tagName}`);
+        UIHelperService.log(`${this.constructor.name}`, ` Elemento: ${elemento.id || elemento.tagName}`);
         
         const opcionesComunes = {
             tieneMenuContextual: true,
@@ -274,5 +274,5 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = BaseDragDropHandler;
 }
 
-// Asignar al window para uso global
-window.BaseDragDropHandler = BaseDragDropHandler;
+// Asignar al globalThis para uso global
+globalThis.BaseDragDropHandler = BaseDragDropHandler;

@@ -8,7 +8,7 @@ use App\Domain\Shared\CQRS\Command;
  * CambiarEstadoPedidoCommand
  * 
  * Command para cambiar el estado de un pedido
- * Estados vÃ¡lidos: activo, pendiente, cancelado, completado
+ * Estados validos: activo, pendiente, cancelado, completado
  * 
  * @param int|string $pedidoId ID del pedido
  * @param string $nuevoEstado Nuevo estado
@@ -24,7 +24,7 @@ class CambiarEstadoPedidoCommand implements Command
         private ?string $razon = null,
     ) {
         if (!in_array(strtolower($this->nuevoEstado), self::ESTADOS_VALIDOS)) {
-            throw new \InvalidArgumentException("Estado invÃ¡lido: {$nuevoEstado}");
+            throw new \InvalidArgumentException("Estado invalido: {$nuevoEstado}");
         }
     }
 

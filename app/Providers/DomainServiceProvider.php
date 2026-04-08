@@ -20,15 +20,25 @@ use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Infrastructure\Storage\ImagenAlmacenador;
 use Intervention\Image\ImageManager;
 
+// ======================================== DDD COTIZACIONES BORDADO
+use App\Application\Cotizacion\Services\CrearCotizacionBordadoService;
+use App\Application\Cotizacion\Services\ActualizarBorradorCotizacionService;
+use App\Application\Cotizacion\Services\ProcesarTecnicasBordadoService;
+use App\Application\Cotizacion\Services\ProcesarTelasBordadoService;
+use App\Application\Cotizacion\Services\BorrarArchivoService;
+
 // ======================================== DDD PEDIDOS
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Domain\Pedidos\Repositories\ProcesoPedidoWriteRepository;
+use App\Domain\Pedidos\Services\PedidoDetalleReadService;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\PedidoRepositoryImpl;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\ProcesoPedidoWriteRepositoryImpl;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\UseCases\ListarPedidosPorClienteUseCase;
-use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarDescripcionPedidoUseCase;
 use App\Application\Pedidos\UseCases\IniciarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CompletarPedidoUseCase;
@@ -45,10 +55,30 @@ use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 
 // ======================================== ASESORES
 use App\Application\Services\Asesores\AsesoresApplicationFacadeService;
+
+// ======================================== INTERFACES PEDIDOS (Fase 14)
+use App\Application\Services\Pedidos\Contracts\ObtenerItemsServiceInterface;
+use App\Application\Services\Pedidos\Contracts\PrepararCrearPedidoServiceInterface;
+use App\Application\Services\Pedidos\Contracts\CargarDatosCompartidosServiceInterface;
+use App\Application\Services\Pedidos\ObtenerItemsEppCotizacionService;
+use App\Application\Services\Pedidos\PrepararCrearPedidoNuevoService;
+use App\Application\Services\Pedidos\CargarDatosCompartidosService;
+
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
 use App\Application\Services\Asesores\EliminarPedidoService;
+
+// ======================================== PROCESO SEGUIMIENTO
+use App\Domain\ProcesoSeguimiento\Repositories\ProcesoPrendaSeguimientoRepository;
+use App\Domain\ProcesoSeguimiento\Repositories\ConsecutivoReciboPedidoRepository;
+use App\Infrastructure\ProcesoSeguimiento\Persistence\Eloquent\EloquentProcesoPrendaSeguimientoRepository;
+use App\Infrastructure\ProcesoSeguimiento\Persistence\Eloquent\EloquentConsecutivoReciboPedidoRepository;
+use App\Application\ProcesoSeguimiento\Services\ProcesoSeguimientoBroadcastService;
+use App\Application\ProcesoSeguimiento\UseCases\GuardarProcesoSeguimientoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\ActualizarProcesoSeguimientoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\ActualizarEstadoProcesoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\EliminarProcesoSeguimientoUseCase;
 use App\Application\Services\Asesores\ObtenerFotosService;
 use App\Application\Services\Asesores\AnularPedidoService;
 use App\Application\Services\Asesores\ObtenerPedidosService;
@@ -105,6 +135,39 @@ class DomainServiceProvider extends ServiceProvider
             return new ImagenAlmacenador(ImageManager::gd());
         });
 
+        // ========================================
+        // SERVICIOS DE APLICACIÓN - COTIZACIONES BORDADO
+        // ========================================
+        // Servicios para procesar técnicas y telas
+        $this->app->singleton(ProcesarTecnicasBordadoService::class);
+        $this->app->singleton(ProcesarTelasBordadoService::class);
+        $this->app->singleton(BorrarArchivoService::class);
+
+        // Use Cases (Casos de Uso) para crear y actualizar cotizaciones de bordado
+        $this->app->singleton(
+            CrearCotizacionBordadoService::class,
+            function ($app) {
+                return new CrearCotizacionBordadoService(
+                    $app->make(\App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class),
+                    $app->make(ProcesarTecnicasBordadoService::class),
+                    $app->make(ProcesarTelasBordadoService::class)
+                );
+            }
+        );
+
+        $this->app->singleton(
+            ActualizarBorradorCotizacionService::class,
+            function ($app) {
+                return new ActualizarBorradorCotizacionService(
+                    $app->make(\App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class),
+                    $app->make(ProcesarTecnicasBordadoService::class),
+                    $app->make(ProcesarTelasBordadoService::class),
+                    $app->make(BorrarArchivoService::class)
+                );
+            }
+        );
+
+
         // Registrar Application Services
         $this->app->bind(
             CrearOrdenService::class,
@@ -128,6 +191,21 @@ class DomainServiceProvider extends ServiceProvider
             PedidoRepositoryImpl::class
         );
 
+        $this->app->bind(
+            PedidoProduccionReadRepository::class,
+            EloquentPedidoProduccionRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Pedidos\Repositories\ProcesoPedidoReadRepository::class,
+            \App\Infrastructure\Pedidos\Persistence\Eloquent\ProcesoPedidoReadRepositoryImpl::class
+        );
+
+        $this->app->bind(
+            ProcesoPedidoWriteRepository::class,
+            ProcesoPedidoWriteRepositoryImpl::class
+        );
+
         // Registrar Use Cases como singletons
         $this->app->singleton(CrearPedidoUseCase::class, function ($app) {
             return new CrearPedidoUseCase($app->make(PedidoRepository::class));
@@ -138,15 +216,14 @@ class DomainServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ObtenerPedidoUseCase::class, function ($app) {
-            return new ObtenerPedidoUseCase($app->make(PedidoRepository::class));
+            return new ObtenerPedidoUseCase(
+                $app->make(PedidoRepository::class),
+                $app->make(PedidoDetalleReadService::class)
+            );
         });
 
         $this->app->singleton(ListarPedidosPorClienteUseCase::class, function ($app) {
             return new ListarPedidosPorClienteUseCase($app->make(PedidoRepository::class));
-        });
-
-        $this->app->singleton(CancelarPedidoUseCase::class, function ($app) {
-            return new CancelarPedidoUseCase($app->make(PedidoRepository::class));
         });
 
         $this->app->singleton(ActualizarDescripcionPedidoUseCase::class, function ($app) {
@@ -225,6 +302,90 @@ class DomainServiceProvider extends ServiceProvider
                 $app->make(ObtenerPedidoDetalleService::class),
             );
         });
+
+        // ========================================
+        // PEDIDOS EDITABLE - Interfaces → Implementaciones (Fase 14)
+        // ========================================
+        $this->app->bind(
+            ObtenerItemsServiceInterface::class,
+            ObtenerItemsEppCotizacionService::class
+        );
+
+        $this->app->bind(
+            PrepararCrearPedidoServiceInterface::class,
+            PrepararCrearPedidoNuevoService::class
+        );
+
+        $this->app->bind(
+            CargarDatosCompartidosServiceInterface::class,
+            CargarDatosCompartidosService::class
+        );
+
+        // ========================================
+        // PROCESO SEGUIMIENTO - Repos + Use Cases
+        // ========================================
+        $this->app->singleton(
+            ProcesoPrendaSeguimientoRepository::class,
+            EloquentProcesoPrendaSeguimientoRepository::class
+        );
+
+        $this->app->singleton(
+            ConsecutivoReciboPedidoRepository::class,
+            EloquentConsecutivoReciboPedidoRepository::class
+        );
+
+        $this->app->singleton(ProcesoSeguimientoBroadcastService::class);
+        $this->app->singleton(GuardarProcesoSeguimientoUseCase::class);
+        $this->app->singleton(ActualizarProcesoSeguimientoUseCase::class);
+        $this->app->singleton(ActualizarEstadoProcesoUseCase::class);
+        $this->app->singleton(EliminarProcesoSeguimientoUseCase::class);
+
+        // ========================================
+        // INSUMOS DDD - Repositories + Use Cases
+        // ========================================
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\MaterialesReadRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentMaterialesReadRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\MaterialesWriteRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentMaterialesWriteRepository::class
+        );
+
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerMaterialesPedidoUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarMaterialesDetalladosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\EliminarMaterialPorNombreUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarObservacionesMaterialUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerPrendasPedidoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerReciboPrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerOpcionesFiltroInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\MarcarNotificacionesInsumosLeidasUseCase::class);
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\RecibosPendientesRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentRecibosPendientesRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\PedidoWorkflowRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentPedidoWorkflowRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Insumos\Repositories\PrendaMaterialMetricsRepository::class,
+            \App\Infrastructure\Insumos\Persistence\Eloquent\EloquentPrendaMaterialMetricsRepository::class
+        );
+
+        $this->app->singleton(\App\Application\Insumos\UseCases\CambiarEstadoReciboInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\CambiarEstadoPedidoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerResumenRecibosPendientesInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerRecibosCosturaPendientesInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\MarcarReciboVistoInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\GuardarAnchoMetrajePrendaInsumosUseCase::class);
+        $this->app->singleton(\App\Application\Insumos\UseCases\EliminarAnchoMetrajePrendaInsumosUseCase::class);
     }
 
     public function boot(): void
@@ -235,8 +396,11 @@ class DomainServiceProvider extends ServiceProvider
 
     private function registerDomainEventListeners(): void
     {
-        // Los listeners se registran aquí cuando estén listos
+        // Domain Events de Pedidos - Fase 14
+        // Los listeners concretos se agregan aquí conforme se implementen.
         // Ejemplo:
-        // $this->app['events']->listen(\App\Domain\Ordenes\Events\OrdenCreada::class, ...);
+        // Event::listen(PedidoCreatedEvent::class, NotificarPedidoCreadoListener::class);
+        // Event::listen(PedidoValidatedEvent::class, LogValidacionListener::class);
+        // Event::listen(ItemsObtuvieronEvent::class, AuditItemsListener::class);
     }
 }

@@ -23,7 +23,7 @@ const TrackingUI = (() => {
         console.log('[fillOrderHeader] Datos recibidos:', orderData);
         console.log('[fillOrderHeader] Campos de fecha:', {
             fecha_creacion: orderData.fecha_creacion,
-            fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
+            created_at: orderData.created_at,
             created_at: orderData.created_at,
             fecha_estimada_de_entrega: orderData.fecha_estimada_de_entrega
         });
@@ -31,7 +31,7 @@ const TrackingUI = (() => {
         const elements = {
             'trackingOrderNumber': `#${orderData.numero_pedido || '-'}`,
             'trackingOrderClient': orderData.cliente || '-',
-            'trackingOrderDate': DateUtils.formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at),
+            'trackingOrderDate': DateUtils.formatDate(orderData.fecha_creacion || orderData.created_at || orderData.created_at),
             'trackingEstimatedDate': DateUtils.formatDate(orderData.fecha_estimada_de_entrega),
             'trackingOrderStatus': formatOrderStatus(orderData.estado || '-')
         };
@@ -115,10 +115,10 @@ const TrackingUI = (() => {
             timelineContainer.appendChild(timelineItem);
         });
         
-        // CORREGIR TOTAL: Calcular desde fecha_de_creacion_de_orden hasta el último proceso (o hoy si no está entregado)
-        if (orderData && (orderData.fecha_de_creacion_de_orden || orderData.fecha_inicio) && procesos.length > 0) {
-            // Usar fecha_inicio (nombre del backend) o fecha_de_creacion_de_orden como fallback
-            const fechaCreacionStr = orderData.fecha_de_creacion_de_orden || orderData.fecha_inicio;
+        // CORREGIR TOTAL: Calcular desde created_at hasta el último proceso (o hoy si no está entregado)
+        if (orderData && (orderData.created_at || orderData.fecha_inicio) && procesos.length > 0) {
+            // Usar fecha_inicio (nombre del backend) o created_at como fallback
+            const fechaCreacionStr = orderData.created_at || orderData.fecha_inicio;
             const fechaCreacion = DateUtils.parseLocalDate(fechaCreacionStr);
             const ultimoProceso = procesos[procesos.length - 1];
             const fechaUltimo = DateUtils.parseLocalDate(ultimoProceso.fecha_inicio);

@@ -16,13 +16,13 @@
  */
 window.actualizarTablaTelas = function() {
     console.log('═════════════════════════════════════════════════════════════════');
-    console.log('[actualizarTablaTelas] 🔄 FUNCIÓN LLAMADA - Rendering tabla');
+    console.log('[actualizarTablaTelas]  FUNCIÓN LLAMADA - Rendering tabla');
     console.log('═════════════════════════════════════════════════════════════════');
     
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.warn('[actualizarTablasTelas] ❌ tbody-telas no encontrado');
+        console.warn('[actualizarTablasTelas]  tbody-telas no encontrado');
         return;
     }
     console.log('[actualizarTablaTelas] ✓ tbody-telas encontrado');
@@ -30,7 +30,7 @@ window.actualizarTablaTelas = function() {
     const telas = window.telasCreacion;
     
     // DIAGNÓSTICO: Ver qué hay en telasCreacion
-    console.log('[actualizarTablaTelas] 📊 DIAGNÓSTICO - Datos a renderizar:');
+    console.log('[actualizarTablaTelas]DIAGNÓSTICO - Datos a renderizar:');
     console.log('  window.telasCreacion:', telas);
     console.log('  Cantidad de telas:', telas?.length || 0);
     if (telas && telas.length > 0) {
@@ -41,9 +41,9 @@ window.actualizarTablaTelas = function() {
     }
     
     // Identificar la fila de INPUTS usando el botón "Agregar" (selector robusto)
-    console.log('[actualizarTablaTelas] 🔍 Buscando fila de INPUTS en tabla...');
+    console.log('[actualizarTablaTelas]  Buscando fila de INPUTS en tabla...');
     const todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
-    console.log('[actualizarTablaTelas] 📊 Total de filas en tabla:', todasLasFilas.length);
+    console.log('[actualizarTablaTelas]Total de filas en tabla:', todasLasFilas.length);
     
     const filaInputs = todasLasFilas.find(tr => 
         tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
@@ -52,12 +52,12 @@ window.actualizarTablaTelas = function() {
     if (filaInputs) {
         console.log('[actualizarTablaTelas] ✓ Fila de INPUTS identificada');
     } else {
-        console.warn('[actualizarTablaTelas] ⚠️  No se encontró fila de INPUTS');
+        console.warn('[actualizarTablaTelas]   No se encontró fila de INPUTS');
     }
     
     // Eliminar SOLO las filas de telas (las que tienen onclick="eliminarTela()")
     // NO eliminar la fila de inputs
-    console.log('[actualizarTablaTelas] 🧹 Eliminando filas antiguas de telas (NO inputs)...');
+    console.log('[actualizarTablaTelas]  Eliminando filas antiguas de telas (NO inputs)...');
     let filasEliminadas = 0;
     todasLasFilas.forEach((fila, idx) => {
         if (fila !== filaInputs) {
@@ -72,7 +72,7 @@ window.actualizarTablaTelas = function() {
     const fragment = document.createDocumentFragment();
     
     if (telas.length === 0) {
-        console.log('[actualizarTablaTelas] 📭 Sin telas - mostrando mensaje vacío');
+        console.log('[actualizarTablaTelas]  Sin telas - mostrando mensaje vacío');
         // Mensaje cuando no hay telas
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -83,7 +83,7 @@ window.actualizarTablaTelas = function() {
         `;
         fragment.appendChild(tr);
     } else {
-        console.log('[actualizarTablaTelas] 🎨 Renderizando ' + telas.length + ' tela(s)...');
+        console.log('[actualizarTablaTelas] Renderizando ' + telas.length + ' tela(s)...');
         // Renderizar cada tela
         telas.forEach((tela, index) => {
             console.log(`[actualizarTablaTelas]   → Creando fila para tela ${index}: ${tela.color}/${tela.tela}`);
@@ -101,11 +101,11 @@ window.actualizarTablaTelas = function() {
         filaInputs.parentNode.insertBefore(fragment, filaInputs.nextSibling);
     } else {
         // Fallback: insertar al final
-        console.log('[actualizarTablaTelas] ⚠️  No hay fila de inputs, insertando al final');
+        console.log('[actualizarTablaTelas]   No hay fila de inputs, insertando al final');
         tbody.appendChild(fragment);
     }
     
-    console.log('[actualizarTablaTelas] ✅ COMPLETADO - Tabla actualizada');
+    console.log('[actualizarTablaTelas]  COMPLETADO - Tabla actualizada');
     console.log('═════════════════════════════════════════════════════════════════');
 };
 
@@ -122,7 +122,7 @@ function crearFilaTela(tela, index) {
     // Procesar imágenes para mostrar en la tabla
     let imagenHTML = '';
     if (tela.imagenes && tela.imagenes.length > 0) {
-        console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Procesando ${tela.imagenes.length} imágenes`);
+        console.log(`[actualizarTablaTelas]  [Tela ${index}] Procesando ${tela.imagenes.length} imágenes`);
         
         // Usar directamente las URLs de preview que ya existen
         const imagenConBlobUrl = tela.imagenes.map(img => {
@@ -132,7 +132,7 @@ function crearFilaTela(tela, index) {
                 return { file: img, previewUrl: blobUrl, nombre: img.name };
             }
             
-            // 🔴 PRIORIDAD: Si tiene File object, SIEMPRE crear nueva blob URL
+            //  PRIORIDAD: Si tiene File object, SIEMPRE crear nueva blob URL
             // (la previewUrl puede ser una blob URL stale/revocada)
             if (img.file && img.file instanceof File) {
                 const blobUrl = URL.createObjectURL(img.file);
@@ -160,7 +160,7 @@ function crearFilaTela(tela, index) {
             return { ...img, previewUrl: null, invalida: true };
         }).filter(img => !img.invalida); // Filtrar imágenes inválidas
         
-        console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
+        console.log(`[actualizarTablaTelas]  [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
         
         if (imagenConBlobUrl.length === 0) {
             console.warn(`[actualizarTablaTelas]  No hay imágenes válidas para la tela ${index}`);
@@ -180,7 +180,7 @@ function crearFilaTela(tela, index) {
         imgElement.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[actualizarTablaTelas] 🖼️ Click en imagen de tela', { 
+            console.log('[actualizarTablaTelas]  Click en imagen de tela', { 
                 index: index, 
                 imagen: imagenConBlobUrl[0].name,
                 totalImagenes: imagenConBlobUrl.length

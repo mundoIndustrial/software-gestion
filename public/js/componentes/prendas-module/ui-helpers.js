@@ -151,8 +151,8 @@ window.mostrarModalError = function(mensaje) {
  */
 if (!window.mostrarGaleriaImagenesPrenda) {
     window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Abriendo galería con', imagenes?.length || 0, 'imágenes');
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Dimensiones de pantalla:', {
+        console.log(' [mostrarGaleriaImagenesPrenda] Abriendo galería con', imagenes?.length || 0, 'imágenes');
+        console.log(' [mostrarGaleriaImagenesPrenda] Dimensiones de pantalla:', {
             vw: window.innerWidth,
             vh: window.innerHeight,
             '90vw': window.innerWidth * 0.9,
@@ -170,8 +170,8 @@ if (!window.mostrarGaleriaImagenesPrenda) {
             ...img
         })).filter(img => img.src);
         
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Imágenes válidas:', imagenesValidas.length);
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Primera imagen src:', imagenesValidas[0]?.src);
+        console.log(' [mostrarGaleriaImagenesPrenda] Imágenes válidas:', imagenesValidas.length);
+        console.log(' [mostrarGaleriaImagenesPrenda] Primera imagen src:', imagenesValidas[0]?.src);
         
         if (imagenesValidas.length === 0) {
             console.warn(' No hay imágenes con URLs válidas');
@@ -194,8 +194,8 @@ if (!window.mostrarGaleriaImagenesPrenda) {
             border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
         `;
         
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] CSS aplicado a imgElement:', imgElement.style.cssText);
-        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Tamaño calculado:', {
+        console.log(' [mostrarGaleriaImagenesPrenda] CSS aplicado a imgElement:', imgElement.style.cssText);
+        console.log(' [mostrarGaleriaImagenesPrenda] tamano calculado:', {
             'min-width': '80vw = ' + (window.innerWidth * 0.80) + 'px',
             'min-height': '60vh = ' + (window.innerHeight * 0.60) + 'px',
             'width': '90vw = ' + (window.innerWidth * 0.90) + 'px',
@@ -205,7 +205,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         });
         
         imgElement.onload = function() {
-            console.log('🖼️ [mostrarGaleriaImagenesPrenda] Imagen cargada - Dimensiones reales:', {
+            console.log(' [mostrarGaleriaImagenesPrenda] Imagen cargada - Dimensiones reales:', {
                 naturalWidth: this.naturalWidth,
                 naturalHeight: this.naturalHeight,
                 displayWidth: this.offsetWidth,
@@ -216,7 +216,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         };
         
         imgElement.onerror = function() {
-            console.error('🖼️ [mostrarGaleriaImagenesPrenda] Error al cargar imagen:', this.src);
+            console.error(' [mostrarGaleriaImagenesPrenda] Error al cargar imagen:', this.src);
         };
         
         const toolbar = document.createElement('div');
@@ -269,7 +269,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         toolbar.appendChild(btnSiguiente);
         
         const btnEliminar = document.createElement('button');
-        btnEliminar.textContent = '🗑️ Eliminar';
+        btnEliminar.textContent = ' Eliminar';
         btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background 0.2s;';
         btnEliminar.title = 'Eliminar esta imagen';
         btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
@@ -312,7 +312,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
             btnConfirmarEliminar.onclick = () => {
                 confirmModalDiv.remove();
                 
-                console.log('🗑️ [mostrarGaleriaImagenesPrenda] Eliminando imagen en índice', indiceActual);
+                console.log(' [mostrarGaleriaImagenesPrenda] Eliminando imagen en índice', indiceActual);
                 
                 // Eliminar de imagenesValidas
                 imagenesValidas.splice(indiceActual, 1);

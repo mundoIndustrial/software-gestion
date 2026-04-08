@@ -25,7 +25,7 @@ if (is_dir($pedidosDir)) {
         $ultimos = array_slice($carpetas, 0, 3);
         
         foreach ($ultimos as $idx => $pedidoId) {
-            echo "\n📌 PEDIDO $pedidoId (Carpeta más reciente #" . ($idx + 1) . ")\n";
+            echo "\n PEDIDO $pedidoId (Carpeta más reciente #" . ($idx + 1) . ")\n";
             echo str_repeat("─", 50) . "\n";
             
             $pedidoPath = $pedidosDir . '/' . $pedidoId;
@@ -35,7 +35,7 @@ if (is_dir($pedidosDir)) {
                 $f !== '.' && $f !== '..' && is_dir($pedidoPath . '/' . $f)
             );
             
-            echo "📁 Carpetas en pedido:\n";
+            echo " Carpetas en pedido:\n";
             foreach ($subdirs as $subdir) {
                 $subPath = $pedidoPath . '/' . $subdir;
                 $files = array_filter(scandir($subPath), fn($f) => 

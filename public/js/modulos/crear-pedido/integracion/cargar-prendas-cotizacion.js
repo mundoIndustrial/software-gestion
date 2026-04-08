@@ -11,7 +11,7 @@ class CargadorPrendasCotizacion {
 
             // Cargar datos COMPLETOS de la prenda desde el backend
             const response = await fetch(
-                `/asesores/pedidos-produccion/obtener-prenda-completa/${cotizacionId}/${prendaId}`,
+                `/api/asesores/pedidos-produccion/obtener-prenda-completa/${cotizacionId}/${prendaId}`,
                 {
                     method: 'GET',
                     headers: {
@@ -77,12 +77,12 @@ class CargadorPrendasCotizacion {
 
         console.log('[CargadorPrendasCotizacion]  Transformando datos para prenda:', prenda.nombre_producto);
         
-        // 🔴 FIX CRÍTICO: Usar telas_multiples de la prenda original guardada (tienen la referencia)
+        //  FIX CRÍTICO: Usar telas_multiples de la prenda original guardada (tienen la referencia)
         // El backend NO devuelve telas_multiples, pero lo tenemos guardado en el cliente
-        if (window.prendaOriginalDesdeSelector && window.prendaOriginalDesdeSelector.variantes) {
-            console.log('[transformarDatos] ✅ USANDO telas_multiples de prenda original guardada:');
+        if (globalThis.prendaOriginalDesdeSelector && globalThis.prendaOriginalDesdeSelector.variantes) {
+            console.log('[transformarDatos]  USANDO telas_multiples de prenda original guardada:');
             
-            const variantesOriginales = window.prendaOriginalDesdeSelector.variantes;
+            const variantesOriginales = globalThis.prendaOriginalDesdeSelector.variantes;
             let telasMultiplesDelOriginal = [];
             
             if (Array.isArray(variantesOriginales)) {
@@ -102,9 +102,9 @@ class CargadorPrendasCotizacion {
                     if (typeof telasTemp === 'string') {
                         try {
                             telasTemp = JSON.parse(telasTemp);
-                            console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING en prenda original');
+                            console.log('[transformarDatos]   telas_multiples parseado desde STRING en prenda original');
                         } catch(e) {
-                            console.warn('[transformarDatos]  ❌ Error parseando telas_multiples de prenda original');
+                            console.warn('[transformarDatos]   Error parseando telas_multiples de prenda original');
                             telasTemp = [];
                         }
                     }
@@ -118,8 +118,8 @@ class CargadorPrendasCotizacion {
             
             // Guardar en un lugar accesible para usarlas más adelante
             if (telasMultiplesDelOriginal.length > 0) {
-                window._telasMultiplesOriginales = telasMultiplesDelOriginal;
-                console.log('[transformarDatos] 💾 Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
+                globalThis._telasMultiplesOriginales = telasMultiplesDelOriginal;
+                console.log('[transformarDatos]  Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
                 telasMultiplesDelOriginal.forEach((t, idx) => {
                     console.log(`  [${idx}] ${t.tela} - ${t.color} -> ref: "${t.referencia}" | imagenes: ${t.imagenes ? JSON.stringify(t.imagenes).substring(0, 100) : 'undefined'}`);
                 });
@@ -166,7 +166,7 @@ class CargadorPrendasCotizacion {
                             ruta_webp = '/storage/' + ruta_webp;
                         }
                         
-                        console.log(`[transformarDatos] 📸 Logo imagen procesada:`, {
+                        console.log(`[transformarDatos]  Logo imagen procesada:`, {
                             ruta_original: img.ruta_original,
                             ruta_webp_original: img.ruta_webp,
                             ruta_final: ruta || ruta_webp
@@ -192,7 +192,7 @@ class CargadorPrendasCotizacion {
 
         // Preparar fotos de prenda
         const fotosFormato = (prenda.fotos || []).map((foto, idx) => {
-            console.log(`[transformarDatos] 📸 PROCESANDO FOTO ${idx}:`, {
+            console.log(`[transformarDatos]  PROCESANDO FOTO ${idx}:`, {
                 tipo_dato: typeof foto,
                 tiene_ruta: !!(foto?.ruta),
                 tiene_ruta_webp: !!(foto?.ruta_webp),
@@ -221,7 +221,7 @@ class CargadorPrendasCotizacion {
                     uid: `existing-foto-prenda-${idx}`
                 };
                 
-                console.log(`[transformarDatos] 📸 FOTO ${idx} PROCESADA => RUTA FINAL:`, resultado.ruta);
+                console.log(`[transformarDatos]  FOTO ${idx} PROCESADA => RUTA FINAL:`, resultado.ruta);
                 return resultado;
             }
             
@@ -234,18 +234,18 @@ class CargadorPrendasCotizacion {
             };
         }).filter(f => f.ruta);  // Filtrar fotos sin ruta válida
         
-        console.log('[transformarDatos] 📸 FOTOS RECIBIDAS DEL BACKEND:', prenda.fotos);
+        console.log('[transformarDatos]  FOTOS RECIBIDAS DEL BACKEND:', prenda.fotos);
         console.log('[transformarDatos]  FOTOS PROCESADAS FINAL:', fotosFormato.map(f => ({ ruta: f.ruta, uid: f.uid })));
 
         // Preparar telas CON TODAS LAS REFERENCIAS
-        console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
-        console.log('[transformarDatos] 🧵 ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
+        console.log('[transformarDatos]  TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
+        console.log('[transformarDatos]  ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
         
         //  LÓGICA NUEVA: Verificar si hay telas desde logoCotizacionTelasPrenda
         // Estas vienen de la tabla logo_cotizacion_telas_prenda cuando la cotización es de tipo Logo
         let telasDesdeLogo = [];
         if (data.prenda?.logoCotizacionTelasPrenda && Array.isArray(data.prenda.logoCotizacionTelasPrenda)) {
-            console.log('[transformarDatos] 🎯 TELAS DESDE LOGO_COTIZACION_TELAS_PRENDA DETECTADAS:', {
+            console.log('[transformarDatos]  TELAS DESDE LOGO_COTIZACION_TELAS_PRENDA DETECTADAS:', {
                 cantidad: data.prenda.logoCotizacionTelasPrenda.length,
                 telas: data.prenda.logoCotizacionTelasPrenda
             });
@@ -281,7 +281,7 @@ class CargadorPrendasCotizacion {
         // PROcesar telas desde el backend (prioridad 1)
         let telasDesdeBackend = (prenda.telas || []).map((tela, idx) => {
             const teleImagen = tela.imagenes || [];
-            console.log(`[transformarDatos] 🧵 Procesando tela ${idx} desde backend:`, {
+            console.log(`[transformarDatos]  Procesando tela ${idx} desde backend:`, {
                 id: tela.id,
                 nombre_tela: tela.nombre_tela,
                 color: tela.color,
@@ -319,7 +319,7 @@ class CargadorPrendasCotizacion {
                     }
                 }
                 
-                console.log(`[transformarDatos] 📸 Imagen tela ${idx}-${imgIdx}:`, {
+                console.log(`[transformarDatos]  Imagen tela ${idx}-${imgIdx}:`, {
                     ruta_original: img.ruta,
                     ruta_webp_original: img.ruta_webp,
                     ruta_procesada: ruta,
@@ -376,7 +376,7 @@ class CargadorPrendasCotizacion {
                 
                 // Verificar si esta variante tiene telas_multiples
                 if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
-                    console.log(`[transformarDatos] 🧵 [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
+                    console.log(`[transformarDatos]  [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
                     
                     // Recorrer todas las telas de esta variante
                     variante.telas_multiples.forEach((tela, telaIndex) => {
@@ -394,7 +394,7 @@ class CargadorPrendasCotizacion {
                             ? String(tela.referencia).trim() 
                             : '';
                         
-                        // 🔴 FIX: Procesar imágenes que pueden venir como string JSON
+                        //  FIX: Procesar imágenes que pueden venir como string JSON
                         let imagenesProcesadas = [];
                         if (tela.imagenes) {
                             if (typeof tela.imagenes === 'string') {
@@ -452,24 +452,24 @@ class CargadorPrendasCotizacion {
         } else if (prenda.variantes && typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
             // Variantes es un objeto plano (ya procesado por el backend) - extraer telas_multiples
             console.log('[transformarDatos]  Variantes es objeto plano, buscando telas_multiples');
-            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples tipo:', typeof prenda.variantes.telas_multiples);
-            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples contenido:', prenda.variantes.telas_multiples);
+            console.log('[transformarDatos]   prenda.variantes.telas_multiples tipo:', typeof prenda.variantes.telas_multiples);
+            console.log('[transformarDatos]   prenda.variantes.telas_multiples contenido:', prenda.variantes.telas_multiples);
             
             let telasMultiples = prenda.variantes.telas_multiples;
             if (typeof telasMultiples === 'string') {
                 try { 
                     telasMultiples = JSON.parse(telasMultiples); 
-                    console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING');
+                    console.log('[transformarDatos]   telas_multiples parseado desde STRING');
                 } catch(e) { 
-                    console.warn('[transformarDatos] ❌ Error parseando telas_multiples:', e);
+                    console.warn('[transformarDatos]  Error parseando telas_multiples:', e);
                     telasMultiples = []; 
                 }
             }
             
-            console.log('[transformarDatos]  📋 telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
+            console.log('[transformarDatos]   telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
             
             if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
-                console.log('[transformarDatos]  🧵 Encontradas', telasMultiples.length, 'telas en telas_multiples');
+                console.log('[transformarDatos]   Encontradas', telasMultiples.length, 'telas en telas_multiples');
                 telasMultiples.forEach((tela, idx) => {
                     console.log(`[transformarDatos]  [TelaMultiple ${idx}] Procesando:`, {
                         tela: tela.tela,
@@ -477,7 +477,7 @@ class CargadorPrendasCotizacion {
                         referencia: tela.referencia
                     });
                     
-                    // 🔴 FIX: Procesar imágenes que pueden venir como string JSON
+                    //  FIX: Procesar imágenes que pueden venir como string JSON
                     let imagenesProcesadas = [];
                     if (tela.imagenes) {
                         if (typeof tela.imagenes === 'string') {
@@ -505,9 +505,9 @@ class CargadorPrendasCotizacion {
                     });
                 });
                 telasDesdeVariantes = telasAgregadasTemp;
-                console.log('[transformarDatos]  ✅ Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
+                console.log('[transformarDatos]   Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
             } else {
-                console.log('[transformarDatos]  ⚠️ telas_multiples no es array o está vacío');
+                console.log('[transformarDatos]   telas_multiples no es array o está vacío');
             }
         } else {
             console.log('[transformarDatos]  La prenda no tiene variantes array');
@@ -518,7 +518,7 @@ class CargadorPrendasCotizacion {
         
         // Si hay telas desde Logo, usarlas DIRECTAMENTE (máxima prioridad)
         if (telasDesdeLogo && telasDesdeLogo.length > 0) {
-            console.log('[transformarDatos] 🎯 USANDO TELAS DESDE LOGO (máxima prioridad):', telasDesdeLogo.length);
+            console.log('[transformarDatos]  USANDO TELAS DESDE LOGO (máxima prioridad):', telasDesdeLogo.length);
             telasFormato = [...telasDesdeLogo];
         } else if (telasDesdeBackend && telasDesdeBackend.length > 0) {
             // Si no hay telas de Logo, usar las del backend
@@ -526,9 +526,9 @@ class CargadorPrendasCotizacion {
             telasFormato = [...telasDesdeBackend];
             
             // Enriquecer con datos de variantes si es necesario
-            // 🔴 FIX: Usar múltiples estrategias de comparación para enriquecer
+            //  FIX: Usar múltiples estrategias de comparación para enriquecer
             telasDesdeVariantes.forEach(telaVariante => {
-                console.log('[transformarDatos] 🔍 Buscando coincidencia para variante:', {
+                console.log('[transformarDatos]  Buscando coincidencia para variante:', {
                     nombre: telaVariante.nombre_tela,
                     color: telaVariante.color,
                     referencia: telaVariante.referencia
@@ -540,7 +540,7 @@ class CargadorPrendasCotizacion {
                     const idx = parseInt(telaVariante.indice);
                     if (idx >= 0 && idx < telasFormato.length) {
                         indiceExistente = idx;
-                        console.log('[transformarDatos] ✅ Coincidencia por ÍNDICE:', idx);
+                        console.log('[transformarDatos]  Coincidencia por ÍNDICE:', idx);
                     }
                 }
                 
@@ -551,7 +551,7 @@ class CargadorPrendasCotizacion {
                         (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
                     );
                     if (indiceExistente !== -1) {
-                        console.log('[transformarDatos] ✅ Coincidencia por NOMBRE + COLOR:', indiceExistente);
+                        console.log('[transformarDatos]  Coincidencia por NOMBRE + COLOR:', indiceExistente);
                     }
                 }
                 
@@ -561,7 +561,7 @@ class CargadorPrendasCotizacion {
                         (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
                     );
                     if (indiceExistente !== -1) {
-                        console.log('[transformarDatos] ✅ Coincidencia por COLOR:', indiceExistente);
+                        console.log('[transformarDatos]  Coincidencia por COLOR:', indiceExistente);
                     }
                 }
                 
@@ -574,19 +574,19 @@ class CargadorPrendasCotizacion {
                         telaVariante.referencia && telaVariante.referencia !== '') {
                         telasFormato[indiceExistente].referencia = telaVariante.referencia;
                         telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
-                        console.log('[transformarDatos] 🔧 Tela enriquecida con referencia:', telaVariante.referencia);
+                        console.log('[transformarDatos]  Tela enriquecida con referencia:', telaVariante.referencia);
                     }
                     
                     // Enriquecer con imagenes
                     if ((!telaExistente.imagenes || telaExistente.imagenes.length === 0) && 
                         telaVariante.imagenes && telaVariante.imagenes.length > 0) {
                         telasFormato[indiceExistente].imagenes = telaVariante.imagenes;
-                        console.log('[transformarDatos] 📸 Tela enriquecida con imágenes:', telaVariante.imagenes.length);
+                        console.log('[transformarDatos]  Tela enriquecida con imágenes:', telaVariante.imagenes.length);
                     }
                 } else {
                     // No encontró coincidencia, agregar como nueva
                     telasFormato.push(telaVariante);
-                    console.log('[transformarDatos] ➕ Agregada tela desde variantes (sin coincidencia):', telaVariante);
+                    console.log('[transformarDatos]  Agregada tela desde variantes (sin coincidencia):', telaVariante);
                 }
             });
         } else if (telasDesdeVariantes && telasDesdeVariantes.length > 0) {
@@ -595,12 +595,12 @@ class CargadorPrendasCotizacion {
             telasFormato = [...telasDesdeVariantes];
         }
         
-        // 🔴 FIX CRÍTICO: Si tenemos telas_multiples originales guardadas, usarlas para enriquecer
+        //  FIX CRÍTICO: Si tenemos telas_multiples originales guardadas, usarlas para enriquecer
         // Esto asegura que referencias como '43534543' se asignen correctamente
-        if (window._telasMultiplesOriginales && window._telasMultiplesOriginales.length > 0 && telasFormato.length > 0) {
-            console.log('[transformarDatos] 🔧 ENRIQUECIENDO CON telas_multiples ORIGINALES...');
+        if (globalThis._telasMultiplesOriginales && globalThis._telasMultiplesOriginales.length > 0 && telasFormato.length > 0) {
+            console.log('[transformarDatos]  ENRIQUECIENDO CON telas_multiples ORIGINALES...');
             
-            window._telasMultiplesOriginales.forEach(telaOriginal => {
+            globalThis._telasMultiplesOriginales.forEach(telaOriginal => {
                 // Estrategia 1: Buscar por índice directo (más confiable)
                 let indiceEncontrado = -1;
                 
@@ -608,7 +608,7 @@ class CargadorPrendasCotizacion {
                     const idx = parseInt(telaOriginal.indice);
                     if (idx >= 0 && idx < telasFormato.length) {
                         indiceEncontrado = idx;
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por ÍNDICE: ${idx}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por ÍNDICE: ${idx}`);
                     }
                 }
                 
@@ -619,7 +619,7 @@ class CargadorPrendasCotizacion {
                         (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
                     );
                     if (indiceEncontrado !== -1) {
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por TELA+COLOR: ${indiceEncontrado}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por TELA+COLOR: ${indiceEncontrado}`);
                     }
                 }
                 
@@ -629,7 +629,7 @@ class CargadorPrendasCotizacion {
                         (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
                     );
                     if (indiceEncontrado !== -1) {
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por COLOR: ${indiceEncontrado}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por COLOR: ${indiceEncontrado}`);
                     }
                 }
                 
@@ -640,19 +640,19 @@ class CargadorPrendasCotizacion {
                     // Enriquecer con referencia
                     if ((!telaTarget.referencia || telaTarget.referencia === '') && telaOriginal.referencia) {
                         telaTarget.referencia = telaOriginal.referencia;
-                        console.log(`[transformarDatos] 🔧 REFERENCIA ENRIQUECIDA: "${telaOriginal.referencia}"`);
+                        console.log(`[transformarDatos]  REFERENCIA ENRIQUECIDA: "${telaOriginal.referencia}"`);
                     }
                     
                     // Enriquecer con descripción/especificación
                     if ((!telaTarget.descripcion || telaTarget.descripcion === '') && telaOriginal.descripcion) {
                         telaTarget.descripcion = telaOriginal.descripcion;
-                        console.log(`[transformarDatos] 📝 DESCRIPCIÓN ENRIQUECIDA: "${telaOriginal.descripcion}"`);
+                        console.log(`[transformarDatos]  DESCRIPCIÓN ENRIQUECIDA: "${telaOriginal.descripcion}"`);
                     }
                     
                     // Enriquecer con imágenes
                     if ((!telaTarget.imagenes || telaTarget.imagenes.length === 0) && telaOriginal.imagenes) {
                         let imagenesTemp = telaOriginal.imagenes;
-                        console.log(`[transformarDatos]  📸 Procesando imagenes de tela original:`, {
+                        console.log(`[transformarDatos]   Procesando imagenes de tela original:`, {
                             tipo: typeof imagenesTemp,
                             esArray: Array.isArray(imagenesTemp),
                             length: imagenesTemp?.length,
@@ -662,26 +662,26 @@ class CargadorPrendasCotizacion {
                         if (typeof imagenesTemp === 'string') {
                             try {
                                 imagenesTemp = JSON.parse(imagenesTemp);
-                                console.log(`[transformarDatos]  ✅ Imagenes parseadas desde STRING`);
+                                console.log(`[transformarDatos]   Imagenes parseadas desde STRING`);
                             } catch(e) {
-                                console.warn(`[transformarDatos]  ❌ Error parseando imagenes:`, e);
+                                console.warn(`[transformarDatos]   Error parseando imagenes:`, e);
                                 imagenesTemp = [];
                             }
                         }
                         
                         if (Array.isArray(imagenesTemp) && imagenesTemp.length > 0) {
                             telaTarget.imagenes = imagenesTemp;
-                            console.log(`[transformarDatos] 📸 IMÁGENES ENRIQUECIDAS: ${imagenesTemp.length} foto(s)`);
+                            console.log(`[transformarDatos]  IMÁGENES ENRIQUECIDAS: ${imagenesTemp.length} foto(s)`);
                         } else {
-                            console.warn(`[transformarDatos]  ⚠️ imagenesTemp NO es array o está vacío:`, imagenesTemp);
+                            console.warn(`[transformarDatos]   imagenesTemp NO es array o está vacío:`, imagenesTemp);
                         }
                     }
                 } else {
-                    console.warn(`[transformarDatos] ⚠️ No se encontró coincidencia para enriquecer: ${telaOriginal.tela} - ${telaOriginal.color}`);
+                    console.warn(`[transformarDatos]  No se encontró coincidencia para enriquecer: ${telaOriginal.tela} - ${telaOriginal.color}`);
                 }
             });
             
-            console.log('[transformarDatos] ✅ ENRIQUECIMIENTO COMPLETADO con telas_multiples originales');
+            console.log('[transformarDatos]  ENRIQUECIMIENTO COMPLETADO con telas_multiples originales');
         }
         
         console.log('[transformarDatos]  TELAS FINALES PROCESADAS:', telasFormato);
@@ -699,10 +699,10 @@ class CargadorPrendasCotizacion {
         let tallasConCantidades = [];
         if (prenda.tallas && Array.isArray(prenda.tallas)) {
             tallasConCantidades = prenda.tallas;
-            console.log('[transformarDatos] 📏 TALLAS CON CANTIDADES para cotización:', tallasConCantidades);
+            console.log('[transformarDatos]  TALLAS CON CANTIDADES para cotización:', tallasConCantidades);
         }
         
-        // 🔴 CRÍTICO: Convertir tallasConCantidades a formato cantidad_talla agrupado por género
+        //  CRÍTICO: Convertir tallasConCantidades a formato cantidad_talla agrupado por género
         // Estructura esperada: { DAMA: { S: 5, M: 10 }, CABALLERO: { L: 7 } }
         let cantidadTallaDesdeBackend = {};
         if (tallasConCantidades.length > 0) {
@@ -711,10 +711,10 @@ class CargadorPrendasCotizacion {
                 if (!cantidadTallaDesdeBackend[genero]) cantidadTallaDesdeBackend[genero] = {};
                 cantidadTallaDesdeBackend[genero][t.talla] = t.cantidad || 0;
             });
-            console.log('[transformarDatos] 📏 cantidad_talla generado desde backend:', cantidadTallaDesdeBackend);
+            console.log('[transformarDatos]  cantidad_talla generado desde backend:', cantidadTallaDesdeBackend);
         }
 
-        // 🎨 CONSTRUIR ASIGNACIONES DE COLOR POR TALLA desde prenda_tallas_cot.color
+        // CONSTRUIR ASIGNACIONES DE COLOR POR TALLA desde prenda_tallas_cot.color
         let asignacionesCotizacion = [];
         let asignacionesColoresPorTallaCot = {};
         
@@ -724,11 +724,11 @@ class CargadorPrendasCotizacion {
                 ? (telasFormato[0].nombre_tela || telasFormato[0].tela || 'SIN TELA').toUpperCase()
                 : 'SIN TELA';
             
-            // 🔴 FIX: Extraer referencia e imagenes de telasFormato enriquecidas
+            //  FIX: Extraer referencia e imagenes de telasFormato enriquecidas
             const referenciaDelTela = telasFormato.length > 0 ? (telasFormato[0].referencia || '') : '';
             const imagenesDelTela = telasFormato.length > 0 ? (telasFormato[0].imagenes || []) : [];
             
-            console.log('[transformarDatos] 🔧 Enriquecimiento para asignaciones wizard:', {
+            console.log('[transformarDatos]  Enriquecimiento para asignaciones wizard:', {
                 tela: telasFormato[0]?.nombre_tela,
                 referencia: referenciaDelTela,
                 imagenes_count: imagenesDelTela.length,
@@ -769,7 +769,7 @@ class CargadorPrendasCotizacion {
                         tipo: tipoTalla,
                         talla: talla,
                         colores: [],
-                        // 🔴 FIX: Agregar referencia e imagenes enriquecidas
+                        //  FIX: Agregar referencia e imagenes enriquecidas
                         referencia: referenciaDelTela,
                         imagenes: imagenesDelTela
                     };
@@ -788,7 +788,7 @@ class CargadorPrendasCotizacion {
             });
             
             if (asignacionesCotizacion.length > 0) {
-                console.log('[transformarDatos] 🎨 ASIGNACIONES DE COLOR construidas desde cotización:', {
+                console.log('[transformarDatos] ASIGNACIONES DE COLOR construidas desde cotización:', {
                     total: asignacionesCotizacion.length,
                     asignaciones: asignacionesCotizacion,
                     stateManager: asignacionesColoresPorTallaCot
@@ -955,14 +955,14 @@ class CargadorPrendasCotizacion {
     agregarPrendaAGestion(prendaCompleta) {
         console.log('[CargadorPrendasCotizacion]  Agregando prenda a GestionItemsUI');
 
-        if (!window.gestionItemsUI) {
+        if (!globalThis.gestionItemsUI) {
             console.error(' GestionItemsUI no disponible');
             return false;
         }
 
         try {
             // Agregar al array de prendas
-            window.gestionItemsUI.agregarPrendaAlOrden(prendaCompleta);
+            globalThis.gestionItemsUI.agregarPrendaAlOrden(prendaCompleta);
 
             console.log('[CargadorPrendasCotizacion] ✓ Prenda agregada a GestionItemsUI');
             return true;
@@ -974,13 +974,13 @@ class CargadorPrendasCotizacion {
 }
 
 // Instancia global
-window.cargadorPrendasCotizacion = new CargadorPrendasCotizacion();
+globalThis.cargadorPrendasCotizacion = new CargadorPrendasCotizacion();
 
 /**
  * Abrir modal para seleccionar prenda de cotización
  * Usar el mismo modal-agregar-prenda-nueva que en crear sin cotización
  */
-window.abrirSelectorPrendasCotizacion = function(cotizacion) {
+globalThis.abrirSelectorPrendasCotizacion = function(cotizacion) {
     console.log('[abrirSelectorPrendasCotizacion]  Abriendo selector de prendas');
     console.log('  Cotización:', cotizacion);
 
@@ -1175,21 +1175,21 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 // Cerrar modal de selección
                 modal.remove();
 
-                // 💾 GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
+                //  GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
                 // Guardar la prenda original del selector para poder acceder a telas_multiples más tarde
-                window.prendaOriginalDesdeSelector = {
+                globalThis.prendaOriginalDesdeSelector = {
                     variantes: prenda.variantes,
                     id: prenda.id,
                     nombre_producto: prenda.nombre_producto,
                     cotizacion_id: cotizacion.id
                 };
-                console.log('[abrirSelectorPrendasCotizacion] 💾 Prenda original guardada para referencia:', {
+                console.log('[abrirSelectorPrendasCotizacion]  Prenda original guardada para referencia:', {
                     tiene_variantes: !!prenda.variantes,
                     variantes_es_array: Array.isArray(prenda.variantes),
                     variantes_length: prenda.variantes?.length || 0
                 });
 
-                const prendaCompleta = await window.cargadorPrendasCotizacion.cargarPrendaCompletaDesdeCotizacion(
+                const prendaCompleta = await globalThis.cargadorPrendasCotizacion.cargarPrendaCompletaDesdeCotizacion(
                     cotizacion.id,
                     prenda.id
                 );
@@ -1199,14 +1199,14 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
 
                 // Abrir el modal modal-agregar-prenda-nueva con la prenda PRECARGADA
                 // Esto permite al usuario ver todos los campos llenos desde la cotización
-                if (window.gestionItemsUI && window.gestionItemsUI.prendaEditor) {
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendaEditor) {
                     //  ASIGNAR COTIZACIÓN AL PRENDAEDITOR (para origen automático)
                     // Usar el objeto original si existe, para tener acceso a tipo_cotizacion_id y tipo_cotizacion
                     const cotizacionParaPrendaEditor = cotizacion.original || cotizacion;
                     
-                    window.gestionItemsUI.prendaEditor.cotizacionActual = cotizacionParaPrendaEditor;
+                    globalThis.gestionItemsUI.prendaEditor.cotizacionActual = cotizacionParaPrendaEditor;
                     
-                    console.log('[abrirSelectorPrendasCotizacion] 🔗 Cotización asignada al PrendaEditor:', {
+                    console.log('[abrirSelectorPrendasCotizacion]  Cotización asignada al PrendaEditor:', {
                         id: cotizacionParaPrendaEditor.id,
                         tipo_cotizacion_id: cotizacionParaPrendaEditor.tipo_cotizacion_id,
                         tipo_cotizacion_nombre: cotizacionParaPrendaEditor.tipo_cotizacion?.nombre,
@@ -1215,7 +1215,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     
                     // Cargar la prenda en el modal (NO como edición de existente, sino como NUEVA)
                     // Pero con todos los datos precargados
-                    window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
+                    globalThis.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
                     console.log('[abrirSelectorPrendasCotizacion] ✓ Prenda cargada en modal para edición');
                     
                     // Los procesos se cargarán automáticamente mediante PrendaEditorProcesos.cargar()
@@ -1231,8 +1231,8 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 }
 
                 // Notificar éxito
-                if (window.gestionItemsUI?.notificationService) {
-                    window.gestionItemsUI.notificationService.exito(
+                if (globalThis.gestionItemsUI?.notificationService) {
+                    globalThis.gestionItemsUI.notificationService.exito(
                         `Prenda "${nombrePrenda}" cargada desde cotización`
                     );
                 }

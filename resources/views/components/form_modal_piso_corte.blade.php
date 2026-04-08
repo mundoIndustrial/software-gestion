@@ -680,7 +680,7 @@
                 this.createKey = config.createKey;
                 this.onSelect = config.onSelect || (() => {});
                 
-                // ⚡ Cache local para búsquedas
+                //  Cache local para búsquedas
                 this.searchCache = new Map();
                 this.cacheExpiry = 5 * 60 * 1000; // 5 minutos
                 this.currentAbortController = null;
@@ -750,7 +750,7 @@
             }
 
             async search(query) {
-                // ⚡ Verificar cache
+                //  Verificar cache
                 const cacheKey = `${this.searchRoute}:${query}`;
                 const cached = this.searchCache.get(cacheKey);
                 
@@ -758,12 +758,12 @@
                     return cached.data;
                 }
                 
-                // ⚡ Cancelar búsqueda anterior si existe
+                //  Cancelar búsqueda anterior si existe
                 if (this.currentAbortController) {
                     this.currentAbortController.abort();
                 }
                 
-                // ⚡ Crear nuevo AbortController con timeout
+                //  Crear nuevo AbortController con timeout
                 this.currentAbortController = new AbortController();
                 const timeoutId = setTimeout(() => {
                     this.currentAbortController.abort();
@@ -787,7 +787,7 @@
                     
                     const data = await response.json();
                     
-                    // ⚡ Guardar en cache
+                    //  Guardar en cache
                     this.searchCache.set(cacheKey, {
                         data: data,
                         timestamp: Date.now()

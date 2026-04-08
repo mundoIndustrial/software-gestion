@@ -414,7 +414,7 @@
                                 `epp_${epp.epp_id}_img_${imgIdx}.${img.file.name.split('.').pop()}`
                             );
                             
-                            console.log(`📸 Agregando imagen EPP: epps[${eppIdx}][imagenes][${imgIdx}]`);
+                            console.log(` Agregando imagen EPP: epps[${eppIdx}][imagenes][${imgIdx}]`);
                         }
                     });
                 }
@@ -448,7 +448,7 @@
                 const formData = construirFormData(pedidoData);
                 
                 mostrarStatus('Enviando pedido...', 'info');
-                console.log('📤 Enviando FormData...');
+                console.log(' Enviando FormData...');
                 
                 // Enviar
                 const response = await fetch('/asesores/pedidos-editable/crear', {

@@ -11,8 +11,9 @@ function inicializarEntregasCompletas() {
     // Configurar eventos
     configurarEventos();
     
-    // Auto-actualización opcional
-    iniciarAutoActualizacion();
+    // Actualizacion en tiempo real (sin polling)
+    setupRealtimeEntregas();
+    setupVisibilityRefresh();
 }
 
 function inicializarTooltips() {
@@ -50,13 +51,45 @@ function configurarEventos() {
     });
 }
 
-function iniciarAutoActualizacion() {
-    // Auto-actualización cada 5 minutos (300,000 ms)
-    setInterval(function() {
-        if (!document.hidden) {
-            recargarDatos(false); // false = no mostrar loading
+function setupRealtimeEntregas() {
+    const onEntregaChanged = () => recargarDatos(false);
+
+    try {
+        const ws = window.shared?.websocket;
+        if (ws && typeof ws.subscribe === 'function') {
+            ws.subscribe('entregas.pedido', 'EntregaRegistrada', onEntregaChanged);
+            ws.subscribe('entregas.pedido', 'EntregaEliminada', onEntregaChanged);
+            ws.subscribe('entregas.bodega', 'EntregaRegistrada', onEntregaChanged);
+            ws.subscribe('entregas.bodega', 'EntregaEliminada', onEntregaChanged);
+            return;
         }
-    }, 300000);
+    } catch (error) {
+        console.warn('[entregas-completas] No se pudo usar window.shared.websocket:', error);
+    }
+
+    if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
+        window.EchoInstance.channel('entregas.pedido')
+            .listen('EntregaRegistrada', onEntregaChanged)
+            .listen('EntregaEliminada', onEntregaChanged);
+        window.EchoInstance.channel('entregas.bodega')
+            .listen('EntregaRegistrada', onEntregaChanged)
+            .listen('EntregaEliminada', onEntregaChanged);
+        return;
+    }
+
+    console.warn('[entregas-completas] Realtime no disponible; solo refresco por foco/visibilidad');
+}
+
+function setupVisibilityRefresh() {
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            recargarDatos(false);
+        }
+    });
+
+    window.addEventListener('focus', function() {
+        recargarDatos(false);
+    });
 }
 
 function recargarDatos(mostrarLoadingState = true) {
@@ -385,3 +418,4 @@ document.addEventListener('keydown', function(e) {
         limpiarFiltros();
     }
 });
+

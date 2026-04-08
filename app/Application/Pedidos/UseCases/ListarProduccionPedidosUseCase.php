@@ -3,21 +3,40 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator as LaravelLengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ListarProduccionPedidosUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoProduccionReadRepository $pedidoRepository
     ) {}
 
     public function ejecutar(ListarProduccionPedidosDTO $dto): LengthAwarePaginator
     {
-        // Obtener pedidos del asesor autenticado con filtros
         $filtros = $dto->filtros ?? [];
-        
-        return $this->pedidoRepository->obtenerPedidosAsesor($filtros);
+
+        if ($dto->soloAsesor && $dto->usuarioId) {
+            $filtros['asesor_id'] = $dto->usuarioId;
+        }
+
+        $resultado = $this->pedidoRepository->obtenerPedidosAsesor($filtros);
+
+        $paginator = new LaravelLengthAwarePaginator(
+            items: new Collection($resultado->items),
+            total: $resultado->total,
+            perPage: $resultado->perPage,
+            currentPage: $resultado->currentPage,
+            options: ['path' => $resultado->path]
+        );
+
+        if (!empty($resultado->query)) {
+            $paginator->appends($resultado->query);
+        }
+
+        return $paginator;
     }
 
     /**
@@ -35,5 +54,3 @@ class ListarProduccionPedidosUseCase
         ];
     }
 }
-
-

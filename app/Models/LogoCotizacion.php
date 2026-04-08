@@ -3,11 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
+/**
+ * LogoCotizacion Model
+ * @property int $id
+ * @property int $cotizacion_id
+ * @property array $observaciones_generales
+ * @property string $tipo_venta
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class LogoCotizacion extends Model
 {
+    use HasFactory;
+
     protected $table = 'logo_cotizaciones';
 
     protected $fillable = [
@@ -37,14 +50,6 @@ class LogoCotizacion extends Model
     }
 
     /**
-     * Relación: Un logo puede tener múltiples fotos (máximo 5)
-     */
-    public function fotos(): HasMany
-    {
-        return $this->hasMany(LogoFotoCot::class, 'logo_cotizacion_id')->orderBy('orden');
-    }
-
-    /**
      * Relación: Acceso directo a prendas técnicas (sin pasar por técnicas)
      */
     public function prendas(): HasMany
@@ -67,6 +72,22 @@ class LogoCotizacion extends Model
     public function telasPrendas(): HasMany
     {
         return $this->hasMany(LogoCotizacionTelasPrenda::class, 'logo_cotizacion_id');
+    }
+
+    /**
+     * Relación: Todas las fotos de todas las prendas técnicas
+     * Utiliza HasManyThrough para atravesar LogoCotizacionTecnicaPrenda
+     */
+    public function fotos(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            LogoCotizacionTecnicaPrendaFoto::class,
+            LogoCotizacionTecnicaPrenda::class,
+            'logo_cotizacion_id', // FK en prendas técnicas
+            'logo_cotizacion_tecnica_prenda_id', // FK en fotos
+            'id', // PK de logo_cotizacion
+            'id'  // PK de prendas técnicas
+        );
     }
 
     /**

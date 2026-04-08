@@ -251,9 +251,13 @@
                                 data-menu-id="menu-recibo-{{ $recibo['id'] }}"
                                 data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
                                 data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
+                                data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                                 data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'COSTURA' }}"
                                 data-es-parcial="{{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}"
-                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}">
+                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}"
+                                data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                data-tiene-parciales="{{ !empty($recibo['tiene_parciales']) ? 'true' : 'false' }}"
+                                data-total-parciales="{{ $recibo['total_parciales'] ?? 0 }}">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
@@ -281,8 +285,9 @@
                         <!-- Área del Recibo (del proceso más reciente) -->
                         <td>
                             @php
-                                // Usar el área del proceso más reciente (pedido_info.area) en lugar del área del recibo
-                                $areaRecibo = $recibo['pedido_info']['area'] ?? $recibo['area'] ?? 'Insumos';
+                                // Usar el área del recibo guardada en la BD en lugar del área general del pedido
+                                $areaRecibo = $recibo['area'] ?? $recibo['pedido_info']['area'] ?? 'Insumos';
+                                $puedeAgregarProceso = stripos((string) $areaRecibo, 'Corte') !== false;
                                 $areaBadge = 'bg-secondary';
                                 if (strpos($areaRecibo, 'Corte') !== false) {
                                     $areaBadge = 'bg-success'; // Verde - bueno para corte
@@ -297,9 +302,11 @@
                                 }
                             @endphp
                             <span class="badge {{ $areaBadge }} area-badge-clickable" 
-                                  style="cursor: pointer; transition: all 0.2s ease;"
-                                  title="Click para agregar proceso"
+                                  style="cursor: {{ $puedeAgregarProceso ? 'pointer' : 'default' }}; transition: all 0.2s ease;"
+                                  title="{{ $puedeAgregarProceso ? 'Click para agregar proceso' : 'Área actual sin acción disponible' }}"
+                                  @if($puedeAgregarProceso)
                                   onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }})"
+                                  @endif
                                   onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';"
                                   onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                                 {{ $areaRecibo }}
@@ -349,7 +356,7 @@
                             @endphp
                             
                             <div class="table-cell" style="flex: 10;">
-                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }})">
+                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }})">
                                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                         {{ $nombreMostrar ?: 'Sin prenda' }}
                                     </span>
@@ -428,9 +435,28 @@
                             @endif
                         </td>
                         
-                        <!-- Fecha estimada entrega (No aplica para recibos) -->
+                        <!-- Fecha estimada entrega -->
                         <td>
-                            <span class="fecha-estimada-span text-muted">-</span>
+                            @if(isset($recibo['fecha_estimada_de_entrega']) && !empty($recibo['fecha_estimada_de_entrega']) && $recibo['fecha_estimada_de_entrega'] !== 'null')
+                                <span class="fecha-estimada-span">
+                                    @php
+                                        $fecha = $recibo['fecha_estimada_de_entrega'];
+                                        // Si ya tiene formato d/m/Y, mostrar tal cual
+                                        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fecha)) {
+                                            echo $fecha;
+                                        } else {
+                                            // Si no, intentar parsear y formatear
+                                            try {
+                                                echo \Carbon\Carbon::parse($fecha)->format('d/m/Y');
+                                            } catch (\Exception $e) {
+                                                echo '-';
+                                            }
+                                        }
+                                    @endphp
+                                </span>
+                            @else
+                                <span class="fecha-estimada-span text-muted">-</span>
+                            @endif
                         </td>
                         
                         <!-- Encargado orden (Proceso más reciente) -->
@@ -444,19 +470,24 @@
                                         $prendaId = isset($recibo['prenda_id']) ? (int) $recibo['prenda_id'] : null;
                                         $numeroRecibo = (int) $recibo['consecutivo_actual'];
 
-                                        $procesoMasReciente = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
-                                            ->whereNull('deleted_at')
-                                            ->where(function ($q) use ($prendaId, $numeroRecibo) {
-                                                if (!empty($prendaId)) {
-                                                    $q->where('prenda_pedido_id', $prendaId);
-                                                }
-                                                $q->orWhere('numero_recibo', $numeroRecibo);
-                                            })
+                                        // Construcción de la query más específica y ordenada
+                                        $query = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                                            ->where('numero_recibo', $numeroRecibo)
+                                            ->whereNull('deleted_at');
+
+                                        // Si tenemos prenda_id, añadir esa condición también
+                                        if (!empty($prendaId)) {
+                                            $query->where('prenda_pedido_id', $prendaId);
+                                        }
+
+                                        // Obtener el proceso más reciente: primero por fecha_fin DESC, luego por created_at DESC
+                                        $procesoMasReciente = $query
+                                            ->orderByDesc('fecha_fin')
                                             ->orderByDesc('created_at')
                                             ->first();
 
                                         if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
-                                            $encargadoProceso = htmlspecialchars($procesoMasReciente->encargado);
+                                            $encargadoProceso = htmlspecialchars(trim($procesoMasReciente->encargado));
                                         }
                                     } catch (\Exception $e) {
                                         \Log::error('[recibos-costura-table] Error obteniendo encargado por recibo: ' . $e->getMessage());

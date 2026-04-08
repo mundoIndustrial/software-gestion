@@ -222,11 +222,8 @@ class GestorDatosPedidoJSON {
                 Object.entries(prenda.procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && proceso.datos) {
                         const prefix = `prendas[${prendaIdx}][procesos][${tipoProceso}]`;
-                        // Normalizar modoTallas: "todas" → "para_todas"
-                        let modoTallas = proceso.modoTallas || (proceso.datos.datosExtendidos ? 'por_tallas' : 'para_todas');
-                        if (modoTallas === 'todas') {
-                            modoTallas = 'para_todas';  // ← Conversión de seguridad
-                        }
+                        // Fuente única canónica de modo
+                        const modoTallas = proceso?.datos?.modo_tallas || 'generico';
 
                         formData.append(`${prefix}[tipo]`, proceso.datos.tipo || tipoProceso);
                         formData.append(`${prefix}[ubicaciones]`, JSON.stringify(proceso.datos.ubicaciones || []));
@@ -235,7 +232,7 @@ class GestorDatosPedidoJSON {
                         formData.append(`${prefix}[modo_tallas]`, modoTallas);
                         contadores.procesos++;
 
-                        if (modoTallas === 'por_tallas' && proceso.datos.datosExtendidos) {
+                        if (modoTallas === 'especifico' && proceso.datos.datosExtendidos) {
                             // Enviar datosExtendidos como JSON (ubicaciones + observaciones por talla)
                             formData.append(`${prefix}[datos_extendidos]`, JSON.stringify(proceso.datos.datosExtendidos));
 
@@ -257,7 +254,7 @@ class GestorDatosPedidoJSON {
                                 }
                             });
                         } else {
-                            // Modo para_todas: enviar imágenes al nivel del proceso
+                            // Modos generico/general: enviar imágenes al nivel del proceso
                             if (proceso.datos.imagenes && proceso.datos.imagenes.length > 0) {
                                 proceso.datos.imagenes.forEach((img, imgIdx) => {
                                     if (img instanceof File) {
@@ -293,7 +290,7 @@ class GestorDatosPedidoJSON {
                 // Enviar asignaciones como JSON
                 formData.append(`prendas[${prendaIdx}][asignaciones_colores]`, JSON.stringify(prenda.asignacionesColoresPorTalla));
                 
-                console.log('[GestorDatosPedidoJSON] 🔍 Buscando ColoresPorTalla para procesar imágenes:', {
+                console.log('[GestorDatosPedidoJSON]  Buscando ColoresPorTalla para procesar imágenes:', {
                     coloresPorTallaExists: !!window.ColoresPorTalla,
                     hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function',
                     prendaIdx: prendaIdx,
@@ -308,7 +305,7 @@ class GestorDatosPedidoJSON {
                             asignacion.colores.forEach((colorItem) => {
                                 if (colorItem.imagen_id) {
                                     const imgData = window.ColoresPorTalla.getImage(colorItem.imagen_id);
-                                    console.log('[GestorDatosPedidoJSON] 📸 Intentando obtener imagen:', {
+                                    console.log('[GestorDatosPedidoJSON]  Intentando obtener imagen:', {
                                         imagen_id: colorItem.imagen_id,
                                         color: colorItem.nombre,
                                         imgDataExists: !!imgData,
@@ -325,7 +322,7 @@ class GestorDatosPedidoJSON {
                                         }));
                                         contadores.archivos++;
                                         colorImgIdx++;
-                                        console.log('[GestorDatosPedidoJSON] ✅ Imagen agregada:', {
+                                        console.log('[GestorDatosPedidoJSON]  Imagen agregada:', {
                                             imagen_id: colorItem.imagen_id,
                                             color: colorItem.nombre,
                                             colorImgIdx: colorImgIdx - 1
@@ -336,7 +333,7 @@ class GestorDatosPedidoJSON {
                         }
                     });
                 } else {
-                    console.warn('[GestorDatosPedidoJSON] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                    console.warn('[GestorDatosPedidoJSON]  ColoresPorTalla no disponible o sin método getImage');
                 }
             }
         });
@@ -359,5 +356,3 @@ class GestorDatosPedidoJSON {
 
 // Crear instancia global
 window.gestorDatosPedidoJSON = new GestorDatosPedidoJSON();
-
-

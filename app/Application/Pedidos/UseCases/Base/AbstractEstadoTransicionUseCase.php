@@ -14,8 +14,8 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * 
  * Ventajas:
  * - Elimina duplicación en validación y obtención (4 lineas)
- * - Centraliza respuesta estÃ¡ndar (10 lineas)
- * - Cada subclase solo implementa aplicarTransicion() (1 lÃ­nea)
+ * - Centraliza respuesta estándar (10 lineas)
+ * - Cada subclase solo implementa aplicarTransicion() (1 linea)
  * - Reduces LOC de 28 a 8 por Use Case (71% menos código)
  * 
  * Uso:
@@ -34,12 +34,12 @@ abstract class AbstractEstadoTransicionUseCase
     }
 
     /**
-     * Template Method - Define el flujo comÃºn para todas las transiciones
+     * Template Method - Define el flujo común para todas las transiciones
      * 
      * Flujo:
      * 1. Obtener pedido
      * 2. Validar existencia
-     * 3. Aplicar transición (strategy especÃ­fica)
+     * 3. Aplicar transición (strategy especifica)
      * 4. Persistir
      * 5. Retornar respuesta
      */
@@ -53,26 +53,26 @@ abstract class AbstractEstadoTransicionUseCase
         // Convertir a entero si es string
         $pedidoId = (int)$pedidoId;
         
-        // LINEA COMÃšN 1: Obtener pedido
+        // LINEA comun 1: Obtener pedido
         $pedido = $this->pedidoRepository->porId($pedidoId);
         
-        // LINEA COMÃšN 2: Validar existencia
+        // LINEA comun 2: Validar existencia
         if (!$pedido) {
             throw new \DomainException("Pedido $pedidoId no encontrado");
         }
 
-        // LINEA VARIABLE 3: Aplicar transición (strategy especÃ­fica por subclase)
+        // LINEA VARIABLE 3: Aplicar transición (strategy especifica por subclase)
         $this->aplicarTransicion($pedido);
         
-        // LINEA COMÃšN 4: Persistir
+        // LINEA comun 4: Persistir
         $this->pedidoRepository->guardar($pedido);
 
-        // LINEA COMÃšN 5: Retornar respuesta
+        // LINEA comun 5: Retornar respuesta
         return $this->crearRespuesta($pedido);
     }
 
     /**
-     * MÃ©todo abstracto - Cada subclase implementa su transición de estado
+     * Metodo abstracto - Cada subclase implementa su transición de estado
      * 
      * Ejemplos:
      * - $pedido->confirmar()
@@ -84,7 +84,7 @@ abstract class AbstractEstadoTransicionUseCase
     abstract protected function aplicarTransicion($pedido): void;
 
     /**
-     * MÃ©todo abstracto - Cada subclase proporciona su mensaje personalizado
+     * Metodo abstracto - Cada subclase proporciona su mensaje personalizado
      * 
      * Ejemplos:
      * - 'Pedido confirmado exitosamente'
@@ -93,7 +93,7 @@ abstract class AbstractEstadoTransicionUseCase
     abstract protected function obtenerMensaje(): string;
 
     /**
-     * MÃ©todo reutilizable - Construye respuesta estÃ¡ndar
+     * Metodo reutilizable - Construye respuesta estándar
      * 
      * Encapsula la construcción del DTO de respuesta
      * Consistente en todas las transiciones

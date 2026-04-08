@@ -51,9 +51,9 @@ class PrendaFormCollector {
             // ============================================
             // 2. PROCESAR IMÁGENES DE PRENDA
             // ============================================
-            const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+            const imagenesTemporales = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
-            console.log('[prenda-form-collector] 🖼️ PROCESANDO IMÁGENES DE PRENDA:', {
+            console.log('[prenda-form-collector]  PROCESANDO IMÁGENES DE PRENDA:', {
                 imagenesTemporales_length: imagenesTemporales.length,
                 imagenesTemporales_type: Array.isArray(imagenesTemporales) ? 'array' : typeof imagenesTemporales,
                 primeraprimeraDiagnostico: imagenesTemporales[0] ? {
@@ -66,12 +66,12 @@ class PrendaFormCollector {
             
             // Procesar imágenes: nuevas File objects + rutas de BD (NUNCA blob URLs que se revocaran)
             const imagenesCopia = imagenesTemporales.map((img, imgIdx) => {
-                console.log(`[prenda-form-collector] 🔍 PROCESANDO IMAGEN ${imgIdx}:`);
-                console.log(`[prenda-form-collector]   🔴 CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
+                console.log(`[prenda-form-collector]  PROCESANDO IMAGEN ${imgIdx}:`);
+                console.log(`[prenda-form-collector]    CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
                     previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
                     url: img?.url?.substring ? img.url.substring(0, 80) : img?.url,
                     nombre: img?.nombre,
-                    tamaño: img?.tamaño,
+                    tamano: img?.tamano,
                     id: img?.id,
                     prenda_foto_id: img?.prenda_foto_id,
                     ruta_original: img?.ruta_original?.substring ? img.ruta_original.substring(0, 80) : img?.ruta_original,
@@ -83,20 +83,20 @@ class PrendaFormCollector {
 
                 // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva)
                 if (img instanceof File) {
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Es File object directo, RETORNANDO`);
+                    console.log(`[prenda-form-collector]    DECISIÓN: Es File object directo, RETORNANDO`);
                     return img;
                 }
                 
                 // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                 if (img && img.file instanceof File) {
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene .file que es File object, RETORNANDO`);
-                    // 🔴 CRÍTICO: Guardar el File object CON el metadata, no solo el File
+                    console.log(`[prenda-form-collector]    DECISIÓN: Tiene .file que es File object, RETORNANDO`);
+                    //  CRÍTICO: Guardar el File object CON el metadata, no solo el File
                     // Esto asegura que cuando se recupere la imagen, tenga toda la info
                     return {
                         file: img.file,                    // ← El File object real
                         previewUrl: img.previewUrl,        // ← El blob URL para preview
                         nombre: img.nombre,
-                        tamaño: img.tamaño,
+                        tamano: img.tamano,
                         fileType: img.file.type,
                         fileSize: img.file.size
                     };
@@ -109,7 +109,7 @@ class PrendaFormCollector {
                     
                     // Prioridad: ruta de almacenamiento permanente
                     if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_original, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene ruta_original, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -121,7 +121,7 @@ class PrendaFormCollector {
                         };
                     }
                     if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_webp, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene ruta_webp, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -133,7 +133,7 @@ class PrendaFormCollector {
                         };
                     }
                     if (img.url && img.url.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene url, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene url, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -144,8 +144,8 @@ class PrendaFormCollector {
                             urlDesdeDB: true
                         };
                     }
-                    // Fallback: Si solo tiene blob URL y datos de BD, preservar ID para merge
-                    console.log(`[prenda-form-classifier]   ⚠️ DECISIÓN: Preservando con blob URL fallback`);
+                    // Respaldo controlado: si solo tiene blob URL y datos de BD, preservar ID para merge
+                    console.log(`[prenda-form-classifier]    DECISIÓN: Preservando con blob URL de respaldo`);
                     return {
                         id: img.id,
                         prenda_foto_id: img.prenda_foto_id,
@@ -158,28 +158,28 @@ class PrendaFormCollector {
                     };
                 }
                 
-                // 4️⃣ FALLBACK DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
+                // 4️⃣ RESGUARDO DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
                 // preservarlo de todas formas porque algo debe tener
                 if (img && typeof img === 'object') {
-                    console.log(`[prenda-form-collector]   ⚠️ Objeto sin previewUrl - preservando como está`);
+                    console.log(`[prenda-form-collector]    Objeto sin previewUrl - preservando como está`);
                     // Si tiene ID o alguna referencia a BD, marcalo como tal
                     if (img.id || img.prenda_foto_id) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando con urlDesdeDB=true`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Preservando con urlDesdeDB=true`);
                         return {
                             ...img,
                             urlDesdeDB: true
                         };
                     }
                     // Si no, preservarlo tal cual
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando tal cual`);
+                    console.log(`[prenda-form-collector]    DECISIÓN: Preservando tal cual`);
                     return img;
                 }
                 
                 // Retornar tal cual si es File o válido
-                console.log(`[prenda-form-collector]   ✅ DECISIÓN: Retornando tal cual`);
+                console.log(`[prenda-form-collector]    DECISIÓN: Retornando tal cual`);
                 return img;
             }).filter((img, filterIdx) => {
-                // 🔴 CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
+                //  CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
                 // Una imagen válida DEBE tener una de estas:
                 // 1. Es un File object
                 // 2. Tiene previewUrl NO VACÍO
@@ -198,7 +198,7 @@ class PrendaFormCollector {
                 
                 const esValido = img !== null && img !== undefined && (esFile || tieneFileObj || tienePreviewUrl || tieneUrl || tieneIdBD || tieneRutaBD || esDesdeDB);
                 
-                console.log(`[prenda-form-collector] 🔍 FILTER [${filterIdx}]: esValido=${esValido}`, {
+                console.log(`[prenda-form-collector]  FILTER [${filterIdx}]: esValido=${esValido}`, {
                     esFile,
                     tieneFileObj: !!tieneFileObj,
                     tienePreviewUrl: !!tienePreviewUrl,
@@ -210,13 +210,13 @@ class PrendaFormCollector {
                 });
                 
                 if (!esValido) {
-                    console.log(`[prenda-form-collector] ❌ Imagen ${filterIdx} DESCARTADA - sin contenido válido`);
+                    console.log(`[prenda-form-collector]  Imagen ${filterIdx} DESCARTADA - sin contenido válido`);
                 }
                 
                 return esValido;
             });
             
-            console.log('[prenda-form-collector] 🖼️ IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
+            console.log('[prenda-form-collector]  IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
                 cantidad: imagenesCopia.length,
                 detalles: imagenesCopia.map(img => ({
                     tipo: img instanceof File ? 'File' : typeof img,
@@ -233,7 +233,7 @@ class PrendaFormCollector {
             // 3. CONSTRUIR OBJETO BASE DE PRENDA
             // ============================================
             //  IMPORTANTE: Hacer DEEP COPY de tallasRelacionales
-            // porque window.tallasRelacionales es limpiado después
+            // porque globalThis.tallasRelacionales es limpiado después
             // Si asignas la referencia, el objeto se vacía
             const copiarTallasRelacionales = (obj) => {
                 const copia = {};
@@ -244,30 +244,47 @@ class PrendaFormCollector {
             };
             
             //  IMPORTANTE: Hacer DEEP COPY de procesosSeleccionados
-            // porque window.procesosSeleccionados puede ser limpiado después
+            // porque globalThis.procesosSeleccionados puede ser limpiado después
             const copiarProcesos = (procesos) => {
+                console.log('[copiarProcesos]  INICIANDO - Procesos a copiar:', {
+                    'es_objeto': !Array.isArray(procesos) && typeof procesos === 'object',
+                    'keys': Object.keys(procesos || {}),
+                    'contenido_completo': procesos
+                });
+                
                 if (!procesos || typeof procesos !== 'object') {
                     return {};
                 }
                 const copia = {};
                 Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
+                    console.log(`[copiarProcesos] Copiando tipo: ${tipoProceso}`, {
+                        'proceso.tipo': proceso?.tipo,
+                        'proceso.datos EXISTS': !!proceso?.datos,
+                        'proceso.datos type': typeof proceso?.datos,
+                        'proceso.datos keys': Object.keys(proceso?.datos || {}),
+                        'proceso COMPLETO': proceso
+                    });
+                    
                     if (proceso && typeof proceso === 'object') {
                         // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes, datosExtendidos)
                         let datosCopiados = null;
                         if (proceso.datos && typeof proceso.datos === 'object') {
+                            const modoProcesoNormalizado = proceso.datos.modo_tallas || 'generico';
+
                             datosCopiados = {
                                 ...proceso.datos,
+                                modo_tallas: modoProcesoNormalizado,
                                 ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
                                 tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
                                 imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
-                                // 🔴 CRÍTICO: Preservar Files de fotos generales (modo general)
+                                //  CRÍTICO: Preservar Files de fotos generales (modo general)
                                 fotosGeneralesFiles: Array.isArray(proceso.datos.fotosGeneralesFiles) ? [...proceso.datos.fotosGeneralesFiles] : [],
                                 imagenesFiles: Array.isArray(proceso.datos.imagenesFiles) ? [...proceso.datos.imagenesFiles] : [],
-                                // 🔴 CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
+                                //  CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
                                 datosExtendidos: proceso.datos.datosExtendidos ? JSON.parse(JSON.stringify(proceso.datos.datosExtendidos)) : {}
                             };
                             
-                            // 🔴 Restaurar imagenesFiles arrays que se pierden en JSON.stringify
+                            //  Restaurar imagenesFiles arrays que se pierden en JSON.stringify
                             // JSON.stringify pierde referencias a File objects, pero imagenesFiles debería estar
                             // Copiar arrays de Files directamente (NO mediante JSON)
                             if (proceso.datos.datosExtendidos && typeof proceso.datos.datosExtendidos === 'object') {
@@ -277,7 +294,7 @@ class PrendaFormCollector {
                                             if (tallaData && Array.isArray(tallaData.imagenesFiles)) {
                                                 // Copiar array de Files directamente (no pueden serializarse vía JSON)
                                                 datosCopiados.datosExtendidos[genero][talla].imagenesFiles = [...tallaData.imagenesFiles];
-                                                console.log(`[copiarProcesos] ✅ imagenesFiles preservados para ${genero}__${talla}:`, tallaData.imagenesFiles.length, 'files');
+                                                console.log(`[copiarProcesos]  imagenesFiles preservados para ${genero}__${talla}:`, tallaData.imagenesFiles.length, 'files');
                                             }
                                         });
                                     }
@@ -286,29 +303,29 @@ class PrendaFormCollector {
                             
                             // Log de fotos generales preservadas
                             if (datosCopiados.fotosGeneralesFiles && datosCopiados.fotosGeneralesFiles.length > 0) {
-                                console.log(`[copiarProcesos] ✅ fotosGeneralesFiles preservados para ${tipoProceso}:`, datosCopiados.fotosGeneralesFiles.length, 'files');
+                                console.log(`[copiarProcesos]  fotosGeneralesFiles preservados para ${tipoProceso}:`, datosCopiados.fotosGeneralesFiles.length, 'files');
                             }
                         }
                         copia[tipoProceso] = {
                             tipo: proceso.tipo || tipoProceso,
                             datos: datosCopiados,
-                            modoTallas: datosCopiados?.modoTallas || proceso.modoTallas || 'generico'
+                            modo_tallas: datosCopiados?.modo_tallas || 'generico'
                         };
                     }
                 });
                 return copia;
             };
             
-            // IMPORTANTE: Obtener tallas desde window.tallasRelacionales O desde StateManager (si viene del wizard)
-            let tallasParaGuardar = window.tallasRelacionales || {};
+            // IMPORTANTE: Obtener tallas desde globalThis.tallasRelacionales O desde StateManager (si viene del wizard)
+            let tallasParaGuardar = globalThis.tallasRelacionales || {};
             
-            // Si window.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
-            const hasWindowTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
+            // Si globalThis.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
+            const hasglobalThisTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
             
-            if (!hasWindowTallas && window.StateManager && window.StateManager.getAsignaciones) {
-                console.log('[prenda-form-collector]  window.tallasRelacionales está vacío, recuperando de StateManager...');
+            if (!hasglobalThisTallas && globalThis.StateManager && globalThis.StateManager.getAsignaciones) {
+                console.log('[prenda-form-collector]  globalThis.tallasRelacionales está vacío, recuperando de StateManager...');
                 
-                const asignaciones = window.StateManager.getAsignaciones();
+                const asignaciones = globalThis.StateManager.getAsignaciones();
                 tallasParaGuardar = {};
                 
                 // Convertir asignaciones a formato cantidad_talla
@@ -330,8 +347,8 @@ class PrendaFormCollector {
             }
             
             // 🟢 NUEVO: Si hay "SOLO CANTIDAD", agregarlo al objeto de tallas con género especial
-            if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0) {
-                console.log('[prenda-form-collector] ✅ "SOLO CANTIDAD" detectado:', window.cantidadSoloSeleccionada);
+            if (globalThis.cantidadSoloSeleccionada && globalThis.cantidadSoloSeleccionada > 0) {
+                console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', globalThis.cantidadSoloSeleccionada);
                 
                 // Inicializar el género especial si no existe
                 if (!tallasParaGuardar['GENERICO']) {
@@ -339,7 +356,7 @@ class PrendaFormCollector {
                 }
                 
                 // Agregar la cantidad con talla especial "SIN_ESPECIFICAR"
-                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = window.cantidadSoloSeleccionada;
+                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = globalThis.cantidadSoloSeleccionada;
                 
                 console.log('[prenda-form-collector] Tallas actualizadas con SOLO CANTIDAD:', tallasParaGuardar);
             }
@@ -354,15 +371,15 @@ class PrendaFormCollector {
                 imagenes: imagenesCopia,
                 telasAgregadas: [],
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
-                procesos: copiarProcesos(window.procesosSeleccionados),
+                procesos: copiarProcesos(globalThis.procesosSeleccionados),
                 // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
                 cantidad_talla: copiarTallasRelacionales(tallasParaGuardar || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
                 variantes: {}
             };
             
-            // 🔴 LOG CRÍTICO INMEDIATO: Verificar que prendaData.imagenes se asignó correctamente
-            console.log('[prenda-form-collector] 🔴 CRÍTICO - prendaData.imagenes asignado JUSTO DESPUÉS DE CREAR prendaData:', {
+            //  LOG CRÍTICO INMEDIATO: Verificar que prendaData.imagenes se asignó correctamente
+            console.log('[prenda-form-collector]  CRÍTICO - prendaData.imagenes asignado JUSTO DESPUÉS DE CREAR prendaData:', {
                 imagenesCopia_length: imagenesCopia.length,
                 prendaData_imagenes_length: prendaData.imagenes?.length || 0,
                 sonLaMismaReferencia: prendaData.imagenes === imagenesCopia,
@@ -389,227 +406,65 @@ class PrendaFormCollector {
             console.log('[prenda-form-collector]     * DAMA:', prendaData.cantidad_talla.DAMA);
             console.log('[prenda-form-collector]     * CABALLERO:', prendaData.cantidad_talla.CABALLERO);
             console.log('[prenda-form-collector]     * UNISEX:', prendaData.cantidad_talla.UNISEX);
-            console.log('[prenda-form-collector]   - window.tallasRelacionales:', window.tallasRelacionales);
-            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (tallas)?', prendaData.cantidad_talla === window.tallasRelacionales);
-            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === window.procesosSeleccionados);
+            console.log('[prenda-form-collector]   - globalThis.tallasRelacionales:', globalThis.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (tallas)?', prendaData.cantidad_talla === globalThis.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === globalThis.procesosSeleccionados);
 
             // ============================================
-            // 4. PROCESAR TELAS AGREGADAS (FLUJO CREACIÓN)
+            // 4. PROCESAR TELAS AGREGADAS (FUENTE UNICA)
             // ============================================
-            console.log('[prenda-form-collector]  INICIANDO PROCESAMIENTO DE TELAS:', {
-                window_telasCreacion_exists: !!window.telasCreacion,
-                window_telasCreacion_isArray: Array.isArray(window.telasCreacion),
-                window_telasCreacion_length: window.telasCreacion?.length || 0
+            // Nota: las imagenes de tela NO viven en telasAgregadas; la fuente unica es
+            // asignacionesColoresPorTalla[colores[].imagen / imagen_id / imagen_ruta].
+            const mapearTelaCanonica = (tela = {}) => ({
+                id: tela.id || tela._original_id || tela.prenda_pedido_colores_telas_id || null,
+                _original_id: tela._original_id || tela.id || null,
+                prenda_pedido_colores_telas_id: tela.prenda_pedido_colores_telas_id || tela.id || tela._original_id || null,
+                tela: tela.nombre_tela || tela.tela || '',
+                color: tela.color || tela.color_nombre || '',
+                referencia: tela.referencia || '',
+                observaciones: tela.observaciones || '',
+                tela_id: tela.tela_id || 0,
+                color_id: tela.color_id || 0,
+                nombre_tela: tela.nombre_tela || tela.tela || '',
+                color_nombre: tela.color_nombre || tela.color || '',
+                imagenes: []
             });
 
-            if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                console.log('[prenda-form-collector]  ANTES DE MAPEAR window.telasCreacion:', {
-                    length: window.telasCreacion.length,
-                    primer_elemento: window.telasCreacion[0]
-                });
+            console.log('[prenda-form-collector] INICIANDO PROCESAMIENTO DE TELAS (fuente unica):', {
+                globalThis_telasCreacion_exists: !!globalThis.telasCreacion,
+                globalThis_telasCreacion_isArray: Array.isArray(globalThis.telasCreacion),
+                globalThis_telasCreacion_length: globalThis.telasCreacion?.length || 0
+            });
 
-                prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
-                    // Copiar imágenes de tela: CRÍTICO - NUNCA usar blob URLs (se revoca en limpieza)
-                    // Solo preservar File objects NUEVOS o rutas de almacenamiento PERMANENTES de BD
-                    let imagenesDelaTela = tela.imagenes || [];
-                    
-                    // 🆕 CRÍTICO: Si tela.imagenes está vacío pero existe imagenesTelaStorage con imágenes
-                    // usar las del storage como fallback (esto ocurre cuando se guardan cambios)
-                    console.log(`[prenda-form-collector]  🔍 ANTES de fallback - Tela ${telaIdx}:`, {
-                        imagenesDelaTela_length: imagenesDelaTela?.length || 0,
-                        imagenesDelaTela_content: imagenesDelaTela,
-                        imagenesTelaStorage_exists: !!window.imagenesTelaStorage,
-                        imagenesTelaStorage_count: window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0
-                    });
-                    
-                    if ((!imagenesDelaTela || imagenesDelaTela.length === 0 || 
-                         (imagenesDelaTela.length > 0 && imagenesDelaTela[0] && Object.keys(imagenesDelaTela[0]).length === 0)) &&
-                        window.imagenesTelaStorage && typeof window.imagenesTelaStorage.obtenerImagenes === 'function') {
-                        
-                        const imagenesDelStorage = window.imagenesTelaStorage.obtenerImagenes() || [];
-                        if (imagenesDelStorage.length > 0) {
-                            console.log(`[prenda-form-collector]  🆘 FALLBACK: Tela ${telaIdx} sin imágenes válidas, usando imagenesTelaStorage (${imagenesDelStorage.length} imágenes)`);
-                            console.log(`[prenda-form-collector]  🆘 Imágenes del storage:`, imagenesDelStorage);
-                            imagenesDelaTela = imagenesDelStorage;
-                        } else {
-                            console.log(`[prenda-form-collector]  ⚠️ imagenesTelaStorage VACÍO! No hay imágenes en storage`);
-                        }
-                    }
-                    
-                    const imagenesCopia = (imagenesDelaTela).map((img, imgIdx) => {
-                        // 🔍 DEBUG PROFUNDO: Analizar exactamente qué es este objeto
-                        let imagenDiagnostico = {
-                            tipo: typeof img,
-                            esFile: img instanceof File,
-                            esObjeto: img && typeof img === 'object',
-                            esNull: img === null,
-                            esUndefined: img === undefined,
-                            campos: img && typeof img === 'object' ? Object.keys(img) : 'N/A',
-                            propiedadesEnumerables: img && typeof img === 'object' ? Object.getOwnPropertyNames(img).slice(0, 10) : 'N/A',
-                            constructor: img?.constructor?.name || 'N/A',
-                            toStringValor: Object.prototype.toString.call(img),
-                            // Intentar acceder a propiedades directamente
-                            _previewUrl: img?.previewUrl,
-                            _ruta: img?.ruta,
-                            _ruta_original: img?.ruta_original,
-                            _ruta_webp: img?.ruta_webp,
-                            _url: img?.url,
-                            _id: img?.id,
-                            _file: img?.file instanceof File ? 'File object' : typeof img?.file,
-                            stringify_resultado: JSON.stringify(img)
-                        };
-                        console.log(`[prenda-form-collector] 🖼️ PROCESANDO imagen ${imgIdx} de tela ${telaIdx}:`, imagenDiagnostico);
-                        
-                        // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva a subir)
-                        if (img instanceof File) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE OBJECT`);
-                            return img;
-                        }
-                        
-                        // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
-                        if (img && img.file instanceof File) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE object dentro de propiedad`);
-                            return img.file;
-                        }
-                        
-                        // 3️⃣ CRÍTICO: Si es un objeto con información de BD, extraer RUTA DE ALMACENAMIENTO PERMANENTE
-                        // NUNCA usar previewUrl/blob URLs aquí porque se revocan durante limpiarDespuésDeGuardar()
-                        if (img && typeof img === 'object') {
-                            // Buscar ruta de almacenamiento permanente en este orden de prioridad
-                            if (img.ruta && img.ruta.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta = ${img.ruta}`);
-                                return img.ruta;  // 🎯 Prioridad 1: ruta absoluta de storage
-                            }
-                            if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_original = ${img.ruta_original}`);
-                                return img.ruta_original;  // 🎯 Prioridad 2: ruta original
-                            }
-                            if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_webp = ${img.ruta_webp}`);
-                                return img.ruta_webp;  // 🎯 Prioridad 3: ruta webp
-                            }
-                            // Si tiene URL de acceso, usarla si es path absoluto
-                            if (img.url && img.url.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.url = ${img.url}`);
-                                return img.url;
-                            }
-                            // Si tienen información de ID de BD, conservarla en un objeto (para merge posterior)
-                            if (img.id || img.prenda_foto_id) {
-                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: PRESERVANDO como objeto de BD (ID encontrado)`);
-                                return {
-                                    id: img.id || img.prenda_foto_id,
-                                    // Conservar alguna ruta aunque sea blob, porque es respaldo
-                                    urlFallback: img.previewUrl,
-                                    enBD: true
-                                };
-                            }
-                            
-                            // 🆕 FALLBACK: Si es un objeto con 0 propiedades enumerables pero era en telasCreacion,
-                            // intentar usar previewUrl como blob URL (último recurso)
-                            if (Object.keys(img).length === 0 && img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: FALLBACK blob URL (objeto vacío pero con previewUrl)`);
-                                // Retornar un objeto con la información que tenemos
-                                return {
-                                    previewUrl: img.previewUrl,
-                                    esBlob: true,
-                                    warning: 'Blob URL - puede revocar después'
-                                };
-                            }
-                        }
-                        
-                        // 4️⃣ Si img es un string (ruta directa), usarlo
-                        if (typeof img === 'string' && img.startsWith('/')) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: STRING (ruta) = ${img}`);
-                            return img;
-                        }
-                        
-                        // ❌ Ignorar blob URLs y otros valores inválidos
-                        console.log(`[prenda-form-collector]   ❌ Imagen ${imgIdx}: DESCARTADA (blob URL o inválida)`);
-                        return null;
-                    }).filter(img => img !== null && img !== undefined);
-                    
-                    return {
-                        tela: tela.nombre_tela || tela.tela || '',
-                        color: tela.color || tela.color_nombre || '',
-                        referencia: tela.referencia || '',
-                        observaciones: tela.observaciones || '',
-                        tela_id: tela.tela_id || 0,
-                        color_id: tela.color_id || 0,
-                        nombre_tela: tela.nombre_tela || tela.tela || '',
-                        color_nombre: tela.color_nombre || tela.color || '',
-                        imagenes: imagenesCopia
-                    };
-                });
-
-                console.log('[prenda-form-collector] 🧵 DESPUÉS DE MAPEAR prendaData.telasAgregadas:', {
-                    length: prendaData.telasAgregadas?.length || 0,
-                    primer_elemento: prendaData.telasAgregadas?.[0]
-                });
-            } else {
-                console.log('[prenda-form-collector]  NO HAY TELAS EN window.telasCreacion, mantiendo array vacío:', {
-                    telasAgregadas_iniciales: prendaData.telasAgregadas
-                });
-            }
-            // ============================================
-            // 4.1. PROCESAR TELAS AGREGADAS (FLUJO EDICIÓN DESDE BD O COTIZACIÓN)
-            // ============================================
-            // IMPORTANTE: Solo usar window.telasAgregadas si window.telasCreacion NO fue definido
-            // Si window.telasCreacion existe (incluso si está vacío), significa estamos en edición
-            // y debemos respetar el estado actual [incluyendo la intención de eliminar todas las telas]
-            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0 
-                && (!window.telasCreacion || !Array.isArray(window.telasCreacion))) {
-                console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS (BD o Cotización)');
-                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
-                    // Para cotización/BD, las imágenes ya vienen procesadas
-                    const imagenesCopia = (tela.imagenes || []).map(img => {
-                        // Si es una URL de BD, mantenerla como string
-                        if (typeof img === 'string' && img.startsWith('/storage/')) {
-                            return img;
-                        }
-                        // Si es un objeto con ruta, usar la ruta
-                        if (img && img.ruta) {
-                            return img.ruta;
-                        }
-                        // Si es un File object, usarlo
-                        if (img instanceof File) {
-                            return img;
-                        }
-                        return img;
-                    }).filter(img => img !== null);
-                    
-                    return {
-                        id: tela.id,  // Preservar ID de relación para MERGE
-                        tela: tela.nombre_tela || tela.tela || '',
-                        color: tela.color_nombre || tela.color || '',
-                        referencia: tela.referencia || '',
-                        observaciones: tela.observaciones || '',
-                        color_id: tela.color_id,  // Preservar para MERGE
-                        tela_id: tela.tela_id,    // Preservar para MERGE
-                        imagenes: imagenesCopia
-                    };
-                });
-            }
-            // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
-            // obtener telas Y VARIANTES de la prenda anterior
-            // PERO SOLO si window.telasCreacion no existe (no estamos en flujo de edición)
-            else if (!window.telasCreacion && prendaEditIndex !== null && prendaEditIndex !== undefined && prendasArray[prendaEditIndex]) {
+            if (Array.isArray(globalThis.telasCreacion) && globalThis.telasCreacion.length > 0) {
+                prendaData.telasAgregadas = globalThis.telasCreacion.map(mapearTelaCanonica);
+            } else if (
+                Array.isArray(globalThis.telasAgregadas) &&
+                globalThis.telasAgregadas.length > 0 &&
+                (!globalThis.telasCreacion || !Array.isArray(globalThis.telasCreacion))
+            ) {
+                prendaData.telasAgregadas = globalThis.telasAgregadas.map(mapearTelaCanonica);
+            } else if (
+                !globalThis.telasCreacion &&
+                prendaEditIndex !== null &&
+                prendaEditIndex !== undefined &&
+                prendasArray[prendaEditIndex]
+            ) {
                 const prendaAnterior = prendasArray[prendaEditIndex];
-                
-                // Copiar telas anteriores
-                if (prendaAnterior && prendaAnterior.telasAgregadas && prendaAnterior.telasAgregadas.length > 0) {
-                    prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(tela => ({
-                        tela: tela.tela || '',
-                        color: tela.color || '',
-                        referencia: tela.referencia || '',
-                        imagenes: tela.imagenes || []
-                    }));
+                if (Array.isArray(prendaAnterior?.telasAgregadas) && prendaAnterior.telasAgregadas.length > 0) {
+                    prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(mapearTelaCanonica);
                 }
-                
-                // IMPORTANTE: También copiar variantes anteriores si existen
+
+                // IMPORTANTE: Tambien copiar variantes anteriores si existen
                 if (prendaAnterior && prendaAnterior.variantes && Object.keys(prendaAnterior.variantes).length > 0) {
                     prendaData.variantes = prendaAnterior.variantes;
                 }
             }
+
+            console.log('[prenda-form-collector] TELAS CANONICAS mapeadas (sin imagenes):', {
+                length: prendaData.telasAgregadas?.length || 0,
+                primer_elemento: prendaData.telasAgregadas?.[0]
+            });
 
             // ============================================
             // 5. RECOLECTAR VARIACIONES/VARIANTES
@@ -643,7 +498,7 @@ class PrendaFormCollector {
                     
                     // Si encontramos el ID, guardarlo
                     if (mangaId) {
-                        variantes.tipo_manga_id = parseInt(mangaId);
+                        variantes.tipo_manga_id = Number(mangaId);
                         console.log('[prenda-form-collector] Manga encontrada en datalist:', {
                             nombre: valorManga,
                             id: mangaId
@@ -716,16 +571,16 @@ class PrendaFormCollector {
             let asignacionesColores = {};
             
             // DIAGNÓSTICO: Verificar qué está disponible
-            console.log('[prenda-form-collector] 🔍 DIAGNÓSTICO de asignaciones:');
-            console.log('[prenda-form-collector]   - window.ColoresPorTalla existe?', !!window.ColoresPorTalla);
-            console.log('[prenda-form-collector]   - window.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
-                window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
-            console.log('[prenda-form-collector]   - window.StateManager existe?', !!window.StateManager);
-            console.log('[prenda-form-collector]   - window.StateManager.getAsignaciones existe?', 
-                window.StateManager && typeof window.StateManager.getAsignaciones === 'function');
+            console.log('[prenda-form-collector]  DIAGNÓSTICO de asignaciones:');
+            console.log('[prenda-form-collector]   - globalThis.ColoresPorTalla existe?', !!globalThis.ColoresPorTalla);
+            console.log('[prenda-form-collector]   - globalThis.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
+                globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
+            console.log('[prenda-form-collector]   - globalThis.StateManager existe?', !!globalThis.StateManager);
+            console.log('[prenda-form-collector]   - globalThis.StateManager.getAsignaciones existe?', 
+                globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function');
             
-            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
-                asignacionesColores = window.ColoresPorTalla.obtenerDatosAsignaciones();
+            if (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
+                asignacionesColores = globalThis.ColoresPorTalla.obtenerDatosAsignaciones();
                 console.log('[prenda-form-collector]  Asignaciones obtenidas de ColoresPorTalla:', asignacionesColores);
                 console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
                 console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
@@ -735,8 +590,8 @@ class PrendaFormCollector {
                 console.log('[prenda-form-collector]  Asignaciones de colores por talla (API antigua):', asignacionesColores);
             } else {
                 // Si no hay función disponible, intentar obtener del StateManager
-                if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
-                    asignacionesColores = window.StateManager.getAsignaciones();
+                if (globalThis.StateManager && typeof globalThis.StateManager.getAsignaciones === 'function') {
+                    asignacionesColores = globalThis.StateManager.getAsignaciones();
                     console.log('[prenda-form-collector]  Asignaciones de colores recuperadas de StateManager:');
                     console.log('[prenda-form-collector]   - Datos:', asignacionesColores);
                     console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
@@ -747,8 +602,57 @@ class PrendaFormCollector {
                 }
             }
             
-            prendaData.asignacionesColoresPorTalla = asignacionesColores;
+            const construirAsignacionesConImagenesPersistidas = (asignacionesBase) => {
+                const resultado = {};
+                const getImageWizard = (globalThis.ColoresPorTalla && typeof globalThis.ColoresPorTalla.getImage === 'function')
+                    ? globalThis.ColoresPorTalla.getImage.bind(globalThis.ColoresPorTalla)
+                    : null;
+
+                Object.entries(asignacionesBase || {}).forEach(([clave, asignacion]) => {
+                    const copiaAsignacion = {
+                        ...(asignacion || {}),
+                        colores: []
+                    };
+
+                    const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+                    copiaAsignacion.colores = colores.map((color) => {
+                        const colorCopia = { ...(color || {}) };
+
+                        if (getImageWizard && colorCopia.imagen_id) {
+                            const imagenWizard = getImageWizard(colorCopia.imagen_id);
+                            if (imagenWizard) {
+                                const file = imagenWizard.file instanceof File ? imagenWizard.file : null;
+                                if (file) {
+                                    colorCopia.imagen = {
+                                        file,
+                                        nombre: imagenWizard.nombre || file.name || '',
+                                        blobUrl: imagenWizard.blobUrl || null
+                                    };
+                                }
+                            }
+                        }
+
+                        return colorCopia;
+                    });
+
+                    resultado[clave] = copiaAsignacion;
+                });
+
+                return resultado;
+            };
+
+            const asignacionesColoresCopia = construirAsignacionesConImagenesPersistidas(asignacionesColores || {});
+            prendaData.asignacionesColoresPorTalla = asignacionesColoresCopia;
+            prendaData.asignacionesColores = asignacionesColoresCopia;
             console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
+            console.log('[prenda-form-collector]  Imagenes preservadas en asignaciones:', Object.values(asignacionesColoresCopia).reduce((acc, asig) => {
+                const colores = Array.isArray(asig?.colores) ? asig.colores : [];
+                acc.totalColores += colores.length;
+                acc.conImagenId += colores.filter(c => !!c?.imagen_id).length;
+                acc.conImagenFile += colores.filter(c => !!(c?.imagen?.file instanceof File)).length;
+                acc.conImagenRuta += colores.filter(c => typeof c?.imagen_ruta === 'string' && c.imagen_ruta.trim() !== '').length;
+                return acc;
+            }, { totalColores: 0, conImagenId: 0, conImagenFile: 0, conImagenRuta: 0 }));
 
             // ============================================
             // 7. SEPARACIÓN DE FLUJOS: SIMPLE vs WIZARD
@@ -756,36 +660,43 @@ class PrendaFormCollector {
             // Si hay asignaciones del wizard (colores por talla), recalcular cantidad_talla
             // con las cantidades reales en vez de los "1" que ColoresPorTalla.js pone en tallasRelacionales
             // para display. También marcar que las telas ya están en las asignaciones (no duplicar).
-            const tieneAsignacionesWizard = Object.keys(asignacionesColores || {}).length > 0;
+            const tieneAsignacionesWizard = Object.keys(asignacionesColoresCopia || {}).length > 0;
             
             if (tieneAsignacionesWizard) {
-                console.log('[prenda-form-collector] 🔄 FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
+                console.log('[prenda-form-collector]  FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
                 
                 const tallasRecalculadas = {};
-                Object.values(asignacionesColores).forEach(asignacion => {
+                Object.values(asignacionesColoresCopia).forEach(asignacion => {
                     const genero = (asignacion.genero || 'UNISEX').toUpperCase();
                     if (!tallasRecalculadas[genero]) {
                         tallasRecalculadas[genero] = {};
                     }
                     const talla = asignacion.talla;
                     // Sumar cantidades reales de colores para esta talla
-                    const totalCantidad = (asignacion.colores || []).reduce((sum, c) => sum + (parseInt(c.cantidad) || 0), 0);
+                    const totalCantidad = (asignacion.colores || []).reduce((sum, c) => sum + (Number(c.cantidad) || 0), 0);
                     if (totalCantidad > 0 && talla) {
                         tallasRecalculadas[genero][talla] = totalCantidad;
                     }
                 });
                 
-                console.log('[prenda-form-collector] 🔄 cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
-                console.log('[prenda-form-collector] 🔄 cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);
+                console.log('[prenda-form-collector]  cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
+                console.log('[prenda-form-collector]  cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);
                 prendaData.cantidad_talla = tallasRecalculadas;
                 
                 // Marcar flujo wizard para que el backend NO cree prenda_pedido_colores_telas (duplicado)
                 prendaData.flujo = 'wizard';
+                prendaData.tipoFlujoTallas = 'talla_color';
+                prendaData.tipo_flujo_tallas = 'talla_color';
             } else {
                 prendaData.flujo = 'simple';
+                const tieneTallas = Object.values(prendaData.cantidad_talla || {}).some(
+                    (tallasGenero) => tallasGenero && Object.keys(tallasGenero).length > 0
+                );
+                prendaData.tipoFlujoTallas = tieneTallas ? 'normal' : 'sin_tallas';
+                prendaData.tipo_flujo_tallas = prendaData.tipoFlujoTallas;
             }
             
-            console.log('[prenda-form-collector] 📋 Flujo detectado:', prendaData.flujo);
+            console.log('[prenda-form-collector]  Flujo detectado:', prendaData.flujo);
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
@@ -799,7 +710,7 @@ class PrendaFormCollector {
             return prendaData;
 
         } catch (error) {
-            console.error('[prenda-form-collector] ❌ ERROR CRÍTICO en construirPrendaDesdeFormulario:', error);
+            console.error('[prenda-form-collector]  ERROR CRÍTICO en construirPrendaDesdeFormulario:', error);
             console.error('[prenda-form-collector] Stack:', error.stack);
             return null;
         }
@@ -807,4 +718,5 @@ class PrendaFormCollector {
 }
 
 // Instancia global para usar en toda la aplicación
-window.prendaFormCollector = new PrendaFormCollector();
+globalThis.prendaFormCollector = new PrendaFormCollector();
+

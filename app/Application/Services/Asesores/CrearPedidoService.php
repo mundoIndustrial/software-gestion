@@ -4,7 +4,6 @@ namespace App\Application\Services\Asesores;
 
 use App\Models\PedidoProduccion;
 use App\Models\LogoPedido;
-use App\Enums\EstadoPedido;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +83,6 @@ class CrearPedidoService
 
     /**
      * Crear pedido de prendas (Pedidos)
-     * 
      * Optimizado para concurrencia:
      * - ID generado por AUTO_INCREMENT (seguro)
      * - numero_pedido se genera después (por Cartera)
@@ -93,13 +91,24 @@ class CrearPedidoService
     protected function crearPedidos(array $datos): PedidoProduccion
     {
         // 1. Crear pedido base - ID generado por AUTO_INCREMENT (seguro para concurrencia)
+        // numero_pedido debe asignarse al crear (fuente de verdad única para consultas)
+        $ultimoPedido = PedidoProduccion::whereNotNull('numero_pedido')
+            ->orderByDesc('numero_pedido')
+            ->lockForUpdate()
+            ->value('numero_pedido');
+        $numeroPedido = $ultimoPedido ? ((int) $ultimoPedido + 1) : 1;
+
+        if (PedidoProduccion::where('numero_pedido', $numeroPedido)->exists()) {
+            throw new \RuntimeException("El número de pedido {$numeroPedido} ya está en uso");
+        }
+
         $pedido = PedidoProduccion::create([
-            'numero_pedido' => null, // Se asignará después por Cartera
+            'numero_pedido' => $numeroPedido,
             'cliente' => $datos['cliente'],
             'asesor_id' => Auth::id(),
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
             'estado' => 'pendiente_cartera',
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
         ]);
 
         \Log::info('[CrearPedidoService] Pedido base creado', [
@@ -159,7 +168,7 @@ class CrearPedidoService
             'asesora' => Auth::user()?->name,
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
             'encargado_orden' => Auth::user()?->name,
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
             'estado' => 'pendiente',
             'area' => 'creacion_de_orden',
             'descripcion' => $datos['logo']['descripcion'] ?? null,
@@ -171,7 +180,7 @@ class CrearPedidoService
             'updated_at' => now()
         ]);
 
-        // Guardar imÃ¡genes
+        // Guardar imagenes
         foreach ($imagenesProcesadas as $index => $imagen) {
             DB::table('logo_pedido_imagenes')->insert([
                 'logo_pedido_id' => $logoPedidoId,
@@ -180,7 +189,7 @@ class CrearPedidoService
                 'ruta_original' => $imagen['ruta_original'],
                 'ruta_webp' => $imagen['ruta_webp'],
                 'tipo_archivo' => $imagen['tipo_archivo'],
-                'tamaÃ±o_archivo' => $imagen['tamaÃ±o_archivo'],
+                'tamano_archivo' => $imagen['tamano_archivo'],
                 'orden' => $index,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -242,7 +251,7 @@ class CrearPedidoService
                                     'ruta_original' => Storage::url($rutaGuardada),
                                     'ruta_webp' => Storage::url(str_replace('.png', '.webp', $rutaGuardada)),
                                     'tipo_archivo' => $archivoFoto->getMimeType(),
-                                    'tamaÃ±o_archivo' => $archivoFoto->getSize(),
+                                    'tamano_archivo' => $archivoFoto->getSize(),
                                 ];
                             }
                         }
@@ -284,7 +293,7 @@ class CrearPedidoService
                     'ruta_webp' => Storage::url($rutaWebp),
                     'url' => Storage::url($rutaWebp),
                     'tipo_archivo' => $imagen->getMimeType(),
-                    'tamaÃ±o_archivo' => $imagen->getSize(),
+                    'tamano_archivo' => $imagen->getSize(),
                 ];
             }
         }
@@ -327,4 +336,3 @@ class CrearPedidoService
         }
     }
 }
-

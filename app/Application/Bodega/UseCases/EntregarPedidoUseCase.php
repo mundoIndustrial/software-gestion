@@ -2,10 +2,8 @@
 
 namespace App\Application\Bodega\UseCases;
 
-use App\Domain\Bodega\Entities\Pedido;
 use App\Domain\Bodega\Repositories\PedidoRepositoryInterface;
 use App\Domain\Bodega\Events\DomainEventDispatcher;
-use App\Domain\Bodega\Events\PedidoEntregado;
 
 /**
  * Use Case para entregar un pedido
@@ -28,7 +26,7 @@ class EntregarPedidoUseCase
         try {
             // 1. Obtener el pedido
             $pedido = $this->pedidoRepository->findById($pedidoId);
-            
+
             if (!$pedido) {
                 throw new \InvalidArgumentException("Pedido no encontrado: {$pedidoId}");
             }
@@ -48,41 +46,47 @@ class EntregarPedidoUseCase
             // 5. Procesar eventos de dominio
             DomainEventDispatcher::processQueue();
 
-            return [
-                'success' => true,
-                'message' => "Pedido {$pedido->getNumeroPedido()} entregado correctamente",
-                'pedido' => $pedido->toArray(),
-                'estado_anterior' => $estadoAnterior->getValor(),
-                'estado_nuevo' => $pedido->getEstado()->getValor(),
-                'fecha_entrega' => $pedido->getFechaEntregaReal()->format('d/m/Y H:i:s')
-            ];
-
-        } catch (\InvalidArgumentException $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'error_type' => 'validation'
-            ];
-
-        } catch (\LogicException $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'error_type' => 'business_logic'
-            ];
+            return $this->buildSuccessResponse($pedido, $estadoAnterior);
 
         } catch (\Exception $e) {
-            \Log::error("Error en EntregarPedidoUseCase: " . $e->getMessage(), [
-                'pedido_id' => $pedidoId,
-                'trace' => $e->getTraceAsString()
-            ]);
+            $errorType = 'system_error';
+            $message = $e->getMessage();
 
-            return [
-                'success' => false,
-                'message' => 'Error interno al entregar el pedido',
-                'error_type' => 'system_error'
-            ];
+            if ($e instanceof \InvalidArgumentException) {
+                $errorType = 'validation';
+            } elseif ($e instanceof \LogicException) {
+                $errorType = 'business_logic';
+            } else {
+                \Log::error("Error en EntregarPedidoUseCase: " . $e->getMessage(), [
+                    'pedido_id' => $pedidoId,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                $message = 'Error interno al entregar el pedido';
+            }
+
+            return $this->buildErrorResponse($message, $errorType);
         }
+    }
+
+    private function buildSuccessResponse($pedido, $estadoAnterior): array
+    {
+        return [
+            'success' => true,
+            'message' => "Pedido {$pedido->getNumeroPedido()} entregado correctamente",
+            'pedido' => $pedido->toArray(),
+            'estado_anterior' => $estadoAnterior->getValor(),
+            'estado_nuevo' => $pedido->getEstado()->getValor(),
+            'fecha_entrega' => $pedido->getFechaEntregaReal()->format('d/m/Y H:i:s')
+        ];
+    }
+
+    private function buildErrorResponse(string $message, string $errorType): array
+    {
+        return [
+            'success' => false,
+            'message' => $message,
+            'error_type' => $errorType
+        ];
     }
 
     /**

@@ -495,7 +495,8 @@
                     @php
                         // Construir descripción con tallas POR PRENDA para el modal
                         $descripcionConTallas = '';
-                        $descripcionBase = $pedido->descripcion_prendas ?? '';
+                        $descriptionService = app(\App\Application\Pedidos\Services\PedidoDescriptionService::class);
+                        $descripcionBase = $descriptionService->generatePrendasDescription($pedido);
                         
                         // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
                         $esReflectivo = false;
@@ -749,7 +750,7 @@
 
                     <!-- Fecha Creación -->
                     <div style="color: #6b7280; font-size: 0.75rem;">
-                        {{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}
+                        {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-' }}
                     </div>
 
                     <!-- Fecha Estimada de Entrega -->

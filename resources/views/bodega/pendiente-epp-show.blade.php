@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="text-xl sm:text-2xl font-semibold text-black">Gestión de Bodega</h1>
                     <p class="text-xs sm:text-sm text-black mt-1">
-                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> | 
+                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> |
                         Cliente: <span class="font-semibold text-black">{{ $pedido['cliente'] ?? 'No especificado' }}</span>
                         @if($pedido['asesor'])
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
@@ -81,7 +81,18 @@
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->
                                     <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
-                                        <div class="font-bold text-black mb-1">{{ $nombre }}</div>
+                                        <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
+                                            {{ $nombre }}
+                                            @if($item['tiene_historial'] ?? false)
+                                                <button type="button"
+                                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                        onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                    <span class="text-sm">🔽</span>
+                                                    <span>Ver cambios</span>
+                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                </button>
+                                            @endif
+                                        </div>
                                         @if($tela || $color)
                                             <div class="text-black text-xs mb-1">
                                                 @if($tela && $color)
@@ -162,8 +173,8 @@
                                             style="font-family: 'Poppins', sans-serif;"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
+                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                             placeholder="Pendientes..."
                                             rows="1"
                                             @if($esReadOnly ?? false) disabled @endif
@@ -265,7 +276,7 @@
                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
                                             class="w-full mt-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                         >
-                                            💾 Guardar
+                                             Guardar
                                         </button>
                                         @else
                                         <div class="w-full mt-1 px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
@@ -309,7 +320,7 @@
             
             @if(!($esReadOnly ?? false))
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
+                <label for="notasNuevaContent" class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
                     id="notasNuevaContent"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
@@ -351,12 +362,12 @@
 <div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100000;">
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
-            <h2 class="text-lg font-semibold text-white">📄 Pedido</h2>
+            <h2 class="text-lg font-semibold text-white"> Pedido</h2>
             <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -500,7 +511,7 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     
     // Deshabilitar botón durante el guardado
     button.disabled = true;
-    button.textContent = '⏳ Guardando...';
+    button.textContent = ' Guardando...';
     
     fetch('/gestion-bodega/guardar-fila', {
         method: 'POST',
@@ -513,15 +524,15 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            button.textContent = '✅ Guardado';
+            button.textContent = ' Guardado';
             setTimeout(() => {
-                button.textContent = '💾 Guardar';
+                button.textContent = ' Guardar';
                 button.disabled = false;
             }, 2000);
         } else {
-            button.textContent = '❌ Error';
+            button.textContent = ' Error';
             setTimeout(() => {
-                button.textContent = '💾 Guardar';
+                button.textContent = ' Guardar';
                 button.disabled = false;
             }, 2000);
             alert('Error al guardar: ' + data.message);
@@ -529,9 +540,9 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     })
     .catch(error => {
         console.error('Error al guardar:', error);
-        button.textContent = '❌ Error';
+        button.textContent = ' Error';
         setTimeout(() => {
-            button.textContent = '💾 Guardar';
+            button.textContent = ' Guardar';
             button.disabled = false;
         }, 2000);
         alert('Error al guardar los datos');
@@ -550,18 +561,18 @@ document.addEventListener('keydown', function(e) {
  * Logs de diagnóstico para el diseño de la tabla - EPP
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-EPP] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO-EPP] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    console.log(`📏 [DIAGNÓSTICO-EPP] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    console.log(` [DIAGNÓSTICO-EPP] Viewport: ${viewportWidth}x${viewportHeight}px`);
     
     // Verificar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO-EPP] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO-EPP] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -590,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (table) {
         const tableRect = table.getBoundingClientRect();
         const tableStyle = window.getComputedStyle(table);
-        console.log(`📊 [DIAGNÓSTICO-EPP] Tabla:`, {
+        console.log(` [DIAGNÓSTICO-EPP] Tabla:`, {
             width: tableRect.width,
             height: tableRect.height,
             computedWidth: tableStyle.width,
@@ -606,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO-EPP] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO-EPP] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,
@@ -617,6 +628,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
 });
+
+// Función para mostrar el historial de homologaciones de EPP
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
+        return;
+    }
+
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar EPP original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-2 py-3 text-center">
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-2 py-3 text-center">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal grande
+    Swal.fire({
+        title: ' Historial de Homologaciones',
+        html: tablaHtml,
+        icon: false,
+        width: '850px',
+        padding: '1rem',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        customClass: { title: 'text-lg font-bold text-gray-800' },
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+                popup.style.maxHeight = '85vh';
+                const htmlContainer = popup.querySelector('.swal2-html-container');
+                if (htmlContainer) {
+                    htmlContainer.style.padding = '1rem 0';
+                }
+            }
+        }
+    });
+}
 </script>
 
 @push('scripts')

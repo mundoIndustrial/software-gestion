@@ -53,7 +53,7 @@ function cargarNovedadesPedido(ordenId) {
     // Mostrar loading
     historialDiv.innerHTML = `
         <div class="flex justify-center items-center py-8">
-            <span class="text-slate-500">⏳ Cargando novedades...</span>
+            <span class="text-slate-500"> Cargando novedades...</span>
         </div>
     `;
     
@@ -79,7 +79,7 @@ function cargarNovedadesPedido(ordenId) {
                 // Si no hay novedades
                 historialDiv.innerHTML = `
                     <div class="flex justify-center items-center py-8">
-                        <span class="text-slate-500">📝 No hay novedades registradas</span>
+                        <span class="text-slate-500"> No hay novedades registradas</span>
                     </div>
                 `;
             }
@@ -112,7 +112,7 @@ function cargarNovedadesPedido(ordenId) {
             // Si no hay novedades o hay error
             historialDiv.innerHTML = `
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">📝 No hay novedades registradas</span>
+                    <span class="text-slate-500"> No hay novedades registradas</span>
                 </div>
             `;
         });
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
     try {
-        console.log(`[saveNovedadesRecibo] 📝 Guardando novedades para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+        console.log(`[saveNovedadesRecibo]  Guardando novedades para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
         
         const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`, {
             method: 'POST',
@@ -542,7 +542,7 @@ async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
         const result = await response.json();
         
         if (result.success) {
-            console.log('[saveNovedadesRecibo] ✅ Novedades guardadas:', result);
+            console.log('[saveNovedadesRecibo]  Novedades guardadas:', result);
             showNotification('Novedades guardadas correctamente', 'success');
             
             // Recargar la página para mostrar los cambios
@@ -550,12 +550,12 @@ async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
                 window.location.reload();
             }, 1000);
         } else {
-            console.error('[saveNovedadesRecibo] ❌ Error:', result.message);
+            console.error('[saveNovedadesRecibo]  Error:', result.message);
             showNotification('Error al guardar novedades: ' + result.message, 'error');
         }
         
     } catch (error) {
-        console.error('[saveNovedadesRecibo] ❌ Error de red:', error);
+        console.error('[saveNovedadesRecibo]  Error de red:', error);
         showNotification('Error de conexión al guardar novedades', 'error');
     }
 }

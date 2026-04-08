@@ -61,7 +61,7 @@ class HistorialProcesos {
         if (procesos_actuales && procesos_actuales.length > 0) {
             html += `
                 <div class="procesos-actuales" style="margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 10px 0; color: #15803d;">📌 Procesos Actuales</h3>
+                    <h3 style="margin: 0 0 10px 0; color: #15803d;"> Procesos Actuales</h3>
                     <div style="display: grid; gap: 10px;">
             `;
 

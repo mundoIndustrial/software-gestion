@@ -27,14 +27,14 @@
 
             <!-- Buscador -->
             <form method="GET" class="flex gap-3 mb-4">
-                <input 
-                    type="text" 
-                    name="search" 
+                <input
+                    type="text"
+                    name="search"
                     placeholder="Buscar por número de pedido, cliente, asesor o producto..."
                     value="{{ $search ?? '' }}"
                     class="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500"
                 >
-                <button 
+                <button
                     type="submit"
                     class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-lg transition-colors"
                 >
@@ -44,7 +44,7 @@
                     </span>
                 </button>
                 @if($search)
-                    <a 
+                    <a
                         href="{{ route('gestion-bodega.pendientes-epp-list') }}"
                         class="px-6 py-3 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded-lg transition-colors"
                     >
@@ -59,7 +59,7 @@
             <!-- Botón de Exportación -->
             @if($total > 0)
                 <div class="flex gap-3 mb-6">
-                    <button 
+                    <button
                         onclick="copyTableToClipboard(this)"
                         class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2"
                     >
@@ -104,7 +104,7 @@
                                 // Agrupar por fecha
                                 $epp_agrupado = [];
                                 foreach ($epp_pendientes as $item) {
-                                    $fecha = $item->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($item->fecha_de_creacion_de_orden)->format('Y-m-d') : 'sin-fecha';
+                                    $fecha = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') : 'sin-fecha';
                                     if (!isset($epp_agrupado[$fecha])) {
                                         $epp_agrupado[$fecha] = [];
                                     }
@@ -144,13 +144,13 @@
                                         </td>
                                         <td class="px-6 py-4 text-slate-700">
                                             <div class="flex items-center gap-2">
-                                                <input 
-                                                    type="date" 
+                                                <input
+                                                    type="date"
                                                     class="fecha-entrega-despacho px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 flex-1"
                                                     value="{{ $item->fecha_entrega_despacho ? $item->fecha_entrega_despacho->format('Y-m-d') : '' }}"
                                                     data-id="{{ $item->id }}"
                                                 >
-                                                <span 
+                                                <span
                                                     class="estado-guardado text-sm text-green-600 font-semibold hidden"
                                                     data-id="{{ $item->id }}"
                                                 >

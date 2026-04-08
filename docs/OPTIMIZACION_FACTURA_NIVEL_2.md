@@ -4,17 +4,17 @@
 
 | # | Optimización | Impacto | Dificultad | Tiempo | Estado |
 |---|--|--|--|--|--|
-| 1 | Eliminar arrays vacíos en JSON | ⚡⚡⚡ | 🟢 Fácil | 20 min |  Pendiente |
-| 2 | Caching con Redis | ⚡⚡⚡ | 🟡 Media | 45 min |  Pendiente |
-| 3 | Lazy loading de imágenes | ⚡⚡ | 🟡 Media | 1h |  Pendiente |
-| 4 | Pagination de prendas | ⚡⚡⚡ | 🟠 Complejo | 2h |  Pendiente |
-| 5 | Usar select() para columnas | ⚡⚡ | 🟢 Fácil | 30 min |  Pendiente |
-| 6 | Endpoint de metadata | ⚡ | 🟢 Fácil | 20 min |  Pendiente |
-| 7 | Comprensión gzip | ⚡⚡ | 🟢 Fácil | 15 min |  Pendiente |
+| 1 | Eliminar arrays vacíos en JSON |  | 🟢 Fácil | 20 min |  Pendiente |
+| 2 | Caching con Redis |  |  Media | 45 min |  Pendiente |
+| 3 | Lazy loading de imágenes |  |  Media | 1h |  Pendiente |
+| 4 | Pagination de prendas |  | 🟠 Complejo | 2h |  Pendiente |
+| 5 | Usar select() para columnas |  | 🟢 Fácil | 30 min |  Pendiente |
+| 6 | Endpoint de metadata |  | 🟢 Fácil | 20 min |  Pendiente |
+| 7 | Comprensión gzip |  | 🟢 Fácil | 15 min |  Pendiente |
 
 ---
 
-## 1️⃣ Eliminar Arrays Vacíos en JSON ⚡⚡⚡
+## 1️⃣ Eliminar Arrays Vacíos en JSON 
 
 ### Problema Actual:
 ```json
@@ -58,13 +58,13 @@ if (!empty($fotosColorTela)) {
 ```
 
 ### Beneficio:
-- **Tamaño JSON:** -30% a -50% en muchos casos
+- **tamano JSON:** -30% a -50% en muchos casos
 - **Tiempo Parsing:** -10-15%
 - **Tiempo Transfer:** -30-50%
 
 ---
 
-## 2️⃣ Caching con Redis ⚡⚡⚡
+## 2️⃣ Caching con Redis 
 
 ### Patrón:
 ```php
@@ -99,7 +99,7 @@ Cache::forget("factura:pedido:{$pedido->id}:v1");
 
 ---
 
-## 3️⃣ Lazy Loading de Imágenes ⚡⚡
+## 3️⃣ Lazy Loading de Imágenes 
 
 ### Problema:
 Todas las imágenes se cargan en la respuesta inicial aunque el frontend las carga lentamente.
@@ -141,12 +141,12 @@ const imagenesResponse = await fetch(`/gestion-bodega/pedidos/4/imagenes`);
 ```
 
 ### Beneficio:
-- **Tamaño inicial:** -60% a -80%
+- **tamano inicial:** -60% a -80%
 - **Tiempo respuesta:** -50-70%
 
 ---
 
-## 4️⃣ Pagination de Prendas ⚡⚡⚡
+## 4️⃣ Pagination de Prendas 
 
 Si un pedido tiene 30+ prendas, devolver solo 5-10 por página:
 
@@ -173,12 +173,12 @@ public function obtenerDatosFacturaJSON($id, Request $request)
 ```
 
 ### Beneficio:
-- **Primera página:** -70% tamaño
+- **Primera página:** -70% tamano
 - **Tiempo respuesta:** -60-80%
 
 ---
 
-## 5️⃣ Usar select() para Columnas Específicas ⚡⚡
+## 5️⃣ Usar select() para Columnas Específicas 
 
 Remover columnas innecesarias desde la BD:
 
@@ -198,12 +198,12 @@ public function obtenerPorId(int $id): ?PedidoProduccion
 ```
 
 ### Beneficio:
-- **Tamaño datos BD:** -20-30%
+- **tamano datos BD:** -20-30%
 - **Tiempo transferencia:** -10-20%
 
 ---
 
-## 6️⃣ Endpoint de Metadata ⚡
+## 6️⃣ Endpoint de Metadata 
 
 Para casos donde solo necesitan información básica sin detalles:
 
@@ -233,7 +233,7 @@ public function metadataFactura($id)
 
 ---
 
-## 7️⃣ Comprensión gzip (Automático) ⚡⚡
+## 7️⃣ Comprensión gzip (Automático) 
 
 Laravel ya soporta gzip, pero verificar que está activado:
 
@@ -251,7 +251,7 @@ gzip_min_length 1000;
 ```
 
 ### Beneficio:
-- **Tamaño transferencia:** -60% a -80%
+- **tamano transferencia:** -60% a -80%
 - **Automático para navegadores**
 
 ---
@@ -292,7 +292,7 @@ gzip_min_length 1000;
 
 ### Día 2-3 (Si necesarias más mejoras):
 ```
-⏳ Fase 2a: Fáciles (30 min)
+ Fase 2a: Fáciles (30 min)
 1. Eliminar arrays vacíos
 2. Gzip (verificar)
 - Ganancia estimada: +20-30% más rápido
@@ -300,7 +300,7 @@ gzip_min_length 1000;
 
 ### Día 4-5 (Si sigue siendo lento):
 ```
-⏳ Fase 2b: Medianas (1-2h)
+ Fase 2b: Medianas (1-2h)
 1. Redis Caching
 2. Lazy loading
 - Ganancia estimada: +30-50% más rápido
@@ -308,7 +308,7 @@ gzip_min_length 1000;
 
 ### Semana 2 (Optimización final):
 ```
-⏳ Fase 2c: Avanzadas (2h+)
+ Fase 2c: Avanzadas (2h+)
 1. Pagination
 2. Select() specifics
 - Ganancia estimada: +50-80% + escalabilidad
@@ -320,13 +320,13 @@ gzip_min_length 1000;
 
 ### Antes de cambios:
 ```bash
-time curl -w "\nTiempo: %{time_total}s\nTamaño: %{size_download} bytes" \
+time curl -w "\nTiempo: %{time_total}s\ntamano: %{size_download} bytes" \
   http://localhost:8000/gestion-bodega/pedidos/4/factura-datos
 ```
 
 ### Después:
 - Comparar tiempos
-- Comparar tamaños de respuesta
+- Comparar tamanos de respuesta
 - Usar Chrome DevTools → Network
 
 ### Benchmark Script:
@@ -361,17 +361,17 @@ include('test-factura-performance.php')
 
 ---
 
-## 📝 Próximos Pasos
+##  Próximos Pasos
 
 1. **Medir estado actual:**
    ```bash
    curl -i http://localhost:8000/gestion-bodega/pedidos/4/factura-datos
    ```
-   Anotarb: Tiempo + Tamaño (Content-Length)
+   Anotarb: Tiempo + tamano (Content-Length)
 
 2. **Decidir cuál implementar:**
    - Si el tiempo es lo crítico → Redis Caching
-   - Si es tamaño → Arrays vacíos + Gzip
+   - Si es tamano → Arrays vacíos + Gzip
    - Si hay muchos pedidos grandes → Pagination
 
 3. **Implementar una por una:**

@@ -5,6 +5,39 @@
 
 @section('content')
 <div class="ver-pedido-fullscreen">
+    <script>
+        // Esta vista carga contenido por fetch + render dinámico.
+        // Mantener el overlay hasta que terminemos de poblar la UI.
+        window.__OVERLAY_MANUAL_HIDE = true;
+        if (window.showLoadingOverlay) {
+            window.showLoadingOverlay();
+        }
+
+        // Si algo falla antes de ocultar el overlay, no dejar al usuario bloqueado.
+        (function() {
+            if (window.__verPedidoOverlayGuardsInstalled) return;
+            window.__verPedidoOverlayGuardsInstalled = true;
+
+            const safeHide = function(origen) {
+                console.warn(' [VER-PEDIDO OVERLAY GUARD] ocultando overlay por', origen);
+                window.__OVERLAY_MANUAL_HIDE = false;
+                if (window.hideLoadingOverlay) {
+                    window.hideLoadingOverlay({ minMs: 0 });
+                } else {
+                    const overlay = document.getElementById('loading-overlay');
+                    if (overlay) {
+                        overlay.style.pointerEvents = 'none';
+                        overlay.classList.add('hidden');
+                        overlay.style.opacity = '0';
+                        overlay.style.display = 'none';
+                    }
+                }
+            };
+
+            window.addEventListener('error', function() { safeHide('error'); });
+            window.addEventListener('unhandledrejection', function() { safeHide('unhandledrejection'); });
+        })();
+    </script>
     <!-- Header Negro -->
     <div class="pedido-header-negro">
         <button class="btn-volver-header" onclick="history.back()">
@@ -1123,6 +1156,10 @@
      * Extrae las fotos solo de la prenda actualmente visible
      */
     function actualizarFotosPrenda() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+        const prendaIdParam = String(urlParams.get('prenda_id') || '').trim();
+        const esReciboParcial = tipoReciboParam === 'PARCIAL';
         const prendaIdx = window.prendaCarouselIndex || 0;
         const PRENDAS_POR_PAGINA = 1;
         const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
@@ -1136,7 +1173,9 @@
         const procesosDisponibles = window.todosProcesosDisponibles || [];
         const procesoActualSeleccionado = procesosDisponibles[procesoActualIndex] || null;
         
-        if (procesoActualSeleccionado) {
+        if (esReciboParcial && prendaIdParam !== '') {
+            prendas = prendas.filter(p => String(p?.id ?? p?.prenda_pedido_id ?? '') === prendaIdParam);
+        } else if (procesoActualSeleccionado) {
             prendas = prendas.filter(p => {
                 if (p.recibos && typeof p.recibos === 'object') {
                     return p.recibos[procesoActualSeleccionado] !== null && p.recibos[procesoActualSeleccionado] !== undefined;
@@ -1150,22 +1189,22 @@
         
         // Extraer fotos solo de las prendas visibles
         prendasVisibles.forEach(prenda => {
-            console.log('🖼️ [EXTRAYENDO FOTOS] Prenda:', prenda.nombre_prenda || prenda.nombre, 'ID:', prenda.id);
+            console.log(' [EXTRAYENDO FOTOS] Prenda:', prenda.nombre_prenda || prenda.nombre, 'ID:', prenda.id);
             
             // Fotos directas de la prenda
             if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-                console.log('  📸 Fotos de prenda encontradas:', prenda.imagenes.length);
+                console.log('   Fotos de prenda encontradas:', prenda.imagenes.length);
                 prenda.imagenes.forEach(img => {
                     if (img.ruta_webp || img.url) {
                         fotosActuales.push(img.ruta_webp || img.url);
-                        console.log('    ✅ Foto prenda agregada:', img.ruta_webp || img.url);
+                        console.log('     Foto prenda agregada:', img.ruta_webp || img.url);
                     }
                 });
             }
             
             // Fotos de telas
             if (prenda.telas_array && Array.isArray(prenda.telas_array)) {
-                console.log('  🧵 Telas encontradas:', prenda.telas_array.length);
+                console.log('   Telas encontradas:', prenda.telas_array.length);
                 prenda.telas_array.forEach((tela, telaIdx) => {
                     console.log('    Tela ' + telaIdx + ':', tela.tela_nombre || 'N/A', '- Color:', tela.color_nombre || 'N/A');
                     if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {
@@ -1173,18 +1212,18 @@
                         tela.fotos_tela.forEach(img => {
                             if (img.ruta_webp || img.url) {
                                 fotosActuales.push(img.ruta_webp || img.url);
-                                console.log('      ✅ Foto tela agregada:', img.ruta_webp || img.url);
+                                console.log('       Foto tela agregada:', img.ruta_webp || img.url);
                             }
                         });
                     } else {
-                        console.log('      ⚠️ Sin fotos_tela en esta tela');
+                        console.log('       Sin fotos_tela en esta tela');
                     }
                 });
             }
             
             // Fotos de procesos
             if (prenda.procesos && Array.isArray(prenda.procesos)) {
-                console.log('  ⚙️ Procesos encontrados:', prenda.procesos.length);
+                console.log('   Procesos encontrados:', prenda.procesos.length);
                 prenda.procesos.forEach((proceso, procIdx) => {
                     console.log('    Proceso ' + procIdx + ':', proceso.tipo_proceso || 'N/A');
                     if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
@@ -1192,11 +1231,11 @@
                         proceso.imagenes.forEach(img => {
                             if (img.ruta_webp || img.url) {
                                 fotosActuales.push(img.ruta_webp || img.url);
-                                console.log('      ✅ Foto proceso agregada:', img.ruta_webp || img.url);
+                                console.log('       Foto proceso agregada:', img.ruta_webp || img.url);
                             }
                         });
                     } else {
-                        console.log('      ⚠️ Sin imagenes en este proceso');
+                        console.log('       Sin imagenes en este proceso');
                     }
                 });
             }
@@ -1204,17 +1243,69 @@
         
         // Eliminar duplicados
         const fotosUnicas = Array.from(new Set(fotosActuales));
-        console.log('📸 [FOTOS POR PRENDA] Prenda idx:', prendaIdx, 'Total extraídas:', fotosActuales.length, 'Únicas:', fotosUnicas.length);
+        console.log(' [FOTOS POR PRENDA] Prenda idx:', prendaIdx, 'Total extraídas:', fotosActuales.length, 'Únicas:', fotosUnicas.length);
         llenarFotos(fotosUnicas);
     }
     
     // Hacer la función accesible globalmente desde el componente
     window.actualizarFotosPrenda = actualizarFotosPrenda;
 
+    function extraerNumeroRecibo(value) {
+        if (value === null || value === undefined) {
+            return null;
+        }
+
+        if (typeof value === 'number') {
+            return String(value);
+        }
+
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed === '' || trimmed.toLowerCase() === 'null') {
+                return null;
+            }
+            return trimmed;
+        }
+
+        if (typeof value === 'object') {
+            const candidatos = [
+                value.consecutivo_parcial,
+                value.consecutivo_actual,
+                value.numero_recibo,
+                value.numero,
+                value.consecutivo,
+            ];
+
+            for (const c of candidatos) {
+                if (c === null || c === undefined) {
+                    continue;
+                }
+                const s = String(c).trim();
+                if (s !== '' && s.toLowerCase() !== 'null') {
+                    return s;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Actualiza el número del recibo en el header según la prenda y proceso actuale
      */
     function actualizarNumeroPrendaHeader() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+        const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+        if (tipoReciboParam === 'PARCIAL' && consecutivoParcialParam) {
+            const headerElement = document.getElementById('header-numero-recibo');
+            if (headerElement) {
+                headerElement.textContent = '#' + consecutivoParcialParam;
+            }
+            numeroReciboActual = consecutivoParcialParam;
+            return;
+        }
+
         const prendaIdx = window.prendaCarouselIndex || 0;
         const PRENDAS_POR_PAGINA = 1;
         const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
@@ -1245,19 +1336,19 @@
             
             // Obtener el número de recibo del proceso actual
             if (procesoActualSeleccionado && prendaActual.recibos) {
-                numeroRecibo = prendaActual.recibos[procesoActualSeleccionado];
+                numeroRecibo = extraerNumeroRecibo(prendaActual.recibos[procesoActualSeleccionado]);
             }
             
             // Fallback a la variable global si existen
             if (!numeroRecibo && numeroReciboActual) {
-                numeroRecibo = numeroReciboActual;
+                numeroRecibo = extraerNumeroRecibo(numeroReciboActual);
             }
             
             // Actualizar el header
             const headerElement = document.getElementById('header-numero-recibo');
             if (headerElement && numeroRecibo) {
                 headerElement.textContent = '#' + numeroRecibo;
-                console.log('🏷️ [HEADER ACTUALIZADO] Recibo:', numeroRecibo);
+                console.log(' [HEADER ACTUALIZADO] Recibo:', numeroRecibo);
             }
         }
     }
@@ -1284,7 +1375,7 @@
                 // Si no existe, buscar el texto y reemplazarlo
                 tabFotosBtn.innerHTML = tabFotosBtn.innerHTML.replace(/FOTOS \(\d+\)/, `FOTOS (${fotos.length})`);
             }
-            console.log('📸 [CONTADOR ACTUALIZADO]', fotos.length, 'fotos');
+            console.log(' [CONTADOR ACTUALIZADO]', fotos.length, 'fotos');
         }
         
         // Limpiar contenido actual
@@ -1499,22 +1590,48 @@
     // Generar imagen al cargar la página - Ejecutar inmediatamente
     // Esperar un poco para asegurar que el DOM esté listo
     setTimeout(function() {
-        console.log('🎬 [VER-PEDIDO] ===== INICIALIZANDO PÁGINA =====');
+        const loadingOverlayInit = document.getElementById('loading-overlay');
+        const ocultarOverlayInit = function(tipo) {
+            try { clearTimeout(failsafeTimer); } catch (_) {}
+            if (window.hideLoadingOverlay) {
+                window.hideLoadingOverlay({ minMs: 300 });
+            } else if (loadingOverlayInit) {
+                loadingOverlayInit.classList.add('hidden');
+                loadingOverlayInit.style.opacity = '0';
+                loadingOverlayInit.style.pointerEvents = 'none';
+            }
+            window.__OVERLAY_MANUAL_HIDE = false;
+            console.log(' Loading overlay ocultado (' + (tipo || 'init') + ')');
+        };
+
+        // Failsafe: no dejar el overlay infinito si algo rompe antes del fetch/render.
+        const FAILSAFE_MS = 20000;
+        const failsafeTimer = setTimeout(function() {
+            console.warn(' [OVERLAY FAILSAFE] Ocultando overlay por timeout');
+            ocultarOverlayInit('failsafe');
+        }, FAILSAFE_MS);
+
+        try {
+            console.log(' [VER-PEDIDO] ===== INICIALIZANDO PÁGINA =====');
+            
+            if (typeof llenarDatosModal === 'function') {
+                llenarDatosModal();
+            }
+            const containerMobile = document.getElementById('factura-container-mobile');
         
-        llenarDatosModal();
-        const containerMobile = document.getElementById('factura-container-mobile');
-        
-        console.log('🔎 Buscando containerMobile:', {
+        console.log(' Buscando containerMobile:', {
             existe: !!containerMobile,
             elemento: containerMobile,
             totalIds: document.querySelectorAll('[id]').length
         });
         
-        if (!containerMobile) {
-            console.error(' ERROR: No se encontró #factura-container-mobile');
-            console.log(' IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
-            return;
-        }
+            if (!containerMobile) {
+                console.error(' ERROR: No se encontró #factura-container-mobile');
+                console.log(' IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+                clearTimeout(failsafeTimer);
+                ocultarOverlayInit('no-container');
+                return;
+            }
         
         // Mostrar el contenedor
         console.log(' Mostrando containerMobile');
@@ -1522,22 +1639,29 @@
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
         const tipoRecibo = containerMobile.dataset.tipoRecibo || '';
-        console.log('📌 Número de pedido del dataset:', numeroPedido);
-        console.log('📌 Tipo de recibo del dataset:', tipoRecibo);
+        console.log(' Número de pedido del dataset:', numeroPedido);
+        console.log(' Tipo de recibo del dataset:', tipoRecibo);
         
         // Leer prenda_id de los query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const prendaIdParam = urlParams.get('prenda_id');
-        console.log('📌 Prenda ID desde URL:', prendaIdParam);
+        console.log(' Prenda ID desde URL:', prendaIdParam);
         
-        if (!numeroPedido) {
-            console.error(' ERROR: numeroPedido no encontrado en dataset');
-            return;
-        }
+            if (!numeroPedido) {
+                console.error(' ERROR: numeroPedido no encontrado en dataset');
+                clearTimeout(failsafeTimer);
+                ocultarOverlayInit('no-numero');
+                return;
+            }
         
         // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
         // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
-        let apiUrl = '/api/operario/pedido/' + numeroPedido;
+        const pathActual = (window.location?.pathname || '').toString();
+        const baseApi = pathActual.includes('/control-calidad/')
+            ? '/control-calidad/api/pedido/'
+            : '/operario/api/pedido/';
+
+        let apiUrl = baseApi + numeroPedido;
         
         // Agregar parámetros a la URL
         const params = new URLSearchParams();
@@ -1546,6 +1670,16 @@
         }
         if (prendaIdParam) {
             params.append('prenda_id', prendaIdParam);
+        }
+        
+        // Agregar TODOS los parámetros disponibles en window.location.search
+        // Esto incluye parcial_id, consecutivo_parcial, etc.
+        const allParams = new URLSearchParams(window.location.search);
+        for (const [key, value] of allParams) {
+            if (key !== 'tipo_recibo' && key !== 'prenda_id') {
+                // Evitar duplicar parámetros que ya fueron agregados
+                params.append(key, value);
+            }
         }
         
         const queryString = params.toString();
@@ -1565,10 +1699,10 @@
             loadingOverlay.classList.remove('hidden');
             loadingOverlay.style.opacity = '1';
             loadingOverlay.style.pointerEvents = 'auto';
-            console.log('✅ Loading overlay mostrado');
+            console.log(' Loading overlay mostrado');
         }
         
-        fetch(apiUrl)
+            fetch(apiUrl)
             .then(function(response) {
                 console.log('📨 Respuesta del servidor:', {
                     ok: response.ok,
@@ -1664,7 +1798,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('⚠️ Error resolviendo fecha de anexo:', e);
+                    console.warn(' Error resolviendo fecha de anexo:', e);
                 }
 
                 // Construir objeto para llenarReciboCosturaMobile con la misma estructura
@@ -1686,23 +1820,23 @@
                 window.procesoCarouselIndex = 0;
                 if (tipoRecibo) {
                     // Se ajustará dinámicamente en order-detail-modal-mobile cuando se conozcan los procesos disponibles
-                    console.log('📌 [CAROUSEL] tipo_recibo detectado:', tipoRecibo, '- el índice se ajustará después');
+                    console.log(' [CAROUSEL] tipo_recibo detectado:', tipoRecibo, '- el índice se ajustará después');
                 }
                 window.prendaCarouselIndex = 0;
                 
                 // Si se pasó prenda_id desde el dashboard, calcular el índice correcto
                 if (prendaIdParam) {
                     const prendaIdInt = parseInt(prendaIdParam, 10);
-                    console.log('🔍 [PRENDA ID] Buscando prenda con ID:', prendaIdInt);
+                    console.log(' [PRENDA ID] Buscando prenda con ID:', prendaIdInt);
                     
                     // Encontrar el índice de la prenda en el array
                     if (data.prendas && Array.isArray(data.prendas)) {
                         const indice = data.prendas.findIndex(p => p.id === prendaIdInt);
                         if (indice !== -1) {
                             window.prendaCarouselIndex = indice;
-                            console.log('✅ [PRENDA ID] Prenda encontrada en índice:', indice);
+                            console.log(' [PRENDA ID] Prenda encontrada en índice:', indice);
                         } else {
-                            console.log('⚠️ [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
+                            console.log(' [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
                         }
                     }
                 }
@@ -1775,15 +1909,34 @@
                 datosCompletoPedido = response.data;
                 
                 // Mostrar fotos iniciales de la primer prenda
-                actualizarFotosPrenda();
-                
-                // Ocultar loading overlay
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('hidden');
-                    loadingOverlay.style.opacity = '0';
-                    loadingOverlay.style.pointerEvents = 'none';
-                    console.log('✅ Loading overlay ocultado (success)');
+                if (typeof actualizarFotosPrenda === 'function') {
+                    actualizarFotosPrenda();
                 }
+                
+                // Ocultar loading overlay: esperar a que el DOM pinte (evita que se quite antes de ver la UI)
+                const ocultarOverlay = function() {
+                    try { clearTimeout(failsafeTimer); } catch (_) {}
+                    if (window.hideLoadingOverlay) {
+                        window.hideLoadingOverlay({ minMs: 300 });
+                    }
+                    if (loadingOverlay) {
+                        // Refuerzo: ocultar también de forma directa para evitar overlays pegados.
+                        loadingOverlay.classList.add('hidden');
+                        loadingOverlay.style.opacity = '0';
+                        loadingOverlay.style.pointerEvents = 'none';
+                        setTimeout(function() {
+                            loadingOverlay.style.display = 'none';
+                        }, 350);
+                    }
+                    window.__OVERLAY_MANUAL_HIDE = false;
+                    console.log(' Loading overlay ocultado (success)');
+                };
+
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        setTimeout(ocultarOverlay, 50);
+                    });
+                });
 
             })
             .catch(function(error) {
@@ -1794,13 +1947,25 @@
                 });
                 
                 // Ocultar loading overlay en caso de error
+                try { clearTimeout(failsafeTimer); } catch (_) {}
+                if (window.hideLoadingOverlay) {
+                    window.hideLoadingOverlay({ minMs: 300 });
+                }
                 if (loadingOverlay) {
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.style.opacity = '0';
                     loadingOverlay.style.pointerEvents = 'none';
-                    console.log('✅ Loading overlay ocultado (error)');
+                    setTimeout(function() {
+                        loadingOverlay.style.display = 'none';
+                    }, 350);
                 }
+                window.__OVERLAY_MANUAL_HIDE = false;
+                console.log(' Loading overlay ocultado (error)');
             });
+        } catch (e) {
+            console.error(' ERROR inicializando ver-pedido:', e);
+            ocultarOverlayInit('exception');
+        }
     }, 500);
 
     function marcarEnProceso() {
@@ -2474,4 +2639,3 @@
         }
     }
 </style>
-

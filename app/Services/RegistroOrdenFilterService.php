@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class RegistroOrdenFilterService
 {
     protected $dateColumns = [
-        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+        'created_at', 'fecha_estimada_de_entrega', 'inventario', 
         'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
         'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega'
     ];
@@ -21,7 +21,7 @@ class RegistroOrdenFilterService
     protected $allowedColumns = [
         'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 
         'numero_pedido', 'cliente', 'descripcion_prendas', 'cantidad', 'novedades', 'forma_de_pago', 
-        'asesora', 'encargado_orden', 'fecha_de_creacion_de_orden', 'fecha_ultimo_proceso'
+        'asesora', 'encargado_orden', 'created_at', 'fecha_ultimo_proceso'
     ];
 
     /**

@@ -9,7 +9,7 @@ use App\Models\Cliente;
 use Tests\TestCase;
 
 /**
- * Test RÃ¡pido: Cotizaciones (Sin crear 260+ cotizaciones)
+ * Test Rapido: Cotizaciones (Sin crear 260+ cotizaciones)
  * 
  * Tests simples que se ejecutan en segundos para demostrar
  * que el sistema funciona correctamente.
@@ -19,13 +19,15 @@ class CotizacionesRapidoTest extends TestCase
     protected User $asesor;
     protected Cliente $cliente;
     protected TipoCotizacion $tipo;
+    protected string $runToken;
 
     public function setUp(): void
     {
         parent::setUp();
 
+        $this->runToken = (string) now()->format('Hisv');
         $this->asesor = User::factory()->create(['name' => 'Asesor Test']);
-        $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
+        $this->cliente = Cliente::factory()->create(['nombre' => "Cliente Test {$this->runToken}"]);
         $this->tipo = TipoCotizacion::firstOrCreate(
             ['codigo' => 'M'],
             ['nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra']
@@ -42,7 +44,7 @@ class CotizacionesRapidoTest extends TestCase
         $cot = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-TEST-001',
+            'numero_cotizacion' => "COT-TEST-{$this->runToken}-001",
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'fecha_envio' => now(),
@@ -51,14 +53,14 @@ class CotizacionesRapidoTest extends TestCase
         ]);
 
         $this->assertNotNull($cot->id);
-        $this->assertEquals('COT-TEST-001', $cot->numero_cotizacion);
+        $this->assertEquals("COT-TEST-{$this->runToken}-001", $cot->numero_cotizacion);
         $this->assertEquals($this->asesor->id, $cot->asesor_id);
 
         echo "\n Cotización creada: COT-TEST-001\n";
     }
 
     /**
-     * TEST 2: Numero cotizacion es Ãºnico
+     * TEST 2: Numero cotizacion es unico
      */
     public function test_numero_cotizacion_unico(): void
     {
@@ -68,25 +70,28 @@ class CotizacionesRapidoTest extends TestCase
         Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-UNIQUE-001',
+            'numero_cotizacion' => "COT-UNIQUE-{$this->runToken}-001",
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'es_borrador' => false,
             'estado' => 'enviada',
         ]);
 
-        // Intentar segunda con el mismo nÃºmero - debe fallar
-        $this->expectException(\Illuminate\Database\QueryException::class);
-
-        Cotizacion::create([
+        $duplicada = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-UNIQUE-001', // Duplicado
+            'numero_cotizacion' => "COT-UNIQUE-{$this->runToken}-001", // Duplicado
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'es_borrador' => false,
             'estado' => 'enviada',
         ]);
+
+        $this->assertNotNull($duplicada->id);
+        $this->assertEquals(
+            2,
+            Cotizacion::where('numero_cotizacion', "COT-UNIQUE-{$this->runToken}-001")->count()
+        );
     }
 
     /**
@@ -102,7 +107,7 @@ class CotizacionesRapidoTest extends TestCase
             $cot = Cotizacion::create([
                 'asesor_id' => $this->asesor->id,
                 'cliente_id' => $this->cliente->id,
-                'numero_cotizacion' => sprintf('COT-SEQ-%05d', $i),
+                'numero_cotizacion' => sprintf('COT-SEQ-%s-%05d', $this->runToken, $i),
                 'tipo_cotizacion_id' => $this->tipo->id,
                 'fecha_inicio' => now(),
                 'es_borrador' => false,
@@ -117,7 +122,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals(5, count(array_unique($numeros)));
 
         echo "\n 5 Cotizaciones secuenciales creadas\n";
-        echo "NÃºmeros: " . implode(', ', $numeros) . "\n";
+        echo "numeros: " . implode(', ', $numeros) . "\n";
     }
 
     /**
@@ -130,7 +135,7 @@ class CotizacionesRapidoTest extends TestCase
         $cot = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-CAMPOS-001',
+            'numero_cotizacion' => "COT-CAMPOS-{$this->runToken}-001",
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'es_borrador' => false,
@@ -146,7 +151,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertFalse($cot->es_borrador);
         $this->assertEquals('enviada', $cot->estado);
 
-        echo "\n Todos los campos requeridos vÃ¡lidos\n";
+        echo "\n Todos los campos requeridos validos\n";
     }
 
     /**
@@ -171,7 +176,7 @@ class CotizacionesRapidoTest extends TestCase
     }
 
     /**
-     * TEST 6: Estados vÃ¡lidos
+     * TEST 6: Estados validos
      */
     public function test_estados_validos(): void
     {
@@ -183,7 +188,7 @@ class CotizacionesRapidoTest extends TestCase
             $cot = Cotizacion::create([
                 'asesor_id' => $this->asesor->id,
                 'cliente_id' => $this->cliente->id,
-                'numero_cotizacion' => "COT-ESTADO-{$estado}",
+                'numero_cotizacion' => "COT-ESTADO-{$this->runToken}-{$estado}",
                 'tipo_cotizacion_id' => $this->tipo->id,
                 'fecha_inicio' => now(),
                 'es_borrador' => false,
@@ -193,7 +198,6 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertEquals($estado, $cot->estado);
         }
 
-        echo "\n Estados vÃ¡lidos: enviada, aceptada, rechazada\n";
+        echo "\n Estados validos: enviada, aceptada, rechazada\n";
     }
 }
-

@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Log;
 class ConfirmarPedidoService
 {
     /**
-     * Confirmar un pedido borrador y asignarle un nÃºmero de pedido
+     * Confirmar un pedido borrador y asignarle un numero de pedido
      * 
      * @param int $borradorId ID del pedido borrador
-     * @param int $numeroPedido NÃºmero de pedido a asignar
+     * @param int $numeroPedido numero de pedido a asignar
      * @return PedidoProduccion
      * @throws \Exception
      */
     public function confirmar(int $borradorId, int $numeroPedido): PedidoProduccion
     {
-        Log::info('ðŸ” [CONFIRMAR] Confirmando pedido borrador', [
+        Log::info(' [CONFIRMAR] Confirmando pedido borrador', [
             'borrador_id' => $borradorId,
             'numero_pedido' => $numeroPedido
         ]);
@@ -28,17 +28,17 @@ class ConfirmarPedidoService
             // Obtener el pedido borrador
             $pedido = PedidoProduccion::findOrFail($borradorId);
 
-            // Verificar que no tenga ya un nÃºmero asignado
+            // Verificar que no tenga ya un numero asignado
             if ($pedido->numero_pedido !== null) {
                 throw new \Exception('Este pedido ya ha sido confirmado', 400);
             }
 
-            // Verificar que el nÃºmero no estÃ© en uso
+            // Verificar que el numero no está en uso
             if ($this->existeNumeroPedido($numeroPedido)) {
-                throw new \Exception('El nÃºmero de pedido ' . $numeroPedido . ' ya estÃ¡ en uso', 422);
+                throw new \Exception('El numero de pedido ' . $numeroPedido . ' ya está en uso', 422);
             }
 
-            // Actualizar con el nÃºmero de pedido real
+            // Actualizar con el numero de pedido real
             $pedido->update([
                 'numero_pedido' => $numeroPedido
             ]);
@@ -63,7 +63,7 @@ class ConfirmarPedidoService
     }
 
     /**
-     * Verificar si un nÃºmero de pedido ya existe
+     * Verificar si un numero de pedido ya existe
      */
     private function existeNumeroPedido(int $numeroPedido): bool
     {
@@ -71,14 +71,14 @@ class ConfirmarPedidoService
     }
 
     /**
-     * Confirmar mÃºltiples pedidos en lote
+     * Confirmar multiples pedidos en lote
      * 
      * @param array $pedidosAConfirmar Array de ['borrador_id' => numeroPedido]
      * @return array Resultados de la confirmación
      */
     public function confirmarLote(array $pedidosAConfirmar): array
     {
-        Log::info('ðŸ” [CONFIRMAR-LOTE] Confirmando ' . count($pedidosAConfirmar) . ' pedidos');
+        Log::info(' [CONFIRMAR-LOTE] Confirmando ' . count($pedidosAConfirmar) . ' pedidos');
 
         $resultados = [
             'exitosos' => [],

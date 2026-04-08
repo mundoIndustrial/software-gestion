@@ -2,16 +2,19 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Domain\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCaseContract;
 
-class PrepararCreacionProduccionPedidoUseCase
+use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Application\Pedidos\Exceptions\PrepararCreacionProduccionPedidoException;
+
+class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProduccionPedidoUseCaseContract
 {
     public function ejecutar(PrepararCreacionProduccionPedidoDTO $dto): array
     {
         $esEdicion = false;
         $cotizacion = null;
 
-        // Si estÃ¡ editando, obtener la cotización
+        // Si esta editando, obtener la cotizacion
         if ($dto->editarId) {
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
@@ -24,16 +27,16 @@ class PrepararCreacionProduccionPedidoUseCase
                 'logoCotizacion.prendas.fotos',
                 'logoCotizacion.prendas.prendaCot.fotos',
             ])->findOrFail($dto->editarId);
-            
+
             // Validar permisos
             if ($cotizacion->asesor_id !== $dto->usuarioId) {
-                throw new \Exception('No tienes permiso para editar esta cotización');
+                throw PrepararCreacionProduccionPedidoException::sinPermisoEditarCotizacion();
             }
 
             if (!$dto->allowEditarCotizacionCreada && !$cotizacion->es_borrador) {
-                throw new \Exception('No tienes permiso para editar este borrador');
+                throw PrepararCreacionProduccionPedidoException::sinPermisoEditarBorrador();
             }
-            
+
             $esEdicion = true;
         }
 
@@ -43,5 +46,13 @@ class PrepararCreacionProduccionPedidoUseCase
             'cotizacion' => $cotizacion
         ];
     }
-}
 
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {PrepararCreacionProduccionPedidoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
+}

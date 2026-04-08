@@ -7,12 +7,12 @@ use App\Models\PedidoProduccion;
 use App\Models\DesparChoParcialesModel;
 use App\Models\User;
 use App\Domain\Pedidos\Despacho\Services\DespachoEstadoService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 
 class DespachoEstadoAutomaticoTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private DespachoEstadoService $despachoEstadoService;
     private User $usuario;
@@ -310,3 +310,5 @@ class DespachoEstadoAutomaticoTest extends TestCase
         );
     }
 }
+
+

@@ -71,7 +71,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorEstado($query, $estado)
     {
-        return $query->where('estado_bodega', $estado);
+        return $query->where('bodega_detalles_talla.estado_bodega', $estado);
     }
 
     /**
@@ -79,7 +79,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorEstadoCostura($query, $estado)
     {
-        return $query->where('costura_estado', $estado);
+        return $query->where('bodega_detalles_talla.costura_estado', $estado);
     }
 
     /**
@@ -87,7 +87,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorEstadoEpp($query, $estado)
     {
-        return $query->where('epp_estado', $estado);
+        return $query->where('bodega_detalles_talla.epp_estado', $estado);
     }
 
     /**
@@ -95,7 +95,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorArea($query, $area)
     {
-        return $query->where('area', $area);
+        return $query->where('bodega_detalles_talla.area', $area);
     }
 
     /**
@@ -103,7 +103,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorNumeroPedido($query, $numeroPedido)
     {
-        return $query->where('numero_pedido', 'LIKE', "%{$numeroPedido}%");
+        return $query->where('bodega_detalles_talla.numero_pedido', 'LIKE', "%{$numeroPedido}%");
     }
 
     /**
@@ -111,7 +111,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorEmpresa($query, $empresa)
     {
-        return $query->where('empresa', 'LIKE', "%{$empresa}%");
+        return $query->where('bodega_detalles_talla.empresa', 'LIKE', "%{$empresa}%");
     }
 
     /**
@@ -119,7 +119,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorAsesor($query, $asesor)
     {
-        return $query->where('asesor', 'LIKE', "%{$asesor}%");
+        return $query->where('bodega_detalles_talla.asesor', 'LIKE', "%{$asesor}%");
     }
 
     /**
@@ -127,7 +127,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorPrenda($query, $prenda)
     {
-        return $query->where('prenda_nombre', 'LIKE', "%{$prenda}%");
+        return $query->where('bodega_detalles_talla.prenda_nombre', 'LIKE', "%{$prenda}%");
     }
 
     /**
@@ -135,7 +135,7 @@ class BodegaDetalleTalla extends Model
      */
     public function scopePorTalla($query, $talla)
     {
-        return $query->where('talla', 'LIKE', "%{$talla}%");
+        return $query->where('bodega_detalles_talla.talla', 'LIKE', "%{$talla}%");
     }
 
     /**
@@ -144,10 +144,10 @@ class BodegaDetalleTalla extends Model
     public function scopePorFechaPedido($query, $fechaDesde = null, $fechaHasta = null)
     {
         if ($fechaDesde) {
-            $query->whereDate('fecha_pedido', '>=', $fechaDesde);
+            $query->whereDate('bodega_detalles_talla.fecha_pedido', '>=', $fechaDesde);
         }
         if ($fechaHasta) {
-            $query->whereDate('fecha_pedido', '<=', $fechaHasta);
+            $query->whereDate('bodega_detalles_talla.fecha_pedido', '<=', $fechaHasta);
         }
         return $query;
     }
@@ -158,10 +158,10 @@ class BodegaDetalleTalla extends Model
     public function scopePorFechaEntrega($query, $fechaDesde = null, $fechaHasta = null)
     {
         if ($fechaDesde) {
-            $query->whereDate('fecha_entrega', '>=', $fechaDesde);
+            $query->whereDate('bodega_detalles_talla.fecha_entrega', '>=', $fechaDesde);
         }
         if ($fechaHasta) {
-            $query->whereDate('fecha_entrega', '<=', $fechaHasta);
+            $query->whereDate('bodega_detalles_talla.fecha_entrega', '<=', $fechaHasta);
         }
         return $query;
     }
@@ -171,8 +171,8 @@ class BodegaDetalleTalla extends Model
      */
     public function scopeRetrasados($query)
     {
-        return $query->whereDate('fecha_entrega', '<', now())
-                    ->where('estado_bodega', self::ESTADO_PENDIENTE);
+        return $query->whereDate('bodega_detalles_talla.fecha_entrega', '<', now())
+                    ->where('bodega_detalles_talla.estado_bodega', self::ESTADO_PENDIENTE);
     }
 
     /**
@@ -180,12 +180,19 @@ class BodegaDetalleTalla extends Model
      */
     public static function obtenerEstadisticasCostura()
     {
+        // Subquery para excluir pedidos anulados
+        $anuladosSubquery = function($subquery) {
+            $subquery->select('numero_pedido')
+                ->from('pedidos_produccion')
+                ->where('estado', 'Anulada');
+        };
+        
         return [
-            'total' => self::porArea(self::AREA_COSTURA)->count(),
-            'pendientes' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_PENDIENTE)->count(),
-            'entregados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ENTREGADO)->count(),
-            'anulados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ANULADO)->count(),
-            'retrasados' => self::porArea(self::AREA_COSTURA)->retrasados()->count(),
+            'total' => self::porArea(self::AREA_COSTURA)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'pendientes' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_PENDIENTE)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'entregados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ENTREGADO)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'anulados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ANULADO)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'retrasados' => self::porArea(self::AREA_COSTURA)->retrasados()->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
         ];
     }
 

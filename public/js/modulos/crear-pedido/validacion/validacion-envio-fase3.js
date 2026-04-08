@@ -86,7 +86,8 @@
      * 
      * @returns {Object} Datos formateados para servidor
      */
-    window.prepararDatosParaEnvio = function() {
+    window.prepararDatosParaEnvio = function(options) {
+        const soloConCantidades = !options || options.soloConCantidades !== false;
         const cotizacionId = document.getElementById('cotizacion_id_editable')?.value;
         const seccionCotizacion = document.getElementById('cotizacion_search_editable')?.closest('.form-section');
         const esSinCotizacion = seccionCotizacion && seccionCotizacion.style.display === 'none';
@@ -94,6 +95,7 @@
         const datos = {
             // Datos básicos
             cliente: document.getElementById('cliente_editable')?.value || '',
+            orden_compra: document.getElementById('orden_compra_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             numero_cotizacion: esSinCotizacion ? null : cotizacionId,
@@ -115,7 +117,7 @@
         // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
         // Usar gestor si existe, sino usar DOM
         if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
-            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas() || [];
             const fotosNuevasGestor = window.gestorPrendaSinCotizacion.fotosNuevas || {};
             const telasNuevasGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas || {};
 
@@ -139,8 +141,8 @@
                     }))
                 };
 
-                // Solo agregar si tiene cantidades
-                if (Object.keys(prendaParaEnviar.cantidades).length > 0) {
+                // Solo agregar si tiene cantidades (o si es modo borrador: incluir aunque estén vacías)
+                if (!soloConCantidades || Object.keys(prendaParaEnviar.cantidades).length > 0) {
                     datos.prendas.push(prendaParaEnviar);
                     datos.items.push(prendaParaEnviar);  //  AGREGADO: también en items
                 }
@@ -209,8 +211,8 @@
                     }
                 });
 
-                // Solo agregar si tiene cantidades
-                if (Object.keys(prenda.cantidades).length > 0) {
+                // Solo agregar si tiene cantidades (o si es modo borrador: incluir aunque estén vacías)
+                if (!soloConCantidades || Object.keys(prenda.cantidades).length > 0) {
                     datos.prendas.push(prenda);
                     datos.items.push(prenda);  //  AGREGADO: también en items
                 }
@@ -283,6 +285,10 @@
                 asesora: datos.asesora || '',
                 forma_de_pago: datos.forma_de_pago || '',
                 numero_cotizacion: datos.numero_cotizacion,
+                // Si estamos editando un borrador, enviar su ID para que el backend lo convierta
+                borrador_pedido_id: (window.modoEdicion && window.pedidoEditarId && window.pedidoEditarData?.pedido?.estado === 'Borrador')
+                    ? window.pedidoEditarId
+                    : null,
                 es_sin_cotizacion: datos.es_sin_cotizacion,
                 tipo_cotizacion: datos.tipo_cotizacion || null,
                 logo: datos.logo || null,
@@ -494,7 +500,7 @@
      * @param {string} endpoint - URL para enviar datos
      * @returns {Promise}
      */
-    window.procesarSubmitFormulario = function(endpoint = '/asesores/pedidos-editable/crear') {
+    window.procesarSubmitFormulario = function(endpoint = '/api/asesores/pedidos/crear') {
         // 1. VALIDAR
         const validacion = window.validarFormularioConGestores();
 
@@ -513,7 +519,7 @@
             .then(response => {
                 // Redirigir a lista de pedidos después de 2 segundos
                 setTimeout(() => {
-                    window.location.href = '/asesores/pedidos';
+                    window.location.href = '/api/asesores/pedidos';
                 }, 2000);
                 return response;
             });

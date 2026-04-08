@@ -7,8 +7,7 @@ use App\Application\Services\Asesores\DashboardService;
 
 /**
  * ObtenerEstadisticasDashboardUseCase
- * 
- * Use Case para obtener estadÃ­sticas generales del dashboard
+ * Use Case para obtener estadisticas generales del dashboard
  * Encapsula la lógica de obtener datos del dashboard
  */
 class ObtenerEstadisticasDashboardUseCase
@@ -19,7 +18,6 @@ class ObtenerEstadisticasDashboardUseCase
 
     public function ejecutar(ObtenerEstadisticasDashboardDTO $dto): array
     {
-        return $this->dashboardService->obtenerEstadisticas();
+        return $this->dashboardService->obtenerEstadisticas($dto->asesorId);
     }
 }
-

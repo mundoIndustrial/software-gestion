@@ -26,6 +26,44 @@ final class Talla
         return $this->valor;
     }
 
+    /**
+     * Alias legacy para compatibilidad.
+     */
+    public function obtenerValor(): string
+    {
+        return $this->valor();
+    }
+
+    public static function extraSmall(): self
+    {
+        return new self('XS');
+    }
+
+    public static function small(): self
+    {
+        return new self('S');
+    }
+
+    public static function medium(): self
+    {
+        return new self('M');
+    }
+
+    public static function large(): self
+    {
+        return new self('L');
+    }
+
+    public static function xlarge(): self
+    {
+        return new self('XL');
+    }
+
+    public static function xxlarge(): self
+    {
+        return new self('XXL');
+    }
+
     public function equals(self $other): bool
     {
         return $this->valor === $other->valor();

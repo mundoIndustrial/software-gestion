@@ -1,5 +1,5 @@
 /**
- * 🔌 Módulo de Servicio - Comunicación con Servidor
+ *  Módulo de Servicio - Comunicación con Servidor
  * Responsabilidad: Obtener datos del servidor de forma segura
  */
 
@@ -10,14 +10,14 @@ class PrendaEditorService {
     static async obtenerDelServidor(prendaId, pedidoId) {
         // Validar parámetros
         if (!pedidoId || !prendaId) {
-            console.warn('[📡 Service] Parámetros inválidos:', { prendaId, pedidoId });
+            console.warn('[ Service] Parámetros inválidos:', { prendaId, pedidoId });
             return null;
         }
         
         try {
             const endpoint = `/pedidos-public/${pedidoId}/factura-datos`;
             
-            console.log('[📡 Service]  Obteniendo desde:', endpoint);
+            console.log('[ Service]  Obteniendo desde:', endpoint);
             
             const response = await fetch(endpoint, {
                 headers: { 'Accept': 'application/json' }
@@ -39,7 +39,7 @@ class PrendaEditorService {
             );
             
             if (!prenda) {
-                console.warn('[📡 Service] Prenda no encontrada en servidor');
+                console.warn('[ Service] Prenda no encontrada en servidor');
                 return null;
             }
             
@@ -47,7 +47,7 @@ class PrendaEditorService {
             return prenda;
             
         } catch (error) {
-            console.error('[📡 Service] Error:', error.message);
+            console.error('[ Service] Error:', error.message);
             return null;
         }
     }
@@ -58,7 +58,7 @@ class PrendaEditorService {
     static debeObtenerDelServidor(prenda) {
         // Si ya se trajo de BD (ej: adapter de pedidos), no re-fetch
         if (prenda._fromDB) {
-            console.log('[📡 Service] Datos ya vienen de BD (_fromDB=true), skip fetch');
+            console.log('[ Service] Datos ya vienen de BD (_fromDB=true), skip fetch');
             return false;
         }
 
@@ -77,16 +77,16 @@ class PrendaEditorService {
             const pedidoId = prenda.pedido_id || prenda.pedidoId;
             const prendaId = prenda.id || prenda.prenda_pedido_id;
             
-            console.log('[📡 Service] Intentando obtener del servidor...');
+            console.log('[ Service] Intentando obtener del servidor...');
             const prendaCompleta = await this.obtenerDelServidor(prendaId, pedidoId);
             
             if (prendaCompleta) {
                 return prendaCompleta;
             }
             
-            console.log('[📡 Service] Fallback a datos locales');
+            console.log('[ Service] Fallback a datos locales');
         } else {
-            console.log('[📡 Service] Usando datos locales (pedido nuevo/sin guardar)');
+            console.log('[ Service] Usando datos locales (pedido nuevo/sin guardar)');
         }
         
         return prenda;

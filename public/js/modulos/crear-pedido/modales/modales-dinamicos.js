@@ -33,10 +33,10 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
     const actualizarImagen = () => {
         const imagenesActuales = window.imagenesPrendaStorage.obtenerImagenes();
         if (imagenesActuales.length > 0 && indiceActual < imagenesActuales.length) {
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
-                console.error('[ModalDinamico] ❌ previewUrl inválido:', imagenActual.previewUrl);
+                console.error('[ModalDinamico]  previewUrl inválido:', imagenActual.previewUrl);
                 img.style.cssText = 'width: 90%; height: 200px; border-radius: 8px; object-fit: contain; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
                 img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
             } else {
@@ -64,10 +64,10 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
         if (imagenesActuales.length > 0) {
             indiceActual = (indiceActual - 1 + imagenesActuales.length) % imagenesActuales.length;
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
-                console.error('[ModalDinamico] ❌ previewUrl inválido en anterior:', imagenActual.previewUrl);
+                console.error('[ModalDinamico]  previewUrl inválido en anterior:', imagenActual.previewUrl);
                 img.style.cssText = 'width: 90%; height: 200px; border-radius: 8px; object-fit: contain; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
                 img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
             } else {
@@ -111,10 +111,10 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
         if (imagenesActuales.length > 0) {
             indiceActual = (indiceActual + 1) % imagenesActuales.length;
             
-            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            //  CRÍTICO: Validar previewUrl antes de asignar
             const imagenActual = imagenesActuales[indiceActual];
             if (!imagenActual.previewUrl || imagenActual.previewUrl === 'undefined' || imagenActual.previewUrl === undefined) {
-                console.error('[ModalDinamico] ❌ previewUrl inválido en siguiente:', imagenActual.previewUrl);
+                console.error('[ModalDinamico]  previewUrl inválido en siguiente:', imagenActual.previewUrl);
                 img.style.cssText = 'width: 90%; height: 200px; border-radius: 8px; object-fit: contain; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
                 img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
             } else {

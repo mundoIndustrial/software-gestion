@@ -12,7 +12,6 @@ use App\Models\TelaPrenda;
 use App\Models\User;
 use App\Application\Services\PedidoPrendaService;
 use App\Domain\PedidoProduccion\Services\ColorTelaService;
-use App\Domain\PedidoProduccion\Services\ImagenMapperService;
 use Illuminate\Database\Seeder;
 
 class TestColorTelaSeeder extends Seeder
@@ -20,7 +19,7 @@ class TestColorTelaSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🧪 TEST: Crear Colores y Telas Automáticamente\n";
+        echo " TEST: Crear Colores y Telas Automáticamente\n";
         echo "========================================\n\n";
 
         try {

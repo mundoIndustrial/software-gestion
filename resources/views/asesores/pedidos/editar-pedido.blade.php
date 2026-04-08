@@ -2,6 +2,8 @@
 
 @include('components.modal-imagen')
 
+@section('body-class', 'crear-pedido-view')
+
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
@@ -116,7 +118,7 @@
                             return false;
                         }
                     } else {
-                        console.log('⏳ [FACTURA-EDITABLE] Esperando datos...', {
+                        console.log(' [FACTURA-EDITABLE] Esperando datos...', {
                             tieneGenerarHTMLFactura: typeof window.generarHTMLFactura === 'function',
                             tienePedidoEdicionData: !!window.pedidoEdicionData,
                             tienePrendas: !!window.pedidoEdicionData?.pedido?.prendas
@@ -151,5 +153,4 @@
     <!-- Componente para editar prendas con procesos desde API -->
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
 @endpush
-
 

@@ -61,7 +61,7 @@ Funciones utilitarias y helpers:
    - toggleGaleria()
 ```
 
-## Tamaño y Rendimiento
+## tamano y Rendimiento
 
 | Archivo | Líneas | Propósito |
 |---------|--------|----------|

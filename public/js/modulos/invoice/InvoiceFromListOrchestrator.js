@@ -12,8 +12,8 @@ class InvoiceFromListOrchestrator {
     init() {
         // No verificar módulos al inicio - esperar a que se necesiten
         // Hacer función principal disponible globalmente
-        window.verFacturaDelPedido = this.verFacturaDelPedido.bind(this);
-        window.verRecibosDelPedido = this.verRecibosDelPedido.bind(this);
+        globalThis.verFacturaDelPedido = this.verFacturaDelPedido.bind(this);
+        globalThis.verRecibosDelPedido = this.verRecibosDelPedido.bind(this);
     }
 
     verificarModulos(modulosNecesarios = null) {
@@ -27,7 +27,7 @@ class InvoiceFromListOrchestrator {
             'componentLoader'
         ];
 
-        const modulosFaltantes = modulosRequeridos.filter(modulo => !window[modulo]);
+        const modulosFaltantes = modulosRequeridos.filter(modulo => !globalThis[modulo]);
 
         if (modulosFaltantes.length > 0) {
             console.log('[InvoiceFromList] Esperando módulos, faltan:', modulosFaltantes);
@@ -72,8 +72,8 @@ class InvoiceFromListOrchestrator {
             console.log('[InvoiceFromList] Iniciando vista de factura:', { numeroPedido, pedidoId });
             
             // Usar el servicio de datos para obtener la información
-            if (window.invoiceDataFetcher) {
-                await window.invoiceDataFetcher.verFacturaDelPedido(numeroPedido, pedidoId);
+            if (globalThis.invoiceDataFetcher) {
+                await globalThis.invoiceDataFetcher.verFacturaDelPedido(numeroPedido, pedidoId);
             } else {
                 throw new Error('Servicio de datos no disponible');
             }
@@ -81,8 +81,8 @@ class InvoiceFromListOrchestrator {
         } catch (error) {
             console.error('[InvoiceFromList] Error en vista de factura:', error);
             
-            if (window.notificationManager) {
-                window.notificationManager.mostrarError(
+            if (globalThis.notificationManager) {
+                globalThis.notificationManager.mostrarError(
                     'Error', 
                     'No se pudo cargar la factura: ' + error.message
                 );
@@ -106,8 +106,8 @@ class InvoiceFromListOrchestrator {
             console.log('[InvoiceFromList] Iniciando vista de recibos:', { numeroPedido, pedidoId });
             
             // Usar el servicio de datos para obtener la información
-            if (window.invoiceDataFetcher) {
-                await window.invoiceDataFetcher.verRecibosDelPedido(numeroPedido, pedidoId, prendasIndex);
+            if (globalThis.invoiceDataFetcher) {
+                await globalThis.invoiceDataFetcher.verRecibosDelPedido(numeroPedido, pedidoId, prendasIndex);
             } else {
                 throw new Error('Servicio de datos no disponible');
             }
@@ -115,8 +115,8 @@ class InvoiceFromListOrchestrator {
         } catch (error) {
             console.error('[InvoiceFromList] Error en vista de recibos:', error);
             
-            if (window.notificationManager) {
-                window.notificationManager.mostrarError(
+            if (globalThis.notificationManager) {
+                globalThis.notificationManager.mostrarError(
                     'Error', 
                     'No se pudieron cargar los recibos: ' + error.message
                 );
@@ -128,7 +128,7 @@ class InvoiceFromListOrchestrator {
      * Verifica si módulos específicos están cargados
      */
     verificarModulosEspecificos(modulosRequeridos) {
-        const modulosFaltantes = modulosRequeridos.filter(modulo => !window[modulo]);
+        const modulosFaltantes = modulosRequeridos.filter(modulo => !globalThis[modulo]);
         
         if (modulosFaltantes.length > 0) {
             console.log('[InvoiceFromList] Módulos faltantes para esta operación:', modulosFaltantes);
@@ -146,33 +146,33 @@ class InvoiceFromListOrchestrator {
         
         try {
             // Intentar inicializar cada módulo manualmente
-            if (!window.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
-                window.invoiceDataFetcher = new InvoiceDataFetcher();
+            if (!globalThis.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
+                globalThis.invoiceDataFetcher = new InvoiceDataFetcher();
                 console.log('[InvoiceFromList]  InvoiceDataFetcher inicializado manualmente');
             }
             
-            if (!window.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
-                window.invoiceModalManager = new InvoiceModalManager();
+            if (!globalThis.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
+                globalThis.invoiceModalManager = new InvoiceModalManager();
                 console.log('[InvoiceFromList]  InvoiceModalManager inicializado manualmente');
             }
             
-            if (!window.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
-                window.receiptsModalManager = new ReceiptsModalManager();
+            if (!globalThis.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
+                globalThis.receiptsModalManager = new ReceiptsModalManager();
                 console.log('[InvoiceFromList]  ReceiptsModalManager inicializado manualmente');
             }
             
-            if (!window.loadingManager && typeof LoadingManager !== 'undefined') {
-                window.loadingManager = new LoadingManager();
+            if (!globalThis.loadingManager && typeof LoadingManager !== 'undefined') {
+                globalThis.loadingManager = new LoadingManager();
                 console.log('[InvoiceFromList]  LoadingManager inicializado manualmente');
             }
             
-            if (!window.notificationManager && typeof NotificationManager !== 'undefined') {
-                window.notificationManager = new NotificationManager();
+            if (!globalThis.notificationManager && typeof NotificationManager !== 'undefined') {
+                globalThis.notificationManager = new NotificationManager();
                 console.log('[InvoiceFromList]  NotificationManager inicializado manualmente');
             }
             
-            if (!window.componentLoader && typeof ComponentLoader !== 'undefined') {
-                window.componentLoader = new ComponentLoader();
+            if (!globalThis.componentLoader && typeof ComponentLoader !== 'undefined') {
+                globalThis.componentLoader = new ComponentLoader();
                 console.log('[InvoiceFromList]  ComponentLoader inicializado manualmente');
             }
             
@@ -190,12 +190,12 @@ class InvoiceFromListOrchestrator {
     getEstadoModulos() {
         return {
             modulosCargados: this.modulosCargados,
-            invoiceDataFetcher: !!window.invoiceDataFetcher,
-            invoiceModalManager: !!window.invoiceModalManager,
-            receiptsModalManager: !!window.receiptsModalManager,
-            loadingManager: !!window.loadingManager,
-            notificationManager: !!window.notificationManager,
-            componentLoader: !!window.componentLoader
+            invoiceDataFetcher: !!globalThis.invoiceDataFetcher,
+            invoiceModalManager: !!globalThis.invoiceModalManager,
+            receiptsModalManager: !!globalThis.receiptsModalManager,
+            loadingManager: !!globalThis.loadingManager,
+            notificationManager: !!globalThis.notificationManager,
+            componentLoader: !!globalThis.componentLoader
         };
     }
 
@@ -216,35 +216,35 @@ class InvoiceFromListOrchestrator {
         console.warn('[InvoiceFromList] Creando fallbacks básicos - módulos no disponibles');
         
         // Fallbacks básicos si los módulos no están disponibles
-        window.verFacturaDelPedido = function(numeroPedido, pedidoId) {
+        globalThis.verFacturaDelPedido = function(numeroPedido, pedidoId) {
             console.warn('[InvoiceFromList] Vista de factura no disponible - módulo InvoiceDataFetcher no cargado');
             alert('Error: Sistema de vista de factura no cargado. Por favor recarga la página.');
         };
         
-        window.verRecibosDelPedido = function(numeroPedido, pedidoId, prendasIndex) {
+        globalThis.verRecibosDelPedido = function(numeroPedido, pedidoId, prendasIndex) {
             console.warn('[InvoiceFromList] Vista de recibos no disponible - módulo InvoiceDataFetcher no cargado');
             alert('Error: Sistema de recibos no cargado. Por favor recarga la página.');
         };
         
-        window.crearModalFacturaDesdeListaPedidos = function(datos) {
+        globalThis.crearModalFacturaDesdeListaPedidos = function(datos) {
             console.warn('[InvoiceFromList] Modal de factura no disponible - módulo InvoiceModalManager no cargado');
             alert('Error: Modal de factura no disponible. Por favor recarga la página.');
         };
         
-        window.crearModalRecibosDesdeListaPedidos = function(datos, prendasIndex) {
+        globalThis.crearModalRecibosDesdeListaPedidos = function(datos, prendasIndex) {
             console.warn('[InvoiceFromList] Modal de recibos no disponible - módulo ReceiptsModalManager no cargado');
             alert('Error: Modal de recibos no disponible. Por favor recarga la página.');
         };
         
-        window.mostrarCargando = function(mensaje) {
+        globalThis.mostrarCargando = function(mensaje) {
             console.warn('[InvoiceFromList] Loading no disponible - módulo LoadingManager no cargado');
         };
         
-        window.ocultarCargando = function() {
+        globalThis.ocultarCargando = function() {
             console.warn('[InvoiceFromList] Loading no disponible - módulo LoadingManager no cargado');
         };
         
-        window.mostrarErrorNotificacion = function(titulo, mensaje) {
+        globalThis.mostrarErrorNotificacion = function(titulo, mensaje) {
             console.warn('[InvoiceFromList] Notificaciones no disponibles - módulo NotificationManager no cargado');
             alert(`${titulo}: ${mensaje}`);
         };
@@ -259,14 +259,14 @@ class InvoiceFromListOrchestrator {
         
         // Verificar scripts cargados
         const scripts = document.querySelectorAll('script[src*="modulos/invoice"]');
-        console.log('\n📦 Scripts encontrados:', scripts.length);
+        console.log('\n Scripts encontrados:', scripts.length);
         
         scripts.forEach((script, index) => {
             console.log(`  ${index + 1}. ${script.src}`);
         });
         
         // Verificar variables globales
-        console.log('\n🔍 Variables globales:');
+        console.log('\n Variables globales:');
         const modulos = [
             'InvoiceDataFetcher',
             'InvoiceModalManager',
@@ -277,8 +277,8 @@ class InvoiceFromListOrchestrator {
         ];
         
         modulos.forEach(modulo => {
-            const claseDisponible = typeof window[modulo] !== 'undefined';
-            const instanciaDisponible = !!window[modulo.charAt(0).toLowerCase() + modulo.slice(1)];
+            const claseDisponible = typeof globalThis[modulo] !== 'undefined';
+            const instanciaDisponible = !!globalThis[modulo.charAt(0).toLowerCase() + modulo.slice(1)];
             
             console.log(`  ${modulo}:`);
             console.log(`    Clase: ${claseDisponible ? '' : ''}`);
@@ -286,17 +286,17 @@ class InvoiceFromListOrchestrator {
         });
         
         // Verificar orquestador
-        console.log('\n🎯 Orquestador:');
-        console.log(`  InvoiceFromListOrchestrator: ${typeof window.InvoiceFromListOrchestrator !== 'undefined' ? '' : ''}`);
-        console.log(`  invoiceFromListOrchestrator: ${!!window.invoiceFromListOrchestrator ? '' : ''}`);
+        console.log('\n Orquestador:');
+        console.log(`  InvoiceFromListOrchestrator: ${typeof globalThis.InvoiceFromListOrchestrator !== 'undefined' ? '' : ''}`);
+        console.log(`  invoiceFromListOrchestrator: ${!!globalThis.invoiceFromListOrchestrator ? '' : ''}`);
         
-        if (window.invoiceFromListOrchestrator) {
-            const estado = window.invoiceFromListOrchestrator.getEstadoModulos();
+        if (globalThis.invoiceFromListOrchestrator) {
+            const estado = globalThis.invoiceFromListOrchestrator.getEstadoModulos();
             console.log('  Estado:', estado);
         }
         
         // Verificar funciones globales
-        console.log('\n🛠️ Funciones globales:');
+        console.log('\n Funciones globales:');
         const funciones = [
             'verFacturaDelPedido',
             'verRecibosDelPedido',
@@ -308,7 +308,7 @@ class InvoiceFromListOrchestrator {
         ];
         
         funciones.forEach(funcion => {
-            console.log(`  ${funcion}: ${typeof window[funcion] !== 'undefined' ? '' : ''}`);
+            console.log(`  ${funcion}: ${typeof globalThis[funcion] !== 'undefined' ? '' : ''}`);
         });
         
         console.log('\n=== FIN DEL DIAGNÓSTICO ===\n');
@@ -321,33 +321,33 @@ class InvoiceFromListOrchestrator {
         console.log('[InvoiceFromList] Forzando carga de módulos...');
         
         // Intentar inicializar manualmente cada módulo
-        if (!window.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
-            window.invoiceDataFetcher = new InvoiceDataFetcher();
+        if (!globalThis.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
+            globalThis.invoiceDataFetcher = new InvoiceDataFetcher();
             console.log(' InvoiceDataFetcher forzado');
         }
         
-        if (!window.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
-            window.invoiceModalManager = new InvoiceModalManager();
+        if (!globalThis.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
+            globalThis.invoiceModalManager = new InvoiceModalManager();
             console.log(' InvoiceModalManager forzado');
         }
         
-        if (!window.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
-            window.receiptsModalManager = new ReceiptsModalManager();
+        if (!globalThis.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
+            globalThis.receiptsModalManager = new ReceiptsModalManager();
             console.log(' ReceiptsModalManager forzado');
         }
         
-        if (!window.loadingManager && typeof LoadingManager !== 'undefined') {
-            window.loadingManager = new LoadingManager();
+        if (!globalThis.loadingManager && typeof LoadingManager !== 'undefined') {
+            globalThis.loadingManager = new LoadingManager();
             console.log(' LoadingManager forzado');
         }
         
-        if (!window.notificationManager && typeof NotificationManager !== 'undefined') {
-            window.notificationManager = new NotificationManager();
+        if (!globalThis.notificationManager && typeof NotificationManager !== 'undefined') {
+            globalThis.notificationManager = new NotificationManager();
             console.log(' NotificationManager forzado');
         }
         
-        if (!window.componentLoader && typeof ComponentLoader !== 'undefined') {
-            window.componentLoader = new ComponentLoader();
+        if (!globalThis.componentLoader && typeof ComponentLoader !== 'undefined') {
+            globalThis.componentLoader = new ComponentLoader();
             console.log(' ComponentLoader forzado');
         }
         
@@ -358,26 +358,26 @@ class InvoiceFromListOrchestrator {
 
 // Inicializar el orquestador
 document.addEventListener('DOMContentLoaded', () => {
-    window.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
+    globalThis.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
 });
 
 // También permitir inicialización manual
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
+        globalThis.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
     });
 } else {
-    window.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
+    globalThis.invoiceFromListOrchestrator = new InvoiceFromListOrchestrator();
 }
 
 // Inicialización simple
-if (typeof window !== 'undefined') {
+if (typeof globalThis !== 'undefined') {
     const orchestrator = new InvoiceFromListOrchestrator();
     
     // Hacer disponible globalmente para debugging
-    window.invoiceFromListOrchestrator = orchestrator;
-    window.diagnosticarInvoiceFromList = () => orchestrator.diagnosticarSistema();
-    window.forzarModulosInvoiceFromList = () => orchestrator.forzarCargaModulos();
-    window.recargarModulosInvoiceFromList = () => orchestrator.recargarModulos();
-    window.estadoModulosInvoiceFromList = () => orchestrator.getEstadoModulos();
+    globalThis.invoiceFromListOrchestrator = orchestrator;
+    globalThis.diagnosticarInvoiceFromList = () => orchestrator.diagnosticarSistema();
+    globalThis.forzarModulosInvoiceFromList = () => orchestrator.forzarCargaModulos();
+    globalThis.recargarModulosInvoiceFromList = () => orchestrator.recargarModulos();
+    globalThis.estadoModulosInvoiceFromList = () => orchestrator.getEstadoModulos();
 }

@@ -19,9 +19,6 @@ class PrendaTelaFotoCot extends Model
         'ruta_webp',
         'ruta_miniatura',
         'orden',
-        'ancho',
-        'alto',
-        'tamaño',
     ];
 
     protected $casts = [
@@ -29,9 +26,6 @@ class PrendaTelaFotoCot extends Model
         'prenda_tela_cot_id' => 'integer',
         'tela_index' => 'integer',
         'orden' => 'integer',
-        'ancho' => 'integer',
-        'alto' => 'integer',
-        'tamaño' => 'integer',
     ];
 
     /**

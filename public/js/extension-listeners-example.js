@@ -1,5 +1,5 @@
 /**
- * 📡 EJEMPLO: Listeners de Chrome Extension
+ *  EJEMPLO: Listeners de Chrome Extension
  * 
  * Uso OPCIONAL: Incluir este archivo solo si tu proyecto tiene listeners de Chrome Extension.
  * 

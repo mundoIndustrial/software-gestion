@@ -29,7 +29,7 @@ function generarHTMLDatosPrenda(prenda) {
         // Tallas Dama
         if (prenda.tallas_dama && prenda.tallas_dama.length > 0) {
             html += '<div>';
-            html += '<strong style="color: #1e40af; font-size: 11px;">👗 DAMA</strong><br>';
+            html += '<strong style="color: #1e40af; font-size: 11px;"> DAMA</strong><br>';
             prenda.tallas_dama.forEach(t => {
                 html += `<div style="font-size: 10px; color: #475569; padding: 4px 0;">• ${t.talla}: <strong>${t.cantidad}</strong> prendas</div>`;
             });
@@ -99,7 +99,7 @@ function generarHTMLDatosPrenda(prenda) {
                     console.log(`[generarHTMLDatosPrenda] Foto ${fotoIdx}: ${urlFoto}`);
                     
                     if (urlFoto) {
-                        html += `<img src="${urlFoto}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.open('${urlFoto}', '_blank')" title="Ver foto">`;
+                        html += `<img src="${urlFoto}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer;" onclick="globalThis.open('${urlFoto}', '_blank')" title="Ver foto">`;
                     }
                 });
                 html += '</div>';
@@ -142,8 +142,8 @@ function generarHTMLDatosPrenda(prenda) {
     return html;
 }
 
-// Exponer en window para acceso global
-window.generarHTMLDatosPrenda = generarHTMLDatosPrenda;
+// Exponer en globalThis para acceso global
+globalThis.generarHTMLDatosPrenda = generarHTMLDatosPrenda;
 
 /**
  * Obtener pedidoId del contexto (varias fuentes)
@@ -154,7 +154,7 @@ function obtenerPedidoId() {
     if (id) return id;
     
     // 2. Del URL (si estamos en página de edición)
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     id = urlParams.get('editar');
     if (id) return id;
     
@@ -209,7 +209,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     if (pedidoId && prenda.id) {
         try {
-            const url = `/asesores/pedidos/${pedidoId}/factura-datos`;
+            const url = `/api/asesores/pedidos/${pedidoId}/factura-datos`;
             console.log(' [FETCH] Llamando a URL:', url);
             console.log(' [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
 
@@ -369,8 +369,8 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
             }
             
             // Actualizar en gestor local
-            if (window.gestorPrendaSinCotizacion) {
-                window.gestorPrendaSinCotizacion.actualizar(prendaIndex, datosModificados);
+            if (globalThis.gestorPrendaSinCotizacion) {
+                globalThis.gestorPrendaSinCotizacion.actualizar(prendaIndex, datosModificados);
 
             }
             
@@ -396,8 +396,8 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     });
 }
 
-// Exponer en window para acceso global
-window.abrirEditarPrendaModal = abrirEditarPrendaModal;
+// Exponer en globalThis para acceso global
+globalThis.abrirEditarPrendaModal = abrirEditarPrendaModal;
 
 /**
  * Convertir factura a editable
@@ -584,7 +584,7 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
 
     
     try {
-        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prendas/${prendaId}`, {
+        const response = await fetch(`/api/asesores/pedidos-produccion/${pedidoId}/prendas/${prendaId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -617,12 +617,12 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
 function reRenderizarTarjetaPrendaEditada(prendaIndex) {
 
     
-    if (!window.gestorPrendaSinCotizacion || !window.generarTarjetaPrendaReadOnly) {
+    if (!globalThis.gestorPrendaSinCotizacion || !globalThis.generarTarjetaPrendaReadOnly) {
 
         return;
     }
     
-    const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+    const prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
     if (!prenda) {
 
         return;
@@ -636,7 +636,7 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     }
     
     // Re-generar HTML
-    const nuevoHTML = window.generarTarjetaPrendaReadOnly(prenda, prendaIndex);
+    const nuevoHTML = globalThis.generarTarjetaPrendaReadOnly(prenda, prendaIndex);
     const nuevoElemento = document.createElement('div');
     nuevoElemento.innerHTML = nuevoHTML;
     
@@ -644,6 +644,4 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     tarjeta.replaceWith(nuevoElemento.firstElementChild);
 
 }
-
-
 

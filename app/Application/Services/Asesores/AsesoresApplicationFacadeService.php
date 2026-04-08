@@ -4,7 +4,6 @@ namespace App\Application\Services\Asesores;
 
 /**
  * AsesoresApplicationFacadeService
- * 
  * Facade que agrupa todos los servicios de Asesores
  * Simplifica inyección de dependencias en controller
  * Patrón: Facade + Service Locator

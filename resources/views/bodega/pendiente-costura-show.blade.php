@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="text-xl sm:text-2xl font-semibold text-black">Pendientes de Costura</h1>
                     <p class="text-xs sm:text-sm text-black mt-1">
-                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> | 
+                        N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> |
                         Cliente: <span class="font-semibold text-black">{{ $pedido['cliente'] ?? 'No especificado' }}</span>
                         @if($pedido['asesor'])
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('gestion-bodega.pendientes-costura') }}" 
+                    <a href="{{ route('gestion-bodega.pendientes-costura') }}"
                        class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
                         ← Volver a Pendientes
                     </a>
@@ -178,6 +178,11 @@
                                                                 <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                             @endif
                                                         </div>
+                                                        @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
+                                                            <div class="text-slate-600 text-xs mb-2 italic">
+                                                                {{ $desc['descripcion'] }}
+                                                            </div>
+                                                        @endif
                                                         @if($tela || ($color && strtolower($color) !== 'sin color'))
                                                             <div class="text-black text-xs mb-1">
                                                                 @if($tela && $color && strtolower($color) !== 'sin color')
@@ -393,11 +398,18 @@
                                                 </td>
                                                 @endif
 
-                                                @if($indexItem === 0)
-                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ count($grupo) }}" style="width: 6%;">
-                                                    {{ $generoFallback ? ucfirst(strtolower($generoFallback)) : '—' }}
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">
+                                                    @php
+                                                        $generoDisplay = '';
+                                                        if (!empty($item['genero'])) {
+                                                            $generoDisplay = $item['genero'];
+                                                        } elseif ($generoFallback) {
+                                                            $generoDisplay = $generoFallback;
+                                                        }
+                                                        $generoDisplay = (is_string($generoDisplay) && strtoupper(trim($generoDisplay)) === 'GENERICO') ? '' : $generoDisplay;
+                                                    @endphp
+                                                    {{ $generoDisplay ? ucfirst(strtolower($generoDisplay)) : '—' }}
                                                 </td>
-                                                @endif
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
                                                     {{ $item['talla'] ?? '—' }}
                                                 </td>
@@ -499,7 +511,7 @@
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -520,7 +532,7 @@
             
             @if(!($esReadOnly ?? false))
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
+                <label for="notasNuevaContent" class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
                     id="notasNuevaContent"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
@@ -573,18 +585,18 @@ function cerrarModalFactura() {
  * Logs de diagnóstico para el diseño de la tabla - Costura
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-COSTURA] Iniciando análisis de diseño...');
+    console.log(' [DIAGNÓSTICO-COSTURA] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    console.log(`📏 [DIAGNÓSTICO-COSTURA] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    console.log(` [DIAGNÓSTICO-COSTURA] Viewport: ${viewportWidth}x${viewportHeight}px`);
     
     // Verificar contenedor principal
     const mainContainer = document.querySelector('.min-h-screen');
     if (mainContainer) {
         const mainRect = mainContainer.getBoundingClientRect();
-        console.log(`📦 [DIAGNÓSTICO-COSTURA] Contenedor principal:`, {
+        console.log(` [DIAGNÓSTICO-COSTURA] Contenedor principal:`, {
             width: mainRect.width,
             height: mainRect.height,
             computedHeight: window.getComputedStyle(mainContainer).height,
@@ -613,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (table) {
         const tableRect = table.getBoundingClientRect();
         const tableStyle = window.getComputedStyle(table);
-        console.log(`📊 [DIAGNÓSTICO-COSTURA] Tabla:`, {
+        console.log(` [DIAGNÓSTICO-COSTURA] Tabla:`, {
             width: tableRect.width,
             height: tableRect.height,
             computedWidth: tableStyle.width,
@@ -629,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const tableContainer = document.querySelector('.overflow-x-auto');
         if (tableContainer) {
-            console.log(`🔄 [DIAGNÓSTICO-COSTURA] Estado del scroll:`, {
+            console.log(` [DIAGNÓSTICO-COSTURA] Estado del scroll:`, {
                 hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
                 hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
                 scrollWidth: tableContainer.scrollWidth,

@@ -1,6 +1,6 @@
 #  GUÍA RÁPIDA DE INSTALACIÓN - MÓDULO BODEGA
 
-## ⚡ 5 Pasos para Poner en Funcionamiento
+##  5 Pasos para Poner en Funcionamiento
 
 ### Paso 1: Registrar las Rutas
 
@@ -135,7 +135,7 @@ DB::table('recibo_prendas')->count(); // Ver cantidad de registros
 
 ---
 
-## 🐛 Solucionar Problemas Comunes
+## Solucionar Problemas Comunes
 
 ### Error: "Undefined variable: pedidosAgrupados"
 
@@ -195,7 +195,7 @@ npm run build
 
 ---
 
-## 📝 Archivos Necesarios
+##  Archivos Necesarios
 
 Verifica que existan estos archivos:
 
@@ -256,7 +256,7 @@ Esto crea 6 pedidos con múltiples items.
 
 ---
 
-## 🔐 Configuración de Seguridad
+##  Configuración de Seguridad
 
 ### Middleware Recomendado
 
@@ -292,7 +292,7 @@ Si encuentras problemas:
 
 ---
 
-## ✨ ¡Listo!
+##  ¡Listo!
 
 Tu módulo de bodega debe estar funcional. Si no es así, revisa el checklist anterior.
 

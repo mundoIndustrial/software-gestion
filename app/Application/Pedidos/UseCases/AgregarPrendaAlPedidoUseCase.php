@@ -4,25 +4,18 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaAlPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Agregar Prenda al Pedido
- * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
- * 
- * Antes: 45 lÃ­neas (7 lÃ­neas de lógica + 38 de validación)
- * DespuÃ©s: 32 lÃ­neas (solo lógica de negocio)
+ * Antes: 45 lineas (7 lineas de lógica + 38 de validación)
+ * despues: 32 lineas (solo lógica de negocio)
  * Reducción: 29%
  */
 final class AgregarPrendaAlPedidoUseCase
 {
     use ManejaPedidosUseCase;
-
-    public function __construct(
-        private PedidoRepository $pedidoRepository,
-    ) {}
 
     public function ejecutar(AgregarPrendaAlPedidoDTO $dto)
     {
@@ -35,12 +28,12 @@ final class AgregarPrendaAlPedidoUseCase
         $pedido = \App\Models\PedidoProduccion::findOrFail($dto->pedidoId);
 
         // Crear nueva prenda con SOLO campos reales de prendas_pedido
-        // Nota: Variantes, colores, telas, tallas se agregan despuÃ©s en tablas relacionadas
+        // Nota: Variantes, colores, telas, tallas se agregan despues en tablas relacionadas
         $prenda = $pedido->prendas()->create([
             'nombre_prenda' => $dto->nombrePrenda,
             'descripcion' => $dto->descripcion,
             'de_bodega' => $dto->deBodega,
-        ]);;
+        ]);
 
         Log::info('[AgregarPrendaAlPedidoUseCase] Prenda agregada exitosamente', [
             'pedido_id' => $pedido->id,
@@ -51,5 +44,4 @@ final class AgregarPrendaAlPedidoUseCase
         return $prenda;
     }
 }
-
 

@@ -37,6 +37,18 @@ class PrendaPedidoTalla extends Model
         'cantidad' => 'integer',
     ];
 
+    public function setGeneroAttribute($value): void
+    {
+        $normalized = strtoupper((string) $value);
+        $normalized = match ($normalized) {
+            'HOMBRE', 'CABALLERO' => 'CABALLERO',
+            'MUJER', 'DAMA' => 'DAMA',
+            default => 'UNISEX',
+        };
+
+        $this->attributes['genero'] = $normalized;
+    }
+
     /**
      * Relación con PrendaPedido
      */

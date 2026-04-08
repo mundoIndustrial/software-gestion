@@ -2,25 +2,23 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Domain\Pedidos\UseCases\EditarProcesoUseCaseContract;
+
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use Illuminate\Support\Facades\DB;
 
 /**
  * EditarProcesoUseCase
- * 
  * Caso de uso para editar un proceso existente
  * Responsabilidad: Validar y actualizar un proceso de pedido
- * 
  * Patrón: Use Case (Application Layer - DDD)
  * Autorización: Solo admin o producción
  */
-class EditarProcesoUseCase
+class EditarProcesoUseCase implements EditarProcesoUseCaseContract
 {
     use ManejaPedidosUseCase;
 
     /**
      * Ejecutar caso de uso
-     * 
      * @param int $id - ID del proceso
      * @param array $data - Datos a actualizar
      * @return array - Respuesta del resultado
@@ -57,5 +55,18 @@ class EditarProcesoUseCase
             'id' => $id
         ];
     }
+
+    public function call(string $method, array $arguments = []): mixed
+    {
+        if (!method_exists($this, $method)) {
+            throw new \BadMethodCallException("Method {EditarProcesoUseCase}::$method does not exist");
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
+
+
+
+
 

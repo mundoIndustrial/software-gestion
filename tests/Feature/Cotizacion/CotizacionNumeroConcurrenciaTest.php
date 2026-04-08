@@ -3,7 +3,7 @@
 namespace Tests\Feature\Cotizacion;
 
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\NumeroSecuencia;
@@ -12,36 +12,31 @@ use App\Models\Cliente;
 use App\Models\User;
 
 /**
- * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de numeros funciona con pessimistic lock
  * 
  * Escenarios:
- * 1. Generación secuencial de nÃºmeros (no hay conflicto)
- * 2. MÃºltiples transacciones simultÃ¡neas NO generan nÃºmeros duplicados
+ * 1. Generación secuencial de numeros (no hay conflicto)
+ * 2. multiples transacciones simultaneas NO generan numeros duplicados
  * 3. El lock pessimista previene race conditions
- * 4. Los nÃºmeros estÃ¡n en formato correcto (COT-YYYYMMDD-NNN)
+ * 4. Los numeros están en formato correcto (COT-YYYYMMDD-NNN)
  */
 class CotizacionNumeroConcurrenciaTest extends TestCase
 {
-    use RefreshDatabase;
-
-    protected $seeder = 'DatabaseSeeder';
+    use DatabaseTransactions;
 
     public function setUp(): void
     {
         parent::setUp();
-        
-        // Ejecutar seeders
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
-        
+
         // Inicializar secuencias si no existen
         $this->inicializarSecuencias();
     }
 
     /**
-     *  TEST 1: Generación simple de nÃºmero
+     *  TEST 1: Generación simple de numero
      * 
      * Valida:
-     * - El nÃºmero se genera en formato COT-YYYYMMDD-NNN
+     * - El numero se genera en formato COT-YYYYMMDD-NNN
      * - El contador se incrementa correctamente
      * - No hay NULL
      */
@@ -52,21 +47,21 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertNotNull($numero);
         $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
         
-        Log::info(' TEST 1: NÃºmero generado correctamente', ['numero' => $numero]);
+        Log::info(' TEST 1: numero generado correctamente', ['numero' => $numero]);
     }
 
     /**
-     *  TEST 2: NÃºmeros secuenciales incrementan
+     *  TEST 2: numeros secuenciales incrementan
      * 
      * Valida:
-     * - El primer nÃºmero termina en -001
-     * - El segundo nÃºmero termina en -002
+     * - El primer numero termina en -001
+     * - El segundo numero termina en -002
      * - Sin saltos en la secuencia
      */
     public function test_numeros_incrementan_secuencialmente()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $numero1 = $this->generarNumero('cotizaciones_prenda');
         $numero2 = $this->generarNumero('cotizaciones_prenda');
@@ -86,17 +81,17 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     /**
      *  TEST 3: El lock pessimista previene duplicados
      * 
-     * Simula dos transacciones que inician casi simultÃ¡neamente.
-     * Con el lock, uno espera al otro â†’ no hay duplicados
+     * Simula dos transacciones que inician casi simultaneamente.
+     * Con el lock, uno espera al otro  no hay duplicados
      */
     public function test_lock_pessimista_previene_duplicados()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $numeros = [];
 
-        // Simulación de 5 transacciones "simultÃ¡neas"
+        // Simulación de 5 transacciones "simultaneas"
         for ($i = 0; $i < 5; $i++) {
             DB::transaction(function () use (&$numeros) {
                 $numero = $this->generarNumero('cotizaciones_prenda');
@@ -107,7 +102,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         // Verificar que no hay duplicados
         $numerosUnicos = array_unique($numeros);
         $this->assertCount(5, $numeros);
-        $this->assertCount(5, $numerosUnicos, 'Hay nÃºmeros duplicados');
+        $this->assertCount(5, $numerosUnicos, 'Hay numeros duplicados');
 
         // Verificar que terminan en 001, 002, 003, 004, 005
         $this->assertStringEndsWith('-001', $numeros[0]);
@@ -133,8 +128,8 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     public function test_diferentes_tipos_secuencia_no_interfieren()
     {
         // Reset a 1
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
-        NumeroSecuencia::where('tipo', 'cotizaciones_bordado')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_bordado')->update(['siguiente' => 1]);
 
         $numeroPrenda = $this->generarNumero('cotizaciones_prenda');
         $numeroBordado = $this->generarNumero('cotizaciones_bordado');
@@ -152,24 +147,24 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 5: Estados de secuencia correctos despuÃ©s de generaciones
+     *  TEST 5: Estados de secuencia correctos despues de generaciones
      */
     public function test_estado_secuencia_despues_generaciones()
     {
-        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['proximo_numero' => 1]);
+        NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->update(['siguiente' => 1]);
 
         $this->generarNumero('cotizaciones_prenda'); // genera 001, incrementa a 2
         $this->generarNumero('cotizaciones_prenda'); // genera 002, incrementa a 3
         $this->generarNumero('cotizaciones_prenda'); // genera 003, incrementa a 4
 
         $secuencia = NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->first();
-        $this->assertEquals(4, $secuencia->proximo_numero);
+        $this->assertEquals(4, $secuencia->siguiente);
 
-        Log::info(' TEST 5: Contador correcto', ['proximo' => $secuencia->proximo_numero]);
+        Log::info(' TEST 5: Contador correcto', ['proximo' => $secuencia->siguiente]);
     }
 
     /**
-     *  TEST 6: Formato de fecha en nÃºmero es dinÃ¡mico (hoy)
+     *  TEST 6: Formato de fecha en numero es dinamico (hoy)
      */
     public function test_numero_incluye_fecha_actual()
     {
@@ -179,11 +174,11 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringContainsString($hoy, $numero);
         $this->assertMatchesRegularExpression("/COT-$hoy-\d{3}/", $numero);
 
-        Log::info(' TEST 6: Fecha en nÃºmero', ['numero' => $numero, 'fecha' => $hoy]);
+        Log::info(' TEST 6: Fecha en numero', ['numero' => $numero, 'fecha' => $hoy]);
     }
 
     /**
-     * HELPER: Generar nÃºmero sincronicamente (simula el controlador)
+     * HELPER: Generar numero sincronicamente (simula el controlador)
      */
     private function generarNumero($tipo = 'cotizaciones_prenda')
     {
@@ -196,8 +191,8 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
                 throw new \Exception("Secuencia '{$tipo}' no encontrada");
             }
 
-            $proximoNumero = $secuencia->proximo_numero;
-            $secuencia->proximo_numero = $proximoNumero + 1;
+            $proximoNumero = $secuencia->siguiente;
+            $secuencia->siguiente = $proximoNumero + 1;
             $secuencia->save();
 
             return 'COT-' . date('Ymd') . '-' . str_pad($proximoNumero, 3, '0', STR_PAD_LEFT);
@@ -214,7 +209,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         foreach ($tipos as $tipo) {
             NumeroSecuencia::updateOrCreate(
                 ['tipo' => $tipo],
-                ['proximo_numero' => 1]
+                ['siguiente' => 1]
             );
         }
     }

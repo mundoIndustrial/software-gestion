@@ -234,8 +234,9 @@ class ProcesoDragDropHandler {
      */
     _procesarImagenProceso(input, procesoNumero) {
         // Usar la función global existente si está disponible
-        if (typeof window.manejarImagenProceso === 'function') {
-            window.manejarImagenProceso(input, procesoNumero);
+        const manejarImagenProceso = window.ProcesoModalController?.imagenes?.manejar || window.manejarImagenProceso;
+        if (typeof manejarImagenProceso === 'function') {
+            manejarImagenProceso(input, procesoNumero);
             UIHelperService.log('ProcesoDragDropHandler', `Imagen de proceso ${procesoNumero} procesada con función global`);
         } else {
             UIHelperService.log('ProcesoDragDropHandler', 'Función manejarImagenProceso no disponible', 'error');
@@ -330,7 +331,7 @@ class ProcesoDragDropHandler {
                 clase: menu.className,
                 visible: rect.width > 0 && rect.height > 0,
                 posición: `(${Math.round(rect.x)}, ${Math.round(rect.y)})`,
-                tamaño: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
+                tamano: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
                 zIndex: window.getComputedStyle(menu).zIndex
             });
         });

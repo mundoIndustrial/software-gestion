@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Application\SupervisorPedidos\UseCases;
+
+use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest;
+use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsResponse;
+use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
+
+class GetPendingEmbroideryStampingReceiptsUseCase
+{
+    public function __construct(
+        private readonly ReceiptRepository $receiptRepository
+    ) {}
+
+    public function execute(GetPendingEmbroideryStampingReceiptsRequest $request): GetPendingEmbroideryStampingReceiptsResponse
+    {
+        try {
+            $receiptTypes = $request->getReceiptTypes();
+            $procesosPendientes = collect(
+                $this->receiptRepository->findPendingEmbroideryStampingReceipts($receiptTypes)
+            );
+
+            $prendaIds = $procesosPendientes
+                ->pluck('prenda_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $parcialIds = $procesosPendientes
+                ->map(fn ($proceso) => $this->extractParcialIdFromNotes($proceso->recibo_notas ?? null))
+                ->filter(fn ($id) => $id !== null)
+                ->unique()
+                ->values()
+                ->all();
+
+            $cantidadPorPrenda = $this->receiptRepository->sumQuantitiesByPrendaIds($prendaIds);
+            $cantidadPorParcial = $this->receiptRepository->sumQuantitiesByPartialIds($parcialIds);
+
+            $procesosConCantidad = $procesosPendientes->map(function ($proceso) use ($cantidadPorPrenda, $cantidadPorParcial) {
+                $parcialId = $this->extractParcialIdFromNotes($proceso->recibo_notas ?? null);
+
+                if ($parcialId !== null) {
+                    $proceso->cantidad_total_prendas = (int) ($cantidadPorParcial[$parcialId] ?? 0);
+                    return $proceso;
+                }
+
+                $proceso->cantidad_total_prendas = (int) ($cantidadPorPrenda[$proceso->prenda_id] ?? 0);
+                return $proceso;
+            });
+
+            return new GetPendingEmbroideryStampingReceiptsResponse($procesosConCantidad->toArray());
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    private function extractParcialIdFromNotes(?string $notas): ?int
+    {
+        $notas = (string) ($notas ?? '');
+
+        if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+}

@@ -209,14 +209,14 @@ class ContextMenuService {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            UIHelperService.log('ContextMenuService', `🖱️ Clic en opción: ${opcion.texto}`);
+            UIHelperService.log('ContextMenuService', ` Clic en opción: ${opcion.texto}`);
             
             // Ejecutar callback o accion si existe (compatibilidad con ambos)
             const funcionAEjecutar = opcion.callback || opcion.accion;
             
             if (typeof funcionAEjecutar === 'function') {
                 try {
-                    UIHelperService.log('ContextMenuService', '⚡ Ejecutando callback/accion...');
+                    UIHelperService.log('ContextMenuService', ' Ejecutando callback/accion...');
                     funcionAEjecutar(e, opcion);
                     UIHelperService.log('ContextMenuService', ' Callback/accion ejecutado exitosamente');
                 } catch (error) {
@@ -228,7 +228,7 @@ class ContextMenuService {
             
             // Cerrar menú si está configurado
             if (config.autoCerrar) {
-                UIHelperService.log('ContextMenuService', '🔒 Cerrando menú automáticamente...');
+                UIHelperService.log('ContextMenuService', ' Cerrando menú automáticamente...');
                 this.cerrarMenuActual();
             }
         });

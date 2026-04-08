@@ -27,7 +27,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transición vÃ¡lida BORRADOR â†’ ENVIADA_CONTADOR
+     * Test: Transición valida BORRADOR  ENVIADA_CONTADOR
      */
     public function test_transicion_valida_borrador_a_enviada_contador()
     {
@@ -36,7 +36,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transición invÃ¡lida BORRADOR â†’ FINALIZADA
+     * Test: Transición invalida BORRADOR  FINALIZADA
      */
     public function test_transicion_invalida_borrador_a_finalizada()
     {
@@ -45,7 +45,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transición vÃ¡lida completa de cotización
+     * Test: Transición valida completa de cotización
      */
     public function test_transiciones_validas_completas_cotizacion()
     {
@@ -57,7 +57,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Transiciones vÃ¡lidas completas de pedido
+     * Test: Transiciones validas completas de pedido
      */
     public function test_transiciones_validas_completas_pedido()
     {

@@ -18,7 +18,7 @@ class CrearEppTestCommand extends Command
 
     public function handle(): int
     {
-        $this->info('🔵 Iniciando prueba de creación de EPP...');
+        $this->info(' Iniciando prueba de creación de EPP...');
         $this->newLine();
 
         $nombre = 'Gafas de Seguridad Test ' . time();

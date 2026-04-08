@@ -67,11 +67,6 @@ class EliminarPedidoService
                 DB::table('prenda_fotos_tela_pedido')
                     ->where('prenda_pedido_id', $prenda->id)
                     ->delete();
-                
-                // 3. Eliminar fotos de logos de prendas (prenda_fotos_logo_pedido)
-                DB::table('prenda_fotos_logo_pedido')
-                    ->where('prenda_pedido_id', $prenda->id)
-                    ->delete();
             }
             
             \Log::info('ðŸ—‘ï¸ Fotos de prendas eliminadas', [
@@ -144,12 +139,12 @@ class EliminarPedidoService
                 'pedido_id' => $pedidoId,
             ]);
             
-            // 9. Decrementar el nÃºmero de secuencia
+            // 9. Decrementar el numero de secuencia
             DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
                 ->decrement('siguiente');
             
-            \Log::info('ðŸ—‘ï¸ NÃºmero de secuencia decrementado', [
+            \Log::info('ðŸ—‘ï¸ numero de secuencia decrementado', [
                 'numero_pedido' => $numeroPedidoGuardado,
             ]);
 

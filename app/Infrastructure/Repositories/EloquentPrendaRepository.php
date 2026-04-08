@@ -47,7 +47,8 @@ class EloquentPrendaRepository implements PrendaRepositoryInterface
     public function obtenerTiposManga(): array
     {
         try {
-            return TipoManga::select('id', 'nombre', 'descripcion')
+            return TipoManga::select('id', 'nombre')
+                ->where('activo', true)
                 ->orderBy('nombre')
                 ->get()
                 ->toArray();
@@ -223,6 +224,80 @@ class EloquentPrendaRepository implements PrendaRepositoryInterface
                 ->toArray();
         } catch (\Exception $e) {
             \Log::error('[EloquentPrendaRepository] Error obteniendo procesos', [
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function obtenerTallasPedido(int $prendaId): array
+    {
+        try {
+            return DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->select('genero', 'talla', 'cantidad')
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            \Log::error('[EloquentPrendaRepository] Error obteniendo tallas de pedido', [
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function obtenerVariantesPedido(int $prendaId): array
+    {
+        try {
+            return DB::table('prenda_pedido_variantes')
+                ->leftJoin('tipos_manga', 'prenda_pedido_variantes.tipo_manga_id', '=', 'tipos_manga.id')
+                ->leftJoin('tipos_broche_boton', 'prenda_pedido_variantes.tipo_broche_boton_id', '=', 'tipos_broche_boton.id')
+                ->where('prenda_pedido_variantes.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_variantes.*',
+                    'tipos_manga.nombre as nombre_manga',
+                    'tipos_broche_boton.nombre as nombre_broche'
+                )
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            \Log::error('[EloquentPrendaRepository] Error obteniendo variantes de pedido', [
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function obtenerColoresTelasPedido(int $prendaId): array
+    {
+        try {
+            return DB::table('prenda_pedido_colores_telas')
+                ->leftJoin('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                ->leftJoin('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_colores_telas.id',
+                    'colores_prenda.nombre as color',
+                    'colores_prenda.codigo as codigo_color',
+                    'telas_prenda.nombre as tela',
+                    'prenda_pedido_colores_telas.referencia as referencia_tela'
+                )
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            \Log::error('[EloquentPrendaRepository] Error obteniendo colores y telas de pedido', [
                 'prenda_id' => $prendaId,
                 'error' => $e->getMessage()
             ]);

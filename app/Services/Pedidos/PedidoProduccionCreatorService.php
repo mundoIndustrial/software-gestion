@@ -25,8 +25,8 @@ class PedidoProduccionCreatorService
      */
     public function crear(CrearPedidoProduccionDTO $dto, int $asesorId): ?PedidoProduccion
     {
-        \Log::info('🔵 [PedidoProduccionCreatorService] ===== INICIO SERVICIO CREAR =====');
-        \Log::info('🔵 [PedidoProduccionCreatorService] Datos recibidos', [
+        \Log::info(' [PedidoProduccionCreatorService] ===== INICIO SERVICIO CREAR =====');
+        \Log::info(' [PedidoProduccionCreatorService] Datos recibidos', [
             'dto_forma_de_pago' => $dto->formaDePago,
             'dto_cliente' => $dto->cliente,
             'dto_cotizacion_id' => $dto->cotizacionId,
@@ -48,16 +48,16 @@ class PedidoProduccionCreatorService
             throw new \InvalidArgumentException('No hay prendas con cantidades válidas');
         }
 
-        \Log::info('🔵 [PedidoProduccionCreatorService] Prendas válidas obtenidas', [
+        \Log::info(' [PedidoProduccionCreatorService] Prendas válidas obtenidas', [
             'total_prendas' => count($prendas),
         ]);
 
-        \Log::info('🔵 [PedidoProduccionCreatorService] Ejecutando Job directamente');
+        \Log::info(' [PedidoProduccionCreatorService] Ejecutando Job directamente');
 
         // Ejecutar el Job directamente (sin cola) para garantizar ejecución inmediata
         $job = new CrearPedidoProduccionJob($dto, $asesorId, $prendas);
         
-        \Log::info('🔵 [PedidoProduccionCreatorService] Job instanciado, llamando a handle()');
+        \Log::info(' [PedidoProduccionCreatorService] Job instanciado, llamando a handle()');
         
         $pedido = $job->handle(
             app(\App\Services\Pedidos\PrendaProcessorService::class),

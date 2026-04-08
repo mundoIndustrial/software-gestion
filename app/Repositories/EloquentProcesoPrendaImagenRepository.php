@@ -5,7 +5,6 @@ namespace App\Repositories;
 use App\Domain\Procesos\Entities\ProcesoPrendaImagen;
 use App\Domain\Procesos\Repositories\ProcesoPrendaImagenRepository;
 use App\Models\ProcesoPrendaImagen as ProcesoPrendaImagenModel;
-use Illuminate\Database\Eloquent\Collection;
 
 class EloquentProcesoPrendaImagenRepository implements ProcesoPrendaImagenRepository
 {
@@ -120,10 +119,6 @@ class EloquentProcesoPrendaImagenRepository implements ProcesoPrendaImagenReposi
             ruta: $modelo->ruta_webp,
             nombreOriginal: $modelo->ruta_original,
             tipoMime: null,
-            tamaño: 0,
-            ancho: 0,
-            alto: 0,
-            hashMd5: null,
             orden: $modelo->orden,
             esPrincipal: $modelo->es_principal,
             descripcion: null

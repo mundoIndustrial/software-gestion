@@ -39,6 +39,10 @@
                 <span class="value">#{{ $pedidoData->pedido }}</span>
             </div>
             <div class="info-item">
+                <label>Orden de Compra:</label>
+                <span class="value">{{ $pedidoData->orden_compra ?? 'No especificada' }}</span>
+            </div>
+            <div class="info-item">
                 <label>Cliente:</label>
                 <span class="value">{{ $pedidoData->cliente }}</span>
             </div>
@@ -67,7 +71,7 @@
             <div class="info-item">
                 <label>Fecha de Creación:</label>
                 <span class="value">
-                    {{ $pedidoData->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($pedidoData->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}
+                    {{ $pedidoData->created_at ? \Carbon\Carbon::parse($pedidoData->created_at)->format('d/m/Y') : '-' }}
                 </span>
             </div>
             <div class="info-item">
@@ -229,7 +233,7 @@
                 ->where('numero_pedido', $numeroPedido)
                 ->get();
             
-            \Log::info('📸 Vista show.blade: Consultando prendas', [
+            \Log::info(' Vista show.blade: Consultando prendas', [
                 'numero_pedido' => $numeroPedido,
                 'total_prendas' => $prendas->count(),
             ]);
@@ -246,12 +250,6 @@
                     
                     // Obtener fotos de telas de esta prenda
                     $fotosTelas = DB::table('prenda_fotos_tela_pedido')
-                        ->where('prenda_pedido_id', $prenda->id)
-                        ->orderBy('orden')
-                        ->get();
-                    
-                    // Obtener fotos de logos de esta prenda
-                    $fotosLogos = DB::table('prenda_fotos_logo_pedido')
                         ->where('prenda_pedido_id', $prenda->id)
                         ->orderBy('orden')
                         ->get();
@@ -326,30 +324,7 @@
                     </div>
                 @endif
 
-                <!-- FOTOS DE LOGOS/BORDADOS -->
-                @if($fotosLogos->count() > 0)
-                    <div style="margin-bottom: 2rem; padding: 1.5rem; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
-                        <h3 style="margin: 0 0 1rem 0; color: #d97706; font-size: 1.1rem; font-weight: 600;">
-                            Bordados - Prenda {{ $indexPrenda + 1 }}
-                        </h3>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-                            @foreach($fotosLogos as $foto)
-                                @php
-                                    $urlFoto = $foto->ruta_webp ?? $foto->ruta_original;
-                                @endphp
-                                <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: white;">
-                                    <img src="{{ $urlFoto }}" 
-                                         alt="Foto logo/bordado" 
-                                         style="width: 100%; height: 120px; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
-                                         onclick="abrirImagenZoom(this.src, 'Bordado Prenda {{ $indexPrenda + 1 }}')"
-                                         onmouseover="this.style.transform='scale(1.05)'"
-                                         onmouseout="this.style.transform='scale(1)'">
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
+
             @endforeach
         @else
             <div class="empty-state">

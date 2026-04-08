@@ -31,9 +31,11 @@ class BlockCosturaReflectivoDashboard
 
         $user = auth()->user();
 
-        // Bloquear costura-reflectivo del acceso a /dashboard
+        // Bloquear roles de operarios del acceso a /dashboard admin
         // Redirigir a /operario/dashboard
-        if ($user && $user->hasRole('costura-reflectivo')) {
+        $operarioRoles = ['costura-reflectivo', 'lider-reflectivo', 'vista-costura', 'administrador-costura', 'cortador', 'costurero', 'confeccion-sobremedida'];
+        
+        if ($user && $user->hasAnyRole($operarioRoles)) {
             return redirect('/operario/dashboard');
         }
 

@@ -102,7 +102,7 @@ class ObtenerPedidosService
                             'tipo_proceso',
                             'created_at'
                         ])
-                        ->limit(3)  // ⚡ MÁXIMO 3 procesos por prenda
+                        ->limit(3)  //  MÁXIMO 3 procesos por prenda
                         ->orderBy('created_at', 'desc');
                     }]);
                 },
@@ -190,17 +190,17 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener estadÃ­sticas de pedidos para dashboard
+     * Obtener estadisticas de pedidos para dashboard
      */
     public function obtenerEstadisticas(): array
     {
         $userId = Auth::id();
 
-        \Log::info('ðŸ“ˆ [ESTADÃSTICAS] Calculando para usuario: ' . $userId);
+        \Log::info(' [ESTADISTICAS] Calculando para usuario: ' . $userId);
 
         $ahora = now();
         $inicioMes = $ahora->clone()->startOfMonth();
-        $inicioAÃ±o = $ahora->clone()->startOfYear();
+        $inicioAano = $ahora->clone()->startOfYear();
         $inicioHoy = $ahora->clone()->startOfDay();
 
         $estadisticas = [
@@ -213,7 +213,7 @@ class ObtenerPedidosService
                 ->count(),
             
             'pedidos_anio' => PedidoProduccion::where('asesor_id', $userId)
-                ->whereBetween('created_at', [$inicioAÃ±o, $ahora])
+                ->whereBetween('created_at', [$inicioAano, $ahora])
                 ->count(),
             
             'pedidos_pendientes' => PedidoProduccion::where('asesor_id', $userId)
@@ -222,7 +222,7 @@ class ObtenerPedidosService
                 ->count(),
         ];
 
-        \Log::info('ðŸ“ˆ [ESTADÃSTICAS] Calculadas', $estadisticas);
+        \Log::info(' [ESTADISTICAS] Calculadas', $estadisticas);
 
         return $estadisticas;
     }

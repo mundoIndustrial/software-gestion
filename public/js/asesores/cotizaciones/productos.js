@@ -770,9 +770,9 @@ function eliminarFoto(productoId, index) {
                     });
                     
                     // Enviar solicitud al backend para eliminar inmediatamente
-                    fetch(window.location.origin + '/asesores/fotos/eliminar', {
+                    fetch(window.location.origin + '/api/asesores/fotos/eliminar', {
                         // Nota: La ruta está dentro del grupo 'prefix(asesores)' en web.php, 
-                        // así que la URL completa es /asesores/fotos/eliminar
+                        // así que la URL completa es /api/asesores/fotos/eliminar
                         method: 'POST',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
@@ -891,7 +891,7 @@ function eliminarFotoById(productoId, fotoId) {
                 });
                 
                 // Enviar solicitud al backend para eliminar inmediatamente
-                fetch(window.location.origin + '/asesores/fotos/eliminar', {
+                fetch(window.location.origin + '/api/asesores/fotos/eliminar', {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',

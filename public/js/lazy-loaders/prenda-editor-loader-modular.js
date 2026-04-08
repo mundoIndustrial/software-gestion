@@ -1,5 +1,5 @@
 /**
- * 🎯 LOADER MODULAR - Prendas Editor (Refactorizado)
+ *  LOADER MODULAR - Prendas Editor (Refactorizado)
  * 
  * Responsabilidad: Cargar todos los módulos especializados de edición de prendas
  * 
@@ -10,10 +10,25 @@
  * - Orquestador → Coordina los módulos
  */
 
-window.PrendaEditorLoader = (function() {
+globalThis.PrendaEditorLoader = (function() {
     let isLoading = false;
     let isLoaded = false;
     let loadError = null;
+
+    function getScriptPath(src) {
+        try {
+            return new URL(src, globalThis.location.origin).pathname;
+        } catch (error) {
+            return String(src || '').split('?')[0];
+        }
+    }
+
+    function getGlobalLoadedScriptsRegistry() {
+        if (!(globalThis.__spLoadedScriptPaths instanceof Set)) {
+            globalThis.__spLoadedScriptPaths = new Set();
+        }
+        return globalThis.__spLoadedScriptPaths;
+    }
 
     /**
      * Cargar todos los módulos necesarios
@@ -25,50 +40,52 @@ window.PrendaEditorLoader = (function() {
 
         isLoading = true;
 
-        // 📦 Módulos a cargar (en orden)
+        //  Módulos a cargar (en orden)
         const modulesToLoad = [
             // Servicios especializados (sin dependencias)
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-loader-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-normalizer-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-cotizacion-service.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-data-loader.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/services/prenda-editor-service.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-loader-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-normalizer-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-cotizacion-service.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-data-loader.js',
+            '/js/modulos/crear-pedido/prendas/services/prenda-editor-service.js',
             
             // Gestión del modal
-            '/js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js',
 
             // Loaders (sin dependencias mutuas)
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js',
+            '/js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js',
 
-            // 🚫 NOTA: prenda-editor.js ya se carga directamente en blade.php
+            //  NOTA: prenda-editor.js ya se carga directamente en blade.php
             // para evitar duplicación y SyntaxError de redeclaración
 
             // Módulos dependientes (manejadores de variaciones, etc.)
-            '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js',
 
-            // Procesos: renderizador de tarjetas y manejadores de checkboxes
-            '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js?v=' + Date.now(),
-            '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js?v=' + Date.now(),
+            // Procesos: servicios desacoplados + renderizador + manejadores
+            '/js/modulos/crear-pedido/procesos/proceso-galeria-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-delete-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js',
+            '/js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js',
+            '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js',
+            '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js',
         ];
 
-        // ⚡ Cargar scripts en paralelo
+        //  Cargar scripts en paralelo
         const promises = modulesToLoad.map(url => loadScript(url));
 
         return Promise.all(promises)
             .then(() => {
-                console.log(' [PrendaEditor] Todos los módulos cargados');
                 isLoaded = true;
                 isLoading = false;
-                window.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
+                globalThis.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
             })
             .catch(error => {
-                console.error(' [PrendaEditor] Error cargando módulos:', error);
                 loadError = error;
                 isLoading = false;
                 throw error;
@@ -80,21 +97,36 @@ window.PrendaEditorLoader = (function() {
      */
     function loadScript(url) {
         return new Promise((resolve, reject) => {
-            // Extraer path sin query string para comparar
-            const urlPath = url.split('?')[0];
-            
-            // Verificar si el script ya está en el DOM (cargado por <script defer> del blade)
-            const existente = document.querySelector(`script[src*="${urlPath}"]`);
-            if (existente) {
-                console.log(`[PrendaEditor] Script ya existe en DOM, skip: ${urlPath}`);
+            const scriptPath = getScriptPath(url);
+            const registry = getGlobalLoadedScriptsRegistry();
+
+            if (registry.has(scriptPath)) {
                 return resolve();
             }
-            
+
+            // Verificar si el script ya está en el DOM (cargado por entry/blade)
+            const existente = Array.from(document.scripts || []).find((scriptTag) => {
+                const rawSrc = scriptTag.getAttribute('src') || '';
+                const normalizedSrc = scriptTag.src || '';
+                const currentPath = getScriptPath(rawSrc || normalizedSrc);
+                return currentPath === scriptPath;
+            });
+            if (existente) {
+                registry.add(scriptPath);
+                return resolve();
+            }
+
+            // Reserva para evitar carreras con otros loaders.
+            registry.add(scriptPath);
+
             const script = document.createElement('script');
             script.src = url;
             script.async = false;
             script.onload = resolve;
-            script.onerror = () => reject(new Error(`Error cargando ${url}`));
+            script.onerror = () => {
+                registry.delete(scriptPath);
+                reject(new Error(`Error cargando ${url}`));
+            };
             document.head.appendChild(script);
         });
     }
@@ -109,8 +141,6 @@ window.PrendaEditorLoader = (function() {
         }
 
         if (typeof PrendaEditor === 'undefined') {
-            console.error('[PrendaEditor] Clase PrendaEditor no disponible');
-            return null;
         }
 
         return new PrendaEditor(options);
@@ -129,16 +159,16 @@ window.PrendaEditorLoader = (function() {
 })();
 
 /**
- * 🚀 AUTO-LOAD EN DOCUMENTO LISTO
+ *  AUTO-LOAD EN DOCUMENTO LISTO
  */
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.PrendaEditorRefactoredLoader !== 'undefined') {
-        window.PrendaEditorRefactoredLoader.load()
+    if (typeof globalThis.PrendaEditorRefactoredLoader !== 'undefined') {
+        globalThis.PrendaEditorRefactoredLoader.load()
             .then(() => {
                 console.log(' [PrendaEditor] Sistema listo para editar prendas');
             })
             .catch(error => {
-                console.error(' [PrendaEditor] Error inicializando:', error);
+                console.error('[PrendaEditor] Error al cargar:', error);
             });
     }
 });

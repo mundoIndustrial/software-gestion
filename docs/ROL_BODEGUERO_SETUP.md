@@ -81,7 +81,7 @@ exit
 
 Bodeguero puede acceder a:
 -  Costura Bodega (`/vistas?tipo=bodega`)
-- ✂️ Corte Bodega (`/vistas?tipo=corte&origen=bodega`)
+-  Corte Bodega (`/vistas?tipo=corte&origen=bodega`)
 
 ## Recibos Disponibles
 

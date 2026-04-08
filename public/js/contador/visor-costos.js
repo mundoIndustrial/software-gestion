@@ -16,8 +16,8 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
     
     // Obtener datos de cotización Y costos en paralelo
     Promise.all([
-        fetch(`/contador/cotizacion/${cotizacionId}`).then(response => response.json()),
-        fetch(`/contador/cotizacion/${cotizacionId}/costos`).then(response => response.json())
+        fetch(`/asesores/contador/cotizacion/${cotizacionId}`).then(response => response.json()),
+        fetch(`/asesores/contador/cotizacion/${cotizacionId}/costos`).then(response => response.json())
     ])
     .then(([cotizacionData, costosData]) => {
         // Guardar cotizacionData para usar en mostrarPrendaVisor

@@ -63,7 +63,7 @@ class ItemFormCollector {
                 de_bodega: item.de_bodega,  // Preserve de_bodega from PrendaFormCollector
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
-                cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
+                cantidad_talla: (Array.isArray(item.cantidad_talla) ? {} : item.cantidad_talla) || {},
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
                 asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, //  Agregar asignaciones de colores
@@ -121,7 +121,9 @@ class ItemFormCollector {
         });
         
         // AGREGAR PRENDAS SIN COTIZACIÓN
-        if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.obtenerActivas().length > 0) {
+        // Solo agregar si gestionItemsUI NO proporcionó prendas (evita duplicados)
+        const prendasYaRecolectadas = itemsFormato.filter(item => item !== null && item.tipo !== 'epp').length;
+        if (prendasYaRecolectadas === 0 && window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.obtenerActivas().length > 0) {
 
             const prendasSinCot = window.gestorPrendaSinCotizacion.obtenerActivas();
             
@@ -177,21 +179,21 @@ class ItemFormCollector {
                 };
                 
                 let procesosParaEnviar = {};
-                let procesosAEliminarLocal = []; // 🔴 NUEVO: Recopilar IDs de procesos a eliminar
+                let procesosAEliminarLocal = []; //  NUEVO: Recopilar IDs de procesos a eliminar
                 
                 if (prenda.procesos && typeof prenda.procesos === 'object') {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                         const datosProceso = proceso.datos || proceso;
                         
-                        // 🔴 CRÍTICO: Filtrar procesos marcados para eliminar
+                        //  CRÍTICO: Filtrar procesos marcados para eliminar
                         // Si el proceso tiene ID y está en window.procesosParaEliminarIds (Set), NO incluirlo
                         if (datosProceso.id && window.procesosParaEliminarIds && window.procesosParaEliminarIds.has(datosProceso.id)) {
-                            console.log('[ItemFormCollector] 🗑️ Proceso excluido (marcado para eliminar):', {
+                            console.log('[ItemFormCollector]  Proceso excluido (marcado para eliminar):', {
                                 procesoId: datosProceso.id,
                                 tipo: key,
                                 procesosParaEliminar: Array.from(window.procesosParaEliminarIds)
                             });
-                            // 🔴 NUEVO: Agregar a lista de procesos a eliminar
+                            //  NUEVO: Agregar a lista de procesos a eliminar
                             procesosAEliminarLocal.push(datosProceso.id);
                             return; // Saltar este proceso
                         }
@@ -277,7 +279,7 @@ class ItemFormCollector {
                     tipo_manga_id: prenda.tipo_manga_id || null,
                     tipo_broche_boton_id: prenda.tipo_broche_boton_id || null,
                     procesos: procesosParaEnviar,
-                    procesos_a_eliminar: procesosAEliminarLocal, // 🔴 NUEVO: Agregar IDs de procesos a eliminar
+                    procesos_a_eliminar: procesosAEliminarLocal, //  NUEVO: Agregar IDs de procesos a eliminar
                     imagenes: fotosParaEnviar
                 };
                 
@@ -338,11 +340,16 @@ class ItemFormCollector {
         
         const pedidoFinal = {
             cliente: document.getElementById('cliente_editable')?.value || '',
+            orden_compra: document.getElementById('orden_compra_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             observaciones: document.getElementById('observaciones_editable')?.value || '',
             prendas: prendas,
-            epps: epps
+            epps: epps,
+            // Si editamos un borrador, enviar su ID para que el backend lo convierta
+            borrador_pedido_id: (window.modoEdicion && window.pedidoEditarId && window.pedidoEditarData?.pedido?.estado === 'Borrador')
+                ? window.pedidoEditarId
+                : null,
         };
         
         // AGREGAR UIDs a prendas, telas, procesos y EPPs (CRÍTICO)

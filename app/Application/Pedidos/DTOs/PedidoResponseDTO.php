@@ -13,12 +13,12 @@ class PedidoResponseDTO
         public ?int $id,
         public ?string $numero,
         public ?int $clienteId,
-        public ?string $cliente = null,
-        public ?string $asesor = null,
-        public string $estado,
-        public string $descripcion,
+        public ?string $estado,
+        public ?string $descripcion,
         public int $totalPrendas,
         public int $totalArticulos,
+        public ?string $cliente = null,
+        public ?string $asesor = null,
         public array $prendas = [],
         public array $epps = [],
         public ?string $formaDePago = null,
@@ -50,4 +50,3 @@ class PedidoResponseDTO
         ];
     }
 }
-

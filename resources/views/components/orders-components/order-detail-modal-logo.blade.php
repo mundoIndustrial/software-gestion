@@ -114,7 +114,7 @@ function toggleFacturaLogo() {
         container.style.width = '100%';
     }
     
-    //  RESTAURAR el tamaño original del wrapper
+    //  RESTAURAR el tamano original del wrapper
     modalWrapper.style.maxWidth = '672px';
     modalWrapper.style.width = '90%';
     modalWrapper.style.height = 'auto';

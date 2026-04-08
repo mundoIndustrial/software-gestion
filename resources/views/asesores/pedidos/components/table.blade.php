@@ -1,14 +1,14 @@
 <!-- Tabla con Scroll Horizontal -->
 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
     <!-- Contenedor con Scroll -->
-    <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: {{ request('tipo') === 'logo' ? '600px' : '800px' }}; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
+    <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
         <!-- Header Azul -->
         <div style="
             background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
             color: white;
             padding: 0.75rem 1.25rem;
             display: grid;
-            grid-template-columns: {{ request('tipo') === 'logo' ? '140px 170px 170px 140px 170px 160px 170px' : '140px 170px 170px 140px 170px 200px 160px 170px 170px' }};
+            grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px;
             gap: 1.8rem;
             font-weight: 600;
             font-size: 0.8rem;
@@ -30,12 +30,6 @@
                 </button>
             </div>
             <div class="th-wrapper">
-                <span>Área</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Área">
-                    <span class="material-symbols-rounded">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper">
                 <span>Pedido</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Pedido">
                     <span class="material-symbols-rounded">filter_alt</span>
@@ -47,14 +41,12 @@
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>
-            @if(request('tipo') !== 'logo')
             <div class="th-wrapper">
                 <span>Novedades</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Novedades">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>
-            @endif
             <div class="th-wrapper">
                 <span>Forma Pago</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Forma Pago">
@@ -67,14 +59,12 @@
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>
-            @if(request('tipo') !== 'logo')
             <div class="th-wrapper">
                 <span>Fecha Estimada</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Fecha">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>
-            @endif
         </div>
 
         <!-- Filas -->

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * 
  * Servicio para obtener fotos de prendas de pedido.
  * Encapsula la lógica de consulta a la nueva relación:
- * pedido_produccion_id â†’ prendas_pedido â†’ prenda_fotos_pedido
+ * pedido_produccion_id  prendas_pedido  prenda_fotos_pedido
  */
 class ObtenerFotosService
 {

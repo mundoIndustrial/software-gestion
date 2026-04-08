@@ -220,7 +220,7 @@ final class ProcesarImagenesCotizacionRequestService
                                             'orden' => $ordenFotosTela,
                                             'ancho' => $fotoExistente->ancho,
                                             'alto' => $fotoExistente->alto,
-                                            'tamaño' => $fotoExistente->tamaño,
+                                            'tamano' => $fotoExistente->tamano,
                                             'created_at' => now(),
                                             'updated_at' => now(),
                                         ]);
@@ -265,7 +265,7 @@ final class ProcesarImagenesCotizacionRequestService
                                         'orden' => $ordenFotosTela,
                                         'ancho' => null,
                                         'alto' => null,
-                                        'tamaño' => $archivoFoto->getSize(),
+                                        'tamano' => $archivoFoto->getSize(),
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);

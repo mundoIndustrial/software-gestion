@@ -189,13 +189,13 @@ class StorageDiagnoseCommand extends Command
 
             $this->components->twoColumnDetail('Total archivos', $files->count());
             $this->components->twoColumnDetail('Total carpetas', $dirs->count());
-            $this->components->twoColumnDetail('Tamaño total', "{$totalSizeMB} MB");
+            $this->components->twoColumnDetail('tamano total', "{$totalSizeMB} MB");
 
             // Mostrar carpetas principales
             foreach ($dirs as $dir) {
                 $dirName = basename($dir);
                 $fileCount = count(File::allFiles($dir));
-                $this->components->twoColumnDetail("  📁 $dirName", "$fileCount archivos");
+                $this->components->twoColumnDetail("   $dirName", "$fileCount archivos");
             }
         }
 
@@ -240,7 +240,7 @@ class StorageDiagnoseCommand extends Command
 
         $this->newLine();
 
-        $this->line('📌 PRÓXIMOS PASOS:');
+        $this->line(' PRÓXIMOS PASOS:');
         $this->line('  1. Visita: http://localhost:8000/storage');
         $this->line('  2. Prueba: http://localhost:8000/storage/test-file.txt');
         $this->line('  3. Si ves 403: Ejecuta con --fix o revisa permisos manualmente');

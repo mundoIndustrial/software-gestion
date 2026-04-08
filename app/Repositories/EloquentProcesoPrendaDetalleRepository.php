@@ -119,6 +119,47 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
             ->map(fn($model) => $this->mapToDomain($model))
             ->toArray();
     }
+    /**
+     * Obtener procesos con tallas para construir descripción de pedido
+     */
+    public function obtenerProcesosConTallasParaPrenda(int $prendaId): array
+    {
+        return \DB::table('pedidos_procesos_prenda_detalles as ppd')
+            ->join('tipos_procesos as tp', 'ppd.tipo_proceso_id', '=', 'tp.id')
+            ->whereNull('ppd.deleted_at')
+            ->where('ppd.prenda_pedido_id', $prendaId)
+            ->orderBy('ppd.id', 'asc')
+            ->get([
+                'ppd.id',
+                'ppd.modo_tallas',
+                'ppd.ubicaciones',
+                'ppd.observaciones as observaciones_generales',
+                'tp.nombre as tipo_proceso_nombre',
+            ])
+            ->map(function ($proc) {
+                $tallasObs = [];
+                if (($proc->modo_tallas ?? 'generico') === 'general') {
+                    $tallasObs = \DB::table('pedidos_procesos_prenda_tallas')
+                        ->where('proceso_prenda_detalle_id', $proc->id)
+                        ->whereNotNull('observaciones')
+                        ->where('observaciones', '!=', '')
+                        ->orderBy('genero', 'asc')
+                        ->orderBy('talla', 'asc')
+                        ->get(['genero', 'talla', 'observaciones'])
+                        ->toArray();
+                }
+
+                return [
+                    'id' => $proc->id,
+                    'modo_tallas' => $proc->modo_tallas ?? 'generico',
+                    'ubicaciones' => $proc->ubicaciones,
+                    'observaciones_generales' => $proc->observaciones_generales,
+                    'tipo_proceso_nombre' => $proc->tipo_proceso_nombre ?? 'PROCESO',
+                    'tallas_observaciones' => $tallasObs,
+                ];
+            })
+            ->toArray();
+    }
 
     /**
      * Mapear Eloquent Model a Domain Entity

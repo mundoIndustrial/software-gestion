@@ -410,7 +410,7 @@ const ProcessManager = (() => {
     }
     
     /**
-     * 🆕 Refrescar una fila específica de la tabla desde el servidor
+     *  Refrescar una fila específica de la tabla desde el servidor
      */
     function _refreshTableRow(numeroPedido) {
         return (async () => {

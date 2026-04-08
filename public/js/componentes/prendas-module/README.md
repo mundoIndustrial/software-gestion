@@ -4,16 +4,16 @@
 
 Sistema modular desacoplado para el manejo de prendas, imágenes y funcionalidades de drag & drop. Organizado en una carpeta específica para mejor claridad y mantenibilidad.
 
-## 🏗️ Estructura del Módulo
+##  Estructura del Módulo
 
 ```
 public/js/componentes/prendas-module/
 ├── index.js                          # Punto de entrada principal
 ├── prendas-wrappers-v2.js           # Loader principal del sistema
 ├── modal-wrappers.js                #  Gestión de modales
-├── image-management.js              # 🖼️ Manejo de imágenes
-├── drag-drop-handlers.js            # 🎯 Funcionalidades drag & drop
-├── ui-helpers.js                    # 🛠️ Utilidades y helpers
+├── image-management.js              #  Manejo de imágenes
+├── drag-drop-handlers.js            #  Funcionalidades drag & drop
+├── ui-helpers.js                    #  Utilidades y helpers
 └── README.md                         # 📚 Documentación
 ```
 
@@ -134,7 +134,7 @@ console.log(window.PrendasModule);
 // }
 ```
 
-## 🎯 Características
+##  Características
 
 ###  Ventajas de la Estructura Modular
 
@@ -153,7 +153,7 @@ console.log(window.PrendasModule);
 - **Validaciones**: Validación de tipos de archivos y límites
 - **Feedback Visual**: Efectos visuales en todas las interacciones
 
-## 🐛 Depuración y Logging
+## Depuración y Logging
 
 ### Logs del Sistema
 
@@ -170,8 +170,8 @@ El módulo incluye logs detallados con emojis:
 
 ### Navegación del Código
 
-- **📁 Carpeta clara**: Todo en `prendas-module/`
-- **🏷️ Nombres descriptivos**: Cada archivo indica su propósito
+- ** Carpeta clara**: Todo en `prendas-module/`
+- ** Nombres descriptivos**: Cada archivo indica su propósito
 - ** Documentación**: README en cada nivel
 - ** Búsqueda fácil**: Encuentra rápidamente lo que necesitas
 
@@ -204,9 +204,9 @@ El módulo incluye logs detallados con emojis:
 - [ ] Internacionalización por módulo
 - [ ] Performance profiling por componente
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
-### 🎯 Propósito del Módulo
+###  Propósito del Módulo
 - **Claridad**: Saber exactamente a qué pertenece cada archivo
 - **Organización**: Estructura lógica y mantenible
 - **Escalabilidad**: Fácil agregar nuevos componentes

@@ -166,7 +166,7 @@ class CotizacionPrendaApp {
      * Envía el formulario al servidor
      */
     async submitForm(formData) {
-        const response = await fetch(window.routes?.guardarCotizacion || '/asesores/cotizaciones/guardar', {
+        const response = await fetch(window.routes?.guardarCotizacion || '/api/asesores/cotizaciones', {
             method: 'POST',
             body: formData,
             headers: {

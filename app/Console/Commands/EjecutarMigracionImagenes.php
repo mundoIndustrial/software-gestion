@@ -56,7 +56,7 @@ class EjecutarMigracionImagenes extends Command
                 orden INT DEFAULT 0,
                 ancho INT,
                 alto INT,
-                tamaño INT,
+                tamano INT,
                 created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_prenda_cot_id (prenda_cot_id),
@@ -81,7 +81,7 @@ class EjecutarMigracionImagenes extends Command
                 orden INT DEFAULT 0,
                 ancho INT,
                 alto INT,
-                tamaño INT,
+                tamano INT,
                 created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_logo_cotizacion_id (logo_cotizacion_id),
@@ -134,7 +134,7 @@ class EjecutarMigracionImagenes extends Command
                 orden,
                 ancho,
                 alto,
-                tamaño,
+                tamano,
                 created_at,
                 updated_at
             )
@@ -146,7 +146,7 @@ class EjecutarMigracionImagenes extends Command
                 orden,
                 ancho,
                 alto,
-                tamaño,
+                tamano,
                 created_at,
                 updated_at
             FROM prenda_fotos_cot
@@ -195,7 +195,7 @@ class EjecutarMigracionImagenes extends Command
                         'orden' => $orden,
                         'ancho' => null,
                         'alto' => null,
-                        'tamaño' => null,
+                        'tamano' => null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);

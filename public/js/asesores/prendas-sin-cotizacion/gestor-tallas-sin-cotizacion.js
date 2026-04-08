@@ -22,7 +22,7 @@ function actualizarSelectTallasSinCot(select) {
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const tipo = select.value;
     
-    // 🆕 Obtener el género de la prenda seleccionada
+    //  Obtener el género de la prenda seleccionada
     const prendaCard = container.closest('.prenda-card-editable');
     const generoSelect = prendaCard ? prendaCard.querySelector('.prenda-genero') : null;
     const generoSeleccionado = generoSelect ? generoSelect.value : '';
@@ -246,7 +246,7 @@ function actualizarModoNumerosSinCot(container, modo) {
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const botonesDiv = container.querySelector('.talla-botones-container');
     
-    // 🆕 Obtener el género de la prenda seleccionada (no del selector de género)
+    //  Obtener el género de la prenda seleccionada (no del selector de género)
     const prendaCard = container.closest('.prenda-card-editable');
     const generoSelect = prendaCard ? prendaCard.querySelector('.prenda-genero') : null;
     const genero = generoSelect ? (generoSelect.value === 'Dama' ? 'dama' : 'caballero') : '';
@@ -375,7 +375,7 @@ function agregarTallasRangoSinCot(btn) {
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
     const tallasSection = container.querySelector('.tallas-section');
     
-    // 🆕 Obtener el género de la prenda seleccionada
+    //  Obtener el género de la prenda seleccionada
     const prendaCard = container.closest('.prenda-card-editable');
     const generoSelect = prendaCard ? prendaCard.querySelector('.prenda-genero') : null;
     

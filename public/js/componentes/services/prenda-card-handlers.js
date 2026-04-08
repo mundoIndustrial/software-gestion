@@ -3,7 +3,7 @@
  * Maneja clicks en menús, botones, fotos y galerías
  */
 
-window.PrendaCardHandlers = {
+globalThis.PrendaCardHandlers = {
     inicializar(tarjeta, prenda, indice, callbacks = {}) {
 
         this._setupEventListeners();
@@ -13,7 +13,7 @@ window.PrendaCardHandlers = {
         // Debug: Capturar todos los clicks en botones de tres puntos para diagnóstico
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn-menu-tres-puntos')) {
-                console.log('[DEBUG GLOBAL] 🖱️ Click capturado en listener global - btn-menu-tres-puntos');
+                console.log('[DEBUG GLOBAL]  Click capturado en listener global - btn-menu-tres-puntos');
                 console.log('[DEBUG GLOBAL]  Target:', e.target);
                 console.log('[DEBUG GLOBAL]  Closest:', e.target.closest('.btn-menu-tres-puntos'));
             }
@@ -23,7 +23,7 @@ window.PrendaCardHandlers = {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('.btn-menu-tres-puntos');
             if (btn) {
-                console.log('[PrendaCardHandlers] 🖱️ CLICK en btn-menu-tres-puntos (listener específico)');
+                console.log('[PrendaCardHandlers]  CLICK en btn-menu-tres-puntos (listener específico)');
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation(); // Evitar otros listeners
@@ -56,7 +56,7 @@ window.PrendaCardHandlers = {
                 // Prevenir doble click rápido
                 const header = e.target.closest('.seccion-expandible-header');
                 if (header.dataset.toggleDisabled === 'true') {
-                    console.log('[PrendaCardHandlers] 🚫 Toggle deshabilitado temporalmente');
+                    console.log('[PrendaCardHandlers]  Toggle deshabilitado temporalmente');
                     return;
                 }
                 
@@ -66,14 +66,14 @@ window.PrendaCardHandlers = {
                     header.dataset.toggleDisabled = 'false';
                 }, 300); // 300ms de protección
                 
-                console.log('[PrendaCardHandlers] 🖱️ CLICK detectado en sección expandible');
+                console.log('[PrendaCardHandlers]  CLICK detectado en sección expandible');
                 console.log('[PrendaCardHandlers]  Target:', e.target);
                 console.log('[PrendaCardHandlers]  Closest header:', header);
 
                 const content = header.nextElementSibling;
                 
-                console.log('[PrendaCardHandlers] 📄 Content element:', content);
-                console.log('[PrendaCardHandlers] 📄 Content classes:', content ? content.className : 'No encontrado');
+                console.log('[PrendaCardHandlers]  Content element:', content);
+                console.log('[PrendaCardHandlers]  Content classes:', content ? content.className : 'No encontrado');
                 
                 if (content && content.classList.contains('seccion-expandible-content')) {
                     console.log('[PrendaCardHandlers]  Content válido, toggling classes');
@@ -84,8 +84,8 @@ window.PrendaCardHandlers = {
                     
                     const isActive = content.classList.contains('active');
                     console.log('[PrendaCardHandlers]  Toggle completado:', { wasActive, isActive });
-                    console.log('[PrendaCardHandlers] 📄 Nuevas clases content:', content.className);
-                    console.log('[PrendaCardHandlers] 📄 Nuevas clases header:', header.className);
+                    console.log('[PrendaCardHandlers]  Nuevas clases content:', content.className);
+                    console.log('[PrendaCardHandlers]  Nuevas clases header:', header.className);
                     
                     // Usar clases CSS en lugar de estilos inline para evitar conflictos con !important
                     if (isActive) {
@@ -94,14 +94,14 @@ window.PrendaCardHandlers = {
                         
                         // Forzar display:block inmediatamente si las clases CSS no funcionan
                         setTimeout(() => {
-                            const computedDisplay = window.getComputedStyle(content).display;
+                            const computedDisplay = globalThis.getComputedStyle(content).display;
                             if (computedDisplay === 'none') {
                                 console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:block con JavaScript');
                                 content.style.setProperty('display', 'block', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
-                                    const newDisplay = window.getComputedStyle(content).display;
+                                    const newDisplay = globalThis.getComputedStyle(content).display;
                                     console.log('[PrendaCardHandlers]  Después de forzar - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
@@ -116,14 +116,14 @@ window.PrendaCardHandlers = {
                         
                         // Forzar display:none inmediatamente si las clases CSS no funcionan
                         setTimeout(() => {
-                            const computedDisplay = window.getComputedStyle(content).display;
+                            const computedDisplay = globalThis.getComputedStyle(content).display;
                             if (computedDisplay !== 'none') {
                                 console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:none con JavaScript');
                                 content.style.setProperty('display', 'none', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
-                                    const newDisplay = window.getComputedStyle(content).display;
+                                    const newDisplay = globalThis.getComputedStyle(content).display;
                                     console.log('[PrendaCardHandlers]  Después de forzar cierre - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
@@ -136,7 +136,7 @@ window.PrendaCardHandlers = {
                     
                     // Verificar estilos computados con más tiempo para asegurar que se aplique
                     setTimeout(() => {
-                        const computedStyle = window.getComputedStyle(content);
+                        const computedStyle = globalThis.getComputedStyle(content);
                         const displayStyle = computedStyle.getPropertyValue('display');
                         const inlineStyle = content.getAttribute('style');
                         console.log('[PrendaCardHandlers]  Computed style display:', displayStyle);
@@ -145,13 +145,13 @@ window.PrendaCardHandlers = {
                         console.log('[PrendaCardHandlers]  Computed style height:', computedStyle.getPropertyValue('height'));
                         
                         // Medición inicial
-                        console.log('[PrendaCardHandlers] 📏 Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                        console.log('[PrendaCardHandlers]  Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                         
                         // Si scrollHeight es 0, hacer una segunda medición después de más tiempo
                         if (content.scrollHeight === 0 && isActive) {
                             console.log('[PrendaCardHandlers]  scrollHeight es 0, haciendo segunda medición...');
                             setTimeout(() => {
-                                console.log('[PrendaCardHandlers] 📏 Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                console.log('[PrendaCardHandlers]  Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                                 
                                 // Forzar un reflow si es necesario
                                 if (content.scrollHeight === 0) {
@@ -162,14 +162,14 @@ window.PrendaCardHandlers = {
                                     content.offsetHeight; // Forzar reflow again
                                     
                                     setTimeout(() => {
-                                        console.log('[PrendaCardHandlers] 📏 Medición después de reflow - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                        console.log('[PrendaCardHandlers]  Medición después de reflow - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                                     }, 50);
                                 }
                             }, 200);
                         }
                         
                         // Verificar si hay otros estilos aplicados
-                        const allStyles = window.getComputedStyle(content, null);
+                        const allStyles = globalThis.getComputedStyle(content, null);
                         console.log('[PrendaCardHandlers]  Todos los estilos aplicados:', {
                             display: allStyles.display,
                             visibility: allStyles.visibility,
@@ -195,11 +195,11 @@ window.PrendaCardHandlers = {
                         
                         // Verificar si hay elementos específicos según el tipo de sección
                         const section = header.getAttribute('data-section');
-                        console.log('[PrendaCardHandlers] 🏷️ Tipo de sección:', section);
+                        console.log('[PrendaCardHandlers]  Tipo de sección:', section);
                         
                         if (section === 'variaciones') {
                             const variantes = content.querySelectorAll('.variacion-item');
-                            console.log('[PrendaCardHandlers] 👗 Variaciones encontradas:', variantes.length);
+                            console.log('[PrendaCardHandlers]  Variaciones encontradas:', variantes.length);
                             
                             // Verificar filas de la tabla
                             const tableRows = content.querySelectorAll('table tr');
@@ -216,8 +216,11 @@ window.PrendaCardHandlers = {
                                 console.log('[PrendaCardHandlers]  No se encontró TBODY en la tabla');
                             }
                         } else if (section === 'tallas-y-cantidades') {
-                            const tallas = content.querySelectorAll('.talla-item, .talla-row');
-                            console.log('[PrendaCardHandlers] 📏 Tallas encontradas:', tallas.length);
+                            // El markup actual usa tarjetas inline (sin .talla-item/.talla-row).
+                            const tallas = content.querySelectorAll('i.fa-ruler');
+                            const contadorHeader = header.querySelector('.tallas-cantidades-count')?.textContent?.trim() || 'N/A';
+                            console.log('[PrendaCardHandlers] Tallas encontradas (iconos fa-ruler):', tallas.length);
+                            console.log('[PrendaCardHandlers] Tallas segun contador header:', contadorHeader);
                         } else if (section === 'procesos') {
                             const procesos = content.querySelectorAll('.proceso-item');
                             console.log('[PrendaCardHandlers]  Procesos encontrados:', procesos.length);
@@ -228,9 +231,9 @@ window.PrendaCardHandlers = {
                         let parent = content.parentElement;
                         let level = 0;
                         while (parent && level < 8) { // Aumenté a 8 niveles
-                            const parentStyle = window.getComputedStyle(parent);
+                            const parentStyle = globalThis.getComputedStyle(parent);
                             const parentRect = parent.getBoundingClientRect();
-                            console.log(`[PrendaCardHandlers] 📁 Padre Nivel ${level}:`, {
+                            console.log(`[PrendaCardHandlers]  Padre Nivel ${level}:`, {
                                 tagName: parent.tagName,
                                 className: parent.className,
                                 display: parentStyle.display,
@@ -270,7 +273,7 @@ window.PrendaCardHandlers = {
                             right: rect.right,
                             width: rect.width,
                             height: rect.height,
-                            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth
+                            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= globalThis.innerHeight && rect.right <= globalThis.innerWidth
                         });
                     }, 50);
                 } else {
@@ -290,8 +293,8 @@ window.PrendaCardHandlers = {
                 let esCrearNuevo = false;
                 
                 // Prioridad 1: Obtener desde GestionItemsUI (crear-nuevo)
-                if (window.gestionItemsUI) {
-                    const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
+                if (globalThis.gestionItemsUI) {
+                    const itemsOrdenados = globalThis.gestionItemsUI.obtenerItemsOrdenados();
                     if (itemsOrdenados && itemsOrdenados[prendaIndex]) {
                         prenda = itemsOrdenados[prendaIndex];
                         esCrearNuevo = true;
@@ -300,14 +303,14 @@ window.PrendaCardHandlers = {
                 }
                 
                 // Prioridad 2: Obtener desde itemsPedido (fallback)
-                if (!prenda && window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                if (!prenda && globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
                 }
                 
                 // Prioridad 3: Obtener desde gestor (pedidos guardados)
-                if (!prenda && window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                if (!prenda && globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -316,16 +319,16 @@ window.PrendaCardHandlers = {
                 
                 if (prenda) {
                     // Si es crear-nuevo, abrir el modal de creación con datos precargados
-                    if (esCrearNuevo && window.gestionItemsUI) {
+                    if (esCrearNuevo && globalThis.gestionItemsUI) {
 
-                        window.gestionItemsUI.prendaEditIndex = prendaIndex;
-                        // 🔴 abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
+                        globalThis.gestionItemsUI.prendaEditIndex = prendaIndex;
+                        //  abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
                         // y llama a cargarPrendaEnModal() internamente (línea 373 de gestion-items-pedido.js).
                         // NO hacer segunda llamada con setTimeout — causaba doble carga de la prenda.
-                        window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+                        globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva();
                     }
                     // Si es pedido guardado, abrir modal simple de edición
-                    else if (window.abrirEditarPrendaModal) {
+                    else if (globalThis.abrirEditarPrendaModal) {
                         // Obtener pedidoId de múltiples fuentes
                         let pedidoId = null;
                         
@@ -333,9 +336,9 @@ window.PrendaCardHandlers = {
                         if (document.body.dataset.pedidoIdEdicion) {
                             pedidoId = document.body.dataset.pedidoIdEdicion;
                         }
-                        // 2. Desde window global (editar-pedido.blade.php)
-                        else if (window.pedidoEdicionId) {
-                            pedidoId = window.pedidoEdicionId;
+                        // 2. Desde globalThis global (editar-pedido.blade.php)
+                        else if (globalThis.pedidoEdicionId) {
+                            pedidoId = globalThis.pedidoEdicionId;
                         }
                         // 3. Desde elemento con data-pedido-id
                         else {
@@ -348,7 +351,7 @@ window.PrendaCardHandlers = {
                             pedidoId
                         });
                         
-                        window.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
+                        globalThis.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
                     }
                 }
                 
@@ -364,13 +367,13 @@ window.PrendaCardHandlers = {
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
                 console.log(' [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
-                console.log(' [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
+                console.log(' [ELIMINAR-PRENDA] globalThis.gestionItemsUI existe:', !!globalThis.gestionItemsUI);
                 
                 // Usar el método eliminarItem de GestionItemsUI que maneja correctamente la lógica
                 // (incluyendo confirmación, re-indexación y renderización)
-                if (window.gestionItemsUI) {
+                if (globalThis.gestionItemsUI) {
                     console.log(' [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI.eliminarItem()');
-                    window.gestionItemsUI.eliminarItem(prendaIndex);
+                    globalThis.gestionItemsUI.eliminarItem(prendaIndex);
                 }
                 
                 const submenu = btn.closest('.submenu-prenda');
@@ -395,14 +398,14 @@ window.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = window.gestionItemsUI.prendas[prendaIndex];
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
+                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
 
-                } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
-                } else if (window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                } else if (globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -422,14 +425,14 @@ window.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = window.gestionItemsUI.prendas[prendaIndex];
+                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
+                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
 
-                } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
-                    prenda = window.itemsPedido[prendaIndex];
+                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
+                    prenda = globalThis.itemsPedido[prendaIndex];
 
-                } else if (window.gestorPrendaSinCotizacion) {
-                    prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                } else if (globalThis.gestorPrendaSinCotizacion) {
+                    prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
                 }
                 
@@ -453,8 +456,8 @@ window.PrendaCardHandlers = {
         
         const fotosUrls = imagenes.map((img, idx) => {
             // Usar servicio centralizado para convertir imágenes
-            const url = window.ImageConverterService ? 
-                window.ImageConverterService.convertirAUrl(img) : 
+            const url = globalThis.ImageConverterService ? 
+                globalThis.ImageConverterService.convertirAUrl(img) : 
                 null;
             
             if (url) {
@@ -608,8 +611,8 @@ window.PrendaCardHandlers = {
             if (tela.imagenes && Array.isArray(tela.imagenes)) {
                 const fotosUrlsTela = tela.imagenes.map((img) => {
                     // Usar servicio centralizado para convertir imágenes
-                    const url = window.ImageConverterService ? 
-                        window.ImageConverterService.convertirAUrl(img) : 
+                    const url = globalThis.ImageConverterService ? 
+                        globalThis.ImageConverterService.convertirAUrl(img) : 
                         null;
                     
                     if (url) {

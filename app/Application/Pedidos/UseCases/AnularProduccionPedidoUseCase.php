@@ -9,10 +9,8 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
  * Use Case: Anular Producción Pedido
- * 
  * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
  * Ahora también gestiona la actualización del campo 'novedades' con formato: NOMBRE-ROL-FECHATIME-MOTIVO
- * 
  * Antes: 45 líneas
  * Después: 15 líneas
  * Reducción: 67%

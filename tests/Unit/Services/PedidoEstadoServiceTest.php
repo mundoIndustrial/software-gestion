@@ -7,11 +7,11 @@ use App\Models\PedidoProduccion;
 use App\Models\User;
 use App\Services\PedidoEstadoService;
 use App\Enums\EstadoPedido;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class PedidoEstadoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private PedidoEstadoService $service;
     private User $supervisor;
@@ -28,7 +28,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero de pedido
+     * Test: Obtener siguiente numero de pedido
      */
     public function test_obtener_siguiente_numero_pedido()
     {
@@ -40,7 +40,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero cuando no hay pedidos
+     * Test: Obtener siguiente numero cuando no hay pedidos
      */
     public function test_obtener_siguiente_numero_pedido_sin_registros()
     {
@@ -85,7 +85,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transición invÃ¡lida
+     * Test: Rechazar transición invalida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -118,7 +118,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar nÃºmero de pedido
+     * Test: Asignar numero de pedido
      */
     public function test_asignar_numero_pedido()
     {
@@ -135,7 +135,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: NÃºmeros Ãºnicos no duplicados
+     * Test: numeros unicos no duplicados
      */
     public function test_numeros_pedido_son_unicos()
     {
@@ -210,7 +210,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo PENDIENTE â†’ FINALIZADO
+     * Test: Flujo completo PENDIENTE  FINALIZADO
      */
     public function test_flujo_completo_pedido()
     {
@@ -255,4 +255,6 @@ class PedidoEstadoServiceTest extends TestCase
         $this->service->marcarComoFinalizado($pedido);
     }
 }
+
+
 

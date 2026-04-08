@@ -10,7 +10,7 @@ use App\Models\PrendaCot;
 use App\Models\PrendaVarianteCot;
 use App\Models\PrendaTallaCot;
 use App\Models\PrendaFotoCot;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -18,7 +18,7 @@ use Tests\TestCase;
  * Test Suite: Concurrencia y Casos Extremos
  * 
  * Validar que el sistema maneje correctamente:
- * - MÃºltiples asesores creando simultÃ¡neamente
+ * - multiples asesores creando simultaneamente
  * - Transacciones y locks para evitar race conditions
  * - Incrementos secuenciales de numero_cotizacion
  * 
@@ -31,7 +31,7 @@ class CotizacionesConcurrencyTest extends TestCase
      * TEST 1: Simular 100 creaciones secuenciales - verificar secuencialidad perfecta
      * 
      * Este test verificar que sin importar cómo se creen las cotizaciones,
-     * el numero_cotizacion siempre sea secuencial y Ãºnico.
+     * el numero_cotizacion siempre sea secuencial y unico.
      */
     public function test_100_cotizaciones_secuenciales_sin_duplicados(): void
     {
@@ -61,7 +61,7 @@ class CotizacionesConcurrencyTest extends TestCase
                     'estado' => 'enviada',
                 ]);
 
-                // Asignar nÃºmero secuencialmente
+                // Asignar numero secuencialmente
                 $cot->numero_cotizacion = sprintf('COT-%010d', $i);
                 $cot->save();
 
@@ -82,19 +82,19 @@ class CotizacionesConcurrencyTest extends TestCase
         // Verificar que no hay duplicados
         $this->assertEquals(100, count(array_unique($numeros)));
 
-        // Verificar que estÃ¡n en orden
+        // Verificar que están en orden
         $numerosOrdenados = $numeros;
         sort($numerosOrdenados);
         $this->assertEquals($numeros, $numerosOrdenados);
 
         echo "\n 100 Cotizaciones creadas sin duplicados\n";
-        echo "Primero: " . $numeros[0] . ", Ãšltimo: " . $numeros[99] . "\n";
+        echo "Primero: " . $numeros[0] . ",ultimo: " . $numeros[99] . "\n";
     }
 
     /**
-     * TEST 2: Emular 3 asesores haciendo transacciones simultÃ¡neas
+     * TEST 2: Emular 3 asesores haciendo transacciones simultaneas
      * 
-     * Crea mÃºltiples cotizaciones desde diferentes usuarios de forma
+     * Crea multiples cotizaciones desde diferentes usuarios de forma
      * intercalada para simular concurrencia.
      */
     public function test_concurrencia_3_asesores_intercalado(): void
@@ -124,7 +124,7 @@ class CotizacionesConcurrencyTest extends TestCase
                     'cliente_id' => $cliente->id,
                     'numero_cotizacion' => sprintf(
                         'COT-ASYNC-%s-%02d',
-                        $asesor->name[7], // Ãšltima letra del nombre
+                        $asesor->name[7], // ultima letra del nombre
                         $i
                     ),
                     'tipo_cotizacion_id' => $tipo->id,
@@ -152,11 +152,11 @@ class CotizacionesConcurrencyTest extends TestCase
             $this->assertCount(11, $cots);
         }
 
-        // Todos los nÃºmeros deben ser Ãºnicos
+        // Todos los numeros deben ser unicos
         $this->assertEquals(33, count(array_unique($numerosGlobales)));
 
-        echo "\n 3 Asesores Ã— 11 Cotizaciones = 33 Total (Intercalado)\n";
-        echo "NÃºmeros Ãºnicos: " . count(array_unique($numerosGlobales)) . "\n";
+        echo "\n 3 Asesores — 11 Cotizaciones = 33 Total (Intercalado)\n";
+        echo "numeros unicos: " . count(array_unique($numerosGlobales)) . "\n";
     }
 
     /**
@@ -230,23 +230,23 @@ class CotizacionesConcurrencyTest extends TestCase
 
         $numeroOriginal = $cot->numero_cotizacion;
 
-        // Intentar cambiar (deberÃ­a estar protegido)
+        // Intentar cambiar (deberia estar protegido)
         $cot->numero_cotizacion = 'COT-CHANGED-999';
         $cot->save();
 
         // Recargar desde BD
         $cotRefresco = Cotizacion::find($cot->id);
 
-        // El nÃºmero deberÃ­a haber cambiado (o estar protegido dependiendo de implementación)
+        // El numero deberia haber cambiado (o estar protegido dependiendo de implementación)
         // Para este test, verificamos que se registra el cambio
-        // En producción, deberÃ­as implementar protección en el modelo
+        // En producción, deberias implementar protección en el modelo
         $this->assertNotNull($cotRefresco->numero_cotizacion);
 
-        echo "\n NÃºmero de cotización actualizado correctamente\n";
+        echo "\n numero de cotización actualizado correctamente\n";
     }
 
     /**
-     * TEST 5: Crear cotizaciones con mÃ¡ximo de prendas/fotos
+     * TEST 5: Crear cotizaciones con Maximo de prendas/fotos
      * 
      * Verificar que el sistema puede manejar cotizaciones con muchas prendas
      * y muchas fotos sin problemas.
@@ -294,9 +294,6 @@ class CotizacionesConcurrencyTest extends TestCase
                     'ruta_webp' => "storage/prenda_{$p}_foto_{$f}.webp",
                     'ruta_miniatura' => "storage/prenda_{$p}_foto_{$f}_thumb.jpg",
                     'orden' => $f,
-                    'ancho' => 1920,
-                    'alto' => 1080,
-                    'tamaÃ±o' => 524288,
                 ]);
 
                 $fotosCount++;
@@ -314,20 +311,20 @@ class CotizacionesConcurrencyTest extends TestCase
 
         // Verificaciones
         $this->assertEquals(10, $prendasCount);
-        $this->assertEquals(100, $fotosCount); // 10 prendas Ã— 10 fotos
+        $this->assertEquals(100, $fotosCount); // 10 prendas — 10 fotos
 
         // Recargar y verificar integridad
-        $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
+        $cotRefresco = Cotizacion::with('prendas.fotos', 'prendas.tallas')->find($cot->id);
         $this->assertCount(10, $cotRefresco->prendas);
 
-        echo "\n Cotización con mÃ¡ximas prendas/fotos creada correctamente\n";
+        echo "\n Cotización con maximas prendas/fotos creada correctamente\n";
         echo "Prendas: $prendasCount, Fotos: $fotosCount\n";
     }
 
     /**
      * TEST 6: Validar que diferentes tipos de cotización funcionan juntos
      * 
-     * Crear mÃºltiples cotizaciones de tipos M, P, G sin conflictos.
+     * Crear multiples cotizaciones de tipos M, P, G sin conflictos.
      */
     public function test_multiples_tipos_cotizacion_sin_conflictos(): void
     {
@@ -379,7 +376,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $totalCots = Cotizacion::count();
         $this->assertGreaterThanOrEqual(15, $totalCots);
 
-        echo "\n MÃºltiples tipos de cotización funcionan correctamente\n";
+        echo "\n multiples tipos de cotización funcionan correctamente\n";
         echo "Tipo M: 5, Tipo P: 5, Tipo G: 5 = 15 Total\n";
     }
 
@@ -412,7 +409,7 @@ class CotizacionesConcurrencyTest extends TestCase
                 'estado' => 'enviada',
             ]);
 
-            // Crear prenda mÃ­nima
+            // Crear prenda minima
             $prenda = PrendaCot::create([
                 'cotizacion_id' => $cot->id,
                 'nombre_producto' => "Prenda $i",
@@ -424,6 +421,8 @@ class CotizacionesConcurrencyTest extends TestCase
             PrendaFotoCot::create([
                 'prenda_cot_id' => $prenda->id,
                 'ruta_original' => "storage/test_$i.jpg",
+                'ruta_webp' => "storage/test_$i.webp",
+                'ruta_miniatura' => "storage/test_{$i}_thumb.jpg",
                 'orden' => 1,
             ]);
 
@@ -491,4 +490,5 @@ class CotizacionesConcurrencyTest extends TestCase
         echo "\n Soft delete funcionó correctamente\n";
     }
 }
+
 

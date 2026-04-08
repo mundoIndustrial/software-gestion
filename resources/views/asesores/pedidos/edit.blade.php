@@ -196,7 +196,7 @@
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-selector-modo-proceso')
-@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+@include('shared.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 
@@ -205,7 +205,7 @@
 @endpush
 
 @push('scripts')
-<!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
+<!--  SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
 <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
@@ -236,7 +236,7 @@
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 
 <!-- Scripts para gestión de ítems en modal (necesarios para edición modal de prendas) -->
-<script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>
 <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
@@ -277,7 +277,7 @@
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}"></script>
 
 <!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
@@ -285,11 +285,22 @@
 
 <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-imagenes.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-persistencia.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-state.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-render-events.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-por-tallas-persist-controller.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-galeria-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-delete-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-loader-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
@@ -308,12 +319,20 @@
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
-<!-- 🆕 PrendaEditor sin legacy -->
+<!--  PrendaEditor sin legacy -->
 <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
 
+<script src="{{ asset('js/modulos/crear-pedido/procesos/pedido-items-state.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-core-services.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/items-sync-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/item-removal-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-edicion-adapter.js') }}?v={{ time() }}"></script>
 
 <!-- Manejadores de variaciones -->
 <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}?v={{ time() }}"></script>
@@ -354,7 +373,7 @@
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/telas-module-main.js') }}?v={{ time() }}"></script>
 
 <!-- Resto de handlers que necesitan DOMContentLoaded -->
 <script>
@@ -363,7 +382,7 @@
         function setupUpperCaseInput(inputId) {
             const input = document.getElementById(inputId);
             if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
+                console.log(' Configurando input para mayúsculas:', inputId);
                 
                 // Función para convertir a mayúsculas
                 function forceUpperCase() {
@@ -371,7 +390,7 @@
                     const upperValue = currentValue.toUpperCase();
                     if (currentValue !== upperValue) {
                         input.value = upperValue;
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
+                        console.log(' Convertido a mayúsculas:', currentValue, '→', upperValue);
                     }
                 }
                 
@@ -387,7 +406,7 @@
                 // Convertir valor inicial si existe
                 if (input.value) {
                     input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
+                    console.log(' Valor inicial convertido:', input.value);
                 }
                 
                 // Forzar mayúsculas cada segundo por si acaso
@@ -396,7 +415,7 @@
                 // Limpiar intervalo después de 10 segundos para no consumir recursos
                 setTimeout(() => clearInterval(intervalId), 10000);
             } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
+                console.warn(' Input no encontrado:', inputId);
             }
         }
         
@@ -510,4 +529,3 @@
 <script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 @endpush
-

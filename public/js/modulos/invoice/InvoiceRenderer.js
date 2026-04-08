@@ -18,14 +18,7 @@ class InvoiceRenderer {
      */
     generarHTMLFactura(datos) {
         try {
-            console.log('[generarHTMLFactura] Datos recibidos:', {
-                datos_existe: !!datos,
-                datos_keys: datos ? Object.keys(datos) : 'null',
-                prendas_existe: !!(datos && datos.prendas),
-                prendas_es_array: !!(datos && datos.prendas && Array.isArray(datos.prendas)),
-                prendas_length: datos && datos.prendas ? datos.prendas.length : 'N/A'
-            });
-            
+
             // Validar que datos y prendas existan
             if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
                 return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
@@ -40,7 +33,7 @@ class InvoiceRenderer {
             const prendasHTML = datos.prendas.map((prenda, idx) => {
                 return this.renderizarPrenda(prenda, idx);
             }).join('');
-            
+
             // Construir el HTML final
             const htmlFacturaFinal = `
                 <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px;">
@@ -50,6 +43,11 @@ class InvoiceRenderer {
                             <div style="font-weight: 700; color: #1a3a52; font-size: 13px; margin-bottom: 2px;">${datos.cliente}</div>
                             <div style="color: #666; font-size: 13px;">Asesor: ${datos.asesora}</div>
                             <div style="color: #666; font-size: 13px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
+                            ${datos.orden_compra ? `
+                                <div style="color: #666; font-size: 13px; margin-top: 3px;">
+                                    <strong>Orden de Compra:</strong> ${datos.orden_compra}
+                                </div>
+                            ` : ''}
                             ${datos.observaciones ? `
                                 <div style="color: #666; font-size: 13px; margin-top: 3px;">
                                     <strong>Observaciones:</strong> ${datos.observaciones}
@@ -63,17 +61,17 @@ class InvoiceRenderer {
                             <div style="color: #666; font-size: 13px;">${datos.fecha_creacion}</div>
                         </div>
                     </div>
-                    
+
                     <!-- Items (Prendas) -->
                     <div style="margin-top: 6px;">
                         ${prendasHTML}
                     </div>
-                    
+
                     <!-- EPP Items -->
                     ${this.renderizarEPP(datos.epps)}
                 </div>
             `;
-            
+
             return htmlFacturaFinal;
         } catch (error) {
             return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error generando factura: ' + error.message + '</div>';
@@ -86,26 +84,26 @@ class InvoiceRenderer {
     renderizarPrenda(prenda, idx) {
         // Renderizar variantes
         const variantesHTML = this.renderizarVariantes(prenda);
-        
+
         // Renderizar especificaciones principales
         const especificacionesHTML = this.renderizarEspecificaciones(prenda);
-        
+
         // Renderizar información de tela
         const telaHTML = this.renderizarTela(prenda);
-        
+
         // Renderizar tallas por género
         const generosTallasHTML = this.renderizarTallas(prenda);
-        
+
         // Renderizar procesos
         const procesosListaHTML = this.renderizarProcesos(prenda);
-        
+
         return `
             <div style="background: white; border: 1px solid #ddd; border-radius: 3px; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; font-size: 11px;">
                 <!-- Encabezado -->
                 <div style="background: #f0f0f0; padding: 6px 8px; margin: -8px -8px 8px -8px; border-radius: 3px 3px 0 0; border-bottom: 2px solid #2c3e50;">
                     <span style="font-weight: 700; color: #2c3e50; font-size: 11px;"> PRENDA ${idx + 1}</span>
                 </div>
-                
+
                 <!-- Layout 3 columnas -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                     <!-- Columna 1: Imagen + Nombre -->
@@ -122,7 +120,7 @@ class InvoiceRenderer {
                             ${prenda.descripcion ? `<div style="color: #666; font-size: 11px; line-height: 1.3;">${prenda.descripcion}</div>` : ''}
                         </div>
                     </div>
-                    
+
                     <!-- Columna 2: Tela, Color, Ref + Tallas -->
                     <div style="font-size: 11px;">
                         <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px;">
@@ -130,17 +128,17 @@ class InvoiceRenderer {
                             <div>${generosTallasHTML}</div>
                         </div>
                     </div>
-                    
+
                     <!-- Columna 3: Variantes -->
                     <div style="font-size: 11px;">
                         <div style="font-weight: 600; color: #2c3e50; margin-bottom: 4px; font-size: 11px;"> Variaciones</div>
                         ${this.renderizarVariacionesColumna(prenda)}
                     </div>
                 </div>
-                
+
                 <!-- Variantes detalladas -->
                 ${variantesHTML}
-                
+
                 <!-- Procesos -->
                 ${procesosListaHTML ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
@@ -162,36 +160,21 @@ class InvoiceRenderer {
     }
 
     renderizarTela(prenda) {
-        // 🔴 NUEVO: Verificar si hay colores asignados por talla (múltiples fuentes)
+        //  NUEVO: Verificar si hay colores asignados por talla (múltiples fuentes)
         const hayColorPorTalla = (
             (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) ||
             (prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) ||
             (prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0)
         );
-        
+
         // Debug logging para diagnóstico
-        console.log('[InvoiceRenderer] renderizarTela - Datos:', {
-            prendas_id: prenda.id,
-            telas_array: prenda.telas_array,
-            imagenes_tela: prenda.imagenes_tela,
-            talla_colores: prenda.talla_colores,
-            asignaciones: prenda.asignaciones,
-            asignacionesColoresPorTalla: prenda.asignacionesColoresPorTalla,
-            hayColorPorTalla
-        });
-        
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
             return prenda.telas_array.map(tela => {
                 // Debug logging para cada tela
                 if (tela.fotos && tela.fotos.length > 0) {
-                    console.log('[InvoiceRenderer] Foto de tela encontrada:', {
-                        tela_nombre: tela.tela_nombre,
-                        fotos_count: tela.fotos.length,
-                        primera_foto: tela.fotos[0],
-                        url_extraida: window._extraerURLImagen(tela.fotos[0])
-                    });
+                    // Debug: Imágenes disponibles
                 }
-                
+
                 return `
                 <div style="margin-bottom: 8px; line-height: 1.4;">
                     ${tela.tela_nombre ? `<div><strong>Tela:</strong> ${tela.tela_nombre}</div>` : ''}
@@ -204,13 +187,9 @@ class InvoiceRenderer {
         } else {
             // Debug logging para fallback
             if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
-                console.log('[InvoiceRenderer] Usando imagenes_tela fallback:', {
-                    imagenes_count: prenda.imagenes_tela.length,
-                    primera_imagen: prenda.imagenes_tela[0],
-                    url_extraida: window._extraerURLImagen(prenda.imagenes_tela[0])
-                });
+                // Debug: Imágenes de tela disponibles
             }
-            
+
             return `
                 ${prenda.tela ? `<div><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
                 ${prenda.color && !hayColorPorTalla ? `<div><strong>Color:</strong> ${prenda.color}</div>` : ''}
@@ -225,27 +204,15 @@ class InvoiceRenderer {
     }
 
     renderizarTallas(prenda) {
-        console.log('[InvoiceRenderer] renderizarTallas - Prenda completa:', prenda);
-        console.log('[InvoiceRenderer] renderizarTallas - Variantes:', prenda.variantes);
-        console.log('[InvoiceRenderer] DEBUG CANTIDAD_TALLA:', prenda.cantidad_talla);
-        console.log('[InvoiceRenderer] DEBUG TALLAS:', prenda.tallas);
-        
-        // 🔴 NUEVO: Primero intentar con cantidad_talla (estructura del editor)
+        //  NUEVO: Primero intentar con cantidad_talla (estructura del editor)
         if (prenda.cantidad_talla && prenda.cantidad_talla.GENERICO) {
-            console.log('[InvoiceRenderer] ✅ DETECTADO SOLO CANTIDAD en cantidad_talla');
-            console.log('[InvoiceRenderer] cantidad_talla.GENERICO:', prenda.cantidad_talla.GENERICO);
-            
             let cantidad = 0;
             const generericoObj = prenda.cantidad_talla.GENERICO;
-            
+
             if (typeof generericoObj === 'object') {
                 const valores = Object.values(generericoObj);
-                console.log('[InvoiceRenderer] Valores en GENERICO:', valores);
-                
                 if (valores.length > 0) {
                     const primerValor = valores[0];
-                    console.log('[InvoiceRenderer] Primer valor:', primerValor, 'Tipo:', typeof primerValor);
-                    
                     // Si es un número, usarlo directamente
                     if (typeof primerValor === 'number') {
                         cantidad = primerValor;
@@ -265,9 +232,6 @@ class InvoiceRenderer {
                     }
                 }
             }
-            
-            console.log('[InvoiceRenderer] CANTIDAD FINAL EXTRAIDA:', cantidad);
-            
             return `
                 <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
                 <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
@@ -275,27 +239,27 @@ class InvoiceRenderer {
                 </div>
             `;
         }
-        
+
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
             const generosConTallas = Object.entries(prenda.tallas).filter(([gen, tallasObj]) => 
                 typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
             );
-            
-            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+
+            //  NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
             const tieneGenerico = generosConTallas.some(([gen]) => gen.toUpperCase() === 'GENERICO');
             const soloGenerico = tieneGenerico && generosConTallas.length === 1;
-            
+
             // Si SOLO hay GENERICO, mostrar "Cantidad: X" de forma simple
             if (soloGenerico) {
                 const [genero, tallasObj] = generosConTallas[0];
-                
-                // 🔴 FIX: Extraer cantidad de forma robusta
+
+                //  FIX: Extraer cantidad de forma robusta
                 let cantidad = 0;
                 const valores = Object.values(tallasObj);
-                
+
                 if (valores.length > 0) {
                     const primerValor = valores[0];
-                    
+
                     // Si es un número, usarlo directamente
                     if (typeof primerValor === 'number') {
                         cantidad = primerValor;
@@ -320,7 +284,7 @@ class InvoiceRenderer {
                         }
                     }
                 }
-                
+
                 return `
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
                     <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
@@ -328,23 +292,23 @@ class InvoiceRenderer {
                     </div>
                 `;
             }
-            
+
             // Filtrar GENERICO del mapeo normal (si hay más géneros además de GENERICO)
             const generosParaMostrar = generosConTallas.filter(([gen]) => {
                 const generoUpper = String(gen || '').toUpperCase().trim();
                 return generoUpper !== 'GENERICO';
             });
-            
+
             if (generosParaMostrar.length > 0) {
-                // 🔴 REFUERZO: Filtrar GENERICO nuevamente como precaución extra
+                //  REFUERZO: Filtrar GENERICO nuevamente como precaución extra
                 const generosFiltrados = generosParaMostrar.filter(([gen]) => {
                     return gen && String(gen).toUpperCase().trim() !== 'GENERICO';
                 });
-                
+
                 if (generosFiltrados.length === 0) {
                     return ''; // Si solo quedan GENERICOs, no mostrar tabla
                 }
-                
+
                 return `
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
                     <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
@@ -352,10 +316,10 @@ class InvoiceRenderer {
                             // Recopilar todos los colores con sus tallas
                             const porColor = {};
                             let hayColores = false;
-                            
+
                             Object.entries(tallasObj).forEach(([talla, cant]) => {
                                 let coloresConCantidad = [];
-                                
+
                                 // Detectar sobremedida
                                 let tallaFinal = talla;
                                 if (!talla || talla.trim() === '') {
@@ -369,7 +333,7 @@ class InvoiceRenderer {
                                         tallaFinal = 'SOBREMEDIDA';
                                     }
                                 }
-                                
+
                                 // Buscar colores en talla_colores
                                 if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                     const coloresEnTalla = prenda.talla_colores.filter(tc => 
@@ -384,7 +348,7 @@ class InvoiceRenderer {
                                         }));
                                     }
                                 }
-                                
+
                                 // Buscar en asignaciones
                                 if (coloresConCantidad.length === 0 && prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) {
                                     const coloresEnTalla = prenda.asignaciones.filter(a => 
@@ -399,7 +363,7 @@ class InvoiceRenderer {
                                         }));
                                     }
                                 }
-                                
+
                                 // Buscar en asignacionesColoresPorTalla (formato key)
                                 if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
                                     const key = `${genero.toUpperCase()}-${prenda.telas_array?.[0]?.tela_nombre || 'DRILL'}-${talla}`;
@@ -412,7 +376,7 @@ class InvoiceRenderer {
                                         }));
                                     }
                                 }
-                                
+
                                 // Buscar en variantes
                                 if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
                                     const varianteColor = prenda.variantes.find(v => v.talla === talla);
@@ -424,7 +388,7 @@ class InvoiceRenderer {
                                         }));
                                     }
                                 }
-                                
+
                                 // Buscar en asignacionesColoresPorTalla (formato objeto)
                                 if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
                                     const clavePorObjeto = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
@@ -468,7 +432,7 @@ class InvoiceRenderer {
                                         }
                                     }
                                 }
-                                
+
                                 // Agrupar por color
                                 if (coloresConCantidad.length > 0) {
                                     coloresConCantidad.forEach(color => {
@@ -499,12 +463,12 @@ class InvoiceRenderer {
                                     porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal });
                                 }
                             });
-                            
+
                             // Renderizar agrupado por color
                             let tallaRows = '';
                             const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
                             const sinColorArr = porColor['__SIN_COLOR__'] || [];
-                            
+
                             if (coloresReales.length > 0) {
                                 tallaRows = coloresReales.map(([color, tallasArr]) => {
                                         tallasArr.sort((a, b) => {
@@ -535,7 +499,7 @@ class InvoiceRenderer {
                                     `<div style="margin: 2px 0;">${t.talla}:${t.cantidad}</div>`
                                 ).join('');
                             }
-                            
+
                             return `
                                 <div style="text-align: left;">
                                     <div style="font-weight: 800; color: #111827; font-size: 11px; margin-bottom: 4px;">${String(genero).toUpperCase()}</div>
@@ -550,7 +514,7 @@ class InvoiceRenderer {
                 return '';
             }
         }
-        
+
         return '<span style="color: #999; font-size: 11px;">Sin tallas</span>';
     }
 
@@ -558,20 +522,20 @@ class InvoiceRenderer {
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const firstVar = prenda.variantes[0];
             const specs = [];
-            
+
             // 🔑 CRÍTICO: Aceptar AMBOS formatos
             // Formato 1: Desde BD (tipo_manga, tipo_broche_boton, tiene_bolsillos, manga_obs, broche_boton_obs, bolsillos_obs)
             // Formato 2: Desde otros lugares (manga, broche, bolsillos, manga_obs, broche_obs, bolsillos_obs)
-            
+
             const manga = firstVar.tipo_manga || firstVar.manga;
             const mangaObs = firstVar.manga_obs;
-            
+
             const broche = firstVar.tipo_broche_boton || firstVar.tipo_broche || firstVar.broche;
             const brocheObs = firstVar.broche_boton_obs || firstVar.broche_obs || firstVar.obs_broche;
-            
+
             const tieneBolsillos = firstVar.tiene_bolsillos || firstVar.bolsillos;
             const bolsillosObs = firstVar.bolsillos_obs || firstVar.obs_bolsillos;
-            
+
             if (manga) {
                 specs.push(`<div><strong>Manga:</strong> ${manga}${mangaObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${mangaObs})</span>` : ''}</div>`);
             }
@@ -583,11 +547,11 @@ class InvoiceRenderer {
             if (tieneBolsillos) {
                 specs.push(`<div><strong>Bolsillo:</strong> Sí${bolsillosObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${bolsillosObs})</span>` : ''}</div>`);
             }
-            
+
             return specs.length > 0 ? specs.join('') : '<span style="color: #999; font-size: 11px;">Sin especificaciones</span>';
         } else if (prenda.manga || prenda.broche || prenda.tiene_bolsillos) {
             const specs = [];
-            
+
             if (prenda.manga) {
                 specs.push(`<div><strong>Manga:</strong> ${prenda.manga}${prenda.obs_manga ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_manga})</span>` : ''}</div>`);
             }
@@ -597,7 +561,7 @@ class InvoiceRenderer {
             if (prenda.tiene_bolsillos) {
                 specs.push(`<div><strong>Bolsillo:</strong> Sí${prenda.obs_bolsillos ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_bolsillos})</span>` : ''}</div>`);
             }
-            
+
             return specs.join('');
         } else {
             return '<span style="color: #999; font-size: 11px;">Sin variantes</span>';
@@ -609,7 +573,7 @@ class InvoiceRenderer {
             return prenda.procesos.map(proc => `
                 <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px; text-align: left;">
                     <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase; text-align: left;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
-                    
+
                     ${(proc.ubicaciones?.length > 0 || proc.observaciones || (proc.tallas && !(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico'))) ? `
                         <table style="width: 100%; font-size: 11px; margin-bottom: 4px; border-collapse: collapse;">
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
@@ -632,7 +596,7 @@ class InvoiceRenderer {
                             ` : ''}
                         </table>
                     ` : ''}
-                    
+
                     ${((proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0) || (proc.modo_tallas === 'general' && proc.tallas) ? `
                         <div style="margin-top: 3px; padding-top: 3px; border-top: 1px solid #eee; font-weight: 600; color: #374151; font-size: 10px; margin-bottom: 2px;">Detalles por Talla:</div>
                         <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 2px;">
@@ -655,15 +619,15 @@ class InvoiceRenderer {
                                                 // Parsear talla en caso de que venga con color: L__AZUL OSCURO
                                                 let tallaReal = talla;
                                                 let colorNombre = datos.color || '';
-                                                
+
                                                 if (talla.includes('__')) {
                                                     const partes = talla.split('__');
                                                     tallaReal = partes[0];
                                                     colorNombre = colorNombre || partes[1] || '';
                                                 }
-                                                
+
                                                 const cantidad = datos.cantidad || 0;
-                                                
+
                                                 return `
                                                 <tr style="border-bottom: 1px solid #f0f0f0;">
                                                     <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaReal}</td>
@@ -676,7 +640,7 @@ class InvoiceRenderer {
                                             }).join('');
                                         }).join('');
                                     }
-                                    
+
                                     // En modo general, si no hay tallas_detalles, usar proc.tallas directamente
                                     if (proc.modo_tallas === 'general' && proc.tallas) {
                                         return Object.entries(proc.tallas).map(([genero, tallasData]) => {
@@ -685,7 +649,7 @@ class InvoiceRenderer {
                                                 let tallaReal = tallaKey;
                                                 let colorNombre = '';
                                                 let cantidad = 0;
-                                                
+
                                                 // Si es un array entonces tiene colores desglosados
                                                 if (Array.isArray(datos) && datos.length > 0) {
                                                     return datos.map((item, idx) => {
@@ -705,7 +669,7 @@ class InvoiceRenderer {
                                                     tallaReal = partes[0];
                                                     colorNombre = partes[1] || '';
                                                     cantidad = datos || 0;
-                                                    
+
                                                     return `
                                                     <tr style="border-bottom: 1px solid #f0f0f0;">
                                                         <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaReal}</td>
@@ -730,13 +694,13 @@ class InvoiceRenderer {
                                             }).join('');
                                         }).join('');
                                     }
-                                    
+
                                     return '';
                                 })()}
                             </tbody>
                         </table>
                     ` : ''}
-                    
+
                     ${proc.imagenes && proc.imagenes.length > 0 ? `
                         <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; display: flex; gap: 4px; position: relative;">
                             <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo || 'Proceso'}')">
@@ -752,7 +716,7 @@ class InvoiceRenderer {
                 </div>
             `).join('');
         }
-        
+
         return '<div style="color: #999; font-size: 11px; font-style: italic;">Sin procesos asociados</div>';
     }
 
@@ -850,44 +814,22 @@ class InvoiceRenderer {
     }
 
     renderizarEPP(epps) {
-        console.log('[InvoiceRenderer] renderizarEPP - INICIO', {
-            epps_existe: !!epps,
-            epps_es_array: Array.isArray(epps),
-            epps_length: epps ? epps.length : 0,
-            epps_data: epps,
-            timestamp: new Date().toISOString()
-        });
-        
+
         if (epps && epps.length > 0) {
             const resultado = `
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #6b7280;">
                     <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
-                        ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
+                         EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
                     </div>
                     ${epps.map((epp, idx) => {
-                        console.log(`[InvoiceRenderer] Procesando EPP ${idx}:`, {
-                            nombre: epp.nombre_completo || epp.nombre,
-                            cantidad: epp.cantidad,
-                            imagenes_existe: !!epp.imagenes,
-                            imagenes_es_array: Array.isArray(epp.imagenes),
-                            imagenes_length: epp.imagenes ? epp.imagenes.length : 0,
-                            imagenes: epp.imagenes
-                        });
-                        
                         // Estandarizar: crear propiedad 'imagen' si no existe pero hay 'imagenes'
                         if (!epp.imagen && epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) {
                             epp.imagen = epp.imagenes[0];
                         }
-                        
+
                         // Generar HTML para las imágenes del EPP
                         const imagenesHTML = this.renderizarImagenesEPP(epp.imagenes || []);
-                        
-                        console.log(`[InvoiceRenderer] HTML generado para EPP ${idx}:`, {
-                            imagenes_html_length: imagenesHTML.length,
-                            tiene_imagenes: imagenesHTML.length > 0,
-                            imagenes_html_preview: imagenesHTML.substring(0, 200)
-                        });
-                        
+
                         return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;">
@@ -900,15 +842,15 @@ class InvoiceRenderer {
                                     <div style="font-weight: 600; color: #374151; font-size: 11px;"><strong>${epp.cantidad || 0}</strong></div>
                                 </div>
                             </div>
-                            
+
                             <!-- Imágenes del EPP -->
                             ${imagenesHTML ? `
                                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"> Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
                                     ${imagenesHTML}
                                 </div>
                             ` : ''}
-                            
+
                             ${epp.observaciones ? `
                                 <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                                     <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600;">Observaciones</div>
@@ -920,18 +862,9 @@ class InvoiceRenderer {
                     }).join('')}
                 </div>
             `;
-            
-            console.log('[InvoiceRenderer] renderizarEPP - HTML FINAL GENERADO:', {
-                length: resultado.length,
-                preview: resultado.substring(0, 500),
-                contiene_imagenes: resultado.includes('img src'),
-                timestamp: new Date().toISOString()
-            });
-            
+
             return resultado;
         }
-        
-        console.log('[InvoiceRenderer] renderizarEPP - SIN EPPs');
         return '';
     }
 
@@ -948,7 +881,7 @@ class InvoiceRenderer {
                 ${imagenes.map((imagen, index) => {
                     let imgUrl = '';
                     let imgTitle = imagen.nombre || `Imagen ${index + 1}`;
-                    
+
                     // Determinar la URL de la imagen según el formato
                     if (typeof imagen === 'string') {
                         imgUrl = imagen;
@@ -968,16 +901,16 @@ class InvoiceRenderer {
                         imgUrl = imagen.previewUrl;
                         imgTitle = imagen.nombre || imgTitle;
                     }
-                    
+
                     // Asegurar que siempre incluya /storage/ para URLs relativas
                     if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/') && !imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:')) {
                         imgUrl = '/storage/' + imgUrl.replace(/^\/+/, '');
                     }
-                    
+
                     if (!imgUrl) {
                         return '';
                     }
-                    
+
                     return `
                         <div style="position: relative; border-radius: 3px; overflow: hidden; background: #f9fafb; border: 1px solid #e5e7eb; aspect-ratio: 1; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
                              onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'; this.querySelector('.hover-overlay').style.opacity='1';"
@@ -994,7 +927,7 @@ class InvoiceRenderer {
                             </div>
                             <!-- Overlay de hover -->
                             <div class="hover-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;">
-                                <div style="color: white; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🔍</div>
+                                <div style="color: white; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></div>
                             </div>
                         </div>
                     `;
@@ -1004,7 +937,7 @@ class InvoiceRenderer {
     }
 
     /**
-     * Abre un modal para mostrar una imagen a tamaño completo
+     * Abre un modal para mostrar una imagen a tamano completo
      */
     abrirModalImagen(imgUrl, imgTitle) {
         // Crear modal si no existe
@@ -1027,7 +960,7 @@ class InvoiceRenderer {
                 padding: 20px;
                 box-sizing: border-box;
             `;
-            
+
             modal.innerHTML = `
                 <div style="position: relative; width: 95%; height: 95%; max-width: 1200px; max-height: 800px; background: white; border-radius: 12px; overflow: hidden; cursor: default; box-shadow: 0 20px 60px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
                     <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; z-index: 10; transition: background 0.2s;" 
@@ -1047,16 +980,16 @@ class InvoiceRenderer {
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
-            
+
             // Evento para cerrar al hacer clic fuera
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
                     modal.remove();
                 }
             });
-            
+
             // Evento para cerrar con ESC
             document.addEventListener('keydown', function escHandler(e) {
                 if (e.key === 'Escape') {
@@ -1065,20 +998,20 @@ class InvoiceRenderer {
                 }
             });
         }
-        
+
         // Actualizar imagen y título
         const img = document.getElementById('modal-imagen-epp-img');
         const title = document.getElementById('modal-imagen-epp-title');
-        
+
         if (img) {
             img.src = imgUrl;
             img.alt = imgTitle;
         }
-        
+
         if (title) {
             title.textContent = imgTitle;
         }
-        
+
         // Mostrar modal
         modal.style.display = 'flex';
     }

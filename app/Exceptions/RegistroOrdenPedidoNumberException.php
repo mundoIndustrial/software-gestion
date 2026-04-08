@@ -41,7 +41,7 @@ class RegistroOrdenPedidoNumberException extends RegistroOrdenException
     public static function unexpectedNumber(int $expected, int $provided): self
     {
         return new self(
-            "Número de pedido inválido. Esperado: {$expected}, Recibido: {$provided}",
+            "Número de pedido no consecutivo. Esperado: {$expected}, Recibido: {$provided}",
             $expected,
             $provided
         );

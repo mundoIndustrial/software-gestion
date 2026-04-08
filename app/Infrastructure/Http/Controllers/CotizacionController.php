@@ -17,6 +17,7 @@ use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\Services\Cotizacion\ActualizarCotizacionService;
 use App\Application\Services\Cotizacion\ActualizarImagenesCotizacionService;
 use App\Application\Services\Cotizacion\AnularCotizacionService;
@@ -114,7 +115,7 @@ final class CotizacionController extends Controller
 
             $mapeoTipos = [
                 1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}&editar_cotizacion=1',
-                2 => '/asesores/cotizaciones/bordado/crear?editar={id}&editar_cotizacion=1',
+                2 => '/asesores/cotizaciones-bordado/crear?editar={id}&editar_cotizacion=1',
                 3 => '/asesores/cotizaciones/create?tipo=P&editar={id}&editar_cotizacion=1',
             ];
 
@@ -191,7 +192,7 @@ final class CotizacionController extends Controller
                 return [
                     'id' => $prenda->id,
                     'nombre_producto' => $prenda->nombre_producto,
-                    'descripcion' => $prenda->generarDescripcionDetallada(),
+                    'descripcion' => app(PrendaPedidoDescriptionFormatter::class)->formatDetailed($prenda),
                     'tallas' => $prenda->tallas->pluck('talla')->toArray(),
                     'fotos' => $prenda->fotos->pluck('url')->toArray(),
                     'variantes' => $variantes
@@ -640,7 +641,7 @@ final class CotizacionController extends Controller
             // Mapeo de tipos a rutas de redirección
             $mapeoTipos = [
                 1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}',  // Combinada (Prenda + Logo)
-                2 => '/asesores/cotizaciones/bordado/crear?editar={id}',  // Logo only
+                2 => '/asesores/cotizaciones-bordado/crear?editar={id}',  // Logo only
                 3 => '/asesores/cotizaciones/create?tipo=P&editar={id}',   // Prenda only
             ];
 

@@ -8,20 +8,26 @@
  */
 
 // Guardar la función original antes de reemplazarla
-const guardarTallasSeleccionadasOriginal = window.guardarTallasSeleccionadas;
+const guardarTallasSeleccionadasOriginal = globalThis.guardarTallasSeleccionadas;
+
+function obtenerProcesoActualEnModal() {
+    return globalThis.ProcesoModalController?.state?.procesoActual
+        || globalThis.procesoModalState?.procesoActual
+        || null;
+}
 
 /**
  * Nueva función que extiende guardarTallasSeleccionadas
  * Guarda también los datos extendidos (ubicaciones, imágenes, observaciones)
  */
-window.guardarTallasSeleccionadas = function() {
+globalThis.guardarTallasSeleccionadas = function() {
     
     // Primero, guardar observaciones pendientes
     document.querySelectorAll('.observaciones-talla-input-extended').forEach(textarea => {
         const genero = textarea.dataset.genero;
         const talla = textarea.dataset.talla;
-        if (window.guardarObservacionesTallaExtendida) {
-            window.guardarObservacionesTallaExtendida(genero, talla, textarea.value);
+        if (globalThis.guardarObservacionesTallaExtendida) {
+            globalThis.guardarObservacionesTallaExtendida(genero, talla, textarea.value);
         }
     });
     
@@ -29,14 +35,15 @@ window.guardarTallasSeleccionadas = function() {
     guardarTallasSeleccionadasOriginal.call(this);
     
     // Ahora guardar los datos extendidos en el objeto del proceso
-    if (procesoActual && window.procesosSeleccionados[procesoActual]?.datos) {
+    const procesoActual = obtenerProcesoActualEnModal();
+    if (procesoActual && globalThis.procesosSeleccionados[procesoActual]?.datos) {
         
         // Guardar datos extendidos
-        const datosExtendidos = window.datosExtendidosTallasProceso || {};
+        const datosExtendidos = globalThis.datosExtendidosTallasProceso || {};
         
         // Inicializar estructura de datos extendidos si no existe
-        if (!window.procesosSeleccionados[procesoActual].datos.datosExtendidos) {
-            window.procesosSeleccionados[procesoActual].datos.datosExtendidos = {
+        if (!globalThis.procesosSeleccionados[procesoActual].datos.datosExtendidos) {
+            globalThis.procesosSeleccionados[procesoActual].datos.datosExtendidos = {
                 dama: {},
                 caballero: {},
                 sobremedida: {}
@@ -45,15 +52,15 @@ window.guardarTallasSeleccionadas = function() {
         
         // Copiar datos extendidos al proceso
         Object.keys(datosExtendidos).forEach(genero => {
-            window.procesosSeleccionados[procesoActual].datos.datosExtendidos[genero] = {
+            globalThis.procesosSeleccionados[procesoActual].datos.datosExtendidos[genero] = {
                 ...datosExtendidos[genero]
             };
         });
         
-        console.log(`💾 [guardarTallasSeleccionadas EXTENDIDO] Datos extendidos guardados para "${procesoActual}":`, {
-            datosExtendidos: window.procesosSeleccionados[procesoActual].datos.datosExtendidos,
-            ubicaciones: Object.values(datosExtendidos.dama || {}).map(d => d.ubicaciones).flat(),
-            observaciones: Object.values(datosExtendidos.dama || {}).map(d => d.observaciones).filter(o => o),
+        console.log(` [guardarTallasSeleccionadas EXTENDIDO] Datos extendidos guardados para "${procesoActual}":`, {
+            datosExtendidos: globalThis.procesosSeleccionados[procesoActual].datos.datosExtendidos,
+            ubicaciones: Object.values(datosExtendidos.dama || {}).flatMap(d => d.ubicaciones),
+            observaciones: Object.values(datosExtendidos.dama || {}).map(d => d.observaciones).filter(Boolean),
             imagenes: Object.values(datosExtendidos.dama || {}).map(d => d.imagen ? '✓' : '✗').filter(i => i === '✓').length
         });
     }
@@ -62,9 +69,9 @@ window.guardarTallasSeleccionadas = function() {
 /**
  * Función auxiliar para obtener los datos extendidos de un talla específica
  */
-window.obtenerDatosExtendidosTalla = function(proceso, genero, talla) {
-    if (window.procesosSeleccionados?.[proceso]?.datos?.datosExtendidos?.[genero]?.[ talla]) {
-        return window.procesosSeleccionados[proceso].datos.datosExtendidos[genero][talla];
+globalThis.obtenerDatosExtendidosTalla = function(proceso, genero, talla) {
+    if (globalThis.procesosSeleccionados?.[proceso]?.datos?.datosExtendidos?.[genero]?.[ talla]) {
+        return globalThis.procesosSeleccionados[proceso].datos.datosExtendidos[genero][talla];
     }
     return null;
 };
@@ -72,21 +79,21 @@ window.obtenerDatosExtendidosTalla = function(proceso, genero, talla) {
 /**
  * Función auxiliar para restaurar datos extendidos cuando se abre el editor
  */
-window.restaurarDatosExtendidosTallasProceso = function(proceso) {
-    if (!window.procesosSeleccionados?.[proceso]?.datos?.datosExtendidos) {
+globalThis.restaurarDatosExtendidosTallasProceso = function(proceso) {
+    if (!globalThis.procesosSeleccionados?.[proceso]?.datos?.datosExtendidos) {
         // No hay datos extendidos, limpiar
-        window.datosExtendidosTallasProceso = { dama: {}, caballero: {}, sobremedida: {} };
+        globalThis.datosExtendidosTallasProceso = { dama: {}, caballero: {}, sobremedida: {} };
         return;
     }
     
-    const datosGuardados = window.procesosSeleccionados[proceso].datos.datosExtendidos;
+    const datosGuardados = globalThis.procesosSeleccionados[proceso].datos.datosExtendidos;
     
     // Restaurar en la estructura de trabajo
-    window.datosExtendidosTallasProceso = {
-        dama: { ...datosGuardados.dama || {} },
-        caballero: { ...datosGuardados.caballero || {} },
-        sobremedida: { ...datosGuardados.sobremedida || {} }
+    globalThis.datosExtendidosTallasProceso = {
+        dama: datosGuardados.dama ? { ...datosGuardados.dama } : {},
+        caballero: datosGuardados.caballero ? { ...datosGuardados.caballero } : {},
+        sobremedida: datosGuardados.sobremedida ? { ...datosGuardados.sobremedida } : {}
     };
     
-    console.log(`🔄 [restaurarDatosExtendidosTallasProceso] Datos restaurados para "${proceso}":`, window.datosExtendidosTallasProceso);
+    console.log(` [restaurarDatosExtendidosTallasProceso] Datos restaurados para "${proceso}":`, globalThis.datosExtendidosTallasProceso);
 };

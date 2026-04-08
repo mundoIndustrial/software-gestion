@@ -176,8 +176,8 @@ function anularPedido(pedidoId, novedad, numeroPedido) {
     }
     
     // Enviar petición
-    fetch(`/asesores/pedidos/${pedidoId}/anular`, {
-        method: 'POST',
+    fetch(`/api/pedidos/${pedidoId}/cancelar`, {
+        method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,
@@ -232,7 +232,7 @@ function anularPedido(pedidoId, novedad, numeroPedido) {
                 }
             }).then(() => {
                 // Recargar la página para actualizar la lista
-                window.location.reload();
+                globalThis.location.reload();
             });
         } else {
             throw new Error(data.message || 'Error al anular el pedido');
@@ -355,7 +355,7 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
     // Obtener CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     
-    fetch(`/asesores/pedidos/${pedidoId}/confirmar-correccion`, {
+    fetch(`/api/asesores/pedidos/${pedidoId}/confirmar-correccion`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -399,7 +399,7 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
                 }
             }).then(() => {
                 // Recargar la página para actualizar la lista
-                window.location.reload();
+                globalThis.location.reload();
             });
         } else {
             throw new Error(data.message || 'Error al confirmar la corrección');

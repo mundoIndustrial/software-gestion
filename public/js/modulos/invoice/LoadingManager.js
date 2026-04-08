@@ -3,16 +3,17 @@
  * Maneja spinners y estados de carga para la interfaz
  */
 
-class LoadingManager {
-    constructor() {
-        this.init();
-    }
+if (typeof LoadingManager === 'undefined') {
+    class LoadingManager {
+        constructor() {
+            this.init();
+        }
 
-    init() {
-        // Hacer métodos disponibles globalmente para compatibilidad
-        window.mostrarCargando = this.mostrarCargando.bind(this);
-        window.ocultarCargando = this.ocultarCargando.bind(this);
-    }
+        init() {
+            // Hacer métodos disponibles globalmente para compatibilidad
+            window.mostrarCargando = this.mostrarCargando.bind(this);
+            window.ocultarCargando = this.ocultarCargando.bind(this);
+        }
 
     /**
      * Muestra un spinner de carga
@@ -328,14 +329,21 @@ class LoadingManager {
 
 // Inicializar el gestor cuando se cargue el script
 document.addEventListener('DOMContentLoaded', () => {
-    window.loadingManager = new LoadingManager();
+    if (!window.loadingManager) {
+        window.loadingManager = new LoadingManager();
+    }
 });
 
 // También permitir inicialización manual
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.loadingManager = new LoadingManager();
+        if (!window.loadingManager) {
+            window.loadingManager = new LoadingManager();
+        }
     });
 } else {
-    window.loadingManager = new LoadingManager();
+    if (!window.loadingManager) {
+        window.loadingManager = new LoadingManager();
+    }
 }
+} // Cierre del if(typeof LoadingManager === 'undefined')

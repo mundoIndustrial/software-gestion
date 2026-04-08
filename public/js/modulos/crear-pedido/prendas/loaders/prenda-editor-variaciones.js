@@ -1,5 +1,5 @@
 /**
- * ⚙️ Módulo de Variaciones (Manga, Bolsillos, Broche)
+ *  Módulo de Variaciones (Manga, Bolsillos, Broche)
  * Responsabilidad: Cargar variaciones específicas en el modal
  */
 
@@ -8,17 +8,17 @@ class PrendaEditorVariaciones {
      * Cargar variaciones específicas (manga, bolsillos, broche)
      */
     static cargar(prenda) {
-        console.log('⚙️ [Variaciones] Cargando manga, bolsillos, broche');
-        console.log('⚙️ [Variaciones] Objeto prenda recibido:', prenda);
-        console.log('⚙️ [Variaciones] prenda.variantes (tipo):', typeof prenda?.variantes);
-        console.log('⚙️ [Variaciones] prenda.variantes (es array?):', Array.isArray(prenda?.variantes));
-        console.log('⚙️ [Variaciones] prenda.variantes (contenido):', prenda?.variantes);
+        console.log(' [Variaciones] Cargando manga, bolsillos, broche');
+        console.log(' [Variaciones] Objeto prenda recibido:', prenda);
+        console.log(' [Variaciones] prenda.variantes (tipo):', typeof prenda?.variantes);
+        console.log(' [Variaciones] prenda.variantes (es array?):', Array.isArray(prenda?.variantes));
+        console.log(' [Variaciones] prenda.variantes (contenido):', prenda?.variantes);
         
-        // 🔴 FIX: El backend devuelve variantes como ARRAY, no como objeto
+        //  FIX: El backend devuelve variantes como ARRAY, no como objeto
         // Usar la primera variante si es array
         let varianteObj = prenda?.variantes;
         if (Array.isArray(varianteObj) && varianteObj.length > 0) {
-            console.log('⚙️ [Variaciones] Detectado array de variantes, usando primera:', varianteObj[0]);
+            console.log(' [Variaciones] Detectado array de variantes, usando primera:', varianteObj[0]);
             varianteObj = varianteObj[0];
         }
         
@@ -32,7 +32,7 @@ class PrendaEditorVariaciones {
         this._cargarBolsillos(prendaConVariantes);
         this._cargarBroche(prendaConVariantes);
         
-        console.log('✅ [Variaciones] Completado');
+        console.log(' [Variaciones] Completado');
     }
 
     /**
@@ -45,7 +45,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('manga-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Manga] Elementos no encontrados');
+            console.warn(' [Manga] Elementos no encontrados');
             return;
         }
 
@@ -59,7 +59,7 @@ class PrendaEditorVariaciones {
         const obsValue = prenda.variantes?.obs_manga || 
                         prenda.variantes?.manga_obs;
         
-        console.log('🔍 [Manga] Buscando manga:', {
+        console.log(' [Manga] Buscando manga:', {
             'prenda.variantes.tipo_manga': prenda.variantes?.tipo_manga,
             'prenda.variantes.manga': prenda.variantes?.manga,
             'prenda.variaciones.manga': prenda.variaciones?.manga,
@@ -85,9 +85,9 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
+            console.log(' [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Manga] Sin manga para cargar');
+            console.log(' [Manga] Sin manga para cargar');
         }
     }
 
@@ -100,7 +100,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('bolsillos-obs');
 
         if (!checkbox || !obs) {
-            console.warn('⚠️ [Bolsillos] Elementos no encontrados');
+            console.warn(' [Bolsillos] Elementos no encontrados');
             return;
         }
 
@@ -113,7 +113,7 @@ class PrendaEditorVariaciones {
                         prenda.variantes?.bolsillos_obs ||
                         prenda.variaciones?.bolsillos?.observacion;
         
-        console.log('🔍 [Bolsillos] Buscando bolsillos:', {
+        console.log(' [Bolsillos] Buscando bolsillos:', {
             'prenda.variantes.tiene_bolsillos': prenda.variantes?.tiene_bolsillos,
             'prenda.variantes.bolsillos_obs': prenda.variantes?.bolsillos_obs,
             'prenda.variaciones.bolsillos': prenda.variaciones?.bolsillos,
@@ -136,9 +136,9 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Bolsillos] Cargado - Obs:', obsValue);
+            console.log(' [Bolsillos] Cargado - Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Bolsillos] Sin bolsillos para cargar');
+            console.log(' [Bolsillos] Sin bolsillos para cargar');
         }
     }
 
@@ -152,7 +152,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('broche-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Broche] Elementos no encontrados');
+            console.warn(' [Broche] Elementos no encontrados');
             return;
         }
 
@@ -166,7 +166,7 @@ class PrendaEditorVariaciones {
                         prenda.variantes?.broche_boton_obs ||
                         prenda.variaciones?.broche?.observacion;
         
-        console.log('🔍 [Broche] Buscando broche:', {
+        console.log(' [Broche] Buscando broche:', {
             'prenda.variantes.tipo_broche': prenda.variantes?.tipo_broche,
             'prenda.variantes.tipo_broche_boton': prenda.variantes?.tipo_broche_boton,
             'prenda.variantes.broche_boton_obs': prenda.variantes?.broche_boton_obs,
@@ -184,14 +184,14 @@ class PrendaEditorVariaciones {
             obs.disabled = false;
             
             // Llenar valores
-            // 🔴 El <select> tiene values "boton"/"broche" (lowercase, sin acento)
+            //  El <select> tiene values "boton"/"broche" (lowercase, sin acento)
             // pero la BD retorna "Botón"/"Broche" (con mayúscula y acento)
             // Normalizar para que matchee las options del select
             if (broche) {
                 const brocheNormalizado = broche
                     .toLowerCase()
                     .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')  // quitar acentos
+                    .replaceAll(/[\u0300-\u036f]/g, '')  // quitar acentos
                     .trim();
                 input.value = brocheNormalizado;
                 
@@ -199,7 +199,7 @@ class PrendaEditorVariaciones {
                 if (input.value === '' || input.selectedIndex === 0) {
                     const options = Array.from(input.options);
                     const match = options.find(opt => {
-                        const optNorm = opt.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const optNorm = opt.value.toLowerCase().normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '');
                         return optNorm === brocheNormalizado || brocheNormalizado.includes(optNorm) || optNorm.includes(brocheNormalizado);
                     });
                     if (match) {
@@ -215,9 +215,9 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
+            console.log(' [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
         } else {
-            console.log('ℹ️ [Broche] Sin broche para cargar');
+            console.log(' [Broche] Sin broche para cargar');
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -34,6 +35,12 @@ use Carbon\Carbon;
  */
 class MigrarDatosCompleto extends Command
 {
+    public function __construct(
+        private readonly PrendaPedidoQuantityCalculator $prendaQuantityCalculator
+    ) {
+        parent::__construct();
+    }
+
     protected $signature = 'migrar:datos-completo 
                             {--dry-run : Simular sin guardar cambios}
                             {--analyze : Solo analizar datos sin migrar}
@@ -63,7 +70,7 @@ class MigrarDatosCompleto extends Command
     protected $procesosMap = [
         'creacion_de_orden' => [
             'proceso' => 'Creación de Orden',
-            'fecha' => 'fecha_de_creacion_de_orden',
+            'fecha' => 'created_at',
             'encargado' => 'encargado_orden',
             'dias' => 'dias_orden',
         ],
@@ -184,7 +191,7 @@ class MigrarDatosCompleto extends Command
             $this->limpiarDatos($dryRun, $force);
 
             // PASO 1: Migrar Usuarios (Asesoras)
-            $this->info("👥 PASO 1: Migrando Usuarios (Asesoras)...\n");
+            $this->info(" PASO 1: Migrando Usuarios (Asesoras)...\n");
             $this->migrarUsuarios($dryRun);
 
             // PASO 2: Migrar Clientes
@@ -505,7 +512,7 @@ class MigrarDatosCompleto extends Command
                 'pedido as numero_pedido',
                 'asesora',
                 'cliente',
-                'fecha_de_creacion_de_orden',
+                'created_at',
                 'dia_de_entrega',
                 'fecha_estimada_de_entrega',
                 'estado',
@@ -542,7 +549,7 @@ class MigrarDatosCompleto extends Command
                         'cliente_id' => $clienteId,
                         'cliente' => $pedidoOrig->cliente,
                         'estado' => $pedidoOrig->estado ?? 'Pendiente',
-                        'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
+                        'created_at' => $this->parsearFecha($pedidoOrig->created_at),
                         'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
                         'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
                         'area' => $pedidoOrig->area ?? 'Creación Orden',
@@ -626,7 +633,7 @@ class MigrarDatosCompleto extends Command
                     DB::table('prendas_pedido')->insert([
                         'nombre_prenda' => $prenda->nombre_prenda,
                         'numero_pedido' => $pedido->numero_pedido,
-                        'cantidad' => $prenda->cantidad_total ?? 0,
+                        'cantidad' => $this->prendaQuantityCalculator->calculate($prenda),
                         'descripcion' => $prenda->descripcion,
                         'cantidad_talla' => !empty($cantidadTalla) ? json_encode($cantidadTalla) : null,
                         'created_at' => now(),

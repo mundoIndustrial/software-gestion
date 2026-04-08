@@ -59,7 +59,7 @@
             <div class="flex gap-3 items-end">
                 <!-- Buscador -->
                 <div class="flex-1">
-                    <label class="block text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">
+                    <label for="searchInput" class="block text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">
                          Buscar Pedido
                     </label>
                     <input
@@ -78,7 +78,7 @@
                     class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded transition border-2 border-slate-600"
                     title="Limpiar búsqueda"
                 >
-                    🗑️ Limpiar
+                     Limpiar
                 </button>
 
                 <!-- Botón Actualizar -->
@@ -144,7 +144,7 @@
                                                     {{ \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') }}
                                                     @if($esAnulada)
                                                         <span class="ml-2 inline-flex items-center px-2 py-1 text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider rounded-full">
-                                                             Anulado 
+                                                             Anulado
                                                             @if($items[0]['nombre_asesor_anulacion'] ?? false)
                                                                 por el asesor {{ $items[0]['nombre_asesor_anulacion'] }}
                                                             @endif
@@ -171,7 +171,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-3 py-1.5 text-[11px] font-semibold bg-amber-50 text-amber-700 uppercase tracking-wider rounded">
-                                                    ⏳ Pendiente
+                                                     Pendiente
                                                 </span>
                                             @endif
                                             
@@ -185,7 +185,7 @@
                                                 @php
                                                     $numPedidoReal = $items[0]['numero_pedido'] ?? $numeroPedido;
                                                 @endphp
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onclick="abrirModalFactura({{ $firstItemId }})"
                                                     class="px-3 py-1.5 text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition rounded"
@@ -440,7 +440,7 @@
                                                 class="w-full px-2 py-2 bg-green-500 hover:bg-green-600 text-white text-[12px] font-bold uppercase tracking-wide rounded-lg transition"
                                                 style="font-family: 'Poppins', sans-serif;"
                                             >
-                                                💾 Guardar
+                                                 Guardar
                                             </button>
                                         </div>
                                     </td>
@@ -545,7 +545,7 @@
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
             <h2 class="text-lg font-semibold text-white"> Pedido</h2>
-            <button onclick="cerrarModalFactura()" 
+            <button onclick="cerrarModalFactura()"
                     class="text-white hover:text-slate-200 text-2xl leading-none">
                 ✕
             </button>
@@ -554,7 +554,7 @@
         <!-- Body -->
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">
-                <span class="text-slate-500">⏳ Cargando factura...</span>
+                <span class="text-slate-500"> Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -566,7 +566,7 @@
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-white">💬 Notas - Pedido <span id="modalNotasNumeroPedido">#</span> | <span id="modalNotasArticulo">-</span></h2>
-            <button onclick="cerrarModalNotas()" 
+            <button onclick="cerrarModalNotas()"
                     class="text-white hover:text-slate-200 text-2xl leading-none">
                 ✕
             </button>
@@ -577,13 +577,13 @@
             <!-- Historial de Notas -->
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                    <span class="text-slate-500"> Cargando notas...</span>
                 </div>
             </div>
             
             <!-- Formulario para agregar nota -->
             <div class="border-t border-slate-200 pt-6">
-                <label class="block text-sm font-bold text-slate-900 mb-3">Agregar Nueva Nota:</label>
+                <label for="notasNuevaContent" class="block text-sm font-bold text-slate-900 mb-3">Agregar Nueva Nota:</label>
                 <textarea
                     id="notasNuevaContent"
                     class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-700 outline-none transition resize-none"
@@ -613,8 +613,8 @@
 </div>
 
 <!-- MODAL DE ÉXITO -->
-<div 
-    id="modalExito" 
+<div
+    id="modalExito"
     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;"
 >
     <div style="background-color: white; border-radius: 12px; padding: 40px; max-width: 420px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); text-align: center;">
@@ -625,11 +625,13 @@
         </div>
         <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #0f172a;">¡Éxito!</h2>
         <p id="modalMensajeExito" style="margin: 0 0 32px 0; color: #64748b; font-size: 15px; line-height: 1.5;">Cambios guardados correctamente</p>
-        <button 
+        <button
             id="btnCerrarModalExito"
             style="background-color: #22c55e; color: white; border: none; padding: 11px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: background-color 0.2s;"
             onmouseover="this.style.backgroundColor='#16a34a'"
             onmouseout="this.style.backgroundColor='#22c55e'"
+            onfocus="this.style.backgroundColor='#16a34a'"
+            onblur="this.style.backgroundColor='#22c55e'"
         >
             Aceptar
         </button>
@@ -641,14 +643,14 @@
     <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-white">✏️ Editar Nota</h2>
+            <h2 class="text-lg font-semibold text-white"> Editar Nota</h2>
             <button onclick="cerrarModalEditarNota()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         
         <!-- Body -->
         <div class="px-6 py-6">
-            <textarea 
-                id="editarNotaContent" 
+            <textarea
+                id="editarNotaContent"
                 class="w-full px-3 py-2 border-2 border-slate-300 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded"
                 rows="6"
                 placeholder="Edita el contenido de la nota..."
@@ -657,14 +659,14 @@
         
         <!-- Footer -->
         <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
-            <button 
+            <button
                 type="button"
                 onclick="cerrarModalEditarNota()"
                 class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-900 text-sm font-bold rounded transition"
             >
                 Cancelar
             </button>
-            <button 
+            <button
                 type="button"
                 onclick="guardarEdicionNota()"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded transition"
@@ -680,7 +682,7 @@
     <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
         <!-- Header -->
         <div class="bg-red-600 px-6 py-4 border-b border-red-300 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-white">🗑️ Eliminar Nota</h2>
+            <h2 class="text-lg font-semibold text-white"> Eliminar Nota</h2>
             <button onclick="cerrarModalConfirmarEliminar()" class="text-white hover:text-red-100 text-2xl leading-none">✕</button>
         </div>
         
@@ -696,14 +698,14 @@
         
         <!-- Footer -->
         <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
-            <button 
+            <button
                 type="button"
                 onclick="cerrarModalConfirmarEliminar()"
                 class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-900 text-sm font-bold rounded transition"
             >
                 Cancelar
             </button>
-            <button 
+            <button
                 type="button"
                 onclick="confirmarEliminarNota()"
                 class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded transition"
@@ -834,145 +836,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     })();
 
-    // Manejar guardado de estado para rol Costura-Bodega / EPP-Bodega
-    // TEMPORALMENTE COMENTADO PARA DEPURAR
-    /*
-    document.querySelectorAll('.guardar-estado-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const numeroPedido = this.dataset.numeroPedido;
-            const talla = this.dataset.talla;
-            const estadoSelect = document.querySelector(
-                `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-            );
-            
-            if (!estadoSelect) {
-                alert('Error: No se encontró el selector de estado');
-                return;
-            }
-
-            const nuevoEstado = estadoSelect.value;
-            if (!nuevoEstado) {
-                alert('Error: Debe seleccionar un estado');
-                return;
-            }
-
-            // Obtener los datos adicionales del formulario
-            const pendientesInput = document.querySelector(
-                `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-            );
-            const observacionesInput = document.querySelector(
-                `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-            );
-            const fechaInput = document.querySelector(
-                `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-            );
-            const fechaPedidoInput = document.querySelector(
-                `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-            );
-
-            const datos = {
-                numero_pedido: numeroPedido,
-                talla: talla,
-                estado_bodega: nuevoEstado,
-                pendientes: pendientesInput ? pendientesInput.value : '',
-                observaciones_bodega: observacionesInput ? observacionesInput.value : '',
-                fecha_entrega: fechaInput ? fechaInput.value : '',
-                fecha_pedido: fechaPedidoInput ? fechaPedidoInput.value : '',
-                last_updated_at: observacionesInput ? observacionesInput.dataset.updatedAt : null
-            };
-
-            // Enviar al servidor
-            fetch('/gestion-bodega/detalles-talla/guardar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Actualizar el selector de estado inmediatamente con el nuevo valor
-                    if (data.data && data.data.estado_bodega) {
-                        const numeroP = datos.numero_pedido;
-                        const tallaVal = datos.talla;
-                        const estadoSelect = document.querySelector(
-                            `.estado-select-readonly[data-numero-pedido="${numeroP}"][data-talla="${tallaVal}"]`
-                        );
-                        if (estadoSelect) {
-                            estadoSelect.value = data.data.estado_bodega;
-                            estadoSelect.setAttribute('data-original-estado', data.data.estado_bodega);
-                        }
-                    }
-                    
-                    // Mostrar modal de éxito
-                    const modal = document.getElementById('modalExito');
-                    const mensaje = document.getElementById('modalMensajeExito');
-                    if (modal && mensaje) {
-                        mensaje.textContent = '✓ Estado guardado correctamente';
-                        modal.style.display = 'flex';
-                        document.getElementById('btnCerrarModalExito').onclick = function() {
-                            modal.style.display = 'none';
-                            // Recargar la página para sincronizar datos
-                            location.reload();
-                        };
-                    }
-                } else if (data.conflict) {
-                    // Conflicto de edición - mostrar modal de conflicto
-                    const modal = document.getElementById('modalExito');
-                    const mensaje = document.getElementById('modalMensajeExito');
-                    if (modal && mensaje) {
-                        const nuevoContenido = `
-                            <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #dc2626;"> Conflicto de Edición</h2>
-                            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px; line-height: 1.5;">
-                                ${data.message}
-                            </p>
-                            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; margin-bottom: 16px; border-radius: 4px;">
-                                <p style="margin: 0 0 8px 0; font-weight: 600; color: #991b1b; font-size: 13px;">Datos actuales en el servidor:</p>
-                                <p style="margin: 0 4px 0 0; color: #7f1d1d; font-size: 12px;">
-                                    <strong>Observaciones:</strong> ${data.current_data?.observaciones_bodega || '(vacío)'}
-                                </p>
-                                <p style="margin: 0 4px 0 0; color: #7f1d1d; font-size: 12px;">
-                                    <strong>Fecha Entrega:</strong> ${data.current_data?.fecha_entrega || '(vacío)'}
-                                </p>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button 
-                                    id="btnCerrarModalExito"
-                                    style="flex: 1; background-color: #3b82f6; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;"
-                                    onmouseover="this.style.backgroundColor='#1e40af'"
-                                    onmouseout="this.style.backgroundColor='#3b82f6'"
-                                    onclick="location.reload();"
-                                >
-                                    Recargar página
-                                </button>
-                                <button 
-                                    style="flex: 1; background-color: #6b7280; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;"
-                                    onmouseover="this.style.backgroundColor='#374151'"
-                                    onmouseout="this.style.backgroundColor='#6b7280'"
-                                    onclick="document.getElementById('modalExito').style.display='none';"
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
-                        `;
-                        modal.querySelector('div').innerHTML = nuevoContenido;
-                        modal.style.display = 'flex';
-                    }
-                } else {
-                    alert('Error: ' + (data.message || 'No se pudo guardar el estado'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al guardar: ' + error.message);
-            });
-        });
-    });
-    });
-    */
+   
 });
 
 /**
@@ -1041,11 +905,11 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         last_updated_at: lastUpdatedAt,
     };
 
-    console.log('📝 DATOS A GUARDAR:', datosAGuardar);
+    console.log(' DATOS A GUARDAR:', datosAGuardar);
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;
-    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.textContent = ' Guardando...';
     btnGuardar.disabled = true;
 
     fetch('/gestion-bodega/detalles-talla/guardar', {
@@ -1183,21 +1047,21 @@ function cargarNotas(numeroPedido, talla) {
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="color: #64748b; font-size: 12px; white-space: nowrap;">${nota.fecha} ${nota.hora}</span>
                                 ${nota.usuario_id === window.usuarioActualId ? `
-                                <button 
+                                <button
                                     type="button"
                                     onclick="editarNota(${nota.id}, '${numeroPedido}', '${talla}', \`${nota.contenido.replace(/`/g, '\\`')}\`)"
                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
                                     title="Editar nota"
                                 >
-                                    ✏️
+                                    
                                 </button>
-                                <button 
+                                <button
                                     type="button"
                                     onclick="eliminarNota(${nota.id}, '${numeroPedido}', '${talla}')"
                                     class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
                                     title="Eliminar nota"
                                 >
-                                    🗑️
+                                    
                                 </button>
                                 ` : ''}
                             </div>

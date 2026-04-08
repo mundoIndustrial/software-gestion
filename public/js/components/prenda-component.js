@@ -70,7 +70,7 @@ class PrendaComponent {
                         <button type="button" 
                             class="btn-eliminar-prenda" 
                             onclick="window.PrendaComponent.eliminarPrenda(${index})">
-                            🗑️ Eliminar Prenda
+                             Eliminar Prenda
                         </button>
                     </div>
                 </div>
@@ -197,7 +197,7 @@ class PrendaComponent {
                 class="btn-agregar-talla-nuevo" 
                 onclick="window.PrendaComponent.agregarTela(${index})"
                 style="margin-top: 1rem;">
-                ➕ Agregar Tela
+                 Agregar Tela
             </button>
         </div>`;
 
@@ -256,7 +256,7 @@ class PrendaComponent {
                         class="btn-agregar-talla-nuevo"
                         onclick="window.abrirModalAgregarFotosTela(${prendaIndex}, ${telaIndex})"
                         style="margin-bottom: 0.5rem;">
-                        📸 Agregar Fotos de Tela
+                         Agregar Fotos de Tela
                     </button>
                     
                     <div class="fotos-adicionales">
@@ -279,7 +279,7 @@ class PrendaComponent {
                     class="btn-eliminar-variacion"
                     onclick="window.PrendaComponent.eliminarTela(${prendaIndex}, ${telaIndex})"
                     style="margin-top: 0.5rem;">
-                    🗑️ Eliminar Tela
+                     Eliminar Tela
                 </button>
             </div>
         `;
@@ -327,7 +327,7 @@ class PrendaComponent {
                 class="btn-agregar-talla-nuevo"
                 onclick="window.TallaComponent.mostrarModalAgregarTalla(${index})"
                 style="margin-top: 0.5rem;">
-                ➕ Agregar Talla
+                 Agregar Talla
             </button>
         </div>`;
 
@@ -350,7 +350,7 @@ class PrendaComponent {
                 class="btn-agregar-talla-nuevo"
                 onclick="window.abrirModalAgregarFotosPrenda(${index})"
                 style="margin-bottom: 1rem; width: 100%;">
-                📸 Agregar Fotos
+                 Agregar Fotos
             </button>
         `;
 
