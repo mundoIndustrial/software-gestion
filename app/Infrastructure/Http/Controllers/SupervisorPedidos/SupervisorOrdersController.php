@@ -130,10 +130,14 @@ class SupervisorOrdersController extends Controller
      */
     public function show($id)
     {
-        $response = $this->getOrderDisplayUseCase->execute((int) $id);
-        $orden = $response->getOrder();
+        try {
+            $response = $this->getOrderDisplayUseCase->execute((int) $id);
+            $orden = $response->getOrder();
 
-        return view('supervisor-pedidos.show', compact('orden'));
+            return view('supervisor-pedidos.show', compact('orden'));
+        } catch (\DomainException $e) {
+            return abort(404, 'Orden no encontrada: ' . $e->getMessage());
+        }
     }
 
     /**
