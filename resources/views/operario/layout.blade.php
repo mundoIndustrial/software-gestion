@@ -308,15 +308,6 @@
 
     <!-- Scripts -->
     @vite(['resources/js/app.js'])
-    @if (file_exists(public_path('dist/manifest.json')))
-        @php
-            $manifest = json_decode(file_get_contents(public_path('dist/manifest.json')), true);
-            $hasOperarioEntry = isset($manifest['resources/js/operario/entry.js']);
-        @endphp
-        @if ($hasOperarioEntry)
-            @vite(['resources/js/operario/entry.js'])
-        @endif
-    @endif
     <script>
         // Configuración de rutas para JavaScript
         window.APP_ROUTES = {
