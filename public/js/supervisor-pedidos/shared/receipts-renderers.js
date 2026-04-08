@@ -74,7 +74,7 @@
     }
 
     function renderSewingRow(proceso, escapeHtml) {
-        const color = proceso?.color_costura || '';
+        const color = proceso?.color_control_calidad || proceso?.color_costura || '';
         const rowBaseColor = color || '#ffffff';
         const area = proceso?.area || '';
         const prendas = normalizeGarments(proceso?.prendas || []);

@@ -61,6 +61,7 @@ class GetPendingQualityControlReceiptsUseCase
             'pedido_id' => $recibo->pedido_id,
             'asesor' => $recibo->asesor,
             'color_costura' => $recibo->color_costura,
+            'color_control_calidad' => $recibo->color_control_calidad ?? null,
             'prendas' => collect(),
         ];
 

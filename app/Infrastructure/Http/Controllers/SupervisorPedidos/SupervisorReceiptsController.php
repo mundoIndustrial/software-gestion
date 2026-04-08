@@ -193,6 +193,38 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Guardar color de fila en vista de Control de Calidad
+     */
+    public function guardarColorControlCalidad(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'numero_recibo' => 'required|string',
+            'color' => 'required|string|max:100',
+        ]);
+
+        $updated = DB::table('consecutivos_recibos_pedidos')
+            ->where('consecutivo_actual', trim((string) $validated['numero_recibo']))
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
+            ->update([
+                'color_control_calidad' => trim((string) $validated['color']),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró recibo para actualizar color de Control de Calidad',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Color de Control de Calidad guardado correctamente',
+            'receiptNumber' => $validated['numero_recibo'],
+        ]);
+    }
+
+    /**
      * Mostrar vista de pendientes de bordados y estampados por recibos
      */
     public function pendientesBordadoEstampado()

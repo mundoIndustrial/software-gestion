@@ -106,6 +106,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 $join->on('palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
                      ->on('palp.pedido_parcial_id', '=', 'ppar.id');
             })
+            ->whereIn('pedidos_procesos_prenda_detalles.tipo_proceso_id', $tipoProcesoIds)
             ->where('ppar.estado', 'APROBADO')
             ->where('ppar.activo', 1)
             ->whereNull('ppar.deleted_at')

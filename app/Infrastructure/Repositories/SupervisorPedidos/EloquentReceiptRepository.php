@@ -318,6 +318,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.id as pedido_id',
                 'u.name as asesor',
                 'crp.color_costura',
+                'crp.color_control_calidad',
                 'crp.area',
             ])
             ->where('crp.tipo_recibo', 'COSTURA')

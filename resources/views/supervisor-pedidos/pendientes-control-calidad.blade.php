@@ -230,8 +230,8 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
-                                        --row-bg-color: {{ $proceso['color_costura'] ?: '#ffffff' }};
+                                    <div data-row="processo" data-color-stored="{{ $proceso['color_control_calidad'] ?? '' }}" style="
+                                        --row-bg-color: {{ $proceso['color_control_calidad'] ?: '#ffffff' }};
                                         display: grid;
                                         grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
@@ -628,7 +628,7 @@ async function guardarColorCostura(reciboId, color) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
-        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-costura', {
+        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-control-calidad', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -658,6 +658,5 @@ async function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
-
 
 

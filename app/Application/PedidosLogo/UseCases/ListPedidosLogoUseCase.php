@@ -22,20 +22,24 @@ final class ListPedidosLogoUseCase
         $isMinimalLogoRole = $isDisenadorLogos || $isBordador;
 
         $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
+        $esFiltroEstampado = $filtro === 'estampado';
 
-        $tipoProcesoIds = $isMinimalLogoRole
-            ? [2]
-            : ($filtro === 'estampado' ? [3, 4, 5] : [2]);
+        // Regla de negocio: en la vista "ESTAMPADO" NO deben aparecer recibos de BORDADO.
+        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+
+        // Para roles mínimos (diseñador/bordador), solo forzar vista reducida en filtro bordado.
+        // En filtro estampado respetamos el tipo de proceso para evitar mezclar bordado.
+        $soloMinimalRole = $isMinimalLogoRole && !$esFiltroEstampado;
 
         $areaFija = null;
-        if ($isMinimalLogoRole) {
+        if ($soloMinimalRole) {
             $areaFija = $isBordador ? 'BORDANDO' : 'DISENO';
         }
 
         $recibos = $this->procesoReadRepository->paginarRecibosAprobados(
             $tipoProcesoIds,
             $search,
-            $isMinimalLogoRole,
+            $soloMinimalRole,
             $areaFija,
             $perPage
         );
