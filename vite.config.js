@@ -46,7 +46,6 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                'resources/js/operario/entry.js',
                 'resources/js/supervisor-pedidos/entry.js',
             ],
             refresh: true,
