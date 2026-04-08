@@ -670,9 +670,11 @@ class PedidoProduccionReadService
         return $query->leftJoinSub($latestAnexoSubquery, 'pah_latest', function ($join) {
             $join->on('pah_latest.pedido_produccion_id', '=', 'pedidos_produccion.id');
         })
-            ->orderByRaw('pah_latest.latest_anexo_at IS NULL ASC')
-            ->orderByDesc('pah_latest.latest_anexo_at')
-            ->orderBy('pedidos_produccion.updated_at', 'desc')
+            // Orden por "última actividad":
+            // 1) última modificación registrada en la tabla de historial de anexos
+            // 2) si no hay modificaciones, fecha de creación del pedido
+            ->orderByRaw('COALESCE(pah_latest.latest_anexo_at, pedidos_produccion.created_at) DESC')
+            ->orderBy('pedidos_produccion.created_at', 'desc')
             ->orderBy('pedidos_produccion.numero_pedido', 'desc')
             ->paginate($request->getPerPage(), ['pedidos_produccion.*'], 'page', $request->getPage())
             ->appends($request->getAppends());

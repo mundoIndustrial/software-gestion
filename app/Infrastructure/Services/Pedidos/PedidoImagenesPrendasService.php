@@ -85,7 +85,7 @@ class PedidoImagenesPrendasService
     public function procesarImagenesNuevasPrendas($request, array $nuevasPrendasIds, array $items): void
     {
         foreach ($nuevasPrendasIds as $i => $prendaId) {
-            $prenda = \App\Models\PrendaPedido::with(['coloresTelas'])->find($prendaId);
+            $prenda = \App\Models\PrendaPedido::with(['coloresTelas', 'procesos.tipoProceso'])->find($prendaId);
             if (!$prenda) {
                 continue;
             }
@@ -134,6 +134,61 @@ class PedidoImagenesPrendasService
                     ]);
                     Log::debug('[PedidoImagenesService] Nueva prenda tela imagen guardada', ['tela_id' => $telaRelacion->id]);
                     $imgIdx++;
+                }
+            }
+
+            $procesos = $items[$i]['procesos'] ?? [];
+            if (is_array($procesos)) {
+                foreach ($procesos as $procesoKey => $procesoData) {
+                    $procesoClave = is_numeric($procesoKey)
+                        ? (string) ($procesoData['tipo'] ?? $procesoData['nombre'] ?? '')
+                        : (string) $procesoKey;
+
+                    if ($procesoClave === '') {
+                        continue;
+                    }
+
+                    $procesoDetalleId = $this->obtenerProcesoDetalleIdPorClave($prenda, $procesoClave);
+                    if (!$procesoDetalleId) {
+                        Log::warning('[PedidoImagenesService] Proceso de nueva prenda no encontrado para guardar imagenes', [
+                            'prenda_id' => $prenda->id,
+                            'proceso_clave' => $procesoClave,
+                        ]);
+                        continue;
+                    }
+
+                    $imgIdx = 0;
+                    while (true) {
+                        $formKey = "nuevas_prendas.{$i}.procesos.{$procesoClave}.imagenes.{$imgIdx}";
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+
+                        $archivo = $request->file($formKey);
+                        $resultado = $this->imageUploadService->guardarImagenDirecta(
+                            $archivo,
+                            $prenda->pedido_produccion_id,
+                            'procesos',
+                            strtoupper($procesoClave),
+                            null
+                        );
+
+                        PedidosProcessImagenes::create([
+                            'proceso_prenda_detalle_id' => $procesoDetalleId,
+                            'ruta_original' => null,
+                            'ruta_webp' => $resultado['webp'],
+                            'orden' => $imgIdx,
+                            'es_principal' => $imgIdx === 0,
+                        ]);
+
+                        Log::debug('[PedidoImagenesService] Nueva prenda proceso imagen guardada', [
+                            'prenda_id' => $prenda->id,
+                            'proceso_detalle_id' => $procesoDetalleId,
+                            'proceso_clave' => $procesoClave,
+                        ]);
+
+                        $imgIdx++;
+                    }
                 }
             }
         }
@@ -315,5 +370,21 @@ class PedidoImagenesPrendasService
         })->first();
 
         return $proceso ? $proceso->id : null;
+    }
+
+    private function obtenerProcesoDetalleIdPorClave($prenda, string $procesoClave): ?int
+    {
+        $clave = mb_strtolower(trim($procesoClave));
+        if ($clave === '') {
+            return null;
+        }
+
+        $proceso = $prenda->procesos->first(function ($proc) use ($clave) {
+            $slug = mb_strtolower((string) ($proc->tipoProceso->slug ?? ''));
+            $nombre = mb_strtolower((string) ($proc->tipoProceso->nombre ?? ''));
+            return $slug === $clave || $nombre === $clave;
+        });
+
+        return $proceso?->id;
     }
 }

@@ -180,6 +180,49 @@
 
         let nuevaPrendaIdx = 0; // Contador independiente para nuevas prendas (el backend itera desde 0)
 
+        const extraerArchivoImagen = (imagen) => {
+            if (!imagen) return null;
+            if (imagen instanceof File) return imagen;
+            if (imagen?.file instanceof File) return imagen.file;
+            return null;
+        };
+
+        const adjuntarImagenesProcesosNuevaPrenda = (prendaData, prendaFormDataIdx) => {
+            const procesos = (prendaData?.procesos && typeof prendaData.procesos === 'object')
+                ? prendaData.procesos
+                : {};
+
+            Object.entries(procesos).forEach(([procesoKey, procesoValue]) => {
+                const datosProceso = procesoValue?.datos || procesoValue || {};
+                const procesoKeyFormData = /^\d+$/.test(String(procesoKey))
+                    ? String(datosProceso.tipo || procesoValue?.tipo || procesoKey)
+                    : String(procesoKey);
+                const fuentes = [
+                    ...(Array.isArray(datosProceso.imagenesFiles) ? datosProceso.imagenesFiles : []),
+                    ...(Array.isArray(datosProceso.fotosGeneralesFiles) ? datosProceso.fotosGeneralesFiles : []),
+                    ...(Array.isArray(datosProceso.imagenes) ? datosProceso.imagenes : [])
+                ];
+
+                const vistos = new Set();
+                let procesoImgIdx = 0;
+
+                fuentes.forEach((img) => {
+                    const file = extraerArchivoImagen(img);
+                    if (!(file instanceof File)) return;
+
+                    const keyDedupe = `${file.name}::${file.size}::${file.lastModified}`;
+                    if (vistos.has(keyDedupe)) return;
+                    vistos.add(keyDedupe);
+
+                    formData.append(
+                        `nuevas_prendas[${prendaFormDataIdx}][procesos][${procesoKeyFormData}][imagenes][${procesoImgIdx}]`,
+                        file
+                    );
+                    procesoImgIdx++;
+                });
+            });
+        };
+
         window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
             const esPrendaExistente = !!(p?.prenda_pedido_id || p?.id);
             if (esPrendaExistente) {
@@ -222,6 +265,8 @@
 
             // Fallback para wizard: imágenes por color/talla (imagen_id en asignaciones)
             adjuntarImagenesWizardATelas(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela);
+            // Adjuntar imagenes de procesos para nuevas prendas
+            adjuntarImagenesProcesosNuevaPrenda(p, nuevaPrendaIdx);
 
             nuevasPrendasJson.push({
                 tipo: 'prenda',

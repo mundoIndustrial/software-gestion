@@ -113,9 +113,21 @@
         deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn-eliminar-imagen-proceso';
         deleteBtn.type = 'button';
-        deleteBtn.setAttribute('data-indice', indice);
+        deleteBtn.dataset.indice = String(indice); // Usar dataset en lugar de setAttribute
+        deleteBtn.setAttribute('data-indice', String(indice)); // Fallback también con setAttribute
         deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
         deleteBtn.textContent = '×';
+        
+        // Event listener directo como fallback
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (typeof globalThis.eliminarImagenProceso === 'function') {
+                globalThis.eliminarImagenProceso(indice);
+            }
+        }, true);
+        
         preview.appendChild(deleteBtn);
     }
 

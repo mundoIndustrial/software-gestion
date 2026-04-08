@@ -307,7 +307,6 @@
     
     <!-- STORAGE Y MANEJO DE IMÁGENES DE PROCESOS -->
     <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-    <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
     
     <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/proceso-editor.js') }}?v={{ time() }}"></script>

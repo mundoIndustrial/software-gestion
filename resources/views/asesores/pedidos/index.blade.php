@@ -1452,7 +1452,6 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-card-renderer-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-<script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
 <script src="{{ asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}"></script>
 
 <!-- Función para actualizar estado del pedido -->

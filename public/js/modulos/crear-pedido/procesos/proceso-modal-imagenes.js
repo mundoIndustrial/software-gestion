@@ -71,9 +71,21 @@ globalThis.manejarImagenProceso = function(input, indice) {
             deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-eliminar-imagen-proceso';
             deleteBtn.type = 'button';
-            deleteBtn.dataset.indice = indice;
+            deleteBtn.dataset.indice = String(indice); // Usar dataset y asegurar string
+            deleteBtn.setAttribute('data-indice', String(indice)); // Fallback con setAttribute
             deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
             deleteBtn.textContent = '×';
+            
+            // Event listener directo como fallback (en caso que event delegation falle)
+            deleteBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                if (typeof globalThis.eliminarImagenProceso === 'function') {
+                    globalThis.eliminarImagenProceso(indice);
+                }
+            }, true);
+            
             preview.appendChild(deleteBtn);
             procesoModalDebug('[manejarImagenProceso]  boton eliminar creado con data-indice:', indice);
             
@@ -93,26 +105,58 @@ globalThis._imagenAEliminarIndice = null;
 // Esto funciona incluso despues de que setupDragAndDropProceso clone el preview con cloneNode(true)
 // porque cloneNode NO copia event listeners, pero event delegation en document si los detecta
 (function() {
-    document.addEventListener('click', function(e) {
+    function handleDeleteBtnClick(e) {
         const btn = e.target.closest('.btn-eliminar-imagen-proceso');
-        if (btn) {
-            procesoModalDebug('[EVENT-DELEGATION]  Click detectado en boton eliminar imagen');
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            const indice = Number.parseInt(btn.dataset.indice, 10);
-            procesoModalDebug('[EVENT-DELEGATION]  indice del boton:', indice);
-            
-            if (indice && typeof globalThis.eliminarImagenProceso === 'function') {
-                procesoModalDebug('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
-                globalThis.eliminarImagenProceso(indice);
-            } else {
-                console.error('[EVENT-DELEGATION]  indice invalido o funcion no existe:', indice, typeof globalThis.eliminarImagenProceso);
-            }
+        if (!btn) return;
+        
+        procesoModalDebug('[EVENT-DELEGATION]  Click detectado en boton eliminar imagen');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        const indiceRaw = btn.dataset.indice || btn.getAttribute('data-indice');
+        const indice = Number.parseInt(indiceRaw, 10);
+        procesoModalDebug('[EVENT-DELEGATION]  indice del boton:', indice, 'raw:', indiceRaw);
+        
+        if (indice > 0 && typeof globalThis.eliminarImagenProceso === 'function') {
+            procesoModalDebug('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
+            globalThis.eliminarImagenProceso(indice);
+        } else {
+            console.error('[EVENT-DELEGATION]  indice invalido o funcion no existe:', indice, typeof globalThis.eliminarImagenProceso);
         }
-    }, true); // true = capture phase, se ejecuta ANTES que otros handlers
+    }
+    
+    document.addEventListener('click', handleDeleteBtnClick, true); // true = capture phase
     procesoModalDebug('[EVENT-DELEGATION]  Event delegation global registrado para .btn-eliminar-imagen-proceso');
+    
+    // FALLBACK: Observer para agregar listeners directos a botones creados dinamicamente
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length) {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Node.ELEMENT_NODE
+                        const deleteBtn = node.classList?.contains('btn-eliminar-imagen-proceso') ? 
+                            node : 
+                            node.querySelector?.('.btn-eliminar-imagen-proceso');
+                        
+                        if (deleteBtn && !deleteBtn._hasEliminarListener) {
+                            procesoModalDebug('[MUTATION-OBSERVER]  Nuevo boton eliminar detectado, agregando listener directo');
+                            deleteBtn._hasEliminarListener = true;
+                            deleteBtn.addEventListener('click', handleDeleteBtnClick, true);
+                        }
+                    }
+                });
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
+    procesoModalDebug('[MUTATION-OBSERVER]  MutationObserver registrado para agregar listeners a botones dinamicos');
 })();
 
 function _mostrarModalConfirmarEliminarImagen(indice, source = 'mostrarModalConfirmarEliminarImagen') {
@@ -120,21 +164,50 @@ function _mostrarModalConfirmarEliminarImagen(indice, source = 'mostrarModalConf
     globalThis._imagenAEliminarIndice = indice;
     procesoModalDebug('[' + source + ']  globalThis._imagenAEliminarIndice establecido a:', globalThis._imagenAEliminarIndice);
     
-    const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
+    let modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     procesoModalDebug('[' + source + ']  Modal encontrado?:', !!modal);
+    
+    // FALLBACK: Si el modal no existe, crear un modal simple
+    if (!modal) {
+        console.warn('[' + source + ']  Modal no encontrado, creando uno temporal...');
+        modal = document.createElement('div');
+        modal.id = 'modal-confirmar-eliminar-imagen-proceso';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'z-index: 2147483648 !important; display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div class="modal-container" style="max-width: 400px; background: white; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                <div class="modal-header modal-header-danger" style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="material-symbols-rounded" style="color: #dc2626; font-size: 24px;">warning</span>
+                    <h3 class="modal-title" style="margin: 0; color: #dc2626; font-weight: 600;">Confirmar eliminación</h3>
+                </div>
+                
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <p style="color: #374151; margin: 0; font-size: 0.95rem;">
+                        ¿Estás seguro de que deseas eliminar esta imagen?
+                    </p>
+                </div>
+                
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalConfirmarEliminarImagen()" style="background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarEliminarImagenProceso()" style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        procesoModalDebug('[' + source + ']  Modal temporal creado y agregado al DOM');
+    }
     
     if (modal) {
         procesoModalDebug('[' + source + ']  Modal existe, mostrando...');
         modal.style.display = 'flex';
-        modal.style.zIndex = '999999999';
+        modal.style.zIndex = '2147483648';
         procesoModalDebug('[' + source + ']  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
-        console.error('[' + source + ']  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
-        procesoModalDebug('[' + source + ']  Elementos en body:', document.body.children.length);
-        procesoModalDebug('[' + source + ']  Buscando modales con clase modal-overlay:');
-        document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
-            procesoModalDebug(`  [${idx}] ID: ${m.id}, Display: ${m.style.display}, Z-index: ${m.style.zIndex}`);
-        });
+        console.error('[' + source + ']  No se pudo crear o encontrar el modal');
     }
 }
 procesoModalModules.ui.mostrarModalConfirmarEliminarImagen = _mostrarModalConfirmarEliminarImagen;
@@ -152,6 +225,7 @@ globalThis.cerrarModalConfirmarEliminarImagen = function() {
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
     if (modal) {
         modal.style.display = 'none';
+        procesoModalDebug('[cerrarModalConfirmarEliminarImagen]  Modal cerrado');
     }
 };
 

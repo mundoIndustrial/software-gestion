@@ -79,7 +79,7 @@ class PedidoSubmitController {
 
             this.ui.mostrarCargando?.('Validando pedido...');
             const validacion = await this.apiService.validarPedido(pedidoData);
-            debugLog('[gestion-items-pedido]  ValidaciÃ³n recibida:', validacion);
+            debugLog('[gestion-items-pedido]  Validacion recibida:', validacion);
 
             if (!validacion.success) {
                 this.ui.ocultarCargando?.();
@@ -87,7 +87,7 @@ class PedidoSubmitController {
                 return;
             }
 
-            debugLog('[gestion-items-pedido] ValidaciÃ³n exitosa, procediendo a crear pedido');
+            debugLog('[gestion-items-pedido] Validacion exitosa, procediendo a crear pedido');
             this.ui.mostrarCargando?.('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
             this._logResultadoCreacion(resultado);
@@ -130,12 +130,12 @@ class PedidoSubmitController {
     }
 
     _mostrarErroresValidacion(validacion) {
-        debugLog('[gestion-items-pedido]  ValidaciÃ³n fallÃ³:', validacion.errores);
+        debugLog('[gestion-items-pedido]  Validacion fallo:', validacion.errores);
         const errores = validacion.errores || [];
         if (Array.isArray(errores) && errores.length > 0) {
             alert('Errores en el pedido:\n' + errores.join('\n'));
         } else {
-            alert('Error en validaciÃ³n: ' + (validacion.message || JSON.stringify(validacion)));
+            alert('Error en validacion: ' + (validacion.message || JSON.stringify(validacion)));
         }
     }
 
@@ -320,7 +320,7 @@ class PedidoSuccessModalService {
         debugLog('[mostrarModalExito] Â¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
         debugLog('[mostrarModalExito] Â¿datosPedidoCreado?', datosPedidoCreado);
 
-        debugLog('[mostrarModalExito]  LIMPIANDO asignaciones de colores tras creaciÃ³n exitosa...');
+        debugLog('[mostrarModalExito]  LIMPIANDO asignaciones de colores tras creacion exitosa...');
         if (typeof limpiarAsignacionesColores === 'function') {
             limpiarAsignacionesColores();
             debugLog('[mostrarModalExito] âœ“ Asignaciones limpiadas');
@@ -339,8 +339,8 @@ class PedidoSuccessModalService {
         if (!modalElement) {
             debugLog('[mostrarModalExito]  Creando modal desde HTML...');
             if (typeof MODAL_EXITO_PEDIDO_HTML === 'undefined') {
-                console.error('[mostrarModalExito]  CRÃTICO: MODAL_EXITO_PEDIDO_HTML no estÃ¡ definido');
-                throw new Error('MODAL_EXITO_PEDIDO_HTML no estÃ¡ disponible');
+                console.error('[mostrarModalExito]  CRITICO: MODAL_EXITO_PEDIDO_HTML no esta definido');
+                throw new Error('MODAL_EXITO_PEDIDO_HTML no esta disponible');
             }
             document.body.insertAdjacentHTML('beforeend', MODAL_EXITO_PEDIDO_HTML);
             modalElement = document.getElementById('modalExitoPedido');
@@ -353,7 +353,7 @@ class PedidoSuccessModalService {
         if (btnVolverAPedidos) {
             debugLog('[mostrarModalExito]  Asignando onclick');
             btnVolverAPedidos.onclick = () => {
-                debugLog('[mostrarModalExito] ðŸ‘‰ BotÃ³n presionado, redirigiendo...');
+                debugLog('[mostrarModalExito] Boton presionado, redirigiendo...');
                 ctx('location').href = '/asesores/pedidos';
             };
         }
