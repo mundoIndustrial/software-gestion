@@ -43,6 +43,7 @@ Route::middleware(['auth', 'control-calidad-access'])->prefix('control-calidad')
     Route::get('/api/pedido/{numeroPedido}', [ControlCalidadController::class, 'getPedidoData'])->name('api.pedido');
     Route::post('/api/recibos/{idRecibo}/completar', [ControlCalidadController::class, 'completarRecibo'])->name('api.recibos.completar.cc');
     Route::delete('/api/recibos/{idRecibo}/deshacer', [ControlCalidadController::class, 'deshacerRecibo'])->name('api.recibos.deshacer.cc');
+    Route::get('/api/recibos/{idRecibo}/distribucion-parciales', [ControlCalidadController::class, 'obtenerDistribucionParciales'])->name('api.recibos.distribucion-parciales');
 });
 
 // ========================================

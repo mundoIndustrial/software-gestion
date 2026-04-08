@@ -69,7 +69,11 @@
                                 . '&consecutivo_parcial=' . urlencode((string) ($recibo['consecutivo_parcial'] ?? $recibo['consecutivo_actual'] ?? ''));
                         }
                     @endphp
-                    <div @class(['orden-card-simple', 'borde-reflectivo' => $esReflectivo])
+                    <div @class([
+                        'orden-card-simple',
+                        'borde-reflectivo' => $esReflectivo,
+                        'recibo-completado-card' => $reciboCompletadoArea
+                    ])
                          data-card-key="{{ $esParcial ? ('parcial-' . ($recibo['parcial_id'] ?? $recibo['id'] ?? '')) : ('recibo-' . ($recibo['id'] ?? '')) }}"
                          data-numero="{{ $prenda['numero_pedido'] }}"
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
@@ -82,6 +86,7 @@
                         <div class="orden-border {{ $estadoClass }}"></div>
 
                         <div class="orden-body {{ $reciboCompletadoArea ? 'recibo-completado-area' : '' }}">
+                            <span class="recibo-completado-chip" style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}">COMPLETADO</span>
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
@@ -105,21 +110,39 @@
                                 </div>
 
                                 <div class="orden-buttons">
-                                    <a
-                                        class="btn-ver-recibos"
-                                        href="{{ $urlVerRecibo }}">
-                                        <span class="material-symbols-rounded">receipt</span>
-                                        VER
-                                    </a>
+                                    @if($prenda['tiene_parciales'] ?? false)
+                                        <button class="btn-ver-distribucion"
+                                                onclick="abrirDistribucionReciboCC(this, @js((string) $recibo['tipo_recibo']));"
+                                                data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                                data-prenda-id="{{ $prenda['prenda_id'] ?? '' }}"
+                                                data-numero-recibo="{{ $prenda['numero_pedido'] ?? '' }}"
+                                                data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? '' }}">
+                                            <span class="material-symbols-rounded">share</span>
+                                            VER DISTRIBUCIÓN
+                                        </button>
+                                    @else
+                                        <a
+                                            class="btn-ver-recibos"
+                                            href="{{ $urlVerRecibo }}">
+                                            <span class="material-symbols-rounded">receipt</span>
+                                            VER
+                                        </a>
+                                    @endif
+                                    <button class="btn-agregar-novedad"
+                                            onclick="abrirModalNovedad(@js((string) $prenda['numero_pedido']), {{ (int) $prenda['prenda_id'] }}, @js((string) $prenda['nombre_prenda']), @js((string) ($consecutivoActual !== '' ? $consecutivoActual : $prenda['numero_pedido'])))">
+                                        <span class="material-symbols-rounded">comment</span>
+                                        AGREGAR NOVEDAD
+                                    </button>
                                     @if($recibo)
                                         <button class="btn-completar-recibo"
                                                 data-recibo-id="{{ $recibo['id'] ?? '' }}"
                                                 data-es-parcial="{{ $esParcial ? '1' : '0' }}"
                                                 data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
                                                 data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
+                                                style="{{ $reciboCompletadoArea ? 'display: none;' : '' }}"
                                                 onclick="toggleCompletarRecibo(this); event.stopPropagation();">
                                             <span class="material-symbols-rounded">done</span>
-                                            {{ $reciboCompletadoArea ? 'COMPLETADO' : 'COMPLETAR' }}
+                                            COMPLETAR
                                         </button>
                                         <button class="btn-deshacer-recibo"
                                                 data-recibo-id="{{ $recibo['id'] ?? '' }}"
@@ -307,6 +330,28 @@
         background: #E3F2FD;
     }
 
+    .orden-card-simple.recibo-completado-card {
+        background: #edf6ff;
+        border-color: #bfdbfe;
+        border-left-color: #2563eb;
+    }
+
+    .recibo-completado-chip {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        background: #cfe8ff;
+        color: #0f4c81;
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        z-index: 2;
+        line-height: 1.2;
+    }
+
     .orden-right-actions {
         display: none;
     }
@@ -490,9 +535,9 @@
 
     .orden-pedido-footer {
         position: absolute;
-        top: 8px;
+        top: auto;
         right: 12px;
-        bottom: auto;
+        bottom: 10px;
         font-size: 0.65rem;
         color: #bbb;
         background: rgba(255, 255, 255, 0.7);
@@ -690,6 +735,155 @@
         box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
     }
 
+    .control-calidad-dashboard .orden-card-simple.recibo-completado-card {
+        background: #eaf4ff;
+        border-color: #bfdbfe;
+        border-left-color: #2563eb;
+        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.14);
+    }
+
+    .control-calidad-dashboard .orden-card-simple.borde-reflectivo.recibo-completado-card {
+        border-left-color: #10b981;
+    }
+
+    /* Modal Novedades: estilos base (esta vista no depende de utilidades Tailwind) */
+    #novedadesEditModal,
+    #modalConfirmarEliminar {
+        display: none !important;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 100001;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    #modalConfirmarEliminar {
+        z-index: 100002;
+        background: rgba(15, 23, 42, 0.62);
+    }
+
+    #novedadesEditModal.hidden,
+    #modalConfirmarEliminar.hidden {
+        display: none !important;
+    }
+
+    #novedadesEditModal.flex,
+    #modalConfirmarEliminar.flex {
+        display: flex !important;
+    }
+
+    #novedadesEditModal .bg-white,
+    #modalConfirmarEliminar .bg-white {
+        width: min(760px, 100%);
+        max-height: 85vh;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.35);
+        display: flex;
+        flex-direction: column;
+    }
+
+    #novedadesEditModal .bg-slate-900 {
+        background: #111827;
+        color: #fff;
+        padding: 1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    #novedadesEditModal .px-6.py-6 {
+        padding: 1rem 1.2rem;
+        overflow-y: auto;
+    }
+
+    #novedadesEditModal #novedadesHistorial {
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+
+    #novedadesEditModal #novedadesNuevaContent {
+        width: 100%;
+        min-height: 110px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 0.75rem;
+        font-size: 0.92rem;
+        resize: vertical;
+    }
+
+    #novedadesEditModal button[onclick="guardarNovedad()"],
+    #novedadesEditModal button[onclick="cerrarModalNovedades()"] {
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    #novedadesEditModal button[onclick="guardarNovedad()"] {
+        background: #22c55e;
+        color: #fff;
+    }
+
+    #novedadesEditModal button[onclick="cerrarModalNovedades()"] {
+        background: #94a3b8;
+        color: #fff;
+    }
+
+    /* Compatibilidad de utilidades usadas por recibos-novedades.js */
+    #novedadesEditModal .mb-6 { margin-bottom: 1rem; }
+    #novedadesEditModal .pt-6 { padding-top: 1rem; }
+    #novedadesEditModal .mt-4 { margin-top: 0.9rem; }
+    #novedadesEditModal .block { display: block; }
+    #novedadesEditModal .text-sm { font-size: 0.88rem; }
+    #novedadesEditModal .font-bold { font-weight: 700; }
+    #novedadesEditModal .mb-3 { margin-bottom: 0.65rem; }
+    #novedadesEditModal .border-t { border-top: 1px solid #e5e7eb; }
+    #novedadesEditModal .border-slate-200 { border-color: #e2e8f0; }
+    #novedadesEditModal .rounded-lg { border-radius: 10px; }
+    #novedadesEditModal .transition { transition: all 0.2s ease; }
+    #novedadesEditModal .flex { display: flex; }
+    #novedadesEditModal .gap-3 { gap: 0.6rem; }
+    #novedadesEditModal .flex-1 { flex: 1; }
+    #novedadesEditModal .text-white { color: #fff; }
+
+    #novedadesEditModal .bg-gray-50 {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.7rem;
+    }
+
+    #novedadesEditModal .border-gray-200 { border-color: #e5e7eb; }
+    #novedadesEditModal .text-gray-700 { color: #374151; }
+    #novedadesEditModal .text-gray-500 { color: #6b7280; }
+    #novedadesEditModal .text-gray-400 { color: #9ca3af; }
+    #novedadesEditModal .text-orange-600 { color: #c2410c; }
+    #novedadesEditModal .whitespace-pre-wrap { white-space: pre-wrap; }
+    #novedadesEditModal .italic { font-style: italic; }
+
+    #novedadesEditModal .bg-blue-100 { background: #dbeafe; }
+    #novedadesEditModal .text-blue-800 { color: #1e40af; }
+    #novedadesEditModal .bg-red-100 { background: #fee2e2; }
+    #novedadesEditModal .text-red-800 { color: #991b1b; }
+    #novedadesEditModal .bg-yellow-100 { background: #fef9c3; }
+    #novedadesEditModal .text-yellow-800 { color: #854d0e; }
+    #novedadesEditModal .bg-green-100 { background: #dcfce7; }
+    #novedadesEditModal .text-green-800 { color: #166534; }
+    #novedadesEditModal .bg-orange-100 { background: #ffedd5; }
+    #novedadesEditModal .text-orange-800 { color: #9a3412; }
+
+    #novedadesEditModal .bg-blue-500 { background: #3b82f6; }
+    #novedadesEditModal .bg-blue-500:hover { background: #2563eb; }
+    #novedadesEditModal .bg-red-500 { background: #ef4444; }
+    #novedadesEditModal .bg-red-500:hover { background: #dc2626; }
+
     .control-calidad-dashboard .orden-card-simple.borde-reflectivo {
         border-left-color: #10b981;
     }
@@ -702,6 +896,15 @@
     .control-calidad-dashboard .orden-body {
         padding: 1.15rem 1.15rem 3.75rem;
         border-radius: 24px;
+    }
+
+    .control-calidad-dashboard .recibo-completado-chip {
+        top: 12px;
+        right: 14px;
+        font-size: 0.56rem;
+        padding: 0.18rem 0.48rem;
+        background: #dbeafe;
+        color: #1e3a8a;
     }
 
     .control-calidad-dashboard .orden-numero {
@@ -775,6 +978,23 @@
     .control-calidad-dashboard .btn-ver-recibos:hover {
         background: #eff6ff;
         box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+    }
+
+    .control-calidad-dashboard .orden-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+        align-items: center;
+    }
+
+    .control-calidad-dashboard .orden-buttons .btn-ver-recibos,
+    .control-calidad-dashboard .orden-buttons .btn-agregar-novedad,
+    .control-calidad-dashboard .orden-buttons .btn-completar-recibo,
+    .control-calidad-dashboard .orden-buttons .btn-deshacer-recibo {
+        width: auto;
+        justify-content: center;
+        margin: 0;
     }
 
     body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-recibos {
@@ -872,17 +1092,294 @@
             padding: 1rem 1rem 4rem;
         }
 
+        .control-calidad-dashboard .orden-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-ver-recibos,
+        .control-calidad-dashboard .orden-buttons .btn-agregar-novedad,
+        .control-calidad-dashboard .orden-buttons .btn-completar-recibo,
+        .control-calidad-dashboard .orden-buttons .btn-deshacer-recibo {
+            width: 100%;
+        }
+
+        .control-calidad-dashboard .recibo-completado-chip {
+            top: 10px;
+            right: 10px;
+        }
+
         .control-calidad-dashboard .orden-numero {
             font-size: 1.35rem;
+        }
+
+        /* Botones responsivos en distribución de parciales */
+        .distribucion-parciales-cc-section .btn-ver-recibo-parcial,
+        .distribucion-parciales-cc-section .btn-completar-parcial-cc {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            gap: 0.35rem;
+        }
+
+        .distribucion-parciales-cc-section .btn-ver-recibo-parcial .material-symbols-rounded,
+        .distribucion-parciales-cc-section .btn-completar-parcial-cc .material-symbols-rounded {
+            font-size: 0.85rem;
         }
     }
 </style>
 
 @include('components.modals.recibo-dinamico-modal')
 
+<!-- Modal de Confirmación -->
+<div id="modalConfirmacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: #fef3c7; margin: 0 auto 1rem; font-size: 2rem;">⚠️</div>
+        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.25rem; font-weight: 700; color: #111827; text-align: center;">¿Eliminar novedad?</h3>
+        <p style="margin: 0 0 1.5rem 0; color: #6b7280; text-align: center; line-height: 1.5; font-size: 0.95rem;">Esta acción no se puede deshacer.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <button id="btnConfirmarNo" onclick="cancelarConfirmacion()" style="padding: 0.75rem 1rem; background: #f3f4f6; color: #374151; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">Cancelar</button>
+            <button id="btnConfirmarSi" onclick="confirmarEliminar()" style="padding: 0.75rem 1rem; background: #ef4444; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Novedades (estilo operario) -->
+<div id="modalNovedad" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; max-width: 760px; width: 92%; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
+        <div style="background: #111827; color: white; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+            <div id="modalNovedadHeaderTitulo" style="font-weight: 800; letter-spacing: 0.5px; font-size: 0.95rem; text-transform: uppercase;">NOVEDADES</div>
+            <button type="button" onclick="cerrarModalNovedad()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 1.25rem; line-height: 1; padding: 0.25rem;">×</button>
+        </div>
+
+        <div style="padding: 1.25rem; overflow-y: auto; max-height: calc(85vh - 56px);">
+            <input type="hidden" id="novedadNumeroPedido">
+            <input type="hidden" id="novedadPrendaId">
+            <input type="hidden" id="novedadNumeroRecibo">
+
+            <div style="margin-bottom: 1rem;">
+                <div style="color: #111827; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Historial:</div>
+                <div id="novedadesHistorial" style="max-height: 220px; overflow-y: auto; padding-right: 0.25rem;"></div>
+            </div>
+
+            <div style="height: 1px; background: #e5e7eb; margin: 1rem 0;"></div>
+
+            <div style="color: #111827; font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem;">Agregar Nueva Novedad:</div>
+
+            <div style="margin-bottom: 1rem;">
+                <textarea id="novedadDescripcionText" rows="5" style="width: 100%; padding: 0.9rem; border: 1px solid #d1d5db; border-radius: 10px; resize: vertical; font-size: 0.95rem;" placeholder="Escribe tu novedad aquí..."></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <button type="button" id="btnGuardarNovedad" onclick="guardarNovedad()" style="padding: 0.85rem 1rem; background: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">Guardar Novedad</button>
+                <button type="button" onclick="cerrarModalNovedad()" style="padding: 0.85rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+    window.usuarioActualId = {{ (int) Auth::id() }};
+    window.novedadIdAEliminar = null;
+
+    function escaparHtml(texto) {
+        return String(texto ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function tokenCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+
+    function mostrarNovedadesTarjetas(novedades) {
+        const historial = document.getElementById('novedadesHistorial');
+        if (!historial) return;
+
+        if (!Array.isArray(novedades) || novedades.length === 0) {
+            historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #f9fafb; color: #6b7280; font-size: 0.9rem;">No hay novedades registradas</div>';
+            return;
+        }
+
+        historial.innerHTML = novedades.map((novedad) => {
+            const fecha = escaparHtml(novedad.creado_en || '');
+            const usuarioNombre = escaparHtml(novedad.creado_por_nombre || 'Sistema');
+            const usuarioRol = escaparHtml(novedad.creado_por_rol || '');
+            const tipoRaw = String(novedad.tipo_novedad || 'observacion');
+            const tipo = escaparHtml(tipoRaw.toUpperCase());
+            const descripcion = escaparHtml(novedad.novedad_texto || '');
+            const esMia = String(novedad.creado_por ?? '') === String(window.usuarioActualId ?? '');
+            const editado = Number(novedad.editado || 0) === 1;
+            const fechaEdicion = escaparHtml(novedad.editado_en || '');
+            const descripcionEsc = JSON.stringify(String(novedad.novedad_texto || ''));
+            const tipoEsc = JSON.stringify(tipoRaw);
+
+            return `
+                <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: #dbeafe; color: #1d4ed8; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">${tipo}</span>
+                            ${editado ? '<span style="background: #fbbf24; color: #92400e; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">EDITADO</span>' : ''}
+                            <span style="color: #6b7280; font-size: 0.85rem;">${usuarioNombre}</span>
+                            ${usuarioRol ? `<span style="background: #e5e7eb; color: #374151; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">${usuarioRol}</span>` : ''}
+                        </div>
+                        <div style="color: #9ca3af; font-size: 0.8rem; white-space: nowrap;">${fecha}</div>
+                    </div>
+                    <div style="margin-top: 0.75rem; color: #374151; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">${descripcion}</div>
+                    ${editado && fechaEdicion ? `<div style="margin-top: 0.5rem; color: #92400e; font-size: 0.75rem; font-style: italic;">Editado: ${fechaEdicion}</div>` : ''}
+                    ${esMia ? `
+                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                            <button onclick='editarNovedad(${novedad.id}, ${descripcionEsc}, ${tipoEsc})' style="background: #3b82f6; color: white; border: none; border-radius: 0.375rem; padding: 0.35rem 0.8rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Editar</button>
+                            <button onclick="eliminarNovedad(${novedad.id})" style="background: #ef4444; color: white; border: none; border-radius: 0.375rem; padding: 0.35rem 0.8rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Eliminar</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function cargarNovedades(numeroPedido, numeroRecibo) {
+        const historial = document.getElementById('novedadesHistorial');
+        if (historial) {
+            historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #f9fafb; color: #6b7280; font-size: 0.9rem;">Cargando novedades...</div>';
+        }
+
+        try {
+            const res = await fetch(`/recibos-novedades/${encodeURIComponent(numeroPedido)}/${encodeURIComponent(numeroRecibo)}`);
+            const data = await res.json();
+            mostrarNovedadesTarjetas(data?.success ? (data.data || []) : []);
+        } catch (_) {
+            if (historial) {
+                historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff1f2; color: #991b1b; font-size: 0.9rem;">Error cargando novedades</div>';
+            }
+        }
+    }
+
+    window.abrirModalNovedad = function(numeroPedido, prendaId, nombrePrenda, numeroRecibo) {
+        const modal = document.getElementById('modalNovedad');
+        if (!modal) return;
+
+        document.getElementById('modalNovedadHeaderTitulo').textContent = `NOVEDADES - PEDIDO #${numeroPedido} - RECIBO ${numeroRecibo}`;
+        document.getElementById('novedadNumeroPedido').value = numeroPedido;
+        document.getElementById('novedadPrendaId').value = prendaId;
+        document.getElementById('novedadNumeroRecibo').value = numeroRecibo;
+        document.getElementById('novedadDescripcionText').value = '';
+
+        const btn = document.getElementById('btnGuardarNovedad');
+        if (btn) {
+            btn.textContent = 'Guardar Novedad';
+            btn.onclick = window.guardarNovedad;
+        }
+
+        modal.style.display = 'flex';
+        cargarNovedades(numeroPedido, numeroRecibo);
+    };
+
+    window.cerrarModalNovedad = function() {
+        const modal = document.getElementById('modalNovedad');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.guardarNovedad = async function() {
+        const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
+        const numeroRecibo = document.getElementById('novedadNumeroRecibo')?.value;
+        const texto = (document.getElementById('novedadDescripcionText')?.value || '').trim();
+        if (!numeroPedido || !numeroRecibo || !texto) return;
+
+        const btn = document.getElementById('btnGuardarNovedad');
+        const txt = btn?.textContent || 'Guardar Novedad';
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+        try {
+            const res = await fetch(`/recibos-novedades/${encodeURIComponent(numeroPedido)}/${encodeURIComponent(numeroRecibo)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': tokenCsrf() },
+                body: JSON.stringify({ novedades: texto, tipo_novedad: 'observacion', prendas_ids: [] }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+                document.getElementById('novedadDescripcionText').value = '';
+                await cargarNovedades(numeroPedido, numeroRecibo);
+            }
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txt; }
+        }
+    };
+
+    window.editarNovedad = function(novedadId, textoActual, tipoActual) {
+        const area = document.getElementById('novedadDescripcionText');
+        const btn = document.getElementById('btnGuardarNovedad');
+        if (!area || !btn) return;
+
+        area.value = String(textoActual || '');
+        area.focus();
+        btn.textContent = 'Actualizar Novedad';
+        btn.onclick = async function() {
+            const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
+            const numeroRecibo = document.getElementById('novedadNumeroRecibo')?.value;
+            const nuevo = area.value.trim();
+            if (!nuevo) return;
+            btn.disabled = true;
+            try {
+                const res = await fetch(`/recibos-novedades/${novedadId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': tokenCsrf() },
+                    body: JSON.stringify({ novedad_texto: nuevo, tipo_novedad: String(tipoActual || 'observacion') }),
+                });
+                const data = await res.json();
+                if (data?.success) {
+                    btn.textContent = 'Guardar Novedad';
+                    btn.onclick = window.guardarNovedad;
+                    area.value = '';
+                    await cargarNovedades(numeroPedido, numeroRecibo);
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    };
+
+    window.eliminarNovedad = function(novedadId) {
+        window.novedadIdAEliminar = novedadId;
+        const modal = document.getElementById('modalConfirmacion');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.cancelarConfirmacion = function() {
+        window.novedadIdAEliminar = null;
+        const modal = document.getElementById('modalConfirmacion');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.confirmarEliminar = async function() {
+        const id = window.novedadIdAEliminar;
+        if (!id) return;
+        const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
+        const numeroRecibo = document.getElementById('novedadNumeroRecibo')?.value;
+        const btn = document.getElementById('btnConfirmarSi');
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch(`/recibos-novedades/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': tokenCsrf() },
+            });
+            const data = await res.json();
+            if (data?.success) {
+                window.cancelarConfirmacion();
+                await cargarNovedades(numeroPedido, numeroRecibo);
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
+        window.cerrarModalNovedad();
+        window.cancelarConfirmacion();
+
         const searchInput = document.getElementById('searchInput');
         const clearBtn = document.getElementById('clearFilterBtn');
         const ordenesList = document.getElementById('ordenesList');
@@ -1077,7 +1574,7 @@
             }
 
             const card = document.createElement('div');
-            card.className = `orden-card-simple${esReflectivo ? ' borde-reflectivo' : ''}`;
+            card.className = `orden-card-simple${esReflectivo ? ' borde-reflectivo' : ''}${completadoArea ? ' recibo-completado-card' : ''}`;
             card.dataset.cardKey = cardKey;
             card.dataset.numero = String(numeroPedido).toLowerCase();
             card.dataset.prenda = String(orden.nombre_prenda || '').toLowerCase();
@@ -1090,6 +1587,7 @@
             card.innerHTML = `
                 <div class="orden-border ${esParcial ? 'en-proceso' : ''}"></div>
                 <div class="orden-body ${completadoArea ? 'recibo-completado-area' : ''}">
+                    <span class="recibo-completado-chip" style="${completadoArea ? '' : 'display: none;'}">COMPLETADO</span>
                     <div class="orden-left">
                         <div class="orden-top">
                             <div class="orden-numero-section">
@@ -1125,9 +1623,13 @@
                                 <span class="material-symbols-rounded">receipt</span>
                                 VER
                             </a>
-                            <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                            <button class="btn-agregar-novedad" onclick="abrirModalNovedad('${numeroPedido}', ${prendaId || 0}, '${(orden.nombre_prenda || '').replace(/'/g, "\\'")}', '${consecutivoActual || numeroPedido || ''}')">
+                                <span class="material-symbols-rounded">comment</span>
+                                AGREGAR NOVEDAD
+                            </button>
+                            <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" style="${completadoArea ? 'display: none;' : ''}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
                                 <span class="material-symbols-rounded">done</span>
-                                ${completadoArea ? 'COMPLETADO' : 'COMPLETAR'}
+                                COMPLETAR
                             </button>
                             <button class="btn-deshacer-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
                                 <span class="material-symbols-rounded">undo</span>
@@ -1249,11 +1751,19 @@
 
             btn.dataset.completado = '1';
             btn.setAttribute('data-completado', '1');
-            btn.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETADO';
+            btn.style.display = 'none';
 
             const body = btn.closest('.orden-body');
             if (body) {
                 body.classList.add('recibo-completado-area');
+                const chip = body.querySelector('.recibo-completado-chip');
+                if (chip) {
+                    chip.style.display = '';
+                }
+            }
+            const card = btn.closest('.orden-card-simple');
+            if (card) {
+                card.classList.add('recibo-completado-card');
             }
 
             const btnDeshacer = btn.parentElement?.querySelector('.btn-deshacer-recibo');
@@ -1297,11 +1807,20 @@
                 btnCompletar.dataset.completado = '0';
                 btnCompletar.setAttribute('data-completado', '0');
                 btnCompletar.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETAR';
+                btnCompletar.style.display = '';
             }
 
             const body = btn.closest('.orden-body');
             if (body) {
                 body.classList.remove('recibo-completado-area');
+                const chip = body.querySelector('.recibo-completado-chip');
+                if (chip) {
+                    chip.style.display = 'none';
+                }
+            }
+            const card = btn.closest('.orden-card-simple');
+            if (card) {
+                card.classList.remove('recibo-completado-card');
             }
 
             btn.style.display = 'none';
@@ -1309,6 +1828,291 @@
             return;
         }
     };
+
+    // Función para abrir distribución de parciales en Control de Calidad
+    window.abrirDistribucionReciboCC = function(btn, tipoRecibo) {
+        const reciboId = btn.dataset.reciboId;
+        const prendaId = btn.dataset.prendaId;
+        const numeroRecibo = btn.dataset.numeroRecibo;
+        const ordenCard = btn.closest('.orden-card-simple');
+
+        if (!reciboId) {
+            console.error('No se pudo determinar el ID del recibo');
+            return;
+        }
+
+        // Buscar si ya existe la sección de distribución
+        let distribucionSection = ordenCard?.nextElementSibling;
+        
+        if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
+            distribucionSection = null;
+        }
+        
+        if (distribucionSection) {
+            // Si ya existe, toggle (mostrar/ocultar)
+            const isHidden = distribucionSection.style.display === 'none';
+            distribucionSection.style.display = isHidden ? 'flex' : 'none';
+            
+            // Cambiar el texto del botón
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
+            
+            return;
+        }
+
+        // Si no existe, obtener datos del endpoint de control-calidad
+        const urlApi = `/control-calidad/api/recibos/${reciboId}/distribucion-parciales`;
+        
+        fetch(urlApi, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.parciales || data.parciales.length === 0) {
+                console.error('No hay parciales disponibles');
+                return;
+            }
+
+            // Generar HTML de cards usando las MISMAS clases CSS de operario/dashboard
+            let cardsHTML = data.parciales.map((parcial, idx) => {
+                // Agrupar tallas
+                const tallasSumadas = (parcial.tallas || []).reduce((acc, talla) => {
+                    const key = (talla.talla || '').toUpperCase();
+                    if (!acc[key]) {
+                        acc[key] = 0;
+                    }
+                    acc[key] += talla.cantidad || 0;
+                    return acc;
+                }, {});
+
+                const tallasHTML = Object.entries(tallasSumadas)
+                    .map(([talla, cantidad]) => `<span class="talla-item">${talla}: <strong>${cantidad}</strong></span>`)
+                    .join('');
+
+                return `
+                    <div class="parcial-card" data-parcial-id="${parcial.id}">
+                        <div class="parcial-header">
+                            <div class="parcial-numero">
+                                <h4 class="parcial-title">Parcial #${parcial.consecutivo_parcial}</h4>
+                                <span class="parcial-tipo-recibo">${tipoRecibo}</span>
+                            </div>
+                            <span class="badge-estado badge-estado-control-calidad">
+                                Control de Calidad
+                            </span>
+                        </div>
+                        
+                        <div class="parcial-body">
+                            <div class="parcial-row">
+                                <div class="parcial-info-group full-width">
+                                    <span class="parcial-label">Recibo Original</span>
+                                    <span class="parcial-value">
+                                        Recibo #${parcial.consecutivo_original}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="parcial-row">
+                                <div class="parcial-info-group full-width">
+                                    <span class="parcial-label">Encargado</span>
+                                    <span class="parcial-value parcial-encargado">
+                                        <span class="material-symbols-rounded">person</span>
+                                        ${parcial.encargado || 'Sin asignar'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="parcial-row">
+                                <div class="parcial-info-group full-width">
+                                    <span class="parcial-label">Estado</span>
+                                    <span class="parcial-value">
+                                        ${parcial.estado_proceso || 'En Progreso'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            ${tallasHTML ? `
+                            <div class="parcial-row parcial-tallas-row">
+                                <div class="parcial-tallas-container">
+                                    ${tallasHTML}
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <div class="parcial-row parcial-acciones">
+                                <button class="btn-ver-recibo-parcial" 
+                                        onclick="verReciboParcialCC(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}')">
+                                    <span class="material-symbols-rounded">visibility</span>
+                                    VER RECIBO
+                                </button>
+                                <button class="btn-completar-parcial-cc"
+                                        onclick="completarParcialCC(${parcial.id});"
+                                        data-parcial-id="${parcial.id}">
+                                    <span class="material-symbols-rounded">done</span>
+                                    COMPLETAR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Crear sección de distribución con las MISMAS clases CSS
+            const distribucionDiv = document.createElement('div');
+            distribucionDiv.className = 'distribucion-parciales-cc-section';
+            distribucionDiv.innerHTML = cardsHTML;
+
+            ordenCard.insertAdjacentElement('afterend', distribucionDiv);
+
+            // Cambiar texto del botón
+            btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
+        })
+        .catch(error => {
+            console.error('Error al obtener parciales:', error);
+        });
+    };
+
+    // Función para ver recibo de un parcial
+    window.verReciboParcialCC = function(parcialId, consecutivoParcial, numeroRecibo) {
+        const urlRecibo = `/control-calidad/pedido/${numeroRecibo}?parcial_id=${parcialId}&consecutivo_parcial=${consecutivoParcial}&tipo_recibo=PARCIAL`;
+        window.location.href = urlRecibo;
+    };
+
+    // Función para completar un parcial
+    window.completarParcialCC = async function(parcialId) {
+        try {
+            const response = await fetch(`/control-calidad/api/recibos/${parcialId}/completar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    es_parcial: true,
+                    parcial_id: parcialId
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                alert('Error: ' + data.message);
+                return;
+            }
+
+            // Marcar el botón como deshabilitado y cambiar su estilo
+            const btn = document.querySelector(`[data-parcial-id="${parcialId}"].btn-completar-parcial-cc`);
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('btn-completed');
+                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> COMPLETADO';
+                btn.style.cursor = 'default';
+            }
+
+            // Mostrar mensaje de éxito
+            alert('Parcial marcado como completado y movido a Entrega');
+
+            // Recargar la página después de 1 segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } catch (error) {
+            console.error('Error al completar parcial:', error);
+            alert('Error al completar el parcial');
+        }
+    };
+
+    // Agregar estilos CSS para que funcione el diseño
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .distribucion-parciales-cc-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 0.75rem 0 1.5rem 0;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            animation: slideDownCards 0.3s ease-out;
+        }
+
+        @keyframes slideDownCards {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .distribucion-parciales-cc-section .parcial-card {
+            animation: slideDownCards 0.3s ease-out;
+        }
+
+        .parcial-row.parcial-acciones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .btn-completar-parcial-cc {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-completar-parcial-cc:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-completar-parcial-cc:disabled,
+        .btn-completar-parcial-cc.btn-completed {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background: #ccc;
+        }
+
+        .btn-ver-recibo-parcial {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-ver-recibo-parcial:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 @endpush
 @endsection

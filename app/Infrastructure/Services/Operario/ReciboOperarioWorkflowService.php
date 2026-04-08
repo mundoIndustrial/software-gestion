@@ -32,7 +32,7 @@ class ReciboOperarioWorkflowService implements ReciboOperarioWorkflow
         DB::table('prenda_recibo_completado')->updateOrInsert(
             $keys,
             [
-                'id_recibo' => $idParcial ? null : (int) $idRecibo,
+                'id_recibo' => $idParcial ? (int) $idParcial : (int) $idRecibo,
                 'id_parcial' => $idParcial,
                 'numero_recibo' => $numeroRecibo,
                 'nombre_operario' => $nombreOperario,
@@ -136,4 +136,3 @@ class ReciboOperarioWorkflowService implements ReciboOperarioWorkflow
             ->values();
     }
 }
-

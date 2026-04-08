@@ -55,6 +55,16 @@ class ProcesoPrendaObserver
                 return;
             }
 
+            // Si el proceso es 'Entrega', no recalcular el área (es un estado final)
+            // Se mantiene como 'Entrega' explícitamente
+            if ($procesoPrenda->proceso && strtolower(trim($procesoPrenda->proceso)) === 'entrega') {
+                \Log::info(' [Observer] Ignorando Entrega - es un estado final', [
+                    'numero_pedido' => $numeroPedido,
+                    'proceso' => $procesoPrenda->proceso,
+                ]);
+                return;
+            }
+
             // Obtener el pedido
             $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             
@@ -67,8 +77,9 @@ class ProcesoPrendaObserver
                 'area_actual' => $pedido->area,
             ]);
 
-            // Obtener todos los procesos del pedido
+            // Obtener todos los procesos del pedido EXCEPTO 'Entrega'
             $procesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->whereRaw('LOWER(TRIM(proceso)) != ?', ['entrega'])
                 ->get();
 
             if ($procesos->isEmpty()) {
@@ -205,9 +216,11 @@ class ProcesoPrendaObserver
 
             // Obtener el ÚLTIMO proceso por fecha_inicio (sin importar estado)
             // IMPORTANTE: Usar whereNull('deleted_at') para excluir procesos eliminados (soft delete)
+            // IMPORTANTE: Excluir procesos 'Entrega' pues es un estado final
             $ultimoProceso = ProcesoPrenda::where('numero_pedido', $numeroPedido)
                 ->where('id', '!=', $procesoPrenda->id)  // Excluir el que se está eliminando
                 ->whereNull('deleted_at')  // Excluir procesos ya eliminados (soft delete)
+                ->whereRaw('LOWER(TRIM(proceso)) != ?', ['entrega'])  // Excluir Entrega
                 ->orderBy('fecha_inicio', 'DESC')  // Más reciente primero
                 ->orderBy('id', 'DESC')
                 ->first();
@@ -266,6 +279,17 @@ class ProcesoPrendaObserver
             // porque el ReciboCosturaController ya lo hace de forma específica
             if ($proceso && strtolower(trim($proceso)) === 'control de calidad') {
                 \Log::info(" Observer ignorando Control de Calidad - será actualizado específicamente por el controlador", [
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'prenda_id' => $prendaId,
+                    'proceso' => $proceso
+                ]);
+                return;
+            }
+
+            // NO actualizar cuando el proceso es "Entrega"
+            // porque es un estado final y el ControlCalidadController ya lo hace explícitamente
+            if ($proceso && strtolower(trim($proceso)) === 'entrega') {
+                \Log::info(" Observer ignorando Entrega - será actualizado específicamente por el controlador de Control de Calidad", [
                     'pedido_produccion_id' => $pedidoProduccionId,
                     'prenda_id' => $prendaId,
                     'proceso' => $proceso

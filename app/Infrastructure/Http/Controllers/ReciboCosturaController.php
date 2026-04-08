@@ -90,12 +90,14 @@ class ReciboCosturaController extends Controller
             $tipoReciboReal = (string) $recibo->tipo_recibo;
 
             $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $request) {
+                // Buscar el proceso padre de Costura de forma más flexible
+                // El proceso padre ya debe existir, solo necesitamos localizarlo
                 $procesoPadre = ProcesoPrenda::query()
                     ->where('numero_pedido', $pedido->numero_pedido)
                     ->where('prenda_pedido_id', $prendaId)
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                    ->where('numero_recibo', $consecutivoOriginal)
                     ->where(function ($query) {
+                        // El proceso padre NO debe tener numero_recibo_parcial
                         $query->whereNull('numero_recibo_parcial')
                               ->orWhere('numero_recibo_parcial', 0);
                     })
@@ -111,10 +113,12 @@ class ReciboCosturaController extends Controller
                 ]);
 
                 if (!$procesoPadre) {
+                    // Si no existe, significa que el recibo nunca fue enviado a Costura
+                    // Crear el proceso padre sin numero_recibo (es un placeholder)
                     $procesoPadre = ProcesoPrenda::create([
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_pedido_id' => $prendaId,
-                        'numero_recibo' => $consecutivoOriginal,
+                        'numero_recibo' => null,  // El proceso padre NO tiene número de recibo específico
                         'numero_recibo_parcial' => null,
                         'proceso' => 'Costura',
                         'fecha_inicio' => now(),
@@ -122,10 +126,22 @@ class ReciboCosturaController extends Controller
                         'estado_proceso' => 'Pendiente',
                         'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
                     ]);
+
+                    Log::info('[COSTURA][DISTRIBUIR] Proceso padre creado', [
+                        'proceso_padre_id' => $procesoPadre->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_id' => $prendaId,
+                    ]);
                 } else {
                     // Si ya existe, asegurarse de que el área del recibo esté en Costura
                     $recibo->area = 'Costura';
                     $recibo->save();
+                    
+                    Log::info('[COSTURA][DISTRIBUIR] Proceso padre ya existía, reutilizado', [
+                        'proceso_padre_id' => $procesoPadre->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_id' => $prendaId,
+                    ]);
                 }
 
                 $maxParcialExistente = ProcesoPrenda::query()
@@ -883,27 +899,78 @@ class ReciboCosturaController extends Controller
             ->first();
 
         if ($algunParcialEnCc) {
-            if ($procesoOriginalCc) {
-                $procesoOriginalCc->fill([
-                    'encargado' => null,
-                    'estado_proceso' => 'En Progreso',
-                ])->save();
-            } else {
-                $procesoOriginalCc = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $parcial->prenda_pedido_id,
-                    'numero_recibo' => $parcial->consecutivo_original,
-                    'numero_recibo_parcial' => null,
-                    'proceso' => 'Control de Calidad',
-                    'fecha_inicio' => now(),
-                    'encargado' => null,
-                    'estado_proceso' => 'En Progreso',
-                    'codigo_referencia' => 'CCO-' . $parcial->consecutivo_original . '-' . date('YmdHis'),
-                ]);
+            if ($todosParcialesEnCc) {
+                // Solo cuando TODOS los parciales están en CC, crear/actualizar proceso padre en CC
+                if ($procesoOriginalCc) {
+                    $procesoOriginalCc->fill([
+                        'encargado' => null,
+                        'estado_proceso' => 'En Progreso',
+                    ])->save();
+                } else {
+                    $procesoOriginalCc = ProcesoPrenda::create([
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                        'numero_recibo' => $parcial->consecutivo_original,
+                        'numero_recibo_parcial' => null,
+                        'proceso' => 'Control de Calidad',
+                        'fecha_inicio' => now(),
+                        'encargado' => null,
+                        'estado_proceso' => 'En Progreso',
+                        'codigo_referencia' => 'CCO-' . $parcial->consecutivo_original . '-' . date('YmdHis'),
+                    ]);
+                }
             }
         } elseif ($procesoOriginalCc) {
             $procesoOriginalCc->forceDelete();
             $procesoOriginalCc = null;
+        }
+
+        // IMPORTANTE: Si TODOS los parciales están en Control Calidad, actualizar el recibo original y el proceso padre
+        if ($todosParcialesEnCc) {
+            // 1. Cambiar el recibo original a Control Calidad en consecutivos_recibos_pedidos
+            $consecutivoNum = (int) $parcial->consecutivo_original;
+            $actualizados = ConsecutivoReciboPedido::query()
+                ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+                ->where('consecutivo_actual', $consecutivoNum)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+                ->update(['area' => 'Control Calidad']);
+
+            Log::info('[COSTURA][PARCIAL][TODOS_EN_CC] Recibo original actualizado a Control Calidad', [
+                'pedido_id' => (int) $pedido->id,
+                'numero_pedido' => (int) $pedido->numero_pedido,
+                'prenda_id' => (int) $parcial->prenda_pedido_id,
+                'consecutivo_original' => (string) $parcial->consecutivo_original,
+                'consecutivo_num' => $consecutivoNum,
+                'tipo_recibo' => (string) $parcial->tipo_recibo,
+                'filas_actualizadas' => $actualizados,
+            ]);
+
+            // 2. Cambiar el proceso padre de Costura a Control Calidad
+            $procesoPadreCostura = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->where(function ($query) {
+                    $query->whereNull('numero_recibo_parcial')
+                          ->orWhere('numero_recibo_parcial', 0);
+                })
+                ->whereNull('deleted_at')
+                ->first();
+
+            if ($procesoPadreCostura) {
+                $procesoPadreCostura->update([
+                    'proceso' => 'Control de Calidad',
+                    'estado_proceso' => 'Pendiente',
+                    'encargado' => 'control',
+                ]);
+
+                Log::info('[COSTURA][PARCIAL][TODOS_EN_CC] Proceso padre Costura actualizado a Control Calidad', [
+                    'proceso_padre_id' => (int) $procesoPadreCostura->id,
+                    'numero_pedido' => (int) $pedido->numero_pedido,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'encargado' => 'control',
+                ]);
+            }
         }
 
         Log::info('[COSTURA][PARCIAL][CONTROL_CALIDAD] Sincronización proceso original', [

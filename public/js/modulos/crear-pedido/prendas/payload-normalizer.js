@@ -30,6 +30,11 @@
 
     function normalizarEpp(eppRaw) {
         if (!eppRaw || typeof eppRaw !== 'object') return {};
+        const imagenesRaw = Array.isArray(eppRaw.imagenes) ? eppRaw.imagenes : [];
+        const tieneArchivosNuevos = imagenesRaw.some(function(img) {
+            return img && typeof img === 'object' && img.file instanceof File;
+        });
+
         return {
             uid: eppRaw.uid || null,  // ← NUEVO: Preservar UID del EPP
             epp_id: eppRaw.epp_id,
@@ -37,8 +42,8 @@
             categoria: eppRaw.categoria || '',
             cantidad: eppRaw.cantidad || 1,
             observaciones: eppRaw.observaciones || '',
-            modo_imagenes: eppRaw.modo_imagenes || 'upload',
-            imagenes: normalizarImagenes(eppRaw.imagenes || [])
+            modo_imagenes: eppRaw.modo_imagenes || (tieneArchivosNuevos ? 'upload' : 'reuse'),
+            imagenes: normalizarImagenes(imagenesRaw)
         };
     }
 

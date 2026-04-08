@@ -259,12 +259,38 @@ class ControlCalidadController extends Controller
                 DB::table('prenda_recibo_completado')->updateOrInsert(
                     ['id_parcial' => (int) $parcial->id, 'area' => 'Control de Calidad'],
                     [
-                        'id_recibo' => null,
+                        'id_recibo' => (int) $parcial->id,
                         'numero_recibo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
                         'nombre_operario' => (string) $usuario->name,
                         'fecha_completado' => now(),
                     ]
                 );
+
+                // Actualizar el area del parcial a Entrega
+                $parcial->update(['area' => 'Entrega']);
+
+                // Crear (una sola vez) proceso Entrega para el parcial
+                $procesoEntregaParcial = ProcesoPrenda::query()
+                    ->where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
+                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['entrega'])
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if (!$procesoEntregaParcial) {
+                    ProcesoPrenda::create([
+                        'numero_pedido' => (int) ($parcial->pedido?->numero_pedido ?? 0),
+                        'prenda_pedido_id' => (int) $parcial->prenda_pedido_id,
+                        'numero_recibo_parcial' => $parcial->consecutivo_parcial,
+                        'proceso' => 'Entrega',
+                        'estado_proceso' => 'Pendiente',
+                        'fecha_inicio' => now(),
+                        'codigo_referencia' => (string) ($parcial->pedido?->numero_pedido ?? ''),
+                    ]);
+                }
+
+                $this->sincronizarEntregaOriginalDesdeParciales($parcial);
 
                 event(new \App\Events\ReciboCompletado([
                     'recibo_id' => (int) $parcial->id,
@@ -272,7 +298,7 @@ class ControlCalidadController extends Controller
                     'pedido_produccion_id' => (int) ($parcial->pedido_produccion_id ?? 0),
                     'prenda_id' => $parcial->prenda_pedido_id ? (int) $parcial->prenda_pedido_id : null,
                     'tipo_recibo' => (string) ($parcial->tipo_recibo ?? ''),
-                    'area' => 'Control de Calidad',
+                    'area' => 'Entrega',
                     'nombre_operario' => (string) ($usuario->name ?? ''),
                 ]));
 
@@ -289,8 +315,8 @@ class ControlCalidadController extends Controller
                         'es_parcial' => true,
                         'parcial_id' => $parcial->id,
                         'completado_area' => true,
-                        'area' => 'Control Calidad',
-                        'proceso_actual' => 'Control Calidad',
+                        'area' => 'Entrega',
+                        'proceso_actual' => 'Entrega',
                     ], 'updated', 'parcial'));
                 } catch (\Throwable $e) {
                     \Log::warning('[ControlCalidadController] Error al broadcast ControlCalidadUpdated parcial completado', [
@@ -301,7 +327,7 @@ class ControlCalidadController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Parcial marcado como completado'
+                    'message' => 'Parcial marcado como completado y movido a Entrega'
                 ]);
             }
 
@@ -333,6 +359,20 @@ class ControlCalidadController extends Controller
                 ]
             );
 
+            // Actualizar el area del recibo a Entrega
+            $recibo->update(['area' => 'Entrega']);
+
+            // Crear nuevo proceso para Entrega
+            ProcesoPrenda::create([
+                'numero_pedido' => (int) ($recibo->pedido?->numero_pedido ?? 0),
+                'prenda_pedido_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
+                'proceso' => 'Entrega',
+                'estado_proceso' => 'Pendiente',
+                'fecha_inicio' => now(),
+                'codigo_referencia' => (string) ($recibo->pedido?->numero_pedido ?? ''),
+            ]);
+
             try {
                 event(new \App\Events\ReciboCompletado([
                     'recibo_id' => (int) $recibo->id,
@@ -340,7 +380,7 @@ class ControlCalidadController extends Controller
                     'pedido_produccion_id' => (int) ($recibo->pedido_produccion_id ?? 0),
                     'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
                     'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
-                    'area' => 'Control de Calidad',
+                    'area' => 'Entrega',
                     'nombre_operario' => (string) ($usuario->name ?? ''),
                 ]));
             } catch (\Exception $e) {
@@ -352,7 +392,7 @@ class ControlCalidadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Recibo marcado como completado'
+                'message' => 'Recibo marcado como completado y movido a Entrega'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al completar recibo C.C: ' . $e->getMessage(), [
@@ -371,6 +411,21 @@ class ControlCalidadController extends Controller
     {
         try {
             if ($request->boolean('es_parcial')) {
+                // Restaurar el area del parcial a Control de Calidad
+                $parcial = ReciboPorPartes::with('pedido')->find((int) $idRecibo);
+                if ($parcial) {
+                    $parcial->update(['area' => 'Control de Calidad']);
+
+                    // Eliminar el proceso de Entrega creado
+                    ProcesoPrenda::where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
+                        ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                        ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['entrega'])
+                        ->delete();
+
+                    $this->sincronizarEntregaOriginalDesdeParciales($parcial);
+                }
+
                 DB::table('prenda_recibo_completado')
                     ->where('id_parcial', (int) $idRecibo)
                     ->where('area', 'Control de Calidad')
@@ -393,8 +448,20 @@ class ControlCalidadController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Marca de completado del parcial eliminada'
+                    'message' => 'Marca de completado del parcial eliminada y area restaurada'
                 ]);
+            }
+
+            // Restaurar el area del recibo a Control de Calidad
+            $recibo = ConsecutivoReciboPedido::with('pedido')->find((int) $idRecibo);
+            if ($recibo) {
+                $recibo->update(['area' => 'Control de Calidad']);
+
+                // Eliminar el proceso de Entrega creado
+                ProcesoPrenda::where('numero_pedido', (int) ($recibo->pedido?->numero_pedido ?? 0))
+                    ->where('numero_recibo', (int) ($recibo->consecutivo_actual ?? 0))
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['entrega'])
+                    ->delete();
             }
 
             DB::table('prenda_recibo_completado')
@@ -404,7 +471,7 @@ class ControlCalidadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Marca de completado eliminada'
+                'message' => 'Marca de completado eliminada y area restaurada'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al deshacer recibo C.C: ' . $e->getMessage(), [
@@ -633,5 +700,84 @@ class ControlCalidadController extends Controller
 
             return $fotos;
         });
+    }
+
+    private function sincronizarEntregaOriginalDesdeParciales(ReciboPorPartes $parcial): void
+    {
+        $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
+        if ($numeroPedido <= 0) {
+            return;
+        }
+
+        $parcialesRelacionados = ReciboPorPartes::query()
+            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+            ->where('consecutivo_original', $parcial->consecutivo_original)
+            ->get(['id', 'consecutivo_parcial']);
+
+        $totalParciales = $parcialesRelacionados->count();
+        if ($totalParciales <= 0) {
+            return;
+        }
+
+        $consecutivosParciales = $parcialesRelacionados
+            ->pluck('consecutivo_parcial')
+            ->filter(fn ($valor) => $valor !== null && $valor !== '')
+            ->values();
+
+        $parcialesEnEntrega = $consecutivosParciales->isEmpty()
+            ? 0
+            : ProcesoPrenda::query()
+                ->where('numero_pedido', $numeroPedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->whereIn('numero_recibo_parcial', $consecutivosParciales->all())
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['entrega'])
+                ->whereNull('deleted_at')
+                ->distinct('numero_recibo_parcial')
+                ->count('numero_recibo_parcial');
+
+        $todosParcialesEnEntrega = $parcialesEnEntrega >= $totalParciales;
+
+        $consecutivoOriginalNum = (int) $parcial->consecutivo_original;
+        $queryReciboPadre = ConsecutivoReciboPedido::query()
+            ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('consecutivo_actual', $consecutivoOriginalNum)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))]);
+
+        $queryProcesoEntregaPadre = ProcesoPrenda::query()
+            ->where('numero_pedido', $numeroPedido)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->where('numero_recibo', $parcial->consecutivo_original)
+            ->where(function ($query) {
+                $query->whereNull('numero_recibo_parcial')
+                    ->orWhere('numero_recibo_parcial', 0);
+            })
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['entrega'])
+            ->whereNull('deleted_at');
+
+        if ($todosParcialesEnEntrega) {
+            $queryReciboPadre->update(['area' => 'Entrega']);
+
+            $procesoEntregaPadre = $queryProcesoEntregaPadre->latest('created_at')->first();
+            if (!$procesoEntregaPadre) {
+                ProcesoPrenda::create([
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_pedido_id' => $parcial->prenda_pedido_id ? (int) $parcial->prenda_pedido_id : null,
+                    'numero_recibo' => $parcial->consecutivo_original,
+                    'numero_recibo_parcial' => null,
+                    'proceso' => 'Entrega',
+                    'estado_proceso' => 'Pendiente',
+                    'fecha_inicio' => now(),
+                    'encargado' => null,
+                    'codigo_referencia' => 'EPO-' . $parcial->consecutivo_original . '-' . date('YmdHis'),
+                ]);
+            }
+
+            return;
+        }
+
+        $queryReciboPadre->update(['area' => 'Control Calidad']);
+        $queryProcesoEntregaPadre->delete();
     }
 }

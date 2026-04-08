@@ -132,35 +132,45 @@ class OperarioController extends Controller
     {
         $dashboardData = $this->getOperarioDashboardUseCase->execute($request);
 
-        // Contar recibos en Control de Calidad desde procesos_prenda
-        $procesosCC = ProcesoPrenda::query()
+        $conteoControlCalidadCostura = 0;
+        $conteoControlCalidadReflectivo = 0;
+
+        // ==================== PARTE 1: CONTAR RECIBOS NORMALES ====================
+        // Desde consecutivos_recibos_pedidos donde area = 'Control Calidad' o 'Control de Calidad'
+        $recibosNormalesCC = ConsecutivoReciboPedido::query()
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->where('activo', 1)
+            ->get();
+
+        foreach ($recibosNormalesCC as $recibo) {
+            $tipoRecibo = strtoupper(trim((string) $recibo->tipo_recibo));
+            if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
+                $conteoControlCalidadCostura++;
+            } elseif ($tipoRecibo === 'REFLECTIVO') {
+                $conteoControlCalidadReflectivo++;
+            }
+        }
+
+        // ==================== PARTE 2: CONTAR PARCIALES ====================
+        // Desde procesos_prenda donde proceso = 'Control Calidad' o 'Control de Calidad'
+        $parcialesCC = ProcesoPrenda::query()
             ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
             ->whereNull('deleted_at')
             ->get();
 
-        $pedidoIdsPorNumero = \App\Models\PedidoProduccion::query()
-            ->whereIn('numero_pedido', $procesosCC->pluck('numero_pedido')->filter()->unique()->values())
-            ->pluck('id', 'numero_pedido');
-        
-        $conteoControlCalidadCostura = 0;
-        $conteoControlCalidadReflectivo = 0;
-
-        foreach ($procesosCC as $proceso) {
-            $pedidoProduccionId = $pedidoIdsPorNumero[$proceso->numero_pedido] ?? null;
-            if (!$pedidoProduccionId) {
-                continue;
-            }
-
-            // Obtener el tipo de recibo desde ConsecutivoReciboPedido
-            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', (int) $pedidoProduccionId)
-                ->where('consecutivo_actual', $proceso->numero_recibo)
-                ->where('activo', 1)
+        foreach ($parcialesCC as $proceso) {
+            // Obtener el tipo_recibo del ReciboPorPartes asociado
+            $parcial = \App\Models\ReciboPorPartes::query()
+                ->where('pedido_produccion_id', $proceso->pedido_produccion_id ?? 0)
+                ->where('prenda_pedido_id', $proceso->prenda_pedido_id ?? 0)
+                ->where('consecutivo_parcial', $proceso->numero_recibo_parcial ?? 0)
                 ->first();
 
-            if ($recibo) {
-                if (strtoupper($recibo->tipo_recibo) === 'COSTURA' || strtoupper($recibo->tipo_recibo) === 'COSTURA-BODEGA') {
+            if ($parcial) {
+                $tipoRecibo = strtoupper(trim((string) $parcial->tipo_recibo));
+                if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
                     $conteoControlCalidadCostura++;
-                } elseif (strtoupper($recibo->tipo_recibo) === 'REFLECTIVO') {
+                } elseif ($tipoRecibo === 'REFLECTIVO') {
                     $conteoControlCalidadReflectivo++;
                 }
             }

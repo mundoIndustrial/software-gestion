@@ -176,7 +176,24 @@ class PedidoImagenesEppService
     {
         $imagenesGuardadas = $this->procesarArchivosEppDesdeRequest($request, $pedidoId, $eppIdx, $eppData, $pedidoEpp);
         if ($imagenesGuardadas === 0) {
-            throw ModoImagenesEppInvalidoException::uploadSinArchivos((int) ($eppData['epp_id'] ?? 0));
+            $imagenesJson = $eppData['imagenes'] ?? [];
+            if (is_array($imagenesJson) && !empty($imagenesJson)) {
+                Log::warning('[PedidoImagenesService] EPP en modo upload sin archivos; intentando fallback a reuse', [
+                    'pedido_id' => $pedidoId,
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'epp_id' => $eppData['epp_id'] ?? null,
+                    'imagenes_json_count' => count($imagenesJson),
+                ]);
+                $this->copiarImagenesEppDesdeUrls($pedidoEpp, $eppData, $imagenesJson, $pedidoId);
+                return;
+            }
+
+            // Las imágenes de EPP son opcionales; no tumbar la creación del pedido.
+            Log::warning('[PedidoImagenesService] EPP en modo upload sin archivos ni URLs reutilizables; se omite guardado de imágenes', [
+                'pedido_id' => $pedidoId,
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_id' => $eppData['epp_id'] ?? null,
+            ]);
         }
     }
 
@@ -184,7 +201,13 @@ class PedidoImagenesEppService
     {
         $imagenesJson = $eppData['imagenes'] ?? [];
         if (!is_array($imagenesJson) || empty($imagenesJson)) {
-            throw ModoImagenesEppInvalidoException::reuseSinImagenes((int) ($eppData['epp_id'] ?? 0));
+            // Las imágenes de EPP son opcionales.
+            Log::warning('[PedidoImagenesService] EPP en modo reuse sin imágenes; se omite guardado de imágenes', [
+                'pedido_id' => $pedidoId,
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_id' => $eppData['epp_id'] ?? null,
+            ]);
+            return;
         }
 
         $this->copiarImagenesEppDesdeUrls($pedidoEpp, $eppData, $imagenesJson, $pedidoId);

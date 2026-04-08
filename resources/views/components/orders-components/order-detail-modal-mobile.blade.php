@@ -382,9 +382,15 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
         console.log(' [CARGAR DINAMICO] Índice actual:', window.procesoCarouselIndex);
         console.log(' [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
         
+        // Determinar la ruta correcta según la vista actual
+        const pathActual = (window.location?.pathname || '').toString();
+        const esControlCalidad = pathActual.includes('/control-calidad/');
+        const baseApi = esControlCalidad ? '/control-calidad/api/pedido' : '/operario/api/pedido';
+        
         // Hacer fetch a la API para obtener datos actualizados
-        const url = `/operario/api/pedido/${pedidoId}${window.location.search}`;
+        const url = `${baseApi}/${pedidoId}${window.location.search}`;
         console.log(' [CARGAR DINAMICO] URL API:', url);
+        console.log(' [CARGAR DINAMICO] Es Control Calidad:', esControlCalidad);
         console.log(' [CARGAR DINAMICO] window.location.search:', window.location.search);
         
         const response = await fetch(url, {
