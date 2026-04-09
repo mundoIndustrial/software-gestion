@@ -293,19 +293,23 @@ globalThis.PrendaCardHandlers = {
 
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-editar-prenda');
-                const prendaIndex = parseInt(btn.dataset.prendaIndex);
+                const indiceVisual = parseInt(btn.dataset.prendaIndex);
+                let prendaIndex = Number.isInteger(indiceVisual) ? indiceVisual : -1;
 
                 
                 let prenda = null;
                 let esCrearNuevo = false;
                 
-                // Prioridad 1: Obtener desde GestionItemsUI (crear-nuevo)
+                // Prioridad 1: Resolver índice real de PRENDA desde ordenItems (fuente única).
                 if (globalThis.gestionItemsUI) {
-                    const itemsOrdenados = globalThis.gestionItemsUI.obtenerItemsOrdenados();
-                    if (itemsOrdenados && itemsOrdenados[prendaIndex]) {
-                        prenda = itemsOrdenados[prendaIndex];
-                        esCrearNuevo = true;
+                    const ordenItems = globalThis.gestionItemsUI.ordenItems || [];
+                    const entradaOrden = ordenItems[indiceVisual];
+                    const prendasState = globalThis.gestionItemsUI.prendas || [];
 
+                    if (entradaOrden && entradaOrden.tipo === 'prenda' && Number.isInteger(entradaOrden.index)) {
+                        prendaIndex = entradaOrden.index;
+                        prenda = prendasState[prendaIndex] || null;
+                        esCrearNuevo = !!prenda;
                     }
                 }
                 
@@ -752,4 +756,3 @@ globalThis.PrendaCardHandlers = {
         });
     }
 };
-

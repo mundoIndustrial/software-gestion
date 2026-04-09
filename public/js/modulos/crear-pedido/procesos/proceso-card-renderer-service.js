@@ -563,11 +563,11 @@ function generarTarjetaProceso(tipo, datos) {
     // --- Construir contenido segun el modo ---
     let contenidoHTML;
     if (esGeneralMode) {
-        // Modo GENERAL: ubicacion general + fotos generales + tallas + observaciones por talla
-        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${tallasHTML}${tallasConObservacionesHTML}`;
+        // Modo GENERAL: ubicacion general + fotos generales + tallas + observaciones por talla + observaciones generales
+        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${tallasHTML}${tallasConObservacionesHTML}${observacionesHTML}`;
     } else if (tieneDetallePorTalla) {
-        // Modo ESPECÍFICO: ubicacion general (si existe) + fotos generales (si existen) + detalles por talla
-        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`;
+        // Modo ESPECÍFICO: ubicacion general (si existe) + fotos generales (si existen) + detalles por talla + observaciones generales
+        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}${observacionesHTML}`;
     } else {
         // Modo GENÉRICO (sin tallas o formato antiguo)
         contenidoHTML = `<div style="margin-bottom: 0.75rem;">

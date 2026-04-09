@@ -164,12 +164,13 @@ class PedidoImagenesEppService
     private function guardarImagenEppDesdeRequest($request, int $pedidoId, string $formKey, array $eppData, PedidoEpp $pedidoEpp, int $imgIdx): void
     {
         $archivo = $request->file($formKey);
+        $nombreBase = $this->generarNombreBaseImagenEpp($eppData, $imgIdx);
         $resultado = $this->imageUploadService->guardarImagenDirecta(
             $archivo,
             $pedidoId,
             'epps',
             null,
-            "epp_{$eppData['epp_id']}_img_{$imgIdx}"
+            $nombreBase
         );
 
         PedidoEppImagen::create([
@@ -284,7 +285,7 @@ class PedidoImagenesEppService
 
     private function copiarImagenEppIndividual($pedidoEpp, array $eppData, string $relative, string $destDir, int $orden): void
     {
-        $destName = "epp_{$eppData['epp_id']}_img_" . ($orden - 1) . '.webp';
+        $destName = $this->generarNombreBaseImagenEpp($eppData, $orden - 1) . '.webp';
         $destRelative = $destDir . '/' . $destName;
 
         if (!Storage::disk('public')->copy($relative, $destRelative)) {
@@ -298,5 +299,14 @@ class PedidoImagenesEppService
             'orden' => $orden,
             'principal' => $orden === 1 ? 1 : 0,
         ]);
+    }
+
+    private function generarNombreBaseImagenEpp(array $eppData, int $imgIdx): string
+    {
+        $eppId = (int) ($eppData['epp_id'] ?? 0);
+        $timestamp = now()->format('YmdHis');
+        $random = substr(md5(uniqid((string) $eppId, true)), 0, 8);
+
+        return "epp_{$eppId}_img_{$imgIdx}_{$timestamp}_{$random}";
     }
 }
