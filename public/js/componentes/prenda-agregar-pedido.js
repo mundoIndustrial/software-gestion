@@ -407,12 +407,14 @@
 
             // Tallas
             const tallasData = datos.tallas || datos.cantidad_talla || {};
+            const tieneAlgunaTalla = Object.entries(tallasData || {}).some(([, tallas]) => Object.keys(tallas || {}).length > 0);
+            const tieneUnisex = Object.keys(tallasData?.UNISEX || {}).length > 0;
             if (tallasData && typeof tallasData === 'object' && Object.keys(tallasData).length > 0) {
                 formData.append('cantidad_talla', JSON.stringify(tallasData));
             }
 
-            // Solo cantidad (sin tallas)
-            if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0) {
+            // Solo cantidad (sin tallas) - solo si no hay tallas (incluyendo UNISEX)
+            if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0 && !tieneAlgunaTalla && !tieneUnisex) {
                 const cantidadSoloTallas = { GENERICO: { SIN_ESPECIFICAR: window.cantidadSoloSeleccionada } };
                 formData.append('cantidad_talla', JSON.stringify(cantidadSoloTallas));
             }

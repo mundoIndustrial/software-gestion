@@ -317,7 +317,7 @@ class PrendaFormCollector {
             };
             
             // IMPORTANTE: Obtener tallas desde globalThis.tallasRelacionales O desde StateManager (si viene del wizard)
-            let tallasParaGuardar = globalThis.tallasRelacionales || {};
+            let tallasParaGuardar = copiarTallasRelacionales(globalThis.tallasRelacionales || {});
             
             // Si globalThis.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
             const hasglobalThisTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
@@ -346,19 +346,39 @@ class PrendaFormCollector {
                 console.log('[prenda-form-collector]  Tallas recuperadas de StateManager:', tallasParaGuardar);
             }
             
+            const tieneTallasNoUnisex = Object.entries(tallasParaGuardar || {}).some(([genero, tallas]) => {
+                const gen = String(genero || '').toUpperCase();
+                if (gen === 'UNISEX' || gen === 'GENERICO') return false;
+                return Object.keys(tallas || {}).length > 0;
+            });
+            const tieneUnisex = Object.keys(tallasParaGuardar?.UNISEX || {}).length > 0;
+
+            // Si hay tallas por género, eliminar cualquier rastro de GENERICO arrastrado
+            if (tieneTallasNoUnisex && tallasParaGuardar.GENERICO) {
+                delete tallasParaGuardar.GENERICO;
+            }
+            // Si hay UNISEX explícito, evitar duplicado en GENERICO
+            if (tieneUnisex && tallasParaGuardar.GENERICO) {
+                delete tallasParaGuardar.GENERICO;
+            }
+
             // 🟢 NUEVO: Si hay "SOLO CANTIDAD", agregarlo al objeto de tallas con género especial
             if (globalThis.cantidadSoloSeleccionada && globalThis.cantidadSoloSeleccionada > 0) {
-                console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', globalThis.cantidadSoloSeleccionada);
-                
-                // Inicializar el género especial si no existe
-                if (!tallasParaGuardar['GENERICO']) {
-                    tallasParaGuardar['GENERICO'] = {};
+                if (!tieneTallasNoUnisex && !tieneUnisex) {
+                    console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', globalThis.cantidadSoloSeleccionada);
+                    
+                    // Inicializar el género especial si no existe
+                    if (!tallasParaGuardar['GENERICO']) {
+                        tallasParaGuardar['GENERICO'] = {};
+                    }
+                    
+                    // Agregar la cantidad con talla especial "SIN_ESPECIFICAR"
+                    tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = globalThis.cantidadSoloSeleccionada;
+                    
+                    console.log('[prenda-form-collector] Tallas actualizadas con SOLO CANTIDAD:', tallasParaGuardar);
+                } else {
+                    console.log('[prenda-form-collector]  "SOLO CANTIDAD" ignorado: ya hay tallas por género');
                 }
-                
-                // Agregar la cantidad con talla especial "SIN_ESPECIFICAR"
-                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = globalThis.cantidadSoloSeleccionada;
-                
-                console.log('[prenda-form-collector] Tallas actualizadas con SOLO CANTIDAD:', tallasParaGuardar);
             }
 
             const prendaData = {

@@ -711,8 +711,11 @@ window.eliminarUnisex = function() {
     window.cantidadSoloSeleccionada = null;
 
     // IMPORTANTE: Limpiar también de la estructura relacional
-    if (window.tallasRelacionales && window.tallasRelacionales.UNISEX) {
+    if (window.tallasRelacionales) {
         window.tallasRelacionales.UNISEX = {};
+        if (window.tallasRelacionales.GENERICO) {
+            window.tallasRelacionales.GENERICO = {};
+        }
     }
 
     // Eliminar tarjeta

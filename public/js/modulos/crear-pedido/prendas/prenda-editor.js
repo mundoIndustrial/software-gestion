@@ -26,6 +26,35 @@ class PrendaEditor {
         this.prendaEditIndex = esEdicion && prendaIndex !== null ? prendaIndex : null;
         if (cotizacionSeleccionada) this.cotizacionActual = cotizacionSeleccionada;
 
+        if (!esEdicion) {
+            if (typeof ModalCleanup !== 'undefined' && typeof ModalCleanup.prepararParaNueva === 'function') {
+                ModalCleanup.prepararParaNueva();
+            } else {
+                // Fallback: resetear estado de generos y tallas para evitar seleccion persistente
+                if (!globalThis.tallasRelacionales) {
+                    globalThis.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+                } else {
+                    globalThis.tallasRelacionales.DAMA = {};
+                    globalThis.tallasRelacionales.CABALLERO = {};
+                    globalThis.tallasRelacionales.UNISEX = {};
+                    globalThis.tallasRelacionales.SOBREMEDIDA = {};
+                }
+                document.querySelectorAll('[id^="btn-genero-"]').forEach(btn => {
+                    btn.dataset.selected = 'false';
+                    btn.style.borderColor = '';
+                    btn.style.background = '';
+                    btn.style.color = '';
+                });
+                document.querySelectorAll('[id^="check-"]').forEach(chk => {
+                    chk.style.display = 'none';
+                });
+                const container = document.getElementById('tarjetas-generos-container');
+                if (container) container.innerHTML = '';
+                const totalSpan = document.getElementById('total-prendas');
+                if (totalSpan) totalSpan.textContent = '0';
+            }
+        }
+
         if (typeof PrendaModalManager !== 'undefined') {
             try {
                 PrendaModalManager.abrir(this.modalId);

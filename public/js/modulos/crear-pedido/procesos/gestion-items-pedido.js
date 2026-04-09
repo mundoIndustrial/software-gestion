@@ -344,6 +344,24 @@ class GestionItemsUI {
     }
 
     _cargarModoCreacion() {
+        // Forzar modo CREACIÓN (evita heredar estado de edición)
+        this.prendaEditIndex = null;
+        this.prendaEnModoEdicion = false;
+
+        // Limpiar estado UNISEX persistente
+        globalThis.cantidadSoloSeleccionada = null;
+        if (typeof globalThis.eliminarUnisex === 'function') {
+            try {
+                globalThis.eliminarUnisex();
+            } catch (e) {
+                console.warn('[abrirModalAgregarPrendaNueva] No se pudo ejecutar eliminarUnisex:', e);
+            }
+        }
+
+        if (typeof ModalCleanup !== 'undefined' && typeof ModalCleanup.prepararParaNueva === 'function') {
+            ModalCleanup.prepararParaNueva();
+        }
+
         debugLog('[abrirModalAgregarPrendaNueva]  RESET - Limpiando globalThis.telasCreacion para NUEVA prenda');
         debugLog('[abrirModalAgregarPrendaNueva]   ANTES:', this._ctx('telasCreacion'));
 
@@ -520,7 +538,6 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
-
 
 
 
