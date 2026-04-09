@@ -282,6 +282,7 @@
             // ========== AGREGAR JSON DEL PEDIDO SIN LAS IMÁGENES ==========
             const pedidoLimpio = {
                 cliente: datos.cliente || '',
+                orden_compra: datos.orden_compra || '',
                 asesora: datos.asesora || '',
                 forma_de_pago: datos.forma_de_pago || '',
                 numero_cotizacion: datos.numero_cotizacion,
@@ -324,6 +325,7 @@
             
             // Agregar datos principales
             formData.append('cliente', datos.cliente || '');
+            formData.append('orden_compra', datos.orden_compra || '');
             formData.append('asesora', datos.asesora || '');
             formData.append('forma_de_pago', datos.forma_de_pago || '');
             

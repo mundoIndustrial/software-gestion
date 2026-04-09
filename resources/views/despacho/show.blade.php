@@ -1356,6 +1356,336 @@ function generarHTMLFactura(datos) {
         return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
+    const normalizarCantidadTalla = (cantidad) => {
+        if (cantidad === null || cantidad === undefined) return 0;
+        if (typeof cantidad === 'number') return cantidad;
+        if (typeof cantidad === 'string' && cantidad.trim() !== '' && !isNaN(cantidad)) {
+            return parseInt(cantidad, 10);
+        }
+        if (Array.isArray(cantidad)) {
+            const suma = cantidad.reduce((acc, item) => {
+                if (typeof item === 'number') return acc + item;
+                if (item && typeof item === 'object') {
+                    const val = item.cantidad ?? item.qty ?? item.cant ?? 0;
+                    return acc + (parseInt(val, 10) || 0);
+                }
+                return acc;
+            }, 0);
+            return suma || 0;
+        }
+        if (typeof cantidad === 'object') {
+            const val = cantidad.cantidad ?? cantidad.qty ?? cantidad.cant ?? null;
+            if (val !== null && val !== undefined && val !== '' && !isNaN(val)) {
+                return parseInt(val, 10);
+            }
+            const num = Object.values(cantidad).find(v => typeof v === 'number' && !isNaN(v));
+            return num ?? 0;
+        }
+        return 0;
+    };
+
+    const renderizarDetallesTallasProceso = (proc) => {
+        if (!proc || !proc.tallas_detalles || typeof proc.tallas_detalles !== 'object') return '';
+        const lineas = [];
+        Object.entries(proc.tallas_detalles).forEach(([genero, tallas]) => {
+            if (!tallas || typeof tallas !== 'object') return;
+            Object.entries(tallas).forEach(([tallaKey, datos]) => {
+                if (!tallaKey) return;
+                let tallaReal = tallaKey;
+                let colorNombre = '';
+                if (tallaKey.includes('__')) {
+                    const partes = tallaKey.split('__');
+                    tallaReal = partes[0] || tallaKey;
+                    colorNombre = partes[1] || '';
+                }
+                const cantidad = normalizarCantidadTalla(datos?.cantidad ?? datos);
+                const colorFinal = datos?.color || colorNombre;
+                lineas.push(
+                    `${String(genero || '').toUpperCase()} ${tallaReal}: ${cantidad}${colorFinal ? ' - ' + colorFinal : ''}`
+                );
+            });
+        });
+        if (lineas.length === 0) return '';
+        return lineas.map(l => `<div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">${l}</div>`).join('');
+    };
+
+    const extraerUbicaciones = (ubicaciones) => {
+        if (!ubicaciones) return '';
+        if (Array.isArray(ubicaciones)) return ubicaciones.join(', ');
+        if (typeof ubicaciones === 'string') {
+            try {
+                const parsed = JSON.parse(ubicaciones);
+                if (Array.isArray(parsed)) return parsed.join(', ');
+            } catch (e) {
+                // Ignorar errores de parseo
+            }
+            return ubicaciones.replace(/[\[\]"]/g, '');
+        }
+        return String(ubicaciones);
+    };
+
+    const extraerURLImagen = (imagen) => {
+        if (!imagen) return '';
+        if (typeof imagen === 'string') return imagen;
+        if (imagen.ruta_web) return imagen.ruta_web.startsWith('/') ? imagen.ruta_web : `/storage/${imagen.ruta_web}`;
+        if (imagen.url) return imagen.url.startsWith('/') ? imagen.url : `/storage/${imagen.url}`;
+        if (imagen.ruta) return imagen.ruta.startsWith('/') ? imagen.ruta : `/storage/${imagen.ruta}`;
+        return '';
+    };
+
+    const renderizarTallasProceso = (tallas) => {
+        if (!tallas || typeof tallas !== 'object') {
+            return '<span style="color: #999; font-size: 10px;">Sin tallas</span>';
+        }
+
+        const generoToHTML = [];
+        const up = (v) => String(v ?? '').trim().toUpperCase();
+
+        const agregarKeyCantidad = (porColor, tallaKey, cantidad) => {
+            const qty = normalizarCantidadTalla(cantidad);
+            if (!tallaKey || qty <= 0) return;
+            const raw = String(tallaKey);
+            const parts = raw.split('__');
+            const talla = up(parts[0]);
+            const color = up(parts[1] || '') || '__SIN_COLOR__';
+            if (!talla) return;
+
+            if (!porColor[color]) porColor[color] = [];
+            const existente = porColor[color].find(t => t.talla === talla);
+            if (existente) {
+                existente.cantidad += qty;
+            } else {
+                porColor[color].push({ talla, cantidad: qty });
+            }
+        };
+
+        const agregarTallaConColoresArray = (porColor, talla, coloresArr) => {
+            const tallaUp = up(talla);
+            if (!tallaUp) return;
+
+            (coloresArr || []).forEach(c => {
+                const qty = normalizarCantidadTalla(c?.cantidad ?? c);
+                if (qty <= 0) return;
+                const color = up(c?.color) || '__SIN_COLOR__';
+                if (!porColor[color]) porColor[color] = [];
+                const existente = porColor[color].find(t => t.talla === tallaUp);
+                if (existente) {
+                    existente.cantidad += qty;
+                } else {
+                    porColor[color].push({ talla: tallaUp, cantidad: qty });
+                }
+            });
+        };
+
+        Object.entries(tallas).forEach(([genero, tallasObj]) => {
+            if (genero && up(genero) === 'GENERICO') return;
+            if (!tallasObj || typeof tallasObj !== 'object') return;
+
+            const porColor = {};
+            Object.entries(tallasObj).forEach(([tallaKey, valor]) => {
+                if (Array.isArray(valor)) {
+                    agregarTallaConColoresArray(porColor, tallaKey, valor);
+                    return;
+                }
+                agregarKeyCantidad(porColor, tallaKey, valor);
+            });
+
+            const lineas = [];
+            Object.entries(porColor).forEach(([color, arr]) => {
+                if (arr.length === 0) return;
+                arr.sort((a, b) => a.talla.localeCompare(b.talla));
+                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                const labelColor = color === '__SIN_COLOR__' ? '' : `<span style="color: #d32f2f; font-weight: 700;">${color}:</span> `;
+                lineas.push(`<div style="margin: 1px 0;">${labelColor}${tallasStr}</div>`);
+            });
+
+            if (lineas.length > 0) {
+                generoToHTML.push(`
+                    <div style="margin-bottom: 4px;">
+                        <div style="font-weight: 700; color: #111827;">${up(genero)}</div>
+                        <div style="padding-left: 8px;">${lineas.join('')}</div>
+                    </div>
+                `);
+            }
+        });
+
+        return generoToHTML.length > 0
+            ? `<div style="text-align: left;">${generoToHTML.join('')}</div>`
+            : '<span style="color: #999; font-size: 10px;">Sin tallas asignadas</span>';
+    };
+
+    const renderizarProcesos = (prenda) => {
+        if (!prenda.procesos || !Array.isArray(prenda.procesos) || prenda.procesos.length === 0) {
+            return '<div style="color: #999; font-size: 11px; font-style: italic;">Sin procesos asociados</div>';
+        }
+
+        return prenda.procesos.map(proc => {
+            const modo = String(proc.modo_tallas || '').toLowerCase();
+            const esGeneral = modo === 'general';
+            const esEspecifico = modo === 'especifico';
+
+            const ubicacionesStr = extraerUbicaciones(proc.ubicaciones);
+            const tieneUbicaciones = ubicacionesStr && ubicacionesStr.trim() !== '';
+            const tieneObservaciones = !!proc.observaciones;
+            const tieneTallasBasicas = proc.tallas && typeof proc.tallas === 'object' && Object.keys(proc.tallas).length > 0;
+            const mostrarTablaBasica = (tieneUbicaciones || tieneObservaciones || (tieneTallasBasicas && !(esGeneral || esEspecifico)));
+
+            const detallesPorTalla = ((esGeneral || esEspecifico) && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0) || (esGeneral && proc.tallas);
+
+            const imagenes = Array.isArray(proc.imagenes) ? proc.imagenes : [];
+            const primeraImagen = imagenes.length > 0 ? extraerURLImagen(imagenes[0]) : '';
+
+            return `
+                <div style="background: #ffffff; width: 100%; box-sizing: border-box; padding: 10px 12px; margin: 6px 0; border: 1px solid #e5e7eb; border-left: 4px solid #3b82f6; border-radius: 8px; font-size: 11px; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <div style="font-weight: 700; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
+                    </div>
+
+                    ${mostrarTablaBasica ? `
+                        <div style="background: #f8fafc; width: 100%; box-sizing: border-box; border: 1px solid #eef2f7; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;">
+                            <div style="display: grid; grid-template-columns: 110px 1fr; gap: 4px 8px; font-size: 11px;">
+                                ${tieneUbicaciones ? `
+                                    <div style="font-weight: 600; color: #64748b;">Ubicacion</div>
+                                    <div style="color: #334155;">${ubicacionesStr}</div>
+                                ` : ''}
+                                ${tieneObservaciones ? `
+                                    <div style="font-weight: 600; color: #64748b;">Observaciones</div>
+                                    <div style="color: #334155;">${proc.observaciones}</div>
+                                ` : ''}
+                                ${tieneTallasBasicas && !(esGeneral || esEspecifico) ? `
+                                    <div style="font-weight: 600; color: #64748b;">Tallas</div>
+                                    <div style="color: #334155;">${renderizarTallasProceso(proc.tallas)}</div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${detallesPorTalla ? `
+                        <div style="margin-top: 4px; font-weight: 700; color: #374151; font-size: 10px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px;">Detalles por talla</div>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; background: #ffffff; width: 100%; box-sizing: border-box;">
+                            <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 1px solid #d1d5db;">
+                                        <th style="padding: 4px 6px; text-align: left; font-weight: 700; color: #374151; width: 15%;">Talla</th>
+                                        <th style="padding: 4px 6px; text-align: center; font-weight: 700; color: #374151; width: 10%;">Cant</th>
+                                        <th style="padding: 4px 6px; text-align: left; font-weight: 700; color: #374151; width: ${esEspecifico ? '20%' : '30%'};">Color</th>
+                                        ${esEspecifico ? `<th style="padding: 4px 6px; text-align: left; font-weight: 700; color: #374151; width: 20%;">Ubicacion</th>` : ''}
+                                        <th style="padding: 4px 6px; text-align: left; font-weight: 700; color: #374151; width: ${esEspecifico ? '35%' : '45%'};">Obs</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                ${(() => {
+                                    if (proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0) {
+                                        return Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
+                                            if (!tallas || typeof tallas !== 'object') return '';
+                                            return Object.entries(tallas).map(([talla, datos]) => {
+                                                let tallaReal = talla;
+                                                let colorNombre = '';
+                                                let datosObj = (datos && typeof datos === 'object') ? datos : { cantidad: datos };
+
+                                                if (talla.includes('__')) {
+                                                    const partes = talla.split('__');
+                                                    tallaReal = partes[0] || talla;
+                                                    colorNombre = partes[1] || '';
+                                                }
+
+                                                colorNombre = datosObj.color || colorNombre;
+                                                const cantidad = normalizarCantidadTalla(datosObj.cantidad ?? datosObj);
+                                                const ubicacionesDet = esEspecifico ? extraerUbicaciones(datosObj.ubicaciones) : '';
+                                                const obsDet = datosObj.observaciones || '—';
+
+                                                return `
+                                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                    <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaReal}</td>
+                                                    <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
+                                                    <td style="padding: 4px 6px; color: #475569;">${colorNombre || '—'}</td>
+                                                    ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">${ubicacionesDet || '—'}</td>` : ''}
+                                                    <td style="padding: 4px 6px; color: #475569;">${obsDet}</td>
+                                                </tr>
+                                            `;
+                                            }).join('');
+                                        }).join('');
+                                    }
+
+                                    if (esGeneral && proc.tallas) {
+                                        return Object.entries(proc.tallas).map(([genero, tallasData]) => {
+                                            if (String(genero || '').toUpperCase() === 'GENERICO' || !tallasData) return '';
+                                            return Object.entries(tallasData).map(([tallaKey, datos]) => {
+                                                let tallaReal = tallaKey;
+                                                let colorNombre = '';
+                                                let cantidad = 0;
+
+                                                if (Array.isArray(datos) && datos.length > 0) {
+                                                    return datos.map((item) => {
+                                                        const cant = normalizarCantidadTalla(item?.cantidad ?? item);
+                                                    return `
+                                                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                            <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaKey}</td>
+                                                            <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cant}</td>
+                                                            <td style="padding: 4px 6px; color: #475569;">${item?.color || '—'}</td>
+                                                            ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
+                                                            <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                        </tr>
+                                                    `;
+                                                    }).join('');
+                                                } else if (String(tallaKey).includes('__')) {
+                                                    const partes = String(tallaKey).split('__');
+                                                    tallaReal = partes[0] || tallaKey;
+                                                    colorNombre = partes[1] || '';
+                                                    cantidad = normalizarCantidadTalla(datos);
+
+                                                    return `
+                                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                        <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaReal}</td>
+                                                        <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
+                                                        <td style="padding: 4px 6px; color: #475569;">${colorNombre || '—'}</td>
+                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
+                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                    </tr>
+                                                `;
+                                                } else {
+                                                    cantidad = normalizarCantidadTalla(datos);
+                                                    return `
+                                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                        <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaKey}</td>
+                                                        <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
+                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
+                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                    </tr>
+                                                `;
+                                                }
+                                            }).join('');
+                                        }).join('');
+                                    }
+
+                                    return '';
+                                })()}
+                            </tbody>
+                        </table>
+                        </div>
+                    ` : ''}
+
+                    ${imagenes.length > 0 && primeraImagen ? `
+                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e5e7eb;">
+                            <div style="font-weight: 600; color: #475569; font-size: 10px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">Imagenes</div>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(imagenes).replace(/\"/g, '&quot;')}, 'Imágenes de ${proc.tipo || proc.nombre || 'Proceso'}')">
+                                    <img src="${primeraImagen}" style="width: 68px; height: 68px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    ${imagenes.length > 1 ? `
+                                        <div style="position: absolute; top: 4px; right: 4px; background: rgba(30, 64, 175, 0.9); color: white; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 6px;">
+                                            +${imagenes.length - 1}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    };
+
     // Generar las tarjetas de prendas
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Usar TALLAS primero que es donde están los datos correctos
@@ -1555,72 +1885,8 @@ function generarHTMLFactura(datos) {
             `;
         }
 
-        // Procesos
-        let procesosHTML = '';
-        if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
-            procesosHTML = '<div style="margin-bottom: 0;">';
-            
-            prenda.procesos.forEach(proc => {
-                // Obtener tallas del proceso para comparar con las de la prenda
-                let tallasProceso = [];
-                if (proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0)) {
-                    tallasProceso = [
-                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
-                    ];
-                }
-                
-                // Obtener tallas de la prenda para comparar
-                let tallasPrenda = [];
-                if (prenda.tallas && typeof prenda.tallas === 'object') {
-                    Object.keys(prenda.tallas).forEach(genero => {
-                        if (typeof prenda.tallas[genero] === 'object') {
-                            const tallasGenero = Object.entries(prenda.tallas[genero]).map(([talla, cantidad]) => `${talla}(${cantidad})`);
-                            if (tallasGenero.length > 0) {
-                                tallasPrenda.push(`${genero.toUpperCase()}: ${tallasGenero.join(', ')}`);
-                            }
-                        }
-                    });
-                }
-                
-                // Estandarizar formato: usar coma como separador para ambos
-                const tallasProcesoStr = tallasProceso.join(', ').toUpperCase();
-                const tallasPrendaStr = tallasPrenda.join(', ').toUpperCase();
-                const mostrarTallas = tallasProcesoStr !== tallasPrendaStr;
-                
-                // Log temporal para depurar
-                console.log('COMPARACIÓN FINAL:');
-                console.log('Proceso:', tallasProcesoStr);
-                console.log('Prenda:', tallasPrendaStr);
-                console.log('¿Mostrar?:', mostrarTallas);
-                console.log('Son iguales?:', tallasProcesoStr === tallasPrendaStr);
-                
-                procesosHTML += `
-                    <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                        <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 13px;">${proc.nombre || proc.tipo}</div>
-                        ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
-                            <div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">
-                                 ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
-                            </div>
-                        ` : ''}
-                        ${mostrarTallas && tallasProceso.length > 0 ? `
-                            <div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">
-                                ${tallasProceso.join(', ')}
-                            </div>
-                        ` : ''}
-                        ${proc.observaciones ? `
-                            <div style="font-size: 13px; color: #6b7280;">
-                                ${proc.observaciones}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            });
-            
-            procesosHTML += '</div>';
-        }
+        // Procesos (detalle completo)
+        const procesosListaHTML = renderizarProcesos(prenda);
 
         return `
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
@@ -1646,7 +1912,12 @@ function generarHTMLFactura(datos) {
                     ${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
                     
                     <!-- Procesos -->
-                    ${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
+                    ${procesosListaHTML ? `
+                        <div style="clear: both; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; width: 100%; box-sizing: border-box;">
+                            <div style="font-size: 11px; font-weight: 700; color: #2c3e50; margin-bottom: 4px; text-align: center;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
+                            <div style="text-align: left;">${procesosListaHTML}</div>
+                        </div>
+                    ` : ''}
                 </div>
                 
                 <div style="clear: both;"></div>
@@ -1755,7 +2026,7 @@ function generarHTMLFactura(datos) {
                         <div style="font-weight: 600;">${datos.asesora}</div>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
                         <div style="font-weight: 600;">${datos.forma_de_pago}</div>
@@ -1763,6 +2034,10 @@ function generarHTMLFactura(datos) {
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
                         <div style="font-weight: 600;">${datos.fecha}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Orden de Compra</div>
+                        <div style="font-weight: 600;">${datos.orden_compra || 'N/A'}</div>
                     </div>
                 </div>
             </div>
@@ -2038,4 +2313,3 @@ function imprimirTablaVacia() {
 </script>
 
 @endsection
-

@@ -16,7 +16,7 @@
                 <div style="font-weight: 600;">{{ $datos['pedido']['asesor'] ?? 'N/A' }}</div>
             </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
             <div>
                 <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
                 <div style="font-weight: 600;">{{ $datos['pedido']['forma_pago'] ?? 'N/A' }}</div>
@@ -24,6 +24,10 @@
             <div>
                 <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
                 <div style="font-weight: 600;">{{ $datos['pedido']['fecha'] ?? date('d/m/Y') }}</div>
+            </div>
+            <div>
+                <div style="font-size: 10px; opacity: 0.8;">Orden de Compra</div>
+                <div style="font-weight: 600;">{{ $datos['pedido']['orden_compra'] ?? 'N/A' }}</div>
             </div>
         </div>
     </div>

@@ -405,11 +405,12 @@
     function normalizarPedido(pedidoRaw) {
         if (!pedidoRaw || typeof pedidoRaw !== 'object') {
             console.warn('[PayloadNormalizer] Pedido inválido');
-            return { cliente: '', asesora: '', forma_de_pago: '', observaciones: '', prendas: [], epps: [] };
+            return { cliente: '', orden_compra: '', asesora: '', forma_de_pago: '', observaciones: '', prendas: [], epps: [] };
         }
 
         const pedidoNorm = {
             cliente: pedidoRaw.cliente || '',
+            orden_compra: pedidoRaw.orden_compra || '',
             asesora: pedidoRaw.asesora || '',
             forma_de_pago: pedidoRaw.forma_de_pago || '',
             observaciones: pedidoRaw.observaciones || '',

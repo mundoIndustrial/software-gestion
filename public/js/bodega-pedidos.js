@@ -1029,6 +1029,59 @@ function generarHTMLFactura(datos) {
         return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
+    const normalizarCantidadTalla = (cantidad) => {
+        if (cantidad === null || cantidad === undefined) return 0;
+        if (typeof cantidad === 'number') return cantidad;
+        if (typeof cantidad === 'string' && cantidad.trim() !== '' && !isNaN(cantidad)) {
+            return parseInt(cantidad, 10);
+        }
+        if (Array.isArray(cantidad)) {
+            const suma = cantidad.reduce((acc, item) => {
+                if (typeof item === 'number') return acc + item;
+                if (item && typeof item === 'object') {
+                    const val = item.cantidad ?? item.qty ?? item.cant ?? 0;
+                    return acc + (parseInt(val, 10) || 0);
+                }
+                return acc;
+            }, 0);
+            return suma || 0;
+        }
+        if (typeof cantidad === 'object') {
+            const val = cantidad.cantidad ?? cantidad.qty ?? cantidad.cant ?? null;
+            if (val !== null && val !== undefined && val !== '' && !isNaN(val)) {
+                return parseInt(val, 10);
+            }
+            const num = Object.values(cantidad).find(v => typeof v === 'number' && !isNaN(v));
+            return num ?? 0;
+        }
+        return 0;
+    };
+
+    const renderizarDetallesTallasProceso = (proc) => {
+        if (!proc || !proc.tallas_detalles || typeof proc.tallas_detalles !== 'object') return '';
+        const lineas = [];
+        Object.entries(proc.tallas_detalles).forEach(([genero, tallas]) => {
+            if (!tallas || typeof tallas !== 'object') return;
+            Object.entries(tallas).forEach(([tallaKey, datos]) => {
+                if (!tallaKey) return;
+                let tallaReal = tallaKey;
+                let colorNombre = '';
+                if (tallaKey.includes('__')) {
+                    const partes = tallaKey.split('__');
+                    tallaReal = partes[0] || tallaKey;
+                    colorNombre = partes[1] || '';
+                }
+                const cantidad = normalizarCantidadTalla(datos?.cantidad ?? datos);
+                const colorFinal = datos?.color || colorNombre;
+                lineas.push(
+                    `${String(genero || '').toUpperCase()} ${tallaReal}: ${cantidad}${colorFinal ? ' - ' + colorFinal : ''}`
+                );
+            });
+        });
+        if (lineas.length === 0) return '';
+        return lineas.map(l => `<div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">${l}</div>`).join('');
+    };
+
     const normalizarUrlImagen = (url) => {
         if (!url || typeof url !== 'string') return url;
 
@@ -1280,10 +1333,10 @@ function generarHTMLFactura(datos) {
                 let tallasProceso = [];
                 if (proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0)) {
                     tallasProceso = [
-                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
+                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${normalizarCantidadTalla(cantidad)})`).join(', ')}`] : []),
+                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${normalizarCantidadTalla(cantidad)})`).join(', ')}`] : []),
+                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${normalizarCantidadTalla(cantidad)})`).join(', ')}`] : []),
+                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${normalizarCantidadTalla(cantidad)})`).join(', ')}`] : [])
                     ];
                 }
                 
@@ -1292,7 +1345,7 @@ function generarHTMLFactura(datos) {
                 if (prenda.tallas && typeof prenda.tallas === 'object') {
                     Object.keys(prenda.tallas).forEach(genero => {
                         if (typeof prenda.tallas[genero] === 'object') {
-                            const tallasGenero = Object.entries(prenda.tallas[genero]).map(([talla, cantidad]) => `${talla}(${cantidad})`);
+                            const tallasGenero = Object.entries(prenda.tallas[genero]).map(([talla, cantidad]) => `${talla}(${normalizarCantidadTalla(cantidad)})`);
                             if (tallasGenero.length > 0) {
                                 tallasPrenda.push(`${genero.toUpperCase()}: ${tallasGenero.join(', ')}`);
                             }
@@ -1300,10 +1353,12 @@ function generarHTMLFactura(datos) {
                     });
                 }
                 
+                const detallesTallasHTML = renderizarDetallesTallasProceso(proc);
+
                 // Estandarizar formato: usar coma como separador para ambos
                 const tallasProcesoStr = tallasProceso.join(', ').toUpperCase();
                 const tallasPrendaStr = tallasPrenda.join(', ').toUpperCase();
-                const mostrarTallas = tallasProcesoStr !== tallasPrendaStr;
+                const mostrarTallas = detallesTallasHTML !== '' || tallasProcesoStr !== tallasPrendaStr;
                 
                 procesosHTML += `
                     <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
@@ -1313,11 +1368,11 @@ function generarHTMLFactura(datos) {
                                  ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
                             </div>
                         ` : ''}
-                        ${mostrarTallas && tallasProceso.length > 0 ? `
+                        ${detallesTallasHTML || (mostrarTallas && tallasProceso.length > 0 ? `
                             <div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">
                                 ${tallasProceso.join(', ')}
                             </div>
-                        ` : ''}
+                        ` : '')}
                         ${proc.observaciones ? `
                             <div style="font-size: 13px; color: #6b7280;">
                                 ${proc.observaciones}
@@ -1507,7 +1562,7 @@ function generarHTMLFactura(datos) {
                         <div style="font-weight: 600;">${datos.asesora || datos.asesor || 'N/A'}</div>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
                         <div style="font-weight: 600;">${datos.forma_de_pago || 'N/A'}</div>
@@ -1515,6 +1570,10 @@ function generarHTMLFactura(datos) {
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
                         <div style="font-weight: 600;">${datos.fecha || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Orden de Compra</div>
+                        <div style="font-weight: 600;">${datos.orden_compra || 'N/A'}</div>
                     </div>
                 </div>
             </div>
