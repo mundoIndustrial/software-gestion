@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                 {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del color --}}
                                                 @if($isFirstRowOfColor)
-                                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $totalRowsColor }}">
+                                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs col-descripcion" rowspan="{{ $totalRowsColor }}">
                                                         <div class="font-semibold text-slate-900 mb-1 flex items-center gap-2 flex-wrap">
                                                             {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
                                                             @if($colorLabel)
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                 {{-- CELDA DE GÉNERO: Solo en la primera fila de cada género --}}
                                                 @if($indexTalla === 0)
-                                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpanGenero }}">
+                                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero" rowspan="{{ $rowSpanGenero }}">
                                                         @if(strtoupper($generoKey) === 'GENERICO')
                                                             —
                                                         @else
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     </td>
                                                 @endif
 
-                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                                     @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                                         —
                                                     @else
@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     @endif
                                                 </td>
 
-                                                <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                                <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900 col-cantidad">
                                                     {{ $t['cantidad'] }}
                                                 </td>
                                         
@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             
                                             {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo --}}
                                             @if($indexFila === 0)
-                                                <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpan }}">
+                                                <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs col-descripcion" rowspan="{{ $rowSpan }}">
                                                     <div class="font-semibold text-slate-900 mb-1">
                                                         {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
                                                         @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </td>
                                                 
                                                 {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
-                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpan }}">
+                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero" rowspan="{{ $rowSpan }}">
                                                     @if($primeraFila && strtoupper($primeraFila->genero ?? '') === 'GENERICO')
                                                         —
                                                     @else
@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </td>
                                             @endif
                                             
-                                            <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                            <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                                 @if(($fila->talla ?? null) === 'SIN_ESPECIFICAR')
                                                     —
                                                 @else
@@ -684,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @endif
                                             </td>
                                             
-                                            <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                            <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900 col-cantidad">
                                                 {{ $fila->cantidadTotal }}
                                             </td>
                                             
@@ -730,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     data-id="{{ $fila->id }}"
                                     data-cantidad="{{ $fila->cantidadTotal }}">
                                     
-                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
+                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs col-descripcion">
                                         <div class="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                                             {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}
                                             {{-- DEBUG LOGS --}}
@@ -774,15 +774,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </div>
                                     </td>
                                     
-                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs">
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero">
                                         —
                                     </td>
                                     
-                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                         —
                                     </td>
                                     
-                                    <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                    <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900 col-cantidad">
                                         {{ $fila->cantidadTotal }}
                                     </td>
                                     
@@ -2111,27 +2111,33 @@ function imprimirTablaVacia() {
             ultimoTipo = tipo;
         }
 
-        // Detectar si esta fila tiene la celda de descripción (primera fila de un grupo)
-        const tds = fila.querySelectorAll('td');
-        const tieneDescripcion = tds.length >= 5; // Si tiene 5 columnas, tiene descripción y género
+                // Detectar si esta fila tiene la celda de descripción (primera fila de un subgrupo)
+        const descCell = fila.querySelector('td.col-descripcion');
+        const generoCell = fila.querySelector('td.col-genero');
+        const tallaCell = fila.querySelector('td.col-talla');
+        const cantidadCell = fila.querySelector('td.col-cantidad');
+
+        const tieneDescripcion = !!descCell;
+        const limpiarCell = (cell) => {
+            if (!cell) return '';
+            const clone = cell.cloneNode(true);
+            clone.querySelectorAll('button').forEach(btn => btn.remove());
+            return clone.textContent.trim();
+        };
 
         if (tieneDescripcion) {
-            // Es la primera fila de un grupo, obtener descripción y género
-            const cloneDesc = tds[0].cloneNode(true);
+            // Es la primera fila de un subgrupo, obtener descripción
+            const cloneDesc = descCell.cloneNode(true);
             cloneDesc.querySelectorAll('button').forEach(btn => btn.remove());
             const descripcion = cloneDesc.innerHTML;
 
-            const cloneGenero = tds[1].cloneNode(true);
-            cloneGenero.querySelectorAll('button').forEach(btn => btn.remove());
-            const genero = cloneGenero.textContent.trim() || '—';
+            let genero = limpiarCell(generoCell);
+            if (!genero) {
+                genero = (fila.dataset.genero || '').trim() || '—';
+            }
 
-            const cloneTalla = tds[2].cloneNode(true);
-            cloneTalla.querySelectorAll('button').forEach(btn => btn.remove());
-            const talla = cloneTalla.textContent.trim() || '—';
-
-            const cloneCantidad = tds[3].cloneNode(true);
-            cloneCantidad.querySelectorAll('button').forEach(btn => btn.remove());
-            const cantidad = cloneCantidad.textContent.trim() || '0';
+            let talla = limpiarCell(tallaCell) || '—';
+            let cantidad = limpiarCell(cantidadCell) || '0';
 
             // Contar cuántas filas más pertenecen a ESTE subgrupo.
             // IMPORTANTE: cuando hay prendas por color, el mismo item_id se repite en subgrupos,
@@ -2143,20 +2149,19 @@ function imprimirTablaVacia() {
                     break;
                 }
 
-                const tdsNext = filas[i].querySelectorAll('td');
-                const nextTieneDescripcion = tdsNext.length >= 5;
-                if (nextTieneDescripcion) {
+                const nextDescCell = filas[i].querySelector('td.col-descripcion');
+                if (nextDescCell) {
                     break;
                 }
 
                 rowspan++;
             }
 
-            // Primera fila con descripción y género
+            // Primera fila con descripción
             tablaHTML += `
                 <tr style="border-bottom: 1px solid #000;">
                     <td style="padding: 8px 4px; font-size: 10px; border: 1px solid #000;" rowspan="${rowspan}">${descripcion}</td>
-                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;" rowspan="${rowspan}">${genero}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${genero}</td>
                     <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${talla}</td>
                     <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${cantidad}</td>
                     <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
@@ -2169,17 +2174,18 @@ function imprimirTablaVacia() {
                 </tr>
             `;
         } else {
-            // Fila adicional sin descripción ni género (solo talla y cantidad)
-            const cloneTalla = tds[0].cloneNode(true);
-            cloneTalla.querySelectorAll('button').forEach(btn => btn.remove());
-            const talla = cloneTalla.textContent.trim() || '—';
+            // Fila adicional sin descripción (mantener género/talla/cantidad)
+            let genero = limpiarCell(generoCell);
+            if (!genero) {
+                genero = (fila.dataset.genero || '').trim() || '—';
+            }
 
-            const cloneCantidad = tds[1].cloneNode(true);
-            cloneCantidad.querySelectorAll('button').forEach(btn => btn.remove());
-            const cantidad = cloneCantidad.textContent.trim() || '0';
+            let talla = limpiarCell(tallaCell) || '—';
+            let cantidad = limpiarCell(cantidadCell) || '0';
 
             tablaHTML += `
                 <tr style="border-bottom: 1px solid #000;">
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${genero}</td>
                     <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${talla}</td>
                     <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${cantidad}</td>
                     <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
