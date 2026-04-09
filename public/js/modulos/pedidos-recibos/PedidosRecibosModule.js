@@ -159,9 +159,20 @@ export class PedidosRecibosModule {
                                 return s;
                             };
                             const obtenerCantidadReal = (generoKey, tallaKey) => {
-                                const generoRaw = proceso?.tallas?.[generoKey];
-                                if (!generoRaw) return 1;
-                                const cantidad = Number(generoRaw[tallaKey] || 0);
+                                const tallasObj = proceso?.tallas;
+                                if (!tallasObj || typeof tallasObj !== 'object') return 1;
+
+                                const generoRaw =
+                                    tallasObj[generoKey] ||
+                                    tallasObj[String(generoKey || '').toUpperCase()] ||
+                                    tallasObj[String(generoKey || '').toLowerCase()];
+                                if (!generoRaw || typeof generoRaw !== 'object') return 1;
+
+                                const cantidad =
+                                    Number(generoRaw[tallaKey] || 0) ||
+                                    Number(generoRaw[String(tallaKey || '').toUpperCase()] || 0) ||
+                                    Number(generoRaw[String(tallaKey || '').toLowerCase()] || 0);
+
                                 return Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1;
                             };
 
