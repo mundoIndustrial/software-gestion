@@ -1,41 +1,51 @@
 /**
  * loader.js
  * Cargador compatible para que funcione con <script> tradicionales
- * Expone el módulo en window para acceso desde HTML/Blade
- * 
+ * Expone el modulo en window para acceso desde HTML/Blade
+ *
  * Uso en Blade:
- * <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+ * <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v=..."></script>
  */
 
-import { PedidosRecibosModule } from './PedidosRecibosModule.js';
-import { Formatters } from './utils/Formatters.js';
+(async () => {
+    const currentUrl = (() => {
+        try {
+            return new URL(import.meta.url, window.location.origin);
+        } catch (_) {
+            return null;
+        }
+    })();
 
-// Importar el script completo para que printReceiptModal esté disponible globalmente
-import './PedidosRecibosModule.js';
+    const version = currentUrl?.searchParams?.get('v');
+    const suffix = version ? `?v=${encodeURIComponent(version)}` : '';
 
-// Inicializar módulo
-const module = new PedidosRecibosModule();
+    // Importar con el mismo versionado del loader para evitar cache stale del modulo interno.
+    const [{ PedidosRecibosModule }, { Formatters }] = await Promise.all([
+        import(`./PedidosRecibosModule.js${suffix}`),
+        import(`./utils/Formatters.js${suffix}`)
+    ]);
 
-// Exponer en window para compatibilidad
-window.PedidosRecibosModule = PedidosRecibosModule;
-window.pedidosRecibosModule = module;
-window.Formatters = Formatters; // ← AGREGAR FORMATTERS AL WINDOW
+    // Inicializar modulo
+    const module = new PedidosRecibosModule();
 
-// Exponer API pública compatibilidad con código antiguo
-window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {
-    return module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
-};
+    // Exponer en window para compatibilidad
+    window.PedidosRecibosModule = PedidosRecibosModule;
+    window.pedidosRecibosModule = module;
+    window.Formatters = Formatters;
 
-window.cerrarModalRecibos = () => {
-    return module.cerrarRecibo();
-};
+    // Exponer API publica compatibilidad con codigo antiguo
+    window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {
+        return module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+    };
 
-// Exponer función de impresión para compatibilidad con botones HTML
-// La función printReceiptModal se define globalmente en PedidosRecibosModule.js
-// simplemente la reasignamos a window para que sea accesible desde HTML
-setTimeout(() => {
-    if (typeof printReceiptModal === 'function') {
-        window.printReceiptModal = printReceiptModal;
-    }
-}, 100);
+    window.cerrarModalRecibos = () => {
+        return module.cerrarRecibo();
+    };
 
+    // Exponer funcion de impresion para compatibilidad con botones HTML
+    setTimeout(() => {
+        if (typeof printReceiptModal === 'function') {
+            window.printReceiptModal = printReceiptModal;
+        }
+    }, 100);
+})();
