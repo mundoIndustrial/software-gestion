@@ -842,6 +842,28 @@
 
         let searchTimeout;
         let isSearching = false;
+        let filasOriginales = null; // Guardar filas originales
+
+        // Guardar filas originales al cargar
+        function guardarFilasOriginales() {
+            const container = document.querySelector('.table-scroll-container');
+            filasOriginales = Array.from(container.querySelectorAll('[data-pedido-row]')).map(row => row.cloneNode(true));
+        }
+
+        // Restaurar filas originales
+        function restaurarFilasOriginales() {
+            const container = document.querySelector('.table-scroll-container');
+            const rowsActuales = container.querySelectorAll('[data-pedido-row]');
+            rowsActuales.forEach(row => row.remove());
+            
+            if (filasOriginales) {
+                filasOriginales.forEach(row => {
+                    const newRow = row.cloneNode(true);
+                    newRow.style.display = 'grid';
+                    container.appendChild(newRow);
+                });
+            }
+        }
 
         // Función para buscar en las filas de la página actual
         function searchOrdersLocal() {
@@ -983,13 +1005,13 @@
             const tableContainer = document.querySelector('.table-scroll-container');
             let noResultsMsg = document.getElementById('noSearchResults');
 
-            // Limpiar mensajes anteriores
+            // Limpiar búsqueda
             if (!searchTerm) {
                 if (noResultsMsg) noResultsMsg.remove();
                 clearButton.style.display = 'none';
                 
-                // Recargar la página para mostrar todos los pedidos originales
-                location.reload();
+                // Restaurar filas originales sin recargar la página
+                restaurarFilasOriginales();
                 return;
             }
 
@@ -1023,6 +1045,9 @@
                 }
             }
         }
+
+        // Guardar filas originales cuando hace clic en el buscador o se carga
+        guardarFilasOriginales();
 
         // Buscar mientras se escribe (con delay)
         searchInput.addEventListener('input', function() {
@@ -1113,43 +1138,45 @@
     }
 </style>
 
-<!--  SCRIPT: Ocultar loading cuando la página está lista -->
+<!--  SCRIPT: Ocultar loading cuando la página está lista (CONSOLIDADO) -->
 <script>
-    (function() {
+    // Variable global para controlar el estado del overlay
+    window._pageLoadingHidden = false;
+    
+    function hidePageLoadingOverlay() {
+        if (window._pageLoadingHidden) return; // Evitar ejecución múltiple
+        window._pageLoadingHidden = true;
         
-        //  Cuando el DOM esté completamente cargado
+        const overlay = document.getElementById('page-loading-overlay');
+        if (!overlay) return;
+        
+        // Agregar clase 'hidden' para animar la desaparición
+        overlay.classList.add('hidden');
+        
+        // Remover del DOM después de la animación
+        setTimeout(function() {
+            if (overlay.parentNode) {
+                overlay.remove();
+            }
+        }, 400);  // Coincide con duración de transición CSS
+    }
+    
+    (function() {
+        // Cuando el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
-            
-            // Dar un pequeño delay para que todos los scripts se inicialicen
-            setTimeout(function() {
-                const overlay = document.getElementById('page-loading-overlay');
-                
-                if (overlay) {
-                    // Agregar clase 'hidden' para animar la desaparición
-                    overlay.classList.add('hidden');
-                    
-                    // Remover del DOM después de la animación
-                    setTimeout(function() {
-                        overlay.remove();
-                    }, 400);  // Coincide con duración de transición CSS
-                }
-            }, 500);  // Pequeño delay para sincronización
+            // Esperar a que todos los scripts se inicialicen
+            setTimeout(hidePageLoadingOverlay, 600);
         });
         
         // Alternativa: Si por algún motivo pasa mucho tiempo, ocultar después de X segundos
         const maxLoadTime = setTimeout(function() {
-            const overlay = document.getElementById('page-loading-overlay');
-            if (overlay && !overlay.classList.contains('hidden')) {
-                overlay.classList.add('hidden');
-                setTimeout(function() {
-                    overlay.remove();
-                }, 400);
-            }
+            hidePageLoadingOverlay();
         }, 10000);  // 10 segundos máximo
         
         // Cuando la ventana cargue completamente (incluyendo imágenes)
         window.addEventListener('load', function() {
             clearTimeout(maxLoadTime);  // Cancelar timeout si aún está activo
+            hidePageLoadingOverlay();
         });
     })();
 

@@ -639,8 +639,8 @@ async function guardarEdicionNovedad(novedadId) {
  */
 async function actualizarBotonNovedadesEnTabla(pedidoId, numeroRecibo) {
     try {
-        // Buscar el botón de novedades en la tabla principal
-        const botonNovedades = document.querySelector(`[data-pedido-id="${pedidoId}"][data-numero-recibo="${numeroRecibo}"]`);
+        // Buscar el botón de novedades en la tabla principal (específicamente el botón, no la fila)
+        const botonNovedades = document.querySelector(`button.btn-edit-novedades[data-pedido-id="${pedidoId}"][data-numero-recibo="${numeroRecibo}"]`);
         
         if (!botonNovedades) {
             console.log('[actualizarBotonNovedadesEnTabla] No se encontró el botón en la tabla principal');

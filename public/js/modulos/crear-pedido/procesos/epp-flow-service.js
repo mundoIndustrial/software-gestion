@@ -38,8 +38,7 @@ class EppFlowService {
 
     eliminarEPPPorTarjetaId(tarjetaId) {
         try {
-            const posicionVisual = this._getEppPositionFromDom(tarjetaId);
-            const eppIdx = posicionVisual >= 0 ? posicionVisual : this._getLastEppIndex();
+            const eppIdx = this._resolveEppIndexById(tarjetaId);
 
             if (!this._isPosicionValidaEpp(eppIdx)) {
                 console.warn('[gestionItemsUI] No se pudo eliminar EPP - posicion invalida:', eppIdx);
@@ -73,6 +72,29 @@ class EppFlowService {
             }
         }
         return -1;
+    }
+
+    _resolveEppIndexById(tarjetaId) {
+        const epps = this.ui?.epps || [];
+        const idBuscado = String(tarjetaId);
+
+        // Fuente de verdad: estado interno de GestionItemsUI
+        const idxPorId = epps.findIndex((epp) => {
+            const id = epp?.epp_id ?? epp?.id ?? epp?.tarjetaId;
+            return String(id) === idBuscado;
+        });
+
+        if (idxPorId >= 0) {
+            return idxPorId;
+        }
+
+        // Fallback defensivo para casos heredados: intentar por posicion visual.
+        const posicionVisual = this._getEppPositionFromDom(tarjetaId);
+        if (posicionVisual >= 0) {
+            return posicionVisual;
+        }
+
+        return this._getLastEppIndex();
     }
 
     _getLastEppIndex() {

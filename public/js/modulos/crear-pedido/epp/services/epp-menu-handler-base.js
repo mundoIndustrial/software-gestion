@@ -147,13 +147,13 @@ class EppMenuHandlerBase {
             return;
         }
 
+        const estabaVisible = window.getComputedStyle(submenu).display !== 'none';
         this.cerrarTodosLosMenus();
-        
-        setTimeout(() => {
-            const isVisible = window.getComputedStyle(submenu).display === 'none';
-            submenu.style.display = isVisible ? 'flex' : 'none';
-            console.log(`[${this.constructor.name}] Menú ${itemId}: ${submenu.style.display}`);
-        }, 5);
+
+        if (!estabaVisible) {
+            submenu.style.display = 'flex';
+        }
+        console.log(`[${this.constructor.name}] Menú ${itemId}: ${submenu.style.display}`);
     }
 
     cerrarTodosLosMenus() {
@@ -167,7 +167,8 @@ class EppMenuHandlerBase {
         const tarjetaId = btn.getAttribute('data-item-id');
         console.log(`[${this.constructor.name}] Editando EPP: ${tarjetaId}`);
 
-        const tarjeta = document.querySelector(`.item-epp-card[data-epp-id="${tarjetaId}"]`);
+        const selectorItem = this.config?.itemSelector || '.item-epp-card';
+        const tarjeta = document.querySelector(`${selectorItem}[data-epp-id="${tarjetaId}"]`);
         if (!tarjeta) {
             console.error(`[${this.constructor.name}] Tarjeta no encontrada: ${tarjetaId}`);
             return;
@@ -204,34 +205,29 @@ class EppMenuHandlerBase {
                 }
             });
         } else {
-            if (confirm('¿Eliminar este EPP? Esta acción no se puede deshacer')) {
-                this.realizarEliminacion(itemId);
-            }
+            console.error(`[${this.constructor.name}] Swal no disponible para confirmar eliminacion de EPP`);
         }
     }
 
     realizarEliminacion(tarjetaId) {
         try {
-            const tarjeta = document.querySelector(`.item-epp-card[data-epp-id="${tarjetaId}"]`);
-            if (!tarjeta) {
-                console.error(`[${this.constructor.name}] Tarjeta no encontrada: ${tarjetaId}`);
+            // Fuente unica de verdad: GestionItemsUI (estado) + ItemRenderer (DOM)
+            const gestion = window.gestionItemsUI;
+            if (!gestion || typeof gestion.eliminarEPPPorTarjetaId !== 'function') {
+                console.error(`[${this.constructor.name}] gestionItemsUI.eliminarEPPPorTarjetaId no disponible`);
                 return;
             }
 
-            // Eliminar del item manager (tabla o tarjeta)
-            const itemManager = window.eppItemManagerTabla || window.eppItemManagerTarjeta;
-            if (itemManager && typeof itemManager.eliminarItem === 'function') {
-                itemManager.eliminarItem(tarjetaId);
+            const eliminado = gestion.eliminarEPPPorTarjetaId(tarjetaId);
+            if (!eliminado) {
+                console.warn(`[${this.constructor.name}] No se pudo eliminar EPP ${tarjetaId} desde GestionItemsUI`);
+                return;
             }
 
-            // Eliminar de window.itemsPedido
-            if (window.itemsPedido) {
-                const idx = window.itemsPedido.findIndex(item => 
-                    item.id === parseInt(tarjetaId) || item.epp_id === parseInt(tarjetaId)
-                );
-                if (idx >= 0) {
-                    window.itemsPedido.splice(idx, 1);
-                }
+            if (typeof gestion._actualizarRenderItemsOrdenadosSinBloquear === 'function') {
+                gestion._actualizarRenderItemsOrdenadosSinBloquear();
+            } else if (typeof gestion._actualizarRenderItemsOrdenados === 'function') {
+                gestion._actualizarRenderItemsOrdenados();
             }
 
             if (window.Swal) {
@@ -248,3 +244,4 @@ class EppMenuHandlerBase {
         console.log(`[${this.constructor.name}] Refrescando`);
     }
 }
+

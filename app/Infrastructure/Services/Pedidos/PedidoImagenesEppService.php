@@ -55,14 +55,8 @@ class PedidoImagenesEppService
             'epps_count' => count($epps),
         ]);
 
-        $eppIds = array_map(fn($e) => $e['epp_id'], $epps);
-        $pedidosEppMapeados = PedidoEpp::where('pedido_produccion_id', $pedidoId)
-            ->whereIn('epp_id', $eppIds)
-            ->get()
-            ->keyBy('epp_id');
-
         foreach ($epps as $eppIdx => $eppData) {
-            $pedidoEpp = $this->obtenerPedidoEppParaImagenes($pedidosEppMapeados, $eppData, $pedidoId);
+            $pedidoEpp = $this->obtenerPedidoEppParaImagenes($eppData, $pedidoId);
             if ($pedidoEpp === null) {
                 continue;
             }
@@ -91,8 +85,19 @@ class PedidoImagenesEppService
         }
     }
 
-    private function obtenerPedidoEppParaImagenes($pedidosEppMapeados, array $eppData, int $pedidoId): ?PedidoEpp
+    private function obtenerPedidoEppParaImagenes(array $eppData, int $pedidoId): ?PedidoEpp
     {
+        $pedidoEppId = (int) ($eppData['pedido_epp_id'] ?? 0);
+        if ($pedidoEppId > 0) {
+            $pedidoEpp = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+                ->where('id', $pedidoEppId)
+                ->first();
+
+            if ($pedidoEpp) {
+                return $pedidoEpp;
+            }
+        }
+
         $eppId = $eppData['epp_id'] ?? null;
         if (!$eppId) {
             Log::warning('[PedidoImagenesService] EPP sin epp_id para procesar imagenes', [
@@ -101,11 +106,15 @@ class PedidoImagenesEppService
             return null;
         }
 
-        $pedidoEpp = $pedidosEppMapeados->get($eppId);
+        $pedidoEpp = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+            ->where('epp_id', $eppId)
+            ->orderByDesc('id')
+            ->first();
         if (!$pedidoEpp) {
             Log::warning('[PedidoImagenesService] EPP no encontrado para procesar imagenes', [
                 'pedido_id' => $pedidoId,
                 'epp_id' => $eppId,
+                'pedido_epp_id' => $pedidoEppId > 0 ? $pedidoEppId : null,
             ]);
             return null;
         }

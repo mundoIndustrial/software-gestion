@@ -23,14 +23,35 @@ class RecibosNovedadesController extends Controller
 
     /**
      * Obtener novedades de prendas para un recibo específico
+     * Para revisor_entregas: filtra solo novedades creadas por usuarios con rol 'vista-costura'
+     * Para otros roles: muestra todas las novedades
      */
     public function index(Request $request, $pedidoId, $numeroRecibo)
     {
         try {
             $novedadesDb = $this->obtenerNovedadesUseCase->execute($pedidoId, $numeroRecibo);
             
+            // Solo aplicar filtro si el usuario es revisor_entregas
+            $usuarioActual = auth()->user();
+            $esRevisorEntregas = $usuarioActual && $usuarioActual->hasRole('revisor_entregas');
+            
+            Log::info('[RecibosNovedadesController] Debug filtro novedades', [
+                'usuario_id' => $usuarioActual?->id,
+                'usuario_rol' => $usuarioActual?->role?->name,
+                'es_revisor_entregas' => $esRevisorEntregas,
+                'novedades_totales' => count($novedadesDb)
+            ]);
+            
             $novedades = [];
             foreach ($novedadesDb as $novedad) {
+                // Si es revisor_entregas, filtrar solo novedades del rol 'vista-costura'
+                if ($esRevisorEntregas) {
+                    $rolUsuario = $novedad->creadoPor && $novedad->creadoPor->role ? $novedad->creadoPor->role->name : null;
+                    if ($rolUsuario !== 'vista-costura') {
+                        continue;
+                    }
+                }
+                
                 $prenda = $novedad->prendaPedido;
                 $novedades[] = [
                     'id' => $novedad->id,

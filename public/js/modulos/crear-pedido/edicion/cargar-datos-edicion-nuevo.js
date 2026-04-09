@@ -491,10 +491,13 @@ function cargarEPPs(epps) {
         }
         
         epps.forEach((epp) => {
+            const pedidoEppId = epp.pedido_epp_id || epp.pedidoEppId || null;
+            const eppCatalogoId = epp.epp_id || epp.id || null;
             const eppNormalizado = {
-                id: epp.epp_id,
-                epp_id: epp.epp_id,
-                tarjetaId: String(epp.epp_id),
+                id: eppCatalogoId,
+                epp_id: eppCatalogoId,
+                pedido_epp_id: pedidoEppId,
+                tarjetaId: String(pedidoEppId || eppCatalogoId),
                 nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
                 nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
                 nombre_completo: epp.nombre_completo || epp.nombre_epp || epp.nombre || '',
@@ -587,61 +590,12 @@ function generarTarjetaEpp(epp, index) {
  * Inicializar event listeners para el menú de EPP
  */
 function inicializarEventListenersEpp() {
-    // Menú de 3 puntos
-    document.addEventListener('click', (e) => {
-        // Toggle del menú
-        if (e.target.closest('.btn-menu-tres-puntos-epp')) {
-            e.stopPropagation();
-            const btn = e.target.closest('.btn-menu-tres-puntos-epp');
-            const submenu = btn.nextElementSibling;
-            
-            // Cerrar otros submenús
-            document.querySelectorAll('.submenu-epp').forEach(menu => {
-                if (menu !== submenu) menu.style.display = 'none';
-            });
-            
-            // Toggle del menú actual
-            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-        }
-        // Cerrar menú si se hace clic fuera
-        else {
-            document.querySelectorAll('.submenu-epp').forEach(menu => {
-                menu.style.display = 'none';
-            });
-        }
-        
-        // Botón EDITAR EPP - MANEJADO POR ARQUITECTURA NUEVA DE HERENCIA
-        // El nuevo EppMenuHandlerTarjeta/Tabla maneja esto automáticamente
-        // a través de window.abrirModalEditarEPP() - no procesar aquí
-        if (e.target.closest('.btn-editar-epp-nuevo') || e.target.closest('.btn-editar-epp')) {
-            // El nuevo handler ya procesó el evento, ignorar
-            return;
-        }
-        
-        // Botón ELIMINAR EPP
-        if (e.target.closest('.btn-eliminar-epp')) {
-            e.stopPropagation();
-            const btn = e.target.closest('.btn-eliminar-epp');
-            const eppIndex = parseInt(btn.dataset.eppIndex);
-            
-            console.log('[EPP]  Eliminando EPP con índice:', eppIndex);
-            
-            // Confirmar eliminación
-            if (confirm('¿Estás seguro de que deseas eliminar este EPP?')) {
-                // Obtener EPP desde window.eppsPedido
-                if (window.eppsPedido) {
-                    // Eliminar del array
-                    window.eppsPedido.splice(eppIndex, 1);
-                    console.log('[EPP] EPP eliminado. Eppspedido ahora:', window.eppsPedido);
-                    
-                    // Recargar la lista de EPPs
-                    cargarEPPs(window.eppsPedido);
-                } else {
-                    alert('Error: No se puede eliminar el EPP');
-                }
-            }
-        }
-    });
+    // Deshabilitado: este listener era legacy y competia con la arquitectura actual.
+    // Fuente unica de verdad:
+    // - EppMenuHandlerBase / EppMenuHandlerTarjeta / EppMenuHandlerTabla
+    // - gestionItemsUI (estado)
+    // - ItemRenderer (UI)
+    console.log('[cargar-datos-edicion-nuevo] inicializarEventListenersEpp() deshabilitado (legacy)');
 }
 
 // Escuchar evento de prenda actualizada (desde modal-novedad-edicion.js)
@@ -699,3 +653,5 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
+
+

@@ -151,7 +151,7 @@ class EppItemManagerTarjeta {
         }
         
         console.log('[EppItemManagerTarjeta] Tarjeta EPP creada:', id);
-        this._inicializarInteractividad();
+        // Interactividad centralizada en EppMenuHandlerBase/EppMenuHandlerTarjeta.
     }
 
     /**
@@ -386,197 +386,9 @@ class EppItemManagerTarjeta {
      * Inicializar interactividad de menús
      */
     _inicializarInteractividad() {
-        const listaItems = document.getElementById(this.listaItemsId);
-        if (!listaItems) return;
-
-        // Event delegation para menús desplegables
-        listaItems.removeEventListener('click', this._handleMenuClick);
-        this._handleMenuClick = (e) => {
-            const btn = e.target.closest('.btn-menu-epp-nuevo');
-            if (!btn) return;
-            
-            e.stopPropagation();
-            const itemId = btn.getAttribute('data-item-id');
-            if (!itemId) return;
-            
-            const submenu = document.querySelector(`.submenu-epp-nuevo[data-item-id="${itemId}"]`);
-            if (!submenu) return;
-            
-            // Cerrar otros menús
-            document.querySelectorAll('.submenu-epp-nuevo').forEach(menu => {
-                if (menu !== submenu) {
-                    menu.style.display = 'none';
-                }
-            });
-            
-            // Toggle menú actual
-            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-        };
-        listaItems.addEventListener('click', this._handleMenuClick);
-
-        // Event delegation para botones eliminar
-        listaItems.removeEventListener('click', this._handleDeleteClick);
-        this._handleDeleteClick = (e) => {
-            const btn = e.target.closest('.btn-eliminar-epp-nuevo');
-            if (!btn) return;
-            
-            e.stopPropagation();
-            const itemId = btn.getAttribute('data-item-id');
-            if (!itemId) return;
-            
-            if (window.Swal) {
-                Swal.fire({
-                    title: '¿Eliminar este EPP?',
-                    text: 'Esta acción no se puede deshacer',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#dc3545'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        //  Obtener datos de la tarjeta ANTES de eliminar del DOM
-                        const card = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${itemId}"]`);
-                        const eppOriginalId = card ? card.getAttribute('data-epp-original-id') : null;
-                        
-                        // Calcular posición visual de esta tarjeta entre todas las EPP cards
-                        let posicionVisual = -1;
-                        const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
-                        todasLasTarjetas.forEach((tarjeta, idx) => {
-                            if (tarjeta.getAttribute('data-epp-id') === itemId) {
-                                posicionVisual = idx;
-                            }
-                        });
-                        
-                        console.log(`[EppItemManagerTarjeta] Eliminando EPP - tarjetaId: ${itemId}, eppOriginalId: ${eppOriginalId}, posición: ${posicionVisual}`);
-                        
-                        // 1. Eliminar de gestionItemsUI ANTES de eliminar del DOM
-                        if (window.gestionItemsUI && typeof window.gestionItemsUI.eliminarEPPPorTarjetaId === 'function') {
-                            window.gestionItemsUI.eliminarEPPPorTarjetaId(itemId);
-                            console.log('[EppItemManagerTarjeta] EPP eliminado de gestionItemsUI');
-                        }
-                        
-                        // 2. Eliminar del DOM
-                        window.eppItemManagerTarjeta.eliminarItem(itemId);
-                        
-                        // 3. Eliminar del array global window.itemsPedido usando posición correcta
-                        if (window.itemsPedido) {
-                            const longitudAntes = window.itemsPedido.length;
-                            
-                            if (posicionVisual >= 0) {
-                                // Encontrar el EPP en la posición visual correcta dentro de itemsPedido
-                                let eppCount = 0;
-                                const idxToRemove = window.itemsPedido.findIndex(item => {
-                                    if (item.tipo === 'epp') {
-                                        if (eppCount === posicionVisual) {
-                                            return true;
-                                        }
-                                        eppCount++;
-                                    }
-                                    return false;
-                                });
-                                
-                                if (idxToRemove >= 0) {
-                                    window.itemsPedido.splice(idxToRemove, 1);
-                                    console.log(`[EppItemManagerTarjeta] EPP eliminado por posición ${posicionVisual}. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
-                                }
-                            }
-                            
-                            // Fallback: si no se eliminó por posición, intentar por epp_id
-                            if (window.itemsPedido.length === longitudAntes && eppOriginalId) {
-                                const fallbackIdx = window.itemsPedido.findIndex(item => 
-                                    item.tipo === 'epp' && String(item.epp_id) === String(eppOriginalId)
-                                );
-                                if (fallbackIdx >= 0) {
-                                    window.itemsPedido.splice(fallbackIdx, 1);
-                                    console.log(`[EppItemManagerTarjeta] EPP eliminado por epp_id fallback. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
-                                }
-                            }
-                            
-                            console.log('[EppItemManagerTarjeta] window.itemsPedido después de eliminar:', window.itemsPedido.length, 'items');
-                        }
-                        
-                        Swal.fire('Eliminado', 'EPP eliminado correctamente', 'success');
-                    }
-                });
-            }
-        };
-        listaItems.addEventListener('click', this._handleDeleteClick);
-
-        // Event delegation para botones editar
-        listaItems.removeEventListener('click', this._handleEditClick);
-        this._handleEditClick = (e) => {
-            const btn = e.target.closest('.btn-editar-epp-nuevo');
-            if (!btn) return;
-            
-            e.stopPropagation();
-            const itemId = btn.getAttribute('data-item-id');
-            if (!itemId) return;
-            
-            const card = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${itemId}"]`);
-            if (!card) return;
-            
-            // Extraer datos del item
-            const eppData = {
-                id: card.getAttribute('data-epp-original-id'),
-                nombre: card.querySelector('h4')?.textContent || '',
-                cantidad: parseInt(card.querySelector('div:nth-child(2) p:nth-of-type(2)')?.textContent || 0),
-                observaciones: card.querySelector('div:nth-child(2) p:nth-of-type(4)')?.textContent || '-'
-            };
-            
-            // Obtener datos completos si existe en window.itemsPedido
-            if (window.itemsPedido) {
-                const item = window.itemsPedido.find(i => i.tipo === 'epp' && String(i.id) === String(eppData.id));
-                if (item) {
-                    Object.assign(eppData, item);
-                }
-            }
-            
-            // Si no hay imágenes en los datos del item, intentar extraer de la tarjeta
-            if (!eppData.imagenes || eppData.imagenes.length === 0) {
-                const imagenesEnTarjeta = [];
-                // Buscar todas las imágenes en la sección de imágenes de la tarjeta
-                const seccionImagenes = card.querySelector('div[style*="margin-top: 1rem"][style*="padding-top"]');
-                if (seccionImagenes) {
-                    const imgElements = seccionImagenes.querySelectorAll('img');
-                    imgElements.forEach(img => {
-                        if (img.src && !imagenesEnTarjeta.some(i => i.previewUrl === img.src)) {
-                            imagenesEnTarjeta.push({
-                                previewUrl: img.src,
-                                url: img.src,
-                                nombre: img.alt || 'Imagen EPP'
-                            });
-                        }
-                    });
-                }
-                if (imagenesEnTarjeta.length > 0) {
-                    eppData.imagenes = imagenesEnTarjeta;
-                    console.log('[EppItemManagerTarjeta] Imágenes extraídas de tarjeta:', imagenesEnTarjeta.length);
-                }
-            }
-            
-            // Agregar tarjetaId para que el modal pueda actualizar la tarjeta visual
-            eppData.tarjetaId = itemId;
-            
-            // Llamar función de edición si existe
-            if (typeof window.editarEPPAgregado === 'function') {
-                window.editarEPPAgregado(eppData);
-            } else {
-                console.warn('[EppItemManagerTarjeta] Función editarEPPAgregado no encontrada');
-            }
-        };
-        listaItems.addEventListener('click', this._handleEditClick);
-
-        // Cerrar menús al hacer clic fuera
-        document.removeEventListener('click', this._handleOutsideClick);
-        this._handleOutsideClick = (e) => {
-            if (!e.target.closest('.btn-menu-epp-nuevo')) {
-                document.querySelectorAll('.submenu-epp-nuevo').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        };
-        document.addEventListener('click', this._handleOutsideClick);
+        // Interactividad migrada completamente al flujo de handlers centralizados.
+        // Se conserva el metodo para evitar errores en llamadas existentes.
+        return;
     }
 
     /**
@@ -596,3 +408,5 @@ class EppItemManagerTarjeta {
 
 // Exportar instancia global exclusiva para nuevo pedido
 window.eppItemManagerTarjeta = new EppItemManagerTarjeta();
+
+

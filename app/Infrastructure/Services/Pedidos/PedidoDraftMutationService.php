@@ -4,6 +4,7 @@ namespace App\Infrastructure\Services\Pedidos;
 
 use App\Application\Pedidos\Services\PedidoCreationCoordinator;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
@@ -21,12 +22,15 @@ class PedidoDraftMutationService
 
     public function actualizarEpps(int $pedidoId, array $eppsCrudos, $request): void
     {
+        $this->sincronizarEppsEliminados($pedidoId, $eppsCrudos);
+
         if (empty($eppsCrudos)) {
             return;
         }
 
-        foreach ($eppsCrudos as $eppData) {
+        foreach ($eppsCrudos as $eppIdx => $eppData) {
             $eppId = $eppData['epp_id'] ?? null;
+            $pedidoEppId = (int) ($eppData['pedido_epp_id'] ?? 0);
             $cantidad = $eppData['cantidad'] ?? 1;
             $observaciones = $eppData['observaciones'] ?? '';
 
@@ -34,7 +38,28 @@ class PedidoDraftMutationService
                 continue;
             }
 
-            $pedidoEppRef = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
+            $pedidoEppRef = null;
+            if ($pedidoEppId > 0) {
+                $pedidoEppModel = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+                    ->where('id', $pedidoEppId)
+                    ->with(['imagenes'])
+                    ->first();
+
+                if ($pedidoEppModel) {
+                    $pedidoEppRef = new \App\Domain\Pedidos\ReadModels\PedidoEppRef(
+                        pedidoEppId: (int) $pedidoEppModel->id,
+                        pedidoId: (int) $pedidoEppModel->pedido_produccion_id,
+                        eppId: (int) $pedidoEppModel->epp_id,
+                        cantidad: (int) $pedidoEppModel->cantidad,
+                        observaciones: $pedidoEppModel->observaciones,
+                        imagenesCount: $pedidoEppModel->imagenes->count(),
+                    );
+                }
+            }
+
+            if (!$pedidoEppRef) {
+                $pedidoEppRef = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
+            }
             
             // Si el EPP es NUEVO (no existe en el pedido), crearlo primero
             if (!$pedidoEppRef) {
@@ -58,13 +83,15 @@ class PedidoDraftMutationService
                 }
             }
 
-            $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEppRef->pedidoEppId);
-            if ($cantidadEliminada > 0) {
-                Log::info('[PedidoDraftMutationService] Imagenes antiguas de EPP eliminadas', [
-                    'pedido_epp_id' => $pedidoEppRef->pedidoEppId,
-                    'epp_id' => $eppId,
-                    'imagenes_eliminadas' => $cantidadEliminada,
-                ]);
+            if ($this->debeRefrescarImagenesEpp($request, (int) $eppIdx, $eppData)) {
+                $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEppRef->pedidoEppId);
+                if ($cantidadEliminada > 0) {
+                    Log::info('[PedidoDraftMutationService] Imagenes antiguas de EPP eliminadas', [
+                        'pedido_epp_id' => $pedidoEppRef->pedidoEppId,
+                        'epp_id' => $eppId,
+                        'imagenes_eliminadas' => $cantidadEliminada,
+                    ]);
+                }
             }
 
             $this->pedidoRepository->actualizarDatosEpp($pedidoEppRef->pedidoEppId, [
@@ -80,6 +107,61 @@ class PedidoDraftMutationService
         }
 
         $this->pedidoImagenesService->procesarImagenesDeEpps($request, $pedidoId, $eppsCrudos);
+    }
+
+    private function sincronizarEppsEliminados(int $pedidoId, array $eppsCrudos): void
+    {
+        $idsRelacionMantener = [];
+        $idsCatalogoMantener = [];
+
+        foreach ($eppsCrudos as $eppData) {
+            $pedidoEppId = (int) ($eppData['pedido_epp_id'] ?? 0);
+            $eppId = (int) ($eppData['epp_id'] ?? 0);
+
+            if ($pedidoEppId > 0) {
+                $idsRelacionMantener[] = $pedidoEppId;
+            }
+            if ($eppId > 0) {
+                $idsCatalogoMantener[] = $eppId;
+            }
+        }
+
+        $existentes = PedidoEpp::where('pedido_produccion_id', $pedidoId)->get();
+        foreach ($existentes as $pedidoEpp) {
+            $debeMantenerPorRelacion = in_array((int) $pedidoEpp->id, $idsRelacionMantener, true);
+            $debeMantenerPorCatalogo = in_array((int) $pedidoEpp->epp_id, $idsCatalogoMantener, true);
+
+            if ($debeMantenerPorRelacion || $debeMantenerPorCatalogo) {
+                continue;
+            }
+
+            $imagenesEliminadas = $this->eppImageCleanupService->eliminarImagenes((int) $pedidoEpp->id);
+            $pedidoEpp->delete();
+
+            Log::info('[PedidoDraftMutationService] EPP eliminado por sincronizacion de borrador', [
+                'pedido_id' => $pedidoId,
+                'pedido_epp_id' => (int) $pedidoEpp->id,
+                'epp_id' => (int) $pedidoEpp->epp_id,
+                'imagenes_eliminadas' => $imagenesEliminadas,
+            ]);
+        }
+    }
+
+    private function debeRefrescarImagenesEpp($request, int $eppIdx, array $eppData): bool
+    {
+        $modo = strtolower(trim((string) ($eppData['modo_imagenes'] ?? '')));
+        if (in_array($modo, ['upload', 'reuse'], true)) {
+            return true;
+        }
+
+        $prefijo = "epps_{$eppIdx}_imagenes_";
+        foreach ((array) $request->allFiles() as $campo => $archivo) {
+            if (is_string($campo) && str_starts_with($campo, $prefijo)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

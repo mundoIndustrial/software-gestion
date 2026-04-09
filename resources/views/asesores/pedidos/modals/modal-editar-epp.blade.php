@@ -128,6 +128,7 @@ let fotosEnEdicionIndividual = [];
 let eppsDisponiblesParaEdicion = [];
 let indiceEPPEnEdicion = -1;  // Guardar el índice para búsqueda rápida
 let tarjetaEppIdEnEdicion = null;  // Guardar el ID de la tarjeta visual para actualizar después
+let imagenesEditadasEnModalEPP = false; // Marca de cambio real de imágenes en modal
 
 /**
  * Abrir modal para editar un EPP individual
@@ -137,10 +138,15 @@ function abrirModalEditarEPP(eppData) {
     
     // Guardar ID de la tarjeta visual
     tarjetaEppIdEnEdicion = eppData.tarjetaId;
+    imagenesEditadasEnModalEPP = false;
     
     // Normalizar el eppData para asegurar que tiene un ID válido
     const eppId = eppData.id || eppData.epp_id || eppData.data_epp_original_id;
     console.log('[abrirModalEditarEPP] ID normalizado:', eppId, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
+    
+    // Recuperar relación real pedido_epp_id desde la tarjeta del DOM (si existe)
+    const tarjetaDom = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${tarjetaEppIdEnEdicion || eppId}"]`);
+    const pedidoEppIdDesdeDOM = tarjetaDom?.dataset?.pedidoEppId ? Number(tarjetaDom.dataset.pedidoEppId) : null;
     
     // PRIMERO: Buscar en window.itemsPedido (donde están realmente los EPPs agregados)
     let eppEncontrado = null;
@@ -166,6 +172,9 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...window.itemsPedido[indiceEPPEnEdicion] };
+            if (!eppEncontrado.pedido_epp_id && pedidoEppIdDesdeDOM) {
+                eppEncontrado.pedido_epp_id = pedidoEppIdDesdeDOM;
+            }
             console.log('[abrirModalEditarEPP]  EPP encontrado en window.itemsPedido:', eppEncontrado);
         }
     }
@@ -190,6 +199,9 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...eppAgregadosList[indiceEPPEnEdicion] };
+            if (!eppEncontrado.pedido_epp_id && pedidoEppIdDesdeDOM) {
+                eppEncontrado.pedido_epp_id = pedidoEppIdDesdeDOM;
+            }
             console.log('[abrirModalEditarEPP]  EPP encontrado en eppAgregadosList:', eppEncontrado);
         }
     }
@@ -238,6 +250,7 @@ function abrirModalEditarEPP(eppData) {
         eppEnEdicionIndividual = { 
             id: eppId,
             epp_id: eppId,
+            pedido_epp_id: pedidoEppIdDesdeDOM || null,
             nombre: eppData.nombre || eppData.nombre_epp || eppData.nombre_completo || 'EPP',
             nombre_completo: eppData.nombre_completo || eppData.nombre_epp || eppData.nombre || 'EPP',
             nombre_epp: eppData.nombre_epp || eppData.nombre_completo || eppData.nombre || 'EPP',
@@ -632,6 +645,9 @@ function manejarSeleccionFotosEnModalEditar(event) {
             console.log(`[manejarSeleccionFotosEnModalEditar] Foto ${i + 1} agregada: ${file.name}`);
         }
     });
+    if (files.length > 0) {
+        imagenesEditadasEnModalEPP = true;
+    }
     
     mostrarFotosEnModalEditar();
     console.log('[manejarSeleccionFotosEnModalEditar] Total de fotos:', fotosEnEdicionIndividual.length);
@@ -664,6 +680,9 @@ function manejarDropEnModalEditar(event) {
             console.log(`[manejarDropEnModalEditar] Foto ${i + 1} agregada: ${file.name}`);
         }
     });
+    if (files.length > 0) {
+        imagenesEditadasEnModalEPP = true;
+    }
     
     mostrarFotosEnModalEditar();
     console.log('[manejarDropEnModalEditar] Total de fotos:', fotosEnEdicionIndividual.length);
@@ -683,6 +702,7 @@ function eliminarFotoEnModalEditar(index) {
     }
     
     fotosEnEdicionIndividual.splice(index, 1);
+    imagenesEditadasEnModalEPP = true;
     mostrarFotosEnModalEditar();
     
     // Actualizar la tarjeta visual inmediatamente después de eliminar
@@ -886,6 +906,8 @@ function guardarEdicionEnModalEditarEPP() {
         targetList[index].cantidad = cantidad;
         targetList[index].observaciones = observaciones;
         targetList[index].imagenes = fotosEnEdicionIndividual;
+        targetList[index].pedido_epp_id = eppEnEdicionIndividual.pedido_epp_id || targetList[index].pedido_epp_id || null;
+        targetList[index].imagenes_editadas = imagenesEditadasEnModalEPP;
         
         // Mantener nombres sincronizados
         if (eppEnEdicionIndividual.nombre_completo) {
@@ -944,6 +966,8 @@ function guardarEdicionEnModalEditarEPP() {
                 eppEnLista.cantidad = cantidad;
                 eppEnLista.observaciones = observaciones;
                 eppEnLista.imagenes = fotosEnEdicionIndividual;
+                eppEnLista.pedido_epp_id = eppEnEdicionIndividual.pedido_epp_id || eppEnLista.pedido_epp_id || null;
+                eppEnLista.imagenes_editadas = imagenesEditadasEnModalEPP;
                 if (eppEnEdicionIndividual.nombre_completo) {
                     eppEnLista.nombre = eppEnEdicionIndividual.nombre_completo;
                     eppEnLista.nombre_epp = eppEnEdicionIndividual.nombre_completo;
@@ -964,6 +988,8 @@ function guardarEdicionEnModalEditarEPP() {
                         eppEnGestión.cantidad = cantidad;
                         eppEnGestión.observaciones = observaciones;
                         eppEnGestión.imagenes = fotosEnEdicionIndividual;
+                        eppEnGestión.pedido_epp_id = eppEnEdicionIndividual.pedido_epp_id || eppEnGestión.pedido_epp_id || null;
+                        eppEnGestión.imagenes_editadas = imagenesEditadasEnModalEPP;
                         if (eppEnEdicionIndividual.nombre_completo) {
                             eppEnGestión.nombre = eppEnEdicionIndividual.nombre_completo;
                             eppEnGestión.nombre_epp = eppEnEdicionIndividual.nombre_completo;
@@ -997,6 +1023,8 @@ function guardarEdicionEnModalEditarEPP() {
                 eppEnItemsPedido.cantidad = cantidad;
                 eppEnItemsPedido.observaciones = observaciones;
                 eppEnItemsPedido.imagenes = fotosEnEdicionIndividual;
+                eppEnItemsPedido.pedido_epp_id = eppEnEdicionIndividual.pedido_epp_id || eppEnItemsPedido.pedido_epp_id || null;
+                eppEnItemsPedido.imagenes_editadas = imagenesEditadasEnModalEPP;
                 if (eppEnEdicionIndividual.nombre_completo) {
                     eppEnItemsPedido.nombre = eppEnEdicionIndividual.nombre_completo;
                     eppEnItemsPedido.nombre_epp = eppEnEdicionIndividual.nombre_completo;
@@ -1079,6 +1107,8 @@ function guardarEdicionEnModalEditarEPP() {
                     targetList[index].cantidad = cantidad;
                     targetList[index].observaciones = observaciones;
                     targetList[index].imagenes = fotosEnEdicionIndividual;
+                    targetList[index].pedido_epp_id = eppEnEdicionIndividual.pedido_epp_id || targetList[index].pedido_epp_id || null;
+                    targetList[index].imagenes_editadas = imagenesEditadasEnModalEPP;
                     
                     console.log('[guardarEdicionEnModalEditarEPP]  EPP actualizado correctamente en reintento:', {
                         lista: 'window.itemsPedido',
@@ -1232,3 +1262,6 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
     }
 }
 </script>
+
+
+

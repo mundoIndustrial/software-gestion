@@ -99,6 +99,15 @@ class PedidoRepository {
     async fetchPageContent(url) {
         throw new Error('fetchPageContent() debe ser implementado por subclases');
     }
+
+    /**
+     * Obtiene datos JSON del listado de pedidos para renderizado cliente
+     * @param {string} url
+     * @returns {Promise<object>}
+     */
+    async fetchOrdersData(url) {
+        throw new Error('fetchOrdersData() debe ser implementado por subclases');
+    }
 }
 
 // Errores de dominio
@@ -166,9 +175,12 @@ class PedidoApiRepository extends PedidoRepository {
     async getSelections() {
         const response = await this.http.get('/api/supervisor-pedidos/selecciones');
         const payload = response?.data ?? response;
+
+        // Compatibilidad con SelectionService (espera "selecciones")
         if (payload && Array.isArray(payload.selections) && !Array.isArray(payload.selecciones)) {
             payload.selecciones = payload.selections;
         }
+
         return payload;
     }
 
@@ -204,6 +216,18 @@ class PedidoApiRepository extends PedidoRepository {
         }
 
         return response.data.html;
+    }
+
+    async fetchOrdersData(url) {
+        const sourceUrl = new URL(url, window.location.origin);
+        const apiPath = `/api/supervisor-pedidos/ordenes${sourceUrl.search || ''}`;
+        const response = await this.http.get(apiPath);
+
+        if (!response?.success || !response?.data) {
+            throw new Error('Respuesta inválida al cargar órdenes');
+        }
+
+        return response.data;
     }
 }
 
@@ -255,6 +279,9 @@ class FilterService {
             return this._splitParam(url, 'numero');
         }
         if (columna === 'fecha') {
+            const fechas = this._splitParam(url, 'fecha');
+            if (fechas.length > 0) return fechas;
+
             const desde = url.searchParams.get('fecha_desde') || '';
             const hasta = url.searchParams.get('fecha_hasta') || '';
             return [desde, hasta].filter(Boolean);
@@ -289,8 +316,16 @@ class FilterService {
         const url = new URL(window.location.href);
 
         if (columna === 'fecha') {
+            url.searchParams.delete('fecha');
             url.searchParams.delete('fecha_desde');
             url.searchParams.delete('fecha_hasta');
+
+            if (valores.length > 0) {
+                url.searchParams.set('fecha', valores.join(','));
+                return url.toString();
+            }
+
+            // Compatibilidad: conservar soporte para rango si se usa desde otra vista.
             if (fechas.desde) url.searchParams.set('fecha_desde', fechas.desde);
             if (fechas.hasta) url.searchParams.set('fecha_hasta', fechas.hasta);
             return url.toString();
@@ -325,8 +360,21 @@ class FilterService {
             container.style.opacity = '0.6';
             container.style.pointerEvents = 'none';
 
-            const html = await this.repository.fetchPageContent(urlString);
-            container.innerHTML = html;
+            // Mostrar overlay de carga
+            const loadingOverlay = document.getElementById('sp-loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.style.opacity = '1';
+            }
+
+            const data = await this.repository.fetchOrdersData(urlString);
+
+            if (typeof window.renderSupervisorOrdersTable !== 'function') {
+                window.location.href = urlString;
+                return false;
+            }
+
+            window.renderSupervisorOrdersTable(data);
 
             if (pushState) {
                 window.history.pushState({ url: urlString }, '', urlString);
@@ -351,6 +399,13 @@ class FilterService {
         } finally {
             container.style.opacity = '';
             container.style.pointerEvents = '';
+
+            // Ocultar overlay de carga
+            const overlay = document.getElementById('sp-loading-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            }
         }
     }
 

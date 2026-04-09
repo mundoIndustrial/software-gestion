@@ -4,12 +4,19 @@
  */
 
 globalThis.PrendaCardHandlers = {
+    _listenersInitialized: false,
+
     inicializar(tarjeta, prenda, indice, callbacks = {}) {
 
         this._setupEventListeners();
     },
 
     _setupEventListeners() {
+        if (this._listenersInitialized) {
+            return;
+        }
+        this._listenersInitialized = true;
+
         // Debug: Capturar todos los clicks en botones de tres puntos para diagnóstico
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn-menu-tres-puntos')) {
@@ -745,5 +752,4 @@ globalThis.PrendaCardHandlers = {
         });
     }
 };
-
 

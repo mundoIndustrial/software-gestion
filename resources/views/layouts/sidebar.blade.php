@@ -758,12 +758,21 @@
   </div>
 </aside>
 
+@if(auth()->user()->hasRole(['despacho', 'asesor', 'admin', 'supervisor_gerencia']))
 <script>
   // Cargar contador de pendientes
   function actualizarContadorPendientes() {
     fetch('/despacho/api/pendientes-todos?per_page=1')
-      .then(response => response.json())
+      .then(response => {
+        // Si no es 2xx, ignorar silenciosamente (usuario sin permisos)
+        if (!response.ok) {
+          return null;
+        }
+        return response.json();
+      })
       .then(data => {
+        if (!data) return; // Ignorar si hubo error de permisos
+        
         const badge = document.getElementById('pendientes-badge');
         const total = data.pagination?.total || 0;
         if (badge && total > 0) {
@@ -773,7 +782,10 @@
           badge.style.display = 'none';
         }
       })
-      .catch(error => console.error('Error al obtener pendientes:', error));
+      .catch(error => {
+        // Silenciar errores de red/JSON
+        console.debug('[Sidebar] Contador de pendientes no disponible:', error.message);
+      });
   }
 
   // Actualizar al cargar la página
@@ -782,3 +794,4 @@
   // Actualizar cada 30 segundos
   setInterval(actualizarContadorPendientes, 30000);
 </script>
+@endif

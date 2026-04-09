@@ -233,23 +233,28 @@
             datos.tipo_cotizacion = tipoCotizacionElement?.dataset.tipoCotizacion || 'P';
         }
 
-        // ========== RECOPILACIÓN DE EPPs ==========
-        if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-            const eppsDelPedido = window.itemsPedido.filter(item => item.tipo === 'epp');
-            if (eppsDelPedido.length > 0) {
-                datos.epps = eppsDelPedido.map(epp => ({
-                    tipo: 'epp',  //  AGREGADO: identificador de tipo
-                    epp_id: epp.epp_id,
-                    cantidad: epp.cantidad || 1,
-                    observaciones: epp.observaciones || null,
-                    //  Incluir imágenes desde el objeto EPP del itemsPedido
-                    imagenes: epp.imagenes || []
-                }));
-                //  AGREGADO: también agregar EPPs a items para procesamiento unificado
-                datos.items.push(...datos.epps);
-                console.debug('[prepararDatosParaEnvio] EPPs a enviar:', datos.epps);
-            }
+        // ========== RECOPILACION DE EPPs ==========
+        // Fuente unica de verdad: gestionItemsUI.
+        let eppsDelPedido = [];
+        if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+            eppsDelPedido = (window.gestionItemsUI.obtenerItemsOrdenados() || []).filter(item => item.tipo === 'epp');
+        } else {
+            console.warn('[prepararDatosParaEnvio] gestionItemsUI no disponible; no se incluiran EPPs');
         }
+
+        if (eppsDelPedido.length > 0) {
+            datos.epps = eppsDelPedido.map(epp => ({
+                tipo: 'epp',
+                epp_id: epp.epp_id,
+                pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
+                cantidad: epp.cantidad || 1,
+                observaciones: epp.observaciones || null,
+                imagenes: epp.imagenes || [],
+                imagenes_editadas: epp.imagenes_editadas === true
+            }));
+            datos.items.push(...datos.epps);
+        }
+        console.debug('[prepararDatosParaEnvio] EPPs a enviar:', datos.epps);
 
         return datos;
     };

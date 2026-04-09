@@ -5,6 +5,7 @@
         if (!imagen) return null;
         if (imagen instanceof File) return imagen;
         if (imagen.file instanceof File) return imagen.file;
+        if (imagen.archivo instanceof File) return imagen.archivo;
         if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
             return convertirBlobUrlAFileSincrono(imagen);
         }
@@ -133,8 +134,8 @@
                 e.imagenes.forEach((img, imgIndex) => {
                     if (!img) return;
 
-                    if (img instanceof File || (img.file && img.file instanceof File)) {
-                        const file = img instanceof File ? img : img.file;
+                    if (img instanceof File || (img.file && img.file instanceof File) || (img.archivo && img.archivo instanceof File)) {
+                        const file = img instanceof File ? img : (img.file instanceof File ? img.file : img.archivo);
                         const fieldName = `epps_${eppIndex}_imagenes_${imgIndex}`;
                         formData.append(fieldName, file);
                         tieneArchivosNuevos = true;
@@ -144,6 +145,7 @@
                     let imageUrl = null;
                     if (typeof img === 'string') imageUrl = img;
                     else if (img.url) imageUrl = img.url;
+                    else if (img.previewUrl) imageUrl = img.previewUrl;
                     else if (img.preview) imageUrl = img.preview;
                     else if (img.ruta_webp) imageUrl = img.ruta_webp;
                     else if (img.ruta) imageUrl = img.ruta;
@@ -156,6 +158,7 @@
 
             const eppPayload = {
                 epp_id: e.epp_id,
+                pedido_epp_id: e.pedido_epp_id || null,
                 cantidad: e.cantidad,
                 observaciones: e.observaciones,
                 imagenes: imagenesExistentes
@@ -164,6 +167,9 @@
             // Si hay archivos nuevos, indicar modo "upload"
             if (tieneArchivosNuevos) {
                 eppPayload.modo_imagenes = 'upload';
+            } else if (e.imagenes_editadas === true) {
+                // Señal explícita: el usuario editó imágenes (incluye caso de dejar en 0).
+                eppPayload.modo_imagenes = 'reuse';
             }
 
             return eppPayload;

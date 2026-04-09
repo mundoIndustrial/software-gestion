@@ -168,7 +168,7 @@ class ItemRenderer {
         const numeroItem = eppCount + 1;
         
         return `
-            <div class="item-epp-card item-epp-card-nuevo" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.id || epp.pedido_epp_id || epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp-card item-epp-card-nuevo" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.pedido_epp_id || epp.pedidoEppId || ''}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
@@ -177,13 +177,13 @@ class ItemRenderer {
                     </div>
                     <!-- Contenedor del botón y menú con posicionamiento relativo -->
                     <div style="position: relative;">
-                        <button class="btn-menu-epp btn-menu-epp-nuevo" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                        <button class="btn-menu-epp-nuevo" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
                         
                         <!-- Menú -->
-                        <div class="submenu-epp submenu-epp-nuevo" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
+                        <div class="submenu-epp-nuevo" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
                             <button 
                                 type="button"
-                                class="btn-editar-epp btn-editar-epp-nuevo"
+                                class="btn-editar-epp-nuevo"
                                 data-item-id="${epp.epp_id}"
                                 style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
                                 onmouseover="this.style.background = '#f9fafb';"
@@ -193,7 +193,7 @@ class ItemRenderer {
                             </button>
                             <button 
                                 type="button"
-                                class="btn-eliminar-epp btn-eliminar-epp-nuevo"
+                                class="btn-eliminar-epp-nuevo"
                                 data-item-id="${epp.epp_id}"
                                 style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
                                 onmouseover="this.style.background = '#fef2f2';"

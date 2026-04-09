@@ -776,78 +776,113 @@
 
     #novedadesEditModal .bg-white,
     #modalConfirmarEliminar .bg-white {
-        width: min(760px, 100%);
-        max-height: 85vh;
-        overflow: hidden;
-        border-radius: 14px;
-        background: #fff;
-        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.35);
-        display: flex;
-        flex-direction: column;
+        width: min(580px, 100%) !important;
+        max-height: 60vh !important;
+        height: auto !important;
+        overflow: hidden !important;
+        border-radius: 14px !important;
+        background: #fff !important;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.35) !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     #novedadesEditModal .bg-slate-900 {
         background: #111827;
         color: #fff;
-        padding: 1rem 1.2rem;
+        padding: 0.85rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-shrink: 0;
     }
 
     #novedadesEditModal .px-6.py-6 {
-        padding: 1rem 1.2rem;
-        overflow-y: auto;
+        padding: 0.85rem 1rem !important;
+        overflow-y: auto !important;
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     #novedadesEditModal #novedadesHistorial {
-        max-height: 260px;
-        overflow-y: auto;
-        padding-right: 0.2rem;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding-right: 0.5rem !important;
+        margin-bottom: 0.75rem !important;
+        max-height: none !important;
+        height: 100% !important;
+    }
+    
+    #novedadesEditModal #novedadesHistorial::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #novedadesEditModal #novedadesHistorial::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    #novedadesEditModal #novedadesHistorial::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    #novedadesEditModal #novedadesHistorial::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 
     #novedadesEditModal #novedadesNuevaContent {
-        width: 100%;
-        min-height: 110px;
-        border: 1px solid #d1d5db;
-        border-radius: 10px;
-        padding: 0.75rem;
-        font-size: 0.92rem;
-        resize: vertical;
+        width: 100% !important;
+        min-height: 75px !important;
+        max-height: 95px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 10px !important;
+        padding: 0.6rem !important;
+        font-size: 0.89rem !important;
+        resize: vertical !important;
+        flex-shrink: 0 !important;
     }
 
     #novedadesEditModal button[onclick="guardarNovedad()"],
     #novedadesEditModal button[onclick="cerrarModalNovedades()"] {
-        border: none;
-        border-radius: 10px;
-        padding: 0.7rem 0.95rem;
-        font-weight: 700;
-        cursor: pointer;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.6rem 0.9rem !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        font-size: 0.9rem !important;
     }
 
     #novedadesEditModal button[onclick="guardarNovedad()"] {
-        background: #22c55e;
-        color: #fff;
+        background: #22c55e !important;
+        color: #fff !important;
     }
 
     #novedadesEditModal button[onclick="cerrarModalNovedades()"] {
-        background: #94a3b8;
-        color: #fff;
+        background: #94a3b8 !important;
+        color: #fff !important;
+    }
+
+    /* Contenedor de acciones (textarea + botones) - siempre visible */
+    #novedadesEditModal .border-t {
+        border-top: 1px solid #e5e7eb !important;
+        flex-shrink: 0 !important;
+        padding-top: 0.75rem !important;
     }
 
     /* Compatibilidad de utilidades usadas por recibos-novedades.js */
-    #novedadesEditModal .mb-6 { margin-bottom: 1rem; }
-    #novedadesEditModal .pt-6 { padding-top: 1rem; }
-    #novedadesEditModal .mt-4 { margin-top: 0.9rem; }
-    #novedadesEditModal .block { display: block; }
-    #novedadesEditModal .text-sm { font-size: 0.88rem; }
-    #novedadesEditModal .font-bold { font-weight: 700; }
-    #novedadesEditModal .mb-3 { margin-bottom: 0.65rem; }
-    #novedadesEditModal .border-t { border-top: 1px solid #e5e7eb; }
-    #novedadesEditModal .border-slate-200 { border-color: #e2e8f0; }
-    #novedadesEditModal .rounded-lg { border-radius: 10px; }
-    #novedadesEditModal .transition { transition: all 0.2s ease; }
-    #novedadesEditModal .flex { display: flex; }
+    #novedadesEditModal .mb-6 { margin-bottom: 0.6rem !important; }
+    #novedadesEditModal .pt-6 { padding-top: 0.75rem !important; }
+    #novedadesEditModal .mt-4 { margin-top: 0.65rem !important; }
+    #novedadesEditModal .block { display: block !important; }
+    #novedadesEditModal .text-sm { font-size: 0.85rem !important; }
+    #novedadesEditModal .font-bold { font-weight: 700 !important; }
+    #novedadesEditModal .mb-3 { margin-bottom: 0.5rem !important; }
+    #novedadesEditModal .border-slate-200 { border-color: #e2e8f0 !important; }
+    #novedadesEditModal .rounded-lg { border-radius: 10px !important; }
+    #novedadesEditModal .transition { transition: all 0.2s ease !important; }
+    #novedadesEditModal .flex { display: flex !important; }
     #novedadesEditModal .gap-3 { gap: 0.6rem; }
     #novedadesEditModal .flex-1 { flex: 1; }
     #novedadesEditModal .text-white { color: #fff; }
