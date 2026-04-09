@@ -1089,9 +1089,36 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     }
                 }
                 
-                // Usar tallas del proceso si existen, sino usar las tallas generales
+                // Usar tallas del proceso si existen, sino usar las tallas generales.
+                // Protección: si tallas_detalle viene "unitario" (cantidad=1 por talla/registro)
+                // pero el objeto de tallas trae totales reales (>1), preferir el objeto para imprimir.
+                let fuenteTallasResumen = tallasProceso || reciboActual?.tallas || prendaData?.tallas || null;
+                if (Array.isArray(tallasProceso) && tallasProceso.length > 0) {
+                    const maxDetalle = tallasProceso.reduce((m, it) => Math.max(m, Number(it?.cantidad || 0)), 0);
+                    const tallasObjeto = reciboActual?.tallas || prendaData?.tallas || null;
+                    const maxObjeto = (() => {
+                        if (!tallasObjeto || typeof tallasObjeto !== 'object') return 0;
+                        let max = 0;
+                        Object.keys(tallasObjeto).forEach((gen) => {
+                            const grupo = tallasObjeto[gen];
+                            if (!grupo || typeof grupo !== 'object') return;
+                            Object.keys(grupo).forEach((talla) => {
+                                max = Math.max(max, Number(grupo[talla] || 0));
+                            });
+                        });
+                        return max;
+                    })();
+                    if (maxDetalle <= 1 && maxObjeto > 1) {
+                        fuenteTallasResumen = tallasObjeto;
+                        console.warn('[printReceiptModal] tallas_detalle parece unitario; usando tallas objeto para resumen de impresión', {
+                            maxDetalle,
+                            maxObjeto
+                        });
+                    }
+                }
+
                 const str = buildTallasResumen(
-                    tallasProceso || reciboActual?.tallas || prendaData?.tallas || null,
+                    fuenteTallasResumen,
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
                 console.log('[printReceiptModal]Resultado buildTallasResumen:', str);
