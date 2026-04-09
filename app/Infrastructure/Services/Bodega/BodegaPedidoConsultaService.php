@@ -463,6 +463,25 @@ class BodegaPedidoConsultaService
                     ->where('user_id', $userId)
                     ->first();
 
+                $fechaActualizacion = $this->historialService->obtenerUltimaActualizacionPrendas($numeroPedido) ?? $primerPedido->created_at;
+                $revisadoVigente = false;
+                $tieneCambiosNuevos = false;
+
+                if (!empty($pedidoRevisado)) {
+                    try {
+                        $tsActualizacion = $fechaActualizacion ? Carbon::parse($fechaActualizacion)->timestamp : null;
+                        $tsRevisado = $pedidoRevisado->created_at ? Carbon::parse($pedidoRevisado->created_at)->timestamp : null;
+                        $revisadoVigente = $tsActualizacion !== null && $tsRevisado !== null
+                            ? $tsRevisado >= $tsActualizacion
+                            : true;
+                        $tieneCambiosNuevos = !$revisadoVigente;
+                    } catch (\Throwable $e) {
+                        // Fallback seguro: si no se puede comparar fechas, mantener comportamiento previo.
+                        $revisadoVigente = true;
+                        $tieneCambiosNuevos = false;
+                    }
+                }
+
                 $pedidosPorPagina[] = [
                     'id' => $numeroPedido,
                     'numero_pedido' => $numeroPedido,
@@ -470,10 +489,11 @@ class BodegaPedidoConsultaService
                     'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
                     'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
                     'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
-                    'fecha_actualizacion' => $this->historialService->obtenerUltimaActualizacionPrendas($numeroPedido) ?? $primerPedido->created_at,
+                    'fecha_actualizacion' => $fechaActualizacion,
                     'cantidad_items' => $pedidosDelNumero->count(),
                     'viewed_at' => $vistoPorUsuario?->created_at,
-                    'pedido_revisado' => !empty($pedidoRevisado),
+                    'pedido_revisado' => !empty($pedidoRevisado) && $revisadoVigente,
+                    'tiene_cambios_nuevos' => $tieneCambiosNuevos,
                     'tiene_pendientes' => $tieneItemsPendientes,
                     'todos_pendientes' => $todosPendientes,
                     'todos_entregados' => $todosEntregados,

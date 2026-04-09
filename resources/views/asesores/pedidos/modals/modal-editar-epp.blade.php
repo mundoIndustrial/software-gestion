@@ -342,6 +342,19 @@ function abrirModalEditarEPP(eppData) {
         
         // Agregar listeners de drag & drop
         if (!fotoZona.__hasDragDropListener) {
+            fotoZona.addEventListener('click', (e) => {
+                // Evitar abrir selector cuando se hace click en botones internos.
+                if (e.target.closest('button')) return;
+                document.getElementById('modalEditarEPPInputFotos')?.click();
+            });
+
+            fotoZona.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('modalEditarEPPInputFotos')?.click();
+                }
+            });
+
             fotoZona.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1262,6 +1275,5 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
     }
 }
 </script>
-
 
 

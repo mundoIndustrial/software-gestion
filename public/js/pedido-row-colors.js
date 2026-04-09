@@ -83,12 +83,15 @@
         }
 
         const claseEstado = obtenerClaseEstado(estado);
+        const tieneCambios = fila.getAttribute('data-tuvo-cambios') === '1';
+        const estadoNormalizado = (estado || '').trim().toLowerCase();
+        const forzarFondoBlanco = tieneCambios && (estadoNormalizado === 'pendiente' || estadoNormalizado === 'entregado');
 
         // Limpiar clases de estados anteriores
         fila.classList.remove('estado-entregado', 'estado-pendiente', 'estado-anulado', 'estado-retrasado');
 
         // Aplicar nueva clase si existe
-        if (claseEstado) {
+        if (claseEstado && !forzarFondoBlanco) {
             fila.classList.add(claseEstado);
         }
         
@@ -98,12 +101,22 @@
             
             // Aplicar color de fondo a las celdas
             const celdas = fila.querySelectorAll('td');
-            const estadoNormalizado = estado.trim().toLowerCase();
-            
+
             // Limpiar colores anteriores de todas las celdas
             celdas.forEach(celda => {
                 celda.style.backgroundColor = '';
             });
+
+            if (forzarFondoBlanco) {
+                selectEstado.style.backgroundColor = '#ffffff';
+                selectEstado.style.color = '#0f172a';
+                celdas.forEach(celda => {
+                    if (!celda.querySelector('.estado-select, .estado-select-readonly')) {
+                        celda.style.backgroundColor = '#ffffff';
+                    }
+                });
+                return;
+            }
             
             // Aplicar nuevo color
             if (COLORES_ESTADOS[estadoNormalizado]) {

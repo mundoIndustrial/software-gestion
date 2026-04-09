@@ -66,7 +66,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidosPorPagina as $pedidoData)
-                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
+                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['tiene_cambios_nuevos'] ?? false) bg-white @elseif($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
                                     <td class="px-6 py-4 text-center">
                                         <input type="checkbox"
                                                class="w-5 h-5 rounded cursor-pointer"
@@ -839,4 +839,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-

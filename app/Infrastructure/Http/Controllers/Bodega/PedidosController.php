@@ -598,10 +598,12 @@ class PedidosController extends Controller
                 DB::raw('MIN(bodega_detalles_talla.usuario_bodega_nombre) as usuario_bodega_nombre'),
                 DB::raw('MIN(bodega_detalles_talla.created_at) as created_at'),
                 DB::raw('MIN(bodega_detalles_talla.updated_at) as updated_at'),
+                DB::raw('MAX(bodega_detalles_talla.updated_at) as ultima_actualizacion_at'),
                 DB::raw('SUM(bodega_detalles_talla.cantidad) as cantidad_total'),
                 DB::raw('SUM(bodega_detalles_talla.pendientes) as pendientes_total'),
                 DB::raw('MIN(bodega_detalles_talla.talla) as talla_ejemplo'),
-                DB::raw('MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists')
+                DB::raw('MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists'),
+                DB::raw('MAX(bdv.created_at) as ultimo_visto_at')
             ])
             ->groupBy('bodega_detalles_talla.numero_pedido')
             ->orderBy($area === 'EPP' ? DB::raw('CAST(bodega_detalles_talla.numero_pedido AS UNSIGNED)') : 'bodega_detalles_talla.numero_pedido', 'desc');
@@ -745,12 +747,20 @@ class PedidosController extends Controller
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];
                 
+                // Desmarcar automáticamente "visto" si hubo cambios después del último visto (comportamiento tipo correo no leído)
+                $tieneVistoHistorico = (bool) $detalle->visto_exists;
+                $ultimoVistoAt = $detalle->ultimo_visto_at ? strtotime((string) $detalle->ultimo_visto_at) : null;
+                $ultimaActualizacionAt = $detalle->ultima_actualizacion_at ? strtotime((string) $detalle->ultima_actualizacion_at) : null;
+                $sigueVisto = $tieneVistoHistorico && $ultimoVistoAt !== null && $ultimaActualizacionAt !== null
+                    ? $ultimoVistoAt >= $ultimaActualizacionAt
+                    : $tieneVistoHistorico;
+
                 // Agregar 'visto_exists' para ambas áreas (EPP y Costura) - traído desde la query principal, sin N+1
-                $datos['visto_exists'] = (bool) $detalle->visto_exists;
+                $datos['visto_exists'] = $sigueVisto;
                 
                 // Agregar 'visto' solo si es EPP para compatibilidad
                 if ($area === 'EPP') {
-                    $datos['visto'] = (bool) $detalle->visto_exists;
+                    $datos['visto'] = $sigueVisto;
                 }
                 
                 return $datos;

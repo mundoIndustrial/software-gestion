@@ -124,6 +124,14 @@
                                 // Verificar estado del PedidoProduccion
                                 $estadoPedidoProduccion = $items[0]['estado_pedido_produccion'] ?? null;
                                 $esAnulada = strtoupper(trim($estadoPedidoProduccion)) === 'ANULADA';
+                                $pedidoTieneCambios = collect($items)->some(function ($item) {
+                                    $tuvoCambiosRecientes = (bool) ($item['tuvo_cambios_recientes'] ?? false);
+                                    $tieneHistorial = (bool) ($item['tiene_historial'] ?? false);
+                                    $historialHomologaciones = $item['historial_homologaciones'] ?? [];
+                                    $tieneCadenaCambios = is_array($historialHomologaciones) && count($historialHomologaciones) > 1;
+
+                                    return $tuvoCambiosRecientes || $tieneHistorial || $tieneCadenaCambios;
+                                });
                             @endphp
                             <tr class="pedido-row pedido-header"
                                 data-numero-pedido="{{ $numeroPedido }}"
@@ -157,7 +165,7 @@
                                             @php
                                                 $allDelivered = collect($items)->every(fn($item) => ($item['estado_bodega'] ?? null) === 'Entregado');
                                                 $anyDelayed = collect($items)->some(fn($item) => ($item['estado_bodega'] ?? null) === 'retrasado');
-                                                $tuvoCambios = collect($items)->some(fn($item) => $item['tuvo_cambios_recientes'] ?? false);
+                                                $tuvoCambios = $pedidoTieneCambios;
                                                 $firstItemId = $items[0]['id'] ?? null;
                                             @endphp
                                             
@@ -210,6 +218,7 @@
                                     data-asesor="{{ strtolower($item['asesor']) }}"
                                     data-empresa="{{ strtolower($item['empresa']) }}"
                                     data-estado="{{ $item['estado_bodega'] }}"
+                                    data-tuvo-cambios="{{ $pedidoTieneCambios ? '1' : '0' }}"
                                     data-tipo="{{ $item['tipo'] ?? 'prenda' }}"
                                     data-search="{{ strtolower($numeroPedido . ' ' . $item['asesor'] . ' ' . $item['empresa']) }}"
                                     @if($esAnulada)
