@@ -42,14 +42,14 @@ class DespachoNotificacionesApplicationService
 
         $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
         $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
-            ->where('created_at', '>=', now()->subDays(7))
+            ->where('created_at', '>=', now()->subMonths(3))
             ->orderBy('created_at', 'desc')
-            ->limit(50)
+            ->limit(200)
             ->get();
 
         \Log::info('[Despacho Notificaciones] Query novedades', [
             'tipos' => $novedadesTipos,
-            'desde' => now()->subDays(7)->toDateTimeString(),
+            'desde' => now()->subMonths(3)->toDateTimeString(),
             'total_encontradas' => $novedadesQuery->count(),
             'total_news_table' => News::count(),
         ]);
@@ -57,11 +57,11 @@ class DespachoNotificacionesApplicationService
         $ordenesAnuladas = PedidoProduccion::where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)
-            ->where('updated_at', '>=', now()->subDays(7))
+            ->where('updated_at', '>=', now()->subMonths(3))
             ->with(['asesora:id,name'])
             ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'updated_at'])
             ->orderBy('updated_at', 'desc')
-            ->limit(20)
+            ->limit(50)
             ->get();
 
         $novedades = $novedadesQuery->map(function ($news) use ($newsVistosIds) {
@@ -131,7 +131,7 @@ class DespachoNotificacionesApplicationService
     {
         $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
         $newsIds = News::whereIn('event_type', $novedadesTipos)
-            ->where('created_at', '>=', now()->subDays(7))
+            ->where('created_at', '>=', now()->subMonths(3))
             ->pluck('id');
         foreach ($newsIds as $newsId) {
             NewsVisto::firstOrCreate(['news_id' => $newsId, 'user_id' => $user->id]);
@@ -149,7 +149,7 @@ class DespachoNotificacionesApplicationService
         $anuladasIds = PedidoProduccion::where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)
-            ->where('updated_at', '>=', now()->subDays(7))
+            ->where('updated_at', '>=', now()->subMonths(3))
             ->pluck('id');
         foreach ($anuladasIds as $anuladaId) {
             PedidoVistoSupervisor::firstOrCreate(['pedido_id' => $anuladaId, 'user_id' => $user->id]);

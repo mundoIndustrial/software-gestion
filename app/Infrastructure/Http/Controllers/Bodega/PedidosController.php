@@ -1716,6 +1716,12 @@ class PedidosController extends Controller
     {
         $user = Auth::user();
         
+        $allNews = \DB::table('news')->get();
+        $typesInNews = \DB::table('news')->distinct()->pluck('event_type');
+        $recentNews = \DB::table('news')
+            ->where('created_at', '>=', now()->subMonths(3))
+            ->get();
+        
         return response()->json([
             'authenticated' => !!$user,
             'user_id' => $user?->id,
@@ -1723,7 +1729,13 @@ class PedidosController extends Controller
             'user_name' => $user?->name,
             'time' => now()->toIso8601String(),
             'session_id' => session()->getId(),
-            'message' => $user ? 'Usuario autenticado correctamente' : 'NO AUTENTICADO - Auth::user() es null'
+            'message' => $user ? 'Usuario autenticado correctamente' : 'NO AUTENTICADO - Auth::user() es null',
+            'news_debug' => [
+                'total_news_records' => $allNews->count(),
+                'event_types_in_db' => $typesInNews->toArray(),
+                'recent_news_3months' => $recentNews->count(),
+                'sample_news' => $recentNews->take(5)->toArray(),
+            ]
         ]);
     }
 
