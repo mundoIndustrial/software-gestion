@@ -428,7 +428,7 @@
 <script defer src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
-<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 
 {{-- Incluir modales de insumos --}}
 @include('insumos.materiales.partials.modales-insumos')

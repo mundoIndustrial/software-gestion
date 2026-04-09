@@ -914,7 +914,7 @@
 <script src="{{ asset('js/asesores/observaciones-despacho.js') }}?v={{ $v }}"></script>
 
 <!--  TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
-<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>

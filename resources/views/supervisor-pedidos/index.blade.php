@@ -164,7 +164,7 @@
     <!-- Scripts específicos de supervisor -->
 
     <!-- Scripts para Recibos/Procesos -->
-    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 
     <!-- Scripts para Modal de Seguimiento de Pedidos -->
     <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}"></script>

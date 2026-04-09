@@ -436,7 +436,7 @@
 <script defer src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script defer src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <script defer src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
-<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ config('app.asset_version', time()) }}"></script>
