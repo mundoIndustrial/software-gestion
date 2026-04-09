@@ -14,6 +14,46 @@
         return '/storage/' + url;
     }
 
+    function obtenerFirmaImagen(img) {
+        if (!img) return 'null';
+
+        if (img instanceof File) {
+            return `file:${img.name}:${img.size}:${img.lastModified}:${img.type}`;
+        }
+
+        if (typeof img === 'string') {
+            return `str:${img}`;
+        }
+
+        if (typeof img === 'object') {
+            if (img.file instanceof File) {
+                const f = img.file;
+                return `fileobj:${f.name}:${f.size}:${f.lastModified}:${f.type}`;
+            }
+
+            const ruta = img.ruta_webp || img.ruta_original || img.ruta || img.url || img.previewUrl || img.src || img.id || img.uid;
+            if (ruta) return `obj:${String(ruta)}`;
+        }
+
+        return `other:${String(img)}`;
+    }
+
+    function deduplicarImagenes(lista) {
+        if (!Array.isArray(lista)) return [];
+        const seen = new Set();
+        const salida = [];
+
+        lista.forEach((img) => {
+            const firma = obtenerFirmaImagen(img);
+            if (!seen.has(firma)) {
+                seen.add(firma);
+                salida.push(img);
+            }
+        });
+
+        return salida;
+    }
+
 function generarTarjetaProceso(tipo, datos) {
     const icono = (globalThis.iconosProcesos || {})[tipo] || '<span class="material-symbols-rounded">settings</span>';
     const nombre = (globalThis.nombresProcesos || {})[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
@@ -383,6 +423,7 @@ function generarTarjetaProceso(tipo, datos) {
                 if (imgsTalla.length === 0 && detalle.imagen) {
                     imgsTalla.push(detalle.imagen);
                 }
+                imgsTalla = deduplicarImagenes(imgsTalla);
                 let imgHTML = '';
                 if (imgsTalla.length > 0) {
                     imgHTML = `<div style="display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.2rem;">` +
@@ -474,6 +515,7 @@ function generarTarjetaProceso(tipo, datos) {
     } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
         fotosDisplay = [...fotosDisplay, ...datos.imagenesFiles];
     }
+    fotosDisplay = deduplicarImagenes(fotosDisplay);
     
     
     
@@ -583,4 +625,3 @@ function generarTarjetaProceso(tipo, datos) {
         generarTarjetaProceso
     });
 })();
-

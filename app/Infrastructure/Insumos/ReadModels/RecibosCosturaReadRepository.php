@@ -30,10 +30,8 @@ class RecibosCosturaReadRepository
             ->where(function ($q) {
                 // Mostrar recibos que estén en PENDIENTE_INSUMOS (estado del RECIBO, no del pedido)
                 $q->where('consecutivos_recibos_pedidos.estado', 'PENDIENTE_INSUMOS')
-                    // O también mostrar si el área del pedido contiene ciertos términos
-                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Corte%')
-                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion%orden%')
-                    ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion de orden%');
+                    // O también mostrar si el área del RECIBO está en CORTE o COSTURA
+                    ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
             })
             // Exclusión general: No mostrar si el pedido está en PENDIENTE_SUPERVISOR
             ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');

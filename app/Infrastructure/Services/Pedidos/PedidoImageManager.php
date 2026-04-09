@@ -75,6 +75,12 @@ class PedidoImageManager
                     (int) $prendaIndex
                 );
             }
+
+            // Mantener paridad con flujo de creación:
+            // en borrador también debemos procesar imágenes por talla (modo especifico)
+            // y colores por talla para no perder archivos en estos subflujos.
+            $this->pedidoImagenesService->procesarImagenesPorTalla($request, $pedidoId, $prendas);
+            $this->pedidoImagenesService->procesarImagenesDeColores($request, $pedidoId, $prendas);
         }
 
         if (!empty($nuevasPrendasIds) && !empty($nuevasPrendas)) {
