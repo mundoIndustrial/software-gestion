@@ -111,7 +111,8 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         $this->prendaProcesosUpdaterService->actualizarProcesos(
             $prenda,
             $dto->procesos,
-            $dto->fotosProcesoNuevo ?? []
+            $dto->fotosProcesoNuevo ?? [],
+            $dto->fotosProcesoTallasNuevo ?? []
         );
         // 8. Guardar novedad en pedido_produccion
         // 9. Mantener campo explícito de tipo de flujo de tallas sincronizado

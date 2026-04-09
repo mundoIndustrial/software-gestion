@@ -236,4 +236,74 @@ final class AsesoresPedidosQueryController extends Controller
             return $this->failure('Error al listar pedidos', 500);
         }
     }
+
+    public function buscarPedidosAsesor(Request $request): JsonResponse
+    {
+        try {
+            $searchTerm = $request->query('search', '');
+            if (strlen($searchTerm) < 1) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Término de búsqueda muy corto',
+                ], 400);
+            }
+
+            $user = Auth::user();
+            $perPage = 15;
+            $maxPages = 100;
+            $resultados = [];
+
+            for ($page = 1; $page <= $maxPages; $page++) {
+                $filtros = [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'search' => $searchTerm,
+                ];
+
+                $dto = ListarProduccionPedidosDTO::fromRequest(
+                    $request->query('tipo', null),
+                    $filtros,
+                    $user?->id,
+                    (bool) ($user?->hasRole('asesor'))
+                );
+
+                $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
+                $items = $pedidos->items();
+
+                if (empty($items)) {
+                    break;
+                }
+
+                foreach ($items as $pedido) {
+                    $resultados[] = [
+                        'id' => data_get($pedido, 'id'),
+                        'numero_pedido' => data_get($pedido, 'numero_pedido'),
+                        'cliente' => data_get($pedido, 'cliente'),
+                        'estado' => data_get($pedido, 'estado'),
+                        'forma_pago' => data_get($pedido, 'forma_pago'),
+                        'page' => $page,
+                    ];
+                }
+
+                if ($page >= $pedidos->lastPage()) {
+                    break;
+                }
+            }
+
+            if (empty($resultados)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'No se encontraron resultados',
+                ], 404);
+            }
+
+            return $this->json([
+                'success' => true,
+                'data' => $resultados,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en buscarPedidosAsesor', ['error' => $e->getMessage()]);
+            return $this->failure('Error al buscar pedidos', 500);
+        }
+    }
 }

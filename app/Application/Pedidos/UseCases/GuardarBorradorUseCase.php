@@ -75,16 +75,23 @@ class GuardarBorradorUseCase
                 );
 
                 $pedidoId = $pedido->id;
-                $nuevasPrendasIds = $this->crearNuevasPrendas($pedido, $input->datosFrontend['nuevas_prendas'] ?? []);
+                $prendasRequest = $input->datosFrontend['prendas'] ?? [];
+                $nuevasPrendasRequest = $input->datosFrontend['nuevas_prendas'] ?? [];
+
+                $nuevasPrendasIds = $this->crearNuevasPrendas($pedido, $nuevasPrendasRequest);
+                $prendasParaImagenes = array_values(array_merge(
+                    is_array($prendasRequest) ? $prendasRequest : [],
+                    is_array($nuevasPrendasRequest) ? $nuevasPrendasRequest : []
+                ));
 
                 $this->pedidoImageManager->procesarGuardadoBorrador(
                     $pedidoId,
                     $dtoPedido,
                     $input->request,
                     $input->datosFrontend['epps'] ?? [],
-                    $input->datosFrontend['prendas'] ?? [],
+                    $prendasParaImagenes,
                     $nuevasPrendasIds,
-                    $input->datosFrontend['nuevas_prendas'] ?? []
+                    $nuevasPrendasRequest
                 );
 
                 $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);
@@ -173,4 +180,3 @@ class GuardarBorradorUseCase
         return $nuevasPrendasIds;
     }
 }
-

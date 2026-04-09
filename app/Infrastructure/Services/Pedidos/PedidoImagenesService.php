@@ -87,8 +87,9 @@ class PedidoImagenesService
             $procesoNumerico = 0;
 
             foreach ($procesos as $procesoKey => $proceso) {
-                $modeTallas = $proceso['modo_tallas'] ?? 'generico';
-                $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
+                $datosProceso = is_array($proceso['datos'] ?? null) ? $proceso['datos'] : $proceso;
+                $modeTallas = $datosProceso['modo_tallas'] ?? $proceso['modo_tallas'] ?? 'generico';
+                $datosExtendidos = $datosProceso['datosExtendidos'] ?? $datosProceso['datos_extendidos'] ?? $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
 
                 if ($modeTallas === 'especifico' && !empty($datosExtendidos)) {
                     $contadorTotal += $this->procesoImagenService->procesarImagenesPorTalla(
@@ -122,4 +123,3 @@ class PedidoImagenesService
         $this->prendasService->procesarImagenesDeProcesos($request, $pedidoId, $procesos, $prendaIndex);
     }
 }
-

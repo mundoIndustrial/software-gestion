@@ -220,6 +220,33 @@
                     );
                     procesoImgIdx++;
                 });
+
+                // Modo especifico: adjuntar archivos por talla/color en la ruta esperada por backend.
+                // Se envian tambien bajo "prendas[...]" para compatibilidad con ProcesoImagenService.
+                const datosExtendidos = datosProceso?.datosExtendidos || datosProceso?.datos_extendidos || null;
+                if (datosExtendidos && typeof datosExtendidos === 'object') {
+                    Object.entries(datosExtendidos).forEach(([generoKey, tallasData]) => {
+                        if (!tallasData || typeof tallasData !== 'object') return;
+
+                        Object.entries(tallasData).forEach(([tallaKey, tallaDetalle]) => {
+                            const imagenesTalla = Array.isArray(tallaDetalle?.imagenesFiles) ? tallaDetalle.imagenesFiles : [];
+                            if (imagenesTalla.length === 0) return;
+
+                            let imgTallaIdx = 0;
+                            imagenesTalla.forEach((imgTalla) => {
+                                const file = extraerArchivoImagen(imgTalla);
+                                if (!(file instanceof File)) return;
+
+                                // Para que Laravel detecte en request->hasFile('prendas.i.procesos.x.datosExtendidos.g.t.imagenes.j')
+                                formData.append(
+                                    `prendas[${prendaFormDataIdx}][procesos][${procesoKeyFormData}][datosExtendidos][${generoKey}][${tallaKey}][imagenes][${imgTallaIdx}]`,
+                                    file
+                                );
+                                imgTallaIdx++;
+                            });
+                        });
+                    });
+                }
             });
         };
 

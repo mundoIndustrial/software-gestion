@@ -120,6 +120,7 @@ class BodegaPedidoDetalleService
             }
 
             $tallaColorId = $colorDetalle['talla_color_id'] ?? ($colorDetalle['tallaColorId'] ?? null);
+            $colorNombre = $colorDetalle['color'] ?? null;
             $items[] = $this->crearItemPrenda(
                 $variante,
                 $prendaEnriquecida,
@@ -128,7 +129,8 @@ class BodegaPedidoDetalleService
                 $areasPermitidas,
                 $pedidoProduccion,
                 $tallaColorId,
-                $cantidadColor
+                $cantidadColor,
+                $colorNombre
             );
         }
 
@@ -279,7 +281,7 @@ class BodegaPedidoDetalleService
         ];
     }
 
-    private function crearItemPrenda(array $variante, array $prendaEnriquecida, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion, ?int $tallaColorId = null, ?int $cantidadOverride = null): array
+    private function crearItemPrenda(array $variante, array $prendaEnriquecida, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion, ?int $tallaColorId = null, ?int $cantidadOverride = null, ?string $colorNombre = null): array
     {
         $talla = $variante['talla'] ?? '';
         $prendaNombre = $prendaEnriquecida['nombre'] ?? null;
@@ -304,6 +306,7 @@ class BodegaPedidoDetalleService
             'recibo_prenda_id' => $recibo->id,
             'prenda_id' => $prendaEnriquecida['id'] ?? null,
             'talla_color_id' => $tallaColorId,
+            'color_nombre' => $colorNombre,
             'genero' => $genero,
             'asesor' => $asesor,
             'empresa' => $empresa,

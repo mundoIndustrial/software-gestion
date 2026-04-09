@@ -93,6 +93,11 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
             $totalCantidad = $items->sum(function($item) {
                 return is_numeric($item->cantidad) ? (int)$item->cantidad : 0;
             });
+
+            $pendientesPrendas = $items->filter(fn($item) => strtolower($item->area ?? '') === 'costura')
+                ->groupBy(fn($item) => $item->prenda_id)->count();
+            $pendientesEpp = $items->filter(fn($item) => strtolower($item->area ?? '') === 'epp')
+                ->groupBy(fn($item) => $item->pedido_epp_id)->count();
             
             $areas = $items->pluck('area')->unique()->filter()->values()->toArray();
             $tipoDisplay = implode(' + ', $areas);
@@ -108,6 +113,8 @@ class BodegaDetalleTallaRepository implements BodegaDetalleTallaRepositoryInterf
                 'tipo' => $tipoDisplay,
                 'total_items' => $totalItems,
                 'total_pendientes' => $itemsUnicos,
+                'pendientes_prendas' => $pendientesPrendas,
+                'pendientes_epp' => $pendientesEpp,
                 'total_cantidad' => $totalCantidad,
                 'areas' => $areas,
                 'detalles' => $items->map(function($item) {

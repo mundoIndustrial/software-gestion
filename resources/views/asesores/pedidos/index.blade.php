@@ -840,8 +840,11 @@
         
         if (!searchInput) return;
 
-        // Función para buscar en las filas
-        function searchOrders() {
+        let searchTimeout;
+        let isSearching = false;
+
+        // Función para buscar en las filas de la página actual
+        function searchOrdersLocal() {
             const searchTerm = searchInput.value.toLowerCase().trim();
             const rows = document.querySelectorAll('[data-pedido-row]');
             let visibleCount = 0;
@@ -862,39 +865,169 @@
                 }
             });
 
-            // Mostrar/ocultar el botón de limpiar
-            if (searchTerm) {
-                clearButton.style.display = 'block';
-            } else {
-                clearButton.style.display = 'none';
+            return visibleCount;
+        }
+
+        // Función para buscar globalmente y mostrar resultados en la tabla
+        async function searchOrdersGlobal() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (!searchTerm || searchTerm.length < 1) {
+                return false;
             }
 
-            // Mensaje si no hay resultados
+            try {
+                isSearching = true;
+                const response = await fetch(`/api/asesores/buscar-pedidos?search=${encodeURIComponent(searchTerm)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!data.success || !data.data || data.data.length === 0) {
+                    isSearching = false;
+                    return false;
+                }
+
+                // Reemplazar el contenido de la tabla con los resultados globales
+                const tableBody = document.querySelector('.table-scroll-container');
+                const headerDiv = tableBody.querySelector('[style*="background: linear-gradient"]');
+                
+                // Limpiar todas las filas existentes
+                const rows = tableBody.querySelectorAll('[data-pedido-row]');
+                rows.forEach(row => row.remove());
+
+                // Crear nuevas filas con los resultados de búsqueda
+                data.data.forEach(pedido => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.setAttribute('data-pedido-row', '');
+                    rowDiv.setAttribute('data-pedido-id', pedido.id || pedido.pedido_id || '');
+                    rowDiv.setAttribute('data-numero-pedido', `#${pedido.numero_pedido}`);
+                    rowDiv.setAttribute('data-cliente', pedido.cliente || '');
+                    rowDiv.setAttribute('data-estado', pedido.estado || '');
+                    rowDiv.setAttribute('data-forma-pago', pedido.forma_pago || '');
+                    rowDiv.style.cssText = 'display: grid; grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px; gap: 1.8rem; padding: 0.75rem 1.25rem; align-items: center; transition: 0.3s; min-width: min-content; background: white; border-radius: 6px; margin-bottom: 0.75rem; box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px;';
+                    rowDiv.onmouseover = function() {
+                        this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                        this.style.transform = 'translateY(-2px)';
+                    };
+                    rowDiv.onmouseout = function() {
+                        this.style.boxShadow = 'rgba(0, 0, 0, 0.05) 0px 2px 4px';
+                        this.style.transform = 'translateY(0)';
+                    };
+
+                    // Construir el HTML de la fila
+                    let estadoColor = '#10b981'; // Verde por defecto
+                    let estadoTexto = pedido.estado || 'Desconocido';
+                    
+                    if (estadoTexto.toLowerCase().includes('ejecución')) {
+                        estadoColor = '#3b82f6'; // Azul
+                    } else if (estadoTexto.toLowerCase().includes('pendiente')) {
+                        estadoColor = '#f59e0b'; // Amarillo
+                    }
+
+                    // Construir HTML completo de la fila
+                    rowDiv.innerHTML = `
+                        <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-${pedido.id || pedido.pedido_id}" data-pedido="${pedido.id || pedido.pedido_id}" title="Ver Opciones" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editarPedido(${pedido.id || pedido.pedido_id})" title="Editar Pedido" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div class="table-cell">
+                            <span class="estado-badge" style="background: ${estadoColor}; color: white; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; white-space: nowrap;">
+                                ${estadoTexto}
+                            </span>
+                        </div>
+                        <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            #${pedido.numero_pedido}
+                        </div>
+                        <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${pedido.cliente || '-'}
+                        </div>
+                        <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            <span style="color: #d1d5db;">-</span>
+                        </div>
+                        <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${pedido.forma_pago || '-'}
+                        </div>
+                        <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                            ${pedido.fecha_creacion ? new Date(pedido.fecha_creacion).toLocaleDateString('es-ES') : '-'}
+                        </div>
+                        <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                            -
+                        </div>
+                    `;
+
+                    tableBody.appendChild(rowDiv);
+                });
+
+                isSearching = false;
+                return true;
+            } catch (error) {
+                console.error('Error en búsqueda global:', error);
+                isSearching = false;
+                return false;
+            }
+        }
+
+        // Función principal de búsqueda
+        async function searchOrders() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
             const tableContainer = document.querySelector('.table-scroll-container');
             let noResultsMsg = document.getElementById('noSearchResults');
-            
-            if (visibleCount === 0 && searchTerm) {
-                if (!noResultsMsg) {
-                    noResultsMsg = document.createElement('div');
-                    noResultsMsg.id = 'noSearchResults';
-                    noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: #6b7280; font-size: 0.95rem;';
-                    noResultsMsg.innerHTML = `
-                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                        <p style="margin: 0; font-weight: 600;">No se encontraron resultados</p>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">Intenta con otro término de búsqueda</p>
-                    `;
-                    tableContainer.appendChild(noResultsMsg);
+
+            // Limpiar mensajes anteriores
+            if (!searchTerm) {
+                if (noResultsMsg) noResultsMsg.remove();
+                clearButton.style.display = 'none';
+                
+                // Recargar la página para mostrar todos los pedidos originales
+                location.reload();
+                return;
+            }
+
+            clearButton.style.display = 'block';
+
+            // Buscar localmente primero
+            const visibleCount = searchOrdersLocal();
+
+            if (visibleCount > 0) {
+                // Hay resultados en la página actual
+                if (noResultsMsg) noResultsMsg.remove();
+            } else {
+                // No hay resultados locales, buscar globalmente
+                const foundGlobal = await searchOrdersGlobal();
+
+                if (foundGlobal) {
+                    if (noResultsMsg) noResultsMsg.remove();
+                } else {
+                    // Sin resultados en ningún lado
+                    if (!noResultsMsg) {
+                        noResultsMsg = document.createElement('div');
+                        noResultsMsg.id = 'noSearchResults';
+                        noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: #6b7280; font-size: 0.95rem;';
+                        noResultsMsg.innerHTML = `
+                            <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                            <p style="margin: 0; font-weight: 600;">No se encontraron resultados</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">Intenta con otro término de búsqueda</p>
+                        `;
+                        tableContainer.appendChild(noResultsMsg);
+                    }
                 }
-            } else if (noResultsMsg) {
-                noResultsMsg.remove();
             }
         }
 
         // Buscar mientras se escribe (con delay)
-        let searchTimeout;
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(searchOrders, 300);
+            searchTimeout = setTimeout(searchOrders, 400);
         });
 
         // Limpiar búsqueda
@@ -904,6 +1037,7 @@
             searchInput.focus();
         });
     });
+
 </script>
 <!--  CORE PEDIDOS (necesario para lista) -->
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>

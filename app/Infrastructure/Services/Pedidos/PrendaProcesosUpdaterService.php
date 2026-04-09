@@ -4,13 +4,19 @@ namespace App\Infrastructure\Services\Pedidos;
 
 use App\Models\PrendaPedido;
 use App\Models\TipoProceso;
+use Illuminate\Support\Facades\Log;
 
 final class PrendaProcesosUpdaterService
 {
     /**
      * @param array<int, mixed>|null $procesos
      */
-    public function actualizarProcesos(PrendaPedido $prenda, ?array $procesos, array $fotosProcesoNuevo = []): void
+    public function actualizarProcesos(
+        PrendaPedido $prenda,
+        ?array $procesos,
+        array $fotosProcesoNuevo = [],
+        array $fotosProcesoTallasNuevo = []
+    ): void
     {
         if (is_null($procesos) || empty($procesos)) {
             return;
@@ -81,6 +87,7 @@ final class PrendaProcesosUpdaterService
                 }
 
                 $this->guardarImagenesNuevasDelProceso($procesoExistente, $fotosProcesoNuevo[$procesoIdx] ?? []);
+                $this->guardarImagenesNuevasPorTallaDelProceso($procesoExistente, $fotosProcesoTallasNuevo, (int) $procesoIdx);
 
                 continue;
             }
@@ -107,6 +114,7 @@ final class PrendaProcesosUpdaterService
             }
 
             $this->guardarImagenesNuevasDelProceso($nuevoProceso, $fotosProcesoNuevo[$procesoIdx] ?? []);
+            $this->guardarImagenesNuevasPorTallaDelProceso($nuevoProceso, $fotosProcesoTallasNuevo, (int) $procesoIdx);
         }
     }
 
@@ -133,6 +141,81 @@ final class PrendaProcesosUpdaterService
                 'ruta_webp' => $rutaWebp ?? $rutaOriginal,
                 'orden' => $ordenInicial + $idx + 1,
             ]);
+        }
+    }
+
+    private function guardarImagenesNuevasPorTallaDelProceso($proceso, array $fotosProcesoTallasNuevo, int $procesoIdx): void
+    {
+        if (empty($fotosProcesoTallasNuevo)) {
+            return;
+        }
+
+        foreach ($fotosProcesoTallasNuevo as $key => $imagenes) {
+            if (!is_array($imagenes) || empty($imagenes)) {
+                continue;
+            }
+
+            foreach ($imagenes as $imgData) {
+                if (!is_array($imgData)) {
+                    continue;
+                }
+
+                $imgProcesoIdx = (int) ($imgData['proceso_idx'] ?? -1);
+                if ($imgProcesoIdx !== $procesoIdx) {
+                    continue;
+                }
+
+                $genero = strtoupper((string) ($imgData['genero'] ?? ''));
+                $tallaRaw = strtoupper((string) ($imgData['talla'] ?? ''));
+                $talla = explode('__', $tallaRaw, 2)[0] ?? $tallaRaw;
+                if ($genero === '' || $talla === '') {
+                    continue;
+                }
+
+                $tallaProceso = $proceso->tallas()
+                    ->where('genero', $genero)
+                    ->where('talla', $talla)
+                    ->orderBy('id')
+                    ->first();
+
+                if (!$tallaProceso) {
+                    Log::warning('[PrendaProcesosUpdaterService] No se encontro talla de proceso para imagen por talla', [
+                        'proceso_detalle_id' => $proceso->id,
+                        'proceso_idx' => $procesoIdx,
+                        'key' => $key,
+                        'genero' => $genero,
+                        'talla' => $talla,
+                    ]);
+                    continue;
+                }
+
+                $rutaOriginal = $imgData['ruta_original'] ?? null;
+                $rutaWebp = $imgData['ruta_webp'] ?? $rutaOriginal;
+                if (!$rutaOriginal && !$rutaWebp) {
+                    continue;
+                }
+
+                $maxOrden = (int) $tallaProceso->imagenes()->max('orden');
+                $orden = $maxOrden + 1;
+                $imagenesExistentes = (int) $tallaProceso->imagenes()->count();
+
+                $proceso->imagenes()->create([
+                    'proceso_prenda_talla_id' => $tallaProceso->id,
+                    'ruta_original' => $rutaOriginal ?? $rutaWebp,
+                    'ruta_webp' => $rutaWebp ?? $rutaOriginal,
+                    'orden' => $orden,
+                    'es_principal' => $imagenesExistentes === 0 ? 1 : 0,
+                ]);
+
+                Log::info('[PrendaProcesosUpdaterService] Imagen por talla guardada en proceso', [
+                    'proceso_detalle_id' => $proceso->id,
+                    'proceso_idx' => $procesoIdx,
+                    'proceso_talla_id' => $tallaProceso->id,
+                    'genero' => $genero,
+                    'talla' => $talla,
+                    'orden' => $orden,
+                ]);
+            }
         }
     }
 

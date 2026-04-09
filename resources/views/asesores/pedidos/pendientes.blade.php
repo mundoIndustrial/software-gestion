@@ -378,6 +378,19 @@
             container.innerHTML = html;
         }
 
+        function formatPendientes(pedido) {
+            const tieneCostura = pedido.areas.includes('Costura');
+            const tieneEpp = pedido.areas.includes('EPP');
+            if (tieneCostura && tieneEpp) {
+                const partes = [];
+                if (pedido.pendientes_prendas > 0) partes.push(`${pedido.pendientes_prendas} ${pedido.pendientes_prendas === 1 ? 'prenda' : 'prendas'}`);
+                if (pedido.pendientes_epp > 0) partes.push(`${pedido.pendientes_epp} EPP`);
+                return partes.join(', ') || pedido.total_pendientes;
+            }
+            if (tieneEpp) return `${pedido.total_pendientes} EPP`;
+            return `${pedido.total_pendientes} ${pedido.total_pendientes === 1 ? 'prenda' : 'prendas'}`;
+        }
+
         function crearPedidoFila(pedido) {
             const tipoClass = pedido.areas.length > 1 ? 'tipo-mixto' : 
                             pedido.areas.includes('Costura') ? 'tipo-costura' : 'tipo-epp';
@@ -395,7 +408,7 @@
                     </td>
                     <td>${pedido.fecha_creacion || '-'}</td>
                     <td>
-                        <span class="pendientes-badge">${pedido.total_pendientes}</span>
+                        <span class="pendientes-badge">${formatPendientes(pedido)}</span>
                     </td>
                     <td>
                         <button class="btn-ver" onclick="verDetallePedido(${pedido.id})">

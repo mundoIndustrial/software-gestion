@@ -344,12 +344,23 @@
                                     $talla = $item['talla'] ?? '';
                                     $cantidad = $item['cantidad'] ?? ($item['cantidad_total'] ?? 0);
                                     $pendientes = $item['pendientes'] ?? '';
+                                    $genero = $item['genero'] ?? null;
+                                    $descripcionTexto = $descripcion['descripcion'] ?? null;
+                                    $colorNombre = $item['color_nombre'] ?? null;
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3 text-xs text-black">
                                         <div class="font-bold text-black mb-1">
                                             {{ $nombre }}
+                                            @if($genero)
+                                                <span style="font-weight: 500; color: #6b7280; font-size: 11px;">({{ ucfirst(strtolower($genero)) }})</span>
+                                            @endif
                                         </div>
+                                        @if($descripcionTexto)
+                                            <div class="text-xs" style="color: #4b5563; margin-bottom: 4px;">
+                                                {{ $descripcionTexto }}
+                                            </div>
+                                        @endif
                                         
                                         @if($tela || ($color && strtolower($color) !== 'sin color'))
                                             <div class="text-black text-xs mb-1">
@@ -404,7 +415,12 @@
                                             {{ $area ?: '-' }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-xs text-black">{{ $area === 'EPP' ? '-' : ($talla ?: '-') }}</td>
+                                    <td class="px-4 py-3 text-xs text-black">
+                                        {{ $area === 'EPP' ? '-' : ($talla ?: '-') }}
+                                        @if($colorNombre)
+                                            <div class="text-xs" style="color: #6b7280; margin-top: 2px;">{{ $colorNombre }}</div>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-xs text-black" style="text-align: center;">
                                         <span class="cantidad-badge">{{ $cantidad }}</span>
                                     </td>
