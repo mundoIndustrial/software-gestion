@@ -83,56 +83,123 @@ class NotificacionesService
 
         // ============================================
         // NOTIFICACIONES: Pedido completo en despacho
-        // Regla: TODOS los items ORIGINALES del pedido (prendas + epp)
-        //        deben tener registro en bodega_detalles_talla en estado "Entregado"
-        //        (se ignoran Anulados y Homologar)
+        // Regla: TODAS las prendas/EPPs del pedido deben estar
+        //        COMPLETAS en estado Entregado
+        // - Una prenda está COMPLETA cuando TODAS sus tallas
+        //   tienen estado_bodega = 'Entregado' (ignorando Anulado/Homologar)
+        // - Un EPP está COMPLETO cuando está en 'Entregado'
         // ============================================
         $pedidosCompletosDespacho = DB::table('pedidos_produccion as pp')
             ->where('pp.asesor_id', $userId)
             ->whereNotIn('pp.id', $viewedPedidosCompletosDespacho)
-            // Contar prendas no-anuladas del pedido
             ->select([
                 'pp.id',
                 'pp.numero_pedido',
                 'pp.cliente',
                 DB::raw('MAX(bdt.updated_at) as updated_at'),
-                DB::raw("(
-                    SELECT COUNT(*)
-                    FROM prendas_pedido
-                    WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL
-                ) as total_prendas"),
-                DB::raw("(
-                    SELECT COUNT(*)
-                    FROM pedido_epp
-                    WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL
-                ) as total_epps"),
-                DB::raw("(
-                    SELECT COUNT(*)
-                    FROM bodega_detalles_talla
-                    WHERE pedido_produccion_id = pp.id 
-                      AND deleted_at IS NULL
-                      AND estado_bodega NOT IN ('Anulado', 'Homologar')
-                      AND estado_bodega = 'Entregado'
-                ) as items_entregados"),
+                DB::raw("
+                    -- Total de prendas NO-ANULADAS del pedido
+                    (SELECT COUNT(DISTINCT pr.id) 
+                     FROM prendas_pedido pr 
+                     WHERE pr.pedido_produccion_id = pp.id 
+                       AND pr.deleted_at IS NULL) as total_prendas
+                "),
+                DB::raw("
+                    -- Total de EPPs NO-ANULADOS del pedido
+                    (SELECT COUNT(DISTINCT pe.id) 
+                     FROM pedido_epp pe 
+                     WHERE pe.pedido_produccion_id = pp.id 
+                       AND pe.deleted_at IS NULL) as total_epps
+                "),
+                DB::raw("
+                    -- Prendas que están COMPLETAS (todas sus tallas Entregado)
+                    (SELECT COUNT(DISTINCT bdt_inner.prenda_id)
+                     FROM bodega_detalles_talla bdt_inner
+                     WHERE bdt_inner.pedido_produccion_id = pp.id
+                       AND bdt_inner.deleted_at IS NULL
+                       AND bdt_inner.prenda_id IS NOT NULL
+                       AND bdt_inner.prenda_id IN (
+                           SELECT DISTINCT pr2.id FROM prendas_pedido pr2
+                           WHERE pr2.pedido_produccion_id = pp.id AND pr2.deleted_at IS NULL
+                       )
+                       -- TODAS las tallas de esta prenda deben estar Entregado
+                       AND NOT EXISTS (
+                           SELECT 1 FROM bodega_detalles_talla bdt_check
+                           WHERE bdt_check.pedido_produccion_id = pp.id
+                             AND bdt_check.prenda_id = bdt_inner.prenda_id
+                             AND bdt_check.deleted_at IS NULL
+                             AND bdt_check.estado_bodega NOT IN ('Anulado', 'Homologar')
+                             AND bdt_check.estado_bodega <> 'Entregado'
+                       )
+                    ) as prendas_completas
+                "),
+                DB::raw("
+                    -- EPPs que están COMPLETOS
+                    (SELECT COUNT(DISTINCT bdt_epp.pedido_epp_id)
+                     FROM bodega_detalles_talla bdt_epp
+                     WHERE bdt_epp.pedido_produccion_id = pp.id
+                       AND bdt_epp.deleted_at IS NULL
+                       AND bdt_epp.pedido_epp_id IS NOT NULL
+                       AND bdt_epp.pedido_epp_id IN (
+                           SELECT DISTINCT pe2.id FROM pedido_epp pe2
+                           WHERE pe2.pedido_produccion_id = pp.id AND pe2.deleted_at IS NULL
+                       )
+                       AND bdt_epp.estado_bodega = 'Entregado'
+                    ) as epps_completos
+                "),
             ])
             ->leftJoin('bodega_detalles_talla as bdt', 'bdt.pedido_produccion_id', '=', 'pp.id')
             ->groupBy('pp.id', 'pp.numero_pedido', 'pp.cliente')
-            // Total de items del pedido = prendas + epps
+            // Debe haber al menos una prenda o un epp
             ->havingRaw("(
-                (SELECT COUNT(*) FROM prendas_pedido WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL) +
-                (SELECT COUNT(*) FROM pedido_epp WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL)
+                (SELECT COUNT(DISTINCT pr.id) 
+                 FROM prendas_pedido pr 
+                 WHERE pr.pedido_produccion_id = pp.id 
+                   AND pr.deleted_at IS NULL) +
+                (SELECT COUNT(DISTINCT pe.id) 
+                 FROM pedido_epp pe 
+                 WHERE pe.pedido_produccion_id = pp.id 
+                   AND pe.deleted_at IS NULL)
             ) > 0")
-            // Items entregados debe ser igual al total de items
-            ->havingRaw("(
-                SELECT COUNT(*) FROM bodega_detalles_talla
-                WHERE pedido_produccion_id = pp.id 
-                  AND deleted_at IS NULL
-                  AND estado_bodega NOT IN ('Anulado', 'Homologar')
-                  AND estado_bodega = 'Entregado'
-            ) = (
-                (SELECT COUNT(*) FROM prendas_pedido WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL) +
-                (SELECT COUNT(*) FROM pedido_epp WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL)
-            )")
+            // TODAS las prendas deben estar completas Y TODOS los EPPs deben estar completos
+            ->havingRaw("
+                (SELECT COUNT(DISTINCT pr.id) 
+                 FROM prendas_pedido pr 
+                 WHERE pr.pedido_produccion_id = pp.id 
+                   AND pr.deleted_at IS NULL) = 
+                (SELECT COUNT(DISTINCT bdt_inner.prenda_id)
+                 FROM bodega_detalles_talla bdt_inner
+                 WHERE bdt_inner.pedido_produccion_id = pp.id
+                   AND bdt_inner.deleted_at IS NULL
+                   AND bdt_inner.prenda_id IS NOT NULL
+                   AND bdt_inner.prenda_id IN (
+                       SELECT DISTINCT pr2.id FROM prendas_pedido pr2
+                       WHERE pr2.pedido_produccion_id = pp.id AND pr2.deleted_at IS NULL
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM bodega_detalles_talla bdt_check
+                       WHERE bdt_check.pedido_produccion_id = pp.id
+                         AND bdt_check.prenda_id = bdt_inner.prenda_id
+                         AND bdt_check.deleted_at IS NULL
+                         AND bdt_check.estado_bodega NOT IN ('Anulado', 'Homologar')
+                         AND bdt_check.estado_bodega <> 'Entregado'
+                   ))
+                AND
+                (SELECT COUNT(DISTINCT pe.id) 
+                 FROM pedido_epp pe 
+                 WHERE pe.pedido_produccion_id = pp.id 
+                   AND pe.deleted_at IS NULL) = 
+                (SELECT COUNT(DISTINCT bdt_epp.pedido_epp_id)
+                 FROM bodega_detalles_talla bdt_epp
+                 WHERE bdt_epp.pedido_produccion_id = pp.id
+                   AND bdt_epp.deleted_at IS NULL
+                   AND bdt_epp.pedido_epp_id IS NOT NULL
+                   AND bdt_epp.pedido_epp_id IN (
+                       SELECT DISTINCT pe2.id FROM pedido_epp pe2
+                       WHERE pe2.pedido_produccion_id = pp.id AND pe2.deleted_at IS NULL
+                   )
+                   AND bdt_epp.estado_bodega = 'Entregado')
+            ")
             ->orderByRaw('MAX(bdt.updated_at) DESC')
             ->get()
             ->map(function ($pedido) {
@@ -181,24 +248,58 @@ class NotificacionesService
         // Obtener IDs de pedidos completos en despacho
         $pedidosCompletosDespachoIds = DB::table('pedidos_produccion as pp')
             ->where('pp.asesor_id', $userId)
-            // Total de items del pedido = prendas + epps
-            ->havingRaw("(
-                (SELECT COUNT(*) FROM prendas_pedido WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL) +
-                (SELECT COUNT(*) FROM pedido_epp WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL)
-            ) > 0")
-            // Items entregados debe ser igual al total de items
-            ->havingRaw("(
-                SELECT COUNT(*) FROM bodega_detalles_talla
-                WHERE pedido_produccion_id = pp.id 
-                  AND deleted_at IS NULL
-                  AND estado_bodega NOT IN ('Anulado', 'Homologar')
-                  AND estado_bodega = 'Entregado'
-            ) = (
-                (SELECT COUNT(*) FROM prendas_pedido WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL) +
-                (SELECT COUNT(*) FROM pedido_epp WHERE pedido_produccion_id = pp.id AND deleted_at IS NULL)
-            )")
             ->select('pp.id')
             ->groupBy('pp.id')
+            // Debe haber al menos una prenda o un epp
+            ->havingRaw("(
+                (SELECT COUNT(DISTINCT pr.id) 
+                 FROM prendas_pedido pr 
+                 WHERE pr.pedido_produccion_id = pp.id 
+                   AND pr.deleted_at IS NULL) +
+                (SELECT COUNT(DISTINCT pe.id) 
+                 FROM pedido_epp pe 
+                 WHERE pe.pedido_produccion_id = pp.id 
+                   AND pe.deleted_at IS NULL)
+            ) > 0")
+            // TODAS las prendas deben estar completas Y TODOS los EPPs deben estar completos
+            ->havingRaw("
+                (SELECT COUNT(DISTINCT pr.id) 
+                 FROM prendas_pedido pr 
+                 WHERE pr.pedido_produccion_id = pp.id 
+                   AND pr.deleted_at IS NULL) = 
+                (SELECT COUNT(DISTINCT bdt_inner.prenda_id)
+                 FROM bodega_detalles_talla bdt_inner
+                 WHERE bdt_inner.pedido_produccion_id = pp.id
+                   AND bdt_inner.deleted_at IS NULL
+                   AND bdt_inner.prenda_id IS NOT NULL
+                   AND bdt_inner.prenda_id IN (
+                       SELECT DISTINCT pr2.id FROM prendas_pedido pr2
+                       WHERE pr2.pedido_produccion_id = pp.id AND pr2.deleted_at IS NULL
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM bodega_detalles_talla bdt_check
+                       WHERE bdt_check.pedido_produccion_id = pp.id
+                         AND bdt_check.prenda_id = bdt_inner.prenda_id
+                         AND bdt_check.deleted_at IS NULL
+                         AND bdt_check.estado_bodega NOT IN ('Anulado', 'Homologar')
+                         AND bdt_check.estado_bodega <> 'Entregado'
+                   ))
+                AND
+                (SELECT COUNT(DISTINCT pe.id) 
+                 FROM pedido_epp pe 
+                 WHERE pe.pedido_produccion_id = pp.id 
+                   AND pe.deleted_at IS NULL) = 
+                (SELECT COUNT(DISTINCT bdt_epp.pedido_epp_id)
+                 FROM bodega_detalles_talla bdt_epp
+                 WHERE bdt_epp.pedido_produccion_id = pp.id
+                   AND bdt_epp.deleted_at IS NULL
+                   AND bdt_epp.pedido_epp_id IS NOT NULL
+                   AND bdt_epp.pedido_epp_id IN (
+                       SELECT DISTINCT pe2.id FROM pedido_epp pe2
+                       WHERE pe2.pedido_produccion_id = pp.id AND pe2.deleted_at IS NULL
+                   )
+                   AND bdt_epp.estado_bodega = 'Entregado')
+            ")
             ->pluck('pp.id')
             ->toArray();
 
