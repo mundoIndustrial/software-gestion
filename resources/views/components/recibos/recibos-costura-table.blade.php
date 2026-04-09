@@ -1,5 +1,5 @@
 <!-- Tabla de Recibos de Costura -->
-<div class="table-scroll-container">
+<div class="table-scroll-container recibos-costura-scale-90">
     <table class="table table-striped table-hover modern-table">
         <thead class="table-header">
             <tr>

@@ -19,6 +19,7 @@ class AddProcessModalController {
     constructor() {
         this.currentOrderData = null;
         this.currentPrendaData = null;
+        this._boundVerifyAndSave = this.verifyAndSave.bind(this);
     }
 
     /**
@@ -259,10 +260,30 @@ class AddProcessModalController {
             this.clearForm();
             this._closeModal();
 
-            // Recargar la página después de 1.5 segundos
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            // Refrescar datos/local UI sin recargar navegador
+            if (result?.data?.prenda) {
+                window.currentPrendaData = result.data.prenda;
+                if (typeof renderPrendaTrackingTimeline === 'function') {
+                    renderPrendaTrackingTimeline(window.currentPrendaData);
+                }
+            } else if (typeof loadPrendasWithTracking === 'function' && window.currentOrderData?.id) {
+                await loadPrendasWithTracking(window.currentOrderData.id);
+                if (window.prendasData && Array.isArray(window.prendasData) && window.currentPrendaData?.id) {
+                    const prendaActualizada = window.prendasData.find((p) => String(p.id) === String(window.currentPrendaData.id));
+                    if (prendaActualizada) {
+                        window.currentPrendaData = prendaActualizada;
+                        if (typeof renderPrendaTrackingTimeline === 'function') {
+                            renderPrendaTrackingTimeline(window.currentPrendaData);
+                        }
+                    }
+                }
+            }
+
+            await this._refreshReciboRowInTable({ encargadoFallback: encargado });
+
+            if (typeof actualizarAreaEnTablaRecibos === 'function') {
+                await actualizarAreaEnTablaRecibos();
+            }
 
             return true;
         } catch (error) {
@@ -286,6 +307,129 @@ class AddProcessModalController {
         if (selectArea) selectArea.value = '';
         if (inputEncargado) inputEncargado.value = '';
         if (selectEncargado) selectEncargado.value = '';
+    }
+
+    /**
+     * PRIVADO: Refrescar fila de la tabla de recibos-costura sin recargar la página
+     * @private
+     * @param {Object} options
+     * @param {string} options.encargadoFallback
+     */
+    async _refreshReciboRowInTable({ encargadoFallback = '' } = {}) {
+        try {
+            if (!String(window.location.pathname || '').includes('/recibos-costura')) {
+                return;
+            }
+
+            const pedidoId = window.currentOrderData?.id || window.currentPedidoId || window.currentOrderData?.numero_pedido;
+            const prendaId = window.currentPrendaData?.id || window.currentPrendaId;
+            if (!pedidoId || !prendaId) {
+                return;
+            }
+
+            let reciboData = null;
+            try {
+                const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
+                const response = await fetch(url);
+                if (response.ok) {
+                    const json = await response.json();
+                    if (json && json.success) {
+                        reciboData = json;
+                        window.currentConsecutivoCosturaData = json;
+                    }
+                }
+            } catch (error) {
+                console.warn('[AddProcessModalController] No se pudo refrescar consecutivo-costura:', error);
+            }
+
+            const numeroRecibo = reciboData?.consecutivo ?? reciboData?.consecutivo_actual ?? null;
+            const row = this._findReciboRow(pedidoId, prendaId, numeroRecibo);
+            if (!row) {
+                return;
+            }
+
+            // Actualizar encargado (última columna)
+            const encargadoValue = String(reciboData?.encargado ?? encargadoFallback ?? '').trim();
+            const encargadoSpan = row.querySelector('td:last-child span');
+            if (encargadoSpan) {
+                encargadoSpan.textContent = encargadoValue || '-';
+            }
+
+            // Actualizar área si viene en respuesta
+            if (reciboData?.area) {
+                const areaBadge = row.querySelector('td:nth-child(3) .badge');
+                if (areaBadge) {
+                    areaBadge.textContent = String(reciboData.area);
+                    areaBadge.classList.remove('bg-secondary', 'bg-success', 'bg-info', 'bg-primary', 'bg-warning', 'bg-purple');
+                    areaBadge.classList.add(this._resolveAreaBadgeClass(reciboData.area));
+                }
+            }
+
+            // Sincronizar consecutivo en atributos data-* (si se obtuvo)
+            if (numeroRecibo) {
+                row.setAttribute('data-numero-recibo', String(numeroRecibo));
+                const rowButton = row.querySelector('.btn-ver-dropdown');
+                if (rowButton) {
+                    rowButton.setAttribute('data-numero-recibo', String(numeroRecibo));
+                }
+            }
+        } catch (error) {
+            console.warn('[AddProcessModalController] Error actualizando fila de tabla:', error);
+        }
+    }
+
+    /**
+     * PRIVADO: Buscar fila de tabla por pedido/prenda/(opcional) número recibo
+     * @private
+     * @param {number|string} pedidoId
+     * @param {number|string} prendaId
+     * @param {number|string|null} numeroRecibo
+     * @returns {HTMLElement|null}
+     */
+    _findReciboRow(pedidoId, prendaId, numeroRecibo = null) {
+        const rows = document.querySelectorAll('#tablaRecibosBody tr[data-pedido-id]');
+        let fallbackRow = null;
+
+        for (const row of rows) {
+            if (String(row.getAttribute('data-pedido-id') || '') !== String(pedidoId)) {
+                continue;
+            }
+
+            const rowButton = row.querySelector('.btn-ver-dropdown');
+            const rowPrendaId = rowButton ? rowButton.getAttribute('data-prenda-id') : null;
+            if (String(rowPrendaId || '') !== String(prendaId)) {
+                continue;
+            }
+
+            if (numeroRecibo !== null && numeroRecibo !== undefined && String(numeroRecibo) !== '') {
+                const rowNumero = row.getAttribute('data-numero-recibo');
+                if (String(rowNumero || '') === String(numeroRecibo)) {
+                    return row;
+                }
+            }
+
+            if (!fallbackRow) {
+                fallbackRow = row;
+            }
+        }
+
+        return fallbackRow;
+    }
+
+    /**
+     * PRIVADO: Resolver clase badge para área en tabla
+     * @private
+     * @param {string} area
+     * @returns {string}
+     */
+    _resolveAreaBadgeClass(area) {
+        const name = String(area || '');
+        if (name.includes('Corte')) return 'bg-success';
+        if (name.includes('Insumos')) return 'bg-info';
+        if (name.includes('Costura')) return 'bg-primary';
+        if (name.includes('Estampado')) return 'bg-warning';
+        if (name.includes('Bordado')) return 'bg-purple';
+        return 'bg-secondary';
     }
 
     /**
@@ -397,22 +541,35 @@ class AddProcessModalController {
         // Seleccionar automáticamente el área en el select
         const selectArea = document.getElementById('procesoArea');
         if (selectArea) {
-            selectArea.value = areaSeleccionada;
+            const normalizedArea = String(areaSeleccionada || '').trim().toLowerCase();
+            const exactOption = Array.from(selectArea.options || []).find((opt) => String(opt.value || '').trim().toLowerCase() === normalizedArea);
+            selectArea.value = exactOption ? exactOption.value : areaSeleccionada;
             console.log('[AddProcessModalController]  Área seleccionada automáticamente:', areaSeleccionada);
+
+            // Importante: disparar change para que se active el selector dinámico de encargados (cortador/costurero)
+            selectArea.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         // Limpiar el campo de encargado y enfocarlo
-        const inputEncargado = document.getElementById('procesoEncargado');
-        if (inputEncargado) {
-            inputEncargado.value = '';
-            inputEncargado.focus();
-        }
+        setTimeout(() => {
+            const inputEncargado = document.getElementById('procesoEncargado');
+            const selectEncargado = document.getElementById('procesoEncargadoSelect');
+            if (selectEncargado) {
+                selectEncargado.value = '';
+                selectEncargado.focus();
+                return;
+            }
+            if (inputEncargado) {
+                inputEncargado.value = '';
+                inputEncargado.focus();
+            }
+        }, 120);
 
         // Agregar listener para verificar datos al hacer clic en "Agregar Proceso"
         const btnConfirm = document.getElementById('btnConfirmAddProceso');
         if (btnConfirm) {
-            btnConfirm.removeEventListener('click', (e) => this.verifyAndSave(e));
-            btnConfirm.addEventListener('click', (e) => this.verifyAndSave(e));
+            btnConfirm.removeEventListener('click', this._boundVerifyAndSave);
+            btnConfirm.addEventListener('click', this._boundVerifyAndSave);
         }
 
         console.log('[AddProcessModalController]  Modal abierto con datos cargados');

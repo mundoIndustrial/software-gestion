@@ -4,11 +4,6 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="row" style="margin-bottom: 20px;">
-        <div class="col-12">
-            <h2 style="margin: 0; color: #1f2937; font-weight: 600;">Recibos de Costura</h2>
-        </div>
-    </div>
     <div class="row">
         <div class="col-12">
             <!-- Table Component -->
@@ -86,6 +81,18 @@
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
 <style>
+.recibos-costura-scale-90 {
+    zoom: 0.9;
+}
+
+@supports not (zoom: 1) {
+    .recibos-costura-scale-90 {
+        transform: scale(0.9);
+        transform-origin: top left;
+        width: 111.1111%;
+    }
+}
+
 .add-proceso-modal.show {
     display: flex !important;
     align-items: center !important;
