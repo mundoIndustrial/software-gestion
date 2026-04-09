@@ -91,7 +91,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.novedades) as novedades,
                 MAX(palp.fechas_areas) as fechas_areas,
                 ppar.consecutivo_actual as numero_recibo_consecutivo,
-                ppar.created_at as fecha_creacion_recibo,
+                MAX(crp.created_at) as fecha_creacion_recibo,
                 ppar.fecha_activacion,
                 1 as es_parcial,
                 ppar.id as pedido_parcial_id,
@@ -102,6 +102,12 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 $join->on('pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'pp.id')
                     ->whereRaw("({$tipoReciboCase}) = ppar.tipo_recibo");
             })
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('crp.prenda_id', '=', 'pp.id')
+                    ->where('crp.activo', 1)
+                    ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+            })
             ->leftJoin('prenda_areas_logo_pedido as palp', function ($join) {
                 $join->on('palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
                      ->on('palp.pedido_parcial_id', '=', 'ppar.id');
@@ -110,7 +116,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->where('ppar.estado', 'APROBADO')
             ->where('ppar.activo', 1)
             ->whereNull('ppar.deleted_at')
-            ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id', 'pp.pedido_produccion_id');
+            ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id');
 
         // Combinar queries
         $results = $queryProcesos->unionAll($queryParciales)

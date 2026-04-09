@@ -76,9 +76,9 @@ final class ListPedidosLogoUseCase
             }
 
             $fechaFinDias = $fechaEntrega ? \Carbon\Carbon::parse($fechaEntrega) : now();
-            $fechaCreacionRecibo = $proceso->fecha_creacion_recibo ?? null;
-            $fechaInicioDias = $fechaCreacionRecibo ?: $proceso->created_at;
-            $totalDias = CalculadorDiasService::calcularDiasHabiles($fechaInicioDias, $fechaFinDias) ?? 0;
+            // Always use fecha_creacion_recibo from consecutivos_recibos_pedidos
+            $fechaCreacionRecibo = $proceso->fecha_creacion_recibo ?? now();
+            $totalDias = CalculadorDiasService::calcularDiasHabiles($fechaCreacionRecibo, $fechaFinDias) ?? 0;
 
             // Verificar si está completado (solo para bordador)
             $completado = $isBordador && in_array($proceso->id, $recibosCompletadosIds);
@@ -96,7 +96,7 @@ final class ListPedidosLogoUseCase
                     'id' => $proceso->id,
                     'numero_recibo' => $proceso->numero_recibo_consecutivo,
                     'cliente' => $clienteNombre,
-                    'created_at' => $fechaCreacionRecibo ?: $proceso->created_at,
+                    'created_at' => $fechaCreacionRecibo,
                     'area' => $proceso->area,
                     'pedido_id' => $pedido?->id,
                     'prenda_id' => $proceso->prenda_pedido_id,
@@ -113,7 +113,7 @@ final class ListPedidosLogoUseCase
                 'id' => $proceso->id,
                 'numero_recibo' => $proceso->numero_recibo_consecutivo,
                 'cliente' => $clienteNombre,
-                'created_at' => $fechaCreacionRecibo ?: $proceso->created_at,
+                'created_at' => $fechaCreacionRecibo,
                 'fecha_entrega' => $fechaEntrega,
                 'fechas_areas' => $fechasAreas,
                 'pedido_id' => $pedido?->id,
