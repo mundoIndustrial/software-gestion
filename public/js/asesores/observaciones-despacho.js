@@ -774,6 +774,7 @@
                 refrescarBadgesObservacionesDespachoAsesores();
             }
         });
+        window.addEventListener('asesores:pedido-actualizado', refrescarBadgesObservacionesDespachoAsesores);
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
         // Marcar como visto solo cuando el usuario hace clic en el botón 💬 o dropdown

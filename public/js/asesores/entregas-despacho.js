@@ -254,6 +254,7 @@
                 refrescarBadgesEntregasDespachoAsesores();
             }
         });
+        window.addEventListener('asesores:pedido-actualizado', refrescarBadgesEntregasDespachoAsesores);
     }
 
     if (document.readyState === 'loading') {

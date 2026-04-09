@@ -80,11 +80,56 @@ class NotificacionesService
                 ];
             });
 
-        $totalNotificaciones = $pedidosDevueltos->count() + $recibosDevueltos->count();
+        // ============================================
+        // NOTIFICACIONES: Pedido completo en despacho
+        // Regla: todos los items activos (no anulados) están Entregado
+        // ============================================
+        $pedidosCompletosDespacho = DB::table('bodega_detalles_talla as bdt')
+            ->join('pedidos_produccion as pp', 'pp.id', '=', 'bdt.pedido_produccion_id')
+            ->leftJoin('pedido_epp as pe', 'pe.id', '=', 'bdt.pedido_epp_id')
+            ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'bdt.prenda_id')
+            ->where('pp.asesor_id', $userId)
+            ->whereNull('bdt.deleted_at')
+            // Ignorar filas históricas de EPP/Prenda eliminadas (soft delete)
+            ->where(function ($q) {
+                $q->whereNull('bdt.pedido_epp_id')
+                    ->orWhereNull('pe.deleted_at');
+            })
+            ->where(function ($q) {
+                $q->whereNull('bdt.prenda_id')
+                    ->orWhereNull('pr.deleted_at');
+            })
+            ->groupBy('bdt.pedido_produccion_id', 'pp.numero_pedido', 'pp.cliente')
+            ->havingRaw("SUM(CASE WHEN bdt.estado_bodega <> 'Anulado' THEN 1 ELSE 0 END) > 0")
+            ->havingRaw("SUM(CASE WHEN bdt.estado_bodega <> 'Anulado' AND bdt.estado_bodega <> 'Entregado' THEN 1 ELSE 0 END) = 0")
+            ->orderByRaw('MAX(bdt.updated_at) DESC')
+            ->select([
+                'bdt.pedido_produccion_id as id',
+                'pp.numero_pedido',
+                'pp.cliente',
+                DB::raw('MAX(bdt.updated_at) as updated_at'),
+                DB::raw("SUM(CASE WHEN bdt.estado_bodega <> 'Anulado' THEN 1 ELSE 0 END) as total_items"),
+            ])
+            ->get()
+            ->map(function ($pedido) {
+                return [
+                    'id' => (int) $pedido->id,
+                    'tipo' => 'pedido_completo_despacho',
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'total_items' => (int) ($pedido->total_items ?? 0),
+                    'updated_at' => $pedido->updated_at,
+                ];
+            });
+
+        $totalNotificaciones = $pedidosDevueltos->count()
+            + $recibosDevueltos->count()
+            + $pedidosCompletosDespacho->count();
 
         return [
             'pedidos_devueltos' => $pedidosDevueltos,
             'recibos_devueltos' => $recibosDevueltos,
+            'pedidos_completos_despacho' => $pedidosCompletosDespacho,
             'total_notificaciones' => $totalNotificaciones
         ];
     }

@@ -18,6 +18,7 @@ use App\Application\Bodega\Services\BodegaUpdateService;
 use App\Application\Bodega\Services\BodegaGuardadoService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
+use Illuminate\Support\Facades\Auth;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\Bodega\CQRS\CQRSManager;
 use App\Application\Bodega\CQRS\Commands\EntregarPedidoCommand;
@@ -406,9 +407,14 @@ class PedidosController extends Controller
                 $numeroPedidoFinal = $reciboPrenda->numero_pedido;
             }
             
-            // Marcar pedido como visto usando el numero_pedido (en ambos casos)
-            PedidoProduccion::where('numero_pedido', $numeroPedidoFinal)
-                ->update(['viewed_at' => Carbon::now()]);
+            // Marcar pedido como visto evitando where numero_pedido = null
+            if (!empty($numeroPedidoFinal)) {
+                PedidoProduccion::where('numero_pedido', $numeroPedidoFinal)
+                    ->update(['viewed_at' => Carbon::now()]);
+            } else {
+                PedidoProduccion::where('id', $pedidoId)
+                    ->update(['viewed_at' => Carbon::now()]);
+            }
             
             $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
             
@@ -1700,6 +1706,24 @@ class PedidosController extends Controller
             'totalNovedades' => $data['totalNovedades'] ?? 0,
             'totalNovedadesNoVistas' => $data['totalNovedadesNoVistas'] ?? 0,
             'totalGeneral' => $data['totalGeneral'] ?? 0,
+        ]);
+    }
+
+    /**
+     * DEBUG: Verificar estado de autenticación
+     */
+    public function debugNotifications(): JsonResponse
+    {
+        $user = Auth::user();
+        
+        return response()->json([
+            'authenticated' => !!$user,
+            'user_id' => $user?->id,
+            'user_email' => $user?->email,
+            'user_name' => $user?->name,
+            'time' => now()->toIso8601String(),
+            'session_id' => session()->getId(),
+            'message' => $user ? 'Usuario autenticado correctamente' : 'NO AUTENTICADO - Auth::user() es null'
         ]);
     }
 

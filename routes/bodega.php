@@ -166,6 +166,8 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     // Notificaciones (campana)
     Route::get('/notificaciones', [PedidosController::class, 'getNotifications'])
         ->name('notificaciones');
+    Route::get('/notificaciones/debug', [PedidosController::class, 'debugNotifications'])
+        ->name('notificaciones.debug');
     Route::post('/notificaciones/marcar-todas-leidas', [PedidosController::class, 'markAllNotificationsAsRead'])
         ->name('notificaciones.marcar-todas');
     Route::post('/notificaciones/news/{newsId}/toggle-visto', [PedidosController::class, 'toggleNewsVisto'])

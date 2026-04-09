@@ -44,6 +44,7 @@ function setupRealtimeNotifications() {
             return;
         }
         loadNotifications();
+        window.dispatchEvent(new CustomEvent('asesores:pedido-actualizado'));
     };
 
     globalThis.waitForEcho(() => {
@@ -69,10 +70,12 @@ function setupRealtimeNotifications() {
 
             ws.subscribe('cotizaciones', '.cotizacion.creada', refreshNotifications);
             ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', refreshNotifications);
+            ws.subscribe('pedidos.general', '.pedido.actualizado', refreshNotifications);
 
             if (currentUserId) {
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.creada', refreshNotifications);
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.estado.cambiado', refreshNotifications);
+                ws.subscribe(`pedidos.${currentUserId}`, '.pedido.actualizado', refreshNotifications);
             }
 
             asesoresRealtimeNotificationsBound = true;
@@ -170,6 +173,26 @@ function renderNotifications(data) {
                 time: formatElapsedTime(recibo.updated_at),
                 link: '#',
                 tipo: 'recibo_devuelto',
+                isNew: true
+            });
+        });
+    }
+
+    // ============================================
+    // Pedido completo en despacho
+    // ============================================
+    if (data.pedidos_completos_despacho && data.pedidos_completos_despacho.length > 0) {
+        data.pedidos_completos_despacho.forEach(pedido => {
+            const pedidoNumero = pedido.numero_pedido ? String(pedido.numero_pedido) : '--';
+            notifications.push({
+                id: `despacho-completo-${pedido.id}`,
+                icon: 'fa-truck-fast',
+                color: '#2563eb',
+                title: `Pedido #${pedidoNumero} completo`,
+                message: `${pedido.cliente || 'Cliente sin nombre'} · Todos los ítems del pedido están completos en despacho`,
+                time: formatElapsedTime(pedido.updated_at),
+                link: '#',
+                tipo: 'pedido_completo_despacho',
                 isNew: true
             });
         });

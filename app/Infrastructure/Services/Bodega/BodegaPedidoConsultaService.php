@@ -189,7 +189,10 @@ class BodegaPedidoConsultaService
                 throw new \Exception("Pedido no encontrado (numero_pedido: $pedidoId)");
             }
 
-            $numeroPedido = $pedidoProduccion->numero_pedido;
+            $numeroPedido = trim((string) ($pedidoProduccion->numero_pedido ?? ''));
+            if ($numeroPedido === '') {
+                $numeroPedido = (string) $pedidoProduccion->id;
+            }
 
             $primerRecibo = new ReciboPrenda([
                 'id' => $pedidoProduccion->id,
@@ -199,13 +202,23 @@ class BodegaPedidoConsultaService
                 'asesor_id' => $pedidoProduccion->asesor_id,
             ]);
         } else {
-            $numeroPedido = $primerRecibo?->numero_pedido;
-            if (!$numeroPedido) {
-                throw new \Exception("ReciboPrenda sin numero_pedido (ID: $pedidoId)");
+            $numeroPedido = trim((string) ($primerRecibo?->numero_pedido ?? ''));
+            if ($numeroPedido === '') {
+                $numeroPedido = (string) $primerRecibo->id;
             }
         }
 
-        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->orWhere('id', (int) ($primerRecibo->id ?? $pedidoId))
+            ->first();
+
+        $numeroPedidoReal = trim((string) ($pedidoProduccion?->numero_pedido ?? $primerRecibo?->numero_pedido ?? ''));
+        $usaFallbackPorId = $numeroPedidoReal === '';
+        if ($usaFallbackPorId) {
+            $numeroPedido = (string) ($pedidoProduccion?->id ?? $primerRecibo->id ?? $pedidoId);
+        } else {
+            $numeroPedido = $numeroPedidoReal;
+        }
 
         $estadoPP = strtoupper(trim($pedidoProduccion?->estado ?? ''));
         $esAnulada = str_starts_with($estadoPP, 'ANULAD');
@@ -218,9 +231,15 @@ class BodegaPedidoConsultaService
             'es_entregada' => $esEntregada,
         ]);
 
-        $recibos = ($esAnulada || $esEntregada)
-            ? ReciboPrenda::with(['asesor'])->where('numero_pedido', $numeroPedido)->get()
-            : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
+        if ($usaFallbackPorId) {
+            $recibos = ReciboPrenda::with(['asesor'])
+                ->where('id', (int) ($pedidoProduccion?->id ?? $primerRecibo->id ?? $pedidoId))
+                ->get();
+        } else {
+            $recibos = ($esAnulada || $esEntregada)
+                ? ReciboPrenda::with(['asesor'])->where('numero_pedido', $numeroPedido)->get()
+                : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
+        }
 
         \Log::info('[obtenerDetallePedido] Recibos obtenidos', ['count' => $recibos->count(), 'es_anulada' => $esAnulada, 'es_entregada' => $esEntregada]);
 

@@ -165,10 +165,36 @@
             });
 
             function cargarNotificacionesBodega() {
-                fetch(rutaBase + '/notificaciones')
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.success) return;
+                console.log('[BODEGA NOTIF] Iniciando carga de notificaciones desde:', rutaBase + '/notificaciones');
+                
+                fetch(rutaBase + '/notificaciones', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'credentials': 'include'
+                    }
+                })
+                    .then(r => {
+                        console.log('[BODEGA NOTIF] Response status:', r.status);
+                        return r.json().then(data => ({status: r.status, data}));
+                    })
+                    .then(({status, data}) => {
+                        console.log('[BODEGA NOTIF] Respuesta recibida:', data);
+                        
+                        if (status === 401) {
+                            console.warn('[BODEGA NOTIF] No autenticado (401)');
+                            document.getElementById('bodegaBellList').innerHTML = `
+                                <div style="padding:1rem; text-align:center; color:#e74c3c;">
+                                    <p>Sesión expirada. Por favor, recarga la página.</p>
+                                </div>`;
+                            return;
+                        }
+                        
+                        if (!data.success) {
+                            console.warn('[BODEGA NOTIF] API respondió con success: false', data);
+                            return;
+                        }
 
                         const badge = document.getElementById('bodegaBellBadge');
                         const list = document.getElementById('bodegaBellList');
@@ -209,29 +235,6 @@
 
                         list.innerHTML = html;
 
-                        function toggleVistoBodega(checkbox, url) {
-                            const item = checkbox.closest('div[style*="border-bottom"]');
-                            const checked = checkbox.checked;
-                            if (item) item.style.opacity = checked ? '0.55' : '1';
-                            fetch(url, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                                    'Accept': 'application/json'
-                                }
-                            })
-                            .then(r => r.json())
-                            .then(resp => {
-                                if (resp.success) {
-                                    let count = parseInt(badge.textContent) || 0;
-                                    count = resp.visto ? Math.max(0, count - 1) : count + 1;
-                                    badge.textContent = count;
-                                    badge.style.display = count > 0 ? 'flex' : 'none';
-                                }
-                            })
-                            .catch(err => console.error('Error toggle visto:', err));
-                        }
-
                         // Checkbox novedades
                         list.querySelectorAll('.bodega-news-check').forEach(chk => {
                             chk.addEventListener('change', function(e) {
@@ -249,9 +252,11 @@
                         });
                     })
                     .catch(err => {
+                        console.error('[BODEGA NOTIF] Error en fetch:', err);
                         document.getElementById('bodegaBellList').innerHTML = `
                             <div style="padding:1rem; text-align:center; color:#e74c3c;">
                                 <p>Error al cargar notificaciones</p>
+                                <small style="color:#999; display:block; margin-top:0.5rem;">Ver consola (F12) para detalles</small>
                             </div>`;
                     });
             }

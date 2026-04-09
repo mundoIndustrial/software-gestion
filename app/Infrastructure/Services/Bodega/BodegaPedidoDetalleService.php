@@ -29,8 +29,17 @@ class BodegaPedidoDetalleService
     public function procesarItemsPedido(Collection $recibos, array $rolesDelUsuario, array $areasPermitidas, bool $paraDespacho = false): array
     {
         $items = [];
-        $numeroPedido = $recibos->first()->numero_pedido;
-        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        $primerRecibo = $recibos->first();
+        $numeroPedido = trim((string) ($primerRecibo?->numero_pedido ?? ''));
+
+        $pedidoProduccion = null;
+        if ($numeroPedido !== '') {
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        }
+
+        if (!$pedidoProduccion && $primerRecibo?->id) {
+            $pedidoProduccion = PedidoProduccion::find($primerRecibo->id);
+        }
 
         foreach ($recibos as $recibo) {
             try {
@@ -227,6 +236,7 @@ class BodegaPedidoDetalleService
 
     private function crearItemPrendaConTallas(array $variantes, array $prendaEnriquecida, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
+        $numeroPedido = $this->resolverNumeroPedido($recibo, $pedidoProduccion);
         $asesor = 'N/A';
         if ($recibo->asesor) {
             $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? 'N/A';
@@ -242,7 +252,7 @@ class BodegaPedidoDetalleService
             $prendaId = $prendaEnriquecida['id'] ?? null;
             $genero = $variante['genero'] ?? null;
 
-            $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaEnriquecida['nombre'] ?? null, $cantidad, $rolesDelUsuario, null, $prendaId, $genero);
+            $bodegaData = $this->obtenerDatosBodega($numeroPedido, $talla, $prendaEnriquecida['nombre'] ?? null, $cantidad, $rolesDelUsuario, null, $prendaId, $genero);
 
             $tallas[] = [
                 'talla' => $talla,
@@ -263,7 +273,7 @@ class BodegaPedidoDetalleService
         return [
             'id' => $recibo->id,
             'tipo' => 'prenda',
-            'numero_pedido' => $recibo->numero_pedido,
+            'numero_pedido' => $numeroPedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'prenda_id' => $prendaEnriquecida['id'] ?? null,
@@ -289,7 +299,8 @@ class BodegaPedidoDetalleService
         $prendaId = $prendaEnriquecida['id'] ?? null;
         $genero = $variante['genero'] ?? null;
 
-        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario, $tallaColorId, $prendaId, $genero);
+        $numeroPedido = $this->resolverNumeroPedido($recibo, $pedidoProduccion);
+        $bodegaData = $this->obtenerDatosBodega($numeroPedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario, $tallaColorId, $prendaId, $genero);
 
         $asesor = 'N/A';
         if ($recibo->asesor) {
@@ -301,7 +312,7 @@ class BodegaPedidoDetalleService
         return [
             'id' => $recibo->id,
             'tipo' => 'prenda',
-            'numero_pedido' => $recibo->numero_pedido,
+            'numero_pedido' => $numeroPedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'prenda_id' => $prendaEnriquecida['id'] ?? null,
@@ -379,7 +390,8 @@ class BodegaPedidoDetalleService
         $eppNombre = $eppEnriquecido['nombre'] ?? WarehouseConstants::AREA_EPP;
         $eppCantidad = (int) ($eppEnriquecido['cantidad'] ?? 0);
         $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
-        $eppId = md5($recibo->numero_pedido . '|' . $eppNombre . '|' . $eppCantidad);
+        $numeroPedido = $this->resolverNumeroPedido($recibo, $pedidoProduccion);
+        $eppId = md5($numeroPedido . '|' . $eppNombre . '|' . $eppCantidad);
 
         $tieneHistorial = count($historialeHomologaciones) > 1;
 
@@ -389,7 +401,7 @@ class BodegaPedidoDetalleService
             'tiene_boton_ver_cambios' => $tieneHistorial,
         ]);
 
-        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
+        $bodegaData = $this->obtenerDatosBodega($numeroPedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
 
         \Log::debug('[crearItemEpp] Datos obtenidos de bodega', [
             'eppNombre' => $eppNombre,
@@ -422,7 +434,7 @@ class BodegaPedidoDetalleService
         $itemEpp = [
             'id' => $recibo->id,
             'tipo' => WarehouseConstants::AREA_EPP,
-            'numero_pedido' => $recibo->numero_pedido,
+            'numero_pedido' => $numeroPedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'pedido_epp_id' => $pedidoEppId,
@@ -465,8 +477,33 @@ class BodegaPedidoDetalleService
         return $itemEpp;
     }
 
-    private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, ?int $tallaColorId = null, ?int $prendaId = null, ?string $genero = null): array
+    private function obtenerDatosBodega(?string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, ?int $tallaColorId = null, ?int $prendaId = null, ?string $genero = null): array
     {
+        $numeroPedido = trim((string) $numeroPedido);
+        if ($numeroPedido === '') {
+            \Log::warning('[obtenerDatosBodega] numeroPedido vacío/null, devolviendo defaults', [
+                'talla' => $talla,
+                'prenda_nombre' => $prendaNombre,
+                'prenda_id' => $prendaId,
+                'talla_color_id' => $tallaColorId,
+            ]);
+
+            return [
+                'id' => null,
+                'estado' => WarehouseConstants::STATE_PENDING,
+                WarehouseConstants::FIELD_ESTADO_BODEGA => WarehouseConstants::STATE_PENDING,
+                WarehouseConstants::FIELD_AREA => null,
+                WarehouseConstants::FIELD_CANTIDAD => $cantidad,
+                WarehouseConstants::FIELD_COSTURA_ESTADO => null,
+                WarehouseConstants::FIELD_EPP_ESTADO => null,
+                'observaciones' => null,
+                WarehouseConstants::FIELD_PENDIENTES => null,
+                WarehouseConstants::FIELD_FECHA_ENTREGA => null,
+                WarehouseConstants::FIELD_FECHA_PEDIDO => null,
+                'usuario_nombre' => null,
+            ];
+        }
+
         $bodegaDataBase = null;
 
         if (strlen($talla) === WarehouseConstants::MD5_LENGTH && ctype_xdigit($talla)) {
@@ -540,6 +577,25 @@ class BodegaPedidoDetalleService
         ]);
 
         return $resultado;
+    }
+
+    private function resolverNumeroPedido(ReciboPrenda $recibo, ?PedidoProduccion $pedidoProduccion): string
+    {
+        $numeroPedido = trim((string) ($recibo->numero_pedido ?? ''));
+        if ($numeroPedido !== '') {
+            return $numeroPedido;
+        }
+
+        $numeroPedidoPedido = trim((string) ($pedidoProduccion?->numero_pedido ?? ''));
+        if ($numeroPedidoPedido !== '') {
+            return $numeroPedidoPedido;
+        }
+
+        if (!empty($pedidoProduccion?->id)) {
+            return (string) $pedidoProduccion->id;
+        }
+
+        return !empty($recibo->id) ? (string) $recibo->id : '';
     }
 
     private function seleccionarDatosSegunRol($bodegaDataEstado, $bodegaDataBase, array $rolesDelUsuario)

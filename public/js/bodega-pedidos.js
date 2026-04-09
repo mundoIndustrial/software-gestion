@@ -1836,6 +1836,23 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
 
     // Buscar el select.estado-select que contiene los data-* principales
     const estadoSelect = fila ? fila.querySelector('.estado-select') : null;
+
+    const numeroPedidoFinal = (
+        String(numeroPedido || '').trim() ||
+        String(estadoSelect ? (estadoSelect.getAttribute('data-numero-pedido') || '') : '').trim() ||
+        String(fila ? (fila.getAttribute('data-numero-pedido') || '') : '').trim() ||
+        String(pendientesInput ? (pendientesInput.getAttribute('data-numero-pedido') || '') : '').trim()
+    );
+
+    if (!numeroPedidoFinal) {
+        console.error(' [GUARDAR-FILA] numero_pedido vacio. No se puede guardar.', {
+            numeroPedidoParam: numeroPedido,
+            numeroPedidoFila: fila ? fila.getAttribute('data-numero-pedido') : null,
+            numeroPedidoEstado: estadoSelect ? estadoSelect.getAttribute('data-numero-pedido') : null
+        });
+        alert('Error: no se pudo identificar el numero de pedido para guardar esta fila.');
+        return;
+    }
     
     // Obtener prenda_id y talla_color_id desde varios lugares (prioridad: estadoSelect > fila > parámetros)
     const prendaIdFinal = (estadoSelect ? estadoSelect.getAttribute('data-prenda-id') : null) 
@@ -1885,7 +1902,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     // Preparar datos para enviar
     const datos = {
         row_hash: rowHash,
-        numero_pedido: numeroPedido,
+        numero_pedido: numeroPedidoFinal,
         talla: talla,
         genero: genero || null,
         talla_color_id: tallaColorIdFinal ? Number(tallaColorIdFinal) : null,
@@ -1912,7 +1929,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     btnGuardar.textContent = 'Guardando...';
 
     // Enviar al servidor
-    fetch(`/gestion-bodega/pedidos/${numeroPedido}/guardar-fila`, {
+    fetch(`/gestion-bodega/pedidos/${encodeURIComponent(numeroPedidoFinal)}/guardar-fila`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
