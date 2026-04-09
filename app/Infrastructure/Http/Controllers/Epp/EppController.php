@@ -18,13 +18,14 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Epp;
 use App\Models\EppImagen;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * Controller: EppController
  * 
  * Infrastructure Layer - Maneja requests HTTP y dispara CQRS
- * Cumple: Separación de responsabilidades, DDD
+ * Cumple: Separacion de responsabilidades, DDD
  */
 class EppController extends Controller
 {
@@ -38,8 +39,8 @@ class EppController extends Controller
      * 
      * Buscar EPP o listar todos los activos
      * Query parameters:
-     * - q: término de búsqueda (código o nombre)
-     * - categoria: filtrar por categoría
+     * - q: termino de busqueda (codigo o nombre)
+     * - categoria: filtrar por categoria
      */
     public function index(Request $request): JsonResponse
     {
@@ -48,7 +49,7 @@ class EppController extends Controller
             $categoria = $request->query('categoria');
 
             // Debug: Log de entrada
-            \Log::info('[EppController] Búsqueda iniciada', [
+            \Log::info('[EppController] Busqueda iniciada', [
                 'termino' => $termino,
                 'categoria' => $categoria,
                 'url' => $request->url(),
@@ -65,7 +66,7 @@ class EppController extends Controller
 
             $epps = $this->queryBus->execute($query);
 
-            \Log::info('[EppController] Búsqueda completada', [
+            \Log::info('[EppController] Busqueda completada', [
                 'total' => is_countable($epps) ? count($epps) : 0,
                 'tipo_respuesta' => gettype($epps),
                 'datos' => $epps,
@@ -135,7 +136,7 @@ class EppController extends Controller
     /**
      * GET /api/epp/gestion
      * 
-     * Endpoint simplificado para vista de gestión (incluye relación con categoría)
+     * Endpoint simplificado para vista de gestion (incluye relacion con categoria)
      */
     public function indexSimple(Request $request): JsonResponse
     {
@@ -148,7 +149,7 @@ class EppController extends Controller
             // Query simple sin relaciones para evitar errores
             $query = Epp::query();
 
-            // Búsqueda
+            // Busqueda
             if ($termino) {
                 $query->where(function($q) use ($termino) {
                     $q->where('nombre_completo', 'LIKE', "%{$termino}%")
@@ -156,7 +157,7 @@ class EppController extends Controller
                 });
             }
 
-            // Filtro por categoría
+            // Filtro por categoria
             if ($categoria) {
                 $query->where('categoria_id', $categoria);
             }
@@ -166,14 +167,14 @@ class EppController extends Controller
                 $query->where('activo', 1);
             }
 
-            // Paginación
+            // Paginacion
             $total = $query->count();
             $epps = $query->offset(($page - 1) * $perPage)
                           ->limit($perPage)
                           ->orderBy('nombre_completo')
                           ->get();
 
-            // Agregar información de asociaciones
+            // Agregar informacion de asociaciones
             $eppsConAsociaciones = $epps->map(function ($epp) {
                 $pedidosAsociados = \App\Models\PedidoEpp::where('epp_id', $epp->id)->count();
                 return array_merge($epp->toArray(), [
@@ -222,13 +223,13 @@ class EppController extends Controller
      * POST /api/epp
      * 
      * Crear nuevo EPP
-     * Solo requiere: nombre y descripción
-     * Los campos adicionales (categoría, cantidad, observaciones, imágenes) se agregan después en la edición
+     * Solo requiere: nombre y descripcion
+     * Los campos adicionales (categoria, cantidad, observaciones, imagenes) se agregan despues en la edicion
      */
     public function store(Request $request): JsonResponse
     {
         try {
-            \Log::info('[EppController] === INICIANDO CREACIÓN DE EPP ===');
+            \Log::info('[EppController] === INICIANDO CREACION DE EPP ===');
             \Log::info('[EppController] Request data:', $request->all());
             
             $validated = $request->validate([
@@ -242,7 +243,7 @@ class EppController extends Controller
                 'activo' => 'required|boolean',
             ]);
 
-            \Log::info('[EppController] Validación exitosa:', $validated);
+            \Log::info('[EppController] Validacion exitosa:', $validated);
 
             // Verificar si el EPP ya existe (case-insensitive)
             $eppExistente = Epp::whereRaw('LOWER(nombre_completo) = ?', [strtolower($validated['nombre_completo'])])
@@ -283,7 +284,7 @@ class EppController extends Controller
             \Log::error('[EppController]  Validation error:', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida',
+                'message' => 'Validacion fallida',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -303,27 +304,27 @@ class EppController extends Controller
     /**
      * GET /api/epp/categorias/all
      * 
-     * Obtener todas las categorías
+     * Obtener todas las categorias
      */
     public function crearEppSimple(Request $request): JsonResponse
     {
         try {
-            \Log::info('[EppController::crearEppSimple] Iniciando creación de EPP simplificada');
+            \Log::info('[EppController::crearEppSimple] Iniciando creacion de EPP simplificada');
             \Log::info('[EppController::crearEppSimple] Request completa:', $request->all());
             
-            // Validación simple
+            // Validacion simple
             $validated = $request->validate([
                 'nombre_completo' => 'required|string|max:500',
             ]);
 
             \Log::info('[EppController::crearEppSimple] Datos validados:', $validated);
 
-            // Obtener otros parámetros opcionales
+            // Obtener otros parametros opcionales
             $categoria_id = $request->input('categoria_id', null);
             $tipo = $request->input('tipo', 'PRODUCTO');
             $activo = filter_var($request->input('activo', true), FILTER_VALIDATE_BOOLEAN);
 
-            \Log::info('[EppController::crearEppSimple] Parámetros opcionales:', [
+            \Log::info('[EppController::crearEppSimple] Parametros opcionales:', [
                 'categoria_id' => $categoria_id,
                 'tipo' => $tipo,
                 'activo' => $activo
@@ -371,7 +372,7 @@ class EppController extends Controller
             \Log::error('[EppController::crearEppSimple] Validation error:', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida',
+                'message' => 'Validacion fallida',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -391,7 +392,7 @@ class EppController extends Controller
     /**
      * GET /api/epp/categorias/all
      * 
-     * Obtener todas las categorías
+     * Obtener todas las categorias
      */
     public function categorias(): JsonResponse
     {
@@ -407,7 +408,7 @@ class EppController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener categorías',
+                'message' => 'Error al obtener categorias',
             ], 500);
         }
     }
@@ -415,7 +416,7 @@ class EppController extends Controller
     /**
      * GET /api/epp/categorias/simple
      * 
-     * Obtener todas las categorías (método simplificado)
+     * Obtener todas las categorias (metodo simplificado)
      */
     public function categoriasSimple(): JsonResponse
     {
@@ -438,7 +439,7 @@ class EppController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener categorías: ' . $e->getMessage(),
+                'message' => 'Error al obtener categorias: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -470,7 +471,7 @@ class EppController extends Controller
     /**
      * POST /api/pedidos/{pedidoId}/epp/agregar
      * 
-     * Agregar EPP a un pedido con imágenes opcionales
+     * Agregar EPP a un pedido con imagenes opcionales
      */
     public function agregar(int $pedidoId, Request $request): JsonResponse
     {
@@ -495,12 +496,12 @@ class EppController extends Controller
                 'imagenes.*' => 'nullable|file|image|max:5120',
             ]);
 
-            // Procesar imágenes si existen
+            // Procesar imagenes si existen
             $imagenes = [];
             if ($request->hasFile('imagenes')) {
                 foreach ($request->file('imagenes') as $imagen) {
                     if ($imagen->isValid()) {
-                        // Guardar imagen en directorio específico del pedido
+                        // Guardar imagen en directorio especifico del pedido
                         $ruta = $imagen->store("pedido/{$pedidoId}/epp", 'public');
                         $imagenes[] = $ruta;
                     }
@@ -517,12 +518,12 @@ class EppController extends Controller
 
             $resultado = $this->commandBus->execute($command);
 
-            // Guardar novedad si se proporcionó
+            // Guardar novedad si se proporciono
             if (!empty($validated['novedad'])) {
                 try {
                     $usuario = null;
                     
-                    // Intenta obtener usuario de múltiples formas
+                    // Intenta obtener usuario de multiples formas
                     if (auth('web')->check()) {
                         $usuario = auth('web')->user();
                     } elseif (auth()->check()) {
@@ -553,8 +554,8 @@ class EppController extends Controller
                     $fechaFormato = now()->format('d/m/Y h:i A');
                     $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - {$validated['novedad']}";
 
-                    $pedido = \App\Models\PedidoProduccion::find($pedidoId);
-                    if ($pedido) {
+                    $pedido = PedidoProduccion::find($pedidoId);
+                    if ($pedido && !$this->esPedidoBorrador($pedido)) {
                         $pedido->novedades = !empty($pedido->novedades)
                             ? $pedido->novedades . "\n\n" . $linea_novedad
                             : $linea_novedad;
@@ -564,13 +565,13 @@ class EppController extends Controller
                             'novedad' => $linea_novedad,
                         ]);
 
-                        // Crear notificación para supervisores
+                        // Crear notificacion para supervisores
                         try {
                             \App\Models\News::create([
                                 'event_type' => 'epp_agregado',
                                 'table_name' => 'pedido_epp',
                                 'record_id' => $resultado['pedido_epp_id'] ?? 0,
-                                'description' => "{$rol} {$nombreUsuario} agregó EPP al Pedido #{$pedido->numero_pedido}: {$validated['novedad']}",
+                                'description' => "{$rol} {$nombreUsuario} agrego EPP al Pedido #{$pedido->numero_pedido}: {$validated['novedad']}",
                                 'user_id' => $usuario?->id,
                                 'pedido' => $pedido->numero_pedido,
                                 'metadata' => [
@@ -597,7 +598,7 @@ class EppController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('[EppController::agregar] Validación fallida al agregar EPP', [
+            \Log::warning('[EppController::agregar] Validacion fallida al agregar EPP', [
                 'pedidoId' => $pedidoId,
                 'errors' => $e->errors(),
                 'input' => $request->except(['imagenes']),
@@ -606,7 +607,7 @@ class EppController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos ivalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -650,12 +651,12 @@ class EppController extends Controller
     /**
      * GET /api/pedidos/{pedidoId}/epp/{pedidoEppId}
      * 
-     * Obtener un EPP específico de un pedido con todos sus detalles
+     * Obtener un EPP especifico de un pedido con todos sus detalles
      */
     public function obtenerEppDelPedidoPorId(int $pedidoId, int $pedidoEppId): JsonResponse
     {
         try {
-            // Obtener la relación pedido_epp
+            // Obtener la relacion pedido_epp
             $pedidoEpp = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoId)
                 ->where('id', $pedidoEppId)
                 ->with(['epp'])
@@ -720,7 +721,7 @@ class EppController extends Controller
                 'novedad' => 'nullable|string|max:2000',
             ]);
 
-            // Obtener la relación pedido_epp
+            // Obtener la relacion pedido_epp
             $pedidoEpp = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoId)
                 ->where('id', $pedidoEppId)
                 ->first();
@@ -750,7 +751,7 @@ class EppController extends Controller
                 try {
                     $usuario = null;
                     
-                    // Intenta obtener usuario de múltiples formas
+                    // Intenta obtener usuario de multiples formas
                     // 1. Usar Auth::user() que debería estar disponible en la sesión
                     if (auth('web')->check()) {
                         $usuario = auth('web')->user();
@@ -810,9 +811,9 @@ class EppController extends Controller
                     ]);
                     
                     // Obtener el pedido de producción
-                    $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+                    $pedido = PedidoProduccion::find($pedidoId);
                     
-                    if ($pedido) {
+                    if ($pedido && !$this->esPedidoBorrador($pedido)) {
                         // Agregar la novedad al campo existente con separador visual
                        if (!empty($pedido->novedades)) {
                             // Solo salto de línea entre novedades
@@ -828,7 +829,7 @@ class EppController extends Controller
                             'novedad' => $linea_novedad,
                         ]);
 
-                        // Crear notificación para supervisores
+                        // Crear notificacion para supervisores
                         try {
                             \App\Models\News::create([
                                 'event_type' => 'epp_modificado',
@@ -847,7 +848,7 @@ class EppController extends Controller
                         } catch (\Exception $newsEx) {
                             \Log::warning('[EppController] Error creando News', ['error' => $newsEx->getMessage()]);
                         }
-                    } else {
+                    } elseif (!$pedido) {
                         \Log::warning('[EppController] Pedido no encontrado para guardar novedad:', [
                             'pedidoId' => $pedidoId,
                         ]);
@@ -883,7 +884,7 @@ class EppController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos ivalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -922,7 +923,7 @@ class EppController extends Controller
             $archivo = $request->file('imagen');
             $principal = $request->boolean('principal', false);
 
-            // Si es principal, desmarcar otras imágenes como principales
+            // Si es principal, desmarcar otras imagenes como principales
             if ($principal) {
                 EppImagen::where('epp_id', $eppId)
                     ->where('principal', true)
@@ -969,7 +970,7 @@ class EppController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos ivalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -1040,14 +1041,14 @@ class EppController extends Controller
      * Subir imagen de EPP durante creación del pedido
      * POST /api/epp/imagenes/upload
      * 
-     * DEPRECADO: Las imágenes se envían directamente con FormData al crear el pedido
+     * DEPRECADO: Las imagenes se envían directamente con FormData al crear el pedido
      * No se suben por separado, se procesan junto con epps[] en crearPedido()
      */
     public function subirImagenEpp(Request $request): JsonResponse
     {
         return response()->json([
             'success' => false,
-            'message' => 'Este endpoint no debe usarse. Las imágenes se envían con FormData al crear el pedido.',
+            'message' => 'Este endpoint no debe usarse. Las imagenes se envían con FormData al crear el pedido.',
         ], 400);
     }
 
@@ -1067,7 +1068,7 @@ class EppController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => [],
-                    'message' => 'Término muy corto'
+                    'message' => 'Termino muy corto'
                 ]);
             }
             
@@ -1109,11 +1110,11 @@ class EppController extends Controller
         try {
             $epp = Epp::findOrFail($id);
 
-            // Verificar si el EPP está asociado a pedidos
+            // Verificar si el EPP esta asociado a pedidos
             $asociacionesPedidos = \App\Models\PedidoEpp::where('epp_id', $id)->count();
             
             if ($asociacionesPedidos > 0) {
-                $mensaje = "No se puede editar el EPP porque está asociado a {$asociacionesPedidos} pedido(s).";
+                $mensaje = "No se puede editar el EPP porque esta asociado a {$asociacionesPedidos} pedido(s).";
                 
                 return response()->json([
                     'success' => false,
@@ -1151,7 +1152,7 @@ class EppController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos ivalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -1179,11 +1180,11 @@ class EppController extends Controller
         try {
             $epp = Epp::findOrFail($id);
             
-            // Verificar si el EPP está asociado a pedidos
+            // Verificar si el EPP esta asociado a pedidos
             $asociacionesPedidos = \App\Models\PedidoEpp::where('epp_id', $id)->count();
             
             if ($asociacionesPedidos > 0) {
-                $mensaje = "No se puede eliminar el EPP porque está asociado a {$asociacionesPedidos} pedido(s).";
+                $mensaje = "No se puede eliminar el EPP porque esta asociado a {$asociacionesPedidos} pedido(s).";
                 
                 return response()->json([
                     'success' => false,
@@ -1273,7 +1274,7 @@ class EppController extends Controller
     /**
      * GET /epp/test
      * 
-     * Método de prueba para depuración
+     * metodo de prueba para depuración
      */
     public function test()
     {
@@ -1301,12 +1302,12 @@ class EppController extends Controller
     /**
      * GET /api/pedido-epp/{pedidoEppId}/imagenes
      * 
-     * Obtener todas las imágenes de un EPP específico en un pedido
+     * Obtener todas las imagenes de un EPP especifico en un pedido
      */
     public function obtenerImagenes($pedidoEppId): JsonResponse
     {
         try {
-            \Log::info("[EppController] Obteniendo imágenes del pedido EPP: {$pedidoEppId}");
+            \Log::info("[EppController] Obteniendo imagenes del pedido EPP: {$pedidoEppId}");
             
             // Buscar el pedido_epp
             $pedidoEpp = \App\Models\PedidoEpp::find($pedidoEppId);
@@ -1320,14 +1321,14 @@ class EppController extends Controller
                 ], 404);
             }
             
-            // Obtener imágenes del pedido_epp
+            // Obtener imagenes del pedido_epp
             $imagenes = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
                 ->orderBy('orden')
                 ->get();
             
-            \Log::info("[EppController] Imágenes encontradas: {$imagenes->count()}");
+            \Log::info("[EppController] imagenes encontradas: {$imagenes->count()}");
             
-            // Formatear las imágenes para el frontend
+            // Formatear las imagenes para el frontend
             $imagenesFormateadas = $imagenes->map(function ($imagen) {
                 // Asegurar que ruta_web siempre incluya /storage/
                 $rutaWeb = $imagen->ruta_web;
@@ -1350,12 +1351,12 @@ class EppController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Imágenes obtenidas correctamente',
+                'message' => 'imagenes obtenidas correctamente',
                 'data' => $imagenesFormateadas
             ]);
             
         } catch (\Exception $e) {
-            \Log::error("[EppController] Error obteniendo imágenes del pedido EPP: {$pedidoEppId}", [
+            \Log::error("[EppController] Error obteniendo imagenes del pedido EPP: {$pedidoEppId}", [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
@@ -1363,7 +1364,7 @@ class EppController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener las imágenes: ' . $e->getMessage(),
+                'message' => 'Error al obtener las imagenes: ' . $e->getMessage(),
                 'data' => []
             ], 500);
         }
@@ -1372,12 +1373,12 @@ class EppController extends Controller
     /**
      * POST /api/pedido-epp/{pedidoEppId}/imagenes
      * 
-     * Agregar nuevas imágenes a un EPP específico en un pedido
+     * Agregar nuevas imagenes a un EPP especifico en un pedido
      */
     public function agregarImagenes(Request $request, $pedidoEppId): JsonResponse
     {
         try {
-            \Log::info("[EppController] Agregando imágenes al pedido EPP: {$pedidoEppId}");
+            \Log::info("[EppController] Agregando imagenes al pedido EPP: {$pedidoEppId}");
             
             // Debug completo del request
             \Log::info("[EppController] Request data:", [
@@ -1398,7 +1399,7 @@ class EppController extends Controller
                 ], 404);
             }
             
-            // Debug del pedidoEpp y su relación
+            // Debug del pedidoEpp y su relacion
             \Log::info("[EppController] PedidoEPP encontrado:", [
                 'pedido_epp_id' => $pedidoEpp->id,
                 'pedido_produccion_id' => $pedidoEpp->pedido_produccion_id,
@@ -1414,10 +1415,10 @@ class EppController extends Controller
             $pedidoId = $pedidoEpp->pedido_produccion_id;
             \Log::info("[EppController] Guardando imagen para pedido ID: {$pedidoId}");
             
-            // Si no hay pedido_produccion_id, intentar obtenerlo de la relación
+            // Si no hay pedido_produccion_id, intentar obtenerlo de la relacion
             if (!$pedidoId && $pedidoEpp->pedidoProduccion) {
                 $pedidoId = $pedidoEpp->pedidoProduccion->id;
-                \Log::info("[EppController] Pedido ID obtenido de relación: {$pedidoId}");
+                \Log::info("[EppController] Pedido ID obtenido de relacion: {$pedidoId}");
             }
             
             if (!$pedidoId) {
@@ -1445,7 +1446,7 @@ class EppController extends Controller
             if (!$imagenes || (is_array($imagenes) && empty($imagenes))) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se han enviado imágenes',
+                    'message' => 'No se han enviado imagenes',
                     'debug' => [
                         'has_files' => $request->hasFile('imagenes'),
                         'has_files_array' => $request->hasFile('imagenes[]'),
@@ -1513,12 +1514,12 @@ class EppController extends Controller
                     $contenidoWebP = $webp->toString();
                     \Storage::disk('public')->put($rutaCompleta, $contenidoWebP);
                     
-                    // Verificar que el archivo se guardó correctamente
+                    // Verificar que el archivo se guardo correctamente
                     $rutaArchivoCompleta = storage_path("app/public/{$rutaCompleta}");
                     if (file_exists($rutaArchivoCompleta)) {
                         \Log::info("[EppController] Archivo guardado exitosamente: {$rutaArchivoCompleta}");
                     } else {
-                        \Log::error("[EppController] Error: Archivo no se guardó: {$rutaArchivoCompleta}");
+                        \Log::error("[EppController] Error: Archivo no se guardo: {$rutaArchivoCompleta}");
                     }
 
                     $tienePrincipal = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
@@ -1549,12 +1550,12 @@ class EppController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => count($imagenesGuardadas) . ' imágenes agregadas correctamente',
+                'message' => count($imagenesGuardadas) . ' imagenes agregadas correctamente',
                 'data' => $imagenesGuardadas
             ]);
             
         } catch (\Exception $e) {
-            \Log::error("[EppController] Error agregando imágenes al pedido EPP: {$pedidoEppId}", [
+            \Log::error("[EppController] Error agregando imagenes al pedido EPP: {$pedidoEppId}", [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
@@ -1562,7 +1563,7 @@ class EppController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error al agregar las imágenes: ' . $e->getMessage()
+                'message' => 'Error al agregar las imagenes: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1619,5 +1620,14 @@ class EppController extends Controller
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function esPedidoBorrador(PedidoProduccion $pedido): bool
+    {
+        if ($pedido->numero_pedido === null) {
+            return true;
+        }
+
+        return strtolower((string) $pedido->estado) === 'borrador';
     }
 }

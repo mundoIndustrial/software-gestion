@@ -60,11 +60,24 @@ final class EliminarPrendaPedidoRepositoryImpl implements EliminarPrendaPedidoRe
 
     private function registrarNovedadEliminacion(PedidoProduccion $pedido, string $nombrePrenda, string $motivo): void
     {
+        if ($this->esPedidoBorrador($pedido)) {
+            return;
+        }
+
         $mensaje = "[ELIMINADA PRENDA] {$nombrePrenda} - Motivo: {$motivo}";
         $pedido->novedades = $pedido->novedades
             ? $pedido->novedades . "\n\n" . $mensaje
             : $mensaje;
         $pedido->save();
+    }
+
+    private function esPedidoBorrador(PedidoProduccion $pedido): bool
+    {
+        if ($pedido->numero_pedido === null) {
+            return true;
+        }
+
+        return strtolower((string) $pedido->estado) === 'borrador';
     }
 
     private function eliminarFotosPrenda(int $prendaId): void
@@ -241,4 +254,3 @@ final class EliminarPrendaPedidoRepositoryImpl implements EliminarPrendaPedidoRe
         Storage::disk('public')->delete($ruta);
     }
 }
-

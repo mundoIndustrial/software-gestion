@@ -4,6 +4,7 @@ namespace App\Infrastructure\Services\Pedidos;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Models\News;
+use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,9 @@ class PrendaNovedadService
             Log::warning('[PrendaNovedadService] No se encontro pedido para prenda', [
                 'prenda_id' => $prenda->id,
             ]);
+            return;
+        }
+        if ($this->esPedidoBorrador($pedido)) {
             return;
         }
 
@@ -90,6 +94,9 @@ class PrendaNovedadService
             ]);
             return;
         }
+        if ($this->esPedidoBorrador($pedido)) {
+            return;
+        }
 
         $novedadesActuales = $pedido->novedades ?? '';
         $usuarioAutenticado = Auth::user();
@@ -146,5 +153,14 @@ class PrendaNovedadService
         }
 
         return 'Sistema';
+    }
+
+    private function esPedidoBorrador(PedidoProduccion $pedido): bool
+    {
+        if ($pedido->numero_pedido === null) {
+            return true;
+        }
+
+        return strtolower((string) $pedido->estado) === 'borrador';
     }
 }

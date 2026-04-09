@@ -25,13 +25,15 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
 
         $pedido = PedidoProduccion::findOrFail($pedidoId);
 
-        $mensaje = "[ELIMINADO EPP] {$nombreEpp} (Cantidad: {$pedidoEpp->cantidad}) - Motivo: {$motivo}";
-        $pedido->novedades = $pedido->novedades
-            ? $pedido->novedades . "\n\n" . $mensaje
-            : $mensaje;
-        $pedido->save();
+        if (!$this->esPedidoBorrador($pedido)) {
+            $mensaje = "[ELIMINADO EPP] {$nombreEpp} (Cantidad: {$pedidoEpp->cantidad}) - Motivo: {$motivo}";
+            $pedido->novedades = $pedido->novedades
+                ? $pedido->novedades . "\n\n" . $mensaje
+                : $mensaje;
+            $pedido->save();
 
-        Log::info('[EliminarEppUseCase] Novedades actualizadas', ['pedido_id' => $pedidoId]);
+            Log::info('[EliminarEppUseCase] Novedades actualizadas', ['pedido_id' => $pedidoId]);
+        }
 
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)->get();
         foreach ($imagenes as $imagen) {
@@ -66,8 +68,16 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
             'pedido_id' => $pedidoId,
         ];
     }
-}
 
+    private function esPedidoBorrador(PedidoProduccion $pedido): bool
+    {
+        if ($pedido->numero_pedido === null) {
+            return true;
+        }
+
+        return strtolower((string) $pedido->estado) === 'borrador';
+    }
+}
 
 
 

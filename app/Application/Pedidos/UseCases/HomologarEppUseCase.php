@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * Use Case para homologar un EPP de un pedido
  *
- * Maneja: novedades, soft delete del EPP anterior, creación del EPP nuevo
- * y duplicación de imágenes al nuevo registro.
+ * Maneja: novedades, soft delete del EPP anterior, creacion del EPP nuevo
+ * y duplicacion de imagenes al nuevo registro.
  */
 final class HomologarEppUseCase implements HomologarEppUseCaseContract
 {
@@ -59,13 +59,15 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
             $datosAsesor .= " ({$rolAsesor})";
         }
 
-        $mensaje = "[HOMOLOGADO EPP] {$nombreEpp} (Cantidad anterior: {$pedidoEppAnterior->cantidad} → Nueva: {$cantidadNueva}) - Motivo: {$motivo}\n({$datosAsesor} - {$fechaFormato})";
-        $pedido->novedades = $pedido->novedades
-            ? $pedido->novedades . "\n\n" . $mensaje
-            : $mensaje;
-        $pedido->save();
-
-        Log::info('[HomologarEppUseCase] Novedades actualizadas', ['pedido_id' => $pedidoId]);
+        if (!$this->esPedidoBorrador($pedido)) {
+            $mensaje = "[HOMOLOGADO EPP] {$nombreEpp} (Cantidad anterior: {$pedidoEppAnterior->cantidad} -> Nueva: {$cantidadNueva}) - Motivo: {$motivo}\n({$datosAsesor} - {$fechaFormato})";
+            $pedido->novedades = $pedido->novedades
+                ? $pedido->novedades . "\n\n" . $mensaje
+                : $mensaje;
+            $pedido->save();
+    
+            Log::info('[HomologarEppUseCase] Novedades actualizadas', ['pedido_id' => $pedidoId]);
+        }
 
         $pedidoEppAnterior->delete();
 
@@ -97,7 +99,7 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
             ]);
         }
 
-        Log::info('[HomologarEppUseCase] Imágenes duplicadas', [
+        Log::info('[HomologarEppUseCase] Imagenes duplicadas', [
             'cantidad' => $imagenesAntiguas->count(),
             'pedido_epp_id_nuevo' => $eppNuevo->id,
         ]);
@@ -117,7 +119,17 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
             ],
         ];
     }
+
+    private function esPedidoBorrador(PedidoProduccion $pedido): bool
+    {
+        if ($pedido->numero_pedido === null) {
+            return true;
+        }
+
+        return strtolower((string) $pedido->estado) === 'borrador';
+    }
 }
+
 
 
 
