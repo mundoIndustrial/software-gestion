@@ -181,6 +181,8 @@
                     })
                     .then(({status, data}) => {
                         console.log('[BODEGA NOTIF] Respuesta recibida:', data);
+                        console.log('[BODEGA NOTIF] data.notificaciones:', data.notificaciones?.length || 0, 'items');
+                        console.log('[BODEGA NOTIF] data.novedades:', data.novedades?.length || 0, 'items');
                         
                         if (status === 401) {
                             console.warn('[BODEGA NOTIF] No autenticado (401)');
@@ -204,10 +206,13 @@
 
                         let html = ``;
 
-                        // Tab Novedades
-                        html += `<div class="bodega-tab-content" data-content="novedades" style="display:${bodegaTabActiva === 'novedades' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
-                        if (data.novedades && data.novedades.length > 0) {
-                            html += data.novedades.map(nov => `
+                        // Renderizar TODAS las novedades (incluye anuladas, pedidos creados, etc.)
+                        const todasLasNovedades = data.novedades || [];
+                        
+                        html += `<div class="bodega-tab-content" data-content="novedades" style="display:block; max-height:350px; overflow-y:auto;">`;
+                        
+                        if (todasLasNovedades.length > 0) {
+                            html += todasLasNovedades.map(nov => `
                                 <div style="padding:0.7rem 1rem; border-bottom:1px solid #f0f0f0; ${nov.visto ? 'opacity:0.55;' : ''}">
                                     <div style="display:flex; gap:0.6rem; align-items:start;">
                                         <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
@@ -226,6 +231,7 @@
                                 </div>
                             `).join('');
                         } else {
+                            console.warn('[BODEGA NOTIF] Sin novedades para mostrar');
                             html += `<div style="padding:2rem; text-align:center; color:#7f8c8d;">
                                 <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">notifications_off</span>
                                 <p>Sin novedades recientes</p>
@@ -234,6 +240,7 @@
                         html += `</div>`;
 
                         list.innerHTML = html;
+                        console.log('[BODEGA NOTIF] HTML renderizado. Total items: ' + todasLasNovedades.length);
 
                         // Checkbox novedades
                         list.querySelectorAll('.bodega-news-check').forEach(chk => {
