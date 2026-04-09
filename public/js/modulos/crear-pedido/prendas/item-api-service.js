@@ -278,17 +278,21 @@ class ItemAPIService {
                                         imagesArray.forEach((imgEnriquecida, imgIdx) => {
                                             // Inyectar en datos.datosExtendidos
                                             if (prenda.procesos[procesoKey].datos?.datosExtendidos) {
-                                                // Encontrar género y talla en datosExtendidos
-                                                const [genero, talla] = tallaKey.split('__');
-                                                if (genero && talla && prenda.procesos[procesoKey].datos.datosExtendidos[genero]?.[talla]?.imagenesFiles) {
-                                                    if (prenda.procesos[procesoKey].datos.datosExtendidos[genero][talla].imagenesFiles[imgIdx]) {
-                                                        prenda.procesos[procesoKey].datos.datosExtendidos[genero][talla].imagenesFiles[imgIdx] = {
-                                                            file: imgEnriquecida.file,
-                                                            formdata_key: imgEnriquecida.formdata_key,
-                                                            uid: imgEnriquecida.uid
-                                                        };
-                                                        console.debug(`[crearPedido] Inyectado en datosExtendidos[${tallaKey}][${imgIdx}]`);
-                                                    }
+                                                // Encontrar genero y talla conservando llaves compuestas:
+                                                // "dama__L__ARENA" => genero="dama", talla="L__ARENA"
+                                                const [genero, ...tallaParts] = tallaKey.split('__');
+                                                const talla = tallaParts.join('__');
+                                                const detalleTalla = genero && talla
+                                                    ? prenda.procesos[procesoKey].datos.datosExtendidos?.[genero]?.[talla]
+                                                    : null;
+
+                                                if (detalleTalla?.imagenesFiles && detalleTalla.imagenesFiles[imgIdx]) {
+                                                    detalleTalla.imagenesFiles[imgIdx] = {
+                                                        file: imgEnriquecida.file,
+                                                        formdata_key: imgEnriquecida.formdata_key,
+                                                        uid: imgEnriquecida.uid
+                                                    };
+                                                    console.debug(`[crearPedido] Inyectado en datosExtendidos[${tallaKey}][${imgIdx}]`);
                                                 }
                                             }
                                         });
