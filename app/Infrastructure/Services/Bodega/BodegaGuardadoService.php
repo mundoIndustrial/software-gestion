@@ -47,6 +47,11 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             
             // Buscar registro anterior para auditoría
             $detalleAnterior = BodegaDetalleTalla::where($criteriosBusqueda)->first();
+            $estadoBodega = $datosValidados['estado_bodega'] ?? null;
+            $fechaEntregaBodega = null;
+            if ($estadoBodega === 'Entregado') {
+                $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? now();
+            }
             
             // Preparar datos para crear/actualizar
             $datosGuardar = [
@@ -66,7 +71,8 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
                 'fecha_pedido' => $datosValidados['fecha_pedido'] ?? null,
                 'fecha_entrega' => $datosValidados['fecha_entrega'] ?? null,
                 'area' => $datosValidados['area'] ?? null,
-                'estado_bodega' => $datosValidados['estado_bodega'] ?? null,
+                'estado_bodega' => $estadoBodega,
+                'fecha_entrega_bodega' => $fechaEntregaBodega,
                 'observaciones_bodega' => $datosValidados['observaciones'] ?? null,
                 'usuario_bodega_id' => $usuario->id,
                 'usuario_bodega_nombre' => $usuario->name,
@@ -230,6 +236,7 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             'pendientes',
             'fecha_pedido',
             'fecha_entrega',
+            'fecha_entrega_bodega',
             'area',
             'estado_bodega',
             'observaciones_bodega',

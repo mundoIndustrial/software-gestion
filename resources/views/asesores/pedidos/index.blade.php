@@ -955,7 +955,7 @@
                     // Construir HTML completo de la fila
                     rowDiv.innerHTML = `
                         <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-${pedido.id || pedido.pedido_id}" data-pedido="${pedido.id || pedido.pedido_id}" title="Ver Opciones" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
+                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-${pedido.id || pedido.pedido_id}" data-pedido="${pedido.id || pedido.pedido_id}" data-pedido-id="${pedido.id || pedido.pedido_id}" title="Ver Opciones" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
                                 <i class="fas fa-eye"></i>
                             </button>
                             <button onclick="editarPedido(${pedido.id || pedido.pedido_id})" title="Editar Pedido" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
@@ -1071,6 +1071,7 @@
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
 <script src="{{ asset('js/asesores/observaciones-despacho.js') }}?v={{ $v }}"></script>
+<script src="{{ asset('js/asesores/entregas-despacho.js') }}?v={{ $v }}"></script>
 
 <!--  TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>

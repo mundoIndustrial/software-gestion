@@ -8,6 +8,7 @@ use App\Infrastructure\Http\Controllers\Asesores\AsesoresPedidosQueryController;
 use App\Infrastructure\Http\Controllers\Asesores\AsesoresRealtimePedidosController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
 use App\Infrastructure\Http\Controllers\Asesores\EppsPedidoController;
+use App\Infrastructure\Http\Controllers\Asesores\EntregasDespachoController;
 use App\Infrastructure\Http\Controllers\Asesores\ObtenerPrendasAutocompleteController;
 use App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController;
 use App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController;
@@ -241,6 +242,19 @@ function registerAsesoresObservacionesDespachoRoutes(): void
         ->name('observaciones.marcar-bodega-vistas');
 }
 
+function registerAsesoresEntregasDespachoRoutes(): void
+{
+    Route::post('/pedidos/entregas-despacho/resumen', [EntregasDespachoController::class, 'resumen'])
+        ->name('entregas-despacho.resumen');
+    Route::get('/pedidos/{id}/entregas-despacho', [EntregasDespachoController::class, 'obtener'])
+        ->whereNumber('id')
+        ->name('entregas-despacho.obtener');
+    Route::post('/pedidos/{id}/entregas-despacho/{detalleId}/marcar', [EntregasDespachoController::class, 'marcar'])
+        ->whereNumber('id')
+        ->whereNumber('detalleId')
+        ->name('entregas-despacho.marcar');
+}
+
 function registerAsesoresRealtimeRoutes(): void
 {
     Route::get('/realtime/pedidos', [AsesoresRealtimePedidosController::class, 'listar'])
@@ -259,5 +273,6 @@ Route::middleware(['web', 'auth:web', 'role:asesor,admin,supervisor_pedidos'])
         registerAsesoresCatalogosRoutes();
         registerAsesoresNotificacionesRoutes();
         registerAsesoresObservacionesDespachoRoutes();
+        registerAsesoresEntregasDespachoRoutes();
         registerAsesoresRealtimeRoutes();
     });

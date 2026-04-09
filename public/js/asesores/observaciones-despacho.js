@@ -5,6 +5,59 @@
         return '';
     }
 
+    window.__asesoresBadgeTotals = window.__asesoresBadgeTotals || { obs: {}, entregas: {} };
+
+    function __renderTotalBadgeOnEyeButton(pedidoId) {
+        const totals = window.__asesoresBadgeTotals || { obs: {}, entregas: {} };
+        const obs = parseInt(totals.obs?.[pedidoId] ?? '0', 10) || 0;
+        const entregas = parseInt(totals.entregas?.[pedidoId] ?? '0', 10) || 0;
+        const total = obs + entregas;
+
+        const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+        if (!btn) return;
+
+        btn.querySelectorAll('.total-notif-badge').forEach((b) => b.remove());
+        if (total <= 0) return;
+
+        if (btn.style.position !== 'relative') {
+            btn.style.position = 'relative';
+        }
+
+        const badge = document.createElement('span');
+        badge.className = 'total-notif-badge';
+        badge.textContent = total > 99 ? '99+' : String(total);
+        badge.style.cssText = [
+            'position:absolute',
+            'top:-6px',
+            'right:-6px',
+            'min-width:18px',
+            'height:18px',
+            'padding:0 5px',
+            'border-radius:999px',
+            'background:#ef4444',
+            'color:#ffffff',
+            'font-size:11px',
+            'font-weight:700',
+            'line-height:18px',
+            'text-align:center',
+            'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
+        ].join(';');
+        btn.appendChild(badge);
+    }
+
+    function __setTotalPart(pedidoId, kind, count) {
+        if (!window.__asesoresBadgeTotals) {
+            window.__asesoresBadgeTotals = { obs: {}, entregas: {} };
+        }
+        if (!window.__asesoresBadgeTotals[kind]) {
+            window.__asesoresBadgeTotals[kind] = {};
+        }
+        window.__asesoresBadgeTotals[kind][pedidoId] = parseInt(count ?? '0', 10) || 0;
+        __renderTotalBadgeOnEyeButton(pedidoId);
+    }
+
+    window.__setTotalBadgePartAsesores = __setTotalPart;
+
     // ==================== BADGE PERSISTENCE ====================
     // Clave para localStorage
     const BADGE_STORAGE_KEY = 'obs_despacho_badges_seen';
@@ -45,10 +98,10 @@
     }
 
     function __clearBadge(pedidoId) {
-        const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
-        if (!btn) return;
-        const badge = btn.querySelector('.obs-despacho-badge');
-        if (badge) badge.remove();
+        const targets = document.querySelectorAll(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        targets.forEach((btn) => {
+            btn.querySelectorAll('.obs-despacho-badge').forEach((badge) => badge.remove());
+        });
     }
 
     function __renderBadge(pedidoId, count) {
@@ -58,51 +111,52 @@
         } else {
             // Si no hay observaciones no leídas, verificar localStorage
             const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-            
+
             if (wasRecentlySeen) {
                 __clearBadge(pedidoId);
                 return;
             }
         }
-        
-        // Buscar en botones de despacho primero
-        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
-        
-        if (!btn) {
-            // Buscar en botones de asesores/pedidos
-            btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
-        }
-        
-        if (!btn) {
+
+        const targets = document.querySelectorAll(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+
+        if (!targets.length) {
             return;
         }
-        
+
         __clearBadge(pedidoId);
-        
+
         if (!count || count <= 0) {
             return;
         }
 
-        const badge = document.createElement('span');
-        badge.className = 'obs-despacho-badge';
-        badge.textContent = count > 99 ? '99+' : String(count);
-        badge.style.cssText = [
-            'position:absolute',
-            'top:-6px',
-            'right:-6px',
-            'min-width:18px',
-            'height:18px',
-            'padding:0 5px',
-            'border-radius:999px',
-            'background:#ef4444',
-            'color:#ffffff',
-            'font-size:11px',
-            'font-weight:700',
-            'line-height:18px',
-            'text-align:center',
-            'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
-        ].join(';');
-        btn.appendChild(badge);
+        targets.forEach((btn) => {
+            // Asegura anclaje correcto del badge al botón
+            if (btn.style.position !== 'relative') {
+                btn.style.position = 'relative';
+            }
+
+            const badge = document.createElement('span');
+            badge.className = 'obs-despacho-badge';
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.style.cssText = [
+                'position:absolute',
+                'top:-6px',
+                'right:-6px',
+                'min-width:18px',
+                'height:18px',
+                'padding:0 5px',
+                'border-radius:999px',
+                'background:#ef4444',
+                'color:#ffffff',
+                'font-size:11px',
+                'font-weight:700',
+                'line-height:18px',
+                'text-align:center',
+                'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
+            ].join(';');
+            btn.appendChild(badge);
+        });
     }
 
     async function refrescarBadgesObservacionesDespachoAsesores() {
@@ -137,6 +191,7 @@
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
                 __renderBadge(pedidoId, unread);
+                __setTotalPart(pedidoId, 'obs', unread);
             });
         } catch (e) {
         }
@@ -765,3 +820,4 @@
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
 })();
+

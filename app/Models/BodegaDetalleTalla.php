@@ -29,6 +29,7 @@ class BodegaDetalleTalla extends Model
         'observaciones_bodega',
         'fecha_pedido',
         'fecha_entrega',
+        'fecha_entrega_bodega',
         'fecha_entrega_despacho',
         'estado_bodega',
         'costura_estado',
@@ -41,6 +42,7 @@ class BodegaDetalleTalla extends Model
     protected $casts = [
         'fecha_pedido' => 'datetime',
         'fecha_entrega' => 'datetime',
+        'fecha_entrega_bodega' => 'datetime',
         'fecha_entrega_despacho' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -50,6 +52,7 @@ class BodegaDetalleTalla extends Model
     protected $dates = [
         'fecha_pedido',
         'fecha_entrega',
+        'fecha_entrega_bodega',
         'fecha_entrega_despacho',
         'created_at',
         'updated_at',

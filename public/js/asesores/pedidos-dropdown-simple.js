@@ -240,7 +240,25 @@ globalThis.crearDropdownVer = function(button) {
         if (!esRutaSupervisor && !esRutaInsumos) {
             dropdownHTML += `
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
+                <button class="entregas-despacho-btn" data-pedido-id="${pedidoId}" onclick="abrirModalEntregasDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-truck-loading" style="color: #2563eb;"></i> Entregas
+                </button>
+                <div style="height: 1px; background: #e5e7eb;"></div>
+                <button class="despacho-obs-btn" data-pedido-id="${pedidoId}" onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -334,7 +352,24 @@ globalThis.crearDropdownVer = function(button) {
                 <i class="fas fa-tasks"></i>
             </button>
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" title="Observaciones despacho" style="
+            <button class="entregas-despacho-btn" data-pedido-id="${pedidoId}" onclick="abrirModalEntregasDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" title="Entregas" style="
+                width: 100%;
+                text-align: center;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #2563eb;
+                font-size: 1.25rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            " onmouseover="this.style.background='#eff6ff'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)'">
+                <i class="fas fa-truck-loading"></i>
+            </button>
+            <div style="height: 1px; background: #e5e7eb;"></div>
+            <button class="despacho-obs-btn" data-pedido-id="${pedidoId}" onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" title="Observaciones despacho" style="
                 width: 100%;
                 text-align: center;
                 padding: 0.875rem 1rem;
@@ -472,6 +507,14 @@ globalThis.crearDropdownVer = function(button) {
             // Abrir solo el dropdown del botón clickeado
             dropdown.style.display = 'block';
             posicionarDropdown(buttonVer, dropdown);
+
+            // Refrescar para que el badge aparezca también en la opción "Observaciones despacho"
+            if (typeof globalThis.refrescarBadgesObservacionesDespachoAsesores === 'function') {
+                globalThis.refrescarBadgesObservacionesDespachoAsesores();
+            }
+            if (typeof globalThis.refrescarBadgesEntregasDespachoAsesores === 'function') {
+                globalThis.refrescarBadgesEntregasDespachoAsesores();
+            }
             
             console.log('[pedidos-dropdown] Dropdown abierto para pedido:', pedidoId);
         }

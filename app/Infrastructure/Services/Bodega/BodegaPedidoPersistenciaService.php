@@ -298,6 +298,12 @@ class BodegaPedidoPersistenciaService
             $updateBase[WarehouseConstants::FIELD_ESTADO_BODEGA] = $estadoNuevo;
         }
 
+        if (($updateBase[WarehouseConstants::FIELD_ESTADO_BODEGA] ?? null) === WarehouseConstants::STATE_DELIVERED) {
+            $updateBase['fecha_entrega_bodega'] = now();
+        } else {
+            $updateBase['fecha_entrega_bodega'] = null;
+        }
+
         BodegaDetallesTalla::updateOrCreate(
             [
                 WarehouseConstants::FIELD_PEDIDO_PRODUCCION_ID => $pedido->id,

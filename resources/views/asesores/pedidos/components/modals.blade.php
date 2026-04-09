@@ -92,3 +92,26 @@
         </div>
     </div>
 </div>
+
+<div id="modalEntregasDespachoAsesores" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center overflow-auto" style="z-index: 999999;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
+            <h2 id="modalEntregasDespachoAsesoresTitle" class="text-lg font-semibold text-white">Entregas para despacho</h2>
+            <button onclick="cerrarModalEntregasDespachoAsesores()"
+                    class="text-white hover:text-slate-200 text-2xl leading-none">
+                ×
+            </button>
+        </div>
+
+        <div class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 220px)">
+            <div id="entregasDespachoAsesoresContent" class="space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0">
+            <button onclick="cerrarModalEntregasDespachoAsesores()"
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
