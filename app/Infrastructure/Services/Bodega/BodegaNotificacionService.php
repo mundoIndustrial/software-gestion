@@ -59,7 +59,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
 
             $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
             $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
-                ->where('created_at', '>=', now()->subYear())
+                ->where('created_at', '>=', now()->subMonths(4))
                 ->orderBy('created_at', 'desc')
                 ->limit(200)
                 ->get();
@@ -68,7 +68,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
             $ordenesAnuladas = PedidoProduccion::where('estado', 'Anulada')
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '>', 0)
-                ->where('updated_at', '>=', now()->subYear())
+                ->where('updated_at', '>=', now()->subMonths(4))
                 ->with(['asesora:id,name'])
                 ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'updated_at'])
                 ->orderBy('updated_at', 'desc')
@@ -161,7 +161,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
             // Marcar news como vistas
             $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
             $newsIds = News::whereIn('event_type', $novedadesTipos)
-                ->where('created_at', '>=', now()->subYear())
+                ->where('created_at', '>=', now()->subMonths(4))
                 ->pluck('id');
 
             foreach ($newsIds as $newsId) {
@@ -183,7 +183,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
             $anuladasIds = PedidoProduccion::where('estado', 'Anulada')
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '>', 0)
-                ->where('updated_at', '>=', now()->subYear())
+                ->where('updated_at', '>=', now()->subMonths(4))
                 ->pluck('id');
 
             foreach ($anuladasIds as $anuladaId) {
