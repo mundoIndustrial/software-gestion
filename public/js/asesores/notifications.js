@@ -4,6 +4,7 @@
 
 let lastMarkAllReadTime = 0;
 let asesoresRealtimeNotificationsBound = false;
+let asesoresNotificationsRefreshTimeout = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
@@ -18,12 +19,29 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeNotifications() {
     loadNotifications();
     setupRealtimeNotifications();
+    setupCrossModuleNotificationRefresh();
 
     // Marcar todas como leídas
     const markAllReadBtn = document.querySelector('.mark-all-read');
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllAsRead);
     }
+}
+
+function setupCrossModuleNotificationRefresh() {
+    if (window.__asesoresNotificationsCrossModuleBound) {
+        return;
+    }
+    window.__asesoresNotificationsCrossModuleBound = true;
+
+    window.addEventListener('asesores:notificaciones:refrescar', () => {
+        if (asesoresNotificationsRefreshTimeout) {
+            clearTimeout(asesoresNotificationsRefreshTimeout);
+        }
+        asesoresNotificationsRefreshTimeout = setTimeout(() => {
+            loadNotifications();
+        }, 250);
+    });
 }
 
 
@@ -71,6 +89,8 @@ function setupRealtimeNotifications() {
             ws.subscribe('cotizaciones', '.cotizacion.creada', refreshNotifications);
             ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', refreshNotifications);
             ws.subscribe('pedidos.general', '.pedido.actualizado', refreshNotifications);
+            ws.subscribe('asesores.observaciones', '.observacion.despacho', refreshNotifications);
+            ws.subscribe('asesores.observaciones', '.bodega.nota', refreshNotifications);
 
             if (currentUserId) {
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.creada', refreshNotifications);

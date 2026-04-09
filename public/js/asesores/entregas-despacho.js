@@ -1,4 +1,10 @@
 (function () {
+    window.__asesoresEntregasResumenCache = window.__asesoresEntregasResumenCache || {};
+
+    function __notifyNotificationsRefresh() {
+        window.dispatchEvent(new CustomEvent('asesores:notificaciones:refrescar'));
+    }
+
     function __displayTalla(value) {
         const talla = (value || '').toString().trim();
         if (!talla) return '-';
@@ -95,14 +101,24 @@
 
             const data = await r.json().catch(() => null);
             const map = (data && data.success && data.data) ? data.data : {};
+            let huboCambio = false;
 
             ids.forEach((pedidoId) => {
                 const count = parseInt(map?.[pedidoId]?.pendientes_despacho ?? '0', 10) || 0;
+                const previo = parseInt(window.__asesoresEntregasResumenCache?.[pedidoId] ?? '0', 10) || 0;
+                if (previo !== count) {
+                    huboCambio = true;
+                }
+                window.__asesoresEntregasResumenCache[pedidoId] = count;
                 __renderBadge(pedidoId, count);
                 if (typeof window.__setTotalBadgePartAsesores === 'function') {
                     window.__setTotalBadgePartAsesores(pedidoId, 'entregas', count);
                 }
             });
+
+            if (huboCambio) {
+                __notifyNotificationsRefresh();
+            }
         } catch (e) {
         }
     }
@@ -205,6 +221,7 @@
                 `;
             }
             refrescarBadgesEntregasDespachoAsesores();
+            __notifyNotificationsRefresh();
         } catch (e) {
             if (triggerEl && originalButtonHtml) {
                 triggerEl.outerHTML = originalButtonHtml;

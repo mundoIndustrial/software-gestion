@@ -7,6 +7,10 @@
 
     window.__asesoresBadgeTotals = window.__asesoresBadgeTotals || { obs: {}, entregas: {} };
 
+    function __notifyNotificationsRefresh() {
+        window.dispatchEvent(new CustomEvent('asesores:notificaciones:refrescar'));
+    }
+
     function __renderTotalBadgeOnEyeButton(pedidoId) {
         const totals = window.__asesoresBadgeTotals || { obs: {}, entregas: {} };
         const obs = parseInt(totals.obs?.[pedidoId] ?? '0', 10) || 0;
@@ -704,6 +708,7 @@
 
                 // Refrescar todos los badges
                 setTimeout(refrescarBadgesObservacionesDespachoAsesores, 500);
+                __notifyNotificationsRefresh();
             });
 
         // Escuchar notas de bodega (para refrescar badges en tiempo real)
@@ -714,6 +719,7 @@
 
                 // Refrescar badges (si no has abierto el modal, debe aparecer)
                 refrescarBadgesObservacionesDespachoAsesores();
+                __notifyNotificationsRefresh();
 
                 // Si el modal está abierto para este pedido, recargar y marcar vistas
                 const currentPedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
@@ -746,6 +752,7 @@
                 .listen('.observacion.despacho', (e) => {
                     // Actualizar badge
                     refrescarBadgesObservacionesDespachoAsesores();
+                    __notifyNotificationsRefresh();
 
                     // Si el modal está abierto, recargar
                     const currentPedidoId = window.__asesoresObsDespachoCtx?.pedidoId;

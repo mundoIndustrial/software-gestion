@@ -7,6 +7,7 @@ use App\Domain\Pedidos\UseCases\ActualizarPrendaCompletaUseCaseContract;
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\Services\PrendaPostUpdateHydrationService;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use App\Domain\Pedidos\Repositories\PrendaPedidoReadRepository;
 use App\Domain\Pedidos\Repositories\PrendaPedidoTallaReadRepository;
 use App\Domain\Pedidos\Services\PrendaTransformerServiceContract;
@@ -48,6 +49,7 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         private readonly PrendaProcesosUpdaterService $prendaProcesosUpdaterService,
         private readonly PrendaPedidoTallaReadRepository $prendaPedidoTallaReadRepository,
         private readonly PrendaPedidoReadRepository $prendaPedidoReadRepository,
+        private readonly PedidoProduccionReadService $pedidoProduccionReadService,
     ) {
     }
 
@@ -120,6 +122,10 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         
         // Tocar el updated_at del pedido padre (modificar prenda = actualización del pedido)
         $prenda->pedidoProduccion()->touch();
+        
+        // DESELECCIONAR PEDIDO para todos los supervisores cuando se actualiza una prenda
+        // Esto asegura que cuando se recargue la tabla el pedido no esté marcado
+        $this->pedidoProduccionReadService->deselectOrderForAllUsers($prenda->pedido_produccion_id);
         
         return $this->postUpdateHydrationService->hidratarParaRespuesta($prenda);
     }

@@ -544,6 +544,17 @@ class PedidosRealtimeRefresh {
                 
                 // Resaltar la fila que se actualizó
                 if (item.id == pedidoId) {
+                    // DESMARCAR CHECKBOX cuando se reordena el pedido
+                    // La deselección se guarda en el servidor automáticamente cuando se actualiza una prenda
+                    const checkbox = item.fila.querySelector(`input.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                        if (this.debug) console.log('[PedidosRealtime]  Checkbox desmarcado para pedido:', pedidoId);
+                    }
+                    
+                    // Actualizar atributo data-seleccionado a false
+                    item.fila.setAttribute('data-seleccionado', 'false');
+                    
                     item.fila.style.background = '#fef3c7';
                     item.fila.style.transition = 'all 0.3s ease';
                     

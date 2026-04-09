@@ -152,6 +152,15 @@ class PedidoProduccionReadService
     }
 
     /**
+     * Deselecciona un pedido para TODOS los supervisores
+     * Se ejecuta cuando se actualiza un pedido (desde la asesora)
+     */
+    public function deselectOrderForAllUsers(int $orderId): void
+    {
+        SeleccionPedido::where('pedido_id', $orderId)->delete();
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function getOrderSelectionsForUser(int $userId): array
