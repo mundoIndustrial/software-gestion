@@ -221,6 +221,7 @@ final class PrendaProcesosUpdaterService
 
     private function actualizarTallasDelProceso($procesoExistente, array $tallasNuevas, array $datosExtendidos = []): void
     {
+        $imagenesExistentesPorTalla = $this->mapearImagenesExistentesPorTalla($procesoExistente);
         // Limpieza física previa para evitar conflictos por índice único
         // (proceso_prenda_detalle_id + genero + talla)
         $procesoExistente->load('tallas.coloresAsignados');
@@ -307,6 +308,9 @@ final class PrendaProcesosUpdaterService
                 'observaciones' => $tallaData['observaciones'],
             ]);
 
+            $claveTalla = $tallaData['genero'] . '__' . $tallaData['talla'];
+            $this->restaurarImagenesExistentesEnTalla($tallaCreada, $imagenesExistentesPorTalla[$claveTalla] ?? []);
+
             foreach ($tallaData['colores'] as $colorData) {
                 \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
                     'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
@@ -319,6 +323,64 @@ final class PrendaProcesosUpdaterService
                     'updated_at' => now(),
                 ]);
             }
+        }
+    }
+
+    private function mapearImagenesExistentesPorTalla($procesoExistente): array
+    {
+        $procesoExistente->load('tallas.imagenes');
+
+        $imagenesPorTalla = [];
+        foreach ($procesoExistente->tallas as $talla) {
+            $clave = strtoupper((string) $talla->genero) . '__' . strtoupper((string) $talla->talla);
+            if (!isset($imagenesPorTalla[$clave])) {
+                $imagenesPorTalla[$clave] = [];
+            }
+
+            foreach ($talla->imagenes as $imagen) {
+                $rutaOriginal = $imagen->ruta_original ?? null;
+                $rutaWebp = $imagen->ruta_webp ?? $rutaOriginal;
+                if (!$rutaOriginal && !$rutaWebp) {
+                    continue;
+                }
+
+                $keyDedupe = ($rutaOriginal ?? '') . '|' . ($rutaWebp ?? '');
+                if (isset($imagenesPorTalla[$clave][$keyDedupe])) {
+                    continue;
+                }
+
+                $imagenesPorTalla[$clave][$keyDedupe] = [
+                    'ruta_original' => $rutaOriginal ?? $rutaWebp,
+                    'ruta_webp' => $rutaWebp ?? $rutaOriginal,
+                ];
+            }
+        }
+
+        return array_map(fn ($imagenes) => array_values($imagenes), $imagenesPorTalla);
+    }
+
+    private function restaurarImagenesExistentesEnTalla($tallaProceso, array $imagenes): void
+    {
+        if (empty($imagenes)) {
+            return;
+        }
+
+        $orden = 1;
+        foreach ($imagenes as $img) {
+            $rutaOriginal = $img['ruta_original'] ?? null;
+            $rutaWebp = $img['ruta_webp'] ?? $rutaOriginal;
+            if (!$rutaOriginal && !$rutaWebp) {
+                continue;
+            }
+
+            $tallaProceso->imagenes()->create([
+                'ruta_original' => $rutaOriginal ?? $rutaWebp,
+                'ruta_webp' => $rutaWebp ?? $rutaOriginal,
+                'orden' => $orden,
+                'es_principal' => $orden === 1 ? 1 : 0,
+            ]);
+
+            $orden++;
         }
     }
 
