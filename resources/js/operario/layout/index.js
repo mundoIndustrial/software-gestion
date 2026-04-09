@@ -1,11 +1,17 @@
-document.addEventListener('DOMContentLoaded', function () {
+function initOperarioLayout() {
     setupUserDropdown();
     setupNotificaciones();
 
     if (typeof window.__initDashboardSearch !== 'function') {
         setupSearch();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initOperarioLayout);
+} else {
+    initOperarioLayout();
+}
 
 function setupUserDropdown() {
     const userBtn = document.getElementById('userBtn');

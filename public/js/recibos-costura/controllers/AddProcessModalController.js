@@ -529,10 +529,19 @@ class AddProcessModalController {
             return;
         }
 
+        // Obtener el encargado actual (si existe)
+        let encargadoActual = '';
+        if (window.currentConsecutivoCosturaData?.encargado) {
+            encargadoActual = window.currentConsecutivoCosturaData.encargado;
+        } else if (window.currentPrendaData?.encargado) {
+            encargadoActual = window.currentPrendaData.encargado;
+        }
+
         // Guardar datos en atributos data- para persistencia
         modal.setAttribute('data-pedido-id', pedidoId);
         modal.setAttribute('data-prenda-id', prendaId || '');
         modal.setAttribute('data-area', areaSeleccionada);
+        modal.setAttribute('data-encargado-actual', encargadoActual);
 
         // Mostrar el modal
         modal.style.display = 'flex';
@@ -545,6 +554,10 @@ class AddProcessModalController {
             const exactOption = Array.from(selectArea.options || []).find((opt) => String(opt.value || '').trim().toLowerCase() === normalizedArea);
             selectArea.value = exactOption ? exactOption.value : areaSeleccionada;
             console.log('[AddProcessModalController]  Área seleccionada automáticamente:', areaSeleccionada);
+            
+            // PRE-CARGAR USUARIOS de la área en el ProcessManager ANTES de disparar el change
+            // Esto hace que cuando se dispare el change, el selector sea ultra-rápido
+            this._preCargarUsuarios(normalizedArea);
 
             // Importante: disparar change para que se active el selector dinámico de encargados (cortador/costurero)
             selectArea.dispatchEvent(new Event('change', { bubbles: true }));
@@ -555,7 +568,6 @@ class AddProcessModalController {
             const inputEncargado = document.getElementById('procesoEncargado');
             const selectEncargado = document.getElementById('procesoEncargadoSelect');
             if (selectEncargado) {
-                selectEncargado.value = '';
                 selectEncargado.focus();
                 return;
             }
@@ -573,5 +585,43 @@ class AddProcessModalController {
         }
 
         console.log('[AddProcessModalController]  Modal abierto con datos cargados');
+    }
+
+    /**
+     * PRIVADO: Pre-cargar usuarios de un área en el caché del ProcessManager
+     * @private
+     * @param {string} area - Área seleccionada (lowercase)
+     */
+    _preCargarUsuarios(area) {
+        // Obtener la instancia de ProcessManager (puede ser con minúscula o mayúscula)
+        const pm = window.processManager || window.ProcessManager;
+        if (!pm) {
+            console.warn('[AddProcessModalController] ProcessManager no disponible para pre-cargar usuarios');
+            return;
+        }
+
+        // Áreas que usan selector
+        if (area === 'corte' || area === 'costura') {
+            // Verificar si ya están en caché
+            if (pm.usuariosCache && pm.usuariosCache[area]) {
+                console.log('[AddProcessModalController] Usuarios ya en caché para:', area);
+                return;
+            }
+
+            console.log('[AddProcessModalController] Pre-cargando usuarios para:', area);
+            
+            // Hacer fetch en background sin esperar a que termine
+            fetch(`/api/usuarios/por-area?area=${encodeURIComponent(area)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.usuarios && pm?.usuariosCache) {
+                        pm.usuariosCache[area] = data.usuarios;
+                        console.log('[AddProcessModalController] ✓ Usuarios pre-cargados en caché:', area, data.usuarios.length);
+                    }
+                })
+                .catch(error => {
+                    console.warn('[AddProcessModalController] Error pre-cargando usuarios:', error);
+                });
+        }
     }
 }

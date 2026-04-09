@@ -7,6 +7,8 @@ if (typeof ProcessManager !== 'undefined') {
   // Gestión de procesos del sistema de tracking
   class ProcessManager {
   constructor() {
+    // Caché de usuarios por área para evitar recargar
+    this.usuariosCache = {};
     this.init();
   }
 
@@ -51,7 +53,7 @@ if (typeof ProcessManager !== 'undefined') {
     });
   }
 
-  // Convertir campo de encargado a SELECT
+  // Convertir campo de encargado a SELECT (OPTIMIZADO CON CACHÉ Y PRE-SELECCIÓN)
   async convertEncargadoToSelect(area, container) {
     // Primero, remover cualquier input o select anterior
     const existingInput = document.getElementById('procesoEncargado');
@@ -75,20 +77,54 @@ if (typeof ProcessManager !== 'undefined') {
     try {
       console.log('[convertEncargadoToSelect] Cargando usuarios para:', area);
       
-      // Cargar usuarios desde API
-      const response = await fetch(`/api/usuarios/por-area?area=${encodeURIComponent(area)}`);
-      const data = await response.json();
+      // Verificar si ya está en caché
+      let usuarios = this.usuariosCache[area];
+      if (!usuarios) {
+        console.log('[convertEncargadoToSelect] No está en caché, llamando API...');
+        // Cargar usuarios desde API (solo si no están en caché)
+        const response = await fetch(`/api/usuarios/por-area?area=${encodeURIComponent(area)}`);
+        const data = await response.json();
+        
+        if (data.success && data.usuarios && data.usuarios.length > 0) {
+          usuarios = data.usuarios;
+          // Guardar en caché para próximas veces
+          this.usuariosCache[area] = usuarios;
+          console.log('[convertEncargadoToSelect] ✓ Usuarios cargados y cacheados:', usuarios.length);
+        } else {
+          console.warn('[convertEncargadoToSelect] No hay usuarios disponibles para:', area);
+          usuarios = [];
+        }
+      } else {
+        console.log('[convertEncargadoToSelect] ✓ Usuarios obtenidos del caché:', usuarios.length);
+      }
 
-      if (data.success && data.usuarios && data.usuarios.length > 0) {
-        data.usuarios.forEach(usuario => {
+      // Agregar opciones al select
+      if (usuarios.length > 0) {
+        usuarios.forEach(usuario => {
           const option = document.createElement('option');
           option.value = usuario.id;
           option.textContent = usuario.name;
           select.appendChild(option);
         });
-        console.log('[convertEncargadoToSelect] ✓ Usuarios cargados:', data.usuarios.length);
+
+        // Obtener encargado actual del modal
+        const modal = document.getElementById('addProcesoModal');
+        const encargadoActual = modal ? modal.getAttribute('data-encargado-actual') : null;
+        
+        if (encargadoActual) {
+          console.log('[convertEncargadoToSelect] Buscando encargado actual:', encargadoActual);
+          // Buscar usuario que coincida con el encargado actual (por ID o nombre)
+          const usuarioEncontrado = usuarios.find(u => 
+            String(u.id) === String(encargadoActual) || 
+            u.name.toLowerCase().trim() === String(encargadoActual).toLowerCase().trim()
+          );
+          
+          if (usuarioEncontrado) {
+            select.value = usuarioEncontrado.id;
+            console.log('[convertEncargadoToSelect] ✓ Encargado pre-seleccionado:', usuarioEncontrado.name);
+          }
+        }
       } else {
-        console.warn('[convertEncargadoToSelect] No hay usuarios disponibles para:', area);
         const option = document.createElement('option');
         option.value = '';
         option.textContent = 'No hay usuarios disponibles';

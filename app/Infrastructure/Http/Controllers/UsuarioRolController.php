@@ -156,7 +156,7 @@ class UsuarioRolController extends Controller
     private function validarArea(string $area): array
     {
         $rolesMap = [
-            'corte' => ['cortador', 'confeccion-sobremedida'],
+            'corte' => ['cortador', 'confeccion-sobremedida', 'visualizador_plooter'],
             'costura' => ['costurero', 'confeccion-sobremedida', 'costura-reflectivo'],
             'bordado' => ['bordador'],
             'estampado' => ['estampador'],
