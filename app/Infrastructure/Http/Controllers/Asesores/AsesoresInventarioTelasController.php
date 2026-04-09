@@ -108,6 +108,25 @@ class AsesoresInventarioTelasController extends Controller
         }
     }
 
+    public function show(int|string $id): JsonResponse
+    {
+        try {
+            $telas = $this->obtenerTelasUseCase->ejecutar();
+            $tela = $telas->firstWhere('id', (int) $id);
+
+            if (!$tela) {
+                return $this->failure('Tela no encontrada', 404);
+            }
+
+            return $this->json([
+                'success' => true,
+                'tela' => $tela,
+            ]);
+        } catch (\Exception $e) {
+            return $this->failure('Error al obtener la tela: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function destroy(int|string $id): JsonResponse
     {
         try {

@@ -53,16 +53,37 @@ function inicializarBuscadorYFiltros() {
 // FUNCIONES PARA MODAL AJUSTAR STOCK
 // ========================================
 function abrirModalAjustarStock(telaId, telaNombre, stockActual) {
-    stockActualGlobal = stockActual;
-    document.getElementById('tela_id_ajuste').value = telaId;
-    document.getElementById('tela_nombre_ajuste').textContent = telaNombre;
-    document.getElementById('stock_actual_ajuste').textContent = stockActual + ' m';
-    document.getElementById('preview_stock_actual').textContent = stockActual + ' m';
-    document.getElementById('cantidad_ajuste').value = '';
-    document.getElementById('observaciones_ajuste').value = '';
-    actualizarVistaPrevia();
-    document.getElementById('modalAjustarStock').style.display = 'flex';
-    mostrarNotificacion(`Ajustando stock de "${telaNombre}" | Stock actual: ${stockActual.toFixed(2)} m`, 'info');
+    // Obtener los datos actualizados del servidor
+    fetch(`/inventario-telas/${telaId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.tela) {
+            const tela = data.tela;
+            // Usar los datos actualizados del servidor - convertir a número
+            stockActualGlobal = parseFloat(tela.stock) || 0;
+            document.getElementById('tela_id_ajuste').value = tela.id;
+            document.getElementById('tela_nombre_ajuste').textContent = tela.nombre_tela;
+            document.getElementById('stock_actual_ajuste').textContent = stockActualGlobal.toFixed(2) + ' m';
+            document.getElementById('preview_stock_actual').textContent = stockActualGlobal.toFixed(2) + ' m';
+            document.getElementById('cantidad_ajuste').value = '';
+            document.getElementById('observaciones_ajuste').value = '';
+            document.querySelector('input[name="tipo_accion"][value="entrada"]').checked = true;
+            actualizarVistaPrevia();
+            document.getElementById('modalAjustarStock').style.display = 'flex';
+        } else {
+            mostrarNotificacion('⚠ Error al cargar los datos de la tela', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarNotificacion('✗ Error al obtener datos de la tela', 'error');
+    });
 }
 
 function cerrarModalAjustarStock() {

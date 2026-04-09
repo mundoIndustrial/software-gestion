@@ -13,8 +13,10 @@ Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.
         ->name('store');
     Route::post('/ajustar-stock', [App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController::class, 'ajustarStock'])
         ->name('ajustar-stock');
-    Route::delete('/{id}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController::class, 'destroy'])
-        ->name('destroy');
     Route::get('/historial', [App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController::class, 'historial'])
         ->name('historial');
+    Route::get('/{id}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController::class, 'show'])
+        ->name('show');
+    Route::delete('/{id}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController::class, 'destroy'])
+        ->name('destroy');
 });
