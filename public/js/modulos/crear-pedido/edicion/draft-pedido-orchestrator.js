@@ -24,19 +24,12 @@
     function confirmarGuardadoBorrador() {
         return Swal.fire({
             icon: 'question',
-            title: ' Guardar Borrador',
-            html: `
-                <div style="text-align: left;">
-                    <p style="margin-bottom: 10px;">
-                        <strong>Este pedido se guardara como borrador</strong>
-                    </p>
-                    <ul style="margin: 10px 0; text-align: left; display: inline-block;">
-                        <li>Si, no se asignara numero de pedido</li>
-                        <li>Si, estado: Borrador</li>
-                        <li>Si, podras editarlo despues</li>
-                    </ul>
-                </div>
-            `,
+            title: '¿Estas seguro de guardarlo como borrador?',
+            position: 'center',
+            customClass: {
+                container: 'swal-centered-container',
+                popup: 'swal-centered-popup'
+            },
             showCancelButton: true,
             confirmButtonColor: '#fb923c',
             cancelButtonColor: '#6b7280',

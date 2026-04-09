@@ -149,12 +149,20 @@ export class PedidosRecibosModule {
 
                         // Caso: modo_tallas=general y viene observaciones_por_talla como objeto
                         // -> convertir a tallas_detalle para que Formatters pinte "OBSERVACIONES POR TALLA"
+                        // IMPORTANTE: no pisar un tallas_detalle ya válido del backend.
                         const modo = String(proceso.modo_tallas || '').toLowerCase();
-                        if (modo === 'general' && proceso.observaciones_por_talla && typeof proceso.observaciones_por_talla === 'object') {
+                        const tallasDetalleValido = Array.isArray(proceso.tallas_detalle) && proceso.tallas_detalle.length > 0;
+                        if (modo === 'general' && !tallasDetalleValido && proceso.observaciones_por_talla && typeof proceso.observaciones_por_talla === 'object') {
                             const normalizarObs = (raw) => {
                                 const s = String(raw ?? '').trim();
                                 if (!s) return '';
                                 return s;
+                            };
+                            const obtenerCantidadReal = (generoKey, tallaKey) => {
+                                const generoRaw = proceso?.tallas?.[generoKey];
+                                if (!generoRaw) return 1;
+                                const cantidad = Number(generoRaw[tallaKey] || 0);
+                                return Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1;
                             };
 
                             const out = [];
@@ -173,7 +181,7 @@ export class PedidosRecibosModule {
                                     out.push({
                                         genero: mapGenero[k],
                                         talla: tallaKey,
-                                        cantidad: 1,
+                                        cantidad: obtenerCantidadReal(k, tallaKey),
                                         observaciones: obs
                                     });
                                 });
@@ -1853,4 +1861,3 @@ window.toggleGaleria = async function() {
         window.toggleGaleria._calling = false;
     }
 };
-
