@@ -268,6 +268,31 @@
                     });
             }
 
+            function toggleVistoBodega(checkbox, url) {
+                const item = checkbox.closest('div[style*="border-bottom"]');
+                const checked = checkbox.checked;
+                if (item) item.style.opacity = checked ? '0.55' : '1';
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(resp => {
+                    if (resp.success) {
+                        const badge = document.getElementById('bodegaBellBadge');
+                        let count = parseInt(badge.textContent) || 0;
+                        count = resp.visto ? Math.max(0, count - 1) : count + 1;
+                        badge.textContent = count;
+                        badge.style.display = count > 0 ? 'flex' : 'none';
+                    }
+                })
+                .catch(err => console.error('Error toggle visto:', err));
+            }
+
             // Auto-load on page and refresh every 30s
             document.addEventListener('DOMContentLoaded', function() {
                 cargarNotificacionesBodega();
