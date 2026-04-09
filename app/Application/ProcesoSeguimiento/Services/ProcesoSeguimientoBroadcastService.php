@@ -80,7 +80,7 @@ final class ProcesoSeguimientoBroadcastService
             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
             ->first();
 
-        if ($operario && $operario->hasRole('cortador')) {
+        if ($operario && ($operario->hasRole('cortador') || $operario->hasRole('visualizador_plooter'))) {
             broadcast(new OperarioRecibosActualizados(
                 userId: $operario->id,
                 payload: [
@@ -92,8 +92,11 @@ final class ProcesoSeguimientoBroadcastService
                 ]
             ));
 
-            Log::info('[ProcesoSeguimientoBroadcastService] Canal privado cortador emitido', [
+            $rol = $operario->hasRole('visualizador_plooter') ? 'visualizador_plooter' : 'cortador';
+            Log::info('[ProcesoSeguimientoBroadcastService] Canal privado emitido para ' . $rol, [
                 'user_id' => $operario->id,
+                'encargado' => $encargado,
+                'rol' => $rol,
             ]);
         }
     }

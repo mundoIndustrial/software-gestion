@@ -25,7 +25,7 @@ class CompletarReciboOperarioUseCase
         try {
             $usuario = Auth::user();
 
-            $esCortador = $usuario->hasRole('cortador');
+            $esCortador = $usuario->hasRole('cortador') || $usuario->hasRole('visualizador_plooter');
             $esCosturero = $usuario->hasRole('costurero');
             $esConfeccionSobremedida = $usuario->hasRole('confeccion-sobremedida');
             $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');

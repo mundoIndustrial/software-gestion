@@ -222,7 +222,7 @@
 }
 
 body[data-user-role="cortador"] .operario-dashboard.is-modern-dashboard .ordenes-list {
-    margin-top: 0.85rem;
+    margin-top: 2rem;
 }
 
 .operario-dashboard.is-modern-dashboard .filtros-badges-principales {

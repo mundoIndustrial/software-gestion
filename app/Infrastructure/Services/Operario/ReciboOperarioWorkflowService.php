@@ -25,14 +25,15 @@ class ReciboOperarioWorkflowService implements ReciboOperarioWorkflow
 
     public function upsertCompletado(?int $idRecibo, ?int $idParcial, string $area, string $numeroRecibo, string $nombreOperario): void
     {
-        $keys = $idParcial
-            ? ['id_parcial' => $idParcial, 'area' => $area]
-            : ['id_recibo' => (int) $idRecibo, 'area' => $area];
-
+        // Use id_recibo as the primary key for uniqueness (as per table constraint)
+        $reciboPrincipal = $idParcial ?? $idRecibo;
+        
         DB::table('prenda_recibo_completado')->updateOrInsert(
-            $keys,
             [
-                'id_recibo' => $idParcial ? (int) $idParcial : (int) $idRecibo,
+                'id_recibo' => (int) $reciboPrincipal,
+                'area' => $area
+            ],
+            [
                 'id_parcial' => $idParcial,
                 'numero_recibo' => $numeroRecibo,
                 'nombre_operario' => $nombreOperario,

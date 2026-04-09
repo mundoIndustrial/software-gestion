@@ -265,7 +265,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
         if ($tipoOperario === 'visualizador_plooter') {
-            // Para visualizador_plooter: mostrar COSTURA solo del área Corte
+            // Para visualizador_plooter: mostrar COSTURA solo del área Corte (como cortador)
             $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
         }
 
@@ -338,30 +338,31 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             })->values();
         }
 
-        // Para visualizador_plooter: mostrar solo recibos donde el usuario es encargado
+        // Para visualizador_plooter: mostrar solo recibos del área Corte que estén asignados a él
         if ($tipoOperario === 'visualizador_plooter') {
             $usuarioNombre = strtolower(trim($usuario->name));
             
-            $recibos = $recibos->filter(function ($recibo) use ($usuarioNombre) {
+            // Obtener TODAS las prendas donde el usuario es encargado de Corte
+            $prendasDelUsuario = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                ->pluck('prenda_pedido_id')
+                ->unique()
+                ->values();
+
+            $recibos = $recibos->filter(function ($recibo) use ($prendasDelUsuario) {
+                // Solo mostrar recibos del área Corte
+                $area = strtolower(trim((string) ($recibo->area ?? '')));
+                if ($area !== 'corte') {
+                    return false;
+                }
+                
                 // Validar que tenga prenda_id
                 if (empty($recibo->prenda_id)) {
                     return false;
                 }
                 
-                // Obtener el proceso de Costura para esta prenda
-                $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                    ->whereNull('deleted_at')
-                    ->first();
-
-                // Solo mostrar si hay un encargado asignado en el proceso de Costura
-                if (!$procesoCostura || empty($procesoCostura->encargado)) {
-                    return false;
-                }
-
-                // Verificar si el encargado es el usuario actual
-                $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
-                return $encargadoNormalizado === $usuarioNombre;
+                // Solo mostrar prendas donde el usuario es encargado de Corte
+                return $prendasDelUsuario->contains($recibo->prenda_id);
             })->values();
         }
 

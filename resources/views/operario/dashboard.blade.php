@@ -27,9 +27,8 @@
         : (auth()->user()->hasRole('lider-reflectivo') ? 'lider-reflectivo'
         : (auth()->user()->hasRole('confeccion-sobremedida') ? 'confeccion-sobremedida'
         : (auth()->user()->hasRole('costurero') ? 'costurero'
-        : (auth()->user()->hasRole('cortador') ? 'cortador'
-        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : '')))))));
-@endphp
+        : (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('visualizador_plooter') ? 'cortador'
+        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : '')))))));@endphp
 
 @section('content')
 <div class="operario-dashboard is-modern-dashboard {{ auth()->user()->hasRole('vista-costura') ? 'is-vista-costura' : '' }}"
@@ -263,7 +262,7 @@
                                         : ($encargadoReflectivoCard ? strtoupper($encargadoReflectivoCard) : 'SIN ENCARGADO'))
                                     : 'SIN ENCARGADO';
                             @endphp
-                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('visualizador_plooter') && !auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     @if(auth()->user()->hasRole('lider-reflectivo'))
@@ -299,6 +298,7 @@
                                 </div>
                             @elseif(
                                 !auth()->user()->hasRole('cortador')
+                                && !auth()->user()->hasRole('visualizador_plooter')
                                 && !auth()->user()->hasRole('lider-reflectivo')
                                 && !auth()->user()->hasRole('administrador-costura')
                             )
@@ -385,7 +385,7 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons">
-                                    @if(auth()->user()->hasRole('cortador'))
+                                    @if(auth()->user()->hasRole('cortador') || auth()->user()->hasRole('visualizador_plooter'))
                                         @php
                                             $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                             $areaRecibo = strtolower(trim((string)($reciboPrincipal['area'] ?? '')));

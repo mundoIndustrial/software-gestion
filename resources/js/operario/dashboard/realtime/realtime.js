@@ -242,7 +242,7 @@ function setupEchoFallbackListeners() {
             aplicarEstadoReciboEnDOM(e);
         };
 
-        if (rol === 'administrador-costura' || rol === 'costura-reflectivo' || rol === 'lider-reflectivo' || rol === 'vista-costura') {
+        if (rol === 'administrador-costura' || rol === 'costura-reflectivo' || rol === 'lider-reflectivo' || rol === 'vista-costura' || rol === 'cortador' || rol === 'visualizador_plooter') {
             window.EchoInstance.private(`App.Models.User.${userId}`)
                 .listen('.operario.recibos.actualizados', async (e) => {
                     console.log('[Operario Dashboard] Fallback privado operario.recibos.actualizados:', { rol, evento: e });
