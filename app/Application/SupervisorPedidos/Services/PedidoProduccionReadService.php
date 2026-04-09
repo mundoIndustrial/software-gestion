@@ -276,7 +276,7 @@ class PedidoProduccionReadService
         $totalMarked = 0;
 
         $newsIds = News::whereIn('event_type', $this->getNotificationNewsTypes())
-            ->where('created_at', '>=', now()->subDays(7))
+            ->where('created_at', '>=', now()->subMonths(3))
             ->pluck('id')
             ->toArray();
 
@@ -306,7 +306,7 @@ class PedidoProduccionReadService
         $cancelledIds = PedidoProduccion::where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)
-            ->where('updated_at', '>=', now()->subDays(7))
+            ->where('updated_at', '>=', now()->subMonths(3))
             ->pluck('id')
             ->toArray();
 
@@ -733,9 +733,9 @@ class PedidoProduccionReadService
 
         $novedades = DB::table('news')
             ->whereIn('event_type', $this->getNotificationNewsTypes())
-            ->where('created_at', '>=', now()->subDays(7))
+            ->where('created_at', '>=', now()->subMonths(3))
             ->orderBy('created_at', 'desc')
-            ->limit(50)
+            ->limit(200)
             ->get();
 
         return $novedades->map(function ($news) use ($newsVistosIds) {
@@ -786,7 +786,7 @@ class PedidoProduccionReadService
             ->where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)
-            ->where('pedidos_produccion.updated_at', '>=', now()->subDays(7))
+            ->where('pedidos_produccion.updated_at', '>=', now()->subMonths(3))
             ->leftJoin('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
             ->select([
                 'pedidos_produccion.id',
@@ -797,7 +797,7 @@ class PedidoProduccionReadService
                 'u.name as asesor',
             ])
             ->orderBy('pedidos_produccion.updated_at', 'desc')
-            ->limit(20)
+            ->limit(50)
             ->get();
 
         return $ordenesAnuladas->map(function ($orden) use ($pedidosVistosIds) {
