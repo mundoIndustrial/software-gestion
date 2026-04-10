@@ -296,7 +296,8 @@ class ReciboPedidoService implements ReciboPedidoServiceContract
                 'ppt.genero',
                 'ppt.talla',
                 'pptc.color_nombre',
-                'pptc.cantidad'
+                'pptc.cantidad',
+                'pptc.referencia'
             )
             ->get();
             
@@ -318,7 +319,8 @@ class ReciboPedidoService implements ReciboPedidoServiceContract
             
             $tallasPorGenero[$genero][$talla][] = [
                 'cantidad' => $cantidad,
-                'color' => $color
+                'color' => $color,
+                'referencia' => $tallaColor->referencia
             ];
         }
         

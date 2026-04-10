@@ -1267,15 +1267,25 @@ export class Formatters {
                             if (esColorValido) {
                                 const color = d.color.toUpperCase();
                                 if (!porColor[color]) porColor[color] = [];
-                                porColor[color].push({ talla, cantidad: d.cantidad || 0 });
+                                porColor[color].push({
+                                    talla,
+                                    cantidad: d.cantidad || 0,
+                                    referencia: d.referencia || d.ref || null,
+                                    referencias: Array.isArray(d.referencias) ? d.referencias : []
+                                });
                             } else {
                                 if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                porColor['__SIN_COLOR__'].push({ talla, cantidad: d.cantidad || 0 });
+                                porColor['__SIN_COLOR__'].push({
+                                    talla,
+                                    cantidad: d.cantidad || 0,
+                                    referencia: d.referencia || d.ref || null,
+                                    referencias: Array.isArray(d.referencias) ? d.referencias : []
+                                });
                             }
                         });
                     } else {
                         if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                        porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
+                        porColor['__SIN_COLOR__'].push({ talla, cantidad: datos, referencia: null, referencias: [] });
                     }
                 });
                 
@@ -1290,12 +1300,29 @@ export class Formatters {
                     coloresReales.forEach(([color, tallasArr]) => {
                         tallasArr.sort((a, b) => compararTallas(a.talla, b.talla));
                         const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                        lineas.push(`<span style="color: red;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                        const refs = [...new Set(
+                            tallasArr.flatMap(t => {
+                                const referencias = Array.isArray(t.referencias) ? t.referencias : [];
+                                const referenciaUnica = t.referencia ? [t.referencia] : [];
+                                return [...referencias, ...referenciaUnica]
+                                    .map(r => String(r || '').trim())
+                                    .filter(Boolean);
+                            })
+                        )];
+                        const refTexto = refs.length > 0 ? ` (Ref: ${refs.join(', ')})` : '';
+                        lineas.push(`<span style="color: red;"><strong>${color}:</strong> ${tallasStr}${refTexto}</span>`);
                     });
                 } else if (sinColor.length > 0) {
                     // Solo tallas sin color - formato simple
                     sinColor.sort((a, b) => compararTallas(a.talla, b.talla));
-                    const tallasStr = sinColor.map(t => `<span style="color: red;"><strong>${t.talla}: ${t.cantidad}</strong></span>`).join(', ');
+                    const tallasStr = sinColor.map(t => {
+                        const refs = [...new Set([
+                            ...(Array.isArray(t.referencias) ? t.referencias : []),
+                            ...(t.referencia ? [t.referencia] : [])
+                        ].map(r => String(r || '').trim()).filter(Boolean))];
+                        const refTexto = refs.length > 0 ? ` (Ref: ${refs.join(', ')})` : '';
+                        return `<span style="color: red;"><strong>${t.talla}: ${t.cantidad}</strong>${refTexto}</span>`;
+                    }).join(', ');
                     lineas.push(`${generoLabel}: ${tallasStr}`);
                 }
             } else {
@@ -1347,8 +1374,10 @@ export class Formatters {
             const talla = String(registro.talla || '').trim().toUpperCase();
             const colorNombre = String(registro.color_nombre || '').trim().toUpperCase();
             const cantidad = parseInt(registro.cantidad || 0, 10);
+            const referencia = String(registro.referencia || registro.ref || '').trim().toUpperCase();
+            const imagenRuta = registro.imagen_ruta || null;
 
-            console.log(`[Formatters._transformarTallaColoresAEstructura]   genero=${genero}, talla=${talla}, color=${colorNombre}, cantidad=${cantidad}`);
+            console.log(`[Formatters._transformarTallaColoresAEstructura]   genero=${genero}, talla=${talla}, color=${colorNombre}, cantidad=${cantidad}, referencia=${referencia}`);
 
             // Validar datos mínimos
             if (!genero || !talla || cantidad <= 0) {
@@ -1377,12 +1406,26 @@ export class Formatters {
                 if (colorExistente) {
                     // Sumar cantidad si el color ya existe
                     colorExistente.cantidad += cantidad;
+                    if (referencia) {
+                        const refsActuales = Array.isArray(colorExistente.referencias) ? colorExistente.referencias : [];
+                        if (!refsActuales.includes(referencia)) {
+                            refsActuales.push(referencia);
+                        }
+                        colorExistente.referencias = refsActuales;
+                        colorExistente.referencia = colorExistente.referencia || referencia;
+                    }
+                    if (!colorExistente.imagen_ruta && imagenRuta) {
+                        colorExistente.imagen_ruta = imagenRuta;
+                    }
                     console.log(`[Formatters._transformarTallaColoresAEstructura]    Color existente actualizado: ${colorNombre} → ${colorExistente.cantidad}`);
                 } else {
                     // Agregar nuevo color
                     estructura[genero][talla].push({
                         color: colorNombre || 'SIN COLOR',
-                        cantidad: cantidad
+                        cantidad: cantidad,
+                        referencia: referencia || null,
+                        referencias: referencia ? [referencia] : [],
+                        imagen_ruta: imagenRuta
                     });
                     console.log(`[Formatters._transformarTallaColoresAEstructura]    Nuevo color agregado: ${colorNombre || 'SIN COLOR'} = ${cantidad}`);
                 }

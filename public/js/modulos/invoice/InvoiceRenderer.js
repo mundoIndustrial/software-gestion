@@ -165,9 +165,30 @@ class InvoiceRenderer {
             (prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0)
         );
 
+        const obtenerReferenciasTallaColor = (nombreTela = null) => {
+            if (!hayColorPorTalla || !Array.isArray(prenda.talla_colores)) return [];
+
+            const normalizar = (valor) => String(valor || '').trim().toUpperCase();
+            const refsFiltradas = prenda.talla_colores
+                .filter(tc => {
+                    if (!nombreTela) return true;
+                    if (!tc?.tela_nombre) return true;
+                    return normalizar(tc.tela_nombre) === normalizar(nombreTela);
+                })
+                .map(tc => String(tc?.referencia || tc?.ref || '').trim())
+                .filter(Boolean);
+
+            return [...new Set(refsFiltradas)];
+        };
+
         // Debug logging para diagnóstico
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
             return prenda.telas_array.map(tela => {
+                const referenciasTallaColor = obtenerReferenciasTallaColor(tela.tela_nombre);
+                const referenciaVisible = tela.referencia
+                    ? tela.referencia
+                    : (referenciasTallaColor.length > 0 ? referenciasTallaColor.join(', ') : null);
+
                 // Debug logging para cada tela
                 if (tela.fotos && tela.fotos.length > 0) {
                     // Debug: Imágenes disponibles
@@ -177,12 +198,15 @@ class InvoiceRenderer {
                 <div style="margin-bottom: 8px; line-height: 1.4;">
                     ${tela.tela_nombre ? `<div><strong>Tela:</strong> ${tela.tela_nombre}</div>` : ''}
                     ${tela.color_nombre && !hayColorPorTalla ? `<div><strong>Color:</strong> ${tela.color_nombre}</div>` : ''}
-                    ${tela.referencia ? `<div><strong>Ref:</strong> ${tela.referencia}</div>` : ''}
+                    ${referenciaVisible ? `<div><strong>Ref:</strong> ${referenciaVisible}</div>` : ''}
                     ${(tela.fotos && tela.fotos.length > 0) ? `<img src="${window._extraerURLImagen(tela.fotos[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(tela.fotos, 'Imágenes de ' + (tela.tela_nombre || 'Tela'))})" title="Click para ver todas las imágenes de tela">` : ''}
                 </div>
             `;
             }).join('');
         } else {
+            const referenciasTallaColor = obtenerReferenciasTallaColor();
+            const referenciaVisible = prenda.ref || (referenciasTallaColor.length > 0 ? referenciasTallaColor.join(', ') : null);
+
             // Debug logging para fallback
             if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
                 // Debug: Imágenes de tela disponibles
@@ -191,7 +215,7 @@ class InvoiceRenderer {
             return `
                 ${prenda.tela ? `<div><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
                 ${prenda.color && !hayColorPorTalla ? `<div><strong>Color:</strong> ${prenda.color}</div>` : ''}
-                ${prenda.ref ? `<div><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
+                ${referenciaVisible ? `<div><strong>Ref:</strong> ${referenciaVisible}</div>` : ''}
                 ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
                         <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" title="Imagen de tela">
@@ -342,7 +366,8 @@ class InvoiceRenderer {
                                         coloresConCantidad = coloresEnTalla.map(c => ({
                                             nombre: c.color_nombre || c.color || 'Sin color',
                                             cantidad: c.cantidad || 1,
-                                            imagen_ruta: c.imagen_ruta || null
+                                            imagen_ruta: c.imagen_ruta || null,
+                                            referencia: c.referencia || c.ref || null
                                         }));
                                     }
                                 }
@@ -357,7 +382,8 @@ class InvoiceRenderer {
                                         coloresConCantidad = coloresEnTalla.map(c => ({
                                             nombre: c.color || c.color_nombre || 'Sin color',
                                             cantidad: c.cantidad || 1,
-                                            imagen_ruta: c.imagen_ruta || null
+                                            imagen_ruta: c.imagen_ruta || null,
+                                            referencia: c.referencia || c.ref || null
                                         }));
                                     }
                                 }
@@ -370,7 +396,8 @@ class InvoiceRenderer {
                                         coloresConCantidad = asignacion.colores.map(c => ({
                                             nombre: c.nombre || c.color_nombre || 'Sin color',
                                             cantidad: c.cantidad || 1,
-                                            imagen_ruta: c.imagen_ruta || null
+                                            imagen_ruta: c.imagen_ruta || null,
+                                            referencia: c.referencia || c.ref || null
                                         }));
                                     }
                                 }
@@ -382,7 +409,8 @@ class InvoiceRenderer {
                                         coloresConCantidad = varianteColor.colores_asignados.map(c => ({
                                             nombre: c.color_nombre || c.color || c.nombre || 'N/A',
                                             cantidad: c.cantidad || 1,
-                                            imagen_ruta: c.imagen_ruta || null
+                                            imagen_ruta: c.imagen_ruta || null,
+                                            referencia: c.referencia || c.ref || null
                                         }));
                                     }
                                 }
@@ -399,7 +427,8 @@ class InvoiceRenderer {
                                             coloresConCantidad = asignacion.colores.map(c => ({
                                                 nombre: c.nombre || c.color || c.color_nombre || 'N/A',
                                                 cantidad: c.cantidad || 1,
-                                                imagen_ruta: c.imagen_ruta || null
+                                                imagen_ruta: c.imagen_ruta || null,
+                                                referencia: c.referencia || c.ref || null
                                             }));
                                         }
                                     } else {
@@ -424,7 +453,8 @@ class InvoiceRenderer {
                                                 coloresConCantidad = coloresArr.map(c => ({
                                                     nombre: c.nombre || c.color || c.color_nombre || 'N/A',
                                                     cantidad: c.cantidad || 1,
-                                                    imagen_ruta: c.imagen_ruta || null
+                                                    imagen_ruta: c.imagen_ruta || null,
+                                                    referencia: c.referencia || c.ref || null
                                                 }));
                                             }
                                         }
@@ -439,10 +469,10 @@ class InvoiceRenderer {
                                             hayColores = true;
                                             const nombreColor = color.nombre.toUpperCase();
                                             if (!porColor[nombreColor]) porColor[nombreColor] = [];
-                                            porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad, imagen_ruta: color.imagen_ruta || null });
+                                            porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad, imagen_ruta: color.imagen_ruta || null, referencia: color.referencia || null });
                                         } else {
                                             if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                            porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                            porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad, referencia: color.referencia || null });
                                         }
                                     });
                                 } else {
@@ -458,7 +488,7 @@ class InvoiceRenderer {
                                             Object.values(cant).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
                                     }
                                     if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                    porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal });
+                                    porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal, referencia: null });
                                 }
                             });
 
@@ -485,7 +515,11 @@ class InvoiceRenderer {
                                         const imgHtml = imgRuta 
                                             ? `<div style="margin: 3px 0 2px 0;"><img src="${imgRuta}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd;" onerror="this.style.display='none'"></div>` 
                                             : '';
-                                        return `<div style="margin: 2px 0;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}${imgHtml}</div>`;
+                                        const refs = [...new Set(tallasArr.map(t => t.referencia).filter(r => r && String(r).trim() !== ''))];
+                                        const refHtml = refs.length > 0
+                                            ? ` <span style="color: #6b7280; font-size: 10px;">Ref: ${refs.join(', ')}</span>`
+                                            : '';
+                                        return `<div style="margin: 2px 0;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}${refHtml}${imgHtml}</div>`;
                                     }).join('');
                             } else if (sinColorArr.length > 0) {
                                 sinColorArr.sort((a, b) => {
@@ -493,9 +527,12 @@ class InvoiceRenderer {
                                     if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
                                     return a.talla.localeCompare(b.talla);
                                 });
-                                tallaRows = sinColorArr.map(t => 
-                                    `<div style="margin: 2px 0;">${t.talla}:${t.cantidad}</div>`
-                                ).join('');
+                                tallaRows = sinColorArr.map(t => {
+                                    const refHtml = (t.referencia && String(t.referencia).trim() !== '')
+                                        ? ` <span style="color: #6b7280; font-size: 10px;">Ref: ${t.referencia}</span>`
+                                        : '';
+                                    return `<div style="margin: 2px 0;">${t.talla}:${t.cantidad}${refHtml}</div>`;
+                                }).join('');
                             }
 
                             return `

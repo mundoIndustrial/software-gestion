@@ -77,10 +77,31 @@ class PrendaTransformadorService implements PrendaTransformadorServiceContract
                     'ptc.tela_nombre',
                     'ptc.color_id',
                     'ptc.color_nombre',
-                    'ptc.cantidad'
+                    'ptc.cantidad',
+                    'ptc.referencia',
+                    'ptc.observaciones',
+                    'ptc.imagen_ruta',
                 ])
                 ->get()
                 ->toArray();
+
+            $tallaColores = array_map(function ($color) {
+                if (!empty($color->imagen_ruta)) {
+                    $ruta = str_replace('\\', '/', $color->imagen_ruta);
+
+                    if (!str_starts_with($ruta, '/storage/')) {
+                        if (str_starts_with($ruta, 'storage/')) {
+                            $ruta = '/' . $ruta;
+                        } elseif (!str_starts_with($ruta, '/')) {
+                            $ruta = '/storage/' . $ruta;
+                        }
+                    }
+
+                    $color->imagen_ruta = $ruta;
+                }
+
+                return $color;
+            }, $tallaColores);
 
             $prenda->talla_colores = $tallaColores;
 

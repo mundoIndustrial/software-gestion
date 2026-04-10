@@ -1180,7 +1180,8 @@ function generarHTMLFactura(datos) {
                         if (coloresEnTalla.length > 0) {
                             tallaItem.colores = coloresEnTalla.map(c => ({
                                 color: c.color_nombre || c.color || 'Sin color',
-                                cantidad: c.cantidad || 1
+                                cantidad: c.cantidad || 1,
+                                referencia: c.referencia || c.ref || null
                             }));
                         }
                     });
@@ -1210,7 +1211,10 @@ function generarHTMLFactura(datos) {
                                             <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
                                             <td style="padding: 6px 8px; color: #374151;">
                                                 ${talla_item.colores && talla_item.colores.length > 0 
-                                                    ? talla_item.colores.map(c => `${c.color}(${c.cantidad})`).join(', ')
+                                                    ? talla_item.colores.map(c => {
+                                                        const ref = c.referencia ? ` - Ref: ${c.referencia}` : '';
+                                                        return `${c.color}(${c.cantidad})${ref}`;
+                                                    }).join(', ')
                                                     : 'Sin color'
                                                 }
                                             </td>
