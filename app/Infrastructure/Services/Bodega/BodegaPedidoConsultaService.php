@@ -109,8 +109,7 @@ class BodegaPedidoConsultaService
 
         foreach ($pedidosAgrupados as $numeroPedido => $pedidosDelNumero) {
             $primerPedido = $pedidosDelNumero->first();
-            $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
-                ->first();
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             $estadosPedido = $this->estadoCalculator->calcular($numeroPedido);
 
             $tieneItemsPendientes = $estadosPedido['tiene_pendientes'];
@@ -165,10 +164,15 @@ class BodegaPedidoConsultaService
 
         \Log::info('[obtenerDetallePedido] Iniciando busqueda', ['pedidoId' => $pedidoId]);
 
-        $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
-        $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
-        if (!$primerRecibo && !$pedidoProduccionPorNumero) {
-            $primerRecibo = ReciboPrenda::where('id', $pedidoId)->first();
+        // IMPORTANTE: priorizar búsqueda por ID real para evitar colisiones con numero_pedido
+        // Ejemplo: pedidoId=163 puede ser ID de PedidoProduccion, pero también existir numero_pedido=163.
+        $primerRecibo = ReciboPrenda::where('id', $pedidoId)->first();
+        $pedidoProduccionPorId = PedidoProduccion::where('id', $pedidoId)->first();
+        $pedidoProduccionPorNumero = null;
+
+        if (!$primerRecibo && !$pedidoProduccionPorId) {
+            $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
+            $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
         }
 
         \Log::info('[obtenerDetallePedido] ReciboPrenda encontrado', [
@@ -178,7 +182,7 @@ class BodegaPedidoConsultaService
         ]);
 
         if (!$primerRecibo || empty($primerRecibo->numero_pedido)) {
-            $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
+            $pedidoProduccion = $pedidoProduccionPorId ?: $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
                 ->first();
 
             \Log::info('[obtenerDetallePedido] ReciboPrenda sin numero_pedido, buscando PedidoProduccion', [

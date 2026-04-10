@@ -211,9 +211,9 @@ class PedidosController extends Controller
                 'area' => $detalle->area
             ]);
             
-            // Marcar pedido como visto usando el numero_pedido
-                $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
-                    ->firstOrFail();
+            // Marcar pedido como visto usando el numero_pedido resuelto
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)
+                ->firstOrFail();
             
             // Obtener datos desde bodega_detalles_talla
             $datos = $this->datosService->obtenerDatosDesdeBodegaDetalles($numeroPedido);
