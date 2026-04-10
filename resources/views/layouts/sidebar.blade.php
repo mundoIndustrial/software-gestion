@@ -111,6 +111,14 @@
           <span class="menu-label">Entregados</span>
         </a>
       </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-ocultos') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-ocultos') ? 'active' : '' }}"
+           aria-label="Pedidos Ocultos">
+          <span class="material-symbols-rounded" aria-hidden="true">visibility_off</span>
+          <span class="menu-label">Pedidos Ocultos</span>
+        </a>
+      </li>
       @endif
       </ul>
     </div>

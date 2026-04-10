@@ -525,7 +525,7 @@ class BodegaPedidoConsultaService
                 }
 
                 $pedidosPorPagina[] = [
-                    'id' => $numeroPedido,
+                    'id' => $pedidoProduccion?->id ?? $primerPedido->pedido_produccion_id,
                     'numero_pedido' => $numeroPedido,
                     'cliente' => $primerPedido->cliente ?? WarehouseConstants::DEFAULT_NA,
                     'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,

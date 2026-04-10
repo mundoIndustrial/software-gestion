@@ -74,11 +74,17 @@
                                                onchange="guardarCheckPedido({{ $pedidoData['id'] }}, this.checked)"
                                                title="Marcar pedido como revisado">
                                     </td>
-                                    <td class="px-6 py-4 text-center">
+                                    <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
                                         <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
-                                           class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
-                                            Ver
+                                           class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors">
+                                            <span class="material-symbols-rounded text-base">visibility</span>
                                         </a>
+                                        <button type="button"
+                                                class="inline-flex items-center justify-center p-1.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-colors"
+                                                onclick="ocultarPedido({{ $pedidoData['id'] }})"
+                                                title="Ocultar este pedido">
+                                            <span class="material-symbols-rounded text-base">visibility_off</span>
+                                        </button>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-black">
                                         {{ $pedidoData['numero_pedido'] }}
@@ -672,16 +678,80 @@ async function guardarCheckPedido(pedidoId, revisado) {
         
         if (data.success) {
             console.log(`Pedido ${pedidoId} marcado como ${revisado ? 'revisado' : 'no revisado'}`);
-            // Recargar la página para mostrar el estado guardado en la DB
-            setTimeout(() => {
-                location.reload();
-            }, 500);
+            // No recargar página, solo mostrar notificación visual
+            mostrarNotificacionExito(`Pedido marcado como ${revisado ? 'revisado' : 'no revisado'}`);
         } else {
             console.error('Error al guardar revisión:', data.message);
+            mostrarNotificacionError('Error al guardar la revisión');
         }
     } catch (error) {
         console.error('Error en la petición:', error);
+        mostrarNotificacionError('Error en la conexión');
     }
+}
+
+async function ocultarPedido(pedidoId) {
+    try {
+        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/ocultar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`Pedido ${pedidoId} ocultado`);
+            // Eliminar la fila de la tabla con animación
+            const fila = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+            if (fila) {
+                fila.style.opacity = '0';
+                fila.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    fila.remove();
+                    mostrarNotificacionExito('Pedido ocultado correctamente');
+                }, 300);
+            }
+        } else {
+            console.error('Error al ocultar pedido:', data.message);
+            mostrarNotificacionError('Error al ocultar el pedido');
+        }
+    } catch (error) {
+        console.error('Error en la petición:', error);
+        mostrarNotificacionError('Error al ocultar el pedido');
+    }
+}
+
+function mostrarNotificacionExito(mensaje) {
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    notificacion.textContent = mensaje;
+    document.body.appendChild(notificacion);
+    
+    setTimeout(() => {
+        notificacion.style.opacity = '0';
+        notificacion.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            notificacion.remove();
+        }, 300);
+    }, 2000);
+}
+
+function mostrarNotificacionError(mensaje) {
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    notificacion.textContent = mensaje;
+    document.body.appendChild(notificacion);
+    
+    setTimeout(() => {
+        notificacion.style.opacity = '0';
+        notificacion.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            notificacion.remove();
+        }, 300);
+    }, 2000);
 }
 
 // Función para desmarcar un pedido como no visto

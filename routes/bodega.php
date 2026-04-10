@@ -96,6 +96,18 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     Route::post('/pedidos/{id}/revisar', [PedidosController::class, 'revisar'])
         ->name('revisar-pedido');
     
+    // Ocultar pedido
+    Route::post('/pedidos/{id}/ocultar', [PedidosController::class, 'ocultarPedido'])
+        ->name('ocultar-pedido');
+    
+    // Deshacer ocultamiento de pedido
+    Route::post('/pedidos/{id}/deshacer-ocultar', [PedidosController::class, 'deshacerOcultarPedido'])
+        ->name('deshacer-ocultar-pedido');
+    
+    // Ver pedidos ocultos
+    Route::get('/pedidos-ocultos', [PedidosController::class, 'ocultosIndex'])
+        ->name('pedidos-ocultos');
+    
     // Marcar detalle de bodega como visto
     Route::post('/bodega-detalles/{id}/marcar-visto', [PedidosController::class, 'marcarVistoDetalle'])
         ->name('marcar-visto-detalle');
