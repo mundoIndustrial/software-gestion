@@ -134,6 +134,7 @@
                                         AGREGAR NOVEDAD
                                     </button>
                                     @if($recibo)
+                                        @if(!($prenda['tiene_parciales'] ?? false))
                                         <button class="btn-completar-recibo"
                                                 data-recibo-id="{{ $recibo['id'] ?? '' }}"
                                                 data-es-parcial="{{ $esParcial ? '1' : '0' }}"
@@ -144,6 +145,7 @@
                                             <span class="material-symbols-rounded">done</span>
                                             COMPLETAR
                                         </button>
+                                        @endif
                                         <button class="btn-deshacer-recibo"
                                                 data-recibo-id="{{ $recibo['id'] ?? '' }}"
                                                 data-es-parcial="{{ $esParcial ? '1' : '0' }}"
@@ -1932,39 +1934,17 @@
                     <div class="parcial-card" data-parcial-id="${parcial.id}">
                         <div class="parcial-header">
                             <div class="parcial-numero">
-                                <h4 class="parcial-title">Parcial #${parcial.consecutivo_parcial}</h4>
+                                <h4 class="parcial-title">Parcial #${String(parseFloat(parcial.consecutivo_parcial))}</h4>
                                 <span class="parcial-tipo-recibo">${tipoRecibo}</span>
                             </div>
-                            <span class="badge-estado badge-estado-control-calidad">
-                                Control de Calidad
-                            </span>
                         </div>
                         
                         <div class="parcial-body">
                             <div class="parcial-row">
                                 <div class="parcial-info-group full-width">
-                                    <span class="parcial-label">Recibo Original</span>
-                                    <span class="parcial-value">
-                                        Recibo #${parcial.consecutivo_original}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="parcial-row">
-                                <div class="parcial-info-group full-width">
-                                    <span class="parcial-label">Encargado</span>
-                                    <span class="parcial-value parcial-encargado">
-                                        <span class="material-symbols-rounded">person</span>
-                                        ${parcial.encargado || 'Sin asignar'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="parcial-row">
-                                <div class="parcial-info-group full-width">
                                     <span class="parcial-label">Estado</span>
                                     <span class="parcial-value">
-                                        ${parcial.estado_proceso || 'En Progreso'}
+                                        ${parcial.completado_area ? 'COMPLETADO' : (parcial.estado_proceso || 'En Progreso')}
                                     </span>
                                 </div>
                             </div>
@@ -1983,12 +1963,21 @@
                                     <span class="material-symbols-rounded">visibility</span>
                                     VER RECIBO
                                 </button>
+                                ${parcial.completado_area ? `
+                                <button class="btn-deshacer-parcial-cc"
+                                        onclick="deshacerCompletarParcialCC(${parcial.id});"
+                                        data-parcial-id="${parcial.id}">
+                                    <span class="material-symbols-rounded">undo</span>
+                                    DESHACER
+                                </button>
+                                ` : `
                                 <button class="btn-completar-parcial-cc"
-                                        onclick="completarParcialCC(${parcial.id});"
+                                        onclick="completarParcialCC(${parcial.id}, ${reciboId});"
                                         data-parcial-id="${parcial.id}">
                                     <span class="material-symbols-rounded">done</span>
                                     COMPLETAR
                                 </button>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -2017,7 +2006,7 @@
     };
 
     // Función para completar un parcial
-    window.completarParcialCC = async function(parcialId) {
+    window.completarParcialCC = async function(parcialId, reciboId) {
         try {
             const response = await fetch(`/control-calidad/api/recibos/${parcialId}/completar`, {
                 method: 'POST',
@@ -2046,16 +2035,52 @@
                 btn.style.cursor = 'default';
             }
 
+            // Si el recibo padre fue completado, remover la tarjeta del recibo del DOM
+            if (data.recibo_padre_completado) {
+                const reciboCard = document.querySelector(`[data-recibo-id="${reciboId}"].orden-card-simple`);
+                if (reciboCard) {
+                    reciboCard.style.transition = 'opacity 0.3s ease-out';
+                    reciboCard.style.opacity = '0';
+                    setTimeout(() => {
+                        reciboCard.remove();
+                    }, 300);
+                }
+            }
+        } catch (error) {
+            console.error('Error al completar parcial:', error);
+        }
+    };
+
+    window.deshacerCompletarParcialCC = async function(parcialId) {
+        try {
+            const response = await fetch(`/control-calidad/api/recibos/${parcialId}/deshacer`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    es_parcial: true,
+                    parcial_id: parcialId
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                alert('Error: ' + data.message);
+                return;
+            }
+
             // Mostrar mensaje de éxito
-            alert('Parcial marcado como completado y movido a Entrega');
+            alert('Parcial deshecho y restaurado a Control de Calidad');
 
             // Recargar la página después de 1 segundo
             setTimeout(() => {
                 location.reload();
             }, 1000);
         } catch (error) {
-            console.error('Error al completar parcial:', error);
-            alert('Error al completar el parcial');
+            console.error('Error al deshacer parcial:', error);
+            alert('Error al deshacer el parcial');
         }
     };
 
@@ -2100,11 +2125,11 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1rem;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
             border: none;
             border-radius: 6px;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -2125,15 +2150,44 @@
             background: #ccc;
         }
 
+        .btn-deshacer-parcial-cc {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #ADD8E6;
+            color: #0066ff;
+        }
+
+        .btn-deshacer-parcial-cc:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(173, 216, 230, 0.5);
+            background: #87CEEB;
+        }
+
+        .btn-deshacer-parcial-cc:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background: #ccc;
+        }
+
         .btn-ver-recibo-parcial {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1rem;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
             border: none;
             border-radius: 6px;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;

@@ -11,8 +11,6 @@ class ReciboPorPartes extends Model
     protected $table = 'recibo_por_partes';
 
     protected $fillable = [
-        'area',
-        'encargado',
         'pedido_produccion_id',
         'prenda_pedido_id',
         'tipo_recibo',

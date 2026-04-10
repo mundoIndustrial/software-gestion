@@ -9,6 +9,7 @@ use App\Models\PrendaReciboCompletado;
 use App\Models\ReciboPorPartes;
 use App\Models\PedidoProduccion;
 use App\Application\Operario\UseCases\GetPedidoDataOperarioUseCase;
+use App\Application\Operario\UseCases\ObtenerDistribucionControlCalidadUseCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -16,8 +17,9 @@ use Illuminate\Http\Request;
 
 class ControlCalidadController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        private readonly ObtenerDistribucionControlCalidadUseCase $obtenerDistribucionCCUseCase,
+    ) {
         $this->middleware('auth');
         $this->middleware('control-calidad-access');
     }
@@ -79,6 +81,14 @@ class ControlCalidadController extends Controller
             $numeroPedido = $pedido?->numero_pedido;
             $procesoActual = $numeroPedido ? ($ultimoProcesoPorPedido[$numeroPedido] ?? null) : null;
 
+            // Detectar si este recibo tiene parciales
+            $tieneParciales = ReciboPorPartes::query()
+                ->where('pedido_produccion_id', $pedido->id ?? 0)
+                ->where('prenda_pedido_id', $prenda->id ?? 0)
+                ->where('consecutivo_original', $recibo->consecutivo_actual)
+                ->where('tipo_recibo', $recibo->tipo_recibo)
+                ->exists();
+
             return [
                 'prenda_id' => $prenda->id ?? 0,
                 'pedido_id' => $pedido->id ?? 0,
@@ -88,6 +98,7 @@ class ControlCalidadController extends Controller
                 'descripcion' => $prenda->descripcion ?? ($pedido->descripcion ?? ''),
                 'proceso_actual' => $procesoActual,
                 'de_bodega' => $prenda->de_bodega ?? null,
+                'tiene_parciales' => $tieneParciales,
                 'recibos' => [[
                     'id' => $recibo->id,
                     'tipo_recibo' => $recibo->tipo_recibo,
@@ -214,6 +225,19 @@ class ControlCalidadController extends Controller
             ];
         });
 
+        // Obtener los consecutivos_original de los recibos que tienen parciales
+        $consecutivosOriginalesConParciales = $prendasConRecibos
+            ->filter(fn ($item) => $item['tiene_parciales'] ?? false)
+            ->flatMap(fn ($item) => $item['recibos'] ?? [])
+            ->pluck('consecutivo_actual')
+            ->toArray();
+
+        // Filtrar parciales: excluir aquellos cuyo consecutivo_original ya está siendo mostrado en la lista
+        $parcialesConRecibos = $parcialesConRecibos->filter(function ($parcial) use ($consecutivosOriginalesConParciales) {
+            $consecutivoOriginal = $parcial['recibos'][0]['consecutivo_inicial'] ?? null;
+            return !in_array($consecutivoOriginal, $consecutivosOriginalesConParciales);
+        })->values();
+
         $prendasConRecibos = $prendasConRecibos
             ->concat($parcialesConRecibos)
             ->sortByDesc(fn ($item) => $item['fecha_creacion'] ?? now())
@@ -266,9 +290,6 @@ class ControlCalidadController extends Controller
                     ]
                 );
 
-                // Actualizar el area del parcial a Entrega
-                $parcial->update(['area' => 'Entrega']);
-
                 // Crear (una sola vez) proceso Entrega para el parcial
                 $procesoEntregaParcial = ProcesoPrenda::query()
                     ->where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
@@ -290,7 +311,7 @@ class ControlCalidadController extends Controller
                     ]);
                 }
 
-                $this->sincronizarEntregaOriginalDesdeParciales($parcial);
+                $reciboPadreCompletado = $this->sincronizarEntregaOriginalDesdeParciales($parcial);
 
                 event(new \App\Events\ReciboCompletado([
                     'recibo_id' => (int) $parcial->id,
@@ -327,7 +348,8 @@ class ControlCalidadController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Parcial marcado como completado y movido a Entrega'
+                    'message' => '',
+                    'recibo_padre_completado' => $reciboPadreCompletado
                 ]);
             }
 
@@ -392,7 +414,7 @@ class ControlCalidadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Recibo marcado como completado y movido a Entrega'
+                'message' => ''
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al completar recibo C.C: ' . $e->getMessage(), [
@@ -411,11 +433,9 @@ class ControlCalidadController extends Controller
     {
         try {
             if ($request->boolean('es_parcial')) {
-                // Restaurar el area del parcial a Control de Calidad
+                // Obtener el parcial para eliminar procesos relacionados
                 $parcial = ReciboPorPartes::with('pedido')->find((int) $idRecibo);
                 if ($parcial) {
-                    $parcial->update(['area' => 'Control de Calidad']);
-
                     // Eliminar el proceso de Entrega creado
                     ProcesoPrenda::where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
                         ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
@@ -448,7 +468,7 @@ class ControlCalidadController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Marca de completado del parcial eliminada y area restaurada'
+                    'message' => ''
                 ]);
             }
 
@@ -471,7 +491,7 @@ class ControlCalidadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Marca de completado eliminada y area restaurada'
+                'message' => ''
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al deshacer recibo C.C: ' . $e->getMessage(), [
@@ -702,11 +722,11 @@ class ControlCalidadController extends Controller
         });
     }
 
-    private function sincronizarEntregaOriginalDesdeParciales(ReciboPorPartes $parcial): void
+    private function sincronizarEntregaOriginalDesdeParciales(ReciboPorPartes $parcial): bool
     {
         $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
         if ($numeroPedido <= 0) {
-            return;
+            return false;
         }
 
         $parcialesRelacionados = ReciboPorPartes::query()
@@ -718,7 +738,7 @@ class ControlCalidadController extends Controller
 
         $totalParciales = $parcialesRelacionados->count();
         if ($totalParciales <= 0) {
-            return;
+            return false;
         }
 
         $consecutivosParciales = $parcialesRelacionados
@@ -774,10 +794,33 @@ class ControlCalidadController extends Controller
                 ]);
             }
 
-            return;
+            return true;
         }
 
         $queryReciboPadre->update(['area' => 'Control Calidad']);
         $queryProcesoEntregaPadre->delete();
+        
+        return false;
+    }
+
+    /**
+     * API: Obtener distribución de parciales para un recibo (llamado desde el dashboard de Control de Calidad)
+     * GET /control-calidad/api/recibos/{idRecibo}/distribucion-parciales
+     */
+    public function obtenerDistribucionParciales(Request $request, $idRecibo)
+    {
+        try {
+            $result = $this->obtenerDistribucionCCUseCase->execute((int) $idRecibo);
+            return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));
+        } catch (\Exception $e) {
+            \Log::error('[ControlCalidadController] Error en obtenerDistribucionParciales: ' . $e->getMessage(), [
+                'recibo_id' => $idRecibo,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener distribución de parciales: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -1,192 +1,121 @@
+/**
+ * Control de Calidad - Search and Filter Script
+ * Búsqueda dinámica sin recarga de página
+ * Respeta el filtro de tags activos (COSTURA/REFLECTIVO)
+ */
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
-    const clearSearch = document.getElementById('clearSearch');
+    const clearFilterBtn = document.getElementById('clearFilterBtn');
+    const ordenesList = document.getElementById('ordenesList');
+    const reciboTags = document.getElementById('reciboTags');
 
-    // Búsqueda en tiempo real
-    let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        const query = this.value;
-        clearTimeout(searchTimeout);
-        
-        searchTimeout = setTimeout(() => {
-            // Recargar la página con el parámetro de búsqueda
-            const url = new URL(window.location.href);
-            if (query) {
-                url.searchParams.set('search', query);
-            } else {
-                url.searchParams.delete('search');
+    // Obtener el filtro activo actual
+    function getActiveFilter() {
+        if (!reciboTags) return 'COSTURA'; // Default
+        const activeBtn = reciboTags.querySelector('.recibo-tag.active');
+        if (activeBtn) {
+            return (activeBtn.dataset.filter || 'COSTURA').toUpperCase();
+        }
+        return 'COSTURA';
+    }
+
+    // Función para filtrar tarjetas en tiempo real
+    function filtrarTarjetas(query) {
+        const searchLower = query.toLowerCase().trim();
+        const activeFilter = getActiveFilter(); // Obtener filtro activo
+        const cards = ordenesList.querySelectorAll('.orden-card-simple');
+        let totalVisible = 0;
+
+        cards.forEach(card => {
+            let mostrar = false;
+            
+            // Primero verificar que el tipo de recibo coincida con el filtro activo
+            const tipoRecibo = (card.dataset.tipoRecibo || 'COSTURA').toUpperCase();
+            const matchTipo = tipoRecibo === activeFilter;
+            
+            if (!matchTipo) {
+                // Si no coincide el tipo de recibo, no mostrar
+                card.style.display = 'none';
+                return;
             }
-            window.location.href = url.toString();
-        }, 500);
 
-        clearSearch.style.display = query ? 'block' : 'none';
-    });
+            if (!searchLower) {
+                // Si no hay búsqueda, mostrar todas las del tipo activo
+                mostrar = true;
+            } else {
+                // Obtener atributos de la tarjeta
+                const numero = (card.dataset.numero || '').toLowerCase().trim();
+                const cliente = (card.dataset.cliente || '').toLowerCase().trim();
+                const prenda = (card.dataset.prenda || '').toLowerCase().trim();
+                
+                // Obtener el número visible del recibo/parcial (del h4)
+                const h4 = card.querySelector('.orden-numero');
+                const numeroVisible = h4 ? h4.textContent.toLowerCase().replace('#', '').trim() : '';
+
+                // Si la búsqueda es un número (con o sin decimales), extraer el entero
+                let numeroBuscadoEntero = null;
+                if (/^\d+(\.\d+)?$/.test(searchLower)) {
+                    numeroBuscadoEntero = Math.floor(parseFloat(searchLower)).toString();
+                }
+
+                // Búsqueda 1: Búsqueda substring normal en todos los campos
+                if (numero.includes(searchLower) || 
+                    cliente.includes(searchLower) || 
+                    prenda.includes(searchLower) ||
+                    numeroVisible.includes(searchLower)) {
+                    mostrar = true;
+                }
+
+                // Búsqueda 2: Si es número (30.1 -> busca 30), buscar el número entero
+                if (!mostrar && numeroBuscadoEntero) {
+                    if (numero.includes(numeroBuscadoEntero) || 
+                        numeroVisible === numeroBuscadoEntero ||
+                        numeroVisible.startsWith(numeroBuscadoEntero)) {
+                        mostrar = true;
+                    }
+                }
+            }
+
+            if (mostrar) {
+                card.style.display = '';
+                totalVisible++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Mostrar/ocultar botón de limpiar
+        if (clearFilterBtn) {
+            clearFilterBtn.style.display = searchLower ? 'block' : 'none';
+        }
+    }
+
+    // Búsqueda en tiempo real sin recargar
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filtrarTarjetas(this.value);
+        });
+    }
 
     // Limpiar búsqueda
-    clearSearch.addEventListener('click', function() {
-        searchInput.value = '';
-        clearSearch.style.display = 'none';
-        const url = new URL(window.location.href);
-        url.searchParams.delete('search');
-        window.location.href = url.toString();
-    });
-
-    // Escuchar eventos en tiempo real
-    if (typeof window.Echo !== 'undefined') {
-        window.Echo.channel('control-calidad')
-            .listen('ControlCalidadUpdated', (e) => {
-
-                
-                if (e.action === 'added') {
-                    // Agregar nueva orden a la tabla correspondiente
-                    agregarOrden(e.orden, e.tipo);
-                } else if (e.action === 'removed') {
-                    // Remover orden de la tabla
-                    removerOrden(e.orden.pedido, e.tipo);
-                }
-            });
-    }
-
-    function agregarOrden(orden, tipo) {
-        const tbody = tipo === 'pedido' 
-            ? document.querySelector('#tablaPedidos tbody')
-            : document.querySelector('#tablaBodega tbody');
-        
-        if (!tbody) return;
-
-        // Verificar si ya existe
-        const existingRow = tbody.querySelector(`tr[data-pedido="${orden.pedido}"]`);
-        if (existingRow) return;
-
-        // Crear nueva fila
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-pedido', orden.pedido);
-        tr.classList.add('new-row-animation');
-        
-        const estadoBadge = orden.estado ? orden.estado.toLowerCase().replace(/ /g, '-') : 'default';
-        const fechaCreacion = orden.created_at 
-            ? new Date(orden.created_at).toLocaleDateString('es-ES')
-            : '-';
-        const fechaControlCalidad = orden.control_de_calidad
-            ? new Date(orden.control_de_calidad).toLocaleString('es-ES')
-            : '-';
-
-        tr.innerHTML = `
-            <td>
-                <span class="badge badge-${estadoBadge}">
-                    ${orden.estado || '-'}
-                </span>
-            </td>
-            <td>${fechaCreacion}</td>
-            <td>${orden.pedido || '-'}</td>
-            <td>${orden.cliente || '-'}</td>
-            <td>${orden.novedades || '-'}</td>
-            <td>${fechaControlCalidad}</td>
-        `;
-
-        // Insertar al inicio de la tabla
-        const firstRow = tbody.querySelector('tr:not(.empty-state)');
-        if (firstRow) {
-            tbody.insertBefore(tr, firstRow);
-        } else {
-            // Si solo hay mensaje de vacío, reemplazarlo
-            const emptyRow = tbody.querySelector('tr.empty-state');
-            if (emptyRow) {
-                emptyRow.remove();
+    if (clearFilterBtn) {
+        clearFilterBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
             }
-            tbody.appendChild(tr);
-        }
-
-        // Actualizar contador del footer
-        actualizarContador(tipo);
-
-        // Remover animación después de 2 segundos
-        setTimeout(() => {
-            tr.classList.remove('new-row-animation');
-        }, 2000);
+            filtrarTarjetas('');
+        });
     }
 
-    function removerOrden(pedido, tipo) {
-        const tbody = tipo === 'pedido'
-            ? document.querySelector('#tablaPedidos tbody')
-            : document.querySelector('#tablaBodega tbody');
-        
-        if (!tbody) return;
-
-        const row = tbody.querySelector(`tr[data-pedido="${pedido}"]`);
-        if (row) {
-            row.classList.add('remove-row-animation');
+    // Escuchar cambios en los tags para actualizar búsqueda cuando se cambia el filtro
+    if (reciboTags) {
+        reciboTags.addEventListener('click', function() {
+            // Cuando cambia el filtro de tags, reaplicar la búsqueda actual
             setTimeout(() => {
-                row.remove();
-                
-                // Si no quedan filas, mostrar mensaje vacío
-                const remainingRows = tbody.querySelectorAll('tr:not(.empty-state)');
-                if (remainingRows.length === 0) {
-                    const emptyRow = document.createElement('tr');
-                    emptyRow.innerHTML = `
-                        <td colspan="6" class="empty-state">
-                            <i class="fas fa-clipboard-check"></i>
-                            <p>No hay órdenes de ${tipo === 'pedido' ? 'pedidos' : 'bodega'} en Control de Calidad</p>
-                        </td>
-                    `;
-                    tbody.appendChild(emptyRow);
-                }
-
-                // Actualizar contador del footer
-                actualizarContador(tipo);
-            }, 300);
-        }
-    }
-
-    function actualizarContador(tipo) {
-        const tbody = tipo === 'pedido'
-            ? document.querySelector('#tablaPedidos tbody')
-            : document.querySelector('#tablaBodega tbody');
-        
-        const tfoot = tipo === 'pedido'
-            ? document.querySelector('#tablaPedidos tfoot td')
-            : document.querySelector('#tablaBodega tfoot td');
-        
-        if (tbody && tfoot) {
-            const count = tbody.querySelectorAll('tr:not(.empty-state)').length;
-            tfoot.textContent = `Total de órdenes: ${count}`;
-        }
+                filtrarTarjetas(searchInput ? searchInput.value : '');
+            }, 100);
+        });
     }
 });
-
-// Estilos para animaciones
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes slideOutUp {
-        from {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-    }
-
-    .new-row-animation {
-        animation: slideInDown 0.5s ease-out;
-        background-color: #dbeafe !important;
-    }
-
-    .remove-row-animation {
-        animation: slideOutUp 0.3s ease-out;
-    }
-`;
-document.head.appendChild(style);
 

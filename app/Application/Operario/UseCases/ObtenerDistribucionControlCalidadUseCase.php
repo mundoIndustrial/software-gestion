@@ -18,9 +18,10 @@ class ObtenerDistribucionControlCalidadUseCase
     {
         $usuario = Auth::user();
 
-        if (!$usuario || !$usuario->hasRole('vista-costura')) {
-            \Log::warning('[ObtenerDistribucionControlCalidadUseCase] Acceso denegado', [
-                'usuario_id' => $usuario?->id,
+        // Permitir a cualquier usuario autenticado
+        // El middleware 'control-calidad-access' ya valida el acceso en el controlador
+        if (!$usuario) {
+            \Log::warning('[ObtenerDistribucionControlCalidadUseCase] Usuario no autenticado', [
                 'recibo_id' => $idRecibo,
             ]);
 
@@ -28,7 +29,7 @@ class ObtenerDistribucionControlCalidadUseCase
                 'status' => 403,
                 'payload' => [
                     'success' => false,
-                    'message' => 'No tienes permiso para ver esta información',
+                    'message' => 'No autenticado',
                 ],
             ];
         }
@@ -115,6 +116,12 @@ class ObtenerDistribucionControlCalidadUseCase
             ]);
 
             $parcialesInfo = $parcialesCC->map(function ($parcial) {
+                // Verificar si el parcial está completado en control de calidad
+                $estaCompletado = \DB::table('prenda_recibo_completado')
+                    ->where('id_parcial', $parcial->id)
+                    ->where('area', 'Control de Calidad')
+                    ->exists();
+
                 return [
                     'id' => $parcial->id,
                     'pedido_numero' => $parcial->pedido_produccion_id,
@@ -122,8 +129,12 @@ class ObtenerDistribucionControlCalidadUseCase
                     'nombre_prenda' => $parcial->nombre_prenda ?? 'Sin nombre',
                     'cliente' => $parcial->cliente ?? 'Sin cliente',
                     'consecutivo_parcial' => $parcial->consecutivo_parcial,
+                    'consecutivo_original' => $parcial->consecutivo_original,
                     'tipo_recibo' => $parcial->tipo_recibo,
                     'area' => $parcial->area,
+                    'encargado' => $parcial->encargado ?? 'Sin asignar',
+                    'estado_proceso' => 'En Progreso',
+                    'completado_area' => $estaCompletado,
                     'tallas' => $parcial->tallas?->map(fn($t) => [
                         'id' => $t->id,
                         'talla' => $t->talla,

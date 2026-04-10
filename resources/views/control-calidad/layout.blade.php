@@ -345,6 +345,7 @@
     </div>
 
     @vite(['resources/js/app.js'])
+    <script src="{{ asset('js/control-calidad.js') }}" defer></script>
     <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
     <script>
         window.CONTROL_CALIDAD_USUARIO = {
