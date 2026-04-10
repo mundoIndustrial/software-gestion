@@ -345,6 +345,11 @@ export function initReciboFilters() {
                                 <span class="material-symbols-rounded">visibility</span>
                                 VER RECIBO
                             </button>
+                            <button class="btn-agregar-novedad" 
+                                    onclick="abrirModalNovedad('${recibo.numero_pedido}', ${recibo.prenda_id}, '${recibo.nombre_prenda}', ${recibo.consecutivo_actual})">
+                                <span class="material-symbols-rounded">comment</span>
+                                AGREGAR NOVEDAD
+                            </button>
                             ${distribucionBtn}
                         </div>
                     </div>
