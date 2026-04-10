@@ -18,6 +18,9 @@ final class ActualizarPedidoCamposUseCase
             throw new \RuntimeException('Pedido no encontrado', 404);
         }
 
+        $estado = strtolower((string) ($pedido['estado'] ?? ''));
+        $esBorrador = empty($pedido['numero_pedido']) || $estado === 'borrador';
+
         $datosActualizar = [];
 
         if ($dto->cliente !== null) {
@@ -32,11 +35,11 @@ final class ActualizarPedidoCamposUseCase
             $datosActualizar['orden_compra'] = $dto->ordenCompra;
         }
 
-        if ($dto->novedades !== null) {
+        if ($dto->novedades !== null && !$esBorrador) {
             $datosActualizar['novedades'] = $dto->novedades;
         }
 
-        if ($dto->justificacion !== null && trim($dto->justificacion) !== '') {
+        if (!$esBorrador && $dto->justificacion !== null && trim($dto->justificacion) !== '') {
             $novedadesActuales = $datosActualizar['novedades'] ?? ($pedido['novedades'] ?? '');
             $fechaActual = now()->format('d/m/Y H:i');
             $registroNovedad = "[{$dto->nombreUsuario} - {$dto->rolUsuario} - {$fechaActual}]\n{$dto->justificacion}";
@@ -52,4 +55,3 @@ final class ActualizarPedidoCamposUseCase
         return $this->pedidoReadRepository->obtenerPedidoPorId($dto->pedidoId) ?? $pedido;
     }
 }
-

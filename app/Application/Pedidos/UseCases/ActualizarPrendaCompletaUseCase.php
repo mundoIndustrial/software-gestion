@@ -15,6 +15,7 @@ use App\Infrastructure\Services\Pedidos\PrendaAsignacionesColoresUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaColoresTelasUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaFotosTelasUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaImagenDeletionService;
+use App\Infrastructure\Services\Pedidos\PrendaNovedadService;
 use App\Infrastructure\Services\Pedidos\PrendaProcesosUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaVariantesUpdaterService;
 use App\Models\PrendaPedido;
@@ -47,6 +48,7 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         private readonly PrendaAsignacionesColoresUpdaterService $prendaAsignacionesColoresUpdaterService,
         private readonly PrendaFotosTelasUpdaterService $prendaFotosTelasUpdaterService,
         private readonly PrendaProcesosUpdaterService $prendaProcesosUpdaterService,
+        private readonly PrendaNovedadService $prendaNovedadService,
         private readonly PrendaPedidoTallaReadRepository $prendaPedidoTallaReadRepository,
         private readonly PrendaPedidoReadRepository $prendaPedidoReadRepository,
         private readonly PedidoProduccionReadService $pedidoProduccionReadService,
@@ -117,6 +119,7 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
             $dto->fotosProcesoTallasNuevo ?? []
         );
         // 8. Guardar novedad en pedido_produccion
+        $this->prendaNovedadService->guardarNovedadModificacion($prenda, $dto->novedad);
         // 9. Mantener campo explícito de tipo de flujo de tallas sincronizado
         $this->sincronizarTipoFlujoTallasPersistido($prenda);
         
@@ -492,3 +495,4 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }
+

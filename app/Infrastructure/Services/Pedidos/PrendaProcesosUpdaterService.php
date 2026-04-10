@@ -200,6 +200,7 @@ final class PrendaProcesosUpdaterService
                 $imagenesExistentes = (int) $tallaProceso->imagenes()->count();
 
                 $proceso->imagenes()->create([
+                    'proceso_prenda_detalle_id' => $proceso->id,
                     'proceso_prenda_talla_id' => $tallaProceso->id,
                     'ruta_original' => $rutaOriginal ?? $rutaWebp,
                     'ruta_webp' => $rutaWebp ?? $rutaOriginal,
