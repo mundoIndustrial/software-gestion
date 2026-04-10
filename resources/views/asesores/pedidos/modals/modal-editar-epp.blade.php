@@ -137,16 +137,42 @@ function abrirModalEditarEPP(eppData) {
     console.log('[abrirModalEditarEPP] Abriendo modal con EPP:', eppData);
     
     // Guardar ID de la tarjeta visual
-    tarjetaEppIdEnEdicion = eppData.tarjetaId;
+    tarjetaEppIdEnEdicion = eppData.tarjetaId || eppData.id || null;
     imagenesEditadasEnModalEPP = false;
     
+    const normalizarIdentificadorEPP = (valor) => {
+        if (valor === null || valor === undefined || valor === '') return null;
+        if (typeof valor === 'number' && !Number.isNaN(valor)) return valor;
+        const txt = String(valor).trim();
+        if (!txt) return null;
+        if (/^\d+$/.test(txt)) return Number(txt);
+        const matchTarjeta = txt.match(/^epp-(\d+)(?:-|$)/i);
+        if (matchTarjeta) return Number(matchTarjeta[1]);
+        return txt;
+    };
+    
     // Normalizar el eppData para asegurar que tiene un ID válido
-    const eppId = eppData.id || eppData.epp_id || eppData.data_epp_original_id;
+    const eppId = normalizarIdentificadorEPP(eppData.epp_id || eppData.data_epp_original_id || eppData.id);
     console.log('[abrirModalEditarEPP] ID normalizado:', eppId, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
     
     // Recuperar relación real pedido_epp_id desde la tarjeta del DOM (si existe)
-    const tarjetaDom = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${tarjetaEppIdEnEdicion || eppId}"]`);
+    const tarjetaDom = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${tarjetaEppIdEnEdicion || eppData.id}"], .item-epp-card[data-epp-id="${tarjetaEppIdEnEdicion || eppData.id}"]`);
+    const eppOriginalIdDesdeDOM = normalizarIdentificadorEPP(tarjetaDom?.dataset?.eppOriginalId || null);
     const pedidoEppIdDesdeDOM = tarjetaDom?.dataset?.pedidoEppId ? Number(tarjetaDom.dataset.pedidoEppId) : null;
+    const nombreDesdeTarjetaDom = tarjetaDom?.querySelector('h4, h5')?.textContent?.trim() || null;
+    const idsPosibles = [
+        eppId,
+        eppData.id,
+        eppData.epp_id,
+        eppData.data_epp_original_id,
+        eppOriginalIdDesdeDOM,
+        tarjetaEppIdEnEdicion
+    ].filter(v => v !== null && v !== undefined && v !== '');
+    const coincideConAlguno = (valor) => {
+        const idNormalizadoValor = normalizarIdentificadorEPP(valor);
+        if (idNormalizadoValor === null) return false;
+        return idsPosibles.some(id => String(normalizarIdentificadorEPP(id)) === String(idNormalizadoValor));
+    };
     
     // PRIMERO: Buscar en window.itemsPedido (donde están realmente los EPPs agregados)
     let eppEncontrado = null;
@@ -157,15 +183,16 @@ function abrirModalEditarEPP(eppData) {
         
         indiceEPPEnEdicion = window.itemsPedido.findIndex(e => {
             // Criterio 1: Coincidir ID directo
-            if (e.epp_id === eppId || e.epp_id === parseInt(eppId)) return true;
-            if (e.id === eppId || String(e.id) === String(eppId)) return true;
+            if (coincideConAlguno(e.epp_id)) return true;
+            if (coincideConAlguno(e.id)) return true;
             
             // Criterio 2: Coincidir por nombre_epp (como aparece en las tarjetas)
             if (eppData.nombre && (e.nombre_epp === eppData.nombre || e.nombre_epp === eppData.nombre_completo)) return true;
             if (eppData.nombre_epp && e.nombre_epp === eppData.nombre_epp) return true;
+            if (nombreDesdeTarjetaDom && e.nombre_epp === nombreDesdeTarjetaDom) return true;
             
             // Criterio 3: Coincidir por tarjeta ID (Si está disponible)
-            if (tarjetaEppIdEnEdicion && e.tarjetaId === tarjetaEppIdEnEdicion) return true;
+            if (tarjetaEppIdEnEdicion && String(e.tarjetaId) === String(tarjetaEppIdEnEdicion)) return true;
             
             return false;
         });
@@ -185,11 +212,13 @@ function abrirModalEditarEPP(eppData) {
         
         indiceEPPEnEdicion = eppAgregadosList.findIndex(e => {
             // Criterio 1: Coincidir ID directo
-            if (e.id === eppId || String(e.id) === String(eppId)) return true;
+            if (coincideConAlguno(e.epp_id)) return true;
+            if (coincideConAlguno(e.id)) return true;
             
             // Criterio 2: Coincidir por nombre si está disponible
             if (eppData.nombre && (e.nombre === eppData.nombre || e.nombre_completo === eppData.nombre)) return true;
             if (eppData.nombre_completo && e.nombre_completo === eppData.nombre_completo) return true;
+            if (nombreDesdeTarjetaDom && (e.nombre_epp === nombreDesdeTarjetaDom || e.nombre_completo === nombreDesdeTarjetaDom || e.nombre === nombreDesdeTarjetaDom)) return true;
             
             // Criterio 3: Coincidir por nombre_epp (como aparece en las tarjetas)
             if (eppData.nombre_epp && e.nombre_epp === eppData.nombre_epp) return true;
@@ -211,15 +240,21 @@ function abrirModalEditarEPP(eppData) {
     if (eppEncontrado) {
         // Usar directamente el objeto encontrado
         eppEnEdicionIndividual = eppEncontrado;
+        const idEppNormalizado = normalizarIdentificadorEPP(
+            eppEnEdicionIndividual.epp_id || eppEnEdicionIndividual.data_epp_original_id || eppEnEdicionIndividual.id || eppId || eppOriginalIdDesdeDOM
+        );
         
         // IMPORTANTE: Asegurar que siempre tiene ambas propiedades para búsqueda
         // Si no tiene 'id', usar 'epp_id'
-        if (!eppEnEdicionIndividual.id && eppEnEdicionIndividual.epp_id) {
-            eppEnEdicionIndividual.id = eppEnEdicionIndividual.epp_id;
+        if (!eppEnEdicionIndividual.id && idEppNormalizado !== null) {
+            eppEnEdicionIndividual.id = idEppNormalizado;
         }
         // Si tiene 'id' pero no 'epp_id', asegurar que epp_id esté disponible
-        if (!eppEnEdicionIndividual.epp_id && eppEnEdicionIndividual.id) {
-            eppEnEdicionIndividual.epp_id = eppEnEdicionIndividual.id;
+        if (!eppEnEdicionIndividual.epp_id && idEppNormalizado !== null) {
+            eppEnEdicionIndividual.epp_id = idEppNormalizado;
+        }
+        if (!eppEnEdicionIndividual.data_epp_original_id && idEppNormalizado !== null) {
+            eppEnEdicionIndividual.data_epp_original_id = idEppNormalizado;
         }
         
         // Sincronizar nombres
@@ -228,6 +263,15 @@ function abrirModalEditarEPP(eppData) {
         }
         if (!eppEnEdicionIndividual.nombre_completo && eppEnEdicionIndividual.nombre_epp) {
             eppEnEdicionIndividual.nombre_completo = eppEnEdicionIndividual.nombre_epp;
+        }
+        if ((!eppEnEdicionIndividual.nombre || eppEnEdicionIndividual.nombre === 'EPP') && nombreDesdeTarjetaDom) {
+            eppEnEdicionIndividual.nombre = nombreDesdeTarjetaDom;
+        }
+        if ((!eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_completo === 'EPP') && nombreDesdeTarjetaDom) {
+            eppEnEdicionIndividual.nombre_completo = nombreDesdeTarjetaDom;
+        }
+        if ((!eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre_epp === 'EPP') && nombreDesdeTarjetaDom) {
+            eppEnEdicionIndividual.nombre_epp = nombreDesdeTarjetaDom;
         }
         
         // Cargar imágenes con validación
@@ -247,13 +291,15 @@ function abrirModalEditarEPP(eppData) {
     } else {
         // Fallback: crear uno nuevo con los datos recibidos
         console.warn('[abrirModalEditarEPP] EPP no encontrado en ninguna lista, usando datos recibidos como fallback');
+        const nombreFallback = nombreDesdeTarjetaDom || eppData.nombre || eppData.nombre_epp || eppData.nombre_completo || 'EPP';
         eppEnEdicionIndividual = { 
-            id: eppId,
-            epp_id: eppId,
+            id: eppId || eppData.id,
+            epp_id: eppId || eppOriginalIdDesdeDOM || normalizarIdentificadorEPP(eppData.id),
+            data_epp_original_id: eppId || eppOriginalIdDesdeDOM || normalizarIdentificadorEPP(eppData.id),
             pedido_epp_id: pedidoEppIdDesdeDOM || null,
-            nombre: eppData.nombre || eppData.nombre_epp || eppData.nombre_completo || 'EPP',
-            nombre_completo: eppData.nombre_completo || eppData.nombre_epp || eppData.nombre || 'EPP',
-            nombre_epp: eppData.nombre_epp || eppData.nombre_completo || eppData.nombre || 'EPP',
+            nombre: nombreFallback,
+            nombre_completo: nombreFallback,
+            nombre_epp: nombreFallback,
             cantidad: eppData.cantidad || 1,
             observaciones: eppData.observaciones || '-',
             imagenes: eppData.imagenes || []
@@ -1275,5 +1321,3 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
     }
 }
 </script>
-
-

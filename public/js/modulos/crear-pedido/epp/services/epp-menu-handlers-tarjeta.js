@@ -74,9 +74,18 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
         this.cerrarTodosLosMenus();
 
         if (typeof window.abrirModalEditarEPP === 'function') {
+            const eppOriginalId = tarjeta.getAttribute('data-epp-original-id');
+            const pedidoEppId = tarjeta.getAttribute('data-pedido-epp-id');
+            const nombre = tarjeta.querySelector('h4, h5')?.textContent?.trim() || null;
             window.abrirModalEditarEPP({
                 id: eppId,
-                tarjetaId: eppId
+                tarjetaId: eppId,
+                epp_id: eppOriginalId ? Number(eppOriginalId) : null,
+                data_epp_original_id: eppOriginalId ? Number(eppOriginalId) : null,
+                pedido_epp_id: pedidoEppId ? Number(pedidoEppId) : null,
+                nombre: nombre,
+                nombre_epp: nombre,
+                nombre_completo: nombre
             });
         } else {
             console.warn(`[${this.constructor.name}] abrirModalEditarEPP no disponible`);

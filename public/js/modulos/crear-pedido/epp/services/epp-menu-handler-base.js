@@ -177,8 +177,23 @@ class EppMenuHandlerBase {
         this.cerrarTodosLosMenus();
 
         // Lógica de edición
+        const eppOriginalIdRaw = tarjeta.getAttribute('data-epp-original-id');
+        const pedidoEppIdRaw = tarjeta.getAttribute('data-pedido-epp-id');
+        const nombre = tarjeta.querySelector('h4, h5')?.textContent?.trim() || null;
+        const eppOriginalId = eppOriginalIdRaw && /^\d+$/.test(String(eppOriginalIdRaw)) ? Number(eppOriginalIdRaw) : null;
+        const pedidoEppId = pedidoEppIdRaw && /^\d+$/.test(String(pedidoEppIdRaw)) ? Number(pedidoEppIdRaw) : null;
+
         if (typeof window.abrirModalEditarEPP === 'function') {
-            window.abrirModalEditarEPP({ id: tarjetaId });
+            window.abrirModalEditarEPP({
+                id: tarjetaId,
+                tarjetaId: tarjetaId,
+                epp_id: eppOriginalId,
+                data_epp_original_id: eppOriginalId,
+                pedido_epp_id: pedidoEppId,
+                nombre: nombre,
+                nombre_epp: nombre,
+                nombre_completo: nombre
+            });
         } else {
             console.warn(`[${this.constructor.name}] abrirModalEditarEPP no disponible`);
         }
@@ -244,4 +259,3 @@ class EppMenuHandlerBase {
         console.log(`[${this.constructor.name}] Refrescando`);
     }
 }
-
