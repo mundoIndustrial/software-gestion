@@ -90,8 +90,16 @@ class Order
 
     public function returnToAdvisor(string $reason): void
     {
-        if ($this->status->isPending()) {
-            throw new \DomainException('No se puede devolver una orden pendiente');
+        if ($this->status->isCancelled()) {
+            throw new \DomainException('No se puede devolver una orden cancelada');
+        }
+
+        if ($this->status->isReturned()) {
+            throw new \DomainException('La orden ya ha sido devuelta');
+        }
+
+        if ($this->status->isDelivered()) {
+            throw new \DomainException('No se puede devolver una orden entregada');
         }
 
         $this->status = new OrderStatus('DEVUELTO_A_ASESORA');

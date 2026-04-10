@@ -28,9 +28,9 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
         return $this->consultaService->obtenerPedidosEntregadosPaginados($request);
     }
 
-    public function obtenerDetallePedido(int $pedidoId, bool $paraDespacho = false): array
+    public function obtenerDetallePedido(int $pedidoId, bool $paraDespacho = false, bool $priorizarNumeroPedido = false): array
     {
-        return $this->consultaService->obtenerDetallePedido($pedidoId, $paraDespacho);
+        return $this->consultaService->obtenerDetallePedido($pedidoId, $paraDespacho, $priorizarNumeroPedido);
     }
 
     public function obtenerDatosFactura(int $id): array

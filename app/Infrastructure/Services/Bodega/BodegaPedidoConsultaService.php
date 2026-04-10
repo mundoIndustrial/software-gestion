@@ -155,24 +155,42 @@ class BodegaPedidoConsultaService
         ];
     }
 
-    public function obtenerDetallePedido(int $pedidoId, bool $paraDespacho = false): array
+    public function obtenerDetallePedido(int $pedidoId, bool $paraDespacho = false, bool $priorizarNumeroPedido = false): array
     {
         $usuario = auth()->user();
         $rolesDelUsuario = $usuario->getRoleNames()->toArray();
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
         $estadosPermitidos = $this->obtenerEstadosPermitidos();
 
-        \Log::info('[obtenerDetallePedido] Iniciando busqueda', ['pedidoId' => $pedidoId]);
+        \Log::info('[obtenerDetallePedido] Iniciando busqueda', [
+            'pedidoId' => $pedidoId,
+            'priorizar_numero_pedido' => $priorizarNumeroPedido,
+        ]);
 
         // IMPORTANTE: priorizar búsqueda por ID real para evitar colisiones con numero_pedido
         // Ejemplo: pedidoId=163 puede ser ID de PedidoProduccion, pero también existir numero_pedido=163.
-        $primerRecibo = ReciboPrenda::where('id', $pedidoId)->first();
-        $pedidoProduccionPorId = PedidoProduccion::where('id', $pedidoId)->first();
+        $primerRecibo = null;
+        $pedidoProduccionPorId = null;
         $pedidoProduccionPorNumero = null;
 
-        if (!$primerRecibo && !$pedidoProduccionPorId) {
+        if ($priorizarNumeroPedido) {
+            // En bodega.show la URL representa numero_pedido; usarlo primero evita colisiones con IDs internos.
             $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
             $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
+
+            if (!$primerRecibo && !$pedidoProduccionPorNumero) {
+                $primerRecibo = ReciboPrenda::where('id', $pedidoId)->first();
+                $pedidoProduccionPorId = PedidoProduccion::where('id', $pedidoId)->first();
+            }
+        } else {
+            // Flujos internos: priorizar ID real para evitar colisiones con numero_pedido.
+            $primerRecibo = ReciboPrenda::where('id', $pedidoId)->first();
+            $pedidoProduccionPorId = PedidoProduccion::where('id', $pedidoId)->first();
+
+            if (!$primerRecibo && !$pedidoProduccionPorId) {
+                $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
+                $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
+            }
         }
 
         \Log::info('[obtenerDetallePedido] ReciboPrenda encontrado', [

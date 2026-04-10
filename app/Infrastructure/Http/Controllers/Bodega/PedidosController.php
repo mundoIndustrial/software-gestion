@@ -392,32 +392,15 @@ class PedidosController extends Controller
     public function show(Request $request, $pedidoId)
     {
         try {
-            // Obtener el ReciboPrenda buscando por numero_pedido (parámetro es numero_pedido, no id)
-            $reciboPrenda = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
-            $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
-            if (!$reciboPrenda && !$pedidoProduccionPorNumero) {
-                $reciboPrenda = ReciboPrenda::where('id', $pedidoId)->first(); // Fallback para compatibilidad con id directo
-            }
+            // Modo estricto: esta ruta se resuelve SOLO por numero_pedido.
+            $numeroPedido = (string) $pedidoId;
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
-            // Si no encuentra ReciboPrenda, buscar en PedidoProduccion directamente
-            if (!$reciboPrenda) {
-                $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
-                    ->firstOrFail();
-                $numeroPedidoFinal = $pedidoProduccion->numero_pedido;
-            } else {
-                $numeroPedidoFinal = $reciboPrenda->numero_pedido;
-            }
+            // Marcar pedido como visto por numero_pedido.
+            PedidoProduccion::where('numero_pedido', $pedidoProduccion->numero_pedido)
+                ->update(['viewed_at' => Carbon::now()]);
             
-            // Marcar pedido como visto evitando where numero_pedido = null
-            if (!empty($numeroPedidoFinal)) {
-                PedidoProduccion::where('numero_pedido', $numeroPedidoFinal)
-                    ->update(['viewed_at' => Carbon::now()]);
-            } else {
-                PedidoProduccion::where('id', $pedidoId)
-                    ->update(['viewed_at' => Carbon::now()]);
-            }
-            
-            $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
+            $datos = $this->bodegaPedidoService->obtenerDetallePedido((int) $pedidoProduccion->numero_pedido, false, true);
             
             \Log::debug('[PedidosController@show] Datos obtenidos del servicio', [
                 'items_count' => count($datos['items'] ?? []),
