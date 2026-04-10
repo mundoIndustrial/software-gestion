@@ -212,8 +212,8 @@ class PedidosController extends Controller
             ]);
             
             // Marcar pedido como visto usando el numero_pedido
-            PedidoProduccion::where('numero_pedido', $numeroPedido)
-                ->update(['viewed_at' => Carbon::now()]);
+                $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
+                    ->firstOrFail();
             
             // Obtener datos desde bodega_detalles_talla
             $datos = $this->datosService->obtenerDatosDesdeBodegaDetalles($numeroPedido);
@@ -393,14 +393,15 @@ class PedidosController extends Controller
     {
         try {
             // Obtener el ReciboPrenda buscando por numero_pedido (parámetro es numero_pedido, no id)
-            $reciboPrenda = ReciboPrenda::where('numero_pedido', $pedidoId)
-                ->orWhere('id', $pedidoId) // Fallback para compatibilidad con id directo
-                ->first();
+            $reciboPrenda = ReciboPrenda::where('numero_pedido', $pedidoId)->first();
+            $pedidoProduccionPorNumero = PedidoProduccion::where('numero_pedido', $pedidoId)->first();
+            if (!$reciboPrenda && !$pedidoProduccionPorNumero) {
+                $reciboPrenda = ReciboPrenda::where('id', $pedidoId)->first(); // Fallback para compatibilidad con id directo
+            }
             
             // Si no encuentra ReciboPrenda, buscar en PedidoProduccion directamente
             if (!$reciboPrenda) {
-                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedidoId)
-                    ->orWhere('id', $pedidoId)
+                $pedidoProduccion = $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
                     ->firstOrFail();
                 $numeroPedidoFinal = $pedidoProduccion->numero_pedido;
             } else {
