@@ -434,9 +434,8 @@ class PedidosController extends Controller
     public function show(Request $request, $pedidoId)
     {
         try {
-            // Modo estricto: esta ruta se resuelve SOLO por numero_pedido.
-            $numeroPedido = (string) $pedidoId;
-            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            // Buscar por ID, no por numero_pedido
+            $pedidoProduccion = PedidoProduccion::findOrFail((int) $pedidoId);
             
             // Marcar pedido como visto por numero_pedido.
             PedidoProduccion::where('numero_pedido', $pedidoProduccion->numero_pedido)
