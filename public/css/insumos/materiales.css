@@ -945,3 +945,86 @@ body.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
         height: 1.25rem;
     }
 }
+
+/* ========================================
+   ESTILOS PARA SELECTOR DE ESTADO
+   ======================================== */
+
+.estado-select {
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+    padding: 0.5rem 1rem !important;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.estado-select:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.estado-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+.estado-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.estado-select option {
+    background-color: white;
+    color: #1f2937;
+    padding: 0.5rem;
+}
+
+/* Colores específicos para cada estado */
+.estado-select.bg-gray-400 {
+    background-color: #9ca3af !important;
+    color: white !important;
+}
+
+.estado-select.bg-blue-100 {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+}
+
+.estado-select.bg-amber-100 {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+}
+
+.estado-select.bg-green-500 {
+    background-color: #22c55e !important;
+    color: white !important;
+}
+
+.estado-select.bg-red-500 {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+.estado-select.bg-purple-500 {
+    background-color: #a855f7 !important;
+    color: white !important;
+}
+
+.estado-select.bg-amber-500 {
+    background-color: #f59e0b !important;
+    color: white !important;
+}
+
+.estado-select.bg-yellow-600 {
+    background-color: #ca8a04 !important;
+    color: white !important;
+}

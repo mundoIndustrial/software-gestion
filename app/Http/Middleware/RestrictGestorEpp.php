@@ -59,11 +59,11 @@ class RestrictGestorEpp
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
                 'error' => 'No tienes permiso para acceder a esta sección.',
-                'redirect' => route('epp.gestion')
+                'redirect' => route('epp.inicio')
             ], 403);
         }
 
         // Para peticiones web normales, redirigir
-        return redirect()->route('epp.gestion')->with('error', 'No tienes permiso para acceder a esta sección.');
+        return redirect()->route('epp.inicio')->with('error', 'No tienes permiso para acceder a esta sección.');
     }
 }

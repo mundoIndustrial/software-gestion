@@ -1285,7 +1285,7 @@ class EppController extends Controller
                 'epp_count' => \App\Models\Epp::count(),
                 'epp_sample' => \App\Models\Epp::limit(3)->get()->toArray(),
                 'routes' => [
-                    'epp' => route('epp.gestion'),
+                    'epp' => route('epp.inicio'),
                     'epp_test' => route('epp.test')
                 ]
             ]);

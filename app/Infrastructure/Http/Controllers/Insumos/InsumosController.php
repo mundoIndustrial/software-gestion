@@ -336,8 +336,41 @@ class InsumosController extends Controller
     public function cambiarEstadoRecibo(Request $request, $reciboId)
     {
         try {
+            $user = Auth::user();
+            $userRole = $user->role->name ?? 'guest';
+            
+            // Determinar los estados permitidos según el rol
+            $estadosPermitidos = [
+                'No iniciado',
+                'En Ejecución', 
+                'PENDIENTE_INSUMOS',
+                'Pendiente_Insumos',
+                'Insumos Pedidos',
+                'INSUMOS_PEDIDOS',
+                'DEVUELTO_ASESOR',
+                'Devuelto_Asesor',
+                'COSTURA',
+                'ESTAMPADO',
+                'BORDADO',
+                'REFLECTIVO',
+                'DTF',
+                'SUBLIMADO',
+                'COSTURA-BODEGA',
+                'Anulada'
+            ];
+            
+            // Si es rol "insumos", solo permite Pendiente Insumos e Insumos Pedidos
+            if ($userRole === 'insumos') {
+                $estadosPermitidos = [
+                    'PENDIENTE_INSUMOS',
+                    'Pendiente_Insumos',
+                    'Insumos Pedidos',
+                    'INSUMOS_PEDIDOS'
+                ];
+            }
+            
             $validated = $request->validate([
-                'estado' => ['required', 'string', Rule::in(['No iniciado', 'En Ejecución'])],
+                'estado' => ['required', 'string', Rule::in($estadosPermitidos)],
             ]);
             
             $resultado = $this->cambiarEstadoReciboUseCase->execute((int) $reciboId, $validated['estado']);

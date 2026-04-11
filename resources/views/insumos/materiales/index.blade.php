@@ -280,7 +280,7 @@
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
-                                <td class="py-4 px-6 text-center">
+                                <td class="py-6 px-6 text-center min-h-20">
                                     @php
                                         $estadoClass = '';
                                         $estadoColor = '';
@@ -296,18 +296,58 @@
                                             $estadoClass = 'bg-amber-100 text-amber-800';
                                             $estadoDisplay = 'Anulada';
                                         } elseif ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') {
-                                            $estadoClass = 'bg-green-500 text-white';
+                                            $estadoClass = 'bg-amber-500 text-white';
                                             $estadoDisplay = 'Pendiente Insumos';
                                         } elseif ($orden->estado === 'DEVUELTO_ASESOR') {
                                             $estadoClass = 'bg-red-500 text-white';
                                             $estadoDisplay = 'Devuelto Asesor';
+                                        } elseif ($orden->estado === 'Insumos Pedidos' || $orden->estado === 'INSUMOS_PEDIDOS') {
+                                            $estadoClass = 'bg-green-500 text-white';
+                                            $estadoDisplay = 'Insumos Pedidos';
                                         } else {
                                             $estadoDisplay = str_replace('_', ' ', $orden->estado ?? 'N/A');
                                         }
+                                        
+                                        // Determinar si el rol insumos puede editar este estado
+                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
+                                        $puedeEditarInsumos = in_array($orden->estado, $estadosEditablesInsumos);
+                                        
+                                        // Mostrar selector solo si no es insumos, o si es insumos y el estado es editable
+                                        $mostrarSelector = ($currentRoleName !== 'insumos') || ($currentRoleName === 'insumos' && $puedeEditarInsumos);
                                     @endphp
-                                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $estadoClass }}">
-                                        {{ $estadoDisplay }}
-                                    </span>
+                                    
+                                    @if($mostrarSelector)
+                                        {{-- SELECTOR EDITABLE --}}
+                                        <div class="relative block w-full flex items-center justify-center">
+                                            <select 
+                                                class="estado-select px-2 py-2 rounded-lg text-xs font-semibold border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-20 leading-tight whitespace-normal {{ $estadoClass }}"
+                                                style="min-height: 3rem; line-height: 1.2;"
+                                                data-recibo-id="{{ $orden->id }}"
+                                                data-estado-actual="{{ $orden->estado }}"
+                                                data-rol="{{ $currentRoleName }}"
+                                                onchange="cambiarEstadoDesdeSelector(this)"
+                                            >
+                                                @if($currentRoleName === 'insumos')
+                                                    {{-- Solo 2 opciones editable para rol insumos --}}
+                                                    <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente Insumos</option>
+                                                    <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos Pedidos</option>
+                                                @else
+                                                    {{-- Todas las opciones para otros roles --}}
+                                                    <option value="No iniciado" {{ $orden->estado === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
+                                                    <option value="En Ejecución" {{ $orden->estado === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
+                                                    <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente Insumos</option>
+                                                    <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos Pedidos</option>
+                                                    <option value="DEVUELTO_ASESOR" {{ $orden->estado === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
+                                                    <option value="Anulada" {{ $orden->estado === 'Anulada' ? 'selected' : '' }}>Anulada</option>
+                                                @endif
+                                            </select>
+                                        </div>
+                                    @else
+                                        {{-- BADGE ESTÁTICO (SIN EDITAR) --}}
+                                        <span class="inline-block px-3 py-2 rounded-lg text-sm font-semibold {{ $estadoClass }} break-words">
+                                            {{ $estadoDisplay }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-6 text-center">
                                     @php
@@ -341,6 +381,39 @@
                 </table>
             </div>
         </div>
+
+
+    {{-- Modal de Confirmación para Cambiar Estado --}}
+    <div id="modalConfirmarCambioEstado" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <h2 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">
+                Confirmar Cambio de Estado
+            </h2>
+            <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.95rem;">
+                ¿Seguro que quieres cambiar el estado a <strong id="nuevoEstadoText"></strong>?
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button 
+                    type="button" 
+                    onclick="cancelarCambioEstado()"
+                    style="padding: 0.75rem 1.5rem; background: #e5e7eb; color: #374151; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+                    onmouseover="this.style.background='#d1d5db'"
+                    onmouseout="this.style.background='#e5e7eb'"
+                >
+                    Cancelar
+                </button>
+                <button 
+                    type="button" 
+                    onclick="confirmarCambioEstado()"
+                    style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+                    onmouseover="this.style.background='#2563eb'"
+                    onmouseout="this.style.background='#3b82f6'"
+                >
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
 
     {{-- Paginación --}}
     @if($ordenes instanceof \Illuminate\Pagination\Paginator || $ordenes instanceof \Illuminate\Pagination\LengthAwarePaginator)
@@ -413,7 +486,6 @@
 <!-- DAYS SELECTOR HANDLER - DEBE cargarse PRIMERO -->
 <script defer src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
 <!-- TRACKING MODAL HANDLER - DEBE cargarse ANTES de ui-components.js -->

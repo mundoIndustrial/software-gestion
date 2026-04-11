@@ -693,7 +693,7 @@
         </button>
         <ul class="submenu">
           <li class="submenu-item">
-            <a href="{{ route('epp.gestion') }}"
+            <a href="{{ route('epp.inicio') }}"
                class="menu-link {{ request()->routeIs('epp.*') ? 'active' : '' }}"
                aria-label="Gestionar EPPs">
               <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>

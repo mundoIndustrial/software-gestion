@@ -49,7 +49,7 @@ class SupervisorAccessControl
 
         // Redirigir gestor de EPP a su vista exclusiva
         if ($user && $user->hasRole('gestor_epp')) {
-            return redirect()->route('epp.gestion');
+            return redirect()->route('epp.inicio');
         }
 
         // Bloquear acceso a despacho en rutas de supervisor/dashboard

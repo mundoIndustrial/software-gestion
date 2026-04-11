@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Gestión de EPPs</title>
+    <title>Gestion de EPPs</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Google Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -83,14 +84,14 @@
                 </table>
             </div>
             
-            <!-- Paginación -->
+            <!-- Paginacion -->
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
                         Mostrando <span id="registrosDesde">0</span> a <span id="registrosHasta">0</span> de <span id="registrosTotales">0</span> registros
                     </div>
                     <div class="flex gap-2" id="paginacionEpps">
-                        <!-- Se generará dinámicamente -->
+                        <!-- Se generara dinamicamente -->
                     </div>
                 </div>
             </div>
@@ -130,7 +131,7 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación de Eliminación -->
+    <!-- Modal de Confirmacion de Eliminacion -->
     <div id="modalConfirmacionEliminar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4">
             <div class="bg-red-600 px-6 py-6 rounded-t-xl">
@@ -183,7 +184,7 @@
         </div>
     </div>
 
-    <!-- Modal de Éxito -->
+    <!-- Modal de Exito -->
     <div id="modalExito" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4 text-center">
             <div class="bg-green-600 px-6 py-6 rounded-t-xl">
@@ -192,7 +193,7 @@
                         <span class="material-symbols-rounded text-4xl text-green-600">check_circle</span>
                     </div>
                 </div>
-                <h3 class="text-xl font-bold text-white">¡Éxito!</h3>
+                <h3 class="text-xl font-bold text-white">Exito!</h3>
             </div>
             <div class="p-6">
                 <p id="mensajeExito" class="text-gray-700 text-lg mb-6">La operación se completó correctamente</p>
@@ -244,7 +245,7 @@
         }
 
         configurarEventListeners() {
-            // Búsqueda en tiempo real
+            // Busqueda en tiempo real
             const buscarInput = document.getElementById('buscar');
             if (buscarInput) {
                 buscarInput.addEventListener('input', (e) => {
@@ -286,7 +287,7 @@
                 }
             } catch (error) {
                 console.error('[GestorEpps] Error en carga:', error);
-                this.renderizarTablaVacia('Error de conexión');
+                this.renderizarTablaVacia('Error de conexion');
             }
         }
 
@@ -371,7 +372,7 @@
                 </button>
             `;
 
-            // Páginas
+            // Paginas
             const maxPagesToShow = 5;
             let startPage = Math.max(1, this.paginaActual - Math.floor(maxPagesToShow / 2));
             let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -389,7 +390,7 @@
                 `;
             }
 
-            // Botón siguiente
+            // Botn siguiente
             html += `
                 <button ${this.paginaActual === totalPages ? 'disabled' : ''} 
                     onclick="gestorEpps.cambiarPagina(${this.paginaActual + 1})" 
@@ -399,12 +400,12 @@
                 </button>
             `;
             
-            // Botón ir al final (>>)
+            // Boton ir al final (>>)
             html += `
                 <button ${this.paginaActual === totalPages ? 'disabled' : ''} 
                     onclick="gestorEpps.cambiarPagina(${totalPages})" 
                     class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition"
-                    title="Última página">
+                    title="última página">
                     <span class="material-symbols-rounded text-base">keyboard_double_arrow_right</span>
                 </button>
             `;

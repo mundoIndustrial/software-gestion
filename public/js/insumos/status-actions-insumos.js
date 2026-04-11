@@ -233,6 +233,190 @@ function confirmarEnvioProduccion() {
     });
 }
 
+
+// ===== VARIABLES GLOBALES PARA MODAL DE CONFIRMACIÓN =====
+let cambioEstadoPendiente = {
+    reciboId: null,
+    estadoActual: null,
+    nuevoEstado: null,
+    selectElement: null
+};
+
+/**
+ * Cambiar estado desde el selector dropdown en la tabla
+ * @param {HTMLSelectElement} selectElement - El elemento select que disparó el cambio
+ */
+async function cambiarEstadoDesdeSelector(selectElement) {
+    const reciboId = selectElement.getAttribute('data-recibo-id');
+    const estadoActual = selectElement.getAttribute('data-estado-actual');
+    const nuevoEstado = selectElement.value;
+    
+    // Si no cambió, no hacer nada
+    if (nuevoEstado === estadoActual) {
+        return;
+    }
+    
+    // Guardar los datos para confirmar después
+    cambioEstadoPendiente.reciboId = reciboId;
+    cambioEstadoPendiente.estadoActual = estadoActual;
+    cambioEstadoPendiente.nuevoEstado = nuevoEstado;
+    cambioEstadoPendiente.selectElement = selectElement;
+    
+    // Mostrar el modal de confirmación
+    mostrarModalConfirmacion(nuevoEstado);
+}
+
+/**
+ * Mostrar el modal de confirmación con el nuevo estado
+ */
+function mostrarModalConfirmacion(nuevoEstado) {
+    const modal = document.getElementById('modalConfirmarCambioEstado');
+    const textoEstado = document.getElementById('nuevoEstadoText');
+    
+    if (!modal) return;
+    
+    // Actualizar el texto del modal con el nuevo estado
+    textoEstado.textContent = nuevoEstado;
+    
+    // Mostrar el modal
+    modal.style.display = 'flex';
+}
+
+/**
+ * Cancelar el cambio de estado
+ */
+function cancelarCambioEstado() {
+    const modal = document.getElementById('modalConfirmarCambioEstado');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Revertir el selector al valor anterior
+    if (cambioEstadoPendiente.selectElement) {
+        cambioEstadoPendiente.selectElement.value = cambioEstadoPendiente.estadoActual;
+    }
+    
+    // Limpiar los datos
+    cambioEstadoPendiente = {
+        reciboId: null,
+        estadoActual: null,
+        nuevoEstado: null,
+        selectElement: null
+    };
+}
+
+/**
+ * Confirmar el cambio de estado
+ */
+async function confirmarCambioEstado() {
+    const reciboId = cambioEstadoPendiente.reciboId;
+    const estadoActual = cambioEstadoPendiente.estadoActual;
+    const nuevoEstado = cambioEstadoPendiente.nuevoEstado;
+    const selectElement = cambioEstadoPendiente.selectElement;
+    
+    // Cerrar el modal
+    const modal = document.getElementById('modalConfirmarCambioEstado');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Deshabilitar el select mientras se procesa
+    if (selectElement) {
+        selectElement.disabled = true;
+    }
+    
+    try {
+        const response = await fetch(`/insumos/materiales/recibo/${reciboId}/cambiar-estado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                estado: nuevoEstado
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar el atributo data-estado-actual
+            if (selectElement) {
+                selectElement.setAttribute('data-estado-actual', nuevoEstado);
+                // Actualizar los colores del select basado en el nuevo estado
+                actualizarColorSelect(selectElement, nuevoEstado);
+            }
+            
+            // Mostrar toast de éxito
+            showToast(`Estado cambiado a ${nuevoEstado}`, 'success');
+            
+            // Recargar la tabla después de un segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            // Revertir el select al valor anterior
+            if (selectElement) {
+                selectElement.value = estadoActual;
+            }
+            showToast(data.message || 'Error al cambiar el estado', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        // Revertir el select al valor anterior
+        if (selectElement) {
+            selectElement.value = estadoActual;
+        }
+        showToast('Error al procesar la solicitud', 'error');
+    } finally {
+        // Habilitar el select
+        if (selectElement) {
+            selectElement.disabled = false;
+        }
+        
+        // Limpiar los datos
+        cambioEstadoPendiente = {
+            reciboId: null,
+            estadoActual: null,
+            nuevoEstado: null,
+            selectElement: null
+        };
+    }
+}
+
+/**
+ * Actualizar los colores del select basado en el estado
+ * @param {HTMLSelectElement} selectElement - El elemento select a actualizar
+ * @param {string} estado - El nuevo estado
+ */
+function actualizarColorSelect(selectElement, estado) {
+    // Remover todas las clases de color
+    selectElement.classList.remove(
+        'bg-gray-400', 'text-white',
+        'bg-blue-100', 'text-blue-800',
+        'bg-amber-100', 'text-amber-800',
+        'bg-yellow-400', 'text-gray-900',
+        'bg-green-500',
+        'bg-red-500'
+    );
+    
+    // Agregar las nuevas clases según el estado
+    if (estado === 'No iniciado') {
+        selectElement.classList.add('bg-gray-400', 'text-white');
+    } else if (estado === 'En Ejecución') {
+        selectElement.classList.add('bg-blue-100', 'text-blue-800');
+    } else if (estado === 'Anulada') {
+        selectElement.classList.add('bg-amber-100', 'text-amber-800');
+    } else if (estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
+        selectElement.classList.add('bg-amber-500', 'text-white');
+    } else if (estado === 'DEVUELTO_ASESOR') {
+        selectElement.classList.add('bg-red-500', 'text-white');
+    } else if (estado === 'Insumos Pedidos' || estado === 'INSUMOS_PEDIDOS') {
+        selectElement.classList.add('bg-green-500', 'text-white');
+    }
+}
+
 function exportStatusActionsInsumos() {
     window.insumosHandlers = window.insumosHandlers || {};
     window.insumosHandlers.statusActions = {
@@ -243,6 +427,13 @@ function exportStatusActionsInsumos() {
         restaurarBotonAprobar,
         confirmarEnvioProduccion,
     };
+    
+    // Exponer funciones globales para el modal de cambio de estado
+    window.cambiarEstadoDesdeSelector = cambiarEstadoDesdeSelector;
+    window.mostrarModalConfirmacion = mostrarModalConfirmacion;
+    window.cancelarCambioEstado = cancelarCambioEstado;
+    window.confirmarCambioEstado = confirmarCambioEstado;
+    window.actualizarColorSelect = actualizarColorSelect;
 }
 
 if (document.readyState === 'loading') {
