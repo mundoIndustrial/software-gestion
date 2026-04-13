@@ -67,6 +67,50 @@
             console.error(' [recargarTablaPedidos] Error:', error);
         }
     }
+
+    async function refrescarDatosEdicionPedidoDesdeServidor(pedidoId) {
+        if (!pedidoId) return false;
+
+        try {
+            const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                return false;
+            }
+
+            const respuesta = await response.json();
+            if (!respuesta?.success) {
+                return false;
+            }
+
+            const datos = respuesta.data || respuesta.datos || {};
+            window.datosEdicionPedido = {
+                id: datos.id,
+                numero_pedido: datos.numero_pedido || datos.numero,
+                numero: datos.numero || datos.numero_pedido,
+                cliente: datos.cliente || 'Cliente sin especificar',
+                asesora: datos.asesor || datos.asesora?.name || 'Asesor sin especificar',
+                estado: datos.estado || 'Pendiente',
+                forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
+                prendas: datos.prendas || [],
+                epps: datos.epps_transformados || datos.epps || [],
+                procesos: datos.procesos || [],
+                ...datos
+            };
+
+            return true;
+        } catch (error) {
+            console.warn('[EPP] No se pudo refrescar datos de edición:', error);
+            return false;
+        }
+    }
     
     /**
      * Abrir formulario para editar EPP del pedido (lista seleccionable)
@@ -723,8 +767,9 @@
             });
             
             // Detectar si es una homologación
+            const esHomologacion = !!window.eppEnHomologacion;
             let response;
-            if (window.eppEnHomologacion) {
+            if (esHomologacion) {
                 console.log(' [Modal Novedad] Modo HOMOLOGACIÓN detectado');
                 
                 response = await fetch(`/api/asesores/pedidos/${pedidoId}/homologar-epp`, {
@@ -765,17 +810,41 @@
             
             const resultado = await response.json();
             console.log(' Cambios guardados con novedad:', resultado);
-            
-            // Actualizar el EPP en la lista de datos sin recargar la página
-            if (window.datosEdicionPedido && window.datosEdicionPedido.epps) {
-                const eppIndex = window.datosEdicionPedido.epps.findIndex(e => e.id === pedidoEppId);
-                if (eppIndex !== -1) {
-                    window.datosEdicionPedido.epps[eppIndex].cantidad = cambios.cantidad;
-                    window.datosEdicionPedido.epps[eppIndex].observaciones = cambios.observaciones;
-                    if (cambios.eppId) {
-                        window.datosEdicionPedido.epps[eppIndex].epp_id = cambios.eppId;
+
+            const refrescoOk = await refrescarDatosEdicionPedidoDesdeServidor(pedidoId);
+
+            // Fallback local si por alguna razón falla el refresco remoto
+            if (!refrescoOk && window.datosEdicionPedido && Array.isArray(window.datosEdicionPedido.epps)) {
+                const eppsLista = window.datosEdicionPedido.epps;
+                const indexAnterior = eppsLista.findIndex(
+                    e => Number(e?.id || e?.pedido_epp_id) === Number(pedidoEppId)
+                );
+
+                if (esHomologacion) {
+                    const nuevoPedidoEppId = Number(resultado?.epp_id_nuevo || 0);
+                    if (indexAnterior !== -1) {
+                        const anterior = eppsLista[indexAnterior] || {};
+                        eppsLista.splice(indexAnterior, 1, {
+                            ...anterior,
+                            id: nuevoPedidoEppId || anterior.id,
+                            pedido_epp_id: nuevoPedidoEppId || anterior.pedido_epp_id,
+                            epp_id: cambios.eppId || anterior.epp_id,
+                            cantidad: cambios.cantidad,
+                            observaciones: cambios.observaciones,
+                            nombre: cambios.nombreSeleccionado || anterior.nombre || anterior.nombre_completo,
+                            nombre_completo: cambios.nombreSeleccionado || anterior.nombre_completo || anterior.nombre
+                        });
                     }
-                    console.log(' [Actualizar EPP] EPP actualizado en memoria:', window.datosEdicionPedido.epps[eppIndex]);
+                } else if (indexAnterior !== -1) {
+                    eppsLista[indexAnterior].cantidad = cambios.cantidad;
+                    eppsLista[indexAnterior].observaciones = cambios.observaciones;
+                    if (cambios.eppId) {
+                        eppsLista[indexAnterior].epp_id = cambios.eppId;
+                    }
+                    if (cambios.nombreSeleccionado) {
+                        eppsLista[indexAnterior].nombre = cambios.nombreSeleccionado;
+                        eppsLista[indexAnterior].nombre_completo = cambios.nombreSeleccionado;
+                    }
                 }
             }
             
@@ -1146,6 +1215,7 @@
             cantidad,
             observaciones,
             eppId,
+            nombreSeleccionado: (document.getElementById('modalEppNombre')?.value || '').trim(),
             imagenesAEliminar,
             imagenesAAgregar
         };

@@ -217,12 +217,68 @@ class PedidoDraftMutationService
                 continue;
             }
 
+            // Filtrar procesos marcados para eliminar para no procesar sus imágenes
+            $procesosAEliminar = $this->decodificarJsonArray($prendaData['procesos_a_eliminar'] ?? []);
+            $procesosFiltrados = $this->filtrarProcesosEliminados($procesos, $procesosAEliminar);
+
+            if (empty($procesosFiltrados)) {
+                \Illuminate\Support\Facades\Log::debug('[PedidoDraftMutationService] Todos los procesos de la prenda fueron eliminados, omitiendo procesamiento de imágenes', [
+                    'prenda_index' => $prendaIndex,
+                    'procesos_eliminados' => count($procesosAEliminar),
+                ]);
+                continue;
+            }
+
+            $prendaId = (int) ($prendaData['prenda_pedido_id'] ?? $prendaData['id'] ?? $prendaData['prenda_id'] ?? 0);
+
+            \Illuminate\Support\Facades\Log::debug('[PedidoDraftMutationService] Procesando imágenes de procesos filtrados', [
+                'prenda_index' => $prendaIndex,
+                'procesos_totales' => count($procesos),
+                'procesos_a_eliminar' => count($procesosAEliminar),
+                'procesos_a_procesar' => count($procesosFiltrados),
+            ]);
+
             $this->pedidoImagenesService->procesarImagenesDeProcesos(
                 $request,
                 $pedidoId,
-                $procesos,
-                (int) $prendaIndex
+                $procesosFiltrados,
+                (int) $prendaIndex,
+                $prendaId
             );
         }
+    }
+
+    private function decodificarJsonArray(mixed $valor): array
+    {
+        if (is_array($valor)) {
+            return $valor;
+        }
+
+        if (!is_string($valor) || trim($valor) === '') {
+            return [];
+        }
+
+        $decodificado = json_decode($valor, true);
+        return is_array($decodificado) ? $decodificado : [];
+    }
+
+    private function filtrarProcesosEliminados(array $procesos, array $procesosAEliminar): array
+    {
+        if (empty($procesosAEliminar)) {
+            return $procesos;
+        }
+
+        return array_filter($procesos, function ($proceso) use ($procesosAEliminar) {
+            // Extraer IDs de procesos a eliminar
+            $idsAEliminar = array_map(function ($p) {
+                return $p['id'] ?? $p['proceso_prenda_detalle_id'] ?? null;
+            }, $procesosAEliminar);
+
+            // El proceso tiene id o proceso_prenda_detalle_id?
+            $procesoId = $proceso['id'] ?? $proceso['proceso_prenda_detalle_id'] ?? null;
+            
+            // NO incluir si está marcado para eliminar
+            return !in_array($procesoId, array_filter($idsAEliminar), true);
+        });
     }
 }

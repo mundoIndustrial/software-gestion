@@ -375,6 +375,9 @@ final class PrendaProcesosUpdaterService
             }
 
             $tallaProceso->imagenes()->create([
+                // Esta FK es obligatoria en pedidos_procesos_imagenes.
+                // La relación de talla solo completa proceso_prenda_talla_id automáticamente.
+                'proceso_prenda_detalle_id' => $tallaProceso->proceso_prenda_detalle_id,
                 'ruta_original' => $rutaOriginal ?? $rutaWebp,
                 'ruta_webp' => $rutaWebp ?? $rutaOriginal,
                 'orden' => $orden,

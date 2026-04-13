@@ -156,12 +156,24 @@ class PrendaEditorProcesos {
         
         // 🔴 FIX: Si datos está anidado, extraerlo
         const datosActuales = proceso?.datos || proceso;
+        const procesoIdNormalizado =
+            datosActuales?.id
+            || proceso?.id
+            || datosActuales?.proceso_prenda_detalle_id
+            || proceso?.proceso_prenda_detalle_id
+            || datosActuales?.proceso_id
+            || proceso?.proceso_id
+            || null;
         
         const datos = {
             ...datosActuales,
             tipo: tipo,
+            id: procesoIdNormalizado,
             modo_tallas: datosActuales?.modo_tallas || proceso?.modo_tallas || 'generico'
         };
+        if (procesoIdNormalizado && !datos.proceso_prenda_detalle_id) {
+            datos.proceso_prenda_detalle_id = procesoIdNormalizado;
+        }
         delete datos.modoTallas;
         
         if (datos.imagenes?.length > 0) {

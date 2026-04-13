@@ -529,9 +529,13 @@ class MapearPedidoEdicionService
             $nombre = $pedidoEpp->epp?->nombre_completo ?? 'EPP #' . $pedidoEpp->epp_id;
             
             return [
+                'id' => $pedidoEpp->id,
+                'pedido_epp_id' => $pedidoEpp->id,
                 'epp_id' => $pedidoEpp->epp_id,
+                'data_epp_original_id' => $pedidoEpp->epp_id,
                 'nombre_completo' => $nombre,
                 'nombre_epp' => $nombre,
+                'nombre' => $nombre,
                 'tipo' => 'epp',
                 'cantidad' => $pedidoEpp->cantidad,
                 'observaciones' => $pedidoEpp->observaciones,

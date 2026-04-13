@@ -255,6 +255,12 @@ class PrendaFormCollector {
                 if (!procesos || typeof procesos !== 'object') {
                     return {};
                 }
+                const procesosMarcadosParaEliminar = new Set(
+                    (Array.isArray(globalThis.procesosParaEliminarIds)
+                        ? globalThis.procesosParaEliminarIds
+                        : Array.from(globalThis.procesosParaEliminarIds || [])
+                    ).map((id) => String(id))
+                );
                 const copia = {};
                 Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
                     console.log(`[copiarProcesos] Copiando tipo: ${tipoProceso}`, {
@@ -311,6 +317,14 @@ class PrendaFormCollector {
                             datos: datosCopiados,
                             modo_tallas: datosCopiados?.modo_tallas || 'generico'
                         };
+
+                        // Evitar reinsertar procesos que ya fueron marcados para eliminar en esta edición
+                        const procesoId = copia[tipoProceso]?.datos?.id
+                            || copia[tipoProceso]?.datos?.proceso_prenda_detalle_id
+                            || null;
+                        if (procesoId && procesosMarcadosParaEliminar.has(String(procesoId))) {
+                            delete copia[tipoProceso];
+                        }
                     }
                 });
                 return copia;
@@ -392,6 +406,7 @@ class PrendaFormCollector {
                 telasAgregadas: [],
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
                 procesos: copiarProcesos(globalThis.procesosSeleccionados),
+                procesos_a_eliminar: Array.from(globalThis.procesosParaEliminarIds || []),
                 // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
                 cantidad_talla: copiarTallasRelacionales(tallasParaGuardar || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
