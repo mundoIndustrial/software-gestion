@@ -254,6 +254,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="text-slate-500">Forma de Pago:</span>
                     <span class="font-medium text-slate-900 ml-2">{{ $pedido->forma_de_pago ?? 'No especificada' }}</span>
                 </div>
+                <div>
+                    <span class="text-slate-500">Orden de Compra:</span>
+                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->orden_compra ?? '—' }}</span>
+                </div>
             </div>
         </div>
         
@@ -2288,6 +2292,7 @@ function imprimirTablaVacia() {
                     <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: bold; color: #000;">Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
                     <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? '—' }}</p>
                     <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creación:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
+                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Orden de Compra:</strong> {{ $pedido->orden_compra ?? '—' }}</p>
                 </div>
                 <div style="text-align: center; flex: 1; margin: 0 20px;">
                     <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #000;">Observaciones</h3>
