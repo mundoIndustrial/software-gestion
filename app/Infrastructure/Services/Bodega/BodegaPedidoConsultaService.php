@@ -121,7 +121,8 @@ class BodegaPedidoConsultaService
                 ->where('user_id', $userId)
                 ->first();
 
-            $pedidoRevisado = PedidoRevisado::where('pedido_id', $numeroPedido)
+            // Buscar por el ID real del recibo, no por numero_pedido
+            $pedidoRevisado = PedidoRevisado::where('pedido_id', $primerPedido->id)
                 ->where('user_id', $userId)
                 ->first();
 
@@ -501,7 +502,8 @@ class BodegaPedidoConsultaService
                     ->where('user_id', $userId)
                     ->first();
 
-                $pedidoRevisado = PedidoRevisado::where('pedido_id', $numeroPedido)
+                // Buscar por el ID real del recibo, no por numero_pedido
+                $pedidoRevisado = PedidoRevisado::where('pedido_id', $primerPedido->id)
                     ->where('user_id', $userId)
                     ->first();
 
@@ -534,7 +536,7 @@ class BodegaPedidoConsultaService
                     'fecha_actualizacion' => $fechaActualizacion,
                     'cantidad_items' => $pedidosDelNumero->count(),
                     'viewed_at' => $vistoPorUsuario?->created_at,
-                    'pedido_revisado' => !empty($pedidoRevisado) && $revisadoVigente,
+                    'pedido_revisado' => !empty($pedidoRevisado),
                     'tiene_cambios_nuevos' => $tieneCambiosNuevos,
                     'tiene_pendientes' => $tieneItemsPendientes,
                     'todos_pendientes' => $todosPendientes,
