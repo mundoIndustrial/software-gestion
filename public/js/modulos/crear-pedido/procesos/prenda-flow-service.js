@@ -316,7 +316,15 @@ class PrendaFlowService {
             'Nombre DESPUES': this.ui.prendas[this.ui.prendaEditIndex].nombre_prenda
         });
 
-        this.ui?._actualizarRenderItemsOrdenadosSinBloquear?.();
+        // FIX DUPLICADOS: No re-renderizar TODO, solo actualizar la tarjeta específica
+        // Para evitar duplicados al editar, solo re-renderizamos la tarjeta editada
+        if (typeof globalThis.reRenderizarTarjetaPrendaEditada === 'function') {
+            globalThis.reRenderizarTarjetaPrendaEditada(this.ui.prendaEditIndex);
+        } else {
+            // Fallback si la función no está disponible
+            this.ui?._actualizarRenderItemsOrdenadosSinBloquear?.();
+        }
+        
         this.ui?.notificationService?.exito('Prenda actualizada correctamente');
         this.ui?.cerrarModalAgregarPrendaNueva?.();
     }

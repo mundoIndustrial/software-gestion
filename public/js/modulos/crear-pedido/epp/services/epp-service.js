@@ -1,6 +1,6 @@
-/**
- * EppService - Servicio principal que orquesta toda la lógica de EPP
- * Patrón: Facade + Orchestrator
+﻿/**
+ * EppService - Servicio principal que orquesta toda la lÃ³gica de EPP
+ * PatrÃ³n: Facade + Orchestrator
  */
 
 class EppService {
@@ -8,11 +8,11 @@ class EppService {
         this.apiService = globalThis.eppApiService;
         this.stateManager = globalThis.eppStateManager;
         this.modalManager = null;
-        // Detectar cuál item manager está disponible (tabla o tarjeta)
+        // Detectar cuÃ¡l item manager estÃ¡ disponible (tabla o tarjeta)
         this.itemManager = globalThis.eppItemManagerTabla || globalThis.eppItemManagerTarjeta || globalThis.eppItemManager;
         this.imagenManager = null;
         
-        // Debouncing y caché para búsqueda
+        // Debouncing y cachÃ© para bÃºsqueda
         this.debounceTimerBusqueda = null;
         this.cacheBusqueda = {};
         this.ultimaConsultaBusqueda = '';
@@ -36,10 +36,10 @@ class EppService {
      * Abrir modal para agregar EPP
      */
     abrirModalAgregar() {
-        // El nuevo modal de Blade es autónomo, no necesita el manager antiguo
+        // El nuevo modal de Blade es autÃ³nomo, no necesita el manager antiguo
         // Simplemente abrir el nuevo modal
         if (typeof abrirModalAgregarEPP === 'function') {
-            abrirModalAgregarEPP(); // Función del template Blade
+            abrirModalAgregarEPP(); // FunciÃ³n del template Blade
         } else {
             console.warn(' [EppService] abrirModalAgregarEPP() no definida');
         }
@@ -50,9 +50,9 @@ class EppService {
      * Seguro para datos opcionales (categoria, codigo)
      */
     abrirModalEditarEPP(eppData) {
-        console.log('[EppService] Abriendo modal de edición con datos:', eppData);
+        console.log('[EppService] Abriendo modal de ediciÃ³n con datos:', eppData);
 
-        // Resetear estado y marcar como edición
+        // Resetear estado y marcar como ediciÃ³n
         this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, true, eppData.pedido_epp_id || eppData.id);
         
         // Obtener nombre (nombre_completo o nombre)
@@ -67,7 +67,7 @@ class EppService {
             categoria: eppData.categoria || null
         });
 
-        // Mostrar producto seleccionado (sin forzar categoría)
+        // Mostrar producto seleccionado (sin forzar categorÃ­a)
         this.modalManager.mostrarProductoSeleccionado({
             nombre: nombre,
             nombre_completo: nombre,
@@ -82,10 +82,10 @@ class EppService {
             eppData.observaciones || ''
         );
 
-        // Limpiar imágenes previas
-        console.log('[EppService]  Limpiando imágenes previas en stateManager');
+        // Limpiar imÃ¡genes previas
+        console.log('[EppService]  Limpiando imÃ¡genes previas en stateManager');
         this.stateManager.limpiarImagenesSubidas();
-        this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacío para poder agregar nuevas
+        this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacÃ­o para poder agregar nuevas
 
         // Habilitar campos
         this.modalManager.habilitarCampos();
@@ -93,7 +93,7 @@ class EppService {
         // Abrir modal
         this.modalManager.abrirModal();
 
-        console.log('[EppService] Modal de edición abierto');
+        console.log('[EppService] Modal de ediciÃ³n abierto');
     }
 
     /**
@@ -110,11 +110,11 @@ class EppService {
         this.modalManager.habilitarCampos();
         console.log(' [EppService] Campos habilitados');
         
-        // Cerrar lista de búsqueda automáticamente
+        // Cerrar lista de bÃºsqueda automÃ¡ticamente
         const resultados = document.getElementById('resultadosBuscadorEPP');
         if (resultados) {
             resultados.style.display = 'none';
-            console.log('[EppService]  Lista de búsqueda cerrada');
+            console.log('[EppService]  Lista de bÃºsqueda cerrada');
         }
         const inputBuscador = document.getElementById('inputBuscadorEPP');
         if (inputBuscador) {
@@ -125,12 +125,12 @@ class EppService {
 
     /**
      * Editar EPP desde formulario (no guardado en BD)
-     * Parámetros: id, nombre, cantidad, observaciones, imagenes
+     * ParÃ¡metros: id, nombre, cantidad, observaciones, imagenes
      * Notas: codigo y categoria son opcionales (null-safe)
      */
     editarEPPFormulario(id, nombre, codigo = null, categoria = null, cantidad, observaciones = '', imagenes = []) {
-        // Manejo defensivo de parámetros para compatibilidad
-        // Si codigo es un número (cantidad), ajustar parámetros
+        // Manejo defensivo de parÃ¡metros para compatibilidad
+        // Si codigo es un nÃºmero (cantidad), ajustar parÃ¡metros
         if (typeof codigo === 'number' && typeof categoria === 'number') {
             // Llamada antigua: editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes)
             // codigo es cantidad, categoria es observaciones
@@ -140,7 +140,7 @@ class EppService {
             codigo = null;
             categoria = null;
         } else if (typeof codigo === 'number') {
-            // Parámetros desalineados: asumir que codigo es cantidad
+            // ParÃ¡metros desalineados: asumir que codigo es cantidad
             cantidad = codigo;
             observaciones = categoria || '';
             imagenes = cantidad || [];
@@ -261,9 +261,9 @@ class EppService {
 
             let resultado;
 
-            // Si tiene pedidoEppId, es una edición (UPDATE)
+            // Si tiene pedidoEppId, es una ediciÃ³n (UPDATE)
             if (pedidoEppId) {
-                console.log('[EppService]  MODO EDICIÓN: Actualizando EPP en el pedido...');
+                console.log('[EppService]  MODO EDICIÃ“N: Actualizando EPP en el pedido...');
                 resultado = await this.apiService.actualizarEPPDelPedido(
                     pedidoId,
                     pedidoEppId,
@@ -292,7 +292,7 @@ class EppService {
             this.cerrarModal();
             this.stateManager.finalizarEdicion();
 
-            // Recargar página
+            // Recargar pÃ¡gina
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
             console.error('[EppService]  Error al guardar EPP:', error);
@@ -335,21 +335,6 @@ class EppService {
                         valor_unitario: valores.valor_unitario,
                         total: valores.total
                     });
-
-                    // Actualizar en globalThis.itemsPedido si existe
-                    if (globalThis.itemsPedido && Array.isArray(globalThis.itemsPedido)) {
-                        const index = globalThis.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
-                        if (index !== -1) {
-                            globalThis.itemsPedido[index] = {
-                                ...globalThis.itemsPedido[index],
-                                cantidad: valores.cantidad,
-                                observaciones: valores.observaciones,
-                                imagenes: imagenes,
-                                valor_unitario: valores.valor_unitario,
-                                total: valores.total
-                            };
-                        }
-                    }
 
                     if (globalThis.eppNotificationService) {
                         globalThis.eppNotificationService.mostrarExito(
@@ -403,30 +388,21 @@ class EppService {
             
             console.log('[EppService]  Objeto EPP a guardar:', eppData);
 
-            // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
+            // Solo agregar a GestionItemsUI si es NUEVO (no editando)
             if (!eppId) {
                 console.log('[EppService] Agregando EPP nuevo a estado');
-                console.log('[EppService] ¿globalThis.gestionItemsUI existe?', !!globalThis.gestionItemsUI);
-                console.log('[EppService] ¿agregarEPPDesdeModal existe?', globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function');
+                console.log('[EppService] Â¿globalThis.gestionItemsUI existe?', !!globalThis.gestionItemsUI);
+                console.log('[EppService] Â¿agregarEPPDesdeModal existe?', globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function');
                 
-                // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
+                // Agregar a GestionItemsUI si estÃ¡ disponible (mantiene sincronizaciÃ³n)
                 if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function') {
                     console.log('[EppService]  USANDO GESTION ITEMS UI');
                     globalThis.gestionItemsUI.agregarEPPDesdeModal(eppData);
+                } else if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPAlOrden === 'function') {
+                    console.log('[EppService]  USANDO gestionItemsUI.agregarEPPAlOrden');
+                    globalThis.gestionItemsUI.agregarEPPAlOrden(eppData);
                 } else {
-                    // Fallback: agregar a globalThis.itemsPedido si GestionItemsUI no está disponible
-                    console.log('[EppService]  FALLBACK A globalThis.itemsPedido (gestionItemsUI no disponible)');
-                    if (!globalThis.itemsPedido) {
-                        globalThis.itemsPedido = [];
-                    }
-                    globalThis.itemsPedido.push(eppData);
-                    console.log('[EppService]  EPP agregado a globalThis.itemsPedido. Total:', globalThis.itemsPedido.length);
-                    
-                    //  TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
-                    if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPAlOrden === 'function') {
-                        console.log('[EppService]  TAMBIÉN agregando a gestionItemsUI.agregarEPPAlOrden');
-                        globalThis.gestionItemsUI.agregarEPPAlOrden(eppData);
-                    }
+                    console.error('[EppService] gestionItemsUI no disponible para agregar EPP');
                 }
             }
 
@@ -443,24 +419,16 @@ class EppService {
      */
     eliminarEPP(eppId) {
         this._mostrarModalConfirmacion(
-            '¿Eliminar este EPP?',
-            'Esta acción no se puede deshacer.',
+            'Â¿Eliminar este EPP?',
+            'Esta acciÃ³n no se puede deshacer.',
             () => {
                 this.itemManager.eliminarItem(eppId);
-
-                // Eliminar de globalThis.itemsPedido
-                if (globalThis.itemsPedido && Array.isArray(globalThis.itemsPedido)) {
-                    const index = globalThis.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
-                    if (index !== -1) {
-                        globalThis.itemsPedido.splice(index, 1);
-                    }
-                }
             }
         );
     }
 
     /**
-     * Mostrar modal de confirmación
+     * Mostrar modal de confirmaciÃ³n
      */
     _mostrarModalConfirmacion(titulo, mensaje, onConfirmar) {
         const modalHTML = `
@@ -498,14 +466,14 @@ class EppService {
     }
 
     /**
-     * Actualizar estado del botón
+     * Actualizar estado del botÃ³n
      */
     actualizarBoton() {
         this.modalManager.actualizarBoton();
     }
 
     /**
-     * Filtrar EPP por término de búsqueda - OPTIMIZADO (debounce + validación mínima)
+     * Filtrar EPP por tÃ©rmino de bÃºsqueda - OPTIMIZADO (debounce + validaciÃ³n mÃ­nima)
      */
     async filtrarEPP(valor) {
         console.log(' [EppService] filtrarEPP iniciado con valor:', valor);
@@ -513,19 +481,19 @@ class EppService {
         const inputBuscador = document.getElementById('inputBuscadorEPP');
         
         if (!container) {
-            console.warn(' [EppService] No se encontró el contenedor resultadosBuscadorEPP');
+            console.warn(' [EppService] No se encontrÃ³ el contenedor resultadosBuscadorEPP');
             return;
         }
 
         const valorLimpio = (valor || '').trim().toLowerCase();
 
         if (!valorLimpio) {
-            console.log(' [EppService] Valor vacío, ocultando resultados');
+            console.log(' [EppService] Valor vacÃ­o, ocultando resultados');
             container.style.display = 'none';
             return;
         }
 
-        //  VALIDACIÓN: Requiere mínimo 2 caracteres
+        //  VALIDACIÃ“N: Requiere mÃ­nimo 2 caracteres
         if (valorLimpio.length < 2) {
             container.innerHTML = `<div style="padding: 0.75rem 1rem; text-align: center; color: #9ca3af; font-size: 0.85rem;">Escribe al menos 2 caracteres para buscar</div>`;
             container.style.display = 'block';
@@ -558,7 +526,7 @@ class EppService {
         `;
         container.style.display = 'block';
 
-        //  DEBOUNCE AUMENTADO: esperar 400ms después de inactividad
+        //  DEBOUNCE AUMENTADO: esperar 400ms despuÃ©s de inactividad
         this.debounceTimerBusqueda = setTimeout(async () => {
             const terminoBusqueda = (inputBuscador?.value || '').toLowerCase().trim();
             
@@ -568,11 +536,11 @@ class EppService {
             }
 
             try {
-                console.log(' [EppService] Ejecutando búsqueda con debounce para:', terminoBusqueda);
+                console.log(' [EppService] Ejecutando bÃºsqueda con debounce para:', terminoBusqueda);
                 
-                // Verificar si está en caché
+                // Verificar si estÃ¡ en cachÃ©
                 if (this.cacheBusqueda[terminoBusqueda]) {
-                    console.log(' [EppService] Resultado obtenido del caché');
+                    console.log(' [EppService] Resultado obtenido del cachÃ©');
                     const epps = this.cacheBusqueda[terminoBusqueda];
                     this._renderizarResultadosBusqueda(epps, terminoBusqueda, container);
                     return;
@@ -581,7 +549,7 @@ class EppService {
                 // Buscar desde BD
                 const epps = await this._buscarEPPDesdeDB(terminoBusqueda);
                 
-                // Guardar en caché
+                // Guardar en cachÃ©
                 this.cacheBusqueda[terminoBusqueda] = epps;
                 
                 console.log(' [EppService] EPPs retornados:', epps.length);
@@ -596,7 +564,7 @@ class EppService {
     }
 
     /**
-     * Renderizar resultados de búsqueda con mejor UI
+     * Renderizar resultados de bÃºsqueda con mejor UI
      */
     _renderizarResultadosBusqueda(epps, termino, container) {
         if (epps.length === 0) {
@@ -609,10 +577,10 @@ class EppService {
         } else {
             console.log(' [EppService] Renderizando resultados:', epps.length);
             
-            // Crear HTML para cada resultado con más información
+            // Crear HTML para cada resultado con mÃ¡s informaciÃ³n
             const html = epps.map(epp => {
                 const nombre = epp.nombre_completo || epp.nombre;
-                const codigo = epp.codigo ? `<span style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem; display: block;">Código: ${epp.codigo}</span>` : '';
+                const codigo = epp.codigo ? `<span style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem; display: block;">CÃ³digo: ${epp.codigo}</span>` : '';
                 const categoria = epp.categoria ? `<span style="color: #9ca3af; font-size: 0.75rem; margin-top: 0.15rem; display: block;"> ${epp.categoria}</span>` : '';
                 const imagen = epp.imagen ? `<img src="${epp.imagen}" alt="${nombre}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px; margin-right: 0.75rem;">` : '';
                 
@@ -635,7 +603,7 @@ class EppService {
             
             // Mostrar contador de resultados
             const contador = epps.length > 1 ? `<div style="padding: 0.5rem 1rem; background: #f3f4f6; font-size: 0.8rem; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
-                ✓ Se encontraron ${epps.length} resultados
+                âœ“ Se encontraron ${epps.length} resultados
             </div>` : '';
             
             container.innerHTML = contador + html;
@@ -647,10 +615,10 @@ class EppService {
     }
 
     /**
-     * Búsqueda de EPP desde la base de datos
+     * BÃºsqueda de EPP desde la base de datos
      */
     async _buscarEPPDesdeDB(valor) {
-        console.log(' [EppService] _buscarEPPDesdeDB iniciado con término:', valor);
+        console.log(' [EppService] _buscarEPPDesdeDB iniciado con tÃ©rmino:', valor);
         try {
             const url = `/api/epp?q=${encodeURIComponent(valor)}`;
             console.log(' [EppService] Realizando fetch a:', url);
@@ -685,11 +653,11 @@ class EppService {
     }
 
     /**
-     * Cargar categorías
+     * Cargar categorÃ­as
      */
     cargarCategorias() {
 
-        // Implementar carga de categorías desde API
+        // Implementar carga de categorÃ­as desde API
     }
 
     /**
@@ -719,7 +687,7 @@ class EppService {
     }
 
     /**
-     * Mostrar validación
+     * Mostrar validaciÃ³n
      */
     mostrarValidacion(titulo, mensaje) {
         if (globalThis.eppNotificationService) {
@@ -741,16 +709,19 @@ class EppService {
     }
 
     /**
-     * Mostrar éxito
+     * Mostrar Ã©xito
      */
     mostrarExito(titulo, mensaje) {
         if (globalThis.eppNotificationService) {
             globalThis.eppNotificationService.mostrarExitoModal(titulo, mensaje);
         } else {
-            alert('✓ ' + titulo + '\n\n' + mensaje);
+            alert('âœ“ ' + titulo + '\n\n' + mensaje);
         }
     }
 }
 
 // Exportar instancia global
 globalThis.eppService = new EppService();
+
+
+

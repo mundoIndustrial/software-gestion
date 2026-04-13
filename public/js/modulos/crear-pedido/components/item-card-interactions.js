@@ -154,27 +154,36 @@ function handleEliminarItem(itemIndex) {
  * @param {number} itemIndex - Índice del item a editar
  */
 function handleEditarItem(itemIndex) {
+  const indiceVisual = Number.parseInt(itemIndex, 10);
+  const itemDesdeGestion = window.gestionItemsUI &&
+    typeof window.gestionItemsUI.obtenerItemPorIndiceVisual === 'function'
+      ? window.gestionItemsUI.obtenerItemPorIndiceVisual(indiceVisual)
+      : null;
 
-  
-  // Obtener el item del array global
-  if (!window.itemsPedido || !window.itemsPedido[itemIndex]) {
-
+  const item = itemDesdeGestion;
+  if (!item) {
     return;
   }
 
-  const item = window.itemsPedido[itemIndex];
+  const esEpp = item.tipo === 'epp' || item.epp_id || item.pedido_epp_id || item.pedidoEppId;
+  if (esEpp && typeof window.abrirModalEditarEPP === 'function') {
+    window.abrirModalEditarEPP({
+      ...item,
+      id: item.tarjetaId || item.id || item.epp_id,
+      tarjetaId: item.tarjetaId || `epp-${item.pedido_epp_id || item.pedidoEppId || item.epp_id || item.id || indiceVisual}`,
+      epp_id: item.epp_id || item.id || null,
+      pedido_epp_id: item.pedido_epp_id || item.pedidoEppId || null,
+      nombre: item.nombre || item.nombre_epp || item.nombre_completo || '',
+      nombre_epp: item.nombre_epp || item.nombre || item.nombre_completo || '',
+      nombre_completo: item.nombre_completo || item.nombre_epp || item.nombre || '',
+    });
+    return;
+  }
 
-
-  // Cargar datos en el modal
   if (window.cargarItemEnModal && typeof window.cargarItemEnModal === 'function') {
-
-    window.cargarItemEnModal(item, itemIndex);
+    window.cargarItemEnModal(item, indiceVisual);
   } else if (window.abrirModalPrendaNueva && typeof window.abrirModalPrendaNueva === 'function') {
-    // Fallback: solo abrir el modal
-
     window.abrirModalPrendaNueva();
-  } else {
-
   }
 }
 

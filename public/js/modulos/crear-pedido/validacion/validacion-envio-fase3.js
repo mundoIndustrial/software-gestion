@@ -115,8 +115,74 @@
         };
 
         // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
-        // Usar gestor si existe, sino usar DOM
-        if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
+        // FIX: Si gestionItemsUI está disponible (modo edición de borrador), usarlo como fuente PRIMARIA
+        // PERO COMBINAR con prendas nuevas de gestorPrendaSinCotizacion (prendas agregadas sin guardar borrador)
+        if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas.length > 0) {
+            // PRIORIDAD: Usar gestionItemsUI (prendas del borrador siendo editado)
+            const prendasEdicion = window.gestionItemsUI.prendas;
+            const fotosNuevasGestor = window.gestorPrendaSinCotizacion?.fotosNuevas || {};
+            const telasNuevasGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas || {};
+
+            prendasEdicion.forEach((prenda, index) => {
+                const prendaParaEnviar = {
+                    tipo: 'prenda',  //  AGREGADO: identificador de tipo
+                    nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || '',
+                    descripcion: prenda.descripcion || '',
+                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  //  AGREGADO: origen (bodega=1, confección=0)
+                    genero: prenda.genero || '',
+                    cantidades: prenda.cantidadesPorTalla || prenda.cantidad_talla || {},
+                    //  AGREGADO: recolectar imágenes desde gestor
+                    imagenes: fotosNuevasGestor[index] || prenda.imagenes || [],
+                    //  AGREGADO: recolectar telas desde prenda
+                    telas: (prenda.telasAgregadas || []).map((tela, telaIdx) => ({
+                        tela: tela.nombre_tela || tela.tela || '',
+                        color: tela.color || tela.color_nombre || '',
+                        referencia: tela.referencia || '',
+                        //  Imágenes de tela
+                        imagenes: telasNuevasGestor?.[index]?.[telaIdx] || tela.imagenes || []
+                    }))
+                };
+
+                // Solo agregar si tiene cantidades (o si es modo borrador: incluir aunque estén vacías)
+                if (!soloConCantidades || Object.keys(prendaParaEnviar.cantidades).length > 0) {
+                    datos.prendas.push(prendaParaEnviar);
+                    datos.items.push(prendaParaEnviar);  //  AGREGADO: también en items
+                }
+            });
+
+            // FIX IMPORTANTES: Si estamos editando un borrador Y hemos agregado nuevas prendas sin guardar
+            // gestor también tendrá prendas nuevas. MEZCLAR ambas fuentes.
+            const prendasNuevasDelGestor = window.gestorPrendaSinCotizacion?.obtenerActivas() || [];
+            if (prendasNuevasDelGestor.length > 0) {
+                console.info('[prepararDatosParaEnvio] Detectadas prendas nuevas agregadas sin guardar borrador:', prendasNuevasDelGestor.length);
+                const fotosNuev = window.gestorPrendaSinCotizacion?.fotosNuevas || {};
+                const telasNuev = window.gestorPrendaSinCotizacion?.telasFotosNuevas || {};
+
+                prendasNuevasDelGestor.forEach((prenda, index) => {
+                    const prendaParaEnviar = {
+                        tipo: 'prenda',
+                        nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || '',
+                        descripcion: prenda.descripcion || '',
+                        de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
+                        genero: prenda.genero || '',
+                        cantidades: prenda.cantidadesPorTalla || {},
+                        imagenes: fotosNuev[index] || prenda.imagenes || [],
+                        telas: (prenda.telasAgregadas || []).map((tela, telaIdx) => ({
+                            tela: tela.nombre_tela || tela.tela || '',
+                            color: tela.color || tela.color_nombre || '',
+                            referencia: tela.referencia || '',
+                            imagenes: telasNuev?.[index]?.[telaIdx] || tela.imagenes || []
+                        }))
+                    };
+
+                    if (!soloConCantidades || Object.keys(prendaParaEnviar.cantidades).length > 0) {
+                        datos.prendas.push(prendaParaEnviar);
+                        datos.items.push(prendaParaEnviar);
+                    }
+                });
+            }
+        } else if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
+            // Fallback: Usar gestor si gestionItemsUI no está disponible (modo nuevo sin ediciones)
             const prendas = window.gestorPrendaSinCotizacion.obtenerActivas() || [];
             const fotosNuevasGestor = window.gestorPrendaSinCotizacion.fotosNuevas || {};
             const telasNuevasGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas || {};
