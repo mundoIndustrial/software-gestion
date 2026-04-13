@@ -220,11 +220,14 @@ window.cargarCatálogoTallas = async function() {
     } catch (error) {
         console.error('[gestion-tallas]  Error al cargar catálogo:', error);
         // Fallback a constantes hardcodeadas si falla el fetch
+        const numerosDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
+        const numerosCaballero = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
         window.catálogoTallasDisponibles = {
             DAMA: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
             CABALLERO: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
-            NUMEROS_DAMA: ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
-            NUMEROS_CABALLERO: ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
+            NUMEROS_DAMA: numerosDama,
+            NUMEROS_CABALLERO: numerosCaballero,
+            NUMEROS_UNISEX: Array.from(new Set([...numerosDama, ...numerosCaballero])),
             UNISEX: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
         };
         console.warn('[gestion-tallas]  Usando catálogo hardcodeado como fallback');
@@ -301,6 +304,12 @@ window.mostrarTallasDisponibles = function(tipo) {
             // Mostrar tallas de número diferenciadas por género
             if (genero === 'DAMA') {
                 tallasAMostrar = catalogo['NUMEROS_DAMA'] || TALLAS_NUMEROS_DAMA || [];
+            } else if (genero === 'UNISEX') {
+                // Para UNISEX, combinar todos los números disponibles (Dama + Caballero)
+                const numerosDama = catalogo['NUMEROS_DAMA'] || TALLAS_NUMEROS_DAMA || [];
+                const numerosCaballero = catalogo['NUMEROS_CABALLERO'] || TALLAS_NUMEROS_CABALLERO || [];
+                // Usar Set para evitar duplicados y mantener orden
+                tallasAMostrar = Array.from(new Set([...numerosDama, ...numerosCaballero]));
             } else {
                 tallasAMostrar = catalogo['NUMEROS_CABALLERO'] || TALLAS_NUMEROS_CABALLERO || [];
             }
@@ -458,7 +467,12 @@ window.abrirModalSeleccionarTallas = async function(genero) {
     
     const headerContent = document.createElement('div');
     headerContent.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
-    const icon = genero === 'DAMA' ? 'woman' : 'man';
+    let icon = 'man';
+    if (genero === 'DAMA') {
+        icon = 'woman';
+    } else if (genero === 'UNISEX') {
+        icon = 'wc';
+    }
     headerContent.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.5rem;">${icon}</span><h2 style="margin: 0; font-size: 1.25rem;">Seleccionar Tallas ${genero}</h2>`;
     header.appendChild(headerContent);
     

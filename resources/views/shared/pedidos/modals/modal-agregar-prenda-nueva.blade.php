@@ -191,7 +191,7 @@
                             </button>
                             
                             <!-- Botón UNISEX -->
-                            <button type="button" id="btn-genero-unisex" class="btn-genero" data-selected="false" onclick="abrirModalUnisex()">
+                            <button type="button" id="btn-genero-unisex" class="btn-genero" data-selected="false" onclick="abrirModalSeleccionarTallas('unisex')">
                                 <div class="btn-genero-content">
                                     <span class="material-symbols-rounded">wc</span>
                                     <span>UNISEX</span>

@@ -20,6 +20,7 @@ class ConsecutivosRecibosRepository
             ->where('prenda_id', $prendaId)
             ->where('pedido_produccion_id', $pedidoProduccionId)
             ->where('activo', 1)
+            ->orderByDesc('id')
             ->get();
     }
 

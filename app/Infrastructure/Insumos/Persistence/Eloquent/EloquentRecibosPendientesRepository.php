@@ -16,6 +16,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         try {
             $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
             $estadoAnterior = $recibo->estado ?? 'PENDIENTE_INSUMOS';
+            $estadoReciboNormalizado = $this->normalizarEstadoRecibo($nuevoEstado);
 
             if ($estadoAnterior !== 'PENDIENTE_INSUMOS') {
                 return [
@@ -24,10 +25,10 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ];
             }
 
-            $area = $this->determinarAreaPorEstado($nuevoEstado);
+            $area = $this->determinarAreaPorEstado($estadoReciboNormalizado);
 
             $recibo->update([
-                'estado' => $nuevoEstado,
+                'estado' => $estadoReciboNormalizado,
                 'area' => $area,
             ]);
 
@@ -40,12 +41,12 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
             if ($pedido && $pedido->estado === 'PENDIENTE_INSUMOS') {
                 $pedido->update([
-                    'estado' => $nuevoEstado,
+                    'estado' => $this->normalizarEstadoPedido($estadoReciboNormalizado),
                     'area' => $area,
                 ]);
             }
 
-            $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $nuevoEstado);
+            $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $estadoReciboNormalizado);
 
             return [
                 'success' => true,
@@ -189,7 +190,25 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             default => 'INSUMOS',
         };
     }
+    private function normalizarEstadoRecibo(string $estado): string
+    {
+        return match (trim($estado)) {
+            'Pendiente_Insumos' => 'PENDIENTE_INSUMOS',
+            'Insumos Pedidos' => 'INSUMOS_PEDIDOS',
+            'Devuelto_Asesor' => 'DEVUELTO_ASESOR',
+            default => trim($estado),
+        };
+    }
 
+    private function normalizarEstadoPedido(string $estadoRecibo): string
+    {
+        return match ($estadoRecibo) {
+            'INSUMOS_PEDIDOS' => 'PENDIENTE_INSUMOS',
+            'DEVUELTO_ASESOR' => 'DEVUELTO_A_ASESORA',
+            'En Ejecucion' => 'En Ejecución',
+            default => $estadoRecibo,
+        };
+    }
     private function crearProcesoCorteSiNoExiste(
         ConsecutivoReciboPedido $recibo,
         ?PedidoProduccion $pedido,
@@ -233,3 +252,4 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         ]);
     }
 }
+

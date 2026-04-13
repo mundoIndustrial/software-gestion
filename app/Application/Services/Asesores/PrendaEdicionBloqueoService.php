@@ -27,6 +27,10 @@ final class PrendaEdicionBloqueoService
         'ENTREGADO',
     ];
 
+    private const ESTADOS_CONSECUTIVO_BLOQUEADOS = [
+        'INSUMOS_PEDIDOS',
+    ];
+
     public function evaluar(int $pedidoId, int $prendaId): array
     {
         $estadoPedido = $this->obtenerEstadoPedido($pedidoId);
@@ -44,8 +48,22 @@ final class PrendaEdicionBloqueoService
 
         $registros = $this->obtenerRegistrosConsecutivo($pedidoId, $prendaId);
         if ($registros->isEmpty()) {
-            // Si no hay consecutivo pero el pedido no está bloqueado, permitir editar
             return $this->respuestaPermitida($estadoPedido);
+        }
+
+        $registroBloqueado = $this->resolverRegistroBloqueado($registros);
+        if ($registroBloqueado !== null) {
+            $area = $this->normalizarArea($registroBloqueado->area ?? null);
+
+            return [
+                'bloqueada' => true,
+                'puede_editar' => false,
+                'mensaje' => $this->mensajeBloqueoInsumosPedidos(),
+                'consecutivo' => $registroBloqueado->consecutivo_actual,
+                'estado' => $registroBloqueado->estado,
+                'area' => $area,
+                'estado_pedido' => $estadoPedido,
+            ];
         }
 
         if ($this->resolverRegistroPermitido($registros)) {
@@ -78,6 +96,11 @@ final class PrendaEdicionBloqueoService
         $accionNormalizada = trim($accion) !== '' ? trim($accion) : 'editar';
         $estadoVisible = is_string($estadoPedido) && trim($estadoPedido) !== '' ? trim($estadoPedido) : 'estado no editable';
         return "Esta prenda no se puede {$accionNormalizada} porque el pedido se encuentra en estado {$estadoVisible}. Comunicate con el lider de produccion.";
+    }
+
+    public function mensajeBloqueoInsumosPedidos(): string
+    {
+        return 'Esta prenda ya se mando a pedir en insumos. Comunicate con el lider de produccion.';
     }
 
     private function respuestaPermitida(?string $estadoPedido): array
@@ -113,8 +136,19 @@ final class PrendaEdicionBloqueoService
         foreach ($registros as $registro) {
             $estadoNormalizado = $this->normalizarTexto((string) ($registro->estado ?? ''));
 
-            // Regla de habilitación: SOLO por estado del recibo.
             if (in_array($estadoNormalizado, self::VALORES_CONSECUTIVO_PERMITIDOS, true)) {
+                return $registro;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolverRegistroBloqueado(Collection $registros): ?object
+    {
+        foreach ($registros as $registro) {
+            $estadoNormalizado = $this->normalizarTexto((string) ($registro->estado ?? ''));
+            if (in_array($estadoNormalizado, self::ESTADOS_CONSECUTIVO_BLOQUEADOS, true)) {
                 return $registro;
             }
         }
