@@ -188,6 +188,7 @@ class ItemAPIService {
      * Crear un nuevo pedido - FLUJO COMPLETO CON NORMALIZACIÓN
      */
     async crearPedido(pedidoData) {
+        const idempotencyKey = this.obtenerIdempotencyKeyParaEnvio();
         try {
             console.debug('[crearPedido]  INICIO');
 
@@ -390,7 +391,8 @@ class ItemAPIService {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': this.csrfToken
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'X-Idempotency-Key': idempotencyKey
                 },
                 body: formData
             });
@@ -430,6 +432,8 @@ class ItemAPIService {
             //  Limpiar registry también en caso de error
             this.limpiarFileRegistry();
             throw error;
+        } finally {
+            this.limpiarIdempotencyKeyFormulario();
         }
     }
 
@@ -1495,6 +1499,38 @@ class ItemAPIService {
         const cantidadAntes = this.fileRegistry.size;
         this.fileRegistry.clear();
         console.log(`[limpiarFileRegistry]  Registry limpiado: ${cantidadAntes} archivos liberados`);
+    }
+
+    obtenerFormPedido() {
+        return document.getElementById('formCrearPedidoEditable');
+    }
+
+    generarIdempotencyKey() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+
+        return `pedido-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    obtenerIdempotencyKeyParaEnvio() {
+        const form = this.obtenerFormPedido();
+        if (!form) {
+            return this.generarIdempotencyKey();
+        }
+
+        if (!form.dataset.idempotencyKey) {
+            form.dataset.idempotencyKey = this.generarIdempotencyKey();
+        }
+
+        return form.dataset.idempotencyKey;
+    }
+
+    limpiarIdempotencyKeyFormulario() {
+        const form = this.obtenerFormPedido();
+        if (form && form.dataset.idempotencyKey) {
+            delete form.dataset.idempotencyKey;
+        }
     }
 }
 

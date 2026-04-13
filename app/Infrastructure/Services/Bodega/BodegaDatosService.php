@@ -142,10 +142,13 @@ class BodegaDatosService implements BodegaDatosServiceContract
                 
                 $items[] = [
                     'id' => $detalle->id,
+                    'prenda_id' => $detalle->prenda_id,
                     'numero_pedido' => $detalle->numero_pedido,
                     'prenda_nombre' => $detalle->prenda_nombre,
+                    'genero' => $detalle->genero,
                     'talla' => $detalle->talla,
                     'cantidad' => $detalle->cantidad,
+                    'pendientes' => $detalle->pendientes,
                     'area' => $detalle->area,
                     'estado_bodega' => $detalle->estado_bodega,
                     'costura_estado' => $detalle->costura_estado ?? null,

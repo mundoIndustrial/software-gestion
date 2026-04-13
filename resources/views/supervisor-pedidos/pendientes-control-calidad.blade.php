@@ -184,8 +184,8 @@
                                 </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>NÂ° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar NÂ° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>N° Recibo</span>
+                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>

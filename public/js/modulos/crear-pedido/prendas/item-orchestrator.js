@@ -124,6 +124,14 @@ class ItemOrchestrator {
      */
     async manejarSubmitFormulario(e) {
         e.preventDefault();
+        if (globalThis.__pedidoSubmitInFlight) {
+            this.notificationService.error('Ya estamos procesando este pedido...');
+            return;
+        }
+
+        globalThis.__pedidoSubmitInFlight = true;
+        const btn = document.getElementById('btn-submit');
+        if (btn) btn.disabled = true;
 
         try {
             // Validar cliente
@@ -166,6 +174,9 @@ class ItemOrchestrator {
         } catch (error) {
             this.notificationService.error('Error: ' + error.message);
 
+        } finally {
+            globalThis.__pedidoSubmitInFlight = false;
+            if (btn) btn.disabled = false;
         }
     }
 

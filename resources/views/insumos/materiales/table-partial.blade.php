@@ -21,12 +21,12 @@
                     <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                     <th class="text-left py-4 px-6 font-bold">
                         <div class="flex items-center justify-between gap-2">
-                            <span>NÂ° Recibo</span>
+                            <span>N° Recibo</span>
                             <button
                                 type="button"
                                 class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
                                 data-column="consecutivo_actual"
-                                title="Filtrar NÂ° Recibo"
+                                title="Filtrar N° Recibo"
                             >
                                 <i class="fas fa-filter text-xs"></i>
                             </button>
@@ -34,12 +34,12 @@
                     </th>
                     <th class="text-left py-4 px-6 font-bold">
                         <div class="flex items-center justify-between gap-2">
-                            <span>NÂ° Pedido</span>
+                            <span>N° Pedido</span>
                             <button
                                 type="button"
                                 class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
                                 data-column="numero_pedido"
-                                title="Filtrar NÂ° Pedido"
+                                title="Filtrar N° Pedido"
                             >
                                 <i class="fas fa-filter text-xs"></i>
                             </button>

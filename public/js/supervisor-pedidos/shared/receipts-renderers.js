@@ -73,24 +73,44 @@
         return lines;
     }
 
-    function renderSewingRow(proceso, escapeHtml) {
+    function renderSewingRow(proceso, escapeHtml, options = {}) {
+        const gridTemplate = options.gridTemplate || '110px 170px 110px 200px 120px 200px 160px 130px 100px';
+        const showActions = options.showActions === true;
+        const actionMode = options.actionMode || 'link';
+        const getReceiptUrl = typeof options.getReceiptUrl === 'function' ? options.getReceiptUrl : null;
         const color = proceso?.color_control_calidad || proceso?.color_costura || '';
         const rowBaseColor = color || '#ffffff';
         const area = proceso?.area || '';
+        const numeroRecibo = String(proceso?.numero_recibo || '');
+        const pedidoId = String(proceso?.pedido_id || '');
+        const prendaId = String(proceso?.prenda_id || '');
         const prendas = normalizeGarments(proceso?.prendas || []);
         const prendasHtml = prendas.length
             ? prendas.map((linea) => `<div style="margin-bottom: 0.25rem;">${escapeHtml(linea)}</div>`).join('')
             : '<div>-</div>';
+        const receiptUrlRaw = showActions && getReceiptUrl ? getReceiptUrl(proceso) : '';
+        const receiptUrl = typeof receiptUrlRaw === 'string' ? receiptUrlRaw : '';
+        const actionsCellHtml = showActions
+            ? `
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    ${actionMode === 'modal'
+                        ? `<button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>`
+                        : receiptUrl
+                        ? `<a href="${escapeHtml(receiptUrl)}" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">Ver</a>`
+                        : '<span style="color:#9ca3af;font-size:0.8rem;">-</span>'}
+                </div>
+            `
+            : '';
 
         const areaHtml = area
             ? `<span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">${escapeHtml(area)}</span>`
             : `<span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">Sin area</span>`;
 
         return `
-            <div data-row="processo" data-color-stored="${escapeHtml(color)}" style="
+            <div data-row="processo" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-color-stored="${escapeHtml(color)}" style="
                 --row-bg-color: ${escapeHtml(rowBaseColor)};
                 display: grid;
-                grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                grid-template-columns: ${escapeHtml(gridTemplate)};
                 gap: 0.15rem;
                 padding: 1rem;
                 border-bottom: 1px solid #e5e7eb;
@@ -98,8 +118,9 @@
                 min-width: min-content;
                 transition: background 0.2s ease;
             ">
+                ${actionsCellHtml}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(formatDateShort(proceso?.fecha_creacion))}</div>
-                <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(String(proceso?.numero_recibo || ''))}</div>
+                <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(numeroRecibo)}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${areaHtml}</div>
                 <div style="display: flex; align-items: start; font-size: 0.9rem; color: #374151;"><div class="prenda-list">${prendasHtml}</div></div>
@@ -121,7 +142,7 @@
                 </div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.asesor || '-'))}</div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div class="color-selector-wrapper" data-recibo-id="${escapeHtml(String(proceso?.numero_recibo || ''))}" style="position: relative; display: flex; gap: 0.3rem; align-items: center;">
+                    <div class="color-selector-wrapper" data-recibo-id="${escapeHtml(numeroRecibo)}" style="position: relative; display: flex; gap: 0.3rem; align-items: center;">
                         <button type="button" class="color-btn" data-color="#e0f2fe" title="Azul claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #e0f2fe; cursor: pointer; transition: all 0.2s;"></button>
                         <button type="button" class="color-btn" data-color="#fef08a" title="Amarillo" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fef08a; cursor: pointer; transition: all 0.2s;"></button>
                         <button type="button" class="color-btn" data-color="#fecaca" title="Rojo claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fecaca; cursor: pointer; transition: all 0.2s;"></button>

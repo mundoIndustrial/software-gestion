@@ -380,12 +380,28 @@
 
                                                     <!-- TALLA -->
                                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                        @if(($baseItem['tipo'] ?? null) === 'epp' || ($baseItem['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $baseItem['talla'] ?? ''))
-                                                            —
-                                                        @elseif(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                        @php
+                                                            $esHash = fn($v) => is_string($v) && preg_match('/^[a-f0-9]{32}$/i', $v);
+                                                            $candidatasTalla = [
+                                                                $t['talla'] ?? null,
+                                                                $baseItem['talla'] ?? null,
+                                                            ];
+                                                            $tallaMostrar = null;
+                                                            foreach ($candidatasTalla as $cand) {
+                                                                if ($cand === null || $cand === '' || $cand === 'SIN_ESPECIFICAR') {
+                                                                    continue;
+                                                                }
+                                                                if ($esHash($cand)) {
+                                                                    continue;
+                                                                }
+                                                                $tallaMostrar = $cand;
+                                                                break;
+                                                            }
+                                                        @endphp
+                                                        @if(($baseItem['tipo'] ?? null) === 'epp')
                                                             —
                                                         @else
-                                                            {{ $t['talla'] ?? '—' }}
+                                                            {{ $tallaMostrar ?? '—' }}
                                                         @endif
                                                     </td>
 
@@ -774,12 +790,16 @@
                                                 
                                                 <!-- TALLA -->
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $item['talla'] ?? ''))
+                                                    @php
+                                                        $tallaItem = $item['talla'] ?? null;
+                                                        $tallaItemHash = is_string($tallaItem) && preg_match('/^[a-f0-9]{32}$/i', $tallaItem);
+                                                    @endphp
+                                                    @if(($item['tipo'] ?? null) === 'epp')
                                                         —
-                                                    @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                    @elseif($tallaItemHash || $tallaItem === 'SIN_ESPECIFICAR' || $tallaItem === null || $tallaItem === '')
                                                         —
                                                     @else
-                                                        {{ $item['talla'] ?? '—' }}
+                                                        {{ $tallaItem }}
                                                     @endif
                                                 </td>
                                                 

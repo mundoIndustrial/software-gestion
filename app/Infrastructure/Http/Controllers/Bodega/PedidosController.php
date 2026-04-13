@@ -259,6 +259,43 @@ class PedidosController extends Controller
             
             // Obtener datos desde bodega_detalles_talla
             $datos = $this->datosService->obtenerDatosDesdeBodegaDetalles($numeroPedido);
+            $debugDetalleItems = $datos['items'] ?? [];
+
+            $debugResumenAntes = [
+                'numero_pedido' => $numeroPedido,
+                'detalle_id_origen' => (int) $pedidoId,
+                'area_objetivo' => $area,
+                'total_items_antes_filtro' => count($debugDetalleItems),
+                'areas_detectadas' => array_values(array_unique(array_map(
+                    fn ($item) => (string) ($item['area'] ?? 'NULL'),
+                    $debugDetalleItems
+                ))),
+                'estados_bodega_detectados' => array_values(array_unique(array_map(
+                    fn ($item) => (string) ($item['estado_bodega'] ?? 'NULL'),
+                    $debugDetalleItems
+                ))),
+                'costura_estados_detectados' => array_values(array_unique(array_map(
+                    fn ($item) => (string) ($item['costura_estado'] ?? 'NULL'),
+                    $debugDetalleItems
+                ))),
+                'resumen_por_prenda_talla' => array_values(array_map(
+                    function ($itemsPorGrupo, $key) {
+                        $primero = $itemsPorGrupo[0] ?? [];
+                        return [
+                            'grupo' => $key,
+                            'cantidad_filas' => count($itemsPorGrupo),
+                            'prenda' => (string) ($primero['prenda_nombre'] ?? 'SIN_PRENDA'),
+                            'tallas' => array_values(array_unique(array_map(
+                                fn ($it) => (string) ($it['talla'] ?? 'SIN_TALLA'),
+                                $itemsPorGrupo
+                            ))),
+                        ];
+                    },
+                    array_values(collect($debugDetalleItems)->groupBy(fn ($item) => ($item['prenda_nombre'] ?? 'SIN_PRENDA'))->toArray()),
+                    array_keys(collect($debugDetalleItems)->groupBy(fn ($item) => ($item['prenda_nombre'] ?? 'SIN_PRENDA'))->toArray())
+                )),
+            ];
+            \Log::debug('[Bodega][showPendientesPorArea] Resumen antes de filtro', $debugResumenAntes);
             
             // Filtrar para mostrar solo artículos del área con estado_bodega 'Pendiente'
             if (isset($datos['items']) && is_array($datos['items'])) {
@@ -387,6 +424,36 @@ class PedidosController extends Controller
                     $datos['estadisticas'][$estadisticaKey] = count($datos['items']);
                 }
             }
+
+            $debugItemsFiltrados = $datos['items'] ?? [];
+            $debugExcluidos = array_values(array_filter($debugDetalleItems, function ($item) use ($area) {
+                return (($item['area'] ?? '') !== $area) || (($item['estado_bodega'] ?? '') !== 'Pendiente');
+            }));
+
+            $debugResumenDespues = [
+                'numero_pedido' => $numeroPedido,
+                'area_objetivo' => $area,
+                'total_items_despues_filtro' => count($debugItemsFiltrados),
+                'total_excluidos_por_filtro' => count($debugExcluidos),
+                'excluidos' => array_map(function ($item) use ($area) {
+                    return [
+                        'id' => $item['id'] ?? null,
+                        'prenda' => $item['prenda_nombre'] ?? null,
+                        'talla' => $item['talla'] ?? null,
+                        'area_real' => $item['area'] ?? null,
+                        'estado_bodega_real' => $item['estado_bodega'] ?? null,
+                        'motivo' => (($item['area'] ?? '') !== $area)
+                            ? 'area_distinta'
+                            : 'estado_bodega_distinto_de_Pendiente',
+                    ];
+                }, $debugExcluidos),
+            ];
+            \Log::debug('[Bodega][showPendientesPorArea] Resumen despues de filtro', $debugResumenDespues);
+
+            $datos['debugCostura'] = [
+                'resumen_antes' => $debugResumenAntes,
+                'resumen_despues' => $debugResumenDespues,
+            ];
             
             // Agregar información del filtro aplicado (solo para Costura)
             if ($area === 'Costura') {

@@ -66,6 +66,14 @@ class PedidoSubmitController {
 
     async manejarSubmitFormulario(e) {
         e?.preventDefault?.();
+        if (globalThis.__pedidoSubmitInFlight) {
+            this.notificationService?.warn?.('Ya estamos procesando este pedido...');
+            return;
+        }
+
+        globalThis.__pedidoSubmitInFlight = true;
+        this.setSubmitDisabled(true);
+
         try {
             if (!this.formCollector || !this.apiService || !this.notificationService) return;
 
@@ -106,7 +114,19 @@ class PedidoSubmitController {
             }
         } catch (error) {
             this._manejarErrorSubmit(error);
+        } finally {
+            globalThis.__pedidoSubmitInFlight = false;
+            this.setSubmitDisabled(false);
         }
+    }
+
+    setSubmitDisabled(disabled) {
+        const btn = document.getElementById('btn-submit');
+        if (!btn) return;
+
+        btn.disabled = disabled;
+        btn.style.opacity = disabled ? '0.7' : '1';
+        btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
     }
 
     _validarCliente(clienteInput) {
@@ -364,4 +384,3 @@ class PedidoSuccessModalService {
         debugLog('[mostrarModalExito]  COMPLETADO');
     }
 }
-

@@ -13,6 +13,47 @@
         display: none !important;
     }
 
+    /* Forzar comportamiento modal aunque no carguen utilidades CSS */
+    #novedadesEditModal {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(0, 0, 0, 0.75) !important;
+        z-index: 100001 !important;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        padding: 1rem;
+        display: none;
+    }
+
+    #novedadesEditModal:not(.hidden) {
+        display: flex !important;
+    }
+
+    #novedadesEditModal > div {
+        width: 100%;
+        max-width: 42rem;
+        max-height: calc(100vh - 2rem);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #novedadesEditModal #novedadesHistorial {
+        flex: 1 1 auto;
+        min-height: 180px;
+        max-height: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #novedadesEditModal .px-6.py-6 {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        max-height: calc(100vh - 170px);
+    }
+
     .modal-overlay {
         display: none;
         position: fixed;
@@ -168,7 +209,7 @@
                             color: white;
                             padding: 0.75rem 1rem;
                             display: grid;
-                            grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                            grid-template-columns: 110px 170px 110px 200px 120px 200px 160px 130px 100px;
                             gap: 0.15rem;
                             font-weight: 600;
                             font-size: 0.8rem;
@@ -177,6 +218,9 @@
                             min-width: min-content;
                             border-radius: 6px;
                         ">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <span>Actions</span>
+                            </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha de Creacion</span>
                                 <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
@@ -184,8 +228,8 @@
                                 </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>NÂ° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar NÂ° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>N° Recibo</span>
+                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
@@ -230,10 +274,10 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
+                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
                                         --row-bg-color: {{ $proceso['color_costura'] ?: '#ffffff' }};
                                         display: grid;
-                                        grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                                        grid-template-columns: 110px 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
                                         padding: 1rem;
                                         border-bottom: 1px solid #e5e7eb;
@@ -242,6 +286,20 @@
                                         transition: background 0.2s ease;
                                     ">
                                         
+                                        <!-- Actions -->
+                                        <div style="display: flex; align-items: center; justify-content: center;">
+                                            <button
+                                                type="button"
+                                                data-pedido-id="{{ $proceso['pedido_id'] }}"
+                                                data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}"
+                                                data-numero-recibo="{{ $proceso['numero_recibo'] }}"
+                                                onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)"
+                                                style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;"
+                                            >
+                                                Ver
+                                            </button>
+                                        </div>
+
                                         <!-- Fecha de Creacion -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
@@ -391,6 +449,7 @@
                                                 <button type="button" class="color-btn" data-color="#fecaca" title="Rojo claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fecaca; cursor: pointer; transition: all 0.2s;"></button>
                                             </div>
                                         </div>
+
                                     </div>
                                 @endforeach
                             @endif
@@ -403,8 +462,34 @@
     </div>
 </div>
 
+<!-- Modal detalle recibo (estilo Recibos Costura) -->
+<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal />
+</div>
+
 <!-- Modal de Novedades (mismo componente de /recibos-costura) -->
 <x-modals.novedades-edit-modal />
+
+<!-- Modal de Alerta para Novedades -->
+<div id="modalAlerta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100003; display: none;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" style="background:#fff;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.25);width:min(100%,520px);margin:1rem;">
+        <div id="alertaHeader" class="px-6 py-4 border-b" style="padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;background:#2563eb;">
+            <h3 id="alertaTitulo" class="text-lg font-semibold text-white flex items-center gap-2" style="margin:0;color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.5rem;">
+                <span id="alertaIcono" class="material-symbols-rounded">info</span>
+                Mensaje
+            </h3>
+        </div>
+        <div class="px-6 py-4" style="padding:1rem 1.25rem;">
+            <p id="alertaMensaje" class="text-gray-700" style="margin:0;color:#374151;">Mensaje del sistema</p>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end" style="background:#f9fafb;padding:1rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;">
+            <button type="button" onclick="cerrarModalAlerta()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition" style="border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;padding:.6rem .9rem;cursor:pointer;">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Modal Filtro Dinamico -->
 <div id="modalFiltro" class="modal-overlay">
@@ -427,6 +512,7 @@
 @push('scripts')
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
@@ -489,6 +575,119 @@ function construirUrlApiPendientesCostura(urlString) {
     return `/api/supervisor-pedidos/recibos/pendientes-costura${source.search || ''}`;
 }
 
+async function resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo) {
+    try {
+        const response = await fetch(`/registros/${pedidoId}/recibos-datos`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            return 0;
+        }
+
+        const payload = await response.json();
+        const data = payload?.data || payload || {};
+        const prendas = Array.isArray(data?.prendas) ? data.prendas : [];
+        let primeraPrendaValida = 0;
+        const numeroNormalizado = String(numeroRecibo || '').trim();
+
+        for (const prenda of prendas) {
+            const prendaId = Number(prenda?.id || 0);
+            if (!prendaId) continue;
+            if (!primeraPrendaValida) primeraPrendaValida = prendaId;
+
+            const recibos = Array.isArray(prenda?.recibos) ? prenda.recibos : [];
+            const tieneReciboCostura = recibos.some((recibo) => {
+                const tipo = String(recibo?.tipo_recibo || '').toUpperCase();
+                const consecutivo = String(recibo?.consecutivo_actual ?? recibo?.numero_recibo ?? '').trim();
+                return tipo === 'COSTURA' && consecutivo === numeroNormalizado;
+            });
+
+            if (tieneReciboCostura) {
+                return prendaId;
+            }
+        }
+
+        // Fallback: usar primera prenda disponible para abrir modal y evitar redirecciones.
+        if (primeraPrendaValida) {
+            return primeraPrendaValida;
+        }
+    } catch (error) {
+        console.error('[resolverPrendaIdPorNumeroRecibo] Error:', error);
+    }
+
+    return 0;
+}
+
+function esperarModuloRecibos(timeoutMs = 1200) {
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            const ready = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function';
+            if (ready) {
+                clearInterval(timer);
+                resolve(true);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                clearInterval(timer);
+                resolve(false);
+            }
+        }, 80);
+    });
+}
+
+window.openReciboCosturaModalFromRow = async function(button) {
+    const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
+    let prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
+    const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
+
+    if (!pedidoId) {
+        console.error('[openReciboCosturaModalFromRow] Falta pedido_id', { pedidoId, prendaId, numeroRecibo });
+        return;
+    }
+
+    if (!prendaId && numeroRecibo) {
+        prendaId = await resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo);
+    }
+
+    if (!prendaId) {
+        console.error('[openReciboCosturaModalFromRow] No se pudo resolver prenda_id para abrir modal.', { pedidoId, numeroRecibo });
+        if (typeof mostrarAlerta === 'function') {
+            mostrarAlerta('Error', 'No se pudo abrir el recibo en modal para este registro.', 'error');
+        }
+        return;
+    }
+
+    const moduleReady = await esperarModuloRecibos();
+    if (moduleReady) {
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura');
+        return;
+    }
+
+    if (typeof mostrarAlerta === 'function') {
+        mostrarAlerta('Error', 'El visor del recibo no está listo. Intenta nuevamente en unos segundos.', 'warning');
+    }
+};
+
+window.closeModalOverlay = function() {
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+        window.pedidosRecibosModule.cerrarRecibo();
+        return;
+    }
+
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalWrapper) modalWrapper.style.display = 'none';
+    if (modalOverlay) modalOverlay.style.display = 'none';
+};
+
 const receiptsRenderers = window.SupervisorReceiptsRenderers;
 
 window.navegarPendientesCostura = async function navegarPendientesCostura(urlString, options = {}) {
@@ -525,7 +724,11 @@ window.navegarPendientesCostura = async function navegarPendientesCostura(urlStr
         if (procesos.length === 0) {
             rows.innerHTML = receiptsRenderers.emptyStateHtml();
         } else {
-            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml)).join('');
+            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml, {
+                gridTemplate: '110px 170px 110px 200px 120px 200px 160px 130px 100px',
+                showActions: true,
+                actionMode: 'modal'
+            })).join('');
         }
 
         if (pushState) {
@@ -549,6 +752,21 @@ window.addEventListener('popstate', function() {
 });
 
 document.addEventListener('click', function(e) {
+    const legacyReciboLink = e.target.closest('a[href*="/recibos-costura"]');
+    if (legacyReciboLink) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const row = legacyReciboLink.closest('[data-row="processo"]');
+        if (!row) return;
+
+        const pseudoButton = {
+            getAttribute: (name) => row.getAttribute(name),
+        };
+        openReciboCosturaModalFromRow(pseudoButton);
+        return;
+    }
+
     const a = e.target.closest('#supervisorPendientesCosturaContent a');
     if (!a) return;
     const href = a.getAttribute('href');
@@ -657,6 +875,3 @@ async function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
-
-
-

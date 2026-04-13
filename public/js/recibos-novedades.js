@@ -67,6 +67,17 @@ function mostrarAlerta(titulo, mensaje, tipo = 'info') {
     if (mensajeEl) {
         mensajeEl.textContent = mensaje;
     }
+
+    // Forzar comportamiento de overlay aunque no existan clases utilitarias CSS
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.left = '0';
+    modal.style.background = 'rgba(0, 0, 0, 0.5)';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '100003';
     
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -201,24 +212,25 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
                 });
                 
                 return `
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 relative">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded ${getTipoColor(novedad.tipo_novedad)}">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 relative" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative;">
+                        <div class="flex justify-between items-start mb-2" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+                            <div class="flex items-center gap-2" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded ${getTipoColor(novedad.tipo_novedad)}" style="${getTipoBadgeStyle(novedad.tipo_novedad)}display:inline-block;padding:3px 8px;font-size:11px;font-weight:700;border-radius:999px;">
                                     ${tipo}
                                 </span>
-                                <span class="text-xs text-gray-500">${usuarioConRol}</span>
-                                ${editado ? '<span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">EDITADO</span>' : ''}
+                                <span class="text-xs text-gray-500" style="font-size:11px;color:#6b7280;">${usuarioConRol}</span>
+                                ${editado ? '<span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-orange-100 text-orange-800" style="display:inline-block;padding:3px 8px;font-size:11px;font-weight:700;border-radius:999px;background:#ffedd5;color:#9a3412;">EDITADO</span>' : ''}
                             </div>
-                            <span class="text-xs text-gray-400">${fecha}</span>
+                            <span class="text-xs text-gray-400" style="font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
                         </div>
-                        <div class="text-sm text-gray-700 whitespace-pre-wrap">${novedad.novedad_texto}</div>
-                        ${editadoInfo ? `<div class="text-xs text-orange-600 italic mt-2">${editadoInfo}</div>` : ''}
-                        <div class="flex gap-2 mt-3">
+                        <div class="text-sm text-gray-700 whitespace-pre-wrap" style="font-size:14px;color:#374151;white-space:pre-wrap;">${novedad.novedad_texto}</div>
+                        ${editadoInfo ? `<div class="text-xs text-orange-600 italic mt-2" style="font-size:11px;color:#c2410c;font-style:italic;margin-top:6px;">${editadoInfo}</div>` : ''}
+                        <div class="flex gap-2 mt-3" style="display:flex;gap:8px;margin-top:10px;">
                             ${novedad.creado_por == window.usuarioActualId ? `
                                 <button 
                                     onclick="editarNovedad(${novedad.id}, '${novedad.novedad_texto.replace(/'/g, "\\'")}')"
                                     class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition"
+                                    style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:0;border-radius:8px;background:#3b82f6;color:#fff;font-size:12px;font-weight:600;cursor:pointer;"
                                     title="Editar novedad">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">edit</span>
                                     Editar
@@ -226,12 +238,13 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
                                 <button 
                                     onclick="eliminarNovedad(${novedad.id})"
                                     class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition"
+                                    style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:0;border-radius:8px;background:#ef4444;color:#fff;font-size:12px;font-weight:600;cursor:pointer;"
                                     title="Eliminar novedad">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">delete</span>
                                     Eliminar
                                 </button>
                             ` : `
-                                <span class="text-xs text-gray-400 italic">Solo lectura</span>
+                                <span class="text-xs text-gray-400 italic" style="font-size:11px;color:#9ca3af;font-style:italic;">Solo lectura</span>
                             `}
                         </div>
                     </div>
@@ -267,6 +280,18 @@ function getTipoColor(tipo) {
         'correccion': 'bg-orange-100 text-orange-800'
     };
     return colores[tipo] || 'bg-gray-100 text-gray-800';
+}
+
+function getTipoBadgeStyle(tipo) {
+    const estilos = {
+        'observacion': 'background:#dbeafe;color:#1e40af;',
+        'problema': 'background:#fee2e2;color:#991b1b;',
+        'cambio': 'background:#fef9c3;color:#854d0e;',
+        'aprobacion': 'background:#dcfce7;color:#166534;',
+        'rechazo': 'background:#fee2e2;color:#991b1b;',
+        'correccion': 'background:#ffedd5;color:#9a3412;'
+    };
+    return estilos[tipo] || 'background:#f3f4f6;color:#374151;';
 }
 
 /**

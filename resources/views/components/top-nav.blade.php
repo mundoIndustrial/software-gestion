@@ -201,8 +201,11 @@
                         const badge = document.getElementById('bodegaBellBadge');
                         const list = document.getElementById('bodegaBellList');
 
-                        badge.textContent = data.totalGeneral;
-                        badge.style.display = data.totalGeneral > 0 ? 'flex' : 'none';
+                        // El dropdown actual solo permite gestionar "novedades" (no la lista de ordenes),
+                        // por eso el badge debe reflejar únicamente las novedades no vistas.
+                        const badgeCount = Number(data.totalNovedadesNoVistas ?? data.totalGeneral ?? 0) || 0;
+                        badge.textContent = badgeCount;
+                        badge.style.display = badgeCount > 0 ? 'flex' : 'none';
 
                         let html = ``;
 

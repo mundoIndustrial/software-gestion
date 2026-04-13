@@ -142,7 +142,11 @@
                                         }
                                         unset($grupoColor);
 
-                                        $tieneColoresPorTalla = !empty($gruposPorColor);
+                                        // IMPORTANTE:
+                                        // Para evitar perder tallas reales, esta vista debe renderizarse
+                                        // desde los items de bodega_detalles_talla (una fila por item).
+                                        // No usar variantes del primer item como fuente de filas.
+                                        $tieneColoresPorTalla = false;
                                     @endphp
 
                                     @if($tieneColoresPorTalla)
@@ -573,6 +577,8 @@
 <script src="{{ asset('js/bodega-pedidos.js') }}"></script>
 
 <script>
+const __debugCosturaBackend = @json($debugCostura ?? null);
+const __debugCosturaItems = @json($items ?? []);
 function cerrarModalFactura() {
     const modal = document.getElementById('modalFactura');
     if (modal) {
@@ -585,6 +591,121 @@ function cerrarModalFactura() {
  * Logs de diagnóstico para el diseño de la tabla - Costura
  */
 document.addEventListener('DOMContentLoaded', function() {
+    if (__debugCosturaBackend) {
+        console.group('[DEBUG-COSTURA] Resumen backend');
+        console.log('Resumen antes del filtro:', __debugCosturaBackend.resumen_antes || {});
+        console.log('Resumen despues del filtro:', __debugCosturaBackend.resumen_despues || {});
+        console.groupEnd();
+    }
+
+    if (Array.isArray(__debugCosturaItems) && __debugCosturaItems.length > 0) {
+        const grupos = {};
+        __debugCosturaItems.forEach((item) => {
+            const key = item.prenda_id || item.prenda_nombre || 'SIN_PRENDA';
+            if (!grupos[key]) grupos[key] = [];
+            grupos[key].push(item);
+        });
+
+        const analisis = Object.entries(grupos).map(([key, grupo]) => {
+            const primera = grupo[0] || {};
+            const tallasEnItems = [...new Set(grupo.map((g) => String(g.talla || 'SIN_TALLA')))];
+            const variantesPrimera = (((primera || {}).descripcion || {}).variantes || []);
+            const tallasEnVariantesPrimera = [...new Set(
+                variantesPrimera
+                    .map((v) => String(v.talla || 'SIN_TALLA'))
+                    .filter((t) => t !== 'SIN_TALLA')
+            )];
+
+            return {
+                grupo: key,
+                prenda: primera.prenda_nombre || 'SIN_PRENDA',
+                filas_en_items: grupo.length,
+                tallas_en_items: tallasEnItems,
+                tallas_en_variantes_primer_item: tallasEnVariantesPrimera,
+                posible_motivo_no_muestra_todas: tallasEnItems.length > tallasEnVariantesPrimera.length
+                    ? 'La vista pinta tallas desde variantes del primer item del grupo; puede omitir tallas de otros items.'
+                    : 'Sin mismatch evidente en este grupo.'
+            };
+        });
+
+        console.group('[DEBUG-COSTURA] Comparativo items vs variantes');
+        console.table(analisis);
+        console.groupEnd();
+
+        // Script solicitado: resumen legible por prenda con genero/talla/cantidad
+        const gruposPedido = {};
+        __debugCosturaItems.forEach((item) => {
+            const nombre = String(item.prenda_nombre || 'PRENDA SIN NOMBRE').trim();
+            const descripcion = String((item.descripcion && item.descripcion.descripcion) || '').trim();
+            const prendaId = item.prenda_id ? `ID:${item.prenda_id}` : 'ID:NULL';
+            const key = `${prendaId}|${nombre}|${descripcion}`;
+            if (!gruposPedido[key]) {
+                gruposPedido[key] = {
+                    nombre,
+                    descripcion,
+                    deBodega: Boolean(item.de_bodega || (item.descripcion && item.descripcion.de_bodega)),
+                    procesos: (((item.descripcion || {}).procesos) || []).map((p) => p.tipo_proceso).filter(Boolean),
+                    filas: []
+                };
+            }
+            gruposPedido[key].filas.push({
+                genero: String(item.genero || '').trim(),
+                talla: String(item.talla || '').trim(),
+                cantidad: Number(item.cantidad || 0)
+            });
+        });
+
+        const ordenGenero = { DAMA: 1, CABALLERO: 2, UNISEX: 3, GENERICO: 4 };
+        const ordenarTalla = (a, b) => {
+            const na = Number(a);
+            const nb = Number(b);
+            const aNum = !Number.isNaN(na);
+            const bNum = !Number.isNaN(nb);
+            if (aNum && bNum) return na - nb;
+            if (aNum) return -1;
+            if (bNum) return 1;
+            return String(a).localeCompare(String(b), 'es');
+        };
+
+        const resumen = Object.values(gruposPedido).map((g, idx) => {
+            const filasUnicas = [];
+            const vistos = new Set();
+            g.filas.forEach((f) => {
+                const k = `${f.genero}|${f.talla}|${f.cantidad}`;
+                if (!vistos.has(k)) {
+                    vistos.add(k);
+                    filasUnicas.push(f);
+                }
+            });
+
+            filasUnicas.sort((a, b) => {
+                const ga = (a.genero || '').toUpperCase();
+                const gb = (b.genero || '').toUpperCase();
+                const og = (ordenGenero[ga] || 99) - (ordenGenero[gb] || 99);
+                if (og !== 0) return og;
+                return ordenarTalla(a.talla, b.talla);
+            });
+
+            return {
+                index: idx + 1,
+                prenda: g.nombre + (g.deBodega ? ' - SE SACA DE BODEGA' : ''),
+                descripcion: g.descripcion,
+                procesos: g.procesos,
+                tallas: filasUnicas
+            };
+        });
+
+        console.group('[DEBUG-COSTURA] RESUMEN PEDIDO (script solicitado)');
+        resumen.forEach((r) => {
+            console.log(`PRENDA ${r.index}: ${r.prenda}`);
+            if (r.descripcion) console.log(r.descripcion);
+            if (Array.isArray(r.procesos) && r.procesos.length > 0) {
+                console.log('Procesos:', r.procesos.join(', '));
+            }
+            console.table(r.tallas);
+        });
+        console.groupEnd();
+    }
     console.log(' [DIAGNÓSTICO-COSTURA] Iniciando análisis de diseño...');
     
     // Verificar dimensiones del viewport
