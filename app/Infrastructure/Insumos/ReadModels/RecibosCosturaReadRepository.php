@@ -29,7 +29,7 @@ class RecibosCosturaReadRepository
             )
             ->where(function ($q) {
                 // Mostrar recibos que estén en PENDIENTE_INSUMOS (estado del RECIBO, no del pedido)
-                $q->where('consecutivos_recibos_pedidos.estado', 'PENDIENTE_INSUMOS')
+                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
                     // O también mostrar si el área del RECIBO está en CORTE o COSTURA
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
             })
@@ -38,8 +38,8 @@ class RecibosCosturaReadRepository
     }
 
     /**
-     * Construir base query sin los filtros por defecto de área
-     * Se usa cuando se van a aplicar filtros específicos del usuario
+     * Construir base query sin los filtros por defecto de Area
+     * Se usa cuando se van a aplicar filtros especi­ficos del usuario
      */
     public function buildBaseQueryForFiltering()
     {
@@ -61,13 +61,13 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
-            // Solo la exclusión de PENDIENTE_SUPERVISOR, sin los filtros por defecto
+            // Solo la exclusion de PENDIENTE_SUPERVISOR, sin los filtros por defecto
             ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
     }
 
     public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '')
     {
-        // LOG: Recibiendo parámetros
+        // LOG: Recibiendo parametros
         \Log::info('[applyFilters] INICIANDO', [
             'filterColumns' => $filterColumns,
             'filterValuesArray' => $filterValuesArray,
@@ -81,7 +81,7 @@ class RecibosCosturaReadRepository
             return $query;
         }
 
-        // Agrupar filtros por columna para manejar múltiples valores de la misma columna
+        // Agrupar filtros por columna para manejar multiples valores de la misma columna
         $filtersByColumn = [];
         
         if (!empty($filterColumns) && !empty($filterValuesArray)) {
@@ -130,14 +130,19 @@ class RecibosCosturaReadRepository
             // Conversiones especiales de valores
             if ($column === 'estado') {
                 $values = array_map(
-                    fn($v) => $v === 'Pendiente Insumos' ? 'PENDIENTE_INSUMOS' : $v,
+                    fn($v) => match ($v) {
+                        'Pendiente Insumos' => 'PENDIENTE_INSUMOS',
+                        'Pendiente Tela' => 'PENDIENTE_TELA',
+                        'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
+                        default => $v,
+                    },
                     $values
                 );
             }
             
-            // Aplicar filtro según el tipo de columna
+            // Aplicar filtro segun el tipo de columna
             if (in_array($dbColumn, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente', 'consecutivos_recibos_pedidos.consecutivo_actual'], true)) {
-                // Para búsqueda de texto: usar LIKE para cada valor
+                // Para busqueda de texto: usar LIKE para cada valor
                 \Log::info('[applyFilters] Aplicando filtro LIKE', ['dbColumn' => $dbColumn]);
                 $query->where(function ($q) use ($dbColumn, $values) {
                     foreach ($values as $idx => $value) {
@@ -170,9 +175,9 @@ class RecibosCosturaReadRepository
             }
         }
         
-        // Aplicar búsqueda de texto
+        // Aplicar busqueda de texto
         if (!empty($search)) {
-            \Log::info('[applyFilters] Aplicando búsqueda', ['search' => $search]);
+            \Log::info('[applyFilters] Aplicando busqueda', ['search' => $search]);
             $query->where(function ($q) use ($search) {
                 $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%")
                     ->orWhere('pedidos_produccion.numero_pedido', 'LIKE', "%{$search}%")
@@ -212,4 +217,3 @@ class RecibosCosturaReadRepository
             ->toArray();
     }
 }
-

@@ -410,6 +410,10 @@ function actualizarColorSelect(selectElement, estado) {
         selectElement.classList.add('bg-amber-100', 'text-amber-800');
     } else if (estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
         selectElement.classList.add('bg-amber-500', 'text-white');
+    } else if (estado === 'Pendiente Tela' || estado === 'PENDIENTE_TELA') {
+        selectElement.classList.add('bg-yellow-400', 'text-gray-900');
+    } else if (estado === 'Pendiente Plotter' || estado === 'PENDIENTE_PLOTTER') {
+        selectElement.classList.add('bg-yellow-400', 'text-gray-900');
     } else if (estado === 'DEVUELTO_ASESOR') {
         selectElement.classList.add('bg-red-500', 'text-white');
     } else if (estado === 'Insumos Pedidos' || estado === 'INSUMOS_PEDIDOS') {

@@ -19,7 +19,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             $estadoAnterior = $recibo->estado ?? 'PENDIENTE_INSUMOS';
             $estadoReciboNormalizado = $this->normalizarEstadoRecibo($nuevoEstado);
 
-            if ($estadoAnterior !== 'PENDIENTE_INSUMOS') {
+            if (!in_array($estadoAnterior, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter'], true)) {
                 return [
                     'success' => false,
                     'message' => 'Este recibo ya ha sido aprobado',
@@ -36,7 +36,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             $recibosPendientes = ConsecutivoReciboPedido::where('pedido_produccion_id', $recibo->pedido_produccion_id)
                 ->where('tipo_recibo', 'COSTURA')
                 ->where('activo', 1)
-                ->where('estado', 'PENDIENTE_INSUMOS')
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
                 ->count();
 
             $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
@@ -74,7 +74,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ->toArray();
 
             $query = ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('estado', 'PENDIENTE_INSUMOS')
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
                 ->where('activo', 1);
 
             if (!empty($vistosIds)) {
@@ -147,7 +147,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     {
         try {
             $recibos = ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('estado', 'PENDIENTE_INSUMOS')
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
                 ->with(['pedido', 'prenda'])
                 ->orderBy('fecha_estimada_de_entrega', 'asc')
                 ->get();
@@ -198,6 +198,8 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         return match (trim($estado)) {
             'Pendiente_Insumos' => 'PENDIENTE_INSUMOS',
             'Insumos Pedidos' => 'INSUMOS_PEDIDOS',
+            'Pendiente Tela' => 'PENDIENTE_TELA',
+            'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
             'Devuelto_Asesor' => 'DEVUELTO_ASESOR',
             default => trim($estado),
         };
@@ -207,6 +209,8 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     {
         return match ($estadoRecibo) {
             'INSUMOS_PEDIDOS' => 'PENDIENTE_INSUMOS',
+            'PENDIENTE_TELA' => 'PENDIENTE_INSUMOS',
+            'PENDIENTE_PLOTTER' => 'PENDIENTE_INSUMOS',
             'DEVUELTO_ASESOR' => 'DEVUELTO_A_ASESORA',
             'En Ejecucion' => 'En Ejecución',
             default => $estadoRecibo,
@@ -215,7 +219,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     private function debeCrearProcesoCorte(string $estadoRecibo): bool
     {
         $estadoNormalizado = strtolower(trim(Str::ascii($estadoRecibo)));
-        return in_array($estadoNormalizado, ['no iniciado', 'en ejecucion'], true);
+        return $estadoNormalizado === 'en ejecucion';
     }
 
     private function crearProcesoCorteSiNoExiste(

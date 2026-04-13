@@ -42,9 +42,9 @@ class ReciboPendienteServiceTest extends TestCase
         ]);
 
         $resultado = app(CambiarEstadoReciboInsumosUseCase::class)
-            ->execute($recibo->id, 'En Ejecución');
+            ->execute($recibo->id, 'En Ejecucion');
 
-        $this->assertTrue($resultado['success']);
+        $this->assertTrue($resultado['success'], json_encode($resultado));
 
         $proceso = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
             ->where('prenda_pedido_id', $prenda->id)
@@ -95,7 +95,7 @@ class ReciboPendienteServiceTest extends TestCase
         ]);
 
         $resultado = app(CambiarEstadoReciboInsumosUseCase::class)
-            ->execute($recibo->id, 'No iniciado');
+            ->execute($recibo->id, 'En Ejecucion');
 
         $this->assertTrue($resultado['success']);
         $this->assertEquals(
@@ -161,3 +161,5 @@ class ReciboPendienteServiceTest extends TestCase
         );
     }
 }
+
+

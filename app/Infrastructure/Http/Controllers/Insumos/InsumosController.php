@@ -345,6 +345,10 @@ class InsumosController extends Controller
                 'En Ejecución', 
                 'PENDIENTE_INSUMOS',
                 'Pendiente_Insumos',
+                'Pendiente Tela',
+                'PENDIENTE_TELA',
+                'Pendiente Plotter',
+                'PENDIENTE_PLOTTER',
                 'Insumos Pedidos',
                 'INSUMOS_PEDIDOS',
                 'DEVUELTO_ASESOR',
@@ -365,6 +369,10 @@ class InsumosController extends Controller
                     'En Ejecución',
                     'PENDIENTE_INSUMOS',
                     'Pendiente_Insumos',
+                    'Pendiente Tela',
+                    'PENDIENTE_TELA',
+                    'Pendiente Plotter',
+                    'PENDIENTE_PLOTTER',
                     'Insumos Pedidos',
                     'INSUMOS_PEDIDOS'
                 ];

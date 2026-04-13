@@ -219,6 +219,12 @@
                                 } elseif ($estadoValor === 'PENDIENTE_INSUMOS' || $estadoValor === 'Pendiente_Insumos') {
                                     $estadoClass = 'bg-amber-500 text-white';
                                     $estadoDisplay = 'Pendiente Insumos';
+                                } elseif ($estadoValor === 'PENDIENTE_TELA' || $estadoValor === 'Pendiente Tela') {
+                                    $estadoClass = 'bg-yellow-400 text-gray-900';
+                                    $estadoDisplay = 'Pendiente Tela';
+                                } elseif ($estadoValor === 'PENDIENTE_PLOTTER' || $estadoValor === 'Pendiente Plotter') {
+                                    $estadoClass = 'bg-yellow-400 text-gray-900';
+                                    $estadoDisplay = 'Pendiente Plotter';
                                 } elseif ($estadoValor === 'DEVUELTO_ASESOR') {
                                     $estadoClass = 'bg-red-500 text-white';
                                     $estadoDisplay = 'Devuelto Asesor';
@@ -229,7 +235,7 @@
                                     $estadoDisplay = str_replace('_', ' ', $estadoValor ?? 'N/A');
                                 }
 
-                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
+                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                 $puedeEditarInsumos = in_array($estadoValor, $estadosEditablesInsumos, true);
                                 $mostrarSelector = ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos);
                             @endphp
@@ -246,11 +252,15 @@
                                     >
                                         @if($roleName === 'insumos')
                                             <option value="PENDIENTE_INSUMOS" {{ in_array($estadoValor, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
+                                            <option value="Pendiente Tela" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                            <option value="Pendiente Plotter" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                             <option value="Insumos Pedidos" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                         @else
                                             <option value="No iniciado" {{ $estadoValor === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                             <option value="En Ejecución" {{ $estadoValor === 'En Ejecución' || $estadoValor === 'En Ejecucion' ? 'selected' : '' }}>En Ejecución</option>
                                             <option value="PENDIENTE_INSUMOS" {{ in_array($estadoValor, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
+                                            <option value="Pendiente Tela" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                            <option value="Pendiente Plotter" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                             <option value="Insumos Pedidos" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                             <option value="DEVUELTO_ASESOR" {{ $estadoValor === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
                                             <option value="Anulada" {{ $estadoValor === 'Anulada' ? 'selected' : '' }}>Anulada</option>
@@ -333,5 +343,4 @@
         </div>
     </div>
 @endif
-
 

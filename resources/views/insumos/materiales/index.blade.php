@@ -298,6 +298,12 @@
                                         } elseif ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') {
                                             $estadoClass = 'bg-amber-500 text-white';
                                             $estadoDisplay = 'Pendiente Insumos';
+                                        } elseif ($orden->estado === 'PENDIENTE_TELA' || $orden->estado === 'Pendiente Tela') {
+                                            $estadoClass = 'bg-yellow-400 text-gray-900';
+                                            $estadoDisplay = 'Pendiente Tela';
+                                        } elseif ($orden->estado === 'PENDIENTE_PLOTTER' || $orden->estado === 'Pendiente Plotter') {
+                                            $estadoClass = 'bg-yellow-400 text-gray-900';
+                                            $estadoDisplay = 'Pendiente Plotter';
                                         } elseif ($orden->estado === 'DEVUELTO_ASESOR') {
                                             $estadoClass = 'bg-red-500 text-white';
                                             $estadoDisplay = 'Devuelto Asesor';
@@ -309,7 +315,7 @@
                                         }
                                         
                                         // Determinar si el rol insumos puede editar este estado
-                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
+                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                         $puedeEditarInsumos = in_array($orden->estado, $estadosEditablesInsumos);
                                         
                                         // Mostrar selector solo si no es insumos, o si es insumos y el estado es editable
@@ -330,12 +336,16 @@
                                                 @if($currentRoleName === 'insumos')
                                                     {{-- Solo 2 opciones editable para rol insumos --}}
                                                     <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
+                                                    <option value="Pendiente Tela" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                                    <option value="Pendiente Plotter" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                                     <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                                 @else
                                                     {{-- Todas las opciones para otros roles --}}
                                                     <option value="No iniciado" {{ $orden->estado === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                                     <option value="En Ejecución" {{ $orden->estado === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
                                                     <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
+                                                    <option value="Pendiente Tela" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                                    <option value="Pendiente Plotter" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                                     <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                                     <option value="DEVUELTO_ASESOR" {{ $orden->estado === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
                                                     <option value="Anulada" {{ $orden->estado === 'Anulada' ? 'selected' : '' }}>Anulada</option>
@@ -501,6 +511,9 @@
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
+
+<!-- Scripts para Cambio de Estado de Recibos -->
+<script defer src="{{ asset('js/insumos/status-actions-insumos.js') }}?v={{ time() }}"></script>
 
 {{-- Incluir modales de insumos --}}
 @include('insumos.materiales.partials.modales-insumos')
