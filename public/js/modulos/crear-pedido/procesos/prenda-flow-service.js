@@ -4,6 +4,7 @@
 class PrendaFlowService {
     constructor(options = {}) {
         this.ui = options.ui || null;
+        this._guardandoPrenda = false;
     }
 
     _ctx(key) {
@@ -11,6 +12,12 @@ class PrendaFlowService {
     }
 
     async agregarPrendaNueva() {
+        if (this._guardandoPrenda) {
+            debugLog('[agregarPrendaNueva] Bloqueado en servicio: guardado ya en curso');
+            return;
+        }
+
+        this._guardandoPrenda = true;
         try {
             this._logEstadoInicial();
             this._ensureNotificationService();
@@ -34,6 +41,8 @@ class PrendaFlowService {
             this._finalizarYRenderizar();
         } catch (error) {
             this.ui?.notificationService?.error('Error al agregar prenda: ' + error.message);
+        } finally {
+            this._guardandoPrenda = false;
         }
     }
 
@@ -370,4 +379,3 @@ class PrendaFlowService {
         this.ui?._sincronizarPrendasEnDatosEdicion?.();
     }
 }
-

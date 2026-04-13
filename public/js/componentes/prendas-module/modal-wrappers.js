@@ -98,13 +98,43 @@ globalThis.cerrarModalPrendaNueva = function() {
  * Delega a GestionItemsUI.agregarPrendaNueva()
  */
 globalThis.agregarPrendaNueva = function() {
+    if (globalThis.__guardandoPrendaEnCurso) {
+        console.debug('[agregarPrendaNueva] Bloqueado: ya hay un guardado en curso');
+        return;
+    }
+
+    globalThis.__guardandoPrendaEnCurso = true;
+    const btnGuardar = document.getElementById('btn-guardar-prenda');
+    if (btnGuardar) {
+        btnGuardar.disabled = true;
+        btnGuardar.dataset.loading = 'true';
+    }
+
+    const liberarGuardado = () => {
+        globalThis.__guardandoPrendaEnCurso = false;
+        if (btnGuardar && btnGuardar.dataset.loading === 'true') {
+            btnGuardar.disabled = false;
+            delete btnGuardar.dataset.loading;
+        }
+    };
+
     // Intentar usar GestionItemsUI si existe
     if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarPrendaNueva === 'function') {
-        return globalThis.gestionItemsUI.agregarPrendaNueva();
+        try {
+            const resultado = globalThis.gestionItemsUI.agregarPrendaNueva();
+            return Promise.resolve(resultado).finally(() => {
+                // Pequeño delay para amortiguar dobles clicks muy rápidos
+                setTimeout(liberarGuardado, 120);
+            });
+        } catch (error) {
+            liberarGuardado();
+            throw error;
+        }
     }
     
     // Fallback: implementación básica
     console.warn('GestionItemsUI no disponible, usando fallback para agregarPrendaNueva');
+    liberarGuardado();
     return null;
 };
 

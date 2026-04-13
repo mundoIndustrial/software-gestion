@@ -191,6 +191,10 @@ class ItemAPIService {
         try {
             console.debug('[crearPedido]  INICIO');
 
+            // Si viene desde un borrador en edición, primero sincronizar cambios
+            // (incluye procesos_a_eliminar) y luego convertir a pedido final.
+            await this.sincronizarBorradorAntesDeCrear(pedidoData);
+
             // PASO 1: Extraer TODOS los Files PRIMERO (antes de cualquier normalización)
             console.debug('[crearPedido] PASO 1: Extrayendo files...');
             const filesExtraidos = await this.extraerFilesDelPedido(pedidoData);
@@ -427,6 +431,48 @@ class ItemAPIService {
             this.limpiarFileRegistry();
             throw error;
         }
+    }
+
+    async sincronizarBorradorAntesDeCrear(pedidoData) {
+        const borradorId = Number(pedidoData?.borrador_pedido_id || 0);
+        if (!Number.isInteger(borradorId) || borradorId <= 0) {
+            return;
+        }
+
+        if (typeof window.sincronizarPrendaModalAntesDeGuardarBorrador === 'function') {
+            window.sincronizarPrendaModalAntesDeGuardarBorrador();
+        }
+
+        if (!window.DraftPedidoBuilder || typeof window.DraftPedidoBuilder.construirFormDataBorrador !== 'function') {
+            throw new Error('No se pudo sincronizar el borrador antes de crear (DraftPedidoBuilder no disponible).');
+        }
+
+        const { formData } = window.DraftPedidoBuilder.construirFormDataBorrador(pedidoData, this.csrfToken);
+        formData.append('pedido_id', String(borradorId));
+
+        console.debug('[crearPedido]  Sincronizando borrador antes de convertir...', {
+            borrador_pedido_id: borradorId
+        });
+
+        const response = await fetch(`${this.baseUrl}/${borradorId}/borrador`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': this.csrfToken
+            },
+            body: formData
+        });
+
+        const resultado = await response.json().catch(() => ({}));
+
+        if (!response.ok || resultado?.success === false) {
+            const msg = resultado?.message || `No se pudo sincronizar borrador (HTTP ${response.status})`;
+            throw new Error(msg);
+        }
+
+        console.debug('[crearPedido]  Borrador sincronizado correctamente', {
+            pedido_id: resultado?.pedido_id || borradorId
+        });
     }
 
     /**

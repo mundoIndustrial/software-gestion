@@ -404,12 +404,32 @@
             }
         });
 
+        const procesosAEliminar = Array.isArray(prenda.procesos_a_eliminar)
+            ? prenda.procesos_a_eliminar
+            : (estaPrendaEnEdicion && window.procesosParaEliminarIds ? Array.from(window.procesosParaEliminarIds) : []);
+        const procesosAEliminarSet = new Set(
+            procesosAEliminar
+                .map((entry) => {
+                    if (typeof entry === 'number' || typeof entry === 'string') {
+                        return Number(entry);
+                    }
+                    if (entry && typeof entry === 'object') {
+                        return Number(entry.id || entry.proceso_prenda_detalle_id || 0);
+                    }
+                    return 0;
+                })
+                .filter((id) => Number.isInteger(id) && id > 0)
+        );
 
         const procesosRaw = prenda.procesos || {};
         const procesosArray = [];
         if (!Array.isArray(procesosRaw) && typeof procesosRaw === 'object') {
             Object.entries(procesosRaw).forEach(([tipo, proc], procesoIdx) => {
                 const d = proc?.datos || proc || {};
+                const procesoId = Number(d.id || d.proceso_prenda_detalle_id || 0);
+                if (procesoId > 0 && procesosAEliminarSet.has(procesoId)) {
+                    return;
+                }
                 const imagenesExistentesProceso = [];
                 const imagenesAEliminarProceso = [];
                 const archivosProcesoAgregados = new Set();
@@ -526,9 +546,6 @@
         }
 
         const imagenesAEliminar = Array.isArray(prenda.imagenes_a_eliminar) ? prenda.imagenes_a_eliminar : [];
-        const procesosAEliminar = Array.isArray(prenda.procesos_a_eliminar)
-            ? prenda.procesos_a_eliminar
-            : (estaPrendaEnEdicion && window.procesosParaEliminarIds ? Array.from(window.procesosParaEliminarIds) : []);
 
         console.debug('[DraftPedidoSerializer] Prenda existente serializada', {
             prendaIndex,

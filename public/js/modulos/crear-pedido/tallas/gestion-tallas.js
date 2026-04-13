@@ -493,14 +493,16 @@ window.abrirModalSeleccionarTallas = async function(genero) {
     selectorTipo.id = 'selector-tipo-talla';
     selectorTipo.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
     
-    // MOSTRAR OPCIONES DE TIPO (LETRA o NÚMERO)
+    // MOSTRAR OPCIONES DE TIPO (LETRA o NÚMERO) - O SIN TALLA si es UNISEX
     const titleTipo = document.createElement('h3');
     titleTipo.textContent = '¿Qué tipo de tallas deseas?';
     titleTipo.style.cssText = 'margin: 0 0 1rem 0; color: #1f2937; font-size: 1.05rem; font-weight: 600;';
     selectorTipo.appendChild(titleTipo);
     
     const btnGroupTipo = document.createElement('div');
-    btnGroupTipo.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;';
+    // Si es UNISEX, 3 columnas; si no, 2 columnas
+    const esUnisex = genero === 'UNISEX';
+    btnGroupTipo.style.cssText = `display: grid; grid-template-columns: ${esUnisex ? '1fr 1fr 1fr' : '1fr 1fr'}; gap: 1rem;`;
     
     // Botón LETRA
     const btnLetra = document.createElement('button');
@@ -573,6 +575,41 @@ window.abrirModalSeleccionarTallas = async function(genero) {
         }
     };
     btnGroupTipo.appendChild(btnNumero);
+    
+    // Botón SIN TALLA (solo para UNISEX)
+    if (esUnisex) {
+        const btnSinTalla = document.createElement('button');
+        btnSinTalla.id = 'btn-tipo-sintalla';
+        btnSinTalla.type = 'button';
+        btnSinTalla.style.cssText = `
+            padding: 1.25rem;
+            border: 2px solid #d1d5db;
+            background: white;
+            color: #1f2937;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        `;
+        btnSinTalla.innerHTML = '<span class="material-symbols-rounded" style="font-size: 2rem;">package_2</span><div>SIN TALLA</div><div style="font-size: 0.75rem; color: #6b7280; font-weight: 400;">Solo cantidad</div>';
+        btnSinTalla.onclick = () => {
+            abrirModalCantidadSinTalla();
+        };
+        btnSinTalla.onmouseover = () => {
+            btnSinTalla.style.borderColor = '#7c3aed';
+            btnSinTalla.style.background = '#f5f3ff';
+        };
+        btnSinTalla.onmouseout = () => {
+            btnSinTalla.style.borderColor = '#d1d5db';
+            btnSinTalla.style.background = 'white';
+        };
+        btnGroupTipo.appendChild(btnSinTalla);
+    }
     
     selectorTipo.appendChild(btnGroupTipo);
     
@@ -1246,10 +1283,6 @@ window.crearTarjetaSobremedida = function(genero, cantidad) {
     container.appendChild(tarjeta);
 };
 
-/**
- * Obtener todas las tallas, cantidades y sobremedida para enviar
- * Actualiza la función existente
- */
 const originalObtenerTallasYCantidades = window.obtenerTallasYCantidades;
 window.obtenerTallasYCantidades = function() {
     const resultado = originalObtenerTallasYCantidades.call(this);
@@ -1261,4 +1294,264 @@ window.obtenerTallasYCantidades = function() {
     }
     
     return resultado;
+};
+
+/**
+ * Abrir modal para "SIN TALLA" en UNISEX
+ * Permite guardar cantidad sin especificar una talla específica
+ */
+window.abrirModalCantidadSinTalla = async function() {
+    // Cerrar el modal de tallas actual
+    const genero = window.generoActualModal;
+    cerrarModalTallas(genero);
+    
+    // Crear nuevo modal
+    const modal = document.createElement('div');
+    modal.id = 'modal-sintalla';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1060000;';
+    
+    const container = document.createElement('div');
+    container.style.cssText = 'background: white; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;';
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;';
+    
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    headerContent.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.5rem;">package_2</span><h2 style="margin: 0; font-size: 1.25rem;">Cantidad sin Talla</h2>`;
+    header.appendChild(headerContent);
+    
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+    btnCerrar.style.cssText = 'background: transparent; color: white; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;';
+    btnCerrar.onclick = () => cerrarModalCantidadSinTalla();
+    header.appendChild(btnCerrar);
+    
+    container.appendChild(header);
+    
+    // Content
+    const content = document.createElement('div');
+    content.style.cssText = 'padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;';
+    
+    // Explicación
+    const explicacion = document.createElement('p');
+    explicacion.style.cssText = 'margin: 0; color: #6b7280; font-size: 0.95rem; line-height: 1.5;';
+    explicacion.textContent = 'Ingresa la cantidad total sin especificar una talla específica. Ideal para prendas genéricas, a medida o confección especial.';
+    content.appendChild(explicacion);
+    
+    // Input de Cantidad
+    const cantidadLabel = document.createElement('label');
+    cantidadLabel.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; font-weight: 600; color: #1f2937;';
+    cantidadLabel.innerHTML = '<span>Cantidad Total *</span>';
+    
+    const cantidadInput = document.createElement('input');
+    cantidadInput.id = 'sintalla-cantidad';
+    cantidadInput.type = 'number';
+    cantidadInput.min = '1';
+    cantidadInput.placeholder = 'Ej: 100';
+    cantidadInput.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 1rem; font-weight: 600;';
+    
+    // Enter para confirmar
+    cantidadInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmarCantidadSinTalla();
+        }
+    });
+    
+    cantidadLabel.appendChild(cantidadInput);
+    content.appendChild(cantidadLabel);
+    
+    container.appendChild(content);
+    
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem; border-top: 1px solid #e5e7eb;';
+    
+    const btnCancelar = document.createElement('button');
+    btnCancelar.type = 'button';
+    btnCancelar.textContent = 'Cancelar';
+    btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
+    btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
+    btnCancelar.onclick = () => cerrarModalCantidadSinTalla();
+    footer.appendChild(btnCancelar);
+    
+    const btnConfirmar = document.createElement('button');
+    btnConfirmar.type = 'button';
+    btnConfirmar.textContent = 'Confirmar';
+    btnConfirmar.style.cssText = 'background: #7c3aed; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#5b21b6';
+    btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#7c3aed';
+    btnConfirmar.onclick = () => confirmarCantidadSinTalla();
+    footer.appendChild(btnConfirmar);
+    
+    container.appendChild(footer);
+    modal.appendChild(container);
+    
+    document.body.appendChild(modal);
+    
+    // Focus en cantidad
+    setTimeout(() => document.getElementById('sintalla-cantidad').focus(), 100);
+};
+
+/**
+ * Confirmar cantidad sin talla para UNISEX
+ */
+window.confirmarCantidadSinTalla = function() {
+    const cantidad = parseInt(document.getElementById('sintalla-cantidad').value) || 0;
+    
+    if (cantidad <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        document.getElementById('sintalla-cantidad').focus();
+        return;
+    }
+    
+    // Guardar en estructura relacional con talla especial "SIN_TALLA"
+    if (!window.tallasRelacionales.UNISEX) {
+        window.tallasRelacionales.UNISEX = {};
+    }
+    
+    window.tallasRelacionales.UNISEX['SIN_TALLA'] = cantidad;
+    
+    console.log('[gestion-tallas] Cantidad sin talla guardada para UNISEX:', window.tallasRelacionales.UNISEX);
+    
+    // Cerrar modal
+    cerrarModalCantidadSinTalla();
+    
+    // Crear tarjeta visual
+    crearTarjetaUnisexSinTalla(cantidad);
+    
+    // Actualizar total
+    actualizarTotalPrendas();
+};
+
+/**
+ * Cerrar modal de cantidad sin talla
+ */
+window.cerrarModalCantidadSinTalla = function() {
+    const modal = document.getElementById('modal-sintalla');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
+ * Crear tarjeta visual para UNISEX sin talla
+ */
+window.crearTarjetaUnisexSinTalla = function(cantidad) {
+    // Marcar botón Unisex
+    const btnUnisex = document.getElementById('btn-genero-unisex');
+    const checkUnisex = document.getElementById('check-unisex');
+    
+    if (btnUnisex) {
+        btnUnisex.dataset.selected = 'true';
+        btnUnisex.style.borderColor = '#7c3aed';
+        btnUnisex.style.background = '#f5f3ff';
+    }
+    
+    if (checkUnisex) {
+        checkUnisex.style.display = 'block';
+    }
+    
+    // Obtener contenedor
+    const container = document.getElementById('tarjetas-generos-container');
+    if (!container) return;
+    
+    // Eliminar tarjeta anterior si existe
+    const tarjetaAnterior = container.querySelector('[data-genero="UNISEX"]');
+    if (tarjetaAnterior) {
+        tarjetaAnterior.remove();
+    }
+    
+    // Crear tarjeta
+    const tarjeta = document.createElement('div');
+    tarjeta.dataset.genero = 'UNISEX';
+    tarjeta.style.cssText = `
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    `;
+    
+    // Header de tarjeta
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; justify-content: space-between;';
+    
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    headerLeft.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #374151;">wc</span>
+        <div>
+            <h4 style="margin: 0; color: #1f2937; font-size: 1rem; font-weight: 600;">UNISEX - SIN TALLA</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 0.8rem;">Cantidad total: <strong>${cantidad}</strong></p>
+        </div>
+    `;
+    header.appendChild(headerLeft);
+    
+    const btnGroupAcciones = document.createElement('div');
+    btnGroupAcciones.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+    
+    const btnEditar = document.createElement('button');
+    btnEditar.type = 'button';
+    btnEditar.title = 'Editar cantidad';
+    btnEditar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 6px;';
+    btnEditar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem;">edit</span>';
+    btnEditar.onmouseover = () => {
+        btnEditar.style.color = '#7c3aed';
+        btnEditar.style.background = '#f5f3ff';
+    };
+    btnEditar.onmouseout = () => {
+        btnEditar.style.color = '#6b7280';
+        btnEditar.style.background = 'transparent';
+    };
+    btnEditar.onclick = () => {
+        abrirModalCantidadSinTalla();
+    };
+    btnGroupAcciones.appendChild(btnEditar);
+    
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.title = 'Eliminar';
+    btnEliminar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 6px;';
+    btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>';
+    btnEliminar.onmouseover = () => {
+        btnEliminar.style.color = '#ef4444';
+        btnEliminar.style.background = '#fee2e2';
+    };
+    btnEliminar.onmouseout = () => {
+        btnEliminar.style.color = '#6b7280';
+        btnEliminar.style.background = 'transparent';
+    };
+    btnEliminar.onclick = () => {
+        delete window.tallasRelacionales.UNISEX['SIN_TALLA'];
+        if (Object.keys(window.tallasRelacionales.UNISEX).length === 0) {
+            delete window.tallasRelacionales.UNISEX;
+        }
+        tarjeta.remove();
+        
+        const btn = document.getElementById('btn-genero-unisex');
+        const check = document.getElementById('check-unisex');
+        
+        if (btn) {
+            btn.dataset.selected = 'false';
+            btn.style.borderColor = '#d1d5db';
+            btn.style.background = 'white';
+        }
+        
+        if (check) {
+            check.style.display = 'none';
+        }
+        
+        actualizarTotalPrendas();
+    };
+    btnGroupAcciones.appendChild(btnEliminar);
+    
+    header.appendChild(btnGroupAcciones);
+    tarjeta.appendChild(header);
+    
+    container.appendChild(tarjeta);
 };

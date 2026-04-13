@@ -88,12 +88,18 @@ class PedidoLifecycleService
             'orden_compra' => $datosValidados['orden_compra'] ?? $borrador->orden_compra,
             'forma_de_pago' => $datosValidados['forma_de_pago'] ?? $borrador->forma_de_pago,
             'observaciones' => $datosValidados['observaciones'] ?? $borrador->observaciones,
-            'created_at' => now(),
         ]);
+
+        // `created_at` no es fillable en PedidoProduccion, por eso se fuerza
+        // al convertir el borrador para reflejar la fecha real de creación final.
+        $borrador->forceFill([
+            'created_at' => now(),
+        ])->save();
 
         Log::info('[PedidoLifecycleService] Borrador convertido exitosamente', [
             'pedido_id' => $borrador->id,
             'numero_pedido' => $numeroPedido,
+            'created_at' => optional($borrador->created_at)?->format('Y-m-d H:i:s'),
         ]);
 
         return $borrador->fresh();

@@ -18,18 +18,52 @@ final class EliminarProcesosListaUseCase implements EliminarProcesosListaUseCase
 {
     public function ejecutar(array $procesosIds): void
     {
-        foreach ($procesosIds as $procesoId) {
+        $idsNormalizados = $this->normalizarIds($procesosIds);
+
+        Log::info('[EliminarProcesosListaUseCase] Procesos a eliminar (normalizados)', [
+            'recibidos' => $procesosIds,
+            'ids_normalizados' => $idsNormalizados,
+        ]);
+
+        foreach ($idsNormalizados as $procesoId) {
             try {
-                $proceso = $this->buscarProceso((int) $procesoId);
+                $proceso = $this->buscarProceso($procesoId);
                 $this->eliminarImagenesProceso($proceso);
                 $this->eliminarTallasProceso($proceso);
                 $proceso->forceDelete();
 
-                $this->registrarProcesoEliminado((int) $procesoId, $proceso->tipo_recibo ?? null);
+                $this->registrarProcesoEliminado($procesoId, $proceso->tipo_recibo ?? null);
             } catch (\Exception $e) {
-                $this->registrarErrorEliminacion((int) $procesoId, $e);
+                $this->registrarErrorEliminacion($procesoId, $e);
             }
         }
+    }
+
+    /**
+     * @param array<int, mixed> $procesosIds
+     * @return array<int, int>
+     */
+    private function normalizarIds(array $procesosIds): array
+    {
+        $ids = [];
+
+        foreach ($procesosIds as $entry) {
+            $id = null;
+
+            if (is_numeric($entry)) {
+                $id = (int) $entry;
+            } elseif (is_array($entry)) {
+                $id = (int) ($entry['id'] ?? $entry['proceso_prenda_detalle_id'] ?? 0);
+            } elseif (is_object($entry)) {
+                $id = (int) ($entry->id ?? $entry->proceso_prenda_detalle_id ?? 0);
+            }
+
+            if ($id && $id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     private function buscarProceso(int $procesoId): PedidosProcesosPrendaDetalle
@@ -92,7 +126,6 @@ final class EliminarProcesosListaUseCase implements EliminarProcesosListaUseCase
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

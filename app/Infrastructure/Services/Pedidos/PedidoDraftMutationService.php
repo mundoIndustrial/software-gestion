@@ -268,17 +268,38 @@ class PedidoDraftMutationService
             return $procesos;
         }
 
-        return array_filter($procesos, function ($proceso) use ($procesosAEliminar) {
-            // Extraer IDs de procesos a eliminar
-            $idsAEliminar = array_map(function ($p) {
-                return $p['id'] ?? $p['proceso_prenda_detalle_id'] ?? null;
-            }, $procesosAEliminar);
+        $idsAEliminar = $this->normalizarIdsProcesos($procesosAEliminar);
 
-            // El proceso tiene id o proceso_prenda_detalle_id?
-            $procesoId = $proceso['id'] ?? $proceso['proceso_prenda_detalle_id'] ?? null;
-            
-            // NO incluir si está marcado para eliminar
-            return !in_array($procesoId, array_filter($idsAEliminar), true);
+        return array_filter($procesos, function ($proceso) use ($idsAEliminar) {
+            $procesoId = (int) ($proceso['id'] ?? $proceso['proceso_prenda_detalle_id'] ?? 0);
+            return !in_array($procesoId, $idsAEliminar, true);
         });
+    }
+
+    /**
+     * @param array<int, mixed> $procesosAEliminar
+     * @return array<int, int>
+     */
+    private function normalizarIdsProcesos(array $procesosAEliminar): array
+    {
+        $ids = [];
+
+        foreach ($procesosAEliminar as $entry) {
+            $id = 0;
+
+            if (is_numeric($entry)) {
+                $id = (int) $entry;
+            } elseif (is_array($entry)) {
+                $id = (int) ($entry['id'] ?? $entry['proceso_prenda_detalle_id'] ?? 0);
+            } elseif (is_object($entry)) {
+                $id = (int) ($entry->id ?? $entry->proceso_prenda_detalle_id ?? 0);
+            }
+
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 }

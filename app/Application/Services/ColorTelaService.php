@@ -17,8 +17,8 @@ class ColorTelaService
     /**
      * Obtener o crear un color por nombre
      * 
-     * Siempre crea un NUEVO color para este pedido
-     * No reutiliza - Cada pedido tiene sus propios colores
+     * Usa el color existente si ya está registrado, de lo contrario crea uno nuevo
+     * Evita violaciones de constraint UNIQUE
      * 
      * @param string|null $nombreColor
      * @return int|null ID del color
@@ -29,12 +29,16 @@ class ColorTelaService
             return null;
         }
 
-        //  Siempre crear NUEVO color para este pedido
-        $color = ColorPrenda::create([
-            'nombre' => trim($nombreColor),
-            'codigo' => strtoupper(substr(md5($nombreColor), 0, 6)),
-            'activo' => true,
-        ]);
+        $nombreTrimmed = trim($nombreColor);
+        
+        // Usar firstOrCreate para evitar duplicate key constraint violation
+        $color = ColorPrenda::firstOrCreate(
+            ['nombre' => $nombreTrimmed],
+            [
+                'codigo' => strtoupper(substr(md5($nombreTrimmed), 0, 6)),
+                'activo' => true,
+            ]
+        );
 
         return $color->id;
     }
@@ -42,8 +46,8 @@ class ColorTelaService
     /**
      * Obtener o crear una tela por nombre
      * 
-     * Siempre crea una NUEVA tela para este pedido
-     * No reutiliza - Cada pedido tiene sus propias telas
+     * Usa la tela existente si ya está registrada, de lo contrario crea una nueva
+     * Evita violaciones de constraint UNIQUE
      * 
      * @param string|null $nombreTela
      * @return int|null ID de la tela
@@ -54,12 +58,16 @@ class ColorTelaService
             return null;
         }
 
-        //  Siempre crear NUEVA tela para este pedido
-        $tela = TelaPrenda::create([
-            'nombre' => trim($nombreTela),
-            'referencia' => '',
-            'activo' => true,
-        ]);
+        $nombreTrimmed = trim($nombreTela);
+        
+        // Usar firstOrCreate para evitar duplicate key constraint violation
+        $tela = TelaPrenda::firstOrCreate(
+            ['nombre' => $nombreTrimmed],
+            [
+                'referencia' => '',
+                'activo' => true,
+            ]
+        );
 
         return $tela->id;
     }

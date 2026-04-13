@@ -416,7 +416,7 @@
         <!-- Footer -->
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="cerrarModalPrendaNueva()">Cancelar</button>
-            <button id="btn-guardar-prenda" class="btn btn-primary" onclick="agregarPrendaNueva()">
+            <button type="button" id="btn-guardar-prenda" class="btn btn-primary" onclick="agregarPrendaNueva()">
                 <span class="material-symbols-rounded">check</span>Agregar Prenda
             </button>
         </div>
