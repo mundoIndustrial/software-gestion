@@ -362,6 +362,7 @@ class InsumosController extends Controller
             // Si es rol "insumos", solo permite Pendiente Insumos e Insumos Pedidos
             if ($userRole === 'insumos') {
                 $estadosPermitidos = [
+                    'En Ejecución',
                     'PENDIENTE_INSUMOS',
                     'Pendiente_Insumos',
                     'Insumos Pedidos',

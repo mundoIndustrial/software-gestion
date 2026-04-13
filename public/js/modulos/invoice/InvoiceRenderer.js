@@ -528,10 +528,15 @@ class InvoiceRenderer {
                                     return a.talla.localeCompare(b.talla);
                                 });
                                 tallaRows = sinColorArr.map(t => {
+                                    // ✅ FIX: Si la talla está vacía o es "—", mostrar "SIN TALLA"
+                                    let tallaDisplay = t.talla;
+                                    if (!tallaDisplay || tallaDisplay.trim() === '' || tallaDisplay === '—') {
+                                        tallaDisplay = 'SIN TALLA';
+                                    }
                                     const refHtml = (t.referencia && String(t.referencia).trim() !== '')
                                         ? ` <span style="color: #6b7280; font-size: 10px;">Ref: ${t.referencia}</span>`
                                         : '';
-                                    return `<div style="margin: 2px 0;">${t.talla}:${t.cantidad}${refHtml}</div>`;
+                                    return `<div style="margin: 2px 0;">${tallaDisplay}:${t.cantidad}${refHtml}</div>`;
                                 }).join('');
                             }
 

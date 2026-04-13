@@ -272,6 +272,12 @@ export class Formatters {
                 lineas.push('');
                 lineas.push('<strong>TALLAS</strong>');
                 this._agregarTallasFormato(lineas, tallasParaRenderizar, prenda.genero, prenda);
+            } else if (Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                // ✅ FIX: Fallback a variantes si no hay tallas (caso operario/móvil)
+                console.log('[Formatters]  No hay tallas pero SÍ hay variantes, usando variantes como fuente');
+                lineas.push('');
+                lineas.push('<strong>TALLAS</strong>');
+                this._agregarTallasFormato(lineas, prenda.variantes, prenda.genero, prenda);
             } else {
                 console.log('[Formatters]  No hay tallas (vacío)');
             }
@@ -1049,6 +1055,7 @@ export class Formatters {
         
         const tallasDama = {};
         const tallasCalballero = {};
+        const tallasUnisex = {};
 
         const insertarTallaConColor = (destino, tallaKey, cantidad) => {
             const qty = parseInt(cantidad, 10) || 0;
@@ -1118,6 +1125,9 @@ export class Formatters {
                     } else if (genero === 'caballero') {
                         insertarTallaConColor(tallasCalballero, tallaFinal, cantidad);
                         console.log(`[Formatters._agregarTallasFormato]   → Agregado a CABALLERO: ${tallaFinal}=${cantidad}`);
+                    } else if (genero === 'unisex') {
+                        insertarTallaConColor(tallasUnisex, tallaFinal, cantidad);
+                        console.log(`[Formatters._agregarTallasFormato]   → Agregado a UNISEX: ${tallaFinal}=${cantidad}`);
                     }
                 } else {
                     console.log(`[Formatters._agregarTallasFormato]   → Item no es objeto válido:`, item);
@@ -1152,6 +1162,8 @@ export class Formatters {
                                         tallasDama['SOBREMEDIDA'] = cantidad;
                                     } else if (generoNormalizado === 'CABALLERO') {
                                         tallasCalballero['SOBREMEDIDA'] = cantidad;
+                                    } else if (generoNormalizado === 'UNISEX') {
+                                        tallasUnisex['SOBREMEDIDA'] = cantidad;
                                     }
                                 } else if (item.talla && item.cantidad) {
                                     // Talla específica
@@ -1163,6 +1175,8 @@ export class Formatters {
                                         tallasDama[talla] = cantidad;
                                     } else if (generoNormalizado === 'CABALLERO') {
                                         tallasCalballero[talla] = cantidad;
+                                    } else if (generoNormalizado === 'UNISEX') {
+                                        tallasUnisex[talla] = cantidad;
                                     }
                                 }
                             }
@@ -1183,6 +1197,8 @@ export class Formatters {
                                     tallasDama[talla] = cantidadRaw;
                                 } else if (generoNormalizado === 'CABALLERO') {
                                     tallasCalballero[talla] = cantidadRaw;
+                                } else if (generoNormalizado === 'UNISEX') {
+                                    tallasUnisex[talla] = cantidadRaw;
                                 }
                                 return;
                             }
@@ -1208,6 +1224,8 @@ export class Formatters {
                                 insertarTallaConColor(tallasDama, tallaKey, cantidad);
                             } else if (generoNormalizado === 'CABALLERO') {
                                 insertarTallaConColor(tallasCalballero, tallaKey, cantidad);
+                            } else if (generoNormalizado === 'UNISEX') {
+                                insertarTallaConColor(tallasUnisex, tallaKey, cantidad);
                             }
                         });
                     }
@@ -1215,7 +1233,7 @@ export class Formatters {
             });
         }
         
-        console.log('[Formatters._agregarTallasFormato]  Resultado final:', { tallasDama, tallasCalballero });
+        console.log('[Formatters._agregarTallasFormato]  Resultado final:', { tallasDama, tallasCalballero, tallasUnisex });
         
         // Función helper para ordenar tallas de menor a mayor
         const ordenTallasLetra = ['XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '4XL', '5XL'];
@@ -1342,6 +1360,9 @@ export class Formatters {
         
         // Renderizar CABALLERO
         renderizarTallasGenero(tallasCalballero, 'CABALLERO');
+        
+        // ✅ Renderizar UNISEX
+        renderizarTallasGenero(tallasUnisex, 'UNISEX');
         
         console.log('[Formatters._agregarTallasFormato]  Lineas después:', lineas);
     }

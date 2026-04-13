@@ -506,9 +506,10 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
                     }
                     $tallas[$genero][$tallaKey] += (int)$t->cantidad;
                 }
-                // Para UNISEX sin sobremedida: usar "—" 
+                // Para UNISEX sin sobremedida: usar talla si existe, sino usar "—" (SIN_TALLA)
                 elseif ($genero === 'UNISEX') {
-                    $tallaKey = '—';
+                    // ✅ FIX: Si tiene talla específica (M, L, S, 36, etc.), usarla. Sino usar "—"
+                    $tallaKey = (!empty($t->talla) && $t->talla !== '—') ? $t->talla : '—';
                     if (!isset($tallas[$genero][$tallaKey])) {
                         $tallas[$genero][$tallaKey] = 0;
                     }
@@ -833,11 +834,69 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
      */
     private function construirVariantesArray($prenda): array
     {
+        $variantesArray = [];
+        
+        // ✅ PRIORIDAD: Usar tallas si están disponibles, crear UNA ENTRADA POR CADA TALLA
+        // Esto asegura que el frontend renderice todas las tallas correctamente
+        if ($prenda->tallas && $prenda->tallas->count() > 0) {
+            \Log::debug('[construirVariantesArray] Usando tallas para crear variantes', [
+                'prenda_id' => $prenda->id,
+                'tallas_count' => $prenda->tallas->count(),
+            ]);
+            
+            // Obtener especificaciones comunes de la primera variante (manga, broche, bolsillos)
+            $especificacionesComunes = [];
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primerVariante = $prenda->variantes->first();
+                $especificacionesComunes = [
+                    'tipo_manga' => $primerVariante->tipoManga?->nombre ?? null,
+                    'manga' => $primerVariante->tipoManga?->nombre ?? null,
+                    'manga_obs' => $primerVariante->manga_obs ?? '',
+                    'tipo_broche_boton' => $primerVariante->tipoBrocheBoton?->nombre ?? null,
+                    'tipo_broche' => $primerVariante->tipoBrocheBoton?->nombre ?? null,
+                    'broche' => $primerVariante->tipoBrocheBoton?->nombre ?? null,
+                    'broche_boton_obs' => $primerVariante->broche_boton_obs ?? '',
+                    'broche_obs' => $primerVariante->broche_boton_obs ?? '',
+                    'tiene_bolsillos' => (bool)($primerVariante->tiene_bolsillos ?? false),
+                    'bolsillos' => (bool)($primerVariante->tiene_bolsillos ?? false),
+                    'bolsillos_obs' => $primerVariante->bolsillos_obs ?? '',
+                    'obs_bolsillos' => $primerVariante->bolsillos_obs ?? '',
+                ];
+            }
+            
+            // ✅ CREAR UNA ENTRADA POR CADA TALLA (NO una sumada)
+            foreach ($prenda->tallas as $idx => $talla) {
+                $item = array_merge([
+                    'talla_id' => $talla->id,
+                    'talla' => $talla->talla ?? 'N/A',
+                    'genero' => $talla->genero ?? 'N/A',
+                    'cantidad' => $talla->cantidad ?? 0,
+                    'es_sobremedida' => (bool)($talla->es_sobremedida ?? false),
+                ], $especificacionesComunes);
+                
+                $variantesArray[] = $item;
+                
+                \Log::debug('[construirVariantesArray] Agregada talla como variante', [
+                    'prenda_id' => $prenda->id,
+                    'idx' => $idx,
+                    'talla' => $talla->talla,
+                    'cantidad' => $talla->cantidad,
+                    'genero' => $talla->genero,
+                ]);
+            }
+            
+            return $variantesArray;
+        }
+        
+        // Fallback: Si no hay tallas, usar variantes de la BD (caso legacy)
+        \Log::debug('[construirVariantesArray] No hay tallas, usando fallback varianetes BD', [
+            'prenda_id' => $prenda->id,
+            'variantes_count' => $prenda->variantes ? $prenda->variantes->count() : 0,
+        ]);
+        
         if (!$prenda->variantes || $prenda->variantes->count() === 0) {
             return [];
         }
-
-        $variantesArray = [];
         
         foreach ($prenda->variantes as $variante) {
             $variantesArray[] = [

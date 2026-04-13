@@ -278,27 +278,24 @@ class PedidoPrendaDetalleBuilder
             return $variantes;
         }
 
-        // Agrupar tallas según tipo:
-        // - UNISEX: sin considerar talla, solo cantidad
-        // - SOBREMEDIDA: agrupar por género (sin talla específica)
-        // - Otros: agrupar por género y talla
+        // Agrupar tallas por tipo:
+        // - SOBREMEDIDA: agrupar por genero (sin talla especifica)
+        // - Resto (incluye UNISEX): agrupar por genero y talla
         $tallasAgrupadas = [];
         foreach ($tallas as $talla) {
             $genero = strtoupper($talla->genero ?? 'GENERAL');
             $esSobremedida = (bool)($talla->es_sobremedida ?? false);
-            $tallaSize = $talla->talla ?? '—';
+            $tallaSize = $talla->talla ?? '-';
             
-            // Determinar clave de agrupación
-            if ($genero === 'UNISEX') {
-                // UNISEX: agrupar todo bajo una sola clave
-                $groupKey = 'UNISEX';
-            } elseif ($esSobremedida) {
-                // SOBREMEDIDA: agrupar por género sin talla específica
+            // Determinar clave de agrupacion
+            if ($esSobremedida) {
+                // SOBREMEDIDA: agrupar por genero sin talla especifica
                 $groupKey = "SOBREMEDIDA_{$genero}";
             } else {
-                // Otros géneros: agrupar por género y talla
+                // Todos los generos (incluye UNISEX): agrupar por genero y talla
                 $groupKey = "{$genero}_{$tallaSize}";
             }
+            
             
             if (!isset($tallasAgrupadas[$groupKey])) {
                 $tallasAgrupadas[$groupKey] = [
@@ -312,7 +309,7 @@ class PedidoPrendaDetalleBuilder
             // Sumar cantidad
             $tallasAgrupadas[$groupKey]['cantidad_total'] += (int)$talla->cantidad;
             
-            // Agregar colores específicos (merged)
+            // Agregar colores especificos (merged)
             $coloresEspecificos = $coloresPorTalla[$talla->id] ?? [];
             foreach ($coloresEspecificos as $color) {
                 $tallasAgrupadas[$groupKey]['coloresEspecificos'][] = $color;
@@ -324,7 +321,7 @@ class PedidoPrendaDetalleBuilder
             $talla = $groupData['talla'];
             $talla->cantidad = $groupData['cantidad_total'];
             
-            // Si es sobremedida: mostrar "SOBREMEDIDA" en la talla (sin importar género)
+            // Si es sobremedida: mostrar "SOBREMEDIDA" en la talla (sin importar genero)
             if ($groupData['es_sobremedida']) {
                 $talla->talla = 'SOBREMEDIDA';
             }
