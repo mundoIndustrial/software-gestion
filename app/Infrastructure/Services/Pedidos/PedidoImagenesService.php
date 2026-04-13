@@ -118,8 +118,8 @@ class PedidoImagenesService
         $this->prendasService->procesarImagenesNuevasPrendas($request, $nuevasPrendasIds, $items);
     }
 
-    public function procesarImagenesDeProcesos($request, int $pedidoId, array $procesos, int $prendaIndex): void
+    public function procesarImagenesDeProcesos($request, int $pedidoId, array $procesos, int $prendaIndex, int $prendaId = 0): void
     {
-        $this->prendasService->procesarImagenesDeProcesos($request, $pedidoId, $procesos, $prendaIndex);
+        $this->prendasService->procesarImagenesDeProcesos($request, $pedidoId, $procesos, $prendaIndex, $prendaId);
     }
 }

@@ -68,11 +68,14 @@ class PedidoImageManager
                     continue;
                 }
 
+                $prendaId = (int) ($prendaData['prenda_pedido_id'] ?? $prendaData['id'] ?? $prendaData['prenda_id'] ?? 0);
+
                 $this->pedidoImagenesService->procesarImagenesDeProcesos(
                     $request,
                     $pedidoId,
                     $procesos,
-                    (int) $prendaIndex
+                    (int) $prendaIndex,
+                    $prendaId
                 );
             }
 

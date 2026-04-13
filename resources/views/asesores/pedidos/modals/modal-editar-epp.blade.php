@@ -52,7 +52,7 @@
                 </div>
             </div>
 
-            <!-- SecciÃ³n de Fotos -->
+            <!-- Sección de Fotos -->
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label for="modalEditarEPPInputFotos" class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
@@ -67,12 +67,12 @@
                         
                         <div class="flex flex-col items-center gap-2">
                             <i class="material-symbols-rounded text-3xl text-gray-400">cloud_upload</i>
-                            <p class="text-sm text-gray-600">Arrastra imÃ¡genes aquÃ­</p>
-                            <p class="text-xs text-gray-500">TambiÃ©n puedes usar Ctrl+V o hacer clic en "Agregar Foto"</p>
+                            <p class="text-sm text-gray-600">Arrastra imágenes aquí</p>
+                            <p class="text-xs text-gray-500">También puedes usar Ctrl+V o hacer clic en "Agregar Foto"</p>
                         </div>
                     </div>
 
-                    <!-- BotÃ³n para agregar fotos -->
+                    <!-- Botón para agregar fotos -->
                     <button 
                         type="button"
                         onclick="document.getElementById('modalEditarEPPInputFotos').click()"
@@ -92,9 +92,9 @@
                     onchange="manejarSeleccionFotosEnModalEditar(event)"
                 >
 
-                <!-- GalerÃ­a de fotos -->
+                <!-- Galería de fotos -->
                 <div id="modalEditarEPPFotosGaleria" class="grid grid-cols-4 gap-2 mt-4">
-                    <!-- Las fotos se agregan dinÃ¡micamente aquÃ­ -->
+                    <!-- Las fotos se agregan dinámicamente aquí -->
                 </div>
             </div>
         </div>
@@ -121,14 +121,14 @@
 
 <script>
 /**
- * Estado global para ediciÃ³n de EPP individual
+ * Estado global para edicion de EPP individual
  */
 let eppEnEdicionIndividual = null;
 let fotosEnEdicionIndividual = [];
 let eppsDisponiblesParaEdicion = [];
-let indiceEPPEnEdicion = -1;  // Guardar el Ã­ndice para bÃºsqueda rÃ¡pida
-let tarjetaEppIdEnEdicion = null;  // Guardar el ID de la tarjeta visual para actualizar despuÃ©s
-let imagenesEditadasEnModalEPP = false; // Marca de cambio real de imÃ¡genes en modal
+let indiceEPPEnEdicion = -1;  // Guardar el indice para busqueda rapida
+let tarjetaEppIdEnEdicion = null;  // Guardar el ID de la tarjeta visual para actualizar despues
+let imagenesEditadasEnModalEPP = false; // Marca de cambio real de imagenes en modal
 
 function obtenerGestionItemsUIEditarEPP() {
     if (window.gestionItemsUI && typeof window.gestionItemsUI.buscarEPPEnEstado === 'function') {
@@ -260,17 +260,19 @@ function cargarEPPUnificadoEnModalEditar(eppData, opciones = {}) {
     }
 
     const referencia = construirReferenciaEPPEditar(eppData);
-    const eppEncontrado = gestion.buscarEPPEnEstado(referencia);
-    if (!eppEncontrado) {
+    const resultado = gestion.buscarEPPEnEstado(referencia);
+    if (!resultado || !resultado.epp) {
         return null;
     }
+
+    const eppEncontrado = resultado.epp;
 
     const tarjetaId = opciones.tarjetaId === null
         ? null
         : (opciones.tarjetaId || eppEncontrado.tarjetaId || `epp-${eppEncontrado.pedido_epp_id || eppEncontrado.pedidoEppId || eppEncontrado.epp_id || eppEncontrado.id}`);
 
     tarjetaEppIdEnEdicion = tarjetaId;
-    indiceEPPEnEdicion = -1;
+    indiceEPPEnEdicion = resultado.index;
     imagenesEditadasEnModalEPP = false;
 
     eppEnEdicionIndividual = {
@@ -315,7 +317,7 @@ function abrirModalEditarEPP(eppData) {
 }
 
 /**
- * Filtrar EPPs en el buscador de ediciÃ³n
+ * Filtrar EPPs en el buscador de edicion
  */
 async function filtrarEPPsEnEdicion(valor) {
     const dropdown = document.getElementById('modalEditarEPPDropdown');
@@ -368,7 +370,7 @@ async function filtrarEPPsEnEdicion(valor) {
 }
 
 /**
- * Seleccionar un EPP diferente en la ediciÃ³n
+ * Seleccionar un EPP diferente en la edicion
  */
 function seleccionarEPPEnEdicion(epp) {
     console.log('[seleccionarEPPEnEdicion] EPP seleccionado:', epp);
@@ -392,7 +394,7 @@ function seleccionarEPPEnEdicion(epp) {
 }
 
 /**
- * Cerrar modal de ediciÃ³n
+ * Cerrar modal de edicion
  */
 function cerrarModalEditarEPP() {
     console.log('[cerrarModalEditarEPP] Cerrando modal');
@@ -421,7 +423,7 @@ function cerrarModalEditarEPP() {
 }
 
 /**
- * Mostrar fotos en la galerÃ­a del modal
+ * Mostrar fotos en la galería del modal
  */
 function mostrarFotosEnModalEditar() {
     const galeria = document.getElementById('modalEditarEPPFotosGaleria');
@@ -430,12 +432,12 @@ function mostrarFotosEnModalEditar() {
     console.log('[mostrarFotosEnModalEditar] Mostrando fotos. Total en array:', fotosEnEdicionIndividual.length);
     
     fotosEnEdicionIndividual.forEach((foto, index) => {
-        // Obtener URL vÃ¡lida de la foto
+        // Obtener URL valida de la foto
         const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_web || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
         
-        // Validar que la URL sea vÃ¡lida
+        // Validar que la URL sea valida
         if (!fotoUrl) {
-            console.warn(`[mostrarFotosEnModalEditar] Foto ${index} no tiene URL vÃ¡lida, omitiendo`);
+            console.warn(`[mostrarFotosEnModalEditar] Foto ${index} no tiene URL valida, omitiendo`);
             return;
         }
         
@@ -483,7 +485,7 @@ function mostrarFotosEnModalEditar() {
             img.style.opacity = '0.3';
         };
         
-        // Crear el overlay (botÃ³n delete)
+        // Crear el overlay (botón delete)
         const overlay = document.createElement('div');
         overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center';
         
@@ -508,18 +510,18 @@ function mostrarFotosEnModalEditar() {
     
     document.getElementById('modalEditarEPPFotosCount').textContent = fotosEnEdicionIndividual.length;
     
-    // Mostrar galerÃ­a si hay fotos, ocultarla si estÃ¡ vacÃ­a
+    // Mostrar galería si hay fotos, ocultarla si está vacía
     if (galeria.children.length > 0) {
         galeria.style.display = 'grid';
     } else {
         galeria.style.display = 'none';
     }
     
-    console.log('[mostrarFotosEnModalEditar] GalerÃ­a actualizada con', galeria.children.length, 'imÃ¡genes');
+    console.log('[mostrarFotosEnModalEditar] Galería actualizada con', galeria.children.length, 'imágenes');
 }
 
 /**
- * Manejar selecciÃ³n de fotos en el modal
+ * Manejar seleccion de fotos en el modal
  */
 function manejarSeleccionFotosEnModalEditar(event) {
     const files = event.target.files;
@@ -585,9 +587,9 @@ function manejarDropEnModalEditar(event) {
  */
 function eliminarFotoEnModalEditar(index) {
     const foto = fotosEnEdicionIndividual[index];
-    console.log('[eliminarFotoEnModalEditar] Eliminando foto en Ã­ndice:', index, '- Nombre:', foto.nombre || 'sin nombre');
+    console.log('[eliminarFotoEnModalEditar] Eliminando foto en indice:', index, '- Nombre:', foto.nombre || 'sin nombre');
     
-    // Solo revocar blob URLs que creamos en esta sesiÃ³n (que tienen un File object)
+    // Solo revocar blob URLs que creamos en esta sesion (que tienen un File object)
     if (foto && foto.file && foto.previewUrl && foto.previewUrl.startsWith('blob:')) {
         console.log('[eliminarFotoEnModalEditar] Revocando blob URL de archivo temporal');
         URL.revokeObjectURL(foto.previewUrl);
@@ -597,7 +599,7 @@ function eliminarFotoEnModalEditar(index) {
     imagenesEditadasEnModalEPP = true;
     mostrarFotosEnModalEditar();
     
-    // Actualizar la tarjeta visual inmediatamente despuÃ©s de eliminar
+    // Actualizar la tarjeta visual inmediatamente despues de eliminar
     if (tarjetaEppIdEnEdicion) {
         actualizarTarjetaEPPEnDOM(tarjetaEppIdEnEdicion, {
             nombre: eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre,
@@ -624,7 +626,7 @@ document.addEventListener('click', function(e) {
 });
 
 /**
- * Guardar cambios de ediciÃ³n individual
+ * Guardar cambios de edicion individual
  */
 function guardarEdicionEnModalEditarEPP() {
     const cantidad = parseInt(document.getElementById('modalEditarEPPCantidad').value) || 1;
@@ -687,7 +689,7 @@ window.seleccionarEPPEnEdicion = seleccionarEPPEnEdicion;
  */
 function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
     try {
-        console.log('[actualizarTarjetaEPPEnDOM] Iniciando actualizaciÃ³n de tarjeta:', {
+        console.log('[actualizarTarjetaEPPEnDOM] Iniciando actualizacion de tarjeta:', {
             tarjetaId: tarjetaId,
             datos: datos
         });
@@ -708,7 +710,7 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             nombreElemento.textContent = datos.nombre || '-';
             console.log('[actualizarTarjetaEPPEnDOM] Nombre actualizado a:', datos.nombre);
         } else {
-            console.warn('[actualizarTarjetaEPPEnDOM]  No se encontrÃ³ elemento h4 para el nombre');
+            console.warn('[actualizarTarjetaEPPEnDOM]  No se encontro elemento h4 para el nombre');
         }
         
         // Actualizar cantidad y observaciones
@@ -744,12 +746,12 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             }
         }
         
-        // Actualizar imÃ¡genes
+        // Actualizar imagenes
         if (datos.imagenes && datos.imagenes.length > 0) {
-            // Buscar o crear el contenedor de imÃ¡genes
+            // Buscar o crear el contenedor de imagenes
             let containerImagenes = tarjeta.querySelector('.epp-imagenes-container');
             
-            // Crear HTML para las imÃ¡genes
+            // Crear HTML para las imagenes
             let htmlImagenes = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; margin-top: 1rem;">';
             
             for (let i = 0; i < datos.imagenes.length; i++) {
@@ -774,13 +776,13 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             }
             
             containerImagenes.innerHTML = htmlImagenes;
-            console.log('[actualizarTarjetaEPPEnDOM] ImÃ¡genes actualizadas:', datos.imagenes.length);
+            console.log('[actualizarTarjetaEPPEnDOM] Imagenes actualizadas:', datos.imagenes.length);
         } else {
-            // Si no hay imÃ¡genes, limpiar el contenedor
+            // Si no hay Imagenes, limpiar el contenedor
             const containerImagenes = tarjeta.querySelector('.epp-imagenes-container');
             if (containerImagenes) {
                 containerImagenes.innerHTML = '';
-                console.log('[actualizarTarjetaEPPEnDOM] Contenedor de imÃ¡genes limpiado (0 imÃ¡genes)');
+                console.log('[actualizarTarjetaEPPEnDOM] Contenedor de imagenes limpiado (0 imagenes)');
             }
         }
         

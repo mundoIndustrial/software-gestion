@@ -194,11 +194,12 @@ class PedidoImagenesPrendasService
         }
     }
 
-    public function procesarImagenesDeProcesos($request, int $pedidoId, array $procesos, int $prendaIndex): void
+    public function procesarImagenesDeProcesos($request, int $pedidoId, array $procesos, int $prendaIndex, int $prendaId = 0): void
     {
         Log::info('[PedidoImagenesService] Procesando imagenes de procesos', [
             'pedido_id' => $pedidoId,
             'prenda_index' => $prendaIndex,
+            'prenda_id' => $prendaId,
             'procesos_count' => count($procesos),
         ]);
 
@@ -219,6 +220,24 @@ class PedidoImagenesPrendasService
                 continue;
             }
 
+            // Buscar el proceso_prenda_detalle_id usando prenda_id y tipo_proceso_id
+            $procesoDetalle = $prendaId > 0 
+                ? \DB::table('pedidos_procesos_prenda_detalles')
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->where('tipo_proceso_id', $tipoProcesoId)
+                    ->first(['id'])
+                : null;
+
+            $procesoPrendaDetalleId = $procesoDetalle?->id ?? null;
+
+            if (!$procesoPrendaDetalleId && $prendaId > 0) {
+                Log::warning('[PedidoImagenesService] No se encontró proceso_prenda_detalle para prenda', [
+                    'prenda_id' => $prendaId,
+                    'tipo_proceso_id' => $tipoProcesoId,
+                    'tipo_proceso' => $tipoProcesoNombre,
+                ]);
+            }
+
             $imgIdx = 0;
             while (true) {
                 $formKey = "procesos_{$prendaIndex}_{$procesoIdx}_imagenes_{$imgIdx}";
@@ -236,30 +255,35 @@ class PedidoImagenesPrendasService
                         "proceso_{$tipoProcesoNombre}_{$imgIdx}"
                     );
 
-                    PedidosProcessImagenes::create([
-                        'pedido_id' => $pedidoId,
-                        'prenda_index' => $prendaIndex,
-                        'tipo_proceso_id' => $tipoProcesoId,
-                        'tipo_proceso' => $tipoProcesoNombre,
+                    $createData = [
                         'ruta_original' => $resultado['webp'],
-                        'ruta_web' => $resultado['webp'],
+                        'ruta_webp' => $resultado['webp'],
                         'orden' => $imgIdx + 1,
-                        'principal' => $imgIdx === 0 ? 1 : 0,
-                        'ubicaciones' => $ubicaciones,
-                    ]);
+                        'es_principal' => ($imgIdx === 0 ? 1 : 0),
+                    ];
+
+                    // Incluir proceso_prenda_detalle_id si está disponible
+                    if ($procesoPrendaDetalleId) {
+                        $createData['proceso_prenda_detalle_id'] = $procesoPrendaDetalleId;
+                    }
+
+                    PedidosProcessImagenes::create($createData);
 
                     $procesosConImagenes++;
                     Log::debug('[PedidoImagenesService] Imagen de proceso guardada', [
                         'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'tipo_proceso' => $tipoProcesoNombre,
                         'webp' => $resultado['webp'],
                         'orden' => $imgIdx + 1,
+                        'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
                     ]);
 
                     $imgIdx++;
                 } catch (\Exception $e) {
                     Log::error('[PedidoImagenesService] Error procesando imagen de proceso', [
                         'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'tipo_proceso' => $tipoProcesoNombre,
                         'error' => $e->getMessage(),
                     ]);
