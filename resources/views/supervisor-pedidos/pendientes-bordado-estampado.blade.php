@@ -26,8 +26,8 @@
                                 color: white;
                                 padding: 0.75rem 1rem;
                                 display: grid;
-                                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 170px;
-                                gap: 0.6rem;
+                                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                gap: 0.15rem;
                                 font-weight: 600;
                                 font-size: 0.8rem;
                                 text-transform: uppercase;
@@ -77,11 +77,8 @@
                                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                                     </button>
                                 </div>
-                                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem; padding-left: 10px;">
-                                    <span>Fecha de llegada</span>
-                                    <button type="button" class="btn-filter-column" data-col="fecha_llegada" title="Filtrar Fecha de llegada" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
-                                    </button>
+                                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span>Color</span>
                                 </div>
                             </div>
 
@@ -94,15 +91,16 @@
                                     </div>
                                 @else
                                     @foreach($procesosConCantidad as $proceso)
-                                        <div data-row="proceso" style="
+                                        <div data-row="proceso" data-color-guardado="{{ $proceso->color_bordado_estampado ?? '' }}" style="
+                                            --row-bg-color: {{ $proceso->color_bordado_estampado ?: 'white' }};
                                             display: grid;
-                                            grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 170px;
-                                            gap: 0.6rem;
+                                            grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                            gap: 0.15rem;
                                             padding: 1rem;
                                             border-bottom: 1px solid #e5e7eb;
                                             align-items: center;
                                             min-width: min-content;
-                                            background: white;
+                                            background: var(--row-bg-color, white);
                                             transition: background 0.2s ease;
                                         ">
                                         <div>
@@ -164,22 +162,13 @@
                                             @endif
                                         </div>
 
-                                        <div style="padding-left: 10px;">
-                                            <input
-                                                type="datetime-local"
-                                                class="input-fecha-llegada"
-                                                data-recibo-id="{{ $proceso->recibo_id }}"
-                                                value="{{ $proceso->fecha_llegada ? \Carbon\Carbon::parse($proceso->fecha_llegada)->format('Y-m-d\\TH:i') : '' }}"
-                                                style="
-                                                    width: 100%;
-                                                    max-width: 160px;
-                                                    padding: 6px 8px;
-                                                    border-radius: 8px;
-                                                    border: 1px solid #cbd5e1;
-                                                    font-size: 0.8rem;
-                                                    outline: none;
-                                                "
-                                            />
+                                        <!-- Color Selector -->
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div class="color-selector-wrapper" data-recibo-id="{{ $proceso->numero_recibo }}" data-tipo-recibo="{{ $proceso->tipo_recibo }}" style="position: relative; display: flex; gap: 0.3rem; align-items: center;">
+                                                <button type="button" class="color-btn" data-color="#e0f2fe" title="Azul claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #e0f2fe; cursor: pointer; transition: all 0.2s; {{ ($proceso->color_bordado_estampado ?? '') === '#e0f2fe' ? 'box-shadow: 0 0 0 2px #1e40af;' : '' }}"></button>
+                                                <button type="button" class="color-btn" data-color="#fef08a" title="Amarillo" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fef08a; cursor: pointer; transition: all 0.2s; {{ ($proceso->color_bordado_estampado ?? '') === '#fef08a' ? 'box-shadow: 0 0 0 2px #1e40af;' : '' }}"></button>
+                                                <button type="button" class="color-btn" data-color="#fecaca" title="Rojo claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fecaca; cursor: pointer; transition: all 0.2s; {{ ($proceso->color_bordado_estampado ?? '') === '#fecaca' ? 'box-shadow: 0 0 0 2px #1e40af;' : '' }}"></button>
+                                            </div>
                                         </div>
                                         </div>
                                     @endforeach
@@ -264,7 +253,7 @@
 
     [data-row="proceso"]:hover,
     [data-row="proceso"]:focus-within {
-        background: #f9fafb !important;
+        background: var(--row-bg-color, #f9fafb) !important;
     }
 </style>
 @endpush
@@ -471,6 +460,7 @@ async function recargarTablaPendientes() {
         }
 
         inicializarPendientesUI();
+        inicializarSelectorColores();
         aplicarFiltrosEnVista();
         actualizarIndicadoresFiltrosPendientes();
     } catch (e) {
@@ -832,5 +822,99 @@ $(document).ready(function() {
 const styleSpin = document.createElement('style');
 styleSpin.textContent = `@keyframes spinPendientes { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
 document.head.appendChild(styleSpin);
+
+// Inicializar selectores de color
+function inicializarSelectorColores() {
+    document.querySelectorAll('[data-row="proceso"]').forEach((fila) => {
+        const colorGuardado = fila.getAttribute('data-color-guardado');
+        if (!colorGuardado) return;
+
+        fila.style.setProperty('--row-bg-color', colorGuardado);
+        fila.style.background = colorGuardado;
+        const wrapper = fila.querySelector('.color-selector-wrapper');
+        if (!wrapper) return;
+
+        wrapper.querySelectorAll('.color-btn').forEach((btn) => {
+            if (btn.getAttribute('data-color') === colorGuardado) {
+                btn.style.boxShadow = '0 0 0 2px #1e40af';
+            }
+        });
+    });
+
+    document.querySelectorAll('.color-btn').forEach((btn) => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const wrapper = this.closest('.color-selector-wrapper');
+            const reciboId = wrapper.getAttribute('data-recibo-id');
+            const tipoRecibo = wrapper.getAttribute('data-tipo-recibo');
+            const color = this.getAttribute('data-color');
+            const fila = this.closest('[data-row="proceso"]');
+            
+            // Retroalimentación visual en botones
+            wrapper.querySelectorAll('.color-btn').forEach(b => b.style.boxShadow = '');
+            this.style.boxShadow = '0 0 0 2px #1e40af';
+            
+            // Cambiar background de la fila y guardar el color en data
+            if (fila) {
+                fila.style.setProperty('--row-bg-color', color);
+                fila.style.background = color;
+                fila.setAttribute('data-color-guardado', color);
+            }
+            
+            // Guardar en BD
+            guardarColorBordadoEstampado(reciboId, tipoRecibo, color);
+        });
+    });
+}
+
+async function guardarColorBordadoEstampado(reciboId, tipoRecibo, color) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    try {
+        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-bordado-estampado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({
+                numero_recibo: reciboId,
+                tipo_recibo: tipoRecibo,
+                color: color
+            })
+        });
+
+        const contentType = response.headers.get('content-type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            console.error('Error al guardar color (respuesta no JSON):', response.status, text);
+            return;
+        }
+
+        if (!response.ok) {
+            console.error('Error al guardar color (HTTP):', response.status, data);
+            return;
+        }
+
+        if (!data?.success) {
+            console.error('Error al guardar color (API):', data);
+        } else {
+            console.log('Color guardado exitosamente:', data);
+            // NO recargar tabla - el color ya está visible en el front
+        }
+    } catch (error) {
+        console.error('Error al guardar color:', error);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarSelectorColores);
+} else {
+    inicializarSelectorColores();
+}
 </script>
 @endpush

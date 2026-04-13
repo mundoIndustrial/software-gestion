@@ -93,6 +93,8 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
             ->name('recibos.guardar-color-costura');
         Route::post('/recibos/guardar-color-control-calidad', [SupervisorReceiptsController::class, 'guardarColorControlCalidad'])
             ->name('recibos.guardar-color-control-calidad');
+        Route::post('/recibos/guardar-color-bordado-estampado', [SupervisorReceiptsController::class, 'guardarColorBordadoEstampado'])
+            ->name('recibos.guardar-color-bordado-estampado');
         Route::post('/ordenes/{pedidoId}/costura/{prendaId}/activar-recibo', [SupervisorReceiptsController::class, 'activarReciboCostura'])
             ->whereNumber('pedidoId')
             ->whereNumber('prendaId')

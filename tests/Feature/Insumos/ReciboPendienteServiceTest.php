@@ -107,5 +107,57 @@ class ReciboPendienteServiceTest extends TestCase
                 ->count()
         );
     }
-}
 
+    public function test_insumos_pedidos_no_crea_proceso_corte_ni_mueve_area_a_corte(): void
+    {
+        $pedido = PedidoProduccion::create([
+            'numero_pedido' => 910003,
+            'cliente' => 'Cliente Test Insumos 3',
+            'estado' => 'PENDIENTE_INSUMOS',
+            'area' => 'INSUMOS',
+        ]);
+
+        $prenda = PrendaPedido::create([
+            'pedido_produccion_id' => $pedido->id,
+            'nombre_prenda' => 'Buzo Test',
+            'descripcion' => 'Prenda para validar insumos pedidos',
+            'de_bodega' => false,
+        ]);
+
+        $recibo = ConsecutivoReciboPedido::create([
+            'pedido_produccion_id' => $pedido->id,
+            'prenda_id' => $prenda->id,
+            'tipo_recibo' => 'COSTURA',
+            'consecutivo_actual' => 703,
+            'consecutivo_inicial' => 703,
+            'activo' => true,
+            'estado' => 'PENDIENTE_INSUMOS',
+            'area' => 'INSUMOS',
+        ]);
+
+        $resultado = app(CambiarEstadoReciboInsumosUseCase::class)
+            ->execute($recibo->id, 'Insumos Pedidos');
+
+        $this->assertTrue($resultado['success']);
+        $this->assertDatabaseHas('consecutivos_recibos_pedidos', [
+            'id' => $recibo->id,
+            'estado' => 'INSUMOS_PEDIDOS',
+            'area' => 'INSUMOS',
+        ]);
+
+        $this->assertDatabaseHas('pedidos_produccion', [
+            'id' => $pedido->id,
+            'estado' => 'PENDIENTE_INSUMOS',
+            'area' => 'INSUMOS',
+        ]);
+
+        $this->assertEquals(
+            0,
+            ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $prenda->id)
+                ->where('numero_recibo', 703)
+                ->where('proceso', 'Corte')
+                ->count()
+        );
+    }
+}

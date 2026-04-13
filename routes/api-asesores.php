@@ -9,6 +9,7 @@ use App\Infrastructure\Http\Controllers\Asesores\AsesoresRealtimePedidosControll
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
 use App\Infrastructure\Http\Controllers\Asesores\EppsPedidoController;
 use App\Infrastructure\Http\Controllers\Asesores\EntregasDespachoController;
+use App\Infrastructure\Http\Controllers\Asesores\ObtenerClientesAutocompleteController;
 use App\Infrastructure\Http\Controllers\Asesores\ObtenerPrendasAutocompleteController;
 use App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController;
 use App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController;
@@ -195,6 +196,8 @@ function registerAsesoresCatalogosRoutes(): void
         ->name('catalogos.colores');
     Route::get('/prendas/autocomplete', [ObtenerPrendasAutocompleteController::class, 'obtenerPrendas'])
         ->name('prendas.autocomplete');
+    Route::get('/clientes/autocomplete', [ObtenerClientesAutocompleteController::class, 'obtenerClientes'])
+        ->name('clientes.autocomplete');
     Route::get('/tipos-manga', [PrendaEditorController::class, 'tiposManga'])
         ->name('tipos-manga');
     Route::post('/tipos-manga', [PrendaEditorController::class, 'crearTipoManga'])

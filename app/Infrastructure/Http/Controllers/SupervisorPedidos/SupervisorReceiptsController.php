@@ -225,6 +225,59 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Guardar color de fila en vista de Bordado y Estampado (Logo)
+     */
+    public function guardarColorBordadoEstampado(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'numero_recibo' => 'required|string',
+                'tipo_recibo' => 'required|string',
+                'color' => 'required|string|max:100',
+            ]);
+
+            $numeroRecibo = trim((string) $validated['numero_recibo']);
+            $tipoRecibo = trim((string) $validated['tipo_recibo']);
+            $color = trim((string) $validated['color']);
+
+            \Log::info('[GUARDAR-COLOR-BORDADO-START]', compact('numeroRecibo', 'tipoRecibo', 'color'));
+
+            $updated = DB::table('consecutivos_recibos_pedidos')
+                ->where('consecutivo_actual', $numeroRecibo)
+                ->where('tipo_recibo', $tipoRecibo)
+                ->update([
+                    'color_bordado_estampado' => $color,
+                    'updated_at' => now(),
+                ]);
+
+            \Log::info('[GUARDAR-COLOR-BORDADO-UPDATED]', ['updated' => $updated]);
+
+            if ($updated <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró recibo para actualizar color de Bordado y Estampado',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Color de Bordado y Estampado guardado correctamente',
+                'receiptNumber' => $numeroRecibo,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[GUARDAR-COLOR-BORDADO-ERROR]', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar color: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar vista de pendientes de bordados y estampados por recibos
      */
     public function pendientesBordadoEstampado()

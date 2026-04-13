@@ -71,7 +71,8 @@
                         Cliente
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="cliente_editable" name="cliente">
+                    <input type="text" id="cliente_editable" name="cliente" list="clientes-editable-list">
+                    <datalist id="clientes-editable-list"></datalist>
                 </div>
 
                 <div class="form-group">
@@ -458,6 +459,7 @@
 
     <!-- Inicializador del buscador de cotizaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-buscador-cotizacion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/inicializacion/cliente-autocomplete-init.js') }}?v={{ time() }}"></script>
     
     <!-- Script para manejar los botones de agregar prenda y EPP -->
 <script>

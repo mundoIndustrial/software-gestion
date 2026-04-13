@@ -73,7 +73,8 @@
                         Cliente
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="cliente_editable" name="cliente" value="{{ ($modoEdicion ?? false) ? ($pedido->cliente_nombre_display ?? '') : '' }}">
+                    <input type="text" id="cliente_editable" name="cliente" list="clientes-editable-list" value="{{ ($modoEdicion ?? false) ? ($pedido->cliente_nombre_display ?? '') : '' }}">
+                    <datalist id="clientes-editable-list"></datalist>
                 </div>
 
                 <div class="form-group">
@@ -363,6 +364,7 @@
 
     <!-- ─── Inicialización UI: Formatters, Buttons, Dropdowns, Handlers ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/input-formatter-init.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/cliente-autocomplete-init.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/leave-button-setup.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/items-dropdown-init.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/item-type-handlers.js') }}?v={{ $v }}"></script>

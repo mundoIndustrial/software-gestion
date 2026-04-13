@@ -43,6 +43,8 @@ use App\Application\SupervisorPedidos\DTOs\SelectOrderRequest;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Exceptions\AuthenticationException;
 
@@ -338,6 +340,272 @@ class SupervisorOrdersController extends Controller
         $response = $this->getComparisonDataUseCase->execute($request);
 
         return response()->json($response->toArray());
+    }
+
+    /**
+     * Panel de estadísticas de asesoras para supervisor de pedidos.
+     */
+    public function estadisticasAsesoras(Request $request)
+    {
+        $hoy = Carbon::now();
+        $periodo = strtolower((string) $request->query('periodo', 'mes'));
+        if (!in_array($periodo, ['mes', 'ano', 'rango'], true)) {
+            $periodo = 'mes';
+        }
+
+        $year = (int) $request->query('year', $hoy->year);
+        $month = (int) $request->query('month', $hoy->month);
+        if ($month < 1 || $month > 12) {
+            $month = $hoy->month;
+        }
+
+        if ($periodo === 'ano') {
+            $inicioActual = Carbon::create($year, 1, 1)->startOfDay();
+            $finActual = $inicioActual->copy()->endOfYear();
+            $inicioAnterior = $inicioActual->copy()->subYear()->startOfYear();
+            $finAnterior = $inicioAnterior->copy()->endOfYear();
+            $periodoActualLabel = (string) $year;
+            $periodoAnteriorLabel = (string) ($year - 1);
+        } elseif ($periodo === 'rango') {
+            $desdeInput = (string) $request->query('desde', $hoy->copy()->startOfMonth()->toDateString());
+            $hastaInput = (string) $request->query('hasta', $hoy->toDateString());
+
+            try {
+                $inicioActual = Carbon::parse($desdeInput)->startOfDay();
+            } catch (\Throwable $e) {
+                $inicioActual = $hoy->copy()->startOfMonth()->startOfDay();
+            }
+
+            try {
+                $finActual = Carbon::parse($hastaInput)->endOfDay();
+            } catch (\Throwable $e) {
+                $finActual = $hoy->copy()->endOfDay();
+            }
+
+            if ($inicioActual->gt($finActual)) {
+                [$inicioActual, $finActual] = [$finActual->copy()->startOfDay(), $inicioActual->copy()->endOfDay()];
+            }
+
+            $diasPeriodo = max(1, $inicioActual->diffInDays($finActual) + 1);
+            $finAnterior = $inicioActual->copy()->subDay()->endOfDay();
+            $inicioAnterior = $finAnterior->copy()->subDays($diasPeriodo - 1)->startOfDay();
+
+            $periodoActualLabel = $inicioActual->format('d/m/Y') . ' - ' . $finActual->format('d/m/Y');
+            $periodoAnteriorLabel = $inicioAnterior->format('d/m/Y') . ' - ' . $finAnterior->format('d/m/Y');
+        } else {
+            $inicioActual = Carbon::create($year, $month, 1)->startOfDay();
+            $finActual = $inicioActual->copy()->endOfMonth();
+            $inicioAnterior = $inicioActual->copy()->subMonthNoOverflow()->startOfMonth();
+            $finAnterior = $inicioAnterior->copy()->endOfMonth();
+            $periodoActualLabel = $inicioActual->copy()->locale('es')->translatedFormat('F Y');
+            $periodoAnteriorLabel = $inicioAnterior->copy()->locale('es')->translatedFormat('F Y');
+        }
+
+        $baseQuery = fn () => DB::table('pedidos_produccion')
+            ->whereNull('deleted_at')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
+            ->where(function ($query) {
+                $query->whereNull('estado')
+                    ->orWhere('estado', '!=', 'Anulada');
+            });
+
+        $totalActual = $baseQuery()
+            ->whereBetween('created_at', [$inicioActual, $finActual])
+            ->count();
+
+        $totalAnterior = $baseQuery()
+            ->whereBetween('created_at', [$inicioAnterior, $finAnterior])
+            ->count();
+
+        $variacionPedidos = $totalAnterior > 0
+            ? round((($totalActual - $totalAnterior) / $totalAnterior) * 100, 2)
+            : ($totalActual > 0 ? 100.0 : 0.0);
+
+        $rankingActual = $baseQuery()
+            ->leftJoin('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
+            ->whereBetween('pedidos_produccion.created_at', [$inicioActual, $finActual])
+            ->selectRaw('pedidos_produccion.asesor_id, COALESCE(u.name, "Sin asesora") as asesora_nombre, COUNT(*) as total')
+            ->groupBy('pedidos_produccion.asesor_id', 'u.name')
+            ->orderByDesc('total')
+            ->get();
+
+        $rankingAnterior = $baseQuery()
+            ->whereBetween('created_at', [$inicioAnterior, $finAnterior])
+            ->selectRaw('asesor_id, COUNT(*) as total')
+            ->groupBy('asesor_id')
+            ->pluck('total', 'asesor_id');
+
+        $rankingAsesoras = $rankingActual->map(function ($fila) use ($rankingAnterior) {
+            $asesorId = $fila->asesor_id;
+            $totalAnteriorAsesora = (int) ($rankingAnterior[$asesorId] ?? 0);
+            $diferencia = (int) $fila->total - $totalAnteriorAsesora;
+            $variacion = $totalAnteriorAsesora > 0
+                ? round(($diferencia / $totalAnteriorAsesora) * 100, 2)
+                : ((int) $fila->total > 0 ? 100.0 : 0.0);
+
+            return [
+                'asesor_id' => $asesorId,
+                'asesora_nombre' => $fila->asesora_nombre,
+                'total_actual' => (int) $fila->total,
+                'total_anterior' => $totalAnteriorAsesora,
+                'diferencia' => $diferencia,
+                'variacion' => $variacion,
+            ];
+        });
+
+        $clientesActualPeriodo = $baseQuery()
+            ->whereBetween('created_at', [$inicioActual, $finActual])
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('LOWER(TRIM(cliente)) as cliente_key')
+            ->groupBy('cliente_key');
+
+        $clientesHistoricos = $baseQuery()
+            ->where('created_at', '<', $inicioActual)
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('LOWER(TRIM(cliente)) as cliente_key')
+            ->groupBy('cliente_key');
+
+        $clientesRecurrentesCount = DB::query()
+            ->fromSub($clientesActualPeriodo, 'actual')
+            ->joinSub($clientesHistoricos, 'historico', function ($join) {
+                $join->on('actual.cliente_key', '=', 'historico.cliente_key');
+            })
+            ->count();
+
+        $clientesUnicosPeriodo = $baseQuery()
+            ->whereBetween('created_at', [$inicioActual, $finActual])
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('COUNT(DISTINCT LOWER(TRIM(cliente))) as total')
+            ->value('total') ?? 0;
+
+        $porcentajeRecompra = $clientesUnicosPeriodo > 0
+            ? round(($clientesRecurrentesCount / $clientesUnicosPeriodo) * 100, 2)
+            : 0.0;
+
+        $pedidosClientesPeriodo = $baseQuery()
+            ->leftJoin('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
+            ->whereBetween('pedidos_produccion.created_at', [$inicioActual, $finActual])
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('LOWER(TRIM(pedidos_produccion.cliente)) as cliente_key')
+            ->addSelect([
+                'pedidos_produccion.cliente as cliente_nombre',
+                'pedidos_produccion.numero_pedido',
+                'pedidos_produccion.created_at',
+                'pedidos_produccion.estado',
+            ])
+            ->selectRaw('COALESCE(u.name, "Sin asesora") as asesora_nombre')
+            ->orderByDesc('pedidos_produccion.created_at')
+            ->get();
+
+        $clientesHistoricosSet = $baseQuery()
+            ->where('created_at', '<', $inicioActual)
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('LOWER(TRIM(cliente)) as cliente_key')
+            ->groupBy('cliente_key')
+            ->pluck('cliente_key')
+            ->flip();
+
+        $clientesRegistradosPreviosSet = DB::table('clientes')
+            ->whereNotNull('nombre')
+            ->whereRaw("TRIM(nombre) <> ''")
+            ->where('created_at', '<', $inicioActual)
+            ->selectRaw('LOWER(TRIM(nombre)) as cliente_key')
+            ->groupBy('cliente_key')
+            ->pluck('cliente_key')
+            ->flip();
+
+        $clientesConPedidos = $pedidosClientesPeriodo
+            ->groupBy('cliente_key')
+            ->map(function ($rows, $clienteKey) use ($clientesHistoricosSet) {
+                $clienteNombre = $rows->first()->cliente_nombre;
+                $pedidos = $rows->map(function ($pedido) {
+                    $fecha = $pedido->created_at ? Carbon::parse($pedido->created_at) : null;
+                    return [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'fecha' => $fecha ? $fecha->format('d/m/Y H:i') : '-',
+                        'asesora_nombre' => $pedido->asesora_nombre,
+                        'estado' => $pedido->estado ?: 'Sin estado',
+                    ];
+                })->values();
+
+                return [
+                    'cliente_key' => $clienteKey,
+                    'cliente_nombre' => $clienteNombre,
+                    'total_pedidos' => $rows->count(),
+                    'es_recurrente' => isset($clientesHistoricosSet[$clienteKey]),
+                    'pedidos' => $pedidos,
+                ];
+            })
+            ->sortByDesc('total_pedidos')
+            ->values();
+
+        $clientesNuevos = $clientesConPedidos
+            ->filter(function ($cliente) use ($clientesRegistradosPreviosSet) {
+                return !$cliente['es_recurrente']
+                    && !isset($clientesRegistradosPreviosSet[$cliente['cliente_key']]);
+            })
+            ->values();
+        $clientesNuevosCount = $clientesNuevos->count();
+
+        $topClientes = $clientesConPedidos
+            ->take(8)
+            ->map(fn ($cliente) => [
+                'cliente_nombre' => $cliente['cliente_nombre'],
+                'total' => $cliente['total_pedidos'],
+                'es_recurrente' => $cliente['es_recurrente'],
+            ])
+            ->values();
+
+        $clientesActualSet = $clientesConPedidos->pluck('cliente_key')->flip();
+        $clientesPeriodoAnterior = $baseQuery()
+            ->whereBetween('created_at', [$inicioAnterior, $finAnterior])
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('LOWER(TRIM(cliente)) as cliente_key, MIN(cliente) as cliente_nombre, COUNT(*) as total_anterior, MAX(created_at) as ultima_compra')
+            ->groupBy('cliente_key')
+            ->get();
+
+        $clientesInactivos = $clientesPeriodoAnterior
+            ->filter(fn ($cliente) => !isset($clientesActualSet[$cliente->cliente_key]))
+            ->map(function ($cliente) {
+                $ultimaCompra = $cliente->ultima_compra ? Carbon::parse($cliente->ultima_compra)->format('d/m/Y') : '-';
+                return [
+                    'cliente_nombre' => $cliente->cliente_nombre,
+                    'total_anterior' => (int) $cliente->total_anterior,
+                    'ultima_compra' => $ultimaCompra,
+                ];
+            })
+            ->sortByDesc('total_anterior')
+            ->values();
+
+        return view('supervisor-pedidos.estadisticas-asesoras', [
+            'periodo' => $periodo,
+            'year' => $year,
+            'month' => $month,
+            'desde' => $inicioActual->toDateString(),
+            'hasta' => $finActual->toDateString(),
+            'periodoActual' => $periodoActualLabel,
+            'periodoAnterior' => $periodoAnteriorLabel,
+            'totalActual' => $totalActual,
+            'totalAnterior' => $totalAnterior,
+            'diferenciaPedidos' => $totalActual - $totalAnterior,
+            'variacionPedidos' => $variacionPedidos,
+            'rankingAsesoras' => $rankingAsesoras,
+            'clientesUnicosMes' => (int) $clientesUnicosPeriodo,
+            'clientesNuevosCount' => $clientesNuevosCount,
+            'clientesRecurrentesCount' => (int) $clientesRecurrentesCount,
+            'porcentajeRecompra' => $porcentajeRecompra,
+            'topClientes' => $topClientes,
+            'clientesConPedidos' => $clientesConPedidos,
+            'clientesNuevos' => $clientesNuevos,
+            'clientesInactivos' => $clientesInactivos,
+        ]);
     }
 
     /**

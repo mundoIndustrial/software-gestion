@@ -8,6 +8,7 @@ use App\Models\PedidoProduccion;
 use App\Models\ProcesoPrenda;
 use App\Models\ReciboVistoInsumo;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
 {
@@ -46,7 +47,9 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ]);
             }
 
-            $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $estadoReciboNormalizado);
+            if ($this->debeCrearProcesoCorte($estadoReciboNormalizado)) {
+                $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $estadoReciboNormalizado);
+            }
 
             return [
                 'success' => true,
@@ -209,6 +212,12 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             default => $estadoRecibo,
         };
     }
+    private function debeCrearProcesoCorte(string $estadoRecibo): bool
+    {
+        $estadoNormalizado = strtolower(trim(Str::ascii($estadoRecibo)));
+        return in_array($estadoNormalizado, ['no iniciado', 'en ejecucion'], true);
+    }
+
     private function crearProcesoCorteSiNoExiste(
         ConsecutivoReciboPedido $recibo,
         ?PedidoProduccion $pedido,

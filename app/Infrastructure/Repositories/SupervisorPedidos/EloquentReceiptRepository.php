@@ -243,6 +243,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'crp.notas as recibo_notas',
                 'ppd.fecha_aprobacion',
                 'rfl.fecha_llegada',
+                'crp.color_bordado_estampado',
             ])
             ->whereIn('crp.tipo_recibo', $receiptTypes)
             ->where('crp.activo', 1)

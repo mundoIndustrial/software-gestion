@@ -76,6 +76,14 @@
                         <span class="menu-label">Pedidos Ocultos</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.estadisticas-asesoras') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.estadisticas-asesoras') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">insights</span>
+                        <span class="menu-label">Stats Asesoras</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

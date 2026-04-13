@@ -169,22 +169,26 @@
         const nombrePrenda = proceso?.nombre_prenda || '';
         const asesor = proceso?.asesor || '';
         const tipoRecibo = renderReceiptTypeBadge(proceso?.tipo_recibo || '', escapeHtml);
+        const tipoReciboRaw = proceso?.tipo_recibo || '';
         const fechaAprobacion = formatDateTime(proceso?.fecha_aprobacion);
-        const fechaLlegada = formatDatetimeLocal(proceso?.fecha_llegada);
-        const reciboId = proceso?.recibo_id ?? '';
+        const colorBordadoEstampado = proceso?.color_bordado_estampado || '';
+
+        if (!tipoReciboRaw) {
+            console.warn('[RENDER-EMBROIDERY] Falta tipo_recibo en proceso:', proceso);
+        }
 
         return `
-            <div data-row="proceso" style="
+            <div data-row="proceso" data-color-guardado="${colorBordadoEstampado}" style="
                 display: grid;
-                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 170px;
-                gap: 0.6rem;
+                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                gap: 0.15rem;
                 padding: 1rem;
                 border-bottom: 1px solid #e5e7eb;
                 align-items: center;
                 min-width: min-content;
-                background: white;
+                background: ${colorBordadoEstampado || 'white'};
                 transition: background 0.2s ease;
-            " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+            " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=this.getAttribute('data-color-guardado') || 'white'">
                 <div><span>${escapeHtml(fechaCreacion)}</span></div>
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>
@@ -192,22 +196,12 @@
                 <div><span>${escapeHtml(String(asesor))}</span></div>
                 <div>${tipoRecibo}</div>
                 <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>
-                <div style="padding-left: 10px;">
-                    <input
-                        type="datetime-local"
-                        class="input-fecha-llegada"
-                        data-recibo-id="${escapeHtml(String(reciboId))}"
-                        value="${escapeHtml(fechaLlegada)}"
-                        style="
-                            width: 100%;
-                            max-width: 160px;
-                            padding: 6px 8px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            font-size: 0.8rem;
-                            outline: none;
-                        "
-                    />
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="color-selector-wrapper" data-recibo-id="${escapeHtml(String(numeroRecibo))}" data-tipo-recibo="${escapeHtml(tipoReciboRaw)}" style="position: relative; display: flex; gap: 0.3rem; align-items: center;">
+                        <button type="button" class="color-btn" data-color="#e0f2fe" title="Azul claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #e0f2fe; cursor: pointer; transition: all 0.2s; ${colorBordadoEstampado === '#e0f2fe' ? 'box-shadow: 0 0 0 2px #1e40af;' : ''}"></button>
+                        <button type="button" class="color-btn" data-color="#fef08a" title="Amarillo" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fef08a; cursor: pointer; transition: all 0.2s; ${colorBordadoEstampado === '#fef08a' ? 'box-shadow: 0 0 0 2px #1e40af;' : ''}"></button>
+                        <button type="button" class="color-btn" data-color="#fecaca" title="Rojo claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fecaca; cursor: pointer; transition: all 0.2s; ${colorBordadoEstampado === '#fecaca' ? 'box-shadow: 0 0 0 2px #1e40af;' : ''}"></button>
+                    </div>
                 </div>
             </div>
         `;
