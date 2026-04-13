@@ -129,6 +129,8 @@
         <script>
         (function() {
             let bodegaTabActiva = 'novedades';
+            let currentPage = 1;
+            let totalPages = 1;
             const rutaBase = window.location.pathname.startsWith('/despacho') ? '/despacho' : '/gestion-bodega';
 
             const bellBtn = document.getElementById('bodegaBellBtn');
@@ -141,7 +143,7 @@
                 e.stopPropagation();
                 const isOpen = dropdown.style.display === 'block';
                 dropdown.style.display = isOpen ? 'none' : 'block';
-                if (!isOpen) cargarNotificacionesBodega();
+                if (!isOpen) cargarNotificacionesBodega(1);
             });
 
             document.addEventListener('click', function(e) {
@@ -160,14 +162,15 @@
                     }
                 })
                 .then(r => r.json())
-                .then(data => { if (data.success) cargarNotificacionesBodega(); })
+                .then(data => { if (data.success) cargarNotificacionesBodega(1); })
                 .catch(err => console.error('Error marcar todas:', err));
             });
 
-            function cargarNotificacionesBodega() {
-                console.log('[BODEGA NOTIF] Iniciando carga de notificaciones desde:', rutaBase + '/notificaciones');
+            function cargarNotificacionesBodega(page = 1) {
+                console.log('[BODEGA NOTIF] Iniciando carga de notificaciones página ' + page + ' desde:', rutaBase + '/notificaciones');
+                currentPage = page;
                 
-                fetch(rutaBase + '/notificaciones', {
+                fetch(rutaBase + '/notificaciones?page=' + page + '&per_page=50', {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
@@ -183,6 +186,7 @@
                         console.log('[BODEGA NOTIF] Respuesta recibida:', data);
                         console.log('[BODEGA NOTIF] data.notificaciones:', data.notificaciones?.length || 0, 'items');
                         console.log('[BODEGA NOTIF] data.novedades:', data.novedades?.length || 0, 'items');
+                        console.log('[BODEGA NOTIF] pagination:', data.pagination);
                         
                         if (status === 401) {
                             console.warn('[BODEGA NOTIF] No autenticado (401)');
@@ -197,6 +201,11 @@
                             console.warn('[BODEGA NOTIF] API respondió con success: false', data);
                             return;
                         }
+
+                        totalPages = Math.max(
+                            data.pagination.total_pages_novedades || 1,
+                            data.pagination.total_pages_anuladas || 1
+                        );
 
                         const badge = document.getElementById('bodegaBellBadge');
                         const list = document.getElementById('bodegaBellList');
@@ -238,6 +247,23 @@
                             </div>`;
                         }
                         html += `</div>`;
+
+                        // Agregar controles de paginación
+                        if (totalPages > 1) {
+                            html += `
+                            <div style="display:flex; justify-content:center; align-items:center; gap:8px; padding:0.8rem; border-top:1px solid #e2e8f0; background:#f8fafc;">
+                                <button id="bodegaPrevBtn" style="padding:4px 8px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; font-size:0.8rem; ${page === 1 ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="event.stopPropagation(); cargarNotificacionesBodega(${Math.max(1, page - 1)})">
+                                    ← Anterior
+                                </button>
+                                <span style="font-size:0.85rem; color:#64748b; padding:0 8px;">
+                                    Página <strong>${page}</strong> de <strong>${totalPages}</strong>
+                                </span>
+                                <button id="bodegaNextBtn" style="padding:4px 8px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; font-size:0.8rem; ${page === totalPages ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="event.stopPropagation(); cargarNotificacionesBodega(${Math.min(totalPages, page + 1)})">
+                                    Siguiente →
+                                </button>
+                            </div>
+                            `;
+                        }
 
                         list.innerHTML = html;
                         console.log('[BODEGA NOTIF] HTML renderizado. Total items: ' + todasLasNovedades.length);
@@ -293,10 +319,13 @@
                 .catch(err => console.error('Error toggle visto:', err));
             }
 
+            // Hacer la función global
+            window.cargarNotificacionesBodega = cargarNotificacionesBodega;
+
             // Auto-load on page and refresh every 30s
             document.addEventListener('DOMContentLoaded', function() {
                 cargarNotificacionesBodega();
-                setInterval(cargarNotificacionesBodega, 30000);
+                setInterval(() => cargarNotificacionesBodega(1), 30000);
             });
         })();
         </script>

@@ -10,7 +10,7 @@ use App\Models\User;
 
 class DespachoNotificacionesApplicationService
 {
-    public function obtenerNotificaciones(User $user): array
+    public function obtenerNotificaciones(User $user, int $page = 1, int $perPage = 50): array
     {
         $pedidosVistosIds = PedidoVistoSupervisor::where('user_id', $user->id)->pluck('pedido_id')->toArray();
 
@@ -41,16 +41,26 @@ class DespachoNotificacionesApplicationService
         $newsVistosIds = NewsVisto::where('user_id', $user->id)->pluck('news_id')->toArray();
 
         $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
+        
+        // Contar el total de novedades para paginación
+        $totalNovedades = News::whereIn('event_type', $novedadesTipos)
+            ->where('created_at', '>=', now()->subMonths(3))
+            ->count();
+        
         $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
             ->where('created_at', '>=', now()->subMonths(3))
             ->orderBy('created_at', 'desc')
-            ->limit(200)
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
             ->get();
 
         \Log::info('[Despacho Notificaciones] Query novedades', [
             'tipos' => $novedadesTipos,
             'desde' => now()->subMonths(3)->toDateTimeString(),
+            'pagina' => $page,
+            'por_pagina' => $perPage,
             'total_encontradas' => $novedadesQuery->count(),
+            'total_historicas' => $totalNovedades,
             'total_news_table' => News::count(),
         ]);
 
@@ -61,8 +71,16 @@ class DespachoNotificacionesApplicationService
             ->with(['asesora:id,name'])
             ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'updated_at'])
             ->orderBy('updated_at', 'desc')
-            ->limit(50)
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
             ->get();
+        
+        // Contar total de órdenes anuladas
+        $totalAnuladas = PedidoProduccion::where('estado', 'Anulada')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '>', 0)
+            ->where('updated_at', '>=', now()->subMonths(3))
+            ->count();
 
         $novedades = $novedadesQuery->map(function ($news) use ($newsVistosIds) {
             $icono = match ($news->event_type) {
@@ -115,15 +133,28 @@ class DespachoNotificacionesApplicationService
         $todasNovedades = $novedades->concat($novedadesAnuladas)->sortByDesc('timestamp')->values();
         $totalNovedadesNoVistas = $todasNovedades->where('visto', false)->count();
 
+        $totalPaginasNovedades = ceil($totalNovedades / $perPage);
+        $totalPaginasAnuladas = ceil($totalAnuladas / $perPage);
+
         return [
             'success' => true,
             'notificaciones' => $notificaciones->values(),
             'novedades' => $todasNovedades,
             'totalPendientes' => $notificaciones->count(),
             'totalOrdenesNoVistas' => $totalOrdenesNoVistas,
-            'totalNovedades' => $todasNovedades->count(),
+            'totalNovedades' => $totalNovedades,
+            'totalAnuladas' => $totalAnuladas,
             'totalNovedadesNoVistas' => $totalNovedadesNoVistas,
             'totalGeneral' => $totalOrdenesNoVistas + $totalNovedadesNoVistas,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total_novedades' => $totalNovedades,
+                'total_anuladas' => $totalAnuladas,
+                'total_pages_novedades' => $totalPaginasNovedades,
+                'total_pages_anuladas' => $totalPaginasAnuladas,
+                'has_more' => $page < max($totalPaginasNovedades, $totalPaginasAnuladas),
+            ],
         ];
     }
 
