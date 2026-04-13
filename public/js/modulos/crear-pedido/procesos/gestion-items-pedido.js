@@ -69,6 +69,62 @@ class GestionItemsUI {
         if (this.itemsState) this.itemsState.prendasEliminadas = Array.isArray(value) ? value : [];
     }
 
+    _normalizarIdentificador(valor) {
+        if (valor === null || valor === undefined || valor === '') return null;
+        if (typeof valor === 'number' && !Number.isNaN(valor)) return String(valor);
+
+        const texto = String(valor).trim();
+        if (!texto) return null;
+
+        const matchTarjeta = texto.match(/^epp[-:](.+)$/i);
+        if (matchTarjeta && matchTarjeta[1]) {
+            return String(matchTarjeta[1]).trim();
+        }
+
+        return texto;
+    }
+
+    _asegurarTarjetaIdEpp(epp) {
+        if (!epp || typeof epp !== 'object') return epp;
+
+        if (!epp.tarjetaId) {
+            const baseId = epp.pedido_epp_id || epp.epp_id || epp.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            epp.tarjetaId = `epp-${baseId}`;
+        }
+
+        return epp;
+    }
+
+    _generarPrendaLocalId(prenda = {}) {
+        const baseId = prenda.prenda_pedido_id || prenda.id || null;
+        if (baseId !== null && baseId !== undefined && baseId !== '') {
+            return `prenda-${baseId}`;
+        }
+
+        return `prenda-local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    _asegurarIdentidadPrenda(prenda) {
+        if (!prenda || typeof prenda !== 'object') return prenda;
+
+        if (!prenda.prenda_pedido_id && prenda.id) {
+            prenda.prenda_pedido_id = prenda.id;
+        }
+
+        if (!prenda._local_id) {
+            prenda._local_id = this._generarPrendaLocalId(prenda);
+        }
+
+        return prenda;
+    }
+
+    _obtenerClavePrenda(prenda) {
+        if (!prenda || typeof prenda !== 'object') return null;
+        const id = prenda.prenda_pedido_id || prenda.id || prenda._local_id || null;
+        if (id === null || id === undefined || id === '') return null;
+        return `prenda:${id}`;
+    }
+
     _stateCollection(tipo) {
         return this.itemsState?.getCollection(tipo) || null;
     }
@@ -129,23 +185,110 @@ class GestionItemsUI {
         return itemsOrdenados;
     }
 
+    obtenerItemPorIndiceVisual(indiceVisual) {
+        const indice = Number.parseInt(indiceVisual, 10);
+        if (!Number.isInteger(indice) || indice < 0) {
+            return null;
+        }
+
+        const orden = this.ordenItems?.[indice];
+        if (!orden) {
+            return null;
+        }
+
+        const collection = this._stateCollection(orden.tipo);
+        return collection?.[orden.index] || null;
+    }
+
+    obtenerPrendaPorIndiceVisual(indiceVisual) {
+        const indice = Number.parseInt(indiceVisual, 10);
+        if (!Number.isInteger(indice) || indice < 0) {
+            return null;
+        }
+
+        const orden = this.ordenItems?.[indice];
+        if (!orden || orden.tipo !== 'prenda') {
+            return null;
+        }
+
+        return this.prendas?.[orden.index] || null;
+    }
+
+    buscarEPPEnEstado(referencia = {}) {
+        const tarjetaId = this._normalizarIdentificador(referencia.tarjetaId);
+        const pedidoEppId = this._normalizarIdentificador(referencia.pedidoEppId || referencia.pedido_epp_id);
+        const eppId = this._normalizarIdentificador(referencia.eppId || referencia.epp_id || referencia.id);
+
+        const index = this.epps.findIndex((epp) => {
+            const tarjetaActual = this._normalizarIdentificador(epp?.tarjetaId);
+            const pedidoActual = this._normalizarIdentificador(epp?.pedido_epp_id);
+            const eppActual = this._normalizarIdentificador(epp?.epp_id || epp?.id);
+
+            if (tarjetaId && tarjetaActual === tarjetaId) return true;
+            if (pedidoEppId && pedidoActual === pedidoEppId) return true;
+            if (eppId && (eppActual === eppId || pedidoActual === eppId)) return true;
+
+            return false;
+        });
+
+        if (index === -1) {
+            return { epp: null, index: -1 };
+        }
+
+        return {
+            epp: this.epps[index],
+            index
+        };
+    }
+
+    actualizarEPPEnEstado(referencia = {}, cambios = {}) {
+        const { epp, index } = this.buscarEPPEnEstado(referencia);
+        if (!epp || index < 0) {
+            return null;
+        }
+
+        Object.assign(epp, cambios);
+        this._asegurarTarjetaIdEpp(epp);
+
+        return {
+            epp,
+            index
+        };
+    }
+
     /**
      * Agregar prenda y registrar en orden
      */
     agregarPrendaAlOrden(prenda) {
-        const index = this._stateAddItem('prenda', prenda);
+        const prendaNormalizada = this._asegurarIdentidadPrenda(prenda);
+        const clavePrenda = this._obtenerClavePrenda(prendaNormalizada);
+
+        if (clavePrenda) {
+            const indiceExistente = this.prendas.findIndex((actual) => this._obtenerClavePrenda(actual) === clavePrenda);
+            if (indiceExistente !== -1) {
+                const yaEnOrden = this.ordenItems.some((entrada) => entrada.tipo === 'prenda' && entrada.index === indiceExistente);
+                if (yaEnOrden) {
+                    debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Registro duplicado omitido:', clavePrenda);
+                    return indiceExistente;
+                }
+            }
+        }
+
+        const index = this._stateAddItem('prenda', prendaNormalizada);
         
-        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
+        debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - PRENDA agregada:', prendaNormalizada.nombre_prenda);
         debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
         debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
         debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
         debugLog('[gestionItemsUI]  agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
+        return index;
     }
 
     /**
      * Agregar EPP y registrar en orden
      */
     agregarEPPAlOrden(epp) {
+        this._asegurarTarjetaIdEpp(epp);
         return this._getEppFlowService().agregarEPPAlOrden(epp);
     }
 
@@ -538,7 +681,5 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
-
-
 
 

@@ -35,11 +35,47 @@ class PedidoItemsState {
 
     obtenerItemsOrdenados() {
         const itemsOrdenados = [];
+        const vistos = new Set();
+
+        const obtenerClaveEstable = (tipo, item, index) => {
+            if (!item || typeof item !== 'object') {
+                return null;
+            }
+
+            if (tipo === 'prenda') {
+                const prendaId = item.prenda_pedido_id || item.id || item._local_id || null;
+                return prendaId !== null && prendaId !== undefined && prendaId !== ''
+                    ? `prenda:${prendaId}`
+                    : null;
+            }
+
+            if (tipo === 'epp') {
+                const eppId = item.pedido_epp_id || item.epp_id || item.id || item.tarjetaId || null;
+                return eppId !== null && eppId !== undefined && eppId !== ''
+                    ? `epp:${eppId}`
+                    : null;
+            }
+
+            return `${tipo}:${index}`;
+        };
+
         this.ordenItems.forEach(({ tipo, index }) => {
             const collection = this.getCollection(tipo);
-            if (collection && collection[index]) {
-                itemsOrdenados.push(collection[index]);
+            const item = collection && collection[index] ? collection[index] : null;
+            if (!item) {
+                return;
             }
+
+            const clave = obtenerClaveEstable(tipo, item, index);
+            if (clave && vistos.has(clave)) {
+                return;
+            }
+
+            if (clave) {
+                vistos.add(clave);
+            }
+
+            itemsOrdenados.push(item);
         });
         return itemsOrdenados;
     }
@@ -79,4 +115,3 @@ class PedidoItemsState {
         return Number.isInteger(index) && index >= 0 && index < this.epps.length;
     }
 }
-

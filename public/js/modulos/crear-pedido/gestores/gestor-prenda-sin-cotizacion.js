@@ -52,6 +52,8 @@ class GestorPrendaSinCotizacion {
      */
     crearPrendaBase() {
         return {
+            prenda_pedido_id: null,
+            _local_id: null,
             nombre_producto: '',
             descripcion: '',
             genero: [],
@@ -89,6 +91,31 @@ class GestorPrendaSinCotizacion {
         };
     }
 
+    _generarLocalId(prenda = {}) {
+        const baseId = prenda.prenda_pedido_id || prenda.id || null;
+        if (baseId !== null && baseId !== undefined && baseId !== '') {
+            return `prenda-${baseId}`;
+        }
+
+        return `prenda-local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    _asegurarIdentidadPrenda(prenda) {
+        if (!prenda || typeof prenda !== 'object') {
+            return prenda;
+        }
+
+        if (!prenda.prenda_pedido_id && prenda.id) {
+            prenda.prenda_pedido_id = prenda.id;
+        }
+
+        if (!prenda._local_id) {
+            prenda._local_id = this._generarLocalId(prenda);
+        }
+
+        return prenda;
+    }
+
     /**
      * Agregar una nueva prenda de tipo PRENDA
      * @param {Object} datosOpcionales - Datos opcionales para inicializar la prenda
@@ -116,6 +143,8 @@ class GestorPrendaSinCotizacion {
                 ...datosOpcionales.variantes
             };
         }
+
+        this._asegurarIdentidadPrenda(nuevaPrenda);
         
         this.prendas.push(nuevaPrenda);
         const index = this.prendas.length - 1;
@@ -182,7 +211,9 @@ class GestorPrendaSinCotizacion {
         this.prendas[index] = {
             ...prendaActual,
             ...prendaActualizada,
-            id: prendaActual.id // Asegurar que se mantiene el ID original
+            id: prendaActualizada.id ?? prendaActual.id,
+            prenda_pedido_id: prendaActualizada.prenda_pedido_id ?? prendaActual.prenda_pedido_id ?? prendaActual.id ?? null,
+            _local_id: prendaActual._local_id || prendaActualizada._local_id || this._generarLocalId(prendaActualizada)
         };
 
         // Si la prenda estaba marcada para eliminación, desmarcarla

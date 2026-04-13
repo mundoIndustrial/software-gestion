@@ -628,9 +628,9 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
         return;
     }
     
-    // Buscar tarjeta en DOM
-    const tarjeta = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
-    if (!tarjeta) {
+    // FIX DUPLICADOS: Buscar TODAS las tarjetas con este índice (puede haber duplicados)
+    const tarjetas = document.querySelectorAll(`[data-prenda-index="${prendaIndex}"]`);
+    if (tarjetas.length === 0) {
 
         return;
     }
@@ -639,9 +639,21 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     const nuevoHTML = globalThis.generarTarjetaPrendaReadOnly(prenda, prendaIndex);
     const nuevoElemento = document.createElement('div');
     nuevoElemento.innerHTML = nuevoHTML;
+    const nuevaTarjeta = nuevoElemento.firstElementChild;
     
-    // Reemplazar tarjeta
-    tarjeta.replaceWith(nuevoElemento.firstElementChild);
+    // FIX DUPLICADOS: Reemplazar la PRIMERA tarjeta y eliminar el resto de duplicados
+    let primeraReemplazada = false;
+    tarjetas.forEach((tarjeta) => {
+        if (!primeraReemplazada) {
+            // Reemplazar la primera tarjeta
+            tarjeta.replaceWith(nuevaTarjeta);
+            primeraReemplazada = true;
+        } else {
+            // Eliminar los duplicados
+            console.warn('[reRenderizarTarjetaPrendaEditada] Tarjeta duplicada eliminada - prendaIndex:', prendaIndex);
+            tarjeta.remove();
+        }
+    });
 
 }
 

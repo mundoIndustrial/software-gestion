@@ -304,22 +304,17 @@ globalThis.PrendaCardHandlers = {
                 if (globalThis.gestionItemsUI) {
                     const ordenItems = globalThis.gestionItemsUI.ordenItems || [];
                     const entradaOrden = ordenItems[indiceVisual];
-                    const prendasState = globalThis.gestionItemsUI.prendas || [];
 
                     if (entradaOrden && entradaOrden.tipo === 'prenda' && Number.isInteger(entradaOrden.index)) {
                         prendaIndex = entradaOrden.index;
-                        prenda = prendasState[prendaIndex] || null;
+                        prenda = typeof globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual === 'function'
+                            ? globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual(indiceVisual)
+                            : (globalThis.gestionItemsUI.prendas || [])[prendaIndex] || null;
                         esCrearNuevo = !!prenda;
                     }
                 }
                 
-                // Prioridad 2: Obtener desde itemsPedido (fallback)
-                if (!prenda && globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
-                    prenda = globalThis.itemsPedido[prendaIndex];
-
-                }
-                
-                // Prioridad 3: Obtener desde gestor (pedidos guardados)
+                // Prioridad 2: Obtener desde gestor (pedidos guardados)
                 if (!prenda && globalThis.gestorPrendaSinCotizacion) {
                     prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
@@ -409,12 +404,10 @@ globalThis.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
-
-                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
-                    prenda = globalThis.itemsPedido[prendaIndex];
-
+                if (globalThis.gestionItemsUI) {
+                    prenda = typeof globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual === 'function'
+                        ? globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual(prendaIndex)
+                        : ((globalThis.gestionItemsUI.prendas || [])[prendaIndex] || null);
                 } else if (globalThis.gestorPrendaSinCotizacion) {
                     prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 
@@ -436,12 +429,10 @@ globalThis.PrendaCardHandlers = {
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
-                if (globalThis.gestionItemsUI && globalThis.gestionItemsUI.prendas && globalThis.gestionItemsUI.prendas[prendaIndex]) {
-                    prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
-
-                } else if (globalThis.itemsPedido && globalThis.itemsPedido[prendaIndex]) {
-                    prenda = globalThis.itemsPedido[prendaIndex];
-
+                if (globalThis.gestionItemsUI) {
+                    prenda = typeof globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual === 'function'
+                        ? globalThis.gestionItemsUI.obtenerPrendaPorIndiceVisual(prendaIndex)
+                        : ((globalThis.gestionItemsUI.prendas || [])[prendaIndex] || null);
                 } else if (globalThis.gestorPrendaSinCotizacion) {
                     prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
 

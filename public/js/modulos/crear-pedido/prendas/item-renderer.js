@@ -27,7 +27,13 @@ class ItemRenderer {
 
         console.log('[ItemRenderer]  actualizar() - Items recibidos:', items.length);
         items.forEach((item, idx) => {
-            console.log('[ItemRenderer]   Item', idx, ':', item.nombre_prenda || item.nombre_completo || item.nombre);
+            console.log('[ItemRenderer]   Item', idx, ':', {
+                nombre: item.nombre_prenda || item.nombre_completo || item.nombre,
+                prenda_pedido_id: item.prenda_pedido_id || null,
+                id: item.id || null,
+                _local_id: item._local_id || null,
+                tarjetaId: item.tarjetaId || null
+            });
         });
 
         if (!items || items.length === 0) {
@@ -44,6 +50,7 @@ class ItemRenderer {
         const prendasContainer = document.getElementById('prendas-container-editable');
         if (prendasContainer) {
             prendasContainer.style.display = 'none';
+            prendasContainer.innerHTML = '';
         }
 
         await this.renderizar(items, container);
@@ -162,13 +169,16 @@ class ItemRenderer {
      */
     _generarTarjetaEPP(epp, index) {
         const galeriaHTML = this._generarGaleriaEPP(epp.imagenes || []);
+        const tarjetaId = epp.tarjetaId || `epp-${epp.pedido_epp_id || epp.pedidoEppId || epp.epp_id || epp.id || index}`;
+        const eppOriginalId = epp.epp_id || epp.id || '';
+        const pedidoEppId = epp.pedido_epp_id || epp.pedidoEppId || '';
         
         // Calcular número de EPP (contar solo items-epp-card-nuevo, no prendas)
         const eppCount = document.querySelectorAll('.item-epp-card-nuevo').length;
         const numeroItem = eppCount + 1;
         
         return `
-            <div class="item-epp-card item-epp-card-nuevo" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.pedido_epp_id || epp.pedidoEppId || ''}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp-card item-epp-card-nuevo" data-epp-index="${index}" data-epp-id="${tarjetaId}" data-epp-original-id="${eppOriginalId}" data-pedido-epp-id="${pedidoEppId}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
@@ -257,6 +267,36 @@ class ItemRenderer {
      * Actualizar interactividad de tarjetas
      */
     actualizarInteractividad() {
+        const gestion = window.gestionItemsUI;
+        if (gestion && Array.isArray(gestion.ordenItems) && Array.isArray(gestion.epps)) {
+            document.querySelectorAll('.item-epp-card-nuevo').forEach((tarjeta) => {
+                const indiceVisual = Number.parseInt(tarjeta.dataset.eppIndex, 10);
+                const entradaOrden = gestion.ordenItems[indiceVisual];
+                if (!entradaOrden || entradaOrden.tipo !== 'epp') {
+                    return;
+                }
+
+                const epp = gestion.epps[entradaOrden.index];
+                if (!epp) {
+                    return;
+                }
+
+                const tarjetaId = epp.tarjetaId || `epp-${epp.pedido_epp_id || epp.pedidoEppId || epp.epp_id || epp.id || entradaOrden.index}`;
+                const eppOriginalId = epp.epp_id || epp.id || '';
+                const pedidoEppId = epp.pedido_epp_id || epp.pedidoEppId || '';
+
+                tarjeta.dataset.eppId = tarjetaId;
+                tarjeta.dataset.eppOriginalId = eppOriginalId;
+                tarjeta.dataset.pedidoEppId = pedidoEppId;
+
+                tarjeta
+                    .querySelectorAll('.btn-menu-epp-nuevo, .submenu-epp-nuevo, .btn-editar-epp-nuevo, .btn-eliminar-epp-nuevo')
+                    .forEach((elemento) => {
+                        elemento.dataset.itemId = tarjetaId;
+                    });
+            });
+        }
+
         if (window.updateItemCardInteractions) {
             window.updateItemCardInteractions();
         }

@@ -68,6 +68,12 @@
 
             proceso.marcadoParaEliminar = true;
 
+            // FIX: Eliminar el proceso de globalThis.procesosSeleccionados para que no se incluya al guardar
+            if (globalThis.procesosSeleccionados && globalThis.procesosSeleccionados[tipo]) {
+                delete globalThis.procesosSeleccionados[tipo];
+                console.log(`[MARCAR-ELIMINAR] Proceso '${tipo}' eliminado de globalThis.procesosSeleccionados`);
+            }
+
             const { tarjeta } = this.buscarTarjetaPorTipo(tipo);
             if (tarjeta) {
                 tarjeta.style.display = 'none';

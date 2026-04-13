@@ -1,13 +1,13 @@
-/**
- * CARGADOR DE DATOS EN MODO EDICIÓN - CREAR PEDIDO NUEVO
+﻿/**
+ * CARGADOR DE DATOS EN MODO EDICIÃ“N - CREAR PEDIDO NUEVO
  * 
- * Carga los datos del pedido existente en el formulario de creación
- * para permitir edición en la interfaz crear-pedido-nuevo.blade.php
+ * Carga los datos del pedido existente en el formulario de creaciÃ³n
+ * para permitir ediciÃ³n en la interfaz crear-pedido-nuevo.blade.php
  */
 
 let datosEditacionCargados = false;
 
-// Esperar a que el DOM esté listo
+// Esperar a que el DOM estÃ© listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCargaEdicion);
 } else {
@@ -24,7 +24,7 @@ function iniciarCargaEdicion() {
         return;
     }
 
-    // Esperar a que estén listos los elementos del DOM
+    // Esperar a que estÃ©n listos los elementos del DOM
     esperarElementosYCargar();
 }
 
@@ -48,7 +48,7 @@ function cargarDatosEdicion() {
     try {
 
         
-        // Si window.pedidoEditarData está dentro de un objeto 'pedido', acceder correctamente
+        // Si window.pedidoEditarData estÃ¡ dentro de un objeto 'pedido', acceder correctamente
         let pedido = window.pedidoEditarData;
         
         // Si llega como { pedido: {...}, estados: [...], areas: [...] }
@@ -61,7 +61,7 @@ function cargarDatosEdicion() {
             return;
         }
 
-        // 1. Cargar información general
+        // 1. Cargar informaciÃ³n general
         cargarInformacionGeneral(pedido);
 
         // 2. Cargar prendas si existen
@@ -80,7 +80,7 @@ function cargarDatosEdicion() {
         // 2.6. Renderizar tarjetas registradas en gestionItemsUI
         renderizarItemsRegistrados();
 
-        // 3. Actualizar título
+        // 3. Actualizar tÃ­tulo
         const titulo = `Editando Pedido #${window.pedidoEditarId}`;
         const pageHeader = document.querySelector('.page-header h1');
         if (pageHeader) {
@@ -123,9 +123,18 @@ function cargarInformacionGeneral(pedido) {
 
 function cargarPrendas(prendas) {
 
+    const prendasRegistradas = new Set();
+    const obtenerClavePrendaEdicion = (prenda, index) => {
+        const baseId = prenda?.prenda_pedido_id || prenda?.id || null;
+        if (baseId !== null && baseId !== undefined && baseId !== '') {
+            return `prenda:${baseId}`;
+        }
+
+        return `prenda:index:${index}`;
+    };
 
     
-    // Asegurar que el gestor está inicializado
+    // Asegurar que el gestor estÃ¡ inicializado
     if (!window.gestorPrendaSinCotizacion) {
 
         if (typeof window.inicializarGestorSinCotizacion === 'function') {
@@ -137,6 +146,12 @@ function cargarPrendas(prendas) {
 
     prendas.forEach((prenda, index) => {
         try {
+            const clavePrenda = obtenerClavePrendaEdicion(prenda, index);
+            if (prendasRegistradas.has(clavePrenda)) {
+                console.warn('[cargar-datos-edicion] Prenda repetida omitida por ID estable:', clavePrenda, prenda);
+                return;
+            }
+            prendasRegistradas.add(clavePrenda);
 
 
             
@@ -176,13 +191,13 @@ function cargarPrendas(prendas) {
                 }
             }
             
-            // Parsear genero si viene como string vacío
+            // Parsear genero si viene como string vacÃ­o
             let genero = prenda.genero;
             if (typeof genero === 'string' && (genero === '' || genero === '[]')) {
                 genero = [];
             }
 
-            // Contrato estricto de edición: no usar alias legacy ni inferencias.
+            // Contrato estricto de ediciÃ³n: no usar alias legacy ni inferencias.
             let asignacionesColoresPorTalla = prenda.asignacionesColoresPorTalla || {};
             if (typeof asignacionesColoresPorTalla === 'string') {
                 try {
@@ -231,7 +246,7 @@ function cargarPrendas(prendas) {
 
             const tipoFlujoTallas = String(prenda.tipo_flujo_tallas || '').toLowerCase();
             if (!['normal', 'talla_color', 'sin_tallas'].includes(tipoFlujoTallas)) {
-                console.error('[cargar-datos-edicion] Contrato inválido: tipo_flujo_tallas ausente o inválido', {
+                console.error('[cargar-datos-edicion] Contrato invÃ¡lido: tipo_flujo_tallas ausente o invÃ¡lido', {
                     prendaId: prenda.id || null,
                     tipo_flujo_tallas: prenda.tipo_flujo_tallas,
                 });
@@ -254,15 +269,17 @@ function cargarPrendas(prendas) {
             // Agregar la prenda al gestor con datos correctos
             const datosPrenda = {
                 id: prenda.id || null,
+                prenda_pedido_id: prenda.prenda_pedido_id || prenda.id || null,
+                _local_id: prenda._local_id || `prenda-${prenda.prenda_pedido_id || prenda.id || index}`,
                 nombre_producto: prenda.nombre_prenda || '',
                 nombre_prenda: prenda.nombre_prenda || '',
                 descripcion: prenda.descripcion || '',
                 genero: genero,
                 // cantidad_talla es el formato que usa PrendaCardService._construirTallasYCantidades
-                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } } — misma estructura
-                // FIX: Backend envía [] (PHP empty array) cuando no hay tallas — [] es truthy en JS
+                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } } â€” misma estructura
+                // FIX: Backend envÃ­a [] (PHP empty array) cuando no hay tallas â€” [] es truthy en JS
                 cantidad_talla: (Array.isArray(generosConTallas) ? {} : generosConTallas) || {},
-                // generosConTallas vacío para que el renderer lo construya desde cantidad_talla
+                // generosConTallas vacÃ­o para que el renderer lo construya desde cantidad_talla
                 generosConTallas: {},
                 tallas: tallas,
                 cantidadesPorTalla: {},
@@ -291,7 +308,7 @@ function cargarPrendas(prendas) {
             };
             const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda(datosPrenda);
 
-            // Registrar también en gestionItemsUI para renderizado unificado con EPPs
+            // Registrar tambiÃ©n en gestionItemsUI para renderizado unificado con EPPs
             if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaAlOrden === 'function') {
                 const prendaAlmacenada = window.gestorPrendaSinCotizacion.prendas[prendasIndex];
                 if (prendaAlmacenada) {
@@ -307,10 +324,18 @@ function cargarPrendas(prendas) {
         }
     });
 
+    // En modo ediciÃ³n de borrador la fuente de verdad visual es gestionItemsUI.
+    // Evitamos renderizar tambiÃ©n por el camino legacy para no duplicar tarjetas
+    // despuÃ©s de editar y guardar dentro de la vista.
+    if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+        console.log('[cargar-datos-edicion] Render legacy de prendas omitido: gestionItemsUI serÃ¡ la fuente Ãºnica');
+        return;
+    }
+
     // Renderizar todas las prendas
     try {
-        // La función debería estar disponible en init-gestor-sin-cotizacion.js
-        // Pero si no está, intentar renderizar directamente
+        // La funciÃ³n deberÃ­a estar disponible en init-gestor-sin-cotizacion.js
+        // Pero si no estÃ¡, intentar renderizar directamente
         
 
 
@@ -355,7 +380,7 @@ function cargarPrendas(prendas) {
             }
         }
         
-        //  NUEVO: Esperar a que se carguen los módulos de prenda-tarjeta
+        //  NUEVO: Esperar a que se carguen los mÃ³dulos de prenda-tarjeta
 
         
         function intentarRenderizarPrendas() {
@@ -394,7 +419,7 @@ function cargarPrendas(prendas) {
         document.addEventListener('prenda-tarjeta-cargado', () => {
 
             if (!intentarRenderizarPrendas()) {
-                // Reintentar en 100ms si aún no está disponible
+                // Reintentar en 100ms si aÃºn no estÃ¡ disponible
                 setTimeout(intentarRenderizarPrendas, 100);
             }
         }, { once: true });
@@ -417,7 +442,7 @@ function cargarPrendas(prendas) {
 
 /**
  * Renderizar items (prendas + EPPs) que ya fueron registrados en gestionItemsUI
- * Usa reintentos porque gestionItemsUI.renderer puede no estar listo aún (scripts defer)
+ * Usa reintentos porque gestionItemsUI.renderer puede no estar listo aÃºn (scripts defer)
  */
 function renderizarItemsRegistrados(intentos = 0) {
     const MAX_INTENTOS = 30;
@@ -425,6 +450,14 @@ function renderizarItemsRegistrados(intentos = 0) {
     if (window.gestionItemsUI && window.gestionItemsUI.renderer) {
         const items = window.gestionItemsUI.obtenerItemsOrdenados();
         console.log('[cargar-datos-edicion] renderizarItemsRegistrados - items:', items.length);
+        console.log('[cargar-datos-edicion] renderizarItemsRegistrados - claves:', items.map((item, idx) => ({
+            idx,
+            nombre: item.nombre_prenda || item.nombre_completo || item.nombre || null,
+            prenda_pedido_id: item.prenda_pedido_id || null,
+            id: item.id || null,
+            _local_id: item._local_id || null,
+            tarjetaId: item.tarjetaId || null
+        })));
         
         if (items.length > 0) {
             window.gestionItemsUI.renderer.actualizar(items);
@@ -439,7 +472,7 @@ function renderizarItemsRegistrados(intentos = 0) {
         console.log('[cargar-datos-edicion] Esperando gestionItemsUI.renderer... intento', intentos + 1);
         setTimeout(() => renderizarItemsRegistrados(intentos + 1), 200);
     } else {
-        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible después de', MAX_INTENTOS, 'intentos');
+        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible despuÃ©s de', MAX_INTENTOS, 'intentos');
     }
 }
 
@@ -457,7 +490,7 @@ function cargarEPPs(epps) {
         
         if (!eppContainer) {
 
-            // Si no existe, intentar encontrar dónde crear el contenedor
+            // Si no existe, intentar encontrar dÃ³nde crear el contenedor
             const form = document.querySelector('form');
             if (form) {
                 eppContainer = document.createElement('div');
@@ -482,40 +515,14 @@ function cargarEPPs(epps) {
             });
         }
         
-        // Registrar EPPs en eppAgregadosList e itemsPedido para que el modal de edición pueda encontrarlos
-        if (!window.eppAgregadosList) {
-            window.eppAgregadosList = [];
+        console.log('[cargar-datos-edicion] EPPs registrados solo en gestionItemsUI');
+
+        if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+            console.log('[cargar-datos-edicion] Render legacy de EPP omitido: gestionItemsUI serÃ¡ la fuente Ãºnica');
+            return;
         }
-        if (!window.itemsPedido) {
-            window.itemsPedido = [];
-        }
         
-        epps.forEach((epp) => {
-            const pedidoEppId = epp.pedido_epp_id || epp.pedidoEppId || null;
-            const eppCatalogoId = epp.epp_id || epp.id || null;
-            const eppNormalizado = {
-                id: eppCatalogoId,
-                epp_id: eppCatalogoId,
-                pedido_epp_id: pedidoEppId,
-                tarjetaId: String(pedidoEppId || eppCatalogoId),
-                nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
-                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
-                nombre_completo: epp.nombre_completo || epp.nombre_epp || epp.nombre || '',
-                cantidad: epp.cantidad || 0,
-                observaciones: epp.observaciones || '',
-                imagenes: epp.imagenes || [],
-                imagen: '',
-                tipo: 'epp'
-            };
-            
-            window.eppAgregadosList.push(eppNormalizado);
-            window.itemsPedido.push(eppNormalizado);
-        });
-        
-        console.log('[cargar-datos-edicion] EPPs registrados en eppAgregadosList:', window.eppAgregadosList.length);
-        console.log('[cargar-datos-edicion] EPPs registrados en itemsPedido:', window.itemsPedido.length);
-        
-        // Si el gestor tiene método para agregar EPPs
+        // Si el gestor tiene mÃ©todo para agregar EPPs
         if (window.gestorPrendaSinCotizacion && typeof window.gestorPrendaSinCotizacion.agregarEpp === 'function') {
             epps.forEach((epp, index) => {
                 try {
@@ -526,7 +533,7 @@ function cargarEPPs(epps) {
                 }
             });
             
-            // Intentar renderizar EPPs si existe función
+            // Intentar renderizar EPPs si existe funciÃ³n
             if (typeof window.renderizarEppsSinCotizacion === 'function') {
                 window.renderizarEppsSinCotizacion();
 
@@ -587,7 +594,7 @@ function generarTarjetaEpp(epp, index) {
 }
 
 /**
- * Inicializar event listeners para el menú de EPP
+ * Inicializar event listeners para el menÃº de EPP
  */
 function inicializarEventListenersEpp() {
     // Deshabilitado: este listener era legacy y competia con la arquitectura actual.
@@ -599,59 +606,32 @@ function inicializarEventListenersEpp() {
 }
 
 // Escuchar evento de prenda actualizada (desde modal-novedad-edicion.js)
-// Este evento se dispara después de guardar cambios en una prenda editada
+// Este evento se dispara despuÃ©s de guardar cambios en una prenda editada
 window.addEventListener('prendaActualizada', (event) => {
     console.log('[cargar-datos-edicion-nuevo]  Evento prendaActualizada recibido:', event.detail);
-    
     try {
-        const { pedidoId, prendaId } = event.detail;
-        
-        // Preservar los EPPs actuales ANTES de actualizar
-        const eppsPersistentes = window.eppsPedido ? JSON.parse(JSON.stringify(window.eppsPedido)) : [];
-        console.log('[cargar-datos-edicion-nuevo]  EPPs a preservar:', eppsPersistentes.length);
-        
-        // Recargar los datos del pedido para obtener la prenda actualizada
-        if (pedidoId && window.datosEdicionPedido) {
-            // Actualizar prendasEdicion con los datos del servidor
-            // Esto asegura que tenemos la prenda actualizada
-            if (window.prendasEdicion && typeof window.prendasEdicion === 'object') {
-                console.log('[cargar-datos-edicion-nuevo]  Actualizando prendasEdicion desde servidor...');
-                
-                // Re-renderizar las prendas (se cargarán desde window.datosEdicionPedido)
-                if (typeof window.renderizarPrendasSinCotizacion === 'function') {
-                    window.renderizarPrendasSinCotizacion();
-                    console.log('[cargar-datos-edicion-nuevo]  Prendas re-renderizadas');
-                } else {
-                    console.warn('[cargar-datos-edicion-nuevo]  renderizarPrendasSinCotizacion no disponible');
-                }
-            }
+        if (window.gestionItemsUI && window.gestionItemsUI.renderer && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+            Promise.resolve(window.gestionItemsUI.renderer.actualizar(window.gestionItemsUI.obtenerItemsOrdenados()))
+                .then(() => {
+                    console.log('[cargar-datos-edicion-nuevo]  Re-render unificado completado tras editar prenda');
+                })
+                .catch((error) => {
+                    console.error('[cargar-datos-edicion-nuevo]  Error en re-render unificado:', error);
+                });
+            return;
         }
-        
-        // Re-renderizar EPPs manteniéndolos intactos
-        if (eppsPersistentes.length > 0) {
-            console.log('[cargar-datos-edicion-nuevo]  Re-renderizando EPPs (preservados)...');
-            
-            // Restaurar los EPPs
-            window.eppsPedido = eppsPersistentes;
-            
-            // Re-renderizar
-            if (typeof window.renderizarEppsSinCotizacion === 'function') {
-                window.renderizarEppsSinCotizacion();
-                console.log('[cargar-datos-edicion-nuevo]  EPPs re-renderizados correctamente');
-            } else {
-                console.warn('[cargar-datos-edicion-nuevo]  renderizarEppsSinCotizacion no disponible');
-            }
-        }
-        
-        console.log('[cargar-datos-edicion-nuevo]  Actualización completada sin perder items');
+        console.warn('[cargar-datos-edicion-nuevo] gestionItemsUI no disponible; se omite re-render legacy');
     } catch (error) {
         console.error('[cargar-datos-edicion-nuevo]  Error al procesar prendaActualizada:', error);
     }
 });
 
-// Inicializar event listeners cuando el documento esté listo
+// Inicializar event listeners cuando el documento estÃ© listo
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
+
+
+
 
 
