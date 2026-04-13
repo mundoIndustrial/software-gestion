@@ -26,13 +26,7 @@ class DespachoNotificacionesController extends Controller
                 return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
             }
 
-            $page = request()->query('page', 1);
-            $perPage = request()->query('per_page', 50);
-            
-            $page = max(1, (int)$page);
-            $perPage = min(100, max(10, (int)$perPage));
-
-            return response()->json($this->service->obtenerNotificaciones($user, $page, $perPage));
+            return response()->json($this->service->obtenerNotificaciones($user));
         } catch (\Exception $e) {
             Log::error('Error notificaciones despacho: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
