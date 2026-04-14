@@ -322,7 +322,12 @@ class CarteraPedidosController extends Controller
             ], 500);
         }
 
-        return response()->json($resultado['data']);
+        $datos = $resultado['data'];
+        
+        // Para el rol cartera, no mostrar sección de EPP
+        $datos['mostrarEPP'] = !auth()->user()->hasRole('cartera');
+
+        return response()->json($datos);
     }
 }
 

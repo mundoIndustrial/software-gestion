@@ -66,7 +66,7 @@ class InvoiceRenderer {
                     </div>
 
                     <!-- EPP Items -->
-                    ${this.renderizarEPP(datos.epps)}
+                    ${this.renderizarEPP(datos.epps, datos.mostrarEPP)}
                 </div>
             `;
 
@@ -853,7 +853,11 @@ class InvoiceRenderer {
             : '<span style="color: #999; font-size: 10px;">Sin tallas asignadas</span>';
     }
 
-    renderizarEPP(epps) {
+    renderizarEPP(epps, mostrarEPP) {
+        // Si mostrarEPP es explícitamente false, no renderizar la sección
+        if (mostrarEPP === false) {
+            return '';
+        }
 
         if (epps && epps.length > 0) {
             const resultado = `
