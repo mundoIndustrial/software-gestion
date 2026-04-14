@@ -12,6 +12,7 @@ class RecibosCosturaReadRepository
         return DB::table('consecutivos_recibos_pedidos')
             ->where('tipo_recibo', 'COSTURA')
             ->where('activo', 1)
+            ->where('area', '!=', 'INSUMOS')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->select(
                 'consecutivos_recibos_pedidos.*',
@@ -46,6 +47,7 @@ class RecibosCosturaReadRepository
         return DB::table('consecutivos_recibos_pedidos')
             ->where('tipo_recibo', 'COSTURA')
             ->where('activo', 1)
+            ->where('area', '!=', 'INSUMOS')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->select(
                 'consecutivos_recibos_pedidos.*',
