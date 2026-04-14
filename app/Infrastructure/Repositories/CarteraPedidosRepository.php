@@ -3,8 +3,11 @@
 namespace App\Infrastructure\Repositories;
 
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
+use App\Models\PedidosProcesosPrendaDetalle;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CarteraPedidosRepository
 {
@@ -51,22 +54,30 @@ class CarteraPedidosRepository
             $query->whereDate('created_at', '<=', $fechaHasta);
         }
 
-        $total = $query->count();
-
         if ($sortBy === 'cliente') {
             $query->orderBy('cliente', $sortOrder);
         } else {
             $query->orderBy('created_at', $sortOrder);
         }
 
-        $pedidos = $query->forPage($page, $perPage)->get();
+        // Obtener TODOS sin paginar primero para poder filtrar
+        $todosPedidos = $query->get();
+        
+        // Aplicar filtro de prendas sin procesos
+        $pedidosFiltrados = $this->filtrarPedidosSinProcesosProductivos($todosPedidos);
+        
+        // Ahora paginar los resultados filtrados
+        $totalFiltrado = $pedidosFiltrados->count();
+        $pedidosPaginados = $pedidosFiltrados
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
 
         return [
-            'pedidos' => $pedidos,
-            'total' => $total,
+            'pedidos' => $pedidosPaginados,
+            'total' => $totalFiltrado,
             'page' => $page,
             'per_page' => $perPage,
-            'last_page' => ceil($total / $perPage)
+            'last_page' => ceil($totalFiltrado / $perPage)
         ];
     }
 
@@ -112,22 +123,30 @@ class CarteraPedidosRepository
             $query->whereDate('aprobado_por_cartera_en', '<=', $fechaHasta);
         }
 
-        $total = $query->count();
-
         if ($sortBy === 'cliente') {
             $query->orderBy('cliente', $sortOrder);
         } else {
             $query->orderBy('aprobado_por_cartera_en', $sortOrder);
         }
 
-        $pedidos = $query->forPage($page, $perPage)->get();
+        // Obtener TODOS sin paginar primero para poder filtrar
+        $todosPedidos = $query->get();
+        
+        // Aplicar filtro de prendas sin procesos
+        $pedidosFiltrados = $this->filtrarPedidosSinProcesosProductivos($todosPedidos);
+        
+        // Ahora paginar los resultados filtrados
+        $totalFiltrado = $pedidosFiltrados->count();
+        $pedidosPaginados = $pedidosFiltrados
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
 
         return [
-            'pedidos' => $pedidos,
-            'total' => $total,
+            'pedidos' => $pedidosPaginados,
+            'total' => $totalFiltrado,
             'page' => $page,
             'per_page' => $perPage,
-            'last_page' => ceil($total / $perPage)
+            'last_page' => ceil($totalFiltrado / $perPage)
         ];
     }
 
@@ -170,22 +189,30 @@ class CarteraPedidosRepository
             $query->whereDate('rechazado_por_cartera_en', '<=', $fechaHasta);
         }
 
-        $total = $query->count();
-
         if ($sortBy === 'cliente') {
             $query->orderBy('cliente', $sortOrder);
         } else {
             $query->orderBy('rechazado_por_cartera_en', $sortOrder);
         }
 
-        $pedidos = $query->forPage($page, $perPage)->get();
+        // Obtener TODOS sin paginar primero para poder filtrar
+        $todosPedidos = $query->get();
+        
+        // Aplicar filtro de prendas sin procesos
+        $pedidosFiltrados = $this->filtrarPedidosSinProcesosProductivos($todosPedidos);
+        
+        // Ahora paginar los resultados filtrados
+        $totalFiltrado = $pedidosFiltrados->count();
+        $pedidosPaginados = $pedidosFiltrados
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
 
         return [
-            'pedidos' => $pedidos,
-            'total' => $total,
+            'pedidos' => $pedidosPaginados,
+            'total' => $totalFiltrado,
             'page' => $page,
             'per_page' => $perPage,
-            'last_page' => ceil($total / $perPage)
+            'last_page' => ceil($totalFiltrado / $perPage)
         ];
     }
 
@@ -228,22 +255,30 @@ class CarteraPedidosRepository
             $query->whereDate('updated_at', '<=', $fechaHasta);
         }
 
-        $total = $query->count();
-
         if ($sortBy === 'cliente') {
             $query->orderBy('cliente', $sortOrder);
         } else {
             $query->orderBy('updated_at', $sortOrder);
         }
 
-        $pedidos = $query->forPage($page, $perPage)->get();
+        // Obtener TODOS sin paginar primero para poder filtrar
+        $todosPedidos = $query->get();
+        
+        // Aplicar filtro de prendas sin procesos
+        $pedidosFiltrados = $this->filtrarPedidosSinProcesosProductivos($todosPedidos);
+        
+        // Ahora paginar los resultados filtrados
+        $totalFiltrado = $pedidosFiltrados->count();
+        $pedidosPaginados = $pedidosFiltrados
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
 
         return [
-            'pedidos' => $pedidos,
-            'total' => $total,
+            'pedidos' => $pedidosPaginados,
+            'total' => $totalFiltrado,
             'page' => $page,
             'per_page' => $perPage,
-            'last_page' => ceil($total / $perPage)
+            'last_page' => ceil($totalFiltrado / $perPage)
         ];
     }
 
@@ -383,5 +418,96 @@ class CarteraPedidosRepository
         }
 
         return $nuevoConsecutivo;
+    }
+
+    /**
+     * Filtrar pedidos que tengan SOLO prendas de bodega sin procesos o SOLO EPPs
+     * 
+     * Excluir si:
+     * - Solo tiene EPPs
+     * - Solo tiene prendas de bodega SIN procesos
+     * - Tiene EPPs + prendas de bodega sin procesos (sin prendas normales)
+     * 
+     * Mantener si:
+     * - Tiene al menos una prenda normal (de_bodega = false)
+     * - Tiene al menos una prenda de bodega CON procesos
+     * 
+     * @param \Illuminate\Support\Collection $pedidos Collection de PedidoProduccion
+     * @return \Illuminate\Support\Collection Pedidos filtrados
+     */
+    private function filtrarPedidosSinProcesosProductivos($pedidos)
+    {
+        $pedidosAExcluir = collect();
+
+        foreach ($pedidos as $pedido) {
+            // 1. Contar prendas normales (confección, de_bodega = false)
+            $prendasNormales = PrendaPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('de_bodega', false)
+                ->whereNull('deleted_at')
+                ->count();
+
+            // Si tiene prendas normales, MANTENER el pedido
+            if ($prendasNormales > 0) {
+                continue;
+            }
+
+            // 2. Si no tiene prendas normales, verificar prendas de bodega
+            $prendasBodega = PrendaPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('de_bodega', true)
+                ->whereNull('deleted_at')
+                ->get();
+
+            // Si tiene prendas de bodega, verificar si al menos una tiene procesos
+            if ($prendasBodega->isNotEmpty()) {
+                $tieneAlgunaPrendaConProcesos = false;
+                $detallesPrendas = [];
+
+                foreach ($prendasBodega as $prenda) {
+                    $cantidadProcesos = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
+                        ->whereNull('deleted_at')
+                        ->count();
+
+                    $detallesPrendas[] = [
+                        'nombre' => $prenda->nombre_prenda,
+                        'procesos' => $cantidadProcesos
+                    ];
+
+                    if ($cantidadProcesos > 0) {
+                        $tieneAlgunaPrendaConProcesos = true;
+                    }
+                }
+
+                // Si NINGUNA prenda de bodega tiene procesos, EXCLUIR
+                if (!$tieneAlgunaPrendaConProcesos) {
+                    $pedidosAExcluir->push($pedido->id);
+                    
+                    Log::info('[CARTERA-FILTRO] ❌ Pedido EXCLUIDO (solo bodega sin procesos)', [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'pedido_id' => $pedido->id,
+                        'prendas_normales' => $prendasNormales,
+                        'prendas_bodega' => $prendasBodega->count(),
+                        'detalles' => $detallesPrendas,
+                    ]);
+                } else {
+                    Log::info('[CARTERA-FILTRO] ✅ Pedido MANTIENE (bodega con procesos)', [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'detalles' => $detallesPrendas,
+                    ]);
+                }
+            } else {
+                // No tiene prendas normales ni de bodega = SOLO EPPs, EXCLUIR
+                $pedidosAExcluir->push($pedido->id);
+                
+                Log::info('[CARTERA-FILTRO] ❌ Pedido EXCLUIDO (solo EPPs)', [
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'pedido_id' => $pedido->id,
+                ]);
+            }
+        }
+
+        // Retornar pedidos que NO estén en la lista de exclusión
+        return $pedidos->reject(function($pedido) use ($pedidosAExcluir) {
+            return $pedidosAExcluir->contains($pedido->id);
+        });
     }
 }

@@ -117,7 +117,16 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
         $prendas = [];
         
         foreach ($pedido->prendas as $prenda) {
-            $prendas[] = $this->procesarPrendaIndividual($prenda, $pedido);
+            $prendaProcesada = $this->procesarPrendaIndividual($prenda, $pedido);
+            
+            // Filtrar: no mostrar prendas de bodega sin procesos en el modal
+            if ($prendaProcesada['de_bodega'] && empty($prendaProcesada['procesos'])) {
+                \Log::info('[MODAL-FILTRO] 🚫 Prenda {id} EXCLUIDA del modal (bodega sin procesos)', 
+                    ['id' => $prendaProcesada['id']]);
+                continue;
+            }
+            
+            $prendas[] = $prendaProcesada;
         }
 
         return $prendas;
