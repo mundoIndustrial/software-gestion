@@ -151,11 +151,27 @@
         {{ $cliente }}
     </div>
 
-    <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; cursor: pointer;"
+    <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; cursor: pointer;"
          onclick="abrirModalNovedades('{{ $pedido->numero_pedido }}', `{{ addslashes($pedido->novedades ?? '') }}`)"
-         title="Click para ver completo">
+         title="Click para ver todas las novedades">
         @if(!empty($pedido->novedades))
-            {{ $pedido->novedades }}
+            <span id="novedad-{{ $pedido->id }}" data-novedades="{{ addslashes($pedido->novedades ?? '') }}">{{ str_replace("\n\n", " → ", trim($pedido->novedades)) }}</span>
+            <script>
+                (function() {
+                    const el = document.getElementById('novedad-{{ $pedido->id }}');
+                    if (el) {
+                        const novedades = el.getAttribute('data-novedades');
+                        if (novedades) {
+                            const bloques = novedades.split('\n\n').filter(b => b.trim());
+                            if (bloques.length > 0) {
+                                // Mostrar solo la última novedad (más actual)
+                                const ultimaNovedad = bloques[bloques.length - 1];
+                                el.textContent = ultimaNovedad.substring(0, 100) + (ultimaNovedad.length > 100 ? '...' : '');
+                            }
+                        }
+                    }
+                })();
+            </script>
         @else
             <span style="color: #d1d5db;">-</span>
         @endif

@@ -216,6 +216,27 @@ class DespachoControlApplicationService
             'fecha_entrega' => now(),
         ]);
 
+        // Crear novedad al marcar como entregado
+        $usuario = auth()->user();
+        $userName = $usuario ? $usuario->name : 'Sistema';
+        $fecha = now()->format('Y-m-d H:i:s');
+        $tipoItem = ucfirst($validated['tipo_item']);
+        $novedad = "[Bodega: $userName - $fecha] $tipoItem marcada como entregada";
+        
+        // Agregar novedad al pedido
+        if ($pedido->novedades) {
+            $pedido->novedades .= "\n\n" . $novedad;
+        } else {
+            $pedido->novedades = $novedad;
+        }
+        $pedido->save();
+
+        Log::info('[DespachoController] Novedad agregada al marcar como entregado', [
+            'pedido_id' => $pedido->id,
+            'usuario' => $userName,
+            'novedad' => $novedad,
+        ]);
+
         $this->verificarYActualizarEstadoPedido($pedido);
 
         return [
@@ -301,6 +322,27 @@ class DespachoControlApplicationService
                 'updated_at' => now(),
             ]);
         }
+
+        // Crear novedad al deshacer entrega
+        $usuario = auth()->user();
+        $userName = $usuario ? $usuario->name : 'Sistema';
+        $fecha = now()->format('Y-m-d H:i:s');
+        $tipoItem = ucfirst($validated['tipo_item']);
+        $novedad = "[Bodega: $userName - $fecha] Entrega de $tipoItem deshecha - Volvió a estado Pendiente";
+        
+        // Agregar novedad al pedido
+        if ($pedido->novedades) {
+            $pedido->novedades .= "\n\n" . $novedad;
+        } else {
+            $pedido->novedades = $novedad;
+        }
+        $pedido->save();
+
+        Log::info('[DespachoController] Novedad agregada al deshacer entregado', [
+            'pedido_id' => $pedido->id,
+            'usuario' => $userName,
+            'novedad' => $novedad,
+        ]);
 
         Log::info('[DespachoController] Estado general del pedido ajustado por deshacer entregado', [
             'pedido_id' => $pedido->id,
@@ -395,6 +437,27 @@ class DespachoControlApplicationService
             $pedido->update([
                 'estado' => 'Entregado',
                 'updated_at' => now(),
+            ]);
+
+            // Crear novedad al entregar todo
+            $usuario = auth()->user();
+            $userName = $usuario ? $usuario->name : 'Sistema';
+            $fecha = now()->format('Y-m-d H:i:s');
+            $novedad = "[Bodega: $userName - $fecha] Pedido completamente entregado - $itemsProcesados items procesados";
+            
+            // Agregar novedad al pedido
+            if ($pedido->novedades) {
+                $pedido->novedades .= "\n\n" . $novedad;
+            } else {
+                $pedido->novedades = $novedad;
+            }
+            $pedido->save();
+
+            Log::info('[DespachoController] Novedad agregada al entregar todo', [
+                'pedido_id' => $pedido->id,
+                'usuario' => $userName,
+                'items_procesados' => $itemsProcesados,
+                'novedad' => $novedad,
             ]);
 
             DB::commit();

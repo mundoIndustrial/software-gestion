@@ -1295,46 +1295,103 @@
 
     /**
      * abrirModalNovedades()
-     * Abre modal para mostrar las novedades completas de un pedido
+     * Abre modal para mostrar las novedades completas de un pedido - VERSIÓN MEJORADA
      */
     function abrirModalNovedades(numeroPedido, novedades) {
         if (!novedades || novedades.trim() === '') {
             novedades = 'Sin novedades registradas';
         }
 
-        // Procesar novedades para mostrar con mejor formato
+        // Procesar novedades: dividir por '\n\n' para obtener bloques
         let bloques = novedades.split('\n\n').filter(b => b.trim());
         let htmlContenido = '';
 
-        bloques.forEach((bloque) => {
-            if (bloque.startsWith('')) {
-                // Extraer información del registro [Usuario - Rol - Fecha]
-                let lineas = bloque.split('\n').filter(l => l.trim());
-                let primerLinea = lineas[0];
-                let resto = lineas.slice(1).join('<br>');
-                
-                // Parsear la primera línea para extraer datos
-                let match = primerLinea.match(/\[(.*?)\]/);
-                let info = match ? match[1] : '';
-                let novedad = primerLinea.replace(/\[.*?\]\n?/, '') || resto;
-                const infoSafe = escapeHtml(info);
-                const novedadSafe = escapeHtml(novedad);
-                const restoSafe = escapeHtml(resto);
-                
-                htmlContenido += `
-                    <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%); border-left: 5px solid #0284c7; border-radius: 8px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);">
-                        <div style="font-weight: 600; color: #0c4a6e; font-size: 0.9rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="font-size: 1.1rem;">👤</span> ${infoSafe}
-                        </div>
-                        <div style="color: #1e40af; line-height: 1.6; font-size: 0.95rem;">
-                            ${restoSafe || novedadSafe}
-                        </div>
-                    </div>
-                `;
-            } else if (bloque.trim()) {
-                htmlContenido += `<div style="margin-bottom: 0.75rem; padding: 0.75rem; color: #374151; background: #f9fafb; border-radius: 6px; border-left: 3px solid #9ca3af;">${escapeHtml(bloque)}</div>`;
+        // Invertir bloques para mostrar el más reciente primero
+        bloques.reverse();
+
+        bloques.forEach((bloque, index) => {
+            const lineas = bloque.split('\n').filter(l => l.trim());
+            if (lineas.length === 0) return;
+
+            const primerLinea = lineas[0];
+            const restoLineas = lineas.slice(1);
+
+            // Intentar extraer información del formato [Usuario - Rol - Fecha]
+            const matchInfo = primerLinea.match(/\[(.*?)\](.*)$/);
+            let info = '';
+            let descripcion = '';
+
+            if (matchInfo) {
+                info = matchInfo[1];
+                descripcion = matchInfo[2].trim() || restoLineas.join('\n').trim();
+            } else {
+                descripcion = bloque.trim();
             }
+
+            const infoSafe = escapeHtml(info);
+            const descripcionSafe = escapeHtml(descripcion);
+
+            // Estilo alternado para mejor visualización
+            const bgColor = index % 2 === 0 ? '#dbeafe' : '#f0f9ff';
+            const borderColor = index % 2 === 0 ? '#0284c7' : '#06b6d4';
+
+            htmlContenido += `
+                <div style="
+                    margin-bottom: 1rem;
+                    padding: 1rem;
+                    background: ${bgColor};
+                    border-left: 4px solid ${borderColor};
+                    border-radius: 6px;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    width: 100%;
+                    box-sizing: border-box;
+                ">
+                    ${info ? `
+                        <div style="
+                            font-weight: 600;
+                            color: #0c4a6e;
+                            font-size: 0.85rem;
+                            margin-bottom: 0.5rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                        ">
+                            <span style="font-size: 1rem;">👤</span>
+                            <span>${infoSafe}</span>
+                        </div>
+                    ` : ''}
+                    <div style="
+                        color: #1e40af;
+                        line-height: 1.5;
+                        font-size: 0.9rem;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        white-space: pre-wrap;
+                    ">
+                        ${descripcionSafe}
+                    </div>
+                </div>
+            `;
         });
+
+        // Si no hay bloques procesados, mostrar contenido como está
+        if (htmlContenido === '') {
+            htmlContenido = `
+                <div style="
+                    padding: 1rem;
+                    background: #f0f9ff;
+                    border-left: 4px solid #06b6d4;
+                    border-radius: 6px;
+                    color: #1e40af;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    white-space: pre-wrap;
+                ">
+                    ${escapeHtml(novedades)}
+                </div>
+            `;
+        }
 
         const numeroPedidoSafe = escapeHtml(numeroPedido);
 
@@ -1351,33 +1408,58 @@
                 justify-content: center;
                 z-index: 9999;
                 animation: fadeIn 0.3s ease;
+                padding: 1rem;
             " onclick="if(event.target.id === 'novedadesModal') cerrarModalNovedades()">
                 <div style="
                     background: white;
                     border-radius: 12px;
-                    padding: 2rem;
-                    max-width: 700px;
-                    max-height: 80vh;
-                    overflow-y: auto;
+                    padding: 0;
+                    max-width: 650px;
+                    width: 100%;
+                    max-height: 85vh;
+                    display: flex;
+                    flex-direction: column;
                     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
                     animation: slideUp 0.3s ease;
+                    overflow: hidden;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedidoSafe}</h2>
+                    <!-- Header -->
+                    <div style="
+                        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+                        padding: 1.5rem;
+                        border-bottom: 1px solid #0369a1;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-shrink: 0;
+                    ">
+                        <h2 style="margin: 0; color: white; font-size: 1.15rem; font-weight: 700;">
+                            📋 Novedades - Pedido #${numeroPedidoSafe}
+                        </h2>
                         <button onclick="cerrarModalNovedades()" style="
-                            background: #f3f4f6;
+                            background: rgba(255, 255, 255, 0.2);
                             border: none;
                             border-radius: 6px;
                             padding: 0.5rem 0.75rem;
                             cursor: pointer;
                             font-size: 1.25rem;
-                            color: #6b7280;
+                            color: white;
                             transition: all 0.2s;
-                        " onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
                             ✕
                         </button>
                     </div>
-                    <div style="color: #374151; line-height: 1.8;">
+
+                    <!-- Contenido -->
+                    <div style="
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 1.5rem;
+                        background: #f9fafb;
+                    ">
                         ${htmlContenido}
                     </div>
                 </div>

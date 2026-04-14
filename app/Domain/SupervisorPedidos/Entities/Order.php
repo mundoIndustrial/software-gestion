@@ -75,7 +75,7 @@ class Order
         return $this->status->isApproved();
     }
 
-    public function approve(): void
+    public function approve(string $approvalNote = ''): void
     {
         if (!$this->status->isPending()) {
             throw new \DomainException('Solo se pueden aprobar órdenes pendientes');
@@ -84,6 +84,11 @@ class Order
         // Persistimos el valor de estado canonical del dominio/BD
         $this->status = new OrderStatus('PENDIENTE_INSUMOS');
         $this->approvedBySupervisorAt = Carbon::now();
+
+        // Agregamos novedad de aprobación si se proporciona
+        if ($approvalNote) {
+            $this->addNote($approvalNote);
+        }
 
         $this->recordDomainEvent(new OrderApprovedEvent($this->id));
     }
@@ -104,7 +109,7 @@ class Order
 
         $this->status = new OrderStatus('DEVUELTO_A_ASESORA');
         $this->approvedBySupervisorAt = Carbon::now();
-        $this->notes = $reason;
+        $this->addNote($reason);
 
         $this->recordDomainEvent(new OrderReturnedEvent($this->id, $reason));
     }

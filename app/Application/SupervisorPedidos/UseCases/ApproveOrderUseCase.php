@@ -7,6 +7,7 @@ use App\Domain\SupervisorPedidos\ValueObjects\OrderId;
 use App\Application\SupervisorPedidos\DTOs\ApproveOrderRequest;
 use App\Application\SupervisorPedidos\DTOs\ApproveOrderResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class ApproveOrderUseCase
 {
@@ -31,11 +32,21 @@ class ApproveOrderUseCase
                 throw new \DomainException('Solo se pueden aprobar órdenes pendientes');
             }
 
-            $order->approve();
+            // Obtener información del usuario actual
+            $user = Auth::user();
+            $userName = $user ? $user->name : 'Sistema';
+            $fecha = now()->format('Y-m-d H:i:s');
+
+            // Crear novedad con información del supervisor
+            $approvalNote = "[Supervisor: $userName - $fecha] Pedido aprobado y enviado a producción";
+
+            $order->approve($approvalNote);
+            
             $this->orderRepository->save($order);
 
             Log::info("Pedido #{$order->getOrderNumber()} aprobado por supervisor", [
                 'order_id' => $orderId->value(),
+                'supervisor' => $userName,
                 'timestamp' => now(),
             ]);
 
