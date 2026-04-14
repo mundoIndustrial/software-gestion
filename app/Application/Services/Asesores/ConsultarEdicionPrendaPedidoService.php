@@ -11,6 +11,7 @@ final class ConsultarEdicionPrendaPedidoService
     public function __construct(
         private readonly ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
         private readonly ObtenerProduccionPedidoUseCase $obtenerPedidoUseCase,
+        private readonly PrendaEdicionBloqueoService $prendaEdicionBloqueoService,
     ) {
     }
 
@@ -48,6 +49,7 @@ final class ConsultarEdicionPrendaPedidoService
         $pedido = $this->obtenerPedidoUseCase->ejecutar(
             ObtenerProduccionPedidoDTO::fromRequest((string) $pedidoId)
         );
+        $pedido = $this->enriquecerPedidoConBloqueos($pedido, $pedidoId);
 
         return [
             'pedido_id' => $pedidoId,
@@ -130,5 +132,71 @@ final class ConsultarEdicionPrendaPedidoService
 
         return '';
     }
-}
 
+    private function enriquecerPedidoConBloqueos(mixed $pedido, int $pedidoId): mixed
+    {
+        if (is_array($pedido)) {
+            if (isset($pedido['prendas']) && is_iterable($pedido['prendas'])) {
+                $pedido['prendas'] = $this->enriquecerPrendasConBloqueo($pedido['prendas'], $pedidoId);
+            }
+            if (isset($pedido['pedido']) && (is_array($pedido['pedido']) || is_object($pedido['pedido']))) {
+                $pedido['pedido'] = $this->enriquecerPedidoConBloqueos($pedido['pedido'], $pedidoId);
+            }
+            return $pedido;
+        }
+
+        if (is_object($pedido)) {
+            if (isset($pedido->prendas) && is_iterable($pedido->prendas)) {
+                $pedido->prendas = $this->enriquecerPrendasConBloqueo($pedido->prendas, $pedidoId);
+            }
+            if (isset($pedido->pedido) && (is_array($pedido->pedido) || is_object($pedido->pedido))) {
+                $pedido->pedido = $this->enriquecerPedidoConBloqueos($pedido->pedido, $pedidoId);
+            }
+        }
+
+        return $pedido;
+    }
+
+    private function enriquecerPrendasConBloqueo(iterable $prendas, int $pedidoId): iterable
+    {
+        $mapFn = function ($prenda) use ($pedidoId) {
+            $prendaId = $this->pick($prenda, 'id') ?? $this->pick($prenda, 'prenda_pedido_id');
+            if (!$prendaId) {
+                return $prenda;
+            }
+
+            $bloqueo = $this->prendaEdicionBloqueoService->evaluar($pedidoId, (int) $prendaId);
+            $bloqueada = (bool) ($bloqueo['bloqueada'] ?? false);
+            $puedeEditar = ! $bloqueada;
+
+            if (is_array($prenda)) {
+                $prenda['puede_editar'] = $puedeEditar;
+                $prenda['bloqueada_edicion'] = $bloqueada;
+                $prenda['bloqueo_edicion'] = $bloqueo;
+                return $prenda;
+            }
+
+            if (is_object($prenda)) {
+                $prenda->puede_editar = $puedeEditar;
+                $prenda->bloqueada_edicion = $bloqueada;
+                $prenda->bloqueo_edicion = $bloqueo;
+            }
+
+            return $prenda;
+        };
+
+        if (is_array($prendas)) {
+            return array_map($mapFn, $prendas);
+        }
+
+        if ($prendas instanceof \Illuminate\Support\Collection) {
+            return $prendas->map($mapFn);
+        }
+
+        $resultado = [];
+        foreach ($prendas as $prenda) {
+            $resultado[] = $mapFn($prenda);
+        }
+        return $resultado;
+    }
+}

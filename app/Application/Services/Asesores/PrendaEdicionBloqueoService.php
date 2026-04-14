@@ -5,6 +5,8 @@ namespace App\Application\Services\Asesores;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class PrendaEdicionBloqueoService
 {
@@ -16,6 +18,8 @@ final class PrendaEdicionBloqueoService
 
     private const VALORES_CONSECUTIVO_PERMITIDOS = [
         'PENDIENTE_INSUMOS',
+        'PENDIENTE_CARTERA',
+        'PENDIENTE_SUPERVISOR',
         'DEVUELTO_ASESOR',
         'DEVUELTO_ASESORA',
         'DEVUELTO_A_ASESOR',
@@ -28,7 +32,17 @@ final class PrendaEdicionBloqueoService
     ];
 
     private const ESTADOS_CONSECUTIVO_BLOQUEADOS = [
+        'PENDIENTE_TELA',
+        'PENDIENTE_PLOTTER',
+        'PENDIENTE_PLOTER',
+        'PENDIENTE_PLOOTER',
         'INSUMOS_PEDIDOS',
+    ];
+    private const TIPOS_PROCESO_BODEGA_BLOQUEO = [
+        'BORDADO',
+        'ESTAMPADO',
+        'DTF',
+        'SUBLIMADO',
     ];
 
     public function evaluar(int $pedidoId, int $prendaId): array
@@ -48,17 +62,30 @@ final class PrendaEdicionBloqueoService
 
         $registros = $this->obtenerRegistrosConsecutivo($pedidoId, $prendaId);
         if ($registros->isEmpty()) {
+            $bloqueoBodegaProcesos = $this->resolverBloqueoBodegaProcesosAprobados($pedidoId, $prendaId);
+            if ($bloqueoBodegaProcesos !== null) {
+                return $bloqueoBodegaProcesos;
+            }
             return $this->respuestaPermitida($estadoPedido);
         }
 
         $registroBloqueado = $this->resolverRegistroBloqueado($registros);
         if ($registroBloqueado !== null) {
             $area = $this->normalizarArea($registroBloqueado->area ?? null);
+            $mensaje = $this->mensajeBloqueoInsumosPedidos($registroBloqueado->estado ?? null);
+
+            Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_ESTADO_CONSECUTIVO', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'estado' => $registroBloqueado->estado ?? null,
+                'area' => $area,
+                'consecutivo' => $registroBloqueado->consecutivo_actual ?? null,
+            ]);
 
             return [
                 'bloqueada' => true,
                 'puede_editar' => false,
-                'mensaje' => $this->mensajeBloqueoInsumosPedidos(),
+                'mensaje' => $mensaje,
                 'consecutivo' => $registroBloqueado->consecutivo_actual,
                 'estado' => $registroBloqueado->estado,
                 'area' => $area,
@@ -66,7 +93,16 @@ final class PrendaEdicionBloqueoService
             ];
         }
 
+        $bloqueoBodegaProcesos = $this->resolverBloqueoBodegaProcesosAprobados($pedidoId, $prendaId);
+        if ($bloqueoBodegaProcesos !== null) {
+            return $bloqueoBodegaProcesos;
+        }
+
         if ($this->resolverRegistroPermitido($registros)) {
+            Log::info('[PrendaEdicionBloqueo] PERMITIDA_POR_ESTADO_CONSECUTIVO', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+            ]);
             return $this->respuestaPermitida($estadoPedido);
         }
 
@@ -98,9 +134,10 @@ final class PrendaEdicionBloqueoService
         return "Esta prenda no se puede {$accionNormalizada} porque el pedido se encuentra en estado {$estadoVisible}. Comunicate con el lider de produccion.";
     }
 
-    public function mensajeBloqueoInsumosPedidos(): string
+    public function mensajeBloqueoInsumosPedidos(?string $estado = null): string
     {
-        return 'Esta prenda ya se mando a pedir en insumos. Comunicate con el lider de produccion.';
+        $estadoVisible = $this->formatearEstadoVisible($estado);
+        return "Esta prenda se encuentra en estado {$estadoVisible}, por ende no se puede editar ya que se pidieron los insumos de esa prenda. Comunicate con el lider de produccion.";
     }
 
     private function respuestaPermitida(?string $estadoPedido): array
@@ -119,7 +156,6 @@ final class PrendaEdicionBloqueoService
     private function obtenerRegistrosConsecutivo(int $pedidoId, int $prendaId): Collection
     {
         $registrosActivos = $this->consecutivosRecibosRepository->obtenerPorPrendaYPedido($prendaId, $pedidoId)
-            ->filter(fn ($r) => !empty($r->consecutivo_actual))
             ->values();
 
         if ($registrosActivos->isNotEmpty()) {
@@ -127,7 +163,6 @@ final class PrendaEdicionBloqueoService
         }
 
         return $this->consecutivosRecibosRepository->obtenerTodosPorPrenda($prendaId, $pedidoId)
-            ->filter(fn ($r) => !empty($r->consecutivo_actual))
             ->values();
     }
 
@@ -148,7 +183,7 @@ final class PrendaEdicionBloqueoService
     {
         foreach ($registros as $registro) {
             $estadoNormalizado = $this->normalizarTexto((string) ($registro->estado ?? ''));
-            if (in_array($estadoNormalizado, self::ESTADOS_CONSECUTIVO_BLOQUEADOS, true)) {
+            if ($this->esEstadoBloqueadoInsumos($estadoNormalizado)) {
                 return $registro;
             }
         }
@@ -191,5 +226,92 @@ final class PrendaEdicionBloqueoService
         $s = $ascii !== false ? $ascii : $s;
         $s = strtoupper($s);
         return str_replace(' ', '_', $s);
+    }
+
+    private function formatearEstadoVisible(?string $estado): string
+    {
+        $normalizado = $this->normalizarTexto((string) $estado);
+        if ($normalizado === '') {
+            return 'INDETERMINADO';
+        }
+
+        return ucwords(strtolower(str_replace('_', ' ', $normalizado)));
+    }
+
+    private function esEstadoBloqueadoInsumos(string $estadoNormalizado): bool
+    {
+        if ($estadoNormalizado === '') {
+            return false;
+        }
+
+        if (in_array($estadoNormalizado, self::ESTADOS_CONSECUTIVO_BLOQUEADOS, true)) {
+            return true;
+        }
+
+        return str_starts_with($estadoNormalizado, 'PENDIENTE_TELA')
+            || str_starts_with($estadoNormalizado, 'PENDIENTE_PLOTTER')
+            || str_starts_with($estadoNormalizado, 'PENDIENTE_PLOTER')
+            || str_starts_with($estadoNormalizado, 'PENDIENTE_PLOOTER')
+            || str_starts_with($estadoNormalizado, 'INSUMOS_PEDIDOS');
+    }
+
+    private function resolverBloqueoBodegaProcesosAprobados(int $pedidoId, int $prendaId): ?array
+    {
+        $prenda = DB::table('prendas_pedido')
+            ->where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereNull('deleted_at')
+            ->select('id', 'de_bodega')
+            ->first();
+
+        if (!$prenda || !((int) ($prenda->de_bodega ?? 0) === 1)) {
+            return null;
+        }
+
+        $procesoBloqueante = DB::table('pedidos_procesos_prenda_detalles as ppd')
+            ->join('tipos_procesos as tp', 'tp.id', '=', 'ppd.tipo_proceso_id')
+            ->where('ppd.prenda_pedido_id', $prendaId)
+            ->whereNull('ppd.deleted_at')
+            ->whereRaw('UPPER(TRIM(ppd.estado)) = ?', ['APROBADO'])
+            ->whereIn(DB::raw('UPPER(TRIM(tp.nombre))'), self::TIPOS_PROCESO_BODEGA_BLOQUEO)
+            ->selectRaw('UPPER(TRIM(tp.nombre)) as tipo_proceso')
+            ->first();
+
+        if (!$procesoBloqueante) {
+            return null;
+        }
+
+        $tipoProceso = strtoupper(trim((string) $procesoBloqueante->tipo_proceso));
+        $consecutivo = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_id', $prendaId)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoProceso])
+            ->whereNotNull('consecutivo_actual')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$consecutivo) {
+            return null;
+        }
+
+        $tipoVisible = ucwords(strtolower($tipoProceso));
+        $mensaje = "Esta prenda de bodega ya tiene proceso {$tipoVisible} aprobado y consecutivo generado, por ende no se puede editar. Comunicate con el lider de produccion.";
+
+        Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_BODEGA_PROCESO_APROBADO', [
+            'pedido_id' => $pedidoId,
+            'prenda_id' => $prendaId,
+            'tipo_proceso' => $tipoProceso,
+            'consecutivo' => $consecutivo->consecutivo_actual ?? null,
+        ]);
+
+        return [
+            'bloqueada' => true,
+            'puede_editar' => false,
+            'mensaje' => $mensaje,
+            'consecutivo' => $consecutivo->consecutivo_actual ?? null,
+            'estado' => $consecutivo->estado ?? null,
+            'area' => $this->normalizarArea($consecutivo->area ?? null),
+            'estado_pedido' => $this->obtenerEstadoPedido($pedidoId),
+        ];
     }
 }
