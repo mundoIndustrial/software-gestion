@@ -43,6 +43,7 @@ final class PrendaEdicionBloqueoService
         'ESTAMPADO',
         'DTF',
         'SUBLIMADO',
+        'REFLECTIVO',
     ];
 
     public function evaluar(int $pedidoId, int $prendaId): array
