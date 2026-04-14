@@ -303,6 +303,16 @@ class DespachoGeneradorService
                 ]);
                 continue;
             }
+            
+            // Si el EPP está eliminado (deleted_at IS NOT NULL) y no tiene versiones más nuevas
+            // (es decir, no fue homologado a otro EPP), entonces no debe aparecer en la vista
+            if ($pedidoEpp->deleted_at !== null && !$tieneVersionesMasNuevas) {
+                \Log::info('[DESPACHO-EPP-ITEM] 🗑️ EPP eliminado sin homologación - No se mostrará', [
+                    'epp_id' => $pedidoEpp->id,
+                    'deleted_at' => $pedidoEpp->deleted_at,
+                ]);
+                continue;
+            }
                 
                 $filaDTO = new FilaDespachoDTO(
                     tipo: 'epp',

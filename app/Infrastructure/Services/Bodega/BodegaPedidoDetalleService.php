@@ -176,6 +176,19 @@ class BodegaPedidoDetalleService
                 continue;
             }
 
+            // Si el EPP está eliminado (deleted_at IS NOT NULL) y no tiene versiones más nuevas
+            // (es decir, no fue homologado a otro EPP), entonces no debe aparecer en la vista
+            $tieneVersionesMasNuevas = !$hijosPorPadre->get($pedidoEppIdActual, collect())->isEmpty();
+            
+            if ($pedidoEppActual->deleted_at !== null && !$tieneVersionesMasNuevas) {
+                \Log::info('[procesarEpps] 🗑️ EPP eliminado sin homologación - No se mostrará', [
+                    'epp_id' => $pedidoEppIdActual,
+                    'deleted_at' => $pedidoEppActual->deleted_at,
+                    'numero_pedido' => $recibo->numero_pedido,
+                ]);
+                continue;
+            }
+
             $historialeHomologaciones = $this->obtenerHistorialEpp($pedidoEppIdOriginal);
 
             $eppEnriquecidoActual = $eppsEnriquecidosPorId->get($pedidoEppIdActual, []);
