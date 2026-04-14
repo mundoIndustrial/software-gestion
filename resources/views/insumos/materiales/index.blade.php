@@ -137,7 +137,7 @@
                                     </button>
                                 </div>
                             </th>
-                            <th class="text-center py-4 px-6 font-bold">
+                            <th class="text-center py-4 px-6 font-bold" style="min-width: 220px;">
                                 <div class="flex items-center justify-center gap-2">
                                     <span>Estado</span>
                                     <button
@@ -280,7 +280,7 @@
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
-                                <td class="py-6 px-6 text-center min-h-20">
+                                <td class="py-6 px-6 text-center min-h-20" style="min-width: 220px;">
                                     @php
                                         $estadoClass = '';
                                         $estadoColor = '';
@@ -326,27 +326,27 @@
                                         {{-- SELECTOR EDITABLE --}}
                                         <div class="relative block w-full flex items-center justify-center">
                                             <select 
-                                                class="estado-select px-2 py-2 rounded-lg text-xs font-semibold border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-20 leading-tight whitespace-normal {{ $estadoClass }}"
-                                                style="min-height: 3rem; line-height: 1.2; white-space: pre-line;"
+                                                class="estado-select px-2 py-2 rounded-full text-xs font-semibold border cursor-pointer leading-tight whitespace-nowrap {{ $estadoClass }}"
+                                                style="min-height: 2rem; line-height: 1.2; white-space: nowrap; width: 100%; max-width: 350px; outline: none;"
                                                 data-recibo-id="{{ $orden->id }}"
                                                 data-estado-actual="{{ $orden->estado }}"
                                                 data-rol="{{ $currentRoleName }}"
-                                                onchange="cambiarEstadoDesdeSelector(this)"
+                                                onchange="cambiarEstadoDesdeSelector(this); aplicarEstiloEstadoSelect(this);"
                                             >
                                                 @if($currentRoleName === 'insumos')
                                                     {{-- Solo 2 opciones editable para rol insumos --}}
                                                     <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
-                                                    <option value="Pendiente Tela" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
-                                                    <option value="Pendiente Plotter" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
-                                                    <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
+                                                    <option value="PENDIENTE_TELA" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                                    <option value="PENDIENTE_PLOTTER" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
+                                                    <option value="INSUMOS_PEDIDOS" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                                 @else
                                                     {{-- Todas las opciones para otros roles --}}
                                                     <option value="No iniciado" {{ $orden->estado === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                                     <option value="En Ejecución" {{ $orden->estado === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
                                                     <option value="PENDIENTE_INSUMOS" {{ in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
-                                                    <option value="Pendiente Tela" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
-                                                    <option value="Pendiente Plotter" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
-                                                    <option value="Insumos Pedidos" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
+                                                    <option value="PENDIENTE_TELA" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                                    <option value="PENDIENTE_PLOTTER" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
+                                                    <option value="INSUMOS_PEDIDOS" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                                     <option value="DEVUELTO_ASESOR" {{ $orden->estado === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
                                                     <option value="Anulada" {{ $orden->estado === 'Anulada' ? 'selected' : '' }}>Anulada</option>
                                                 @endif
@@ -514,6 +514,41 @@
 
 <!-- Scripts para Cambio de Estado de Recibos -->
 <script defer src="{{ asset('js/insumos/status-actions-insumos.js') }}?v={{ time() }}"></script>
+
+<script>
+// Aplicar estilos iniciales a todos los selects de estado
+function aplicarEstilosIniciales() {
+    const selectsEstado = document.querySelectorAll('.estado-select');
+    selectsEstado.forEach(select => {
+        if (typeof window.aplicarEstiloEstadoSelect === 'function') {
+            window.aplicarEstiloEstadoSelect(select);
+        }
+        
+        // Agregar listener para cambios en tiempo real (antes de confirmar)
+        select.addEventListener('change', function() {
+            if (typeof window.aplicarEstiloEstadoSelect === 'function') {
+                window.aplicarEstiloEstadoSelect(this);
+            }
+        });
+    });
+}
+
+// Ejecutar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', aplicarEstilosIniciales);
+
+// También ejecutar después de que todas las imágenes hayan cargado (por si hay lazy loading)
+window.addEventListener('load', aplicarEstilosIniciales);
+
+// Y ejecutar cada 500ms durante los primeros 3 segundos en caso de que los selects se cargen dinámicamente
+let intentos = 0;
+const intervalo = setInterval(() => {
+    aplicarEstilosIniciales();
+    intentos++;
+    if (intentos >= 6) {
+        clearInterval(intervalo);
+    }
+}, 500);
+</script>
 
 {{-- Incluir modales de insumos --}}
 @include('insumos.materiales.partials.modales-insumos')

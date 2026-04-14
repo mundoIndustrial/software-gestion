@@ -11,11 +11,13 @@
  * - confirmarEnvioProduccion() - Confirmar y enviar a produccion
  */
 
-const productionState = {
-    reciboId: null,
-    consecutivo: null,
-    pedidoId: null,
-};
+if (typeof window.productionState === 'undefined') {
+    window.productionState = {
+        reciboId: null,
+        consecutivo: null,
+        pedidoId: null,
+    };
+}
 
 function getPasarARevisarHandler(name) {
     return window.insumosHandlers?.pasarARevisar?.[name];
@@ -85,8 +87,8 @@ function confirmarPasarRevisar(event) {
  */
 function cambiarEstadoRecibo(reciboId, consecutivo) {
     // Guardar el ID del recibo y su consecutivo en variables globales
-    productionState.reciboId = reciboId;
-    productionState.consecutivo = consecutivo;
+    window.productionState.reciboId = reciboId;
+    window.productionState.consecutivo = consecutivo;
     
     // Mostrar el modal
     document.getElementById('numeroPedidoConfirm').textContent = consecutivo;
@@ -99,7 +101,7 @@ function cambiarEstadoRecibo(reciboId, consecutivo) {
  */
 function cambiarEstadoPedido(numeroPedido, estadoActual) {
     if (estadoActual.toLowerCase() === 'pendiente' || estadoActual === 'PENDIENTE_INSUMOS') {
-        productionState.pedidoId = numeroPedido;
+        window.productionState.pedidoId = numeroPedido;
         document.getElementById('numeroPedidoConfirm').textContent = numeroPedido;
         document.getElementById('modalConfirmarProduccion').style.display = 'flex';
     } else {
@@ -113,9 +115,9 @@ function cambiarEstadoPedido(numeroPedido, estadoActual) {
  */
 function cerrarModalConfirmarProduccion() {
     document.getElementById('modalConfirmarProduccion').style.display = 'none';
-    productionState.reciboId = null;
-    productionState.consecutivo = null;
-    productionState.pedidoId = null;
+    window.productionState.reciboId = null;
+    window.productionState.consecutivo = null;
+    window.productionState.pedidoId = null;
     
     // Restaurar boton al cerrar modal
     restaurarBotonAprobar();
@@ -147,8 +149,8 @@ function restaurarBotonAprobar() {
  * Muestra animacion de carga y recarga la Pagina al Exito
  */
 function confirmarEnvioProduccion() {
-    const reciboId = productionState.reciboId;
-    const pedidoId = productionState.pedidoId;
+    const reciboId = window.productionState.reciboId;
+    const pedidoId = window.productionState.pedidoId;
     
     if (!reciboId && !pedidoId) return;
     
@@ -235,12 +237,14 @@ function confirmarEnvioProduccion() {
 
 
 // ===== VARIABLES GLOBALES PARA MODAL DE CONFIRMACIÓN =====
-let cambioEstadoPendiente = {
-    reciboId: null,
-    estadoActual: null,
-    nuevoEstado: null,
-    selectElement: null
-};
+if (typeof window.cambioEstadoPendiente === 'undefined') {
+    window.cambioEstadoPendiente = {
+        reciboId: null,
+        estadoActual: null,
+        nuevoEstado: null,
+        selectElement: null
+    };
+}
 
 /**
  * Cambiar estado desde el selector dropdown en la tabla
@@ -257,10 +261,10 @@ async function cambiarEstadoDesdeSelector(selectElement) {
     }
     
     // Guardar los datos para confirmar después
-    cambioEstadoPendiente.reciboId = reciboId;
-    cambioEstadoPendiente.estadoActual = estadoActual;
-    cambioEstadoPendiente.nuevoEstado = nuevoEstado;
-    cambioEstadoPendiente.selectElement = selectElement;
+    window.cambioEstadoPendiente.reciboId = reciboId;
+    window.cambioEstadoPendiente.estadoActual = estadoActual;
+    window.cambioEstadoPendiente.nuevoEstado = nuevoEstado;
+    window.cambioEstadoPendiente.selectElement = selectElement;
     
     // Mostrar el modal de confirmación
     mostrarModalConfirmacion(nuevoEstado);
@@ -292,27 +296,25 @@ function cancelarCambioEstado() {
     }
     
     // Revertir el selector al valor anterior
-    if (cambioEstadoPendiente.selectElement) {
-        cambioEstadoPendiente.selectElement.value = cambioEstadoPendiente.estadoActual;
+    if (window.cambioEstadoPendiente.selectElement) {
+        window.cambioEstadoPendiente.selectElement.value = window.cambioEstadoPendiente.estadoActual;
     }
     
     // Limpiar los datos
-    cambioEstadoPendiente = {
-        reciboId: null,
-        estadoActual: null,
-        nuevoEstado: null,
-        selectElement: null
-    };
+    window.cambioEstadoPendiente.reciboId = null;
+    window.cambioEstadoPendiente.estadoActual = null;
+    window.cambioEstadoPendiente.nuevoEstado = null;
+    window.cambioEstadoPendiente.selectElement = null;
 }
 
 /**
  * Confirmar el cambio de estado
  */
 async function confirmarCambioEstado() {
-    const reciboId = cambioEstadoPendiente.reciboId;
-    const estadoActual = cambioEstadoPendiente.estadoActual;
-    const nuevoEstado = cambioEstadoPendiente.nuevoEstado;
-    const selectElement = cambioEstadoPendiente.selectElement;
+    const reciboId = window.cambioEstadoPendiente.reciboId;
+    const estadoActual = window.cambioEstadoPendiente.estadoActual;
+    const nuevoEstado = window.cambioEstadoPendiente.nuevoEstado;
+    const selectElement = window.cambioEstadoPendiente.selectElement;
     
     // Cerrar el modal
     const modal = document.getElementById('modalConfirmarCambioEstado');
@@ -341,20 +343,29 @@ async function confirmarCambioEstado() {
         const data = await response.json();
         
         if (data.success) {
-            // Actualizar el atributo data-estado-actual
+            // Actualizar el atributo data-estado-actual Y el valor del select
             if (selectElement) {
+                // Asegurar que el select tenga el nuevo valor
+                selectElement.value = nuevoEstado;
                 selectElement.setAttribute('data-estado-actual', nuevoEstado);
-                // Actualizar los colores del select basado en el nuevo estado
-                actualizarColorSelect(selectElement, nuevoEstado);
+                
+                // Aplicar el nuevo estilo del select inmediatamente
+                if (typeof window.aplicarEstiloEstadoSelect === 'function') {
+                    window.aplicarEstiloEstadoSelect(selectElement);
+                }
+                
+                // Si no se aplicó el estilo, intentar con setTimeout como fallback
+                setTimeout(() => {
+                    if (typeof window.aplicarEstiloEstadoSelect === 'function') {
+                        window.aplicarEstiloEstadoSelect(selectElement);
+                    }
+                }, 100);
             }
             
             // Mostrar toast de éxito
             showToast(`Estado cambiado a ${nuevoEstado}`, 'success');
             
-            // Recargar la tabla después de un segundo
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            // NO recargar la página - mantener el cambio visible sin recarga
         } else {
             // Revertir el select al valor anterior
             if (selectElement) {
@@ -376,12 +387,10 @@ async function confirmarCambioEstado() {
         }
         
         // Limpiar los datos
-        cambioEstadoPendiente = {
-            reciboId: null,
-            estadoActual: null,
-            nuevoEstado: null,
-            selectElement: null
-        };
+        window.cambioEstadoPendiente.reciboId = null;
+        window.cambioEstadoPendiente.estadoActual = null;
+        window.cambioEstadoPendiente.nuevoEstado = null;
+        window.cambioEstadoPendiente.selectElement = null;
     }
 }
 
@@ -430,6 +439,32 @@ function exportStatusActionsInsumos() {
         cerrarModalConfirmarProduccion,
         restaurarBotonAprobar,
         confirmarEnvioProduccion,
+    };
+    
+    // Función para aplicar estilos de color según el estado
+    window.aplicarEstiloEstadoSelect = function(selectElement) {
+        const estado = selectElement.value;
+        const estilosEstado = {
+            'No iniciado': { bg: '#6b7280', color: '#ffffff', border: '#4b5563' },
+            'En Ejecución': { bg: '#3b82f6', color: '#ffffff', border: '#1d4ed8' },
+            'PENDIENTE_INSUMOS': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
+            'Pendiente_Insumos': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
+            'Pendiente Insumos': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
+            'Pendiente Tela': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
+            'PENDIENTE_TELA': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
+            'Pendiente Plotter': { bg: '#a855f7', color: '#ffffff', border: '#7e22ce' },
+            'PENDIENTE_PLOTTER': { bg: '#a855f7', color: '#ffffff', border: '#7e22ce' },
+            'Insumos Pedidos': { bg: '#10b981', color: '#ffffff', border: '#059669' },
+            'INSUMOS_PEDIDOS': { bg: '#10b981', color: '#ffffff', border: '#059669' },
+            'DEVUELTO_ASESOR': { bg: '#ef4444', color: '#ffffff', border: '#dc2626' },
+            'Devuelto Asesor': { bg: '#ef4444', color: '#ffffff', border: '#dc2626' },
+            'Anulada': { bg: '#6366f1', color: '#ffffff', border: '#4f46e5' }
+        };
+        
+        const estilo = estilosEstado[estado] || { bg: '#e5e7eb', color: '#1f2937', border: '#d1d5db' };
+        selectElement.style.backgroundColor = estilo.bg;
+        selectElement.style.color = estilo.color;
+        selectElement.style.borderColor = estilo.border;
     };
     
     // Exponer funciones globales para el modal de cambio de estado

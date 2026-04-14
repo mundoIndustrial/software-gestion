@@ -248,27 +248,27 @@
                                         data-recibo-id="{{ $orden->id }}"
                                         data-estado-actual="{{ $estadoValor }}"
                                         data-rol="{{ $roleName }}"
-                                        onchange="cambiarEstadoDesdeSelector(this)"
+                                        onchange="cambiarEstadoDesdeSelector(this); aplicarEstiloEstadoSelect(this);"
                                     >
                                         @if($roleName === 'insumos')
                                             <option value="PENDIENTE_INSUMOS" {{ in_array($estadoValor, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
-                                            <option value="Pendiente Tela" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
-                                            <option value="Pendiente Plotter" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
-                                            <option value="Insumos Pedidos" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
+                                            <option value="PENDIENTE_TELA" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                            <option value="PENDIENTE_PLOTTER" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
+                                            <option value="INSUMOS_PEDIDOS" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                         @else
                                             <option value="No iniciado" {{ $estadoValor === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                             <option value="En Ejecución" {{ $estadoValor === 'En Ejecución' || $estadoValor === 'En Ejecucion' ? 'selected' : '' }}>En Ejecución</option>
                                             <option value="PENDIENTE_INSUMOS" {{ in_array($estadoValor, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos']) ? 'selected' : '' }}>Pendiente&#10;Insumos</option>
-                                            <option value="Pendiente Tela" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
-                                            <option value="Pendiente Plotter" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
-                                            <option value="Insumos Pedidos" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
+                                            <option value="PENDIENTE_TELA" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
+                                            <option value="PENDIENTE_PLOTTER" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
+                                            <option value="INSUMOS_PEDIDOS" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                             <option value="DEVUELTO_ASESOR" {{ $estadoValor === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
                                             <option value="Anulada" {{ $estadoValor === 'Anulada' ? 'selected' : '' }}>Anulada</option>
                                         @endif
                                     </select>
                                 </div>
                             @else
-                                <span class="inline-block px-3 py-2 rounded-lg text-sm font-semibold {{ $estadoClass }} break-words">
+                                <span class="inline-block px-3 py-2 rounded-lg text-sm font-semibold {{ $estadoClass }} break-words hover:text-white">
                                     {{ $estadoDisplay }}
                                 </span>
                             @endif

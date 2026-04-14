@@ -953,28 +953,27 @@ body.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
 .estado-select {
     transition: all 0.3s ease;
     width: 100%;
-    max-width: 200px;
+    max-width: 500px;
     padding: 0.5rem 1rem !important;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    font-weight: 500;
+    border: 2px solid;
+    border-radius: 9999px;
+    font-weight: 600;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
+    white-space: nowrap;
+    font-size: 0.85rem;
 }
 
 .estado-select:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .estado-select:focus {
     outline: none;
-    border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-    background-color: inherit !important;
-    color: inherit !important;
 }
 
 .estado-select:disabled {
@@ -988,43 +987,51 @@ body.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 0.5rem;
 }
 
-/* Colores específicos para cada estado */
+/* Colores específicos para cada estado - Diferentes y vibrantes */
 .estado-select.bg-gray-400 {
-    background-color: #9ca3af !important;
+    background-color: #6b7280 !important;
     color: white !important;
+    border-color: #4b5563 !important;
 }
 
 .estado-select.bg-blue-100 {
-    background-color: #dbeafe !important;
-    color: #1e40af !important;
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border-color: #1d4ed8 !important;
 }
 
 .estado-select.bg-amber-100 {
-    background-color: #fef3c7 !important;
-    color: #92400e !important;
+    background-color: #f59e0b !important;
+    color: white !important;
+    border-color: #d97706 !important;
 }
 
 .estado-select.bg-green-500 {
-    background-color: #22c55e !important;
+    background-color: #10b981 !important;
     color: white !important;
+    border-color: #059669 !important;
 }
 
 .estado-select.bg-red-500 {
     background-color: #ef4444 !important;
     color: white !important;
+    border-color: #dc2626 !important;
 }
 
 .estado-select.bg-purple-500 {
     background-color: #a855f7 !important;
     color: white !important;
+    border-color: #7e22ce !important;
 }
 
 .estado-select.bg-amber-500 {
-    background-color: #f59e0b !important;
+    background-color: #f97316 !important;
     color: white !important;
+    border-color: #ea580c !important;
 }
 
 .estado-select.bg-yellow-600 {
     background-color: #ca8a04 !important;
     color: white !important;
+    border-color: #b45309 !important;
 }
