@@ -7,10 +7,10 @@ use App\Events\PedidoCreado;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use App\Services\ConsecutivosRecibosService;
+use App\Services\PushNotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
 
 class PedidoProduccionObserver
 {
@@ -35,6 +35,9 @@ class PedidoProduccionObserver
         
         // Generar consecutivos cuando el estado cambia a PENDIENTE_INSUMOS
         $this->handleGeneracionConsecutivos($pedido);
+
+        // Push móvil cuando el pedido entra a pendiente_cartera
+        $this->handlePushPedidoPendienteCartera($pedido, false);
     }
 
     /**
@@ -94,6 +97,9 @@ class PedidoProduccionObserver
             ]);
             // No lanzar excepción - no queremos bloquear la creación del pedido
         }
+
+        // Push móvil para pedido nuevo en pendiente_cartera
+        $this->handlePushPedidoPendienteCartera($pedido, true);
     }
 
     /**
@@ -326,6 +332,34 @@ class PedidoProduccionObserver
                 'estado_nuevo' => $estadoNuevo,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    private function handlePushPedidoPendienteCartera(PedidoProduccion $pedido, bool $isCreated): void
+    {
+        try {
+            $estadoActual = strtolower((string) $pedido->estado);
+            if ($estadoActual !== 'pendiente_cartera') {
+                return;
+            }
+
+            if (!$isCreated) {
+                if (!$pedido->wasChanged('estado')) {
+                    return;
+                }
+
+                $estadoAnterior = strtolower((string) $pedido->getOriginal('estado'));
+                if ($estadoAnterior === 'pendiente_cartera') {
+                    return;
+                }
+            }
+
+            app(PushNotificationService::class)->notifyCarteraPedidoPendiente($pedido);
+        } catch (\Throwable $e) {
+            Log::warning('[PedidoProduccionObserver] Error enviando push de cartera', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
             ]);
         }
     }

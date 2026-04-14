@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\Auditable;
+use App\Models\PushSubscription;
 
 /**
  * @property int $id
@@ -302,6 +303,11 @@ class User extends Authenticatable
     public function notificacionesNoLeidas()
     {
         return $this->notificacionesLectura()->whereNull('read_at');
+    }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 
     /**

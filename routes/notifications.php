@@ -20,6 +20,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('notifications.mark-all-read');
     Route::post('/notifications/mark-read-on-open', [App\Infrastructure\Http\Controllers\Notifications\NotificationsController::class, 'markAsReadOnOpen'])
         ->name('notifications.mark-read-on-open');
+
+    // Push subscriptions (Web Push)
+    Route::post('/push-subscriptions', [App\Infrastructure\Http\Controllers\Notifications\PushSubscriptionController::class, 'store'])
+        ->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [App\Infrastructure\Http\Controllers\Notifications\PushSubscriptionController::class, 'destroy'])
+        ->name('push-subscriptions.destroy');
     
     // Contador (compatibilidad)
     Route::post('/contador/notifications/marcar-leidas', [App\Infrastructure\Http\Controllers\Contador\CotizacionNotificacionesController::class, 'markAllAsRead'])

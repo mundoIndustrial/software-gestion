@@ -19,6 +19,9 @@ let currentSortOrder = 'desc';
 let filtroCliente = '';
 let filtroFechaDesde = '';
 let filtroFechaHasta = '';
+let carteraKnownPendingIds = new Set();
+let carteraWsNotificationsBootstrapped = false;
+let carteraWsDedupe = new Map();
 
 // ===== PERMISOS DE USUARIO =====
 // Detectar si el usuario tiene permisos de acción (no es supervisor_gerencia)
@@ -314,6 +317,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formRechazo) {
         formRechazo.addEventListener('submit', confirmarRechazo);
     }
+    
+    // Inicializar notificaciones en tiempo real por WebSocket
+    inicializarNotificacionesWebSocketCartera();
+    inicializarPushMovilCartera();
 });
 
 function updateSortIndicators() {
@@ -393,6 +400,11 @@ async function cargarPedidos() {
         } else {
             carteraMainPedidosData = [];
         }
+
+        const idsActuales = carteraMainPedidosData
+            .map(item => Number(item?.id))
+            .filter(id => Number.isFinite(id));
+        idsActuales.forEach(id => carteraKnownPendingIds.add(id));
         
         // Actualizar información de paginación
         if (data.pagination) {
@@ -452,6 +464,177 @@ function updatePaginationControls(pagination) {
     if (btnPrev) btnPrev.disabled = pagination.page <= 1;
     if (btnNext) btnNext.disabled = pagination.page >= pagination.last_page;
     if (btnLast) btnLast.disabled = pagination.page >= pagination.last_page;
+}
+
+// ===== WEBSOCKET DE NUEVOS PENDIENTES =====
+function inicializarNotificacionesWebSocketCartera() {
+    if (carteraWsNotificationsBootstrapped) return;
+    carteraWsNotificationsBootstrapped = true;
+
+    solicitarPermisoNotificacionSiAplica();
+
+    if (typeof window.waitForEcho !== 'function') {
+        console.warn('[CARTERA] waitForEcho no disponible para notificaciones realtime');
+        return;
+    }
+
+    window.waitForEcho(() => {
+        const ws = window.shared?.websocket;
+        const onCreated = (event) => manejarEventoRealtimeCartera(event, 'pedido.creado');
+        const onUpdated = (event) => manejarEventoRealtimeCartera(event, 'pedido.actualizado');
+        const onOrdenUpdated = (event) => manejarEventoRealtimeCartera(event, 'orden.updated');
+
+        try {
+            if (ws && typeof ws.subscribe === 'function') {
+                ws.subscribe('pedidos.creados', '.pedido.creado', onCreated);
+                ws.subscribe('pedidos.general', '.pedido.actualizado', onUpdated);
+                ws.subscribe('ordenes', '.orden.updated', onOrdenUpdated);
+                return;
+            }
+
+            if (window.EchoInstance) {
+                window.EchoInstance.channel('pedidos.creados').listen('.pedido.creado', onCreated);
+                window.EchoInstance.channel('pedidos.general').listen('.pedido.actualizado', onUpdated);
+                window.EchoInstance.channel('ordenes').listen('.orden.updated', onOrdenUpdated);
+                return;
+            }
+
+            console.warn('[CARTERA] No hay cliente websocket disponible');
+        } catch (error) {
+            console.warn('[CARTERA] Error suscribiendo websocket cartera:', error);
+        }
+    });
+}
+
+function manejarEventoRealtimeCartera(event, tipoEvento) {
+    const pedido = extraerPedidoDesdeEventoRealtime(event);
+    if (!pedido || !pedido.id) return;
+
+    const estado = String(pedido.estado || '').toLowerCase();
+    if (estado !== 'pendiente_cartera') return;
+
+    const pedidoId = Number(pedido.id);
+    if (!Number.isFinite(pedidoId)) return;
+
+    const numero = pedido.numero_pedido || pedido.numero || `#${pedidoId}`;
+    const cliente = pedido.cliente || pedido.cliente_nombre || 'Cliente no disponible';
+    const dedupeKey = `${tipoEvento}|${pedidoId}|${estado}`;
+    if (!debeNotificarRealtime(dedupeKey)) return;
+
+    const esNuevoPendiente = !carteraKnownPendingIds.has(pedidoId);
+    carteraKnownPendingIds.add(pedidoId);
+
+    if (!esNuevoPendiente && tipoEvento !== 'pedido.creado') {
+        return;
+    }
+
+    const mensaje = `Nuevo pedido ${numero} de ${cliente}, pendiente por autorizar.`;
+    mostrarNotificacion(mensaje, 'info');
+    mostrarNotificacionNavegador('Nuevo pedido pendiente de cartera', mensaje);
+
+    if (typeof cargarPedidos === 'function') {
+        cargarPedidos();
+    }
+}
+
+function extraerPedidoDesdeEventoRealtime(event) {
+    if (!event || typeof event !== 'object') return null;
+    return event.pedido || event.orden || null;
+}
+
+function debeNotificarRealtime(key) {
+    const now = Date.now();
+    const ttlMs = 10000;
+
+    for (const [k, ts] of carteraWsDedupe.entries()) {
+        if (now - ts > ttlMs) {
+            carteraWsDedupe.delete(k);
+        }
+    }
+
+    if (carteraWsDedupe.has(key)) {
+        return false;
+    }
+
+    carteraWsDedupe.set(key, now);
+    return true;
+}
+
+async function solicitarPermisoNotificacionSiAplica() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+    try {
+        await Notification.requestPermission();
+    } catch (error) {
+        console.warn('[CARTERA] No se pudo solicitar permiso de notificaciones:', error);
+    }
+}
+
+function mostrarNotificacionNavegador(titulo, mensaje) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        const notification = new Notification(titulo, {
+            body: mensaje,
+            icon: '/mundo_icon.png',
+        });
+
+        notification.onclick = function () {
+            window.focus();
+            this.close();
+        };
+    } catch (error) {
+        console.warn('[CARTERA] Error mostrando notificación de navegador:', error);
+    }
+}
+
+// ===== WEB PUSH (SERVICE WORKER) =====
+async function inicializarPushMovilCartera() {
+    const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content') || '';
+    if (!vapidPublicKey) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        const registration = await navigator.serviceWorker.register('/sw-push.js');
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+        }
+
+        await fetch('/push-subscriptions', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(subscription.toJSON()),
+        });
+    } catch (error) {
+        console.warn('[CARTERA] No fue posible registrar push móvil:', error);
+    }
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
 // ===== RENDERIZAR TABLA =====

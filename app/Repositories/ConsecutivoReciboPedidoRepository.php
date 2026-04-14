@@ -217,6 +217,11 @@ class ConsecutivoReciboPedidoRepository
                 'prenda.coloresTelas'
             ]);
 
+        // Excluir INSUMOS solo para COSTURA (no aplica a REFLECTIVO u otros)
+        if ($tipoRecibo === 'COSTURA') {
+            $query->where('area', '!=', 'INSUMOS');
+        }
+
         // Filtros especiales para revisor_entregas
         $user = auth()->user();
         if ($user && $user->hasRole('revisor_entregas')) {
