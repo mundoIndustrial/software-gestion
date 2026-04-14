@@ -12,6 +12,7 @@ const API_BASE_RECHAZADOS = '/api/cartera/rechazados';
 let currentPage = 1;
 let totalPages = 1;
 let pedidosPorPagina = 10;
+let busquedaActual = '';
 
 // Exponer datos globalmente para que el sistema compartido pueda acceder
 globalThis.pedidosDataRechazados = pedidosDataRechazados;
@@ -33,6 +34,11 @@ globalThis.cargarPedidos = async function() {
     // Construir URL con filtros
     let url = API_BASE_RECHAZADOS;
     const params = new URLSearchParams();
+    
+    // Agregar búsqueda si existe
+    if (busquedaActual) {
+      params.append('search', busquedaActual);
+    }
     
     // Agregar filtros si existen
     if (filtroClienteActual) {
@@ -73,7 +79,7 @@ globalThis.cargarPedidos = async function() {
       
       // Extraer datos de paginación
       const pagination = data.pagination || {};
-      totalPages = pagination.total_pages || 1;
+      totalPages = pagination.last_page || 1;
       
       renderizarPedidos(pedidosDataRechazados);
       actualizarPaginacion(pagination.total || 0);
@@ -400,6 +406,25 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
+  
+  // Conectar el buscador
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    let timeoutId;
+    searchInput.addEventListener('input', function(e) {
+      busquedaActual = e.target.value.trim();
+      currentPage = 1; // Resetear a primera página al buscar
+      
+      // Debounce para no hacer muchas peticiones
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        globalThis.cargarPedidos();
+      }, 300);
+    });
+    console.log(' Buscador conectado exitosamente');
+  } else {
+    console.warn(' Advertencia: No se encontró el input de búsqueda');
+  }
   
   // Cargar pedidos iniciales
   globalThis.cargarPedidos();

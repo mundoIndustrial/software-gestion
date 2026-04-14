@@ -36,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Providers\PrendaEditorServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Importante para túneles/proxies (Cloudflare, localtunnel, ngrok):
+        // permite respetar X-Forwarded-* y detectar correctamente https.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'bodega-access' => \App\Http\Middleware\CheckBodegaAccess::class,
