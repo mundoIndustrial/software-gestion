@@ -345,9 +345,12 @@ async function confirmarCambioEstado() {
         if (data.success) {
             // Actualizar el atributo data-estado-actual Y el valor del select
             if (selectElement) {
+                // Usar el estado que realmente se guardó en el backend
+                const estadoGuardado = data.estado_guardado || nuevoEstado;
+                
                 // Asegurar que el select tenga el nuevo valor
-                selectElement.value = nuevoEstado;
-                selectElement.setAttribute('data-estado-actual', nuevoEstado);
+                selectElement.value = estadoGuardado;
+                selectElement.setAttribute('data-estado-actual', estadoGuardado);
                 
                 // Aplicar el nuevo estilo del select inmediatamente
                 if (typeof window.aplicarEstiloEstadoSelect === 'function') {
@@ -363,7 +366,7 @@ async function confirmarCambioEstado() {
             }
             
             // Mostrar toast de éxito
-            showToast(`Estado cambiado a ${nuevoEstado}`, 'success');
+            showToast(`Estado cambiado a ${data.estado_guardado || nuevoEstado}`, 'success');
             
             // NO recargar la página - mantener el cambio visible sin recarga
         } else {

@@ -242,7 +242,7 @@
                                         {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                         @if(!$isPatronista)
                                             {{-- Botón Enviar a Producción (visible en la fila) --}}
-                                            @if($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos')
+                                            @if(in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
                                                 <button 
                                                     class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                                     data-insumos-action="enviar-produccion"

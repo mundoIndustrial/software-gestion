@@ -29,7 +29,7 @@ class RecibosCosturaReadRepository
             )
             ->where(function ($q) {
                 // Mostrar recibos que estén en PENDIENTE_INSUMOS (estado del RECIBO, no del pedido)
-                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
+                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
                     // O también mostrar si el área del RECIBO está en CORTE o COSTURA
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
             })

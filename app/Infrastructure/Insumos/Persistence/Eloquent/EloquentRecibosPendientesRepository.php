@@ -15,11 +15,25 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     public function cambiarEstadoRecibo(int $reciboId, string $nuevoEstado): array
     {
         try {
+            Log::info('[cambiarEstadoRecibo] Iniciando', [
+                'reciboId' => $reciboId,
+                'nuevoEstado' => $nuevoEstado,
+            ]);
+
             $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
             $estadoAnterior = $recibo->estado ?? 'PENDIENTE_INSUMOS';
             $estadoReciboNormalizado = $this->normalizarEstadoRecibo($nuevoEstado);
 
-            if (!in_array($estadoAnterior, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter'], true)) {
+            Log::info('[cambiarEstadoRecibo] Estados', [
+                'estadoAnterior' => $estadoAnterior,
+                'nuevoEstadoRecibido' => $nuevoEstado,
+                'estadoReciboNormalizado' => $estadoReciboNormalizado,
+            ]);
+
+            if (!in_array($estadoAnterior, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos'], true)) {
+                Log::warning('[cambiarEstadoRecibo] Estado anterior no válido', [
+                    'estadoAnterior' => $estadoAnterior,
+                ]);
                 return [
                     'success' => false,
                     'message' => 'Este recibo ya ha sido aprobado',
@@ -27,37 +41,67 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             }
 
             $area = $this->determinarAreaPorEstado($estadoReciboNormalizado);
+            
+            Log::info('[cambiarEstadoRecibo] Determinando área', [
+                'area' => $area,
+            ]);
 
-            $recibo->update([
+            $updateResult = $recibo->update([
                 'estado' => $estadoReciboNormalizado,
                 'area' => $area,
+            ]);
+
+            Log::info('[cambiarEstadoRecibo] Resultado del update', [
+                'updateResult' => $updateResult,
+                'estadoActualEnDB' => ConsecutivoReciboPedido::find($reciboId)->estado ?? 'NO ENCONTRADO',
             ]);
 
             $recibosPendientes = ConsecutivoReciboPedido::where('pedido_produccion_id', $recibo->pedido_produccion_id)
                 ->where('tipo_recibo', 'COSTURA')
                 ->where('activo', 1)
-                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
                 ->count();
 
-            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
-            if ($pedido && $pedido->estado === 'PENDIENTE_INSUMOS') {
-                $pedido->update([
-                    'estado' => $this->normalizarEstadoPedido($estadoReciboNormalizado),
-                    'area' => $area,
-                ]);
+            // Solo actualizar pedidos_produccion si el recibo se aprueba para producción (En Ejecución)
+            // En otros estados intermedios NO se toca pedidos_produccion
+            if (in_array($estadoReciboNormalizado, ['En Ejecución', 'En Ejecucion'], true)) {
+                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                if ($pedido) {
+                    $pedido->update([
+                        'estado' => 'En Ejecución',
+                        'area' => 'CORTE',
+                    ]);
+                    Log::info('[cambiarEstadoRecibo] Pedido actualizado a En Ejecución', [
+                        'pedido_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                    ]);
+                }
             }
 
             if ($this->debeCrearProcesoCorte($estadoReciboNormalizado)) {
+                $recibo->refresh();
+                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
                 $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $estadoReciboNormalizado);
             }
+
+            Log::info('[cambiarEstadoRecibo] Completado exitosamente', [
+                'reciboId' => $reciboId,
+                'estadoNuevo' => $estadoReciboNormalizado,
+            ]);
 
             return [
                 'success' => true,
                 'message' => 'Recibo aprobado correctamente',
                 'recibos_pendientes' => $recibosPendientes,
+                'estado_guardado' => $estadoReciboNormalizado,
             ];
         } catch (\Exception $e) {
-            Log::error('Error al cambiar estado del recibo: ' . $e->getMessage());
+            Log::error('Error al cambiar estado del recibo', [
+                'reciboId' => $reciboId,
+                'nuevoEstado' => $nuevoEstado,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return [
                 'success' => false,
@@ -205,17 +249,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         };
     }
 
-    private function normalizarEstadoPedido(string $estadoRecibo): string
-    {
-        return match ($estadoRecibo) {
-            'INSUMOS_PEDIDOS' => 'PENDIENTE_INSUMOS',
-            'PENDIENTE_TELA' => 'PENDIENTE_INSUMOS',
-            'PENDIENTE_PLOTTER' => 'PENDIENTE_INSUMOS',
-            'DEVUELTO_ASESOR' => 'DEVUELTO_A_ASESORA',
-            'En Ejecucion' => 'En Ejecución',
-            default => $estadoRecibo,
-        };
-    }
+    
     private function debeCrearProcesoCorte(string $estadoRecibo): bool
     {
         $estadoNormalizado = strtolower(trim(Str::ascii($estadoRecibo)));
