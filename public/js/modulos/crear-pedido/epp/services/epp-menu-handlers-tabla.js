@@ -17,6 +17,47 @@ class EppMenuHandlerTabla extends EppMenuHandlerBase {
         console.log('[EppMenuHandlerTabla]  Inicializado para estructura TABLA');
     }
 
+    /**
+     * Sobrescribir editarEPP para usar selectores de tabla
+     * En tabla, buscamos .item-epp[data-item-id] en lugar de .item-epp-card[data-epp-id]
+     */
+    editarEPP(btn) {
+        const tarjetaId = btn.getAttribute('data-item-id');
+        console.log(`[${this.constructor.name}] Editando EPP: ${tarjetaId}`);
+
+        // Para tabla usamos .item-epp con data-item-id
+        const tarjeta = document.querySelector(`.item-epp[data-item-id="${tarjetaId}"]`);
+        if (!tarjeta) {
+            console.error(`[${this.constructor.name}] Tarjeta no encontrada: ${tarjetaId}`);
+            return;
+        }
+
+        this.cerrarTodosLosMenus();
+
+        // Lógica de edición
+        const eppOriginalIdRaw = tarjeta.getAttribute('data-pedido-epp-id');
+        const tipoRaw = tarjeta.getAttribute('data-tipo');
+        const nombre = tarjeta.querySelector('span')?.textContent?.trim() || null;
+        const eppOriginalId = eppOriginalIdRaw && /^\d+$/.test(String(eppOriginalIdRaw)) ? Number(eppOriginalIdRaw) : null;
+        const tipo = tipoRaw || 'epp';
+
+        if (typeof window.abrirModalEditarEPP === 'function') {
+            window.abrirModalEditarEPP({
+                id: tarjetaId,
+                tarjetaId: tarjetaId,
+                epp_id: eppOriginalId,
+                data_epp_original_id: eppOriginalId,
+                pedido_epp_id: eppOriginalId,
+                nombre: nombre,
+                nombre_epp: nombre,
+                nombre_completo: nombre,
+                tipo: tipo
+            });
+        } else {
+            console.warn(`[${this.constructor.name}] abrirModalEditarEPP no disponible`);
+        }
+    }
+
     attachEventListeners() {
         console.log('[EppMenuHandlerTabla]  Configurando event listeners para tabla...');
         

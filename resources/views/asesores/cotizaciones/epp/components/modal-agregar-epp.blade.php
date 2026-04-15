@@ -9,3 +9,4 @@
 </script>
 
 @include('shared.pedidos.modals.modal-agregar-editar-epp')
+@include('asesores.pedidos.modals.modal-editar-epp')

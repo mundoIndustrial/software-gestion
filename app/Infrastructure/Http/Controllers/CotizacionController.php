@@ -110,7 +110,7 @@ final class CotizacionController extends Controller
             }
 
             if ($codigoTipo === 'EPP') {
-                return redirect("/asesores/cotizaciones/{$id}/edit?tipo=EPP");
+                return redirect()->route('asesores.cotizaciones.edit-epp', ['id' => $id]);
             }
 
             $mapeoTipos = [

@@ -343,8 +343,10 @@
                     // PRIORIDAD 4: URLs normales (NO blob URLs - violarían CSP en producción)
                     // Blob URLs no pueden ser fetched en producción, se saltan
                     if (src.startsWith('blob:')) {
-                        console.warn(`[convertirImagenAFile] Blob URL detectado sin File object. Ignorando fetch para cumplir CSP: ${src.substring(0, 50)}...`);
-                        return null;
+                        console.log(`[convertirImagenAFile] Convirtiendo Blob URL a File: ${fallbackName}`);
+                        const res = await fetch(src);
+                        const blob = await res.blob();
+                        return new File([blob], fallbackName, { type: blob.type || 'image/webp' });
                     }
 
                     // URLs normales (http/https/relativas)
@@ -498,6 +500,11 @@
                         }
                         
                         // Convertir URL pública /storage/... a ruta relativa en disk('public')
+                        if (src.startsWith('data:')) {
+                            console.log('[itemsPayload] Ignorando data URL temporal en keep');
+                            continue;
+                        }
+
                         if (src.includes('/storage/')) {
                             const idx = src.indexOf('/storage/');
                             const rel = src.substring(idx + '/storage/'.length);
@@ -544,6 +551,14 @@
                     } else if (img?.file && img.file instanceof File) {
                         // Tiene file object guardado, es nueva
                         formData.append(`items[${idx}][imagenes][]`, img.file, img.file.name);
+                    } else if (typeof img === 'object' && (img?.previewUrl || img?.url || img?.base64 || img?.ruta_web || img?.ruta_webp || img?.ruta_original)) {
+                        const src = img.previewUrl || img.url || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original;
+                        if (typeof src === 'string' && (src.startsWith('data:') || src.startsWith('blob:'))) {
+                            const file = await convertirImagenAFile(img, img.nombre || `epp_${idx + 1}_${j + 1}.webp`);
+                            if (file) {
+                                formData.append(`items[${idx}][imagenes][]`, file, file.name);
+                            }
+                        }
                     } else if (typeof img === 'string' && img.startsWith('data:')) {
                         // Es DataURL, convertir a File
                         const file = await convertirImagenAFile(img, `epp_${idx + 1}_${j + 1}.webp`);
@@ -1483,4 +1498,3 @@
         syncEmptyState();
         syncTotales();
     });
-

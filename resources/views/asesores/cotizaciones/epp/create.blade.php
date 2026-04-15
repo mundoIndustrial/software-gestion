@@ -309,5 +309,343 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ $v }}"></script>
+
+<!-- Wrapper para abrirModalEditarEPP en contexto de cotizaciones -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Envolver la función abrirModalEditarEPP para trabajar con cotizaciones
+    const originalAbrirModalEditarEPP = window.abrirModalEditarEPP;
+    
+    window.abrirModalEditarEPP = function(eppData) {
+        console.log('[Cotizacion] abrirModalEditarEPP interceptado con EPP:', eppData);
+        
+        // Si estamos en modo cotización, buscar en __EPP_COTIZACION_ITEMS__
+        if (window.__EPP_COTIZACION_MODE__) {
+            const epp_id = eppData?.id || eppData?.epp_id || eppData?.tarjetaId;
+            console.log('[Cotizacion] Buscando EPP en modo cotización, ID:', epp_id);
+            
+            const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
+            const eppEncontrado = items.find(item => {
+                const itemId = item.epp_id || item.id;
+                return String(itemId) === String(epp_id);
+            });
+            
+            if (eppEncontrado) {
+                console.log('[Cotizacion] EPP encontrado en __EPP_COTIZACION_ITEMS__:', eppEncontrado);
+                
+                // Cargar el EPP encontrado en las variables globales que usa el modal
+                window.eppEnEdicionIndividual = {
+                    ...eppEncontrado,
+                    id: epp_id,
+                    epp_id: epp_id,
+                    pedido_epp_id: eppData?.pedido_epp_id || epp_id,
+                    tarjetaId: eppData?.tarjetaId || epp_id,
+                    nombre: eppEncontrado.nombre || eppEncontrado.nombre_epp || '',
+                    nombre_epp: eppEncontrado.nombre_epp || eppEncontrado.nombre || '',
+                    nombre_completo: eppEncontrado.nombre_completo || eppEncontrado.nombre_epp || eppEncontrado.nombre || ''
+                };
+                
+                // Cargar imágenes
+                window.fotosEnEdicionIndividual = (eppEncontrado.imagenes || []).filter(img => img);
+                window.imagenesEditadasEnModalEPP = false;
+                window.tarjetaEppIdEnEdicion = eppData?.tarjetaId || epp_id;
+                window.indiceEPPEnEdicion = items.findIndex(item => {
+                    const itemId = item.epp_id || item.id;
+                    return String(itemId) === String(epp_id);
+                });
+                
+                // Rellenar campos del modal
+                const campos = {
+                    'modalEditarEPPBuscador': window.eppEnEdicionIndividual.nombre_completo || window.eppEnEdicionIndividual.nombre,
+                    'modalEditarEPPNombre': window.eppEnEdicionIndividual.nombre_completo || window.eppEnEdicionIndividual.nombre,
+                    'modalEditarEPPCantidad': eppEncontrado.cantidad || 1,
+                    'modalEditarEPPObservaciones': eppEncontrado.observaciones || '-'
+                };
+                
+                for (const [elementId, valor] of Object.entries(campos)) {
+                    const el = document.getElementById(elementId);
+                    if (el) {
+                        if (elementId.endsWith('Nombre')) {
+                            el.textContent = valor;
+                        } else {
+                            el.value = valor;
+                        }
+                    }
+                }
+                
+                // IMPORTANTE: Cargar imágenes en la variable del modal
+                // Las imágenes guardadas pueden ser Data URLs o blob URLs
+                if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes) && eppEncontrado.imagenes.length > 0) {
+                    // Usar la función del modal para cargar imágenes
+                    if (typeof window.cargarImagenesEnModalEditar === 'function') {
+                        console.log('[Cotizacion] Cargando', eppEncontrado.imagenes.length, 'imágenes guardadas');
+                        window.cargarImagenesEnModalEditar(eppEncontrado.imagenes);
+                    } else {
+                        console.warn('[Cotizacion] Función cargarImagenesEnModalEditar no disponible, intentando acceso directo');
+                        // Fallback: intentar asignar directamente a la variable del scope global
+                        // Esta es una aproximación un poco hacky pero debería funcionar
+                        window.fotosEnEdicionIndividual = eppEncontrado.imagenes.map(img => ({
+                            previewUrl: img.previewUrl || img.url || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
+                            url: img.url || img.previewUrl || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
+                            nombre: img.nombre || `imagen.jpg`,
+                            base64: img.base64,
+                            ruta_webp: img.ruta_webp,
+                            ruta_web: img.ruta_web,
+                            ruta_original: img.ruta_original
+                        }));
+                        
+                        // Mostrar las fotos
+                        if (typeof window.mostrarFotosEnModalEditar === 'function') {
+                            window.mostrarFotosEnModalEditar();
+                        }
+                    }
+                } else {
+                    console.log('[Cotizacion] No hay imágenes para cargar');
+                    if (typeof window.mostrarFotosEnModalEditar === 'function') {
+                        window.mostrarFotosEnModalEditar();
+                    }
+                }
+                
+                // Mostrar imágenes si existe la función
+                if (typeof window.mostrarFotosEnModalEditar === 'function' && !eppEncontrado.imagenes) {
+                    window.mostrarFotosEnModalEditar();
+                }
+                
+                // Abrir el modal
+                const modal = document.getElementById('modalEditarEPP');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    console.log('[Cotizacion] Modal de edición abierto');
+                }
+                
+                return;
+            } else {
+                console.warn('[Cotizacion] EPP no encontrado en __EPP_COTIZACION_ITEMS__');
+            }
+        }
+        
+        // Fallback: intentar con la función original si existe
+        if (typeof originalAbrirModalEditarEPP === 'function') {
+            console.log('[Cotizacion] Fallback a originalAbrirModalEditarEPP');
+            originalAbrirModalEditarEPP(eppData);
+        } else {
+            console.warn('[Cotizacion] No se pudo abrir el modal de edición');
+        }
+    };
+    
+    // Envolver guardarEdicionEnModalEditarEPP para cotizaciones
+    const originalGuardarEdicionEnModalEditarEPP = window.guardarEdicionEnModalEditarEPP;
+    
+    window.guardarEdicionEnModalEditarEPP = async function() {
+        console.log('[Cotizacion] guardarEdicionEnModalEditarEPP interceptado');
+        
+        // Si estamos en modo cotización
+        if (window.__EPP_COTIZACION_MODE__) {
+            if (!window.eppEnEdicionIndividual) {
+                console.error('[Cotizacion] No hay EPP en edicion');
+                return;
+            }
+            
+            const cantidad = parseInt(document.getElementById('modalEditarEPPCantidad').value) || 1;
+            const observaciones = document.getElementById('modalEditarEPPObservaciones').value || '-';
+            const epp_id = window.eppEnEdicionIndividual.epp_id || window.eppEnEdicionIndividual.id;
+            
+            console.log('[Cotizacion] Guardando edicion para EPP ID:', epp_id, 'Cantidad:', cantidad, 'Observaciones:', observaciones);
+            
+            // Extraer imágenes desde el DOM del modal (galería)
+            const imagenes = [];
+            const galeriaItems = document.querySelectorAll('#modalEditarEPPFotosGaleria img');
+            console.log('[Cotizacion] Imágenes encontradas en galería:', galeriaItems.length);
+            
+            // Convertir blob URLs a Data URLs (base64) para que persistan
+            const convertirImagenADataURL = async (img, idx) => {
+                return new Promise((resolve) => {
+                    const src = img.src;
+                    const alt = img.alt || `imagen_${idx}.jpg`;
+                    
+                    if (!src) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    // Si ya es una data URL, usarla directamente
+                    if (src.startsWith('data:')) {
+                        console.log(`[Cotizacion] Imagen ${idx} ya es Data URL`);
+                        imagenes.push({
+                            previewUrl: src,
+                            url: src,
+                            nombre: alt,
+                            ruta_web: src,
+                            base64: src
+                        });
+                        resolve();
+                        return;
+                    }
+                    
+                    // Si es una blob URL, convertir a canvas y luego a data URL
+                    if (src.startsWith('blob:')) {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const tempImg = new Image();
+                        
+                        tempImg.crossOrigin = 'anonymous';
+                        tempImg.onload = function() {
+                            canvas.width = tempImg.width;
+                            canvas.height = tempImg.height;
+                            ctx.drawImage(tempImg, 0, 0);
+                            const dataURL = canvas.toDataURL('image/jpeg', 0.85);
+                            
+                            console.log(`[Cotizacion] Imagen ${idx} convertida a Data URL (${dataURL.length} bytes)`);
+                            imagenes.push({
+                                previewUrl: dataURL,
+                                url: dataURL,
+                                nombre: alt,
+                                ruta_web: dataURL,
+                                base64: dataURL
+                            });
+                            resolve();
+                        };
+                        
+                        tempImg.onerror = function() {
+                            console.warn(`[Cotizacion] Error convirtiendo blob URL a imagen ${idx}`);
+                            // Fallback: usar blob URL directamente
+                            imagenes.push({
+                                previewUrl: src,
+                                url: src,
+                                nombre: alt,
+                                ruta_web: src
+                            });
+                            resolve();
+                        };
+                        
+                        tempImg.src = src;
+                    } else {
+                        // URL normal (http/https)
+                        console.log(`[Cotizacion] Imagen ${idx} es URL normal: ${src}`);
+                        imagenes.push({
+                            previewUrl: src,
+                            url: src,
+                            nombre: alt,
+                            ruta_web: src
+                        });
+                        resolve();
+                    }
+                });
+            };
+            
+            // Procesar todas las imágenes de forma síncrona pero esperar a que se conviertan
+            await Promise.all(
+                Array.from(galeriaItems).map((img, idx) => convertirImagenADataURL(img, idx))
+            );
+            
+            console.log('[Cotizacion] Total de imágenes capturadas:', imagenes.length);
+            
+            // Obtener items del store o de __EPP_COTIZACION_ITEMS__
+            const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
+            const indice = items.findIndex(item => {
+                const itemId = item.epp_id || item.id;
+                return String(itemId) === String(epp_id);
+            });
+            
+            if (indice === -1) {
+                console.error('[Cotizacion] No se encontró el EPP en __EPP_COTIZACION_ITEMS__');
+                return;
+            }
+            
+            // Actualizar los datos en el array
+            window.__EPP_COTIZACION_ITEMS__[indice] = {
+                ...window.__EPP_COTIZACION_ITEMS__[indice],
+                cantidad: cantidad,
+                observaciones: observaciones,
+                imagenes: imagenes
+            };
+            
+            console.log('[Cotizacion] EPP actualizado con ', imagenes.length, ' imágenes:', window.__EPP_COTIZACION_ITEMS__[indice]);
+            
+            // Actualizar también en globalThis.itemsPedido si existe
+            if (Array.isArray(globalThis.itemsPedido)) {
+                const itemIndex = globalThis.itemsPedido.findIndex(item => {
+                    const itemId = item.epp_id || item.id;
+                    return String(itemId) === String(epp_id);
+                });
+                if (itemIndex !== -1) {
+                    globalThis.itemsPedido[itemIndex] = {
+                        ...globalThis.itemsPedido[itemIndex],
+                        cantidad: cantidad,
+                        observaciones: observaciones,
+                        imagenes: imagenes
+                    };
+                    console.log('[Cotizacion] itemsPedido actualizado');
+                }
+            }
+            
+            // Re-renderizar la tabla
+            const tabla = document.getElementById('tabla-items-pedido');
+            if (tabla) {
+                const fila = tabla.querySelector(`tr[data-item-id="${epp_id}"]`);
+                if (fila) {
+                    // Actualizar cantidad
+                    const celdaCantidad = fila.querySelectorAll('td')[3];
+                    if (celdaCantidad) {
+                        celdaCantidad.textContent = cantidad;
+                    }
+                    
+                    // Actualizar observaciones
+                    const celdaObservaciones = fila.querySelectorAll('td')[4];
+                    if (celdaObservaciones) {
+                        celdaObservaciones.textContent = observaciones;
+                    }
+                    
+                    // Actualizar imagen
+                    const celdaImagen = fila.querySelectorAll('td')[1];
+                    if (celdaImagen && imagenes.length > 0) {
+                        const miniatura = imagenes[0].previewUrl || imagenes[0].url || imagenes[0].base64 || imagenes[0].ruta_web || '';
+                        if (miniatura) {
+                            celdaImagen.innerHTML = `
+                                <img src="${miniatura}" alt="${window.__EPP_COTIZACION_ITEMS__[indice].nombre || 'Imagen'}" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
+                                     onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${miniatura}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${miniatura}', 'galeria-epp-${epp_id}', 0);">
+                            `;
+                            console.log('[Cotizacion] Imagen actualizada en tabla');
+                        }
+                    }
+                    
+                    console.log('[Cotizacion] Fila actualizada en tabla');
+                }
+            }
+            
+            // Recalcular totales
+            if (typeof globalThis.syncTotales === 'function') {
+                globalThis.syncTotales();
+                console.log('[Cotizacion] Totales recalculados');
+            }
+            
+            // Cerrar el modal
+            if (typeof window.cerrarModalEditarEPP === 'function') {
+                window.cerrarModalEditarEPP();
+            } else {
+                const modal = document.getElementById('modalEditarEPP');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+            
+            console.log('[Cotizacion] Edicion guardada exitosamente');
+            return;
+        }
+        
+        // Fallback: intentar con la función original si existe
+        if (typeof originalGuardarEdicionEnModalEditarEPP === 'function') {
+            console.log('[Cotizacion] Fallback a originalGuardarEdicionEnModalEditarEPP');
+            originalGuardarEdicionEnModalEditarEPP();
+        } else {
+            console.warn('[Cotizacion] No se pudo guardar la edicion');
+        }
+    };
+    
+    console.log('[Cotizacion] abrirModalEditarEPP y guardarEdicionEnModalEditarEPP redefinidas para cotizaciones');
+});
+</script>
+
 <script defer src="{{ js_asset('js/modulos/cotizaciones/epp/cotizacion-epp-create-page.js') }}?v={{ $v }}"></script>
 @endpush

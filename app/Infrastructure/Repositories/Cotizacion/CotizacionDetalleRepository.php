@@ -41,7 +41,7 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
 
         $tipoCodigo = null;
         if (!empty($cot->tipo_cotizacion_id)) {
-            $tipoCodigo = DB::table('tipo_cotizaciones')
+            $tipoCodigo = DB::table('tipos_cotizacion')
                 ->where('id', $cot->tipo_cotizacion_id)
                 ->value('codigo');
         }
@@ -78,13 +78,17 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
             ->orderBy('id')
             ->get();
         
+        // Obtener IDs de items
+        $itemIds = $items->pluck('id')->toArray();
+        
+        // Obtener valores unitarios para esos items (no filtrar por cotizacion_id)
         $valores = DB::table('epp_valor_unitario')
-            ->where('cotizacion_id', $cotizacionId)
-            ->keyBy('epp_item_id')
-            ->get();
+            ->whereIn('epp_item_id', $itemIds)
+            ->get()
+            ->keyBy('epp_item_id');
         
         $imagenes = DB::table('epp_img_cot')
-            ->where('cotizacion_id', $cotizacionId)
+            ->whereIn('epp_item_id', $itemIds)
             ->get()
             ->groupBy('epp_item_id');
 
@@ -97,7 +101,7 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
                 'id' => $id,
                 'nombre' => $it->nombre ?? '',
                 'cantidad' => $it->cantidad ?? '',
-                'valor_unitario' => $vUnitario ? ($vUnitario->valor ?? '') : '',
+                'valor_unitario' => $vUnitario ? ($vUnitario->valor_unitario ?? '') : '',
                 'imagenes' => $imgs->map(fn($img) => [
                     'url' => $img->ruta ?? '',
                     'nombre' => $img->nombre ?? ''
@@ -118,13 +122,17 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
             ->orderBy('id')
             ->get();
         
+        // Obtener IDs de prendas
+        $prendaIds = $prendas->pluck('id')->toArray();
+        
+        // Obtener valores unitarios para esas prendas (no filtrar por cotizacion_id)
         $valoresPrendas = DB::table('prenda_valor_unitario')
-            ->where('cotizacion_id', $cotizacionId)
-            ->keyBy('prenda_item_id')
-            ->get();
+            ->whereIn('prenda_item_id', $prendaIds)
+            ->get()
+            ->keyBy('prenda_item_id');
         
         $imagenesPrendas = DB::table('prenda_img_cot')
-            ->where('cotizacion_id', $cotizacionId)
+            ->whereIn('prenda_item_id', $prendaIds)
             ->get()
             ->groupBy('prenda_item_id');
 
@@ -137,7 +145,7 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
                 'id' => $id,
                 'nombre' => $prenda->nombre ?? '',
                 'cantidad' => $prenda->cantidad ?? '',
-                'valor_unitario' => $vUnitario ? ($vUnitario->valor ?? '') : '',
+                'valor_unitario' => $vUnitario ? ($vUnitario->valor_unitario ?? '') : '',
                 'imagenes' => $imgs->map(fn($img) => [
                     'url' => $img->ruta ?? '',
                     'nombre' => $img->nombre ?? ''

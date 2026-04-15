@@ -583,4 +583,40 @@ class CotizacionEppController extends Controller
             }
         }, attempts: 3);
     }
-}
+    /**
+     * Redirigir a la vista de edición de cotización EPP
+     * GET /asesores/cotizaciones/{id}/editar-epp
+     */
+    public function edit(int $id)
+    {
+        try {
+            $cotizacion = Cotizacion::findOrFail($id);
+
+            // Verificar que el usuario sea el propietario
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                abort(403, 'No tienes permiso para editar esta cotización');
+            }
+
+            // Verificar que sea tipo EPP
+            $tipoCot = TipoCotizacion::find($cotizacion->tipo_cotizacion_id);
+            if (!$tipoCot || strtoupper(trim($tipoCot->codigo)) !== 'EPP') {
+                abort(400, 'Esta cotización no es de tipo EPP');
+            }
+
+            // Redirigir al formulario de edición con tipo=PARA_CLIENTE
+            // AsesoresPedidosViewController::editCotizacion cargará los datos correctamente
+            return redirect()
+                ->to(route('asesores.cotizaciones.edit', ['id' => $id]) . '?tipo=PARA_CLIENTE')
+                ->with('success', 'Cotización cargada para edición');
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            abort(404, 'Cotización no encontrada');
+        } catch (\Exception $e) {
+            Log::error('CotizacionEppController@edit: Error', [
+                'error' => $e->getMessage(),
+                'cotizacion_id' => $id,
+                'usuario_id' => Auth::id()
+            ]);
+            abort(500, 'Error al cargar la cotización: ' . $e->getMessage());
+        }
+    }}

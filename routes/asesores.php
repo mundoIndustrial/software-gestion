@@ -79,6 +79,15 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
 
     // Editar cotizacion ya creada (NO borrador) - reusa el mismo formulario y carga
     Route::get('/cotizaciones/{id}/editar-cotizacion', [CotizacionController::class, 'editCotizacion'])->name('cotizaciones.edit-creada');
+
+    // Alias de compatibilidad para tablas/vistas que aun esperan este nombre
+    Route::get('/cotizaciones/{id}/edit-borrador', [CotizacionController::class, 'editCotizacion'])->name('cotizaciones.edit-borrador');
+    
+    // Editar cotización con carga de datos (para todas las formas, incluyendo EPP)
+    Route::get('/cotizaciones/{id}/edit', [AsesoresPedidosViewController::class, 'editCotizacion'])->name('cotizaciones.edit');
+    
+    // Editar cotizacion EPP
+    Route::get('/cotizaciones/{id}/editar-epp', [\App\Infrastructure\Http\Controllers\CotizacionEppController::class, 'edit'])->name('cotizaciones.edit-epp');
     
     // ========================================
     // PDF GENERATION - NEW REFACTORED STRUCTURE

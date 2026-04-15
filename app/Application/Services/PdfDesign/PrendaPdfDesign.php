@@ -239,7 +239,7 @@ class PrendaPdfDesign
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
 
-        table, thead, tbody, tfoot, tr, td, th { page-break-inside: avoid; }
+        table, thead, tbody, tfoot, tr, td, th { page-break-inside: auto; }
         img, svg { page-break-inside: avoid; }
         
         .header-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 0; }
@@ -255,9 +255,9 @@ class PrendaPdfDesign
         .info-table .label { background: #f0f0f0; font-weight: bold; }
         
         /* Estilos para prendas */
-        .prendas-wrapper { padding: 5mm; }
+        .prendas-wrapper { padding: 2mm 5mm 5mm 5mm; }
         
-        .prenda-card { border: 1px solid #000; margin-bottom: 8px; padding: 0; page-break-inside: avoid; }
+        .prenda-card { border: 1px solid #000; margin-bottom: 6px; padding: 0; page-break-inside: auto; break-inside: auto; }
         
         /* Header del card con nombre y detalles */
         .prenda-header { background: #fff; padding: 6px 8px; border-bottom: 1px solid #000; }
@@ -266,7 +266,7 @@ class PrendaPdfDesign
         .prenda-tallas { font-size: 10px; color: #0f172a; font-weight: bold; }
         
         /* Contenedor principal de la prenda */
-        .prenda-contenido { padding: 6px 8px; }
+        .prenda-contenido { padding: 4px 8px; }
         
         /* Columna izquierda: tabla de variaciones */
         .prenda-info { flex: 1; }

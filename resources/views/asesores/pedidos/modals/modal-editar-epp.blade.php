@@ -443,7 +443,10 @@ function mostrarFotosEnModalEditar() {
         
         // Normalizar URL: agregar /storage/ si es una ruta relativa sin protocolo (blob: o http://)
         let finalUrl = fotoUrl;
-        if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && !fotoUrl.startsWith('/')) {
+        if (fotoUrl.startsWith('data:')) {
+            // Data URL - usarla directamente
+            finalUrl = fotoUrl;
+        } else if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && !fotoUrl.startsWith('/')) {
             // Es una ruta relativa sin /storage/, agregar el prefijo
             finalUrl = '/storage/' + fotoUrl;
         } else if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && fotoUrl.startsWith('/')) {
@@ -518,6 +521,36 @@ function mostrarFotosEnModalEditar() {
     }
     
     console.log('[mostrarFotosEnModalEditar] Galería actualizada con', galeria.children.length, 'imágenes');
+}
+
+/**
+ * Cargar imágenes externas en el modal (usado por cotizaciones)
+ * Permite inyectar imágenes desde contextos externos
+ */
+function cargarImagenesEnModalEditar(imagenes) {
+    if (!Array.isArray(imagenes)) {
+        console.warn('[cargarImagenesEnModalEditar] imagenes no es un array');
+        return;
+    }
+    
+    console.log('[cargarImagenesEnModalEditar] Cargando', imagenes.length, 'imágenes externas');
+    
+    // Copiar imágenes al array local
+    fotosEnEdicionIndividual = imagenes.map(img => ({
+        previewUrl: img.previewUrl || img.url || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
+        url: img.url || img.previewUrl || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
+        nombre: img.nombre || `imagen.jpg`,
+        base64: img.base64,
+        ruta_webp: img.ruta_webp,
+        ruta_web: img.ruta_web,
+        ruta_original: img.ruta_original,
+        file: img.file // Por si viene con referencia a File object
+    }));
+    
+    // Mostrar las fotos en la galería
+    mostrarFotosEnModalEditar();
+    
+    console.log('[cargarImagenesEnModalEditar] Imágenes cargadas exitosamente');
 }
 
 /**
@@ -678,6 +711,7 @@ window.abrirModalEditarEPP = abrirModalEditarEPP;
 window.cerrarModalEditarEPP = cerrarModalEditarEPP;
 window.guardarEdicionEnModalEditarEPP = guardarEdicionEnModalEditarEPP;
 window.manejarSeleccionFotosEnModalEditar = manejarSeleccionFotosEnModalEditar;
+window.cargarImagenesEnModalEditar = cargarImagenesEnModalEditar;
 window.manejarDropEnModalEditar = manejarDropEnModalEditar;
 window.eliminarFotoEnModalEditar = eliminarFotoEnModalEditar;
 window.filtrarEPPsEnEdicion = filtrarEPPsEnEdicion;
