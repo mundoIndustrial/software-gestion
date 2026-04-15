@@ -2,6 +2,7 @@
 
 @section('title', 'Pendiente Control Calidad')
 @section('page-title', 'Pendiente Control Calidad')
+@section('search-action', route('supervisor-pedidos.pendientes-control-calidad'))
 
 @push('styles')
 <style>
@@ -149,6 +150,16 @@
         background: var(--row-bg-color, #ffffff) !important;
         opacity: 0.9;
     }
+
+    @media (max-width: 768px) {
+        .table-scroll-container {
+            max-height: 65vh !important;
+        }
+
+        .control-calidad-pagination {
+            justify-content: center !important;
+        }
+    }
 </style>
 @endpush
 
@@ -159,7 +170,7 @@
             <div class="supervisor-pedidos-container">
                 <div id="supervisorPendientesControlCalidadContent">
                 <!-- Tabla de Ordenes -->
-                <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
+                <div class="control-calidad-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
                     <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
                         <!-- Header Azul -->
@@ -223,7 +234,7 @@
 
                         <div id="controlCalidadRows">
                             <!-- Filas -->
-                            @if(empty($procesosConCantidad))
+                            @if($procesosConCantidad->count() === 0)
                                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                                     <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                                     <p style="font-size: 1rem; margin: 0;">No hay pendientes</p>
@@ -396,6 +407,9 @@
                             @endif
                         </div>
                     </div>
+                    <div class="control-calidad-pagination" style="padding: 0.85rem 0.25rem 0.25rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        {{ $procesosConCantidad->onEachSide(1)->links('vendor.pagination.bootstrap-custom') }}
+                    </div>
                 </div>
                 </div>
             </div>
@@ -485,6 +499,47 @@ function actualizarIndicadoresFiltros() { receiptsFilters.refreshIndicators(); }
 receiptsFilters.bindUi();
 actualizarIndicadoresFiltros();
 
+function aplicarBusquedaGeneralControlCalidad() {
+    const textoBusqueda = (document.getElementById('busqueda')?.value || '').trim().toLowerCase();
+    const filas = document.querySelectorAll('#controlCalidadRows [data-row="processo"]');
+    if (!filas.length) return;
+
+    filas.forEach((fila) => {
+        const celdas = fila.children;
+        const numeroRecibo = String(celdas[1]?.textContent || '').trim().toLowerCase();
+        const cliente = String(celdas[2]?.textContent || '').trim().toLowerCase();
+        const coincide = textoBusqueda === '' || numeroRecibo.includes(textoBusqueda) || cliente.includes(textoBusqueda);
+
+        fila.style.display = coincide ? 'grid' : 'none';
+    });
+}
+
+function inicializarBusquedaGeneralControlCalidad() {
+    const inputBusqueda = document.getElementById('busqueda');
+    if (!inputBusqueda) return;
+
+    const formBusqueda = inputBusqueda.closest('form');
+    if (formBusqueda) {
+        formBusqueda.removeAttribute('onsubmit');
+        if (formBusqueda.getAttribute('data-control-calidad-search-init') !== '1') {
+            formBusqueda.setAttribute('data-control-calidad-search-init', '1');
+            formBusqueda.addEventListener('submit', function(event) {
+                event.preventDefault();
+                aplicarBusquedaGeneralControlCalidad();
+            });
+        }
+    }
+
+    if (inputBusqueda.getAttribute('data-control-calidad-search-input-init') !== '1') {
+        inputBusqueda.setAttribute('data-control-calidad-search-input-init', '1');
+        inputBusqueda.addEventListener('input', aplicarBusquedaGeneralControlCalidad);
+    }
+
+    aplicarBusquedaGeneralControlCalidad();
+}
+
+inicializarBusquedaGeneralControlCalidad();
+
 function construirUrlApiPendientesControlCalidad(urlString) {
     const source = new URL(urlString, window.location.origin);
     return `/api/supervisor-pedidos/recibos/pendientes-control-calidad${source.search || ''}`;
@@ -535,6 +590,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
 
         actualizarIndicadoresFiltros();
         inicializarSelectorColores();
+        inicializarBusquedaGeneralControlCalidad();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
     } catch (e) {
         window.location.href = urlString;
@@ -552,6 +608,7 @@ window.addEventListener('popstate', function() {
 document.addEventListener('click', function(e) {
     const a = e.target.closest('#supervisorPendientesControlCalidadContent a');
     if (!a) return;
+    if (e.target.closest('.control-calidad-pagination')) return;
     const href = a.getAttribute('href');
     if (!href) return;
     if (href.startsWith('#')) return;
@@ -658,5 +715,4 @@ async function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
-
 

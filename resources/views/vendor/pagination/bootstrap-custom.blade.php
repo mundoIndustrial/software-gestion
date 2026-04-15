@@ -1,35 +1,31 @@
 @if ($paginator->hasPages())
     <nav aria-label="Page navigation" style="margin-top: 30px; margin-bottom: 20px;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            
-            {{-- Información de página --}}
             <span style="color: #666; font-size: 0.9rem; font-weight: 500; margin-right: 10px; padding: 0 10px;">
-                Página {{ $paginator->currentPage() }} de {{ $paginator->lastPage() }}
+                Pagina {{ $paginator->currentPage() }} de {{ $paginator->lastPage() }}
             </span>
 
             <div style="display: flex; gap: 4px; align-items: center;">
-                {{-- Previous Page Link --}}
                 @if ($paginator->onFirstPage())
-                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 12px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 500; font-size: 0.85rem;">
-                        ← Anterior
-                    </span>
+                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 600; font-size: 0.9rem;"><<</span>
                 @else
-                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 12px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
-                        ← Anterior
-                    </a>
+                    <a href="{{ $paginator->url(1) }}" rel="first" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"><<</a>
                 @endif
 
-                {{-- Pagination Elements --}}
+                @if ($paginator->onFirstPage())
+                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 600; font-size: 0.9rem;"><</span>
+                @else
+                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"><</a>
+                @endif
+
                 <div style="display: flex; gap: 2px; align-items: center;">
                     @foreach ($elements as $element)
-                        {{-- "Three Dots" Separator --}}
                         @if (is_string($element))
                             <span style="color: #999; font-weight: 500; padding: 0 4px; font-size: 0.9rem;">
                                 {{ $element }}
                             </span>
                         @endif
 
-                        {{-- Array Of Links --}}
                         @if (is_array($element))
                             @foreach ($element as $page => $url)
                                 @if ($page == $paginator->currentPage())
@@ -46,15 +42,16 @@
                     @endforeach
                 </div>
 
-                {{-- Next Page Link --}}
                 @if ($paginator->hasMorePages())
-                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 12px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
-                        Siguiente →
-                    </a>
+                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">></a>
                 @else
-                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 12px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 500; font-size: 0.85rem;">
-                        Siguiente →
-                    </span>
+                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 600; font-size: 0.9rem;">></span>
+                @endif
+
+                @if ($paginator->hasMorePages())
+                    <a href="{{ $paginator->url($paginator->lastPage()) }}" rel="last" style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: white; color: #1e40af; border-radius: 6px; border: 1px solid #d0d0d0; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">>></a>
+                @else
+                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; background: #f0f0f0; color: #bbb; border-radius: 6px; border: 1px solid #e0e0e0; cursor: not-allowed; font-weight: 600; font-size: 0.9rem;">>></span>
                 @endif
             </div>
         </div>
@@ -77,7 +74,7 @@
             nav div {
                 gap: 4px !important;
             }
-            
+
             nav span, nav a {
                 min-width: 34px !important;
                 height: 34px !important;

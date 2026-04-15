@@ -2,6 +2,7 @@
 
 @section('title', 'Pendientes Logo')
 @section('page-title', 'Pendientes Logo')
+@section('search-action', route('supervisor-pedidos.pendientes-bordado-estampado'))
 
 @section('content')
 <div class="container-fluid">
@@ -16,8 +17,8 @@
                 </div>
 
                 <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
-                <div style="transform: scale(0.80); transform-origin: top left; width: 133.333333%;">
-                    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
+                <div class="pendientes-logo-scale-wrapper" style="transform: scale(0.80); transform-origin: top left; width: 133.333333%;">
+                    <div class="pendientes-logo-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                         <!-- Contenedor con Scroll -->
                         <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
                             <!-- Header Azul -->
@@ -84,7 +85,7 @@
 
                             <div id="pendientesRows">
                                 <!-- Filas -->
-                                @if(empty($procesosConCantidad))
+                                @if($procesosConCantidad->count() === 0)
                                     <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                                         <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                                         <p style="font-size: 1rem; margin: 0;">No hay pendientes</p>
@@ -175,6 +176,9 @@
                                 @endif
                             </div>
                         </div>
+                        <div class="pendientes-logo-pagination" style="padding: 0.85rem 0.25rem 0.25rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            {{ $procesosConCantidad->onEachSide(1)->links('vendor.pagination.bootstrap-custom') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -254,6 +258,35 @@
     [data-row="proceso"]:hover,
     [data-row="proceso"]:focus-within {
         background: var(--row-bg-color, #f9fafb) !important;
+    }
+
+    @media (max-width: 1200px) {
+        .pendientes-logo-scale-wrapper {
+            transform: none !important;
+            width: 100% !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .pendientes-logo-table-frame {
+            padding: 0.5rem !important;
+            border-radius: 6px !important;
+        }
+
+        .table-scroll-container {
+            max-height: 65vh !important;
+            border-radius: 6px !important;
+        }
+
+        .pendientes-logo-pagination {
+            justify-content: center !important;
+            gap: 0.35rem !important;
+        }
+
+        .pendientes-logo-pagination .btn {
+            padding: 0.2rem 0.55rem !important;
+            font-size: 0.75rem !important;
+        }
     }
 </style>
 @endpush
@@ -416,7 +449,7 @@ function verPedido(pedidoId) {
 }
 
 function recargarDatos() {
-    recargarTablaPendientes();
+    window.location.reload();
 }
 
 function mostrarCargandoTablaPendientes() {
@@ -460,6 +493,7 @@ async function recargarTablaPendientes() {
         }
 
         inicializarPendientesUI();
+        inicializarBusquedaGeneralPendientes();
         inicializarSelectorColores();
         aplicarFiltrosEnVista();
         actualizarIndicadoresFiltrosPendientes();
@@ -508,6 +542,31 @@ function inicializarPendientesUI() {
             abrirModalFiltroPendientes(btn.getAttribute('data-col'));
         });
     });
+}
+
+function inicializarBusquedaGeneralPendientes() {
+    const inputBusqueda = document.getElementById('busqueda');
+    if (!inputBusqueda) return;
+
+    const formBusqueda = inputBusqueda.closest('form');
+    if (formBusqueda) {
+        formBusqueda.removeAttribute('onsubmit');
+
+        if (formBusqueda.getAttribute('data-pendientes-search-init') !== '1') {
+            formBusqueda.setAttribute('data-pendientes-search-init', '1');
+            formBusqueda.addEventListener('submit', function(event) {
+                event.preventDefault();
+                aplicarFiltrosEnVista();
+            });
+        }
+    }
+
+    if (inputBusqueda.getAttribute('data-pendientes-search-input-init') !== '1') {
+        inputBusqueda.setAttribute('data-pendientes-search-input-init', '1');
+        inputBusqueda.addEventListener('input', function() {
+            aplicarFiltrosEnVista();
+        });
+    }
 }
 
 let filtroActual = null;
@@ -670,6 +729,7 @@ function aplicarFiltroColumna(event) {
 
 function aplicarFiltrosEnVista() {
     const filas = document.querySelectorAll('[data-row="proceso"]');
+    const textoBusqueda = (document.getElementById('busqueda')?.value || '').trim().toLowerCase();
 
     filas.forEach((fila) => {
         let visible = true;
@@ -685,6 +745,16 @@ function aplicarFiltrosEnVista() {
                     visible = false;
                     break;
                 }
+            }
+        }
+
+        if (visible && textoBusqueda !== '') {
+            const numeroRecibo = String(leerValorColumnaFila(fila, 'numero_recibo') || '').toLowerCase();
+            const cliente = String(leerValorColumnaFila(fila, 'cliente') || '').toLowerCase();
+            const coincideBusqueda = numeroRecibo.includes(textoBusqueda) || cliente.includes(textoBusqueda);
+
+            if (!coincideBusqueda) {
+                visible = false;
             }
         }
 
@@ -808,6 +878,7 @@ $(document).ready(function() {
     }
 
     inicializarPendientesUI();
+    inicializarBusquedaGeneralPendientes();
 
     const overlay = document.getElementById('modalFiltro');
     overlay?.addEventListener('click', function(e) {

@@ -24,6 +24,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
@@ -280,11 +281,27 @@ class SupervisorReceiptsController extends Controller
     /**
      * Mostrar vista de pendientes de bordados y estampados por recibos
      */
-    public function pendientesBordadoEstampado()
+    public function pendientesBordadoEstampado(Request $request)
     {
-        $request = new GetPendingEmbroideryStampingReceiptsRequest();
-        $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($request);
-        $procesosConCantidad = $response->getProcesses();
+        $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest();
+        $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
+
+        $allProcesses = collect($response->getProcesses());
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(10, min($perPage, 100));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allProcesses->slice($offset, $perPage)->values(),
+            $allProcesses->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('supervisor-pedidos.pendientes-bordado-estampado', compact('procesosConCantidad'));
     }
@@ -303,7 +320,22 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
-        $procesosConCantidad = $response->getReceipts();
+        $allReceipts = collect($response->getReceipts());
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(10, min($perPage, 100));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allReceipts->slice($offset, $perPage)->values(),
+            $allReceipts->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('supervisor-pedidos.pendientes-costura', compact('procesosConCantidad'));
     }
@@ -322,7 +354,22 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
-        $procesosConCantidad = $response->getReceipts();
+        $allReceipts = collect($response->getReceipts());
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(10, min($perPage, 100));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allReceipts->slice($offset, $perPage)->values(),
+            $allReceipts->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('supervisor-pedidos.pendientes-control-calidad', compact('procesosConCantidad'));
     }

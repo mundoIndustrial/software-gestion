@@ -450,7 +450,10 @@
 
             <div class="nav-center">
                 <!-- Barra de búsqueda -->
-                <form method="GET" action="{{ route('supervisor-pedidos.index') }}" class="search-form" style="flex: 1; max-width: 500px; margin: 0 1rem;" onsubmit="limpiarParametrosVacios(event)">
+                @php
+                    $searchAction = trim($__env->yieldContent('search-action'));
+                @endphp
+                <form method="GET" action="{{ $searchAction !== '' ? $searchAction : route('supervisor-pedidos.index') }}" class="search-form" style="flex: 1; max-width: 500px; margin: 0 1rem;" onsubmit="limpiarParametrosVacios(event)">
                     @if(request('aprobacion'))
                         <input type="hidden" name="aprobacion" value="{{ request('aprobacion') }}">
                     @endif
@@ -610,4 +613,3 @@
 
 </body>
 </html>
-
