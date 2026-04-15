@@ -61,6 +61,12 @@ final class PrendaEdicionBloqueoService
             ];
         }
 
+        // Validar consecutivos COSTURA primero (NUEVA LÓGICA)
+        $bloqueoCostura = $this->validarConsecutivosCostura($pedidoId, $prendaId);
+        if ($bloqueoCostura !== null) {
+            return $bloqueoCostura;
+        }
+
         $registros = $this->obtenerRegistrosConsecutivo($pedidoId, $prendaId);
         if ($registros->isEmpty()) {
             $bloqueoBodegaProcesos = $this->resolverBloqueoBodegaProcesosAprobados($pedidoId, $prendaId);
@@ -139,6 +145,65 @@ final class PrendaEdicionBloqueoService
     {
         $estadoVisible = $this->formatearEstadoVisible($estado);
         return "Esta prenda se encuentra en estado {$estadoVisible}, por ende no se puede editar ya que se pidieron los insumos de esa prenda. Comunicate con el lider de produccion.";
+    }
+
+    /**
+     * Validar que los consecutivos de COSTURA tengan estado "DEVUELTO_ASESOR"
+     * 
+     * LÓGICA:
+     * - Si NO hay consecutivos de COSTURA → Retorna null (permitir)
+     * - Si hay consecutivos de COSTURA → AL MENOS UNO debe tener estado "DEVUELTO_ASESOR"
+     * - Si NINGUNO tiene estado "DEVUELTO_ASESOR" → Retorna array bloqueador
+     * 
+     * @param int $pedidoId
+     * @param int $prendaId
+     * @return array|null
+     */
+    private function validarConsecutivosCostura(int $pedidoId, int $prendaId): ?array
+    {
+        // Obtener todos los consecutivos COSTURA para esta prenda
+        $consecutivosCostura = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_id', $prendaId)
+            ->where('tipo_recibo', 'COSTURA')
+            ->get();
+
+        // Si no hay consecutivos de costura, permitir edición
+        if ($consecutivosCostura->isEmpty()) {
+            return null;
+        }
+
+        // Verificar si AL MENOS UNO tiene estado "DEVUELTO_ASESOR"
+        $tieneDevueltoAsesor = $consecutivosCostura->contains(function ($consecutivo) {
+            $estado = $consecutivo->estado ?? '';
+            return strtoupper(trim($estado)) === 'DEVUELTO_ASESOR';
+        });
+
+        // Si AL MENOS UNO tiene estado "DEVUELTO_ASESOR", permitir edición
+        if ($tieneDevueltoAsesor) {
+            return null;
+        }
+
+        // Si NINGUNO tiene estado "DEVUELTO_ASESOR", bloquear
+        $primerConsecutivo = $consecutivosCostura->first();
+        $area = $this->normalizarArea($primerConsecutivo->area ?? null);
+
+        Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_CONSECUTIVO_COSTURA_NO_DEVUELTO', [
+            'pedido_id' => $pedidoId,
+            'prenda_id' => $prendaId,
+            'consecutivo' => $primerConsecutivo->consecutivo_actual ?? null,
+            'estado' => $primerConsecutivo->estado ?? null,
+        ]);
+
+        return [
+            'bloqueada' => true,
+            'puede_editar' => false,
+            'mensaje' => 'El pedido ya fue aprobado por ende no se puede editar. Comuníquese con el líder de producción.',
+            'consecutivo' => $primerConsecutivo->consecutivo_actual,
+            'estado' => $primerConsecutivo->estado,
+            'area' => $area,
+            'estado_pedido' => $this->obtenerEstadoPedido($pedidoId),
+        ];
     }
 
     private function respuestaPermitida(?string $estadoPedido): array

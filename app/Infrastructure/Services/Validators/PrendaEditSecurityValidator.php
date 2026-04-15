@@ -16,8 +16,15 @@ use Illuminate\Validation\ValidationException;
  * ✓ No se puede eliminar una talla que tenga procesos asociados
  * ✓ Las relaciones se actualizan mediante MERGE (no se borran)
  * ✓ Los procesos NO se pueden editar desde este endpoint
+ * ✓ Si los consecutivos de COSTURA no tienen estado "DEVUELTO_ASESOR", NO se puede editar
  * 
- * REGLAS:
+ * LÓGICA DE BLOQUEO POR CONSECUTIVOS:
+ * - Si NO hay consecutivos de COSTURA → Se permite edición
+ * - Si hay consecutivos de COSTURA → AL MENOS UNO debe estar en estado "DEVUELTO_ASESOR"
+ * - Si TODOS los consecutivos están en estado diferente a "DEVUELTO_ASESOR" → Bloquea edición
+ * - Mensaje de bloqueo: "El pedido ya fue aprobado por ende no se puede editar. Comuníquese con el líder de producción."
+ * 
+ * REGLAS ADICIONALES:
  * 1. Cantidad total NO puede ser menor que la suma de procesos
  * 2. Una talla NO puede reducir cantidad por debajo de procesos
  * 3. NO se puede "borrar" una talla que tenga procesos (solo conservarla)
@@ -34,20 +41,63 @@ class PrendaEditSecurityValidator
      */
     public static function validateEdit(PrendaPedido $prendaPedido, EditPrendaPedidoDTO $dto): void
     {
-        // Validar cambios de cantidad
+        // 1. PRIMERA VALIDACIÓN: Verificar estado de consecutivos de COSTURA
+        self::validateConsecutivosCostura($prendaPedido);
+
+        // 2. Validar cambios de cantidad
         if ($dto->hasField('cantidad')) {
             self::validateCantidadChange($prendaPedido, $dto->cantidad);
         }
 
-        // Validar cambios de tallas
+        // 3. Validar cambios de tallas
         if ($dto->hasField('tallas')) {
             self::validateTallasChange($prendaPedido, $dto->tallas);
         }
 
-        // Validar que no intenten modificar procesos
+        // 4. Validar que no intenten modificar procesos
         if ($dto->hasField('procesos')) {
             throw ValidationException::withMessages([
                 'procesos' => 'Los procesos no pueden editarse desde este endpoint. Use el endpoint de procesos.',
+            ]);
+        }
+    }
+
+    /**
+     * Validar que los consecutivos de COSTURA tengan estado "DEVUELTO_ASESOR"
+     * 
+     * LÓGICA:
+     * - Si NO hay consecutivos de COSTURA → Permitir edición
+     * - Si hay consecutivos de COSTURA → AL MENOS UNO debe tener estado "DEVUELTO_ASESOR"
+     * - Si NINGUNO tiene estado "DEVUELTO_ASESOR" → Bloquear edición
+     * 
+     * @param PrendaPedido $prendaPedido
+     * @return void
+     * @throws ValidationException
+     */
+    private static function validateConsecutivosCostura(PrendaPedido $prendaPedido): void
+    {
+        // Obtener todos los consecutivos COSTURA para esta prenda
+        $consecutivosCostura = \DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
+            ->where('prenda_id', $prendaPedido->id)
+            ->where('tipo_recibo', 'COSTURA')
+            ->get();
+
+        // Si no hay consecutivos de costura, permitir edición
+        if ($consecutivosCostura->isEmpty()) {
+            return;
+        }
+
+        // Verificar si AL MENOS UNO tiene estado "DEVUELTO_ASESOR"
+        $tieneDevueltoAsesor = $consecutivosCostura->contains(function ($consecutivo) {
+            $estado = $consecutivo->estado ?? '';
+            return strtoupper(trim($estado)) === 'DEVUELTO_ASESOR';
+        });
+
+        // Si NINGUNO tiene estado "DEVUELTO_ASESOR", bloquear
+        if (!$tieneDevueltoAsesor) {
+            throw ValidationException::withMessages([
+                'edicion_bloqueada' => 'El pedido ya fue aprobado por ende no se puede editar. Comuníquese con el líder de producción.',
             ]);
         }
     }
@@ -85,6 +135,9 @@ class PrendaEditSecurityValidator
      */
     public static function validateTallasChange(PrendaPedido $prenda, array $tallasPayload): void
     {
+        // Validar estado de consecutivos de COSTURA primero
+        self::validateConsecutivosCostura($prenda);
+
         $tallasActuales = $prenda->tallas()->get();
         $errores = [];
 
