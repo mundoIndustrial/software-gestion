@@ -82,31 +82,10 @@ class PedidosController extends Controller
                 ]);
             }
             
-            // Vista de lista - Filtrar pedidos ocultos por el usuario actual
-            $userId = auth()->id();
-            $pediodosOcultosIds = PedidoOculto::where('user_id', $userId)
-                ->pluck('pedido_id')
-                ->toArray();
-            
-            \Log::info('[PEDIDOS-FILTRO] Usuario ocultos', [
-                'user_id' => $userId,
-                'pedidos_ocultos_count' => count($pediodosOcultosIds),
-                'pedidos_ocultos_ids' => $pediodosOcultosIds,
-                'total_pedidos_antes' => count($datos['pedidos_por_pagina'] ?? [])
-            ]);
-            
-            // Filtrar pedidos que no estén ocultos
-            $pedidosPorPagina = array_filter($datos['pedidos_por_pagina'] ?? [], function($pedido) use ($pediodosOcultosIds) {
-                return !in_array($pedido['id'], $pediodosOcultosIds);
-            });
-            
-            \Log::info('[PEDIDOS-FILTRO] Después de filtrar', [
-                'total_pedidos_despues' => count($pedidosPorPagina)
-            ]);
-            
+            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
             return view('bodega.index-list', [
-                'pedidosPorPagina' => array_values($pedidosPorPagina), // Reindexa el array
-                'totalPedidos' => count($pedidosPorPagina), // Actualizar total
+                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                'totalPedidos' => $datos['total_pedidos'] ?? 0,
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
@@ -144,19 +123,10 @@ class PedidosController extends Controller
                 ]);
             }
 
-            // Filtrar pedidos ocultos por el usuario actual
-            $userId = auth()->id();
-            $pediodosOcultosIds = PedidoOculto::where('user_id', $userId)
-                ->pluck('pedido_id')
-                ->toArray();
-            
-            $pedidosPorPagina = array_filter($datos['pedidos_por_pagina'] ?? [], function($pedido) use ($pediodosOcultosIds) {
-                return !in_array($pedido['id'], $pediodosOcultosIds);
-            });
-            
+            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
             return view('bodega.index-list', [
-                'pedidosPorPagina' => array_values($pedidosPorPagina),
-                'totalPedidos' => count($pedidosPorPagina),
+                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                'totalPedidos' => $datos['total_pedidos'] ?? 0,
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
@@ -193,19 +163,10 @@ class PedidosController extends Controller
                 ]);
             }
 
-            // Filtrar pedidos ocultos por el usuario actual
-            $userId = auth()->id();
-            $pediodosOcultosIds = PedidoOculto::where('user_id', $userId)
-                ->pluck('pedido_id')
-                ->toArray();
-            
-            $pedidosPorPagina = array_filter($datos['pedidos_por_pagina'] ?? [], function($pedido) use ($pediodosOcultosIds) {
-                return !in_array($pedido['id'], $pediodosOcultosIds);
-            });
-            
+            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
             return view('bodega.index-list', [
-                'pedidosPorPagina' => array_values($pedidosPorPagina),
-                'totalPedidos' => count($pedidosPorPagina),
+                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                'totalPedidos' => $datos['total_pedidos'] ?? 0,
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),

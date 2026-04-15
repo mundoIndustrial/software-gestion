@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\Festivo;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Repositories\ConsecutivoReciboPedidoRepository;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +17,9 @@ use Illuminate\Support\Facades\DB;
  * 
  * Servicio especializado para consultas de recibos de costura
  * Responsabilidades:
- * - Aplicar filtros dinámicos
+ * - Aplicar filtros dinamicos
  * - Mapear datos a estructura esperada por frontend
- * - Calcular campos derivados (días, cantidad, etc.)
+ * - Calcular campos derivados (dias, cantidad, etc.)
  */
 class ReciboCosturaQueryService
 {
@@ -53,7 +55,7 @@ class ReciboCosturaQueryService
         // Filtros especiales para revisor_entregas
         $user = auth()->user();
         if ($user && $user->hasRole('revisor_entregas')) {
-            // Excluir áreas: corte, insumos, creacion orden
+            // Excluir Areas: corte, insumos, creacion orden
             $query->whereNotIn(DB::raw('LOWER(TRIM(area))'), ['corte', 'insumos', 'creacion orden']);
         } else {
             // Filtro por estado (solo para otros roles)
@@ -61,33 +63,33 @@ class ReciboCosturaQueryService
                 $query->whereIn('estado', (array) $filters['estado']);
             }
 
-            // Filtro por área (solo para otros roles)
+            // Filtro por Area (solo para otros roles)
             if (!empty($filters['area'])) {
                 $query->whereIn('area', (array) $filters['area']);
             }
         }
 
-        // Filtro por número de recibo
+        // Filtro por numero de recibo
         if (!empty($filters['numero_recibo'])) {
             $query->whereIn('consecutivo_actual', (array) $filters['numero_recibo']);
         }
 
-        // Filtro por cliente (en la relación pedido)
+        // Filtro por cliente (en la relacion pedido)
         if (!empty($filters['cliente'])) {
             $query->whereHas('pedido', function (Builder $q) use ($filters) {
                 $q->whereIn('cliente', (array) $filters['cliente']);
             });
         }
 
-        // Filtro por día de entrega
+        // Filtro por dia de entrega
         if (!empty($filters['dia_entrega'])) {
             $query->whereHas('pedido', function (Builder $q) use ($filters) {
-                // Convertir día de semana (nombre) a fecha
+                // Convertir di­a de semana (nombre) a fecha
                 $q->whereIn('dia_de_entrega', (array) $filters['dia_entrega']);
             });
         }
 
-        // Filtro por rango de fecha de creación
+        // Filtro por rango de fecha de creacion
         if (!empty($filters['fecha_creacion_desde'])) {
             $query->whereDate('created_at', '>=', $filters['fecha_creacion_desde']);
         }
@@ -134,13 +136,13 @@ class ReciboCosturaQueryService
             $cantidadTotal = $prenda->tallas->sum('cantidad');
         }
 
-        // Construir descripción detallada
+        // Construir descripcion detallada
         $descripcion = $this->buildDescripcion($prenda);
 
-        // Obtener el encargado más reciente
+        // Obtener el encargado mas reciente
         $encargado = $this->getEncargado($pedido, $prenda);
 
-        // Calcular días transcurridos
+        // Calcular dias transcurridos
         $diasCalculados = $this->calculateDays($recibo);
 
         return [
@@ -159,7 +161,7 @@ class ReciboCosturaQueryService
             'fecha_creacion' => $recibo->created_at?->format('d/m/Y H:i') ?? 'N/A',
             'novedades' => $recibo->notas ?? '',
             
-            // Información completa para detalles
+            // Informacion completa para detalles
             'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
             'estado_pedido' => $pedido->estado ?? 'N/A',
             'dia_entrega' => $pedido->dia_de_entrega ?? '-',
@@ -170,7 +172,7 @@ class ReciboCosturaQueryService
     }
 
     /**
-     * Construir descripción detallada de la prenda
+     * Construir descripcion detallada de la prenda
      * 
      * @param PrendaPedido|null $prenda
      * @return string
@@ -208,7 +210,7 @@ class ReciboCosturaQueryService
     }
 
     /**
-     * Obtener el encargado más reciente de la prenda
+     * Obtener el encargado mas reciente de la prenda
      * 
      * @param PedidoProduccion|null $pedido
      * @param PrendaPedido|null $prenda
@@ -220,7 +222,7 @@ class ReciboCosturaQueryService
             return '-';
         }
 
-        // Buscar proceso más reciente para esta prenda en este pedido
+        // Buscar proceso mas reciente para esta prenda en este pedido
         // procesos_prenda usa: numero_pedido (no pedido_produccion_id) y prenda_pedido_id
         $procesoMasReciente = \DB::table('procesos_prenda')
             ->where('numero_pedido', $pedido->numero_pedido)
@@ -237,7 +239,7 @@ class ReciboCosturaQueryService
     }
 
     /**
-     * Calcular días transcurridos desde creación
+     * Calcular dias transcurridos desde creacion
      * @param ConsecutivoReciboPedido $recibo
      * @return int
      */
@@ -248,30 +250,58 @@ class ReciboCosturaQueryService
             return 0;
         }
 
-        // Obtener festivos
-        $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+        // El conteo inicia desde el dia siguiente a la creacion.
+        $inicioConteo = $fechaCreacion->copy()->startOfDay()->addDay();
+        $hoy = now()->startOfDay();
 
-        // Calcular días hábiles
-        $dias = 0;
-        $fecha = $fechaCreacion->clone();
-        $hoy = now();
+        if ($inicioConteo->gt($hoy)) {
+            return 0;
+        }
 
-        while ($fecha->format('Y-m-d') <= $hoy->format('Y-m-d')) {
-            // No contar domingos (0) ni sábados (6)
-            if ($fecha->dayOfWeek !== 0 && $fecha->dayOfWeek !== 6) {
-                // No contar festivos
-                if (!in_array($fecha->format('Y-m-d'), $festivos)) {
-                    $dias++;
-                }
+        $festivosSet = $this->getFestivosSet($inicioConteo, $hoy);
+
+        $diasHabiles = 0;
+        $fecha = $inicioConteo->copy();
+
+        while ($fecha->lte($hoy)) {
+            $dateString = $fecha->toDateString();
+            $esFinDeSemana = $fecha->isWeekend();
+            $esFestivo = isset($festivosSet[$dateString]);
+
+            if (!$esFinDeSemana && !$esFestivo) {
+                $diasHabiles++;
             }
+
             $fecha->addDay();
         }
 
-        return max(0, $dias - 1); // -1 para NO contar el día de creación
+        return $diasHabiles;
     }
 
     /**
-     * Obtener opciones para filtros dinámicos
+     * Obtener set de festivos (Y-m-d => true) para el rango.
+     */
+    private function getFestivosSet(Carbon $inicio, Carbon $fin): array
+    {
+        $festivos = Festivo::query()
+            ->whereDate('fecha', '>=', $inicio->toDateString())
+            ->whereDate('fecha', '<=', $fin->toDateString())
+            ->pluck('fecha')
+            ->toArray();
+
+        $set = [];
+        foreach ($festivos as $fecha) {
+            try {
+                $set[Carbon::parse($fecha)->toDateString()] = true;
+            } catch (\Exception $e) {
+                // Ignorar fechas invalidas.
+            }
+        }
+
+        return $set;
+    }
+    /**
+     * Obtener opciones para filtros dinamicos
      * 
      * @return array
      */
@@ -286,3 +316,4 @@ class ReciboCosturaQueryService
         ];
     }
 }
+

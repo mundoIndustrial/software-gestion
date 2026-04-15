@@ -736,7 +736,10 @@ class RecibosTableController {
 
         const estado = new EstadoRecibo(recibo.estado || 'No iniciado');
         const area = new AreaRecibo(recibo.area || 'Costura');
-        const dias = DiasTranscurridos.fromFechas(recibo.fecha_creacion, new Date());
+        const diasDesdeCreacion = Number.parseInt(recibo.dias_desde_creacion, 10);
+        const dias = Number.isInteger(diasDesdeCreacion) && diasDesdeCreacion >= 0
+            ? DiasTranscurridos.from(diasDesdeCreacion)
+            : DiasTranscurridos.fromFechas(recibo.fecha_creacion, new Date());
         const encargado = EncargadoProceso.tryFrom(recibo.encargado_proceso);
 
         fila.innerHTML = `

@@ -7,6 +7,7 @@ use App\Application\Bodega\Constants\WarehouseConstants;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Models\BodegaDetallesTalla;
 use App\Models\PedidoProduccion;
+use App\Models\PedidoOculto;
 use App\Models\PedidoRevisado;
 use App\Models\PedidoVistoSupervisor;
 use App\Models\ReciboPrenda;
@@ -39,6 +40,7 @@ class BodegaPedidoConsultaService
         $todosLosPedidos = $this->filtrarPedidosAnulados($todosLosPedidos);
 
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
+        $pedidosFiltradosPorRol = $this->filtrarPedidosOcultosUsuario($pedidosFiltradosPorRol);
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
 
         if ($request->query('view') === WarehouseConstants::VIEW_DETAILS) {
@@ -71,6 +73,7 @@ class BodegaPedidoConsultaService
             ->get();
 
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
+        $pedidosFiltradosPorRol = $this->filtrarPedidosOcultosUsuario($pedidosFiltradosPorRol);
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
 
         if ($request->query('view') === WarehouseConstants::VIEW_DETAILS) {
@@ -102,6 +105,7 @@ class BodegaPedidoConsultaService
             ->get();
 
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
+        $pedidosFiltradosPorRol = $this->filtrarPedidosOcultosUsuario($pedidosFiltradosPorRol);
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
 
         $pedidosPorPagina = [];
@@ -358,6 +362,41 @@ class BodegaPedidoConsultaService
         }
 
         return $pedidos->reject(fn ($p) => $numerosAnulados->contains($p->numero_pedido))->values();
+    }
+
+    private function filtrarPedidosOcultosUsuario(Collection $pedidos): Collection
+    {
+        $userId = auth()->id();
+        if (!$userId || $pedidos->isEmpty()) {
+            return $pedidos;
+        }
+
+        $pedidosOcultosIds = PedidoOculto::query()
+            ->where('user_id', $userId)
+            ->pluck('pedido_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($pedidosOcultosIds->isEmpty()) {
+            return $pedidos;
+        }
+
+        $numerosPedidoOcultos = PedidoProduccion::query()
+            ->whereIn('id', $pedidosOcultosIds)
+            ->whereNotNull('numero_pedido')
+            ->pluck('numero_pedido')
+            ->filter(fn ($numero) => $numero !== null && trim((string) $numero) !== '')
+            ->unique()
+            ->values();
+
+        if ($numerosPedidoOcultos->isEmpty()) {
+            return $pedidos;
+        }
+
+        return $pedidos
+            ->reject(fn ($pedido) => $numerosPedidoOcultos->contains($pedido->numero_pedido))
+            ->values();
     }
 
     private function paginarPedidos(Collection $pedidos, Request $request): array
