@@ -151,7 +151,7 @@ curl -i -N -H "Connection: Upgrade" \
  [PedidosRealtime] Fallback a polling activado
 
 // Actualización recibida
-📨 [PedidosRealtime] Mensaje WebSocket recibido
+ [PedidosRealtime] Mensaje WebSocket recibido
 
 // Cambio detectado
  [PedidosRealtime] Actualización de pedido por WebSocket: 123
@@ -250,7 +250,7 @@ realtime.start();
 
 #### 3. No se reciben actualizaciones
 ```
-📨 [PedidosRealtime] Mensaje WebSocket recibido (vacío)
+ [PedidosRealtime] Mensaje WebSocket recibido (vacío)
 ```
 **Solución**: Verificar que Observer esté registrado y funcionando
 

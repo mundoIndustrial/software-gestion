@@ -664,7 +664,7 @@ function configurarWebSocketsPedidos() {
     // Escuchar en el canal 'pedidos.creados'
     window.Echo.channel('pedidos.creados')
       .listen('pedido.creado', (event) => {
-        console.log('📨 [CarteraPedidos] Nuevo pedido recibido en tiempo real:', event);
+        console.log(' [CarteraPedidos] Nuevo pedido recibido en tiempo real:', event);
         
         // Recargar la tabla de pedidos para mostrar el nuevo
         cargarPedidos();

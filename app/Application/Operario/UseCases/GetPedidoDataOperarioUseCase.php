@@ -21,7 +21,10 @@ class GetPedidoDataOperarioUseCase
     {
         $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
         $parcialId = $request->query('parcial_id');
-        if ($tipoRecibo === 'PARCIAL' && $parcialId) {
+        if ($parcialId) {
+            // Compatibilidad: si llega parcial_id con tipo_recibo distinto a PARCIAL,
+            // forzamos el flujo parcial para abrir el recibo correcto.
+            $request->merge(['tipo_recibo' => 'PARCIAL']);
             return $this->obtenerDatosRecibosOperarioUseCase->execute((int) $numeroPedido, $request);
         }
 

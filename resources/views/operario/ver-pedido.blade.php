@@ -1704,7 +1704,7 @@
         
             fetch(apiUrl)
             .then(function(response) {
-                console.log('📨 Respuesta del servidor:', {
+                console.log(' Respuesta del servidor:', {
                     ok: response.ok,
                     status: response.status,
                     statusText: response.statusText,
@@ -1831,7 +1831,10 @@
                     
                     // Encontrar el índice de la prenda en el array
                     if (data.prendas && Array.isArray(data.prendas)) {
-                        const indice = data.prendas.findIndex(p => p.id === prendaIdInt);
+                        const indice = data.prendas.findIndex(p => {
+                            const idPrenda = p?.id ?? p?.prenda_id ?? p?.prenda_pedido_id ?? null;
+                            return idPrenda !== null && String(idPrenda) === String(prendaIdInt);
+                        });
                         if (indice !== -1) {
                             window.prendaCarouselIndex = indice;
                             console.log(' [PRENDA ID] Prenda encontrada en índice:', indice);

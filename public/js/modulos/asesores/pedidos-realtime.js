@@ -196,7 +196,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
-                        if (this.debug) console.log('📨 OrdenUpdated (cartera)');
+                        if (this.debug) console.log(' OrdenUpdated (cartera)');
                         if (typeof globalThis.cargarPedidos === 'function') {
                             globalThis.cargarPedidos();
                         }

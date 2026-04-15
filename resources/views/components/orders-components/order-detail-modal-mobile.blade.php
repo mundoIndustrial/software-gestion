@@ -854,6 +854,7 @@ window.llenarReciboCosturaMobile = function(data) {
         // Vista operario:
         // - Por defecto mostrar COSTURA/COSTURA-BODEGA
         // - PERO si viene tipo_recibo en URL y existe en los procesos disponibles, mostrar ese tipo solicitado
+        // - Caso especial: tipo_recibo=PARCIAL no es un proceso real, se debe mapear al tipo de proceso del parcial
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneCosturaBodega = todosProcesos.includes('COSTURA-BODEGA');
 
@@ -861,7 +862,18 @@ window.llenarReciboCosturaMobile = function(data) {
         if (tieneCostu) procesosFiltrados.push('COSTURA');
         if (tieneCosturaBodega) procesosFiltrados.push('COSTURA-BODEGA');
 
-        if (tipoReciboUpper && todosProcesos.includes(tipoReciboUpper)) {
+        if (tipoReciboUpper === 'PARCIAL') {
+            if (tieneCostu) {
+                procesosFiltrados = ['COSTURA'];
+            } else if (tieneCosturaBodega) {
+                procesosFiltrados = ['COSTURA-BODEGA'];
+            } else if (todosProcesos.length > 0) {
+                procesosFiltrados = [todosProcesos[0]];
+            }
+            window.procesoCarouselIndex = 0;
+            window.procesoActualSeleccionado = procesosFiltrados[0] || null;
+            console.log(' [FILTRO PROCESOS] Vista operario - tipo_recibo=PARCIAL mapeado a proceso:', window.procesoActualSeleccionado);
+        } else if (tipoReciboUpper && todosProcesos.includes(tipoReciboUpper)) {
             procesosFiltrados = [tipoReciboUpper];
             window.procesoCarouselIndex = 0;
             window.procesoActualSeleccionado = tipoReciboUpper;

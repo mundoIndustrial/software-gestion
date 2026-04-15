@@ -57,7 +57,7 @@ class TestEnviarCotizacion extends Command
         }
         
         // 2. ENVIAR COTIZACIÓN - Simular lo que hace el Controller
-        $this->info("\n📨 PASO 2: Enviar cotización (generar número como hace Controller)...");
+        $this->info("\n PASO 2: Enviar cotización (generar número como hace Controller)...");
         
         // Buscar el último número (como hace el Controller)
         $ultimaCotizacion = \App\Models\Cotizacion::whereNotNull('numero_cotizacion')

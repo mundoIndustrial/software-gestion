@@ -12,7 +12,7 @@ echo "║     DIAGNÓSTICO DE GUARDADO - ANÁLISIS SIMPLE                    ║
 echo "╚════════════════════════════════════════════════════════════════════╝\n\n";
 
 // ===== 1. REVISAR LOGS =====
-echo "📨 1. ANALIZANDO LOGS\n";
+echo " 1. ANALIZANDO LOGS\n";
 echo str_repeat("─", 70) . "\n";
 
 $logFile = BASE_PATH . '/storage/logs/laravel.log';

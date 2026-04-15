@@ -5,6 +5,8 @@ namespace App\Application\Operario\UseCases;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Operario\Repositories\PedidoProduccionOperarioReadRepository;
 use App\Domain\Operario\Repositories\ReciboParcialReadRepository;
+use App\Models\ReciboPorPartes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ObtenerDatosRecibosOperarioUseCase
@@ -60,17 +62,93 @@ class ObtenerDatosRecibosOperarioUseCase
         }
 
         if ($tipoRecibo === 'PARCIAL' && $parcialId) {
+            $prendaId = $request->query('prenda_id');
+
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Obteniendo datos del parcial', [
                 'parcial_id' => $parcialId,
                 'parcial_id_type' => gettype($parcialId),
                 'consecutivo_parcial' => $consecutivoParcial,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $pedido->id,
             ]);
 
             $parcial = $this->parciales->findByIdWithRelationsAndTallas((int) $parcialId);
 
+            if ($parcial) {
+                \Log::debug('[ObtenerDatosRecibosOperarioUseCase] Datos crudos del parcial', [
+                    'parcial_id' => $parcial->id,
+                    'tallas_json' => json_encode($parcial->tallas),
+                    'primer_talla' => $parcial->tallas ? json_encode($parcial->tallas->first()) : 'sin tallas',
+                ]);
+            }
+
+            if (!$parcial) {
+                // Fallback defensivo: algunos cards envían parcial_id no alineado con recibo_por_partes.id.
+                // Intentar resolver por contexto (pedido + prenda + consecutivo_parcial).
+                if ($consecutivoParcial !== null && $consecutivoParcial !== '' && $prendaId !== null && $prendaId !== '') {
+                    $parcial = ReciboPorPartes::query()
+                        ->with(['tallas', 'pedido', 'prenda'])
+                        ->where('pedido_produccion_id', (int) $pedido->id)
+                        ->where('prenda_pedido_id', (int) $prendaId)
+                        ->where('consecutivo_parcial', (float) $consecutivoParcial)
+                        ->latest('id')
+                        ->first();
+                }
+            }
+
+            if (!$parcial) {
+                // Compatibilidad legacy: algunos parciales todavía viven en pedidos_parciales.
+                $parcialLegacy = DB::table('pedidos_parciales')
+                    ->where('id', (int) $parcialId)
+                    ->where('pedido_produccion_id', (int) $pedido->id)
+                    ->when(
+                        $prendaId !== null && $prendaId !== '',
+                        fn ($query) => $query->where('prenda_pedido_id', (int) $prendaId)
+                    )
+                    ->when(
+                        $consecutivoParcial !== null && $consecutivoParcial !== '',
+                        fn ($query) => $query->where('consecutivo_actual', (float) $consecutivoParcial)
+                    )
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if (!$parcialLegacy && $consecutivoParcial !== null && $consecutivoParcial !== '' && $prendaId !== null && $prendaId !== '') {
+                    $parcialLegacy = DB::table('pedidos_parciales')
+                        ->where('pedido_produccion_id', (int) $pedido->id)
+                        ->where('prenda_pedido_id', (int) $prendaId)
+                        ->where('consecutivo_actual', (float) $consecutivoParcial)
+                        ->whereNull('deleted_at')
+                        ->orderByDesc('id')
+                        ->first();
+                }
+
+                if ($parcialLegacy) {
+                    $tallasLegacy = DB::table('pedidos_parciales_tallas')
+                        ->where('pedido_parcial_id', (int) $parcialLegacy->id)
+                        ->get(['talla', 'cantidad', 'color_nombre']);
+
+                    $parcialLegacyNormalizado = new \stdClass();
+                    $parcialLegacyNormalizado->id = (int) $parcialLegacy->id;
+                    $parcialLegacyNormalizado->pedido_produccion_id = (int) $parcialLegacy->pedido_produccion_id;
+                    $parcialLegacyNormalizado->prenda_pedido_id = (int) $parcialLegacy->prenda_pedido_id;
+                    $parcialLegacyNormalizado->tipo_recibo = (string) ($parcialLegacy->tipo_recibo ?? 'COSTURA');
+                    $parcialLegacyNormalizado->consecutivo_parcial = (float) ($parcialLegacy->consecutivo_actual ?? 0);
+                    $parcialLegacyNormalizado->consecutivo_original = (float) ($parcialLegacy->consecutivo_inicial ?? $parcialLegacy->consecutivo_actual ?? 0);
+                    $parcialLegacyNormalizado->area = 'Costura';
+                    $parcialLegacyNormalizado->encargado = null;
+                    $parcialLegacyNormalizado->tallas = $tallasLegacy;
+
+                    $parcial = $parcialLegacyNormalizado;
+                }
+            }
+
             if (!$parcial) {
                 \Log::error('[ObtenerDatosRecibosOperarioUseCase] Parcial no encontrado', [
                     'parcial_id' => (int) $parcialId,
+                    'consecutivo_parcial' => $consecutivoParcial !== null && $consecutivoParcial !== '' ? (float) $consecutivoParcial : null,
+                    'prenda_id' => $prendaId !== null && $prendaId !== '' ? (int) $prendaId : null,
+                    'pedido_id' => (int) $pedido->id,
+                    'tipo_recibo' => $tipoRecibo,
                 ]);
 
                 return [
@@ -81,6 +159,16 @@ class ObtenerDatosRecibosOperarioUseCase
                         'message' => 'Parcial no encontrado',
                     ],
                 ];
+            }
+
+            if ((int) $parcial->id !== (int) $parcialId) {
+                \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Parcial resuelto por fallback de contexto', [
+                    'parcial_id_recibido' => (int) $parcialId,
+                    'parcial_id_resuelto' => (int) $parcial->id,
+                    'consecutivo_parcial' => $consecutivoParcial !== null && $consecutivoParcial !== '' ? (float) $consecutivoParcial : null,
+                    'prenda_id' => $prendaId !== null && $prendaId !== '' ? (int) $prendaId : null,
+                    'pedido_id' => (int) $pedido->id,
+                ]);
             }
 
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Parcial encontrado', [
@@ -100,14 +188,43 @@ class ObtenerDatosRecibosOperarioUseCase
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
                     ->map(function ($prenda) use ($parcial) {
-                        $tallasParcial = ($parcial->tallas ?? collect())->map(function ($talla) {
+                        // Convertir $parcial->tallas a array si es object/stdClass
+                        $tallasRaw = $parcial->tallas ?? [];
+                        
+                        \Log::info('[NORMAL DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
+                        \Log::info('[NORMAL DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
+                        \Log::info('[NORMAL DEBUG 3] Contenido raw original: ' . json_encode($tallasRaw));
+                        
+                        // Convertir a array de forma segura
+                        if ($tallasRaw instanceof \Illuminate\Support\Collection) {
+                            \Log::info('[NORMAL DEBUG 4] Entrando rama Collection');
+                            $tallasRaw = json_decode(json_encode($tallasRaw), true) ?: [];
+                        } elseif (is_object($tallasRaw)) {
+                            \Log::info('[NORMAL DEBUG 4] Entrando rama object');
+                            $tallasRaw = json_decode(json_encode($tallasRaw), true) ?: [];
+                        } elseif (!is_array($tallasRaw)) {
+                            \Log::info('[NORMAL DEBUG 4] Entrando rama no-array');
+                            $tallasRaw = [];
+                        }
+                        
+                        \Log::info('[NORMAL DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
+                        
+                        $tallasParcial = collect($tallasRaw)->map(function ($talla) {
+                            \Log::info('[NORMAL DEBUG 6] Procesando talla: ' . json_encode($talla));
+                            
+                            // Soportar tanto acceso como objeto como array
+                            $genero = is_array($talla) ? ($talla['genero'] ?? 'UNISEX') : ($talla->genero ?? 'UNISEX');
+                            $tallaNombre = is_array($talla) ? ($talla['talla'] ?? null) : ($talla->talla ?? null);
+                            $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
+                            $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
+                            
+                            \Log::info('[NORMAL DEBUG 7] Genero extraído: ' . $genero);
+                            
                             return [
-                                // La tabla recibos_por_partes_tallas no tiene género: tratar como UNISEX.
-                                // El front (order-detail-modal-mobile) sabe transformar esta lista a estructura.
-                                'genero' => 'UNISEX',
-                                'talla' => $talla->talla,
-                                'cantidad' => (int) $talla->cantidad,
-                                'color_nombre' => $talla->color_nombre,
+                                'genero' => $genero,
+                                'talla' => $tallaNombre,
+                                'cantidad' => (int) $cantidad,
+                                'color_nombre' => $colorNombre,
                             ];
                         })->values()->toArray();
 
@@ -276,6 +393,120 @@ class ObtenerDatosRecibosOperarioUseCase
                     })
                     ->values()
                     ->toArray();
+            }
+
+            // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vacía,
+            // construir una prenda mínima para que el recibo parcial siempre renderice descripción/tallas.
+            if (empty($responseData['prendas']) && $parcial->prenda_pedido_id) {
+                $prendaBase = DB::table('prendas_pedido')
+                    ->where('id', (int) $parcial->prenda_pedido_id)
+                    ->first(['id', 'nombre_prenda', 'descripcion']);
+
+                // Cargar tallas desde la tabla correcta: pedidos_parciales_tallas
+                // (que tiene el campo genero, a diferencia de recibos_por_partes_tallas)
+                $tallasRaw = DB::table('pedidos_parciales_tallas')
+                    ->where('pedido_parcial_id', (int) $parcial->id)
+                    ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+                
+                \Log::info('[FALLBACK DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
+                \Log::info('[FALLBACK DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
+                \Log::info('[FALLBACK DEBUG 3] Contenido raw original: ' . json_encode($tallasRaw));
+                
+                // Convertir a array de forma segura (ya es Collection, así que solo normalizamos)
+                if ($tallasRaw instanceof \Illuminate\Support\Collection) {
+                    \Log::info('[FALLBACK DEBUG 4] Entrando rama Collection');
+                    $tallasRaw = $tallasRaw->toArray();
+                } elseif (is_object($tallasRaw)) {
+                    \Log::info('[FALLBACK DEBUG 4] Entrando rama object');
+                    $tallasRaw = json_decode(json_encode($tallasRaw), true) ?: [];
+                } elseif (!is_array($tallasRaw)) {
+                    \Log::info('[FALLBACK DEBUG 4] Entrando rama no-array');
+                    $tallasRaw = [];
+                }
+                
+                \Log::info('[FALLBACK DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
+
+                $tallasParcial = collect($tallasRaw)->map(function ($talla) {
+                    \Log::info('[FALLBACK DEBUG 6] Procesando talla: ' . json_encode($talla));
+                    
+                    // Soportar tanto acceso como objeto como array
+                    $genero = is_array($talla) ? ($talla['genero'] ?? 'UNISEX') : ($talla->genero ?? 'UNISEX');
+                    $tallaNombre = is_array($talla) ? ($talla['talla'] ?? null) : ($talla->talla ?? null);
+                    $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
+                    $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
+                    
+                    \Log::info('[FALLBACK DEBUG 7] Genero extraído: ' . $genero);
+                    
+                    return [
+                        'genero' => $genero,
+                        'talla' => $tallaNombre,
+                        'cantidad' => $cantidad,
+                        'color_nombre' => $colorNombre,
+                    ];
+                })->filter(fn ($r) => !empty($r['talla']) && (int) $r['cantidad'] > 0)->values()->toArray();
+
+                // Distribuir tallas por género (DAMA, CABALLERO, UNISEX)
+                $dama = [];
+                $caballero = [];
+                $unisex = [];
+                foreach ($tallasParcial as $registro) {
+                    $tallaNombre = strtoupper(trim((string) ($registro['talla'] ?? '')));
+                    $cantidad = (int) ($registro['cantidad'] ?? 0);
+                    $genero = strtoupper(trim((string) ($registro['genero'] ?? 'UNISEX')));
+                    
+                    if ($tallaNombre === '' || $cantidad <= 0) {
+                        continue;
+                    }
+                    
+                    if ($genero === 'DAMA') {
+                        $dama[$tallaNombre] = ($dama[$tallaNombre] ?? 0) + $cantidad;
+                    } elseif ($genero === 'CABALLERO') {
+                        $caballero[$tallaNombre] = ($caballero[$tallaNombre] ?? 0) + $cantidad;
+                    } else {
+                        $unisex[$tallaNombre] = ($unisex[$tallaNombre] ?? 0) + $cantidad;
+                    }
+                }
+
+                $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
+                $responseData['prendas'] = [[
+                    'id' => (int) $parcial->prenda_pedido_id,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'prenda_pedido_id' => (int) $parcial->prenda_pedido_id,
+                    'nombre' => (string) ($prendaBase->nombre_prenda ?? 'PRENDA'),
+                    'nombre_prenda' => (string) ($prendaBase->nombre_prenda ?? 'PRENDA'),
+                    'descripcion' => (string) ($prendaBase->descripcion ?? ''),
+                    'tallas' => $tallasParcial,
+                    'talla_colores' => [],
+                    'procesos' => [[
+                        'proceso' => $reciboKey,
+                        'tipo_proceso' => $reciboKey,
+                        'es_parcial' => true,
+                        'pedido_parcial_id' => (int) $parcial->id,
+                        'tallas' => [
+                            'dama' => $dama,
+                            'caballero' => $caballero,
+                            'unisex' => $unisex,
+                        ],
+                    ]],
+                    'recibos' => [
+                        $reciboKey => [
+                            'id' => $parcial->id,
+                            'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
+                            'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                            'consecutivo_original' => (float) $parcial->consecutivo_original,
+                            'tipo_recibo' => $parcial->tipo_recibo,
+                            'area' => $parcial->area ?? 'Costura',
+                            'encargado' => $parcial->encargado ?? null,
+                            'tallas' => $tallasParcial,
+                        ],
+                    ],
+                ]];
+
+                \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Prendas vacías en parcial, usando fallback mínimo', [
+                    'parcial_id' => (int) $parcial->id,
+                    'prenda_id' => (int) $parcial->prenda_pedido_id,
+                    'total_tallas' => count($tallasParcial),
+                ]);
             }
 
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Respuesta de parcial enviada', [

@@ -36,9 +36,11 @@
         if (consecutivoParcial !== null && consecutivoParcial !== undefined && String(consecutivoParcial).trim() !== '') {
             params.append('consecutivo_parcial', String(consecutivoParcial).trim());
         }
-        if (!tipoRecibo || String(tipoRecibo).toUpperCase() === 'VER RECIBO') {
-            params.set('tipo_recibo', 'PARCIAL');
-        }
+
+        // Si existe parcial_id, siempre debe abrirse la vista de parcial.
+        // Evita caer al recibo general (ej: 76) cuando se selecciona un parcial (ej: 78).
+        params.set('tipo_recibo', 'PARCIAL');
+
         console.log(' Pedido Parcial ID:', pedidoParcialId);
     }
 
@@ -58,4 +60,3 @@
         return false;
     }
 }
-

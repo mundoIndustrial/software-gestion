@@ -53,7 +53,7 @@ class VerPedidoOperarioUseCase
 
         $numeroReciboCostura = null;
 
-        if ($tipoReciboUpper === 'PARCIAL' && $consecutivoParcialParam !== null && $consecutivoParcialParam !== '') {
+        if ($consecutivoParcialParam !== null && $consecutivoParcialParam !== '') {
             $numeroReciboCostura = (string) $consecutivoParcialParam;
         }
 
@@ -118,4 +118,3 @@ class VerPedidoOperarioUseCase
         ];
     }
 }
-

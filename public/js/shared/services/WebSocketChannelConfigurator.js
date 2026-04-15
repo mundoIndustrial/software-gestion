@@ -94,7 +94,7 @@ class WebSocketChannelConfigurator {
 
             // Cambios de orden
             this.ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
-                if (this.debug) console.log('[WebSocketChannelConfigurator] 📨 OrdenUpdated (cartera):', data?.orden?.id);
+                if (this.debug) console.log('[WebSocketChannelConfigurator]  OrdenUpdated (cartera):', data?.orden?.id);
                 this.onUpdate('orden.actualizada', data?.orden);
             });
 

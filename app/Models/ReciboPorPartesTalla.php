@@ -13,6 +13,7 @@ class ReciboPorPartesTalla extends Model
         'recibo_por_partes_id',
         'talla',
         'cantidad',
+        'genero',
         'color_nombre',
     ];
 
