@@ -188,17 +188,20 @@ class ObtenerDatosRecibosOperarioUseCase
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
                     ->map(function ($prenda) use ($parcial) {
-                        // Convertir $parcial->tallas a array si es object/stdClass
-                        $tallasRaw = $parcial->tallas ?? [];
+                        // Cargar tallas desde la tabla correcta: pedidos_parciales_tallas
+                        // (que tiene el campo genero, a diferencia de recibos_por_partes_tallas)
+                        $tallasRaw = DB::table('pedidos_parciales_tallas')
+                            ->where('pedido_parcial_id', (int) $parcial->id)
+                            ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
                         
                         \Log::info('[NORMAL DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
                         \Log::info('[NORMAL DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
                         \Log::info('[NORMAL DEBUG 3] Contenido raw original: ' . json_encode($tallasRaw));
                         
-                        // Convertir a array de forma segura
+                        // Convertir a array de forma segura (ya es Collection, así que solo normalizamos)
                         if ($tallasRaw instanceof \Illuminate\Support\Collection) {
                             \Log::info('[NORMAL DEBUG 4] Entrando rama Collection');
-                            $tallasRaw = json_decode(json_encode($tallasRaw), true) ?: [];
+                            $tallasRaw = $tallasRaw->toArray();
                         } elseif (is_object($tallasRaw)) {
                             \Log::info('[NORMAL DEBUG 4] Entrando rama object');
                             $tallasRaw = json_decode(json_encode($tallasRaw), true) ?: [];
@@ -236,14 +239,17 @@ class ObtenerDatosRecibosOperarioUseCase
                         // En parciales se debe filtrar para NO devolver las tallas del recibo original.
                         $cantidadesPorTalla = [];
                         $cantidadesPorTallaYColor = [];
+                        $generosPorTalla = []; // Mapear talla -> género para preservar info
                         foreach ($tallasParcial as $registro) {
                             $t = strtoupper(trim((string) ($registro['talla'] ?? '')));
                             $c = (int) ($registro['cantidad'] ?? 0);
+                            $g = strtoupper(trim((string) ($registro['genero'] ?? 'UNISEX')));
                             $color = strtoupper(trim((string) ($registro['color_nombre'] ?? '')));
                             if ($t === '' || $c <= 0) {
                                 continue;
                             }
                             $cantidadesPorTalla[$t] = ($cantidadesPorTalla[$t] ?? 0) + $c;
+                            $generosPorTalla[$t] = $g; // Guardar género (último valor, normalmente es consistente)
 
                             if ($color !== '') {
                                 if (!isset($cantidadesPorTallaYColor[$t])) {
@@ -260,9 +266,10 @@ class ObtenerDatosRecibosOperarioUseCase
                             $telaNombre = $prenda['tela_nombre'] ?? $prenda['tela'] ?? null;
                             $tallaColoresParcial = [];
                             foreach ($cantidadesPorTallaYColor as $talla => $porColor) {
+                                $generoParaTalla = $generosPorTalla[$talla] ?? 'UNISEX';
                                 foreach ($porColor as $colorNombre => $cantidad) {
                                     $tallaColoresParcial[] = [
-                                        'genero' => 'UNISEX',
+                                        'genero' => $generoParaTalla,
                                         'talla' => $talla,
                                         'tela_nombre' => $telaNombre,
                                         'color_nombre' => $colorNombre,
@@ -321,9 +328,10 @@ class ObtenerDatosRecibosOperarioUseCase
                                 if (isset($tallasUsadas[$talla])) {
                                     continue;
                                 }
+                                $generoParaTalla = $generosPorTalla[$talla] ?? 'UNISEX';
                                 $nueva = [
                                     'talla' => $talla,
-                                    'genero' => 'UNISEX',
+                                    'genero' => $generoParaTalla,
                                     'cantidad' => $cantidad,
                                 ];
                                 if (isset($cantidadesPorTallaYColor[$talla]) && !empty($cantidadesPorTallaYColor[$talla])) {
@@ -348,19 +356,31 @@ class ObtenerDatosRecibosOperarioUseCase
 
                         // Además, muchos renderizadores usan `proceso.tallas` (estructura).
                         // Para parciales, sobreescribir `proceso.tallas` para que NO muestre las tallas del recibo original.
+                        // Distribuir correctamente por género (DAMA, CABALLERO, UNISEX)
+                        $dama = [];
+                        $caballero = [];
                         $unisex = [];
                         foreach ($tallasParcial as $registro) {
                             $tallaNombre = strtoupper(trim((string) ($registro['talla'] ?? '')));
                             $cantidad = (int) ($registro['cantidad'] ?? 0);
+                            $genero = strtoupper(trim((string) ($registro['genero'] ?? 'UNISEX')));
+                            
                             if ($tallaNombre === '' || $cantidad <= 0) {
                                 continue;
                             }
-                            $unisex[$tallaNombre] = ($unisex[$tallaNombre] ?? 0) + $cantidad;
+                            
+                            if ($genero === 'DAMA') {
+                                $dama[$tallaNombre] = ($dama[$tallaNombre] ?? 0) + $cantidad;
+                            } elseif ($genero === 'CABALLERO') {
+                                $caballero[$tallaNombre] = ($caballero[$tallaNombre] ?? 0) + $cantidad;
+                            } else {
+                                $unisex[$tallaNombre] = ($unisex[$tallaNombre] ?? 0) + $cantidad;
+                            }
                         }
 
                         $tallasProceso = [
-                            'dama' => [],
-                            'caballero' => [],
+                            'dama' => $dama,
+                            'caballero' => $caballero,
                             'unisex' => $unisex,
                         ];
 
