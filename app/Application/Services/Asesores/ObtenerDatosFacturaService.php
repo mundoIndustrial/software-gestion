@@ -64,8 +64,8 @@ class ObtenerDatosFacturaService
     {
 
 
-        // Usar obtenerDatosFactura() que incluye manga, broche, bolsillos con todas las observaciones
-        $datos = $this->pedidoProduccionRepository->obtenerDatosFactura($pedido->id);
+        // Usar obtenerDatosFactura() con paraCartera=true para filtrar prendas de bodega sin procesos en Cartera
+        $datos = $this->pedidoProduccionRepository->obtenerDatosFactura($pedido->id, true);
         
         // Agregar el ID del pedido para poder usarlo en el frontend
         $datos['id'] = $pedido->id;

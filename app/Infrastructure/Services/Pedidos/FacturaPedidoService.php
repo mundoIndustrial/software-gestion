@@ -24,7 +24,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
      * - Prendas con colores, telas e imágenes
      * - Procesos con imágenes
      */
-    public function obtenerDatosFactura(int $pedidoId): array
+    public function obtenerDatosFactura(int $pedidoId, bool $paraCartera = false): array
     {
         try {
             $pedido = $this->obtenerPedidoConRelaciones($pedidoId);
@@ -35,7 +35,7 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
             }
 
             $datos = $this->construirDatosBase($pedido);
-            $datos['prendas'] = $this->procesarPrendasParaFactura($pedido);
+            $datos['prendas'] = $this->procesarPrendasParaFactura($pedido, $paraCartera);
             $datos['epps'] = $this->procesarEppsParaFactura($pedido);
             $datos['total_items'] = $this->calcularTotalItems($datos);
 
@@ -112,12 +112,20 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
     /**
      * Procesar todas las prendas para la factura
      */
-    private function procesarPrendasParaFactura(PedidoProduccion $pedido): array
+    private function procesarPrendasParaFactura(PedidoProduccion $pedido, bool $paraCartera = false): array
     {
         $prendas = [];
         
         foreach ($pedido->prendas as $prenda) {
             $prendaProcesada = $this->procesarPrendaIndividual($prenda, $pedido);
+            
+            // Filtrar: en Cartera no mostrar prendas de bodega sin procesos
+            if ($paraCartera && $prendaProcesada['de_bodega'] && empty($prendaProcesada['procesos'])) {
+                \Log::info('[MODAL-FILTRO] 🚫 Prenda {id} EXCLUIDA del modal cartera (bodega sin procesos)', 
+                    ['id' => $prendaProcesada['id']]);
+                continue;
+            }
+            
             $prendas[] = $prendaProcesada;
         }
 

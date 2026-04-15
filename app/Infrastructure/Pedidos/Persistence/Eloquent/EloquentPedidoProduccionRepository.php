@@ -149,9 +149,9 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
         }
     }
 
-    public function obtenerDatosFactura(int $pedidoId): array
+    public function obtenerDatosFactura(int $pedidoId, bool $paraCartera = false): array
     {
-        return $this->facturaService->obtenerDatosFactura($pedidoId);
+        return $this->facturaService->obtenerDatosFactura($pedidoId, $paraCartera);
     }
 
     public function obtenerDatosRecibos(int $pedidoId, bool $filtrarProcesosPendientes = false): array

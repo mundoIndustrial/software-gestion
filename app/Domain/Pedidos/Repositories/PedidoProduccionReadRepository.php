@@ -18,7 +18,7 @@ interface PedidoProduccionReadRepository
 
     public function actualizarCantidadTotal(string $numeroPedido): void;
 
-    public function obtenerDatosFactura(int $pedidoId): array;
+    public function obtenerDatosFactura(int $pedidoId, bool $paraCartera = false): array;
 
     public function obtenerDatosRecibos(int $pedidoId, bool $filtrarProcesosPendientes = false): array;
 
