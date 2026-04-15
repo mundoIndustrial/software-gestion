@@ -87,7 +87,8 @@
                 referencia: t.referencia || '',
                 tela_id: t.tela_id || 0,
                 color_id: t.color_id || 0,
-                id: t.id || t._original_id || undefined
+                id: t.id || t._original_id || undefined,
+                prenda_pedido_colores_telas_id: t.prenda_pedido_colores_telas_id || t.id || t._original_id || undefined
             };
 
             if (t.imagenes && Array.isArray(t.imagenes)) {
@@ -103,6 +104,33 @@
         });
 
         formData.append('colores_telas', JSON.stringify(telasJSON));
+        
+        // CRÍTICO: Crear metadatos de fotos de telas para que el backend no rechace los archivos
+        const fotosTelasMetadata = [];
+        telas.forEach((t, telaIdx) => {
+            if (t.imagenes && Array.isArray(t.imagenes)) {
+                t.imagenes.forEach((img, imgIdx) => {
+                    const esArchivo = img instanceof File || img?.file instanceof File;
+                    const tieneRutaExistente = img.ruta_original || img.url;
+                    
+                    if (esArchivo || tieneRutaExistente) {
+                        fotosTelasMetadata.push({
+                            prenda_pedido_colores_telas_id: t.prenda_pedido_colores_telas_id || t.id || t._original_id,
+                            ruta_original: img.ruta_original || img.url || undefined,
+                            nombre: img.nombre || (img.file?.name) || 'foto_tela',
+                            es_nueva: esArchivo,
+                            indice_archivo: esArchivo ? telaIdx : undefined
+                        });
+                    }
+                });
+            }
+        });
+
+        if (fotosTelasMetadata.length > 0) {
+            formData.append('fotosTelas', JSON.stringify(fotosTelasMetadata));
+            console.log('[PedidosAdapter]  Metadatos de fotos de telas enviados:', fotosTelasMetadata.length, 'fotos');
+        }
+        
         console.log('[PedidosAdapter]  Telas enviadas:', telasJSON.length, 'telas');
     }
 

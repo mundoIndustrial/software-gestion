@@ -50,6 +50,9 @@
                                 <span class="material-symbols-rounded">description</span>DESCRIPCIÓN
                             </label>
                             <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." class="form-textarea" onkeyup="convertirAMayusculasConCursor(this);" style="text-transform: uppercase;"></textarea>
+                            <small style="display: block; margin-top: 0.5rem; color: #dc3545; font-weight: 500;">
+                                <strong>⚠️ NO OLVIDES:</strong> Agregar en descripción: Manga, Bolsillo, cuellos y puños. Incluir: Tela, Referencia y Código de Puños
+                            </small>
                         </div>
                     </div>
 
