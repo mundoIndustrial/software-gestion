@@ -110,6 +110,12 @@
                                 </div>
 
                                 <div class="orden-buttons">
+                                    <a
+                                        class="btn-ver-recibos"
+                                        href="{{ $urlVerRecibo }}">
+                                        <span class="material-symbols-rounded">receipt</span>
+                                        VER
+                                    </a>
                                     @if($prenda['tiene_parciales'] ?? false)
                                         <button class="btn-ver-distribucion"
                                                 onclick="abrirDistribucionReciboCC(this, @js((string) $recibo['tipo_recibo']));"
@@ -120,13 +126,6 @@
                                             <span class="material-symbols-rounded">share</span>
                                             VER DISTRIBUCIÓN
                                         </button>
-                                    @else
-                                        <a
-                                            class="btn-ver-recibos"
-                                            href="{{ $urlVerRecibo }}">
-                                            <span class="material-symbols-rounded">receipt</span>
-                                            VER
-                                        </a>
                                     @endif
                                     <button class="btn-agregar-novedad"
                                             onclick="abrirModalNovedad(@js((string) $prenda['numero_pedido']), {{ (int) $prenda['prenda_id'] }}, @js((string) $prenda['nombre_prenda']), @js((string) ($consecutivoActual !== '' ? $consecutivoActual : $prenda['numero_pedido'])))">
@@ -607,6 +606,35 @@
         font-size: 14px;
     }
 
+    .btn-ver-distribucion {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        background: #E3F2FD;
+        color: #1976D2;
+        border: 1px solid #1976D2;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(25, 118, 210, 0.15);
+    }
+
+    .btn-ver-distribucion:hover {
+        background: #BBDEFB;
+        box-shadow: 0 4px 8px rgba(25, 118, 210, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-ver-distribucion .material-symbols-rounded {
+        font-size: 14px;
+    }
+
     .empty-state {
         text-align: center;
         padding: 2rem;
@@ -1017,6 +1045,21 @@
         box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
     }
 
+    .control-calidad-dashboard .btn-ver-distribucion {
+        border-radius: 14px;
+        padding: 0.62rem 0.95rem;
+        font-size: 0.74rem;
+        background: #fff;
+        color: #2563eb;
+        border: 1px solid #c9d8f8;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+    }
+
+    .control-calidad-dashboard .btn-ver-distribucion:hover {
+        background: #eff6ff;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+    }
+
     .control-calidad-dashboard .orden-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -1041,6 +1084,17 @@
     }
 
     body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-recibos:hover {
+        background: #ecfdf5;
+        box-shadow: 0 10px 18px rgba(17, 150, 105, 0.18);
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-distribucion {
+        color: #119669;
+        border-color: #b7e5d2;
+        box-shadow: 0 6px 14px rgba(17, 150, 105, 0.12);
+    }
+
+    body[data-dashboard-theme="reflectivo"] .control-calidad-dashboard .btn-ver-distribucion:hover {
         background: #ecfdf5;
         box-shadow: 0 10px 18px rgba(17, 150, 105, 0.18);
     }
@@ -1130,15 +1184,34 @@
         }
 
         .control-calidad-dashboard .orden-buttons {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        .control-calidad-dashboard .orden-buttons .btn-ver-recibos,
-        .control-calidad-dashboard .orden-buttons .btn-agregar-novedad,
-        .control-calidad-dashboard .orden-buttons .btn-completar-recibo,
+        .control-calidad-dashboard .orden-buttons .btn-ver-recibos {
+            order: 1;
+            width: auto;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-ver-distribucion {
+            order: 2;
+            width: auto;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-agregar-novedad {
+            order: 3;
+            width: auto;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-completar-recibo {
+            order: 4;
+            width: auto;
+        }
+
         .control-calidad-dashboard .orden-buttons .btn-deshacer-recibo {
-            width: 100%;
+            order: 5;
+            width: auto;
         }
 
         .control-calidad-dashboard .recibo-completado-chip {

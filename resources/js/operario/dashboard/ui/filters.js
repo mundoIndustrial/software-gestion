@@ -1,3 +1,5 @@
+import { crearBotonAgregarNovedad } from './novedadButtons';
+
 export function initReciboFilters() {
     // Flag para saber si estamos en modo Control de Calidad
     let __enModoControlCalidad = false;
@@ -300,6 +302,12 @@ export function initReciboFilters() {
         }
 
         const htmlRecibos = recibos.map(recibo => {
+            const botonAgregarNovedad = crearBotonAgregarNovedad({
+                numeroPedido: recibo.numero_pedido,
+                prendaId: recibo.prenda_id,
+                nombrePrenda: recibo.nombre_prenda,
+                numeroRecibo: recibo.consecutivo_actual,
+            });
             const distribucionBtn = recibo.tiene_parciales 
                 ? `<button class="btn-ver-distribucion" 
                         onclick="abrirDistribucionReciboCC(this, '${tipoRecibo}');"
@@ -345,11 +353,7 @@ export function initReciboFilters() {
                                 <span class="material-symbols-rounded">visibility</span>
                                 VER RECIBO
                             </button>
-                            <button class="btn-agregar-novedad" 
-                                    onclick="abrirModalNovedad('${recibo.numero_pedido}', ${recibo.prenda_id}, '${recibo.nombre_prenda}', ${recibo.consecutivo_actual})">
-                                <span class="material-symbols-rounded">comment</span>
-                                AGREGAR NOVEDAD
-                            </button>
+                            ${botonAgregarNovedad}
                             ${distribucionBtn}
                         </div>
                     </div>
@@ -548,4 +552,3 @@ export function initReciboFilters() {
         return parcialCards;
     }
 }
-

@@ -1,5 +1,6 @@
 import { httpJsonBody } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
+import { asegurarBotonAgregarNovedad } from '../ui/novedadButtons';
 
 function actualizarInterfazControlCalidadParcial(btn, areaNueva, procesoId = '', esDeshacer = false) {
     const parcialCard = btn.closest('.parcial-card');
@@ -92,6 +93,7 @@ export function pasarAControlCalidad(btn) {
     }
 
     const originalHTML = btn.innerHTML;
+    const card = btn.closest('.orden-card-simple');
     btn.disabled = true;
     btn.style.opacity = '0.6';
     btn.style.pointerEvents = 'none';
@@ -109,6 +111,15 @@ export function pasarAControlCalidad(btn) {
             console.log('Respuesta del servidor (Control Calidad):', data);
 
             if (data.success) {
+                if (card) {
+                    asegurarBotonAgregarNovedad(card, {
+                        numeroPedido: btn.dataset.numeroPedido || btn.dataset.numero || card.dataset.numero || '',
+                        prendaId: btn.dataset.prendaId || card.dataset.prendaId || '',
+                        nombrePrenda: btn.dataset.nombre || card.dataset.prenda || '',
+                        numeroRecibo: btn.dataset.recibo || card.dataset.numeroRecibo || '',
+                    });
+                }
+
                 if (esParcial) {
                     actualizarInterfazControlCalidadParcial(
                         btn,
