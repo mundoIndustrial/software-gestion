@@ -257,7 +257,8 @@ class ObtenerPedidoTransformadoUseCase
             $procesosAdicionales = [];
 
             foreach ($recibosParciales as $reciboParcial) {
-                $tipoRecibo = $reciboParcial->tipo_recibo;
+                $tipoReciboOriginal = strtoupper((string) $reciboParcial->tipo_recibo);
+                $tipoRecibo = $tipoReciboOriginal === 'COSTURA-BODEGA' ? 'COSTURA' : $tipoReciboOriginal;
 
                 if (!isset($anexosPorTipo[$tipoRecibo])) {
                     $anexosPorTipo[$tipoRecibo] = 0;
@@ -295,6 +296,7 @@ class ObtenerPedidoTransformadoUseCase
                     'es_parcial' => true,
                     'numero_anexo' => $anexosPorTipo[$tipoRecibo],
                     'pedido_parcial_id' => $reciboParcial->id,
+                    'tipo_recibo_original' => $tipoReciboOriginal,
                     'tallas' => $tallasList,
                     'tallas_transformadas' => $talasTransformadas,
                     'created_at' => $reciboParcial->created_at,

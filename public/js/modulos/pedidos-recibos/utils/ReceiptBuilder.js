@@ -29,8 +29,15 @@ export class ReceiptBuilder {
         
         if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
             // PASO 1: AGREGAR RECIBO BASE
-            const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
-            const nombreBase = prenda.de_bodega == 1 ? "Bodega" : "Costura";
+            const recibosMap = (prenda && prenda.recibos && typeof prenda.recibos === 'object') ? prenda.recibos : {};
+            const tieneCostura = !!recibosMap.COSTURA;
+            const tieneCosturaBodega = !!recibosMap['COSTURA-BODEGA'];
+
+            // Regla canónica: SIEMPRE usar recibo base COSTURA en UI.
+            // Si en BD solo existe COSTURA-BODEGA, se usa como fuente de datos legacy.
+            const tipoBase = "costura";
+            const nombreBase = "Costura";
+            const datosReciboBase = recibosMap.COSTURA || recibosMap['COSTURA-BODEGA'] || null;
                 
             // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
             let tallasObj = {};
@@ -105,11 +112,11 @@ export class ReceiptBuilder {
             };
             
             // Agregar datos del recibo de costura si existen
-            if (prenda.recibos && prenda.recibos[tipoBase.toUpperCase()]) {
-                const datosRecibo = prenda.recibos[tipoBase.toUpperCase()];
+            if (datosReciboBase && typeof datosReciboBase === 'object') {
+                const datosRecibo = datosReciboBase;
                 reciboBase.activo = datosRecibo.activo;
                 reciboBase.created_at = datosRecibo.created_at;
-                reciboBase.tipo_recibo = datosRecibo.tipo_recibo;
+                reciboBase.tipo_recibo = 'COSTURA';
                 reciboBase.consecutivo_actual = datosRecibo.consecutivo_actual;
                 
                 console.log('[ReceiptBuilder] Datos de recibo agregados al recibo base:', {

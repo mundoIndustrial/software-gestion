@@ -53,6 +53,9 @@ class GetPendingSewingReceiptsUseCase
 
     private function formatReceipt($recibo): array
     {
+        $isPartial = (bool) ($recibo->es_parcial ?? false);
+        $partialId = (int) ($recibo->pedido_parcial_id ?? 0);
+
         $proceso = [
             'fecha_creacion' => $recibo->fecha_creacion,
             'numero_recibo' => $recibo->numero_recibo,
@@ -62,8 +65,18 @@ class GetPendingSewingReceiptsUseCase
             'pedido_id' => $recibo->pedido_id,
             'asesor' => $recibo->asesor,
             'color_costura' => $recibo->color_costura,
+            'es_parcial' => $isPartial,
+            'pedido_parcial_id' => $partialId > 0 ? $partialId : null,
             'prendas' => collect(),
         ];
+
+        if ($isPartial && $partialId > 0) {
+            $proceso['prendas'] = collect(
+                $this->receiptRepository->findPartialGarmentsByPartialId($partialId)
+            );
+
+            return $proceso;
+        }
 
         if (empty($recibo->prenda_id)) {
             return $proceso;

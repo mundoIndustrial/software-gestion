@@ -144,7 +144,9 @@
                     const pedidoId = btn.getAttribute('data-pedido-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
                     const tipoRecibo = btn.getAttribute('data-tipo-recibo') || 'COSTURA';
-                    safeCall('abrirDetalleRecibo', [pedidoId, prendaId, tipoRecibo], 'abrirDetalleRecibo no esta disponible');
+                    const esParcial = btn.getAttribute('data-es-parcial') === '1';
+                    const pedidoParcialId = btn.getAttribute('data-pedido-parcial-id');
+                    safeCall('abrirDetalleRecibo', [pedidoId, prendaId, tipoRecibo, esParcial, pedidoParcialId], 'abrirDetalleRecibo no esta disponible');
                     safeCall('cerrarDropdownVerRecibo', [], 'cerrarDropdownVerRecibo no esta disponible');
                     break;
                 }

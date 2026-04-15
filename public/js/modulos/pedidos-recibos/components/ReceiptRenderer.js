@@ -66,12 +66,13 @@ export class ReceiptRenderer {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
             const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
-            const esParcial = !!(recibo && recibo._esParcial);
 
             // Caso especial: anexos de costura en prenda de bodega se renderizan sobre "costura-bodega"
             // pero el título debe mostrarse como COSTURA.
             const nombreRecibo = String(
-                (esParcial && tipoProcesoLower === 'costura-bodega') ? 'costura' : (tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo')
+                ((tipoProcesoLower === 'costura-bodega') || ((tipoProcesoLower === 'costura-bodega') && (esParcial || esVistaInsumosMateriales)))
+                    ? 'costura'
+                    : (tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo')
             ).toUpperCase();
             
             // Debug: Verificar qué datos llegan
@@ -97,7 +98,7 @@ export class ReceiptRenderer {
             // Definir mapa de tipos de recibo
             const tipoReciboMap = {
                 'costura': 'COSTURA',
-                'costura-bodega': 'COSTURA-BODEGA',  //  Corregido: usar COSTURA-BODEGA
+                'costura-bodega': 'COSTURA',
                 'bordado': 'BORDADO',
                 'estampado': 'ESTAMPADO',
                 'dtf': 'DTF',

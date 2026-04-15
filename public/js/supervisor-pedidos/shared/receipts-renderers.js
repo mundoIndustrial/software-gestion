@@ -50,13 +50,13 @@
 
             if (color && cantidadColor > 0) {
                 const key = `${nombre}|${color}`;
-                if (!grouped.has(key)) grouped.set(key, cantidadColor);
+                grouped.set(key, (grouped.get(key) || 0) + cantidadColor);
                 return;
             }
 
             if (!color && cantidadTalla > 0) {
                 const key = `${nombre}${tela}|sin-color`;
-                if (!grouped.has(key)) grouped.set(key, cantidadTalla);
+                grouped.set(key, (grouped.get(key) || 0) + cantidadTalla);
             }
         });
 
@@ -84,6 +84,8 @@
         const numeroRecibo = String(proceso?.numero_recibo || '');
         const pedidoId = String(proceso?.pedido_id || '');
         const prendaId = String(proceso?.prenda_id || '');
+        const esParcial = Boolean(proceso?.es_parcial);
+        const pedidoParcialId = String(proceso?.pedido_parcial_id || '');
         const prendas = normalizeGarments(proceso?.prendas || []);
         const prendasHtml = prendas.length
             ? prendas.map((linea) => `<div style="margin-bottom: 0.25rem;">${escapeHtml(linea)}</div>`).join('')
@@ -94,7 +96,7 @@
             ? `
                 <div style="display: flex; align-items: center; justify-content: center;">
                     ${actionMode === 'modal'
-                        ? `<button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>`
+                        ? `<button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-es-parcial="${esParcial ? 'true' : 'false'}" data-pedido-parcial-id="${escapeHtml(pedidoParcialId)}" onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>`
                         : receiptUrl
                         ? `<a href="${escapeHtml(receiptUrl)}" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">Ver</a>`
                         : '<span style="color:#9ca3af;font-size:0.8rem;">-</span>'}
@@ -107,7 +109,7 @@
             : `<span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">Sin area</span>`;
 
         return `
-            <div data-row="processo" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-color-stored="${escapeHtml(color)}" style="
+            <div data-row="processo" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-es-parcial="${esParcial ? 'true' : 'false'}" data-pedido-parcial-id="${escapeHtml(pedidoParcialId)}" data-color-stored="${escapeHtml(color)}" style="
                 --row-bg-color: ${escapeHtml(rowBaseColor)};
                 display: grid;
                 grid-template-columns: ${escapeHtml(gridTemplate)};

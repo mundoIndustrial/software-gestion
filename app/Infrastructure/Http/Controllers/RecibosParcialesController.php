@@ -383,7 +383,9 @@ class RecibosParcialesController extends Controller
             $consecutivoGenerado = null;
 
             DB::transaction(function () use ($parcial, $id, &$consecutivoGenerado) {
-                $tipoRecibo = $parcial->tipo_recibo; // COSTURA, BORDADO, etc.
+                $tipoReciboParcial = strtoupper((string) ($parcial->tipo_recibo ?? ''));
+                // Regla de negocio: anexo de bodega debe generar recibo de COSTURA.
+                $tipoRecibo = $tipoReciboParcial === 'COSTURA-BODEGA' ? 'COSTURA' : $tipoReciboParcial;
 
                 // Obtener siguiente consecutivo de tabla maestra
                 $registroMaestro = DB::table('consecutivos_recibos')
@@ -445,6 +447,7 @@ class RecibosParcialesController extends Controller
 
                 Log::info('[RecibosParcialesController@activar] Recibo parcial activado', [
                     'parcial_id' => $id,
+                    'tipo_recibo_parcial' => $tipoReciboParcial,
                     'tipo_recibo' => $tipoRecibo,
                     'consecutivo' => $nuevoConsecutivo,
                     'pedido_id' => $parcial->pedido_produccion_id,
@@ -587,7 +590,9 @@ class RecibosParcialesController extends Controller
 
             // Anulación: estado visible del recibo se controla en consecutivos_recibos_pedidos.
             // El parcial también debe quedar en estado ANULADO.
-            $tipoRecibo = strtoupper((string)($parcial->tipo_recibo ?? ''));
+            $tipoReciboParcial = strtoupper((string)($parcial->tipo_recibo ?? ''));
+            // Mantener simetria con activar(): anexos COSTURA-BODEGA se tratan como COSTURA en recibos.
+            $tipoRecibo = $tipoReciboParcial === 'COSTURA-BODEGA' ? 'COSTURA' : $tipoReciboParcial;
             $notaNeedle = 'parcial_id:' . $id;
 
             $consecutivo = DB::table('consecutivos_recibos_pedidos')

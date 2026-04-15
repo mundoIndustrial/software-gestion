@@ -566,6 +566,8 @@
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
                 const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
+                const reciboCosturaBodegaActual = prenda?.recibos?.['COSTURA-BODEGA'] || prenda?.consecutivos?.['COSTURA-BODEGA'] || null;
+                const reciboBaseActual = reciboCosturaActual || reciboCosturaBodegaActual || null;
                 
                 console.log('[renderizarPrendasEnSelector] DEBUG - Datos de costura:', {
                     prendaId: prenda.id,
@@ -573,6 +575,8 @@
                     recibos: prenda?.recibos,
                     consecutivos: prenda?.consecutivos,
                     reciboCosturaActual,
+                    reciboCosturaBodegaActual,
+                    reciboBaseActual,
                     tipoReciboCosturaActual: typeof reciboCosturaActual,
                     esNull: reciboCosturaActual === null,
                     esUndefined: reciboCosturaActual === undefined,
@@ -584,28 +588,28 @@
                 let numeroRecibo = null;
                 let activoValue = 0;
                 
-                if (reciboCosturaActual) {
+                if (reciboBaseActual) {
                     // Nuevo formato: objeto con datos completos
-                    if (typeof reciboCosturaActual === 'object' && reciboCosturaActual.activo !== undefined) {
-                        estadoRecibo = reciboCosturaActual.activo === 1 ? 'APROBADO' : 'PENDIENTE';
-                        numeroRecibo = reciboCosturaActual.consecutivo_actual || null;
-                        activoValue = reciboCosturaActual.activo;
+                    if (typeof reciboBaseActual === 'object' && reciboBaseActual.activo !== undefined) {
+                        estadoRecibo = reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE';
+                        numeroRecibo = reciboBaseActual.consecutivo_actual || null;
+                        activoValue = reciboBaseActual.activo;
                         
                         console.log('[renderizarPrendasEnSelector] DEBUG - Usando nuevo formato:', {
-                            activo: reciboCosturaActual.activo,
-                            consecutivo_actual: reciboCosturaActual.consecutivo_actual,
+                            activo: reciboBaseActual.activo,
+                            consecutivo_actual: reciboBaseActual.consecutivo_actual,
                             estadoDeterminado: estadoRecibo,
                             numeroRecibo
                         });
                     } 
                     // Formato antiguo: solo el número de consecutivo
-                    else if (reciboCosturaActual) {
+                    else if (reciboBaseActual) {
                         estadoRecibo = 'APROBADO';
-                        numeroRecibo = reciboCosturaActual;
+                        numeroRecibo = reciboBaseActual;
                         activoValue = 1;
                         
                         console.log('[renderizarPrendasEnSelector] DEBUG - Usando formato antiguo:', {
-                            reciboCosturaActual,
+                            reciboBaseActual,
                             estadoDeterminado: estadoRecibo,
                             numeroRecibo
                         });
@@ -615,8 +619,8 @@
                 }
                 
                 const reciboBase = {
-                    tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
-                    nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
+                    tipo: reciboCosturaActual ? "costura" : (reciboCosturaBodegaActual ? "costura-bodega" : (prenda.de_bodega == 1 ? "costura-bodega" : "costura")),
+                    nombre: reciboCosturaActual ? "Costura" : (reciboCosturaBodegaActual ? "Bodega" : (prenda.de_bodega == 1 ? "Bodega" : "Costura")),
                     estado: estadoRecibo,
                     es_base: true,
                     numero_recibo: numeroRecibo,
@@ -681,12 +685,15 @@
             parciales.forEach((parcial, index) => {
                 // Determinar el estado del parcial
                 const estadoParcial = parcial.activo === 1 ? 'APROBADO' : (parcial.estado || 'PENDIENTE');
+                const tipoParcial = String(parcial.tipo_recibo || '').toUpperCase() === 'COSTURA-BODEGA'
+                    ? 'COSTURA'
+                    : String(parcial.tipo_recibo || '');
                 
                 // Crear nombre descriptivo para el parcial
-                const nombreParcial = `${parcial.tipo_recibo} ANEXO ${index + 1}`;
+                const nombreParcial = `${tipoParcial} ANEXO ${index + 1}`;
                 
                 recibos.push({
-                    tipo: parcial.tipo_recibo,
+                    tipo: tipoParcial,
                     nombre: nombreParcial,
                     estado: estadoParcial,
                     es_base: false,

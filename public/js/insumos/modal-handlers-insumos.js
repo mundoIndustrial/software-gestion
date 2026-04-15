@@ -88,14 +88,28 @@ function cerrarModalInsumos() {
     }
 }
 
-function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo) {
+function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, pedidoParcialId = null) {
     const parsedPedidoId = parseInt(pedidoId, 10) || null;
     const parsedPrendaId = (prendaId === 'null' || prendaId === '' || !prendaId)
         ? null
         : (parseInt(prendaId, 10) || null);
+    const parsedPedidoParcialId = pedidoParcialId ? (parseInt(pedidoParcialId, 10) || null) : null;
 
     resolveOpenOrderDetailModalHandler()
-        .then((handler) => handler(parsedPedidoId, parsedPrendaId, tipoRecibo))
+        .then((handler) => {
+            if (esParcial && parsedPedidoParcialId && pedidosRecibosModuleInstance && typeof pedidosRecibosModuleInstance.abrirReciboParcial === 'function') {
+                const nombreAnexo = `${String(tipoRecibo || 'COSTURA').toUpperCase()} ANEXO`;
+                return pedidosRecibosModuleInstance.abrirReciboParcial(
+                    parsedPedidoId,
+                    parsedPrendaId,
+                    tipoRecibo,
+                    parsedPedidoParcialId,
+                    nombreAnexo
+                );
+            }
+
+            return handler(parsedPedidoId, parsedPrendaId, tipoRecibo);
+        })
         .catch((error) => {
             console.error('[modal-handlers-insumos] Error cargando PedidosRecibosModule:', error);
         });

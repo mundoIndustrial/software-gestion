@@ -233,6 +233,8 @@
                                             data-pedido-id="{{ $pedidoProduccionId }}"
                                             data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                             data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                            data-es-parcial="{{ !empty($orden->es_parcial) ? '1' : '0' }}"
+                                            data-pedido-parcial-id="{{ $orden->pedido_parcial_id ?? '' }}"
                                             data-tooltip="Ver recibo o seguimiento"
                                             title="Ver recibo o seguimiento"
                                         >

@@ -68,6 +68,11 @@ interface ReceiptRepository
      */
     public function findGarmentsWithoutColorsByPrendaId(int $prendaId): array;
 
+    /**
+     * @return array<int, object>
+     */
+    public function findPartialGarmentsByPartialId(int $partialId): array;
+
     public function getSewingReceiptFilterOptions(string $field): array;
 
     public function getQualityControlReceiptFilterOptions(string $field): array;

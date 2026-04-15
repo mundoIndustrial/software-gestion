@@ -285,7 +285,7 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
+                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
                                         --row-bg-color: {{ $proceso['color_costura'] ?: '#ffffff' }};
                                         display: grid;
                                         grid-template-columns: 110px 170px 110px 200px 120px 200px 160px 130px 100px;
@@ -304,6 +304,8 @@
                                                 data-pedido-id="{{ $proceso['pedido_id'] }}"
                                                 data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}"
                                                 data-numero-recibo="{{ $proceso['numero_recibo'] }}"
+                                                data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}"
+                                                data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}"
                                                 onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)"
                                                 style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;"
                                             >
@@ -348,16 +350,12 @@
                                                         if(!empty($prenda->color_nombre) && !empty($prenda->cantidad_color)) {
                                                             // Con color
                                                             $key = $prenda->nombre_prenda . '|' . $prenda->color_nombre;
-                                                            if(!isset($prendasAgrupadas[$key])) {
-                                                                $prendasAgrupadas[$key] = $prenda->cantidad_color;
-                                                            }
+                                                            $prendasAgrupadas[$key] = ($prendasAgrupadas[$key] ?? 0) + (int) $prenda->cantidad_color;
                                                         } elseif(!empty($prenda->cantidad_talla) && empty($prenda->color_nombre)) {
                                                             // Sin color
                                                             $tela = !empty($prenda->tela) ? ' ' . $prenda->tela : '';
                                                             $key = $prenda->nombre_prenda . $tela . '|sin-color';
-                                                            if(!isset($prendasAgrupadas[$key])) {
-                                                                $prendasAgrupadas[$key] = $prenda->cantidad_talla;
-                                                            }
+                                                            $prendasAgrupadas[$key] = ($prendasAgrupadas[$key] ?? 0) + (int) $prenda->cantidad_talla;
                                                         }
                                                     }
                                                 @endphp
@@ -630,7 +628,7 @@ function construirUrlApiPendientesCostura(urlString) {
     return `/api/supervisor-pedidos/recibos/pendientes-costura${source.search || ''}`;
 }
 
-async function resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo) {
+async function resolverReciboCosturaContexto(pedidoId, numeroRecibo) {
     try {
         const response = await fetch(`/registros/${pedidoId}/recibos-datos`, {
             method: 'GET',
@@ -642,7 +640,7 @@ async function resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo) {
         });
 
         if (!response.ok) {
-            return 0;
+            return null;
         }
 
         const payload = await response.json();
@@ -657,26 +655,40 @@ async function resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo) {
             if (!primeraPrendaValida) primeraPrendaValida = prendaId;
 
             const recibos = Array.isArray(prenda?.recibos) ? prenda.recibos : [];
-            const tieneReciboCostura = recibos.some((recibo) => {
-                const tipo = String(recibo?.tipo_recibo || '').toUpperCase();
+            const reciboCostura = recibos.find((recibo) => {
+                const tipo = String(recibo?.tipo_recibo || recibo?.tipo || '').toUpperCase();
                 const consecutivo = String(recibo?.consecutivo_actual ?? recibo?.numero_recibo ?? '').trim();
-                return tipo === 'COSTURA' && consecutivo === numeroNormalizado;
+                return (tipo === 'COSTURA' || tipo === 'COSTURA-BODEGA') && consecutivo === numeroNormalizado;
             });
 
-            if (tieneReciboCostura) {
-                return prendaId;
+            if (reciboCostura) {
+                const esParcial = Boolean(
+                    reciboCostura?.es_parcial ||
+                    reciboCostura?.origen === 'PARCIAL' ||
+                    reciboCostura?.pedido_parcial_id
+                );
+
+                return {
+                    prendaId,
+                    esParcial,
+                    pedidoParcialId: Number(reciboCostura?.pedido_parcial_id || 0) || null,
+                };
             }
         }
 
         // Fallback: usar primera prenda disponible para abrir modal y evitar redirecciones.
         if (primeraPrendaValida) {
-            return primeraPrendaValida;
+            return {
+                prendaId: primeraPrendaValida,
+                esParcial: false,
+                pedidoParcialId: null,
+            };
         }
     } catch (error) {
-        console.error('[resolverPrendaIdPorNumeroRecibo] Error:', error);
+        console.error('[resolverReciboCosturaContexto] Error:', error);
     }
 
-    return 0;
+    return null;
 }
 
 function esperarModuloRecibos(timeoutMs = 1200) {
@@ -702,18 +714,25 @@ window.openReciboCosturaModalFromRow = async function(button) {
     const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
     let prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
     const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
+    let esParcial = String(button?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    let pedidoParcialId = Number(button?.getAttribute('data-pedido-parcial-id') || 0);
 
     if (!pedidoId) {
         console.error('[openReciboCosturaModalFromRow] Falta pedido_id', { pedidoId, prendaId, numeroRecibo });
         return;
     }
 
-    if (!prendaId && numeroRecibo) {
-        prendaId = await resolverPrendaIdPorNumeroRecibo(pedidoId, numeroRecibo);
+    if ((!prendaId || !pedidoParcialId) && numeroRecibo) {
+        const contexto = await resolverReciboCosturaContexto(pedidoId, numeroRecibo);
+        if (contexto) {
+            if (!prendaId) prendaId = Number(contexto.prendaId || 0);
+            if (!pedidoParcialId) pedidoParcialId = Number(contexto.pedidoParcialId || 0);
+            esParcial = esParcial || Boolean(contexto.esParcial);
+        }
     }
 
     if (!prendaId) {
-        console.error('[openReciboCosturaModalFromRow] No se pudo resolver prenda_id para abrir modal.', { pedidoId, numeroRecibo });
+        console.error('[openReciboCosturaModalFromRow] No se pudo resolver prenda_id para abrir modal.', { pedidoId, numeroRecibo, esParcial, pedidoParcialId });
         if (typeof mostrarAlerta === 'function') {
             mostrarAlerta('Error', 'No se pudo abrir el recibo en modal para este registro.', 'error');
         }
@@ -722,6 +741,11 @@ window.openReciboCosturaModalFromRow = async function(button) {
 
     const moduleReady = await esperarModuloRecibos();
     if (moduleReady) {
+        if (esParcial && pedidoParcialId > 0 && typeof window.openOrderDetailModalWithParcial === 'function') {
+            window.openOrderDetailModalWithParcial(pedidoParcialId, prendaId, 'COSTURA', pedidoId, 'COSTURA ANEXO');
+            return;
+        }
+
         window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura');
         return;
     }

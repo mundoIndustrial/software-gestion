@@ -384,7 +384,19 @@ class ObtenerDetalleCompletoUseCase
                 }
             }
 
-            $recibos['parciales'] = $parciales->toArray();
+            $recibos['parciales'] = $parciales->map(function ($parcial) {
+                $row = (array) $parcial;
+                $tipoRecibo = strtoupper((string) ($row['tipo_recibo'] ?? ''));
+
+                // Normalizar anexos de costura: aunque se persistan como COSTURA-BODEGA,
+                // en UI y flujo de recibos deben tratarse como COSTURA.
+                if ($tipoRecibo === 'COSTURA-BODEGA') {
+                    $row['tipo_recibo_original'] = 'COSTURA-BODEGA';
+                    $row['tipo_recibo'] = 'COSTURA';
+                }
+
+                return $row;
+            })->values()->toArray();
 
             return $recibos;
 

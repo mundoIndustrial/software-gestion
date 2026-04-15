@@ -70,6 +70,8 @@ function crearDropdownVerRecibo(event, button) {
 
     const pedidoId = button.getAttribute('data-pedido-id') || button.getAttribute('data-pedido-produccion-id');
     const prendaId = button.getAttribute('data-prenda-id');
+    const esParcial = button.getAttribute('data-es-parcial') === '1';
+    const pedidoParcialId = button.getAttribute('data-pedido-parcial-id') || '';
     const rect = button.getBoundingClientRect();
 
     const dropdown = document.createElement('div');
@@ -93,6 +95,8 @@ function crearDropdownVerRecibo(event, button) {
             data-pedido-id="${pedidoId}"
             data-prenda-id="${prendaId ?? 'null'}"
             data-tipo-recibo="COSTURA"
+            data-es-parcial="${esParcial ? '1' : '0'}"
+            data-pedido-parcial-id="${pedidoParcialId}"
             style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
