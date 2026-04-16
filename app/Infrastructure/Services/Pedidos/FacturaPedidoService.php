@@ -648,28 +648,24 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
                     ? $tallaProceso->coloresAsignados->toArray()
                     : null;
                 
-                if ($tallaProceso->es_sobremedida) {
-                    $genero = strtoupper($tallaProceso->genero ?? 'DAMA');
-                    $procTallas['sobremedida'][$genero] = (int)$tallaProceso->cantidad;
+                // Usar el genero de la BD, NO el flag es_sobremedida
+                $genero = strtolower($tallaProceso->genero ?? 'dama');
+                $nomTalla = $tallaProceso->talla;
+                
+                // Si hay colores, guardar como array; si no, solo cantidad
+                if ($colores) {
+                    // Formatear colores para el frontend
+                    // El frontend espera { color, cantidad } en el array
+                    $procTallas[$genero][$nomTalla] = array_map(function ($color) {
+                        return [
+                            'color' => $color['color_nombre'] ?? 'Sin color',
+                            'tela' => $color['tela_nombre'] ?? 'Sin tela',
+                            'cantidad' => (int)$color['cantidad'],
+                        ];
+                    }, $colores);
                 } else {
-                    $genero = strtolower($tallaProceso->genero ?? 'dama');
-                    $nomTalla = $tallaProceso->talla;
-                    
-                    // Si hay colores, guardar como array; si no, solo cantidad
-                    if ($colores) {
-                        // Formatear colores para el frontend
-                        // El frontend espera { color, cantidad } en el array
-                        $procTallas[$genero][$nomTalla] = array_map(function ($color) {
-                            return [
-                                'color' => $color['color_nombre'] ?? 'Sin color',
-                                'tela' => $color['tela_nombre'] ?? 'Sin tela',
-                                'cantidad' => (int)$color['cantidad'],
-                            ];
-                        }, $colores);
-                    } else {
-                        // Fallback: solo cantidad si no hay colores
-                        $procTallas[$genero][$nomTalla] = (int)$tallaProceso->cantidad;
-                    }
+                    // Fallback: solo cantidad si no hay colores
+                    $procTallas[$genero][$nomTalla] = (int)$tallaProceso->cantidad;
                 }
             }
         }

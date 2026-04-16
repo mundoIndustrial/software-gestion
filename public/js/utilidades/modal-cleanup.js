@@ -438,6 +438,16 @@ class ModalCleanup {
      */
     static prepararParaNueva() {
 
+        //  ⚠️ CRÍTICO FIX: Detectar si estamos en modo EDICIÓN
+        // Si prendaEditIndex ya está establecido, NO debemos limpiar los storages
+        const esModoEdicion = globalThis.prendaEditIndex !== null && 
+                             globalThis.prendaEditIndex !== undefined;
+        
+        if (esModoEdicion) {
+            console.log(' [ModalCleanup] MODO EDICIÓN DETECTADO - Saltando prepararParaNueva para preservar imágenes');
+            return; // Salir temprano sin limpiar nada
+        }
+
         //  CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
         // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
         globalThis.prendaEditIndex = null;

@@ -110,21 +110,39 @@ class PedidoProcesoTallaBuilder
     ): void {
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
+        // Para determinar si es realmente sobremedida, verificar si la prenda tiene es_sobremedida=1
+        $prendaPedido = $proceso->prendaPedido;
+        $prendasTallasCs = $prendaPedido->tallas()
+            ->where('es_sobremedida', 1)
+            ->exists();
+
         foreach ($tallas as $generoBD => $tallasCant) {
             if (!is_array($tallasCant) || empty($tallasCant)) {
                 continue;
             }
 
             if (strtolower($generoBD) === 'sobremedida') {
-                foreach ($tallasCant as $generoParaSobremedida => $cantidad) {
+                Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] SOBREMEDIDA detectado', [
+                    'proceso_id' => $proceso->id,
+                    'tallasCant_keys' => array_keys($tallasCant),
+                    'prenda_tiene_sobremedida' => $prendasTallasCs,
+                ]);
+                foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
+                        // Solo marcar como sobremedida si la prenda tiene es_sobremedida=1
+                        $esSobremedida = $prendasTallasCs ? 1 : 0;
+                        Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Guardando', [
+                            'genero' => 'UNISEX',
+                            'talla' => strtoupper($tallaParaSobremedida),
+                            'es_sobremedida' => $esSobremedida,
+                        ]);
                         PedidosProcesosPrendaTalla::create([
                             'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => strtoupper($generoParaSobremedida),
-                            'talla' => null,
+                            'genero' => 'UNISEX',
+                            'talla' => strtoupper($tallaParaSobremedida),
                             'cantidad' => $cantidad,
-                            'es_sobremedida' => true,
+                            'es_sobremedida' => $esSobremedida,
                         ]);
                     }
                 }
@@ -166,6 +184,7 @@ class PedidoProcesoTallaBuilder
                     'genero' => $generoEnum,
                     'talla' => (string) $tallaReal,
                     'cantidad' => $cantidad,
+                    'es_sobremedida' => 0,
                     'ubicaciones' => $ubicacionesTalla,
                     'observaciones' => $observacionesTalla,
                 ]);
@@ -194,21 +213,39 @@ class PedidoProcesoTallaBuilder
     ): void {
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
+        // Para determinar si es realmente sobremedida, verificar si la prenda tiene es_sobremedida=1
+        $prendaPedido = $proceso->prendaPedido;
+        $prendasTallasCs = $prendaPedido->tallas()
+            ->where('es_sobremedida', 1)
+            ->exists();
+
         foreach ($tallas as $generoBD => $tallasCant) {
             if (!is_array($tallasCant) || empty($tallasCant)) {
                 continue;
             }
 
             if (strtolower($generoBD) === 'sobremedida') {
-                foreach ($tallasCant as $generoParaSobremedida => $cantidad) {
+                Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] SOBREMEDIDA detectado', [
+                    'proceso_id' => $proceso->id,
+                    'tallasCant_keys' => array_keys($tallasCant),
+                    'prenda_tiene_sobremedida' => $prendasTallasCs,
+                ]);
+                foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
+                        // Solo marcar como sobremedida si la prenda tiene es_sobremedida=1
+                        $esSobremedida = $prendasTallasCs ? 1 : 0;
+                        Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Guardando', [
+                            'genero' => 'UNISEX',
+                            'talla' => strtoupper($tallaParaSobremedida),
+                            'es_sobremedida' => $esSobremedida,
+                        ]);
                         PedidosProcesosPrendaTalla::create([
                             'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => strtoupper($generoParaSobremedida),
-                            'talla' => null,
+                            'genero' => 'UNISEX',
+                            'talla' => strtoupper($tallaParaSobremedida),
                             'cantidad' => $cantidad,
-                            'es_sobremedida' => true,
+                            'es_sobremedida' => $esSobremedida,
                         ]);
                     }
                 }
@@ -294,6 +331,7 @@ class PedidoProcesoTallaBuilder
                 'genero' => $generoEnum,
                 'talla' => $tallaReal,
                 'cantidad' => $data['totalCantidad'],
+                'es_sobremedida' => 0,
             ]);
 
             foreach ($data['colores'] as $colorItem) {
@@ -359,6 +397,7 @@ class PedidoProcesoTallaBuilder
                 'genero' => $generoEnum,
                 'talla' => $talla,
                 'cantidad' => $cantidad,
+                'es_sobremedida' => 0,
                 'observaciones' => $observacionesTalla,
                 'ubicaciones' => !empty($ubicacionesTalla) ? json_encode($ubicacionesTalla) : null,
             ]);

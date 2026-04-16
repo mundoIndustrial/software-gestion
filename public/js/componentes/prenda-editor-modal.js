@@ -1262,18 +1262,30 @@ function cerrarModalPrendaNueva() {
         console.log('✓ PASO 5 completado');
         
         // PASO 5.6: Limpiar imágenes de prenda del storage
-        console.log('→ PASO 5.6: Limpiando imagenesPrendaStorage...');
-        if (globalThis.imagenesPrendaStorage) {
+        // ⚠️ FIX CRÍTICO: NO limpiar storage si estamos en modo EDICIÓN
+        // Esto previene que se eliminen las imágenes cuando se cierra el modal de edición
+        const esModoEdicion = globalThis.gestionItemsUI?.prendaEditIndex !== null && 
+                             globalThis.gestionItemsUI?.prendaEditIndex !== undefined;
+        
+        console.log('→ PASO 5.6: Limpiando imagenesPrendaStorage... (modoEdicion:', esModoEdicion, ')');
+        if (!esModoEdicion && globalThis.imagenesPrendaStorage) {
+            // Solo limpiar en modo CREACIÓN
             globalThis.imagenesPrendaStorage.limpiar?.() || globalThis.imagenesPrendaStorage.establecerImagenes([]);
+        } else if (esModoEdicion) {
+            console.log('   ⚠️  MODO EDICIÓN DETECTADO - NO limpiando storage para preservar imágenes');
         }
+        
         const previewFoto = document.getElementById('nueva-prenda-foto-preview');
         if (previewFoto) {
-            previewFoto.innerHTML = '';
-            previewFoto.dataset.imagenes = '[]';
-            previewFoto.dataset.indiceActual = '0';
+            // Solo limpiar preview en modo CREACIÓN
+            if (!esModoEdicion) {
+                previewFoto.innerHTML = '';
+                previewFoto.dataset.imagenes = '[]';
+                previewFoto.dataset.indiceActual = '0';
+            }
         }
         const contadorFoto = document.getElementById('nueva-prenda-foto-contador');
-        if (contadorFoto) contadorFoto.textContent = '';
+        if (contadorFoto && !esModoEdicion) contadorFoto.textContent = '';
         console.log('✓ PASO 5.6 completado');
 
         // PASO 5.5: Limpiar "UNISEX" (antes "SOLO CANTIDAD")

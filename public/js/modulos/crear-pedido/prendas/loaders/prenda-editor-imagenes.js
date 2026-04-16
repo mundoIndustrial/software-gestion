@@ -39,7 +39,18 @@ class PrendaEditorImagenes {
     static _obtenerImagenesValidas(prenda) {
         // Formato 1: prenda.imagenes es un array
         if (Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
-            return prenda.imagenes.filter(img => img && (img.url || img.previewUrl || img.ruta || img.ruta_webp || img.ruta_original));
+            return prenda.imagenes.filter(img => {
+                if (!img) return false;
+                // Aceptar si tiene URL/ruta/previewUrl
+                if (img.url || img.previewUrl || img.ruta || img.ruta_webp || img.ruta_original) return true;
+                // ⚠️ CRÍTICO FIX: Aceptar si tiene File object (incluso si previewUrl fue revocado)  
+                // Esto permite recrear blob URLs para imágenes que fueron revocadas
+                if (img.file instanceof File) {
+                    console.log('[_obtenerImagenesValidas] Imagen con File object encontrada - previewUrl será recreado');
+                    return true;
+                }
+                return false;
+            });
         }
         
         // Formato 2: prenda.imagen es una URL única
@@ -101,7 +112,18 @@ class PrendaEditorImagenes {
      * @private
      */
     static _cargarSinImagenes(preview, contador, btn) {
+        // ⚠️ CRÍTICO FIX: NO limpiar el storage si ya tiene imágenes válidas
+        // Esto previene que se eliminen las imágenes cuando se edita una prenda
         if (globalThis.imagenesPrendaStorage) {
+            const imagenesEnStorage = globalThis.imagenesPrendaStorage.obtenerImagenes();
+            if (imagenesEnStorage && imagenesEnStorage.length > 0) {
+                // Storage tiene imágenes → NO las limpies, renderiza desde el storage
+                console.log(' [Imagenes]  Prenda sin .imagenes pero storage tiene', imagenesEnStorage.length, 'imágenes - PRESERVANDO');
+                this._renderizarPreviewConImagenes(preview, imagenesEnStorage, contador, btn);
+                return;
+            }
+            
+            // Storage vacío → es seguro limpiar
             console.log(' [Imagenes]  Prenda sin imágenes, limpiando storage');
             globalThis.imagenesPrendaStorage.establecerImagenes([]);
         }
@@ -129,8 +151,9 @@ class PrendaEditorImagenes {
                 id: img.id || img.imagen_id || null,
             };
             
-            // 1️⃣ PRIMERO: Si hay File object, crear blob URL NUEVO
-            // (Esto asegura que en ediciones posteriores el blob sea válido)
+            // 1️⃣ PRIMERO: Si hay File object SIEMPRE crear blob URL NUEVO
+            // (Los blob URLs revocados causarían que las imágenes no se muestren)
+            // ⚠️ FIX: Esto es CRÍTICO para recuperar imágenes después de revocación
             if (img.file instanceof File) {
                 const nuevoBlob = URL.createObjectURL(img.file);
                 console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Creando blob URL NUEVO desde File`);
@@ -143,15 +166,10 @@ class PrendaEditorImagenes {
                 };
             }
             
-            // 2️⃣ SEGUNDO: Preservar blob URLs existentes (primera edición)
-            if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
-                console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Preservando blob URL existente`);
-                return imagenConId;
-            }
-            
-            // 3️⃣ TERCERO: Intentar obtener URL del servidor (ediciones posteriores si blob expiró)
+            // 2️⃣ SEGUNDO: Si NO hay File object pero hay URL del servidor, usar esa
+            // (Para imágenes que ya fueron guardadas en BD)
             const urlServidor = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
-            if (urlServidor && typeof urlServidor === 'string') {
+            if (urlServidor && typeof urlServidor === 'string' && !urlServidor.startsWith('blob:')) {
                 console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Usando URL servidor: ${urlServidor.substring(0, 50)}...`);
                 return {
                     ...imagenConId,
@@ -162,8 +180,15 @@ class PrendaEditorImagenes {
                 };
             }
             
+            // 3️⃣ TERCERO: Si hay blob URL existente (data: o blob:), intentar preservarlo
+            // ⚠️ AVISO: Si fue revocado, la imagen no cargará, pero tenemos fallback en paso 2
+            if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
+                console.log(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: Preservando blob URL existente (RIESGO: puede estar revocado)`);
+                return imagenConId;
+            }
+            
             // 4️⃣ FALLBACK: Retornar tal cual
-            console.warn(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: No se pudo determinar URL`);
+            console.warn(`[_procesarImagenesConBlobUrl] Imagen ${idx + 1}: No se pudo determinar URL válida`);
             return imagenConId;
         });
     }

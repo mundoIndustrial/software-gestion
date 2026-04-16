@@ -47,17 +47,17 @@ class PedidoTallaBuilder
 
     private function crearSobremedidas(PrendaPedido $prenda, array $contenido): void
     {
-        foreach ($contenido as $genero => $cantidad) {
+        foreach ($contenido as $tallaKey => $cantidad) {
             if ((int) $cantidad <= 0) {
                 continue;
             }
 
             PrendaPedidoTalla::create([
                 'prenda_pedido_id' => $prenda->id,
-                'genero' => strtoupper($genero),
-                'talla' => null,
+                'genero' => 'UNISEX',
+                'talla' => strtoupper($tallaKey),
                 'cantidad' => (int) $cantidad,
-                'es_sobremedida' => true,
+                'es_sobremedida' => 1,
             ]);
         }
 
@@ -89,6 +89,7 @@ class PedidoTallaBuilder
                 'genero' => strtoupper($genero),
                 'talla' => (string) $talla,
                 'cantidad' => $cantidadGuardar,
+                'es_sobremedida' => 0,
             ]);
 
             if ($claveEncontrada && is_array($asignacion)) {
