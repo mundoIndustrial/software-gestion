@@ -202,6 +202,18 @@ document.addEventListener('DOMContentLoaded', function() {
     window.pedidoId = {{ $pedido->id }};
     window.numeroPedido = '{{ $pedido->numero_pedido }}';
     console.log(' [DOMContentLoaded] Pedido ID:', window.pedidoId, 'Número:', window.numeroPedido);
+
+    const params = new URLSearchParams(window.location.search);
+    const autoPrint = params.get('print') === '1';
+    if (autoPrint) {
+        setTimeout(() => {
+            if (typeof imprimirTablaVacia === 'function') {
+                imprimirTablaVacia();
+            }
+            window.close();
+        }, 300);
+        return;
+    }
     
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {

@@ -109,7 +109,7 @@ class DespachoControlApplicationService
 
         [$pendientesBodegueroText, $observacionesAsesoraText] = $this->buildTextosPendientesYAsesora($pedido);
 
-        return compact('pedido', 'prendas', 'epps', 'pendientesBodegueroText', 'observacionesAsesoraText');
+        return compact('pedido', 'filas', 'prendas', 'epps', 'pendientesBodegueroText', 'observacionesAsesoraText');
     }
 
     /**

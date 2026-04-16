@@ -5,6 +5,7 @@
 
 class InvoiceModalManager {
     constructor() {
+        this.menuImpresionAbierto = false;
         this.init();
     }
 
@@ -13,6 +14,7 @@ class InvoiceModalManager {
         globalThis.crearModalFacturaDesdeListaPedidos = this.crearModalFactura.bind(this);
         globalThis.cerrarModalFactura = this.cerrarModalFactura.bind(this);
         globalThis.imprimirFacturaModal = this.imprimirFacturaModal.bind(this);
+        globalThis.imprimirDespachoPedido = this.imprimirDespachoPedido.bind(this);
     }
 
     /**
@@ -31,6 +33,7 @@ class InvoiceModalManager {
 
         // Generar HTML de la factura
         const htmlFactura = this.generarHTMLFactura(datos);
+        this.ultimoDatosPedido = datos?.data || datos || null;
 
         // Crear estructura del modal
         const modal = this.crearEstructuraModal(htmlFactura);
@@ -319,6 +322,7 @@ class InvoiceModalManager {
             max-height: calc(90vh - 100px);
         `;
         contenido.innerHTML = htmlFactura;
+        contenido.__invoiceDatosPedido = this.ultimoDatosPedido;
         modal.appendChild(contenido);
 
         overlay.appendChild(modal);
@@ -362,11 +366,11 @@ class InvoiceModalManager {
      */
     crearBotonesAccion() {
         const botonesAccion = document.createElement('div');
-        botonesAccion.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+        botonesAccion.style.cssText = 'display: flex; gap: 8px; align-items: center; position: relative;';
 
-        // Botón Imprimir
-        const btnImprimir = this.crearBotonImprimir();
-        botonesAccion.appendChild(btnImprimir);
+        // Botón Imprimir con menú desplegable
+        const bloqueImpresion = this.crearBloqueImpresion();
+        botonesAccion.appendChild(bloqueImpresion);
 
         // Botón Cerrar
         const btnCerrar = this.crearBotonCerrar();
@@ -376,17 +380,20 @@ class InvoiceModalManager {
     }
 
     /**
-     * Crea el botón de imprimir
+     * Crea el bloque de impresión con menú desplegable
      */
-    crearBotonImprimir() {
+    crearBloqueImpresion() {
+        const contenedor = document.createElement('div');
+        contenedor.style.cssText = 'position: relative; display: flex; align-items: center;';
+
         const btnImprimir = document.createElement('button');
         btnImprimir.id = 'print-receipt-btn';
-        btnImprimir.innerHTML = '<span class="material-symbols-rounded" style="font-size: 20px;">print</span>';
+        btnImprimir.innerHTML = '<span class="material-symbols-rounded" style="font-size: 20px;">print</span><span class="material-symbols-rounded" style="font-size: 14px; margin-left: 2px;">expand_more</span>';
         btnImprimir.style.cssText = `
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 1rem;
@@ -394,7 +401,9 @@ class InvoiceModalManager {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
+            gap: 0;
+            width: auto;
+            min-width: 52px;
             height: 40px;
         `;
 
@@ -408,9 +417,96 @@ class InvoiceModalManager {
             btnImprimir.style.transform = 'scale(1)';
         };
 
-        btnImprimir.onclick = () => this.imprimirFacturaModal();
+        btnImprimir.onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.toggleMenuImpresion();
+        };
 
-        return btnImprimir;
+        const menu = this.crearMenuImpresion();
+
+        contenedor.appendChild(btnImprimir);
+        contenedor.appendChild(menu);
+        return contenedor;
+    }
+
+    /**
+     * Crea el menú desplegable de impresión
+     */
+    crearMenuImpresion() {
+        const menu = document.createElement('div');
+        menu.id = 'print-receipt-menu';
+        menu.style.cssText = `
+            position: absolute;
+            top: 48px;
+            right: 0;
+            min-width: 220px;
+            background: white;
+            border: 1px solid #dbe4f0;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+            padding: 8px;
+            display: none;
+            z-index: 10001;
+        `;
+
+        menu.innerHTML = `
+            <button type="button" id="btn-print-factura"
+                style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 10px 12px;
+                    border: none;
+                    border-radius: 8px;
+                    background: transparent;
+                    color: #0f172a;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                ">
+                <span class="material-symbols-rounded" style="font-size: 18px; color: #2563eb;">description</span>
+                Imprimir factura
+            </button>
+            <button type="button" id="btn-print-despacho"
+                style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 10px 12px;
+                    border: none;
+                    border-radius: 8px;
+                    background: transparent;
+                    color: #0f172a;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    margin-top: 4px;
+                ">
+                <span class="material-symbols-rounded" style="font-size: 18px; color: #0f766e;">local_shipping</span>
+                Imprimir despacho
+            </button>
+        `;
+
+        menu.querySelector('#btn-print-factura').onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.ocultarMenuImpresion();
+            this.imprimirFacturaModal();
+        };
+
+        menu.querySelector('#btn-print-despacho').onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.ocultarMenuImpresion();
+            this.imprimirDespachoDesdeModal();
+        };
+
+        return menu;
     }
 
     /**
@@ -451,6 +547,25 @@ class InvoiceModalManager {
         return btnCerrar;
     }
 
+    toggleMenuImpresion() {
+        const menu = document.getElementById('print-receipt-menu');
+        if (!menu) {
+            return;
+        }
+
+        const nuevoEstado = menu.style.display === 'block' ? 'none' : 'block';
+        menu.style.display = nuevoEstado;
+        this.menuImpresionAbierto = nuevoEstado === 'block';
+    }
+
+    ocultarMenuImpresion() {
+        const menu = document.getElementById('print-receipt-menu');
+        if (menu) {
+            menu.style.display = 'none';
+        }
+        this.menuImpresionAbierto = false;
+    }
+
     /**
      * Configura los eventos del modal
      */
@@ -473,6 +588,24 @@ class InvoiceModalManager {
                 }
             };
         }
+
+        if (this.clickFueraMenuHandler) {
+            document.removeEventListener('click', this.clickFueraMenuHandler);
+        }
+
+        this.clickFueraMenuHandler = (event) => {
+            const menu = document.getElementById('print-receipt-menu');
+            const boton = document.getElementById('print-receipt-btn');
+            if (!menu || !boton) {
+                return;
+            }
+
+            if (!menu.contains(event.target) && !boton.contains(event.target)) {
+                this.ocultarMenuImpresion();
+            }
+        };
+
+        document.addEventListener('click', this.clickFueraMenuHandler);
     }
 
     /**
@@ -483,6 +616,11 @@ class InvoiceModalManager {
         if (overlay) {
             // Removing directly without animation to prevent stacking issues
             overlay.remove();
+        }
+
+        if (this.clickFueraMenuHandler) {
+            document.removeEventListener('click', this.clickFueraMenuHandler);
+            this.clickFueraMenuHandler = null;
         }
 
         // Ocultar loading si está activo
@@ -500,6 +638,370 @@ class InvoiceModalManager {
 
         // Usar globalThis.print() para imprimir el modal
         globalThis.print();
+    }
+
+    /**
+     * Imprime el diseño de despacho del pedido
+     */
+    async imprimirDespachoPedido() {
+        const datosPedido = this.obtenerDatosPedidoActual();
+        const pedidoId = datosPedido?.id || datosPedido?.pedido_id || datosPedido?.pedido_produccion_id;
+
+        if (!pedidoId) {
+            console.error('[InvoiceModalManager] No se pudo determinar el ID del pedido para impresión de despacho');
+            return;
+        }
+
+        const popup = globalThis.open('', '', 'width=1200,height=800');
+
+        if (!popup) {
+            console.warn('[InvoiceModalManager] El navegador bloqueó la ventana emergente de despacho.');
+            return;
+        }
+
+        this.mostrarCargandoDespachoEnPopup(popup);
+
+        try {
+            const response = await fetch(`/despacho/${pedidoId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html,application/xhtml+xml',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const htmlImpresion = this.generarHtmlImpresionDespacho(doc, datosPedido);
+
+            popup.document.open();
+            popup.document.write(htmlImpresion);
+            popup.document.close();
+            popup.focus();
+        } catch (error) {
+            console.error('[InvoiceModalManager] Error generando impresión de despacho:', error);
+            popup.document.open();
+            popup.document.write(`<!DOCTYPE html>
+                <html lang="es">
+                <head><meta charset="UTF-8"><title>Error</title></head>
+                <body style="font-family: Arial, sans-serif; padding: 24px;">
+                    <h3 style="color: #b91c1c;">No se pudo cargar la impresión de despacho</h3>
+                    <p>${String(error.message || error)}</p>
+                </body>
+                </html>`);
+            popup.document.close();
+        }
+    }
+
+    /**
+     * Alias legible para el flujo del menú
+     */
+    imprimirDespachoDesdeModal() {
+        this.imprimirDespachoPedido();
+    }
+
+    /**
+     * Recupera los datos actuales del pedido desde el modal
+     */
+    obtenerDatosPedidoActual() {
+        return this.ultimoDatosPedido || null;
+    }
+
+    /**
+     * Muestra un estado de carga en la ventana emergente
+     */
+    mostrarCargandoDespachoEnPopup(popup) {
+        popup.document.open();
+        popup.document.write(`<!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Despacho - Imprimir</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        margin: 0;
+                        padding: 24px;
+                        background: #fff;
+                        color: #0f172a;
+                    }
+                </style>
+            </head>
+            <body>
+                <div style="padding: 20px; font-size: 14px;">Cargando impresión de despacho...</div>
+            </body>
+            </html>`);
+        popup.document.close();
+    }
+
+    /**
+     * Extrae un literal JS simple desde un script renderizado
+     */
+    extraerValorScript(doc, nombreVariable, valorDefecto = '') {
+        const scripts = Array.from(doc.querySelectorAll('script'))
+            .map(script => script.textContent || '')
+            .join('\n');
+
+        const patron = new RegExp(`const\\s+${nombreVariable}\\s*=\\s*([^;]+);`);
+        const match = scripts.match(patron);
+
+        if (!match) {
+            return valorDefecto;
+        }
+
+        const literal = match[1].trim();
+
+        try {
+            // El valor viene como literal JS renderizado por Blade.
+            // Usamos Function para convertirlo a texto real sin depender del formato exacto de comillas.
+            return Function(`"use strict"; return (${literal});`)();
+        } catch (error) {
+            return valorDefecto;
+        }
+    }
+
+    /**
+     * Formatea una fecha para el encabezado de impresión
+     */
+    formatearFechaImpresion(valorFecha) {
+        if (!valorFecha) {
+            return '—';
+        }
+
+        const fecha = new Date(valorFecha);
+        if (Number.isNaN(fecha.getTime())) {
+            return String(valorFecha);
+        }
+
+        return fecha.toLocaleString('es-CO', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    /**
+     * Genera el HTML del popup de despacho usando el DOM de la vista de despacho
+     */
+    generarHtmlImpresionDespacho(doc, datosPedido) {
+        const escapeHtml = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const pedidoNumero = datosPedido?.numero_pedido ?? datosPedido?.numeroPedido ?? datosPedido?.pedido ?? '—';
+        const cliente = datosPedido?.cliente ?? '—';
+        const fechaCreacion = this.formatearFechaImpresion(
+            datosPedido?.fecha_creacion ?? datosPedido?.fechaCreacion ?? datosPedido?.created_at ?? null
+        );
+        const ordenCompra = datosPedido?.orden_compra ?? datosPedido?.ordenCompra ?? '—';
+        const observaciones = datosPedido?.observaciones ?? this.extraerValorScript(doc, 'observacionesAsesoraText', 'Sin observaciones');
+        const pendientesBodegueroText = this.extraerValorScript(doc, 'pendientesBodegueroText', '— Sin observaciones');
+        const observacionesAsesoraText = this.extraerValorScript(doc, 'observacionesAsesoraText', '— Sin observaciones');
+
+        const filas = Array.from(doc.querySelectorAll('#tablaDespacho tr[data-tipo]'));
+        let tablaHTML = `
+            <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
+                <thead style="background: #f1f5f9; border-bottom: 2px solid #000;">
+                    <tr>
+                        <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #000;">Descripción</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Género</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 50px;">Talla</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Cantidad</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 1</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 2</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 3</th>
+                        <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let ultimoTipo = '';
+
+        filas.forEach((fila, index) => {
+            const tipo = fila.dataset.tipo;
+            const id = fila.dataset.id;
+
+            if (tipo !== ultimoTipo) {
+                const nombreSeccion = tipo === 'prenda' ? 'Prendas' : 'EPP';
+                tablaHTML += `
+                    <tr style="background: #f1f5f9;">
+                        <td colspan="11" style="padding: 8px 4px; font-weight: 600; font-size: 11px; border: 1px solid #000;">${nombreSeccion}</td>
+                    </tr>
+                `;
+                ultimoTipo = tipo;
+            }
+
+            const descCell = fila.querySelector('td.col-descripcion');
+            const generoCell = fila.querySelector('td.col-genero');
+            const tallaCell = fila.querySelector('td.col-talla');
+            const cantidadCell = fila.querySelector('td.col-cantidad');
+
+            const tieneDescripcion = !!descCell;
+            const limpiarCell = (cell) => {
+                if (!cell) return '';
+                const clone = cell.cloneNode(true);
+                clone.querySelectorAll('button').forEach(btn => btn.remove());
+                return clone.textContent.trim();
+            };
+
+            if (tieneDescripcion) {
+                const cloneDesc = descCell.cloneNode(true);
+                cloneDesc.querySelectorAll('button').forEach(btn => btn.remove());
+                const descripcion = cloneDesc.innerHTML;
+
+                let genero = limpiarCell(generoCell);
+                if (!genero) {
+                    genero = (fila.dataset.genero || '').trim() || '—';
+                }
+
+                let talla = limpiarCell(tallaCell) || '—';
+                let cantidad = limpiarCell(cantidadCell) || '0';
+
+                let rowspan = 1;
+                for (let i = index + 1; i < filas.length; i++) {
+                    if (filas[i].dataset.id !== id || filas[i].dataset.tipo !== tipo) {
+                        break;
+                    }
+
+                    const nextDescCell = filas[i].querySelector('td.col-descripcion');
+                    if (nextDescCell) {
+                        break;
+                    }
+
+                    rowspan++;
+                }
+
+                tablaHTML += `
+                    <tr style="border-bottom: 1px solid #000;">
+                        <td style="padding: 8px 4px; font-size: 10px; border: 1px solid #000;" rowspan="${rowspan}">${descripcion}</td>
+                        <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${escapeHtml(genero)}</td>
+                        <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${escapeHtml(talla)}</td>
+                        <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${escapeHtml(cantidad)}</td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    </tr>
+                `;
+            } else {
+                let genero = limpiarCell(generoCell);
+                if (!genero) {
+                    genero = (fila.dataset.genero || '').trim() || '—';
+                }
+
+                let talla = limpiarCell(tallaCell) || '—';
+                let cantidad = limpiarCell(cantidadCell) || '0';
+
+                tablaHTML += `
+                    <tr style="border-bottom: 1px solid #000;">
+                        <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${escapeHtml(genero)}</td>
+                        <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${escapeHtml(talla)}</td>
+                        <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${escapeHtml(cantidad)}</td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                        <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    </tr>
+                `;
+            }
+        });
+
+        tablaHTML += `
+                </tbody>
+            </table>
+        `;
+
+        const mostrarAsesora = String(observacionesAsesoraText ?? '').trim() !== '' && String(observacionesAsesoraText ?? '') !== '— Sin observaciones';
+
+        const pendientesHTML = `
+            <div style="margin-top: 10px; font-size: 12px; color: #000;">
+                <strong>Pendientes bodeguero:</strong>
+                <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${escapeHtml(pendientesBodegueroText)}</div>
+            </div>
+            ${mostrarAsesora ? `
+                <div style="margin-top: 10px; font-size: 12px; color: #000;">
+                    <strong>Observaciones asesora:</strong>
+                    <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${escapeHtml(observacionesAsesoraText)}</div>
+                </div>
+            ` : ''}
+        `;
+
+        return `<!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Despacho - Imprimir</title>
+                <style>
+                    @page { margin: 5mm; size: letter portrait; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 9px; background: white; padding: 0; margin: 0; }
+                    h2 { text-align: center; margin-bottom: 5px; font-size: 14px; page-break-after: avoid; }
+                    p { text-align: center; margin-bottom: 8px; font-size: 10px; page-break-after: avoid; }
+                    table { width: 100%; border-collapse: collapse; page-break-before: avoid; }
+                    thead { page-break-after: avoid; }
+                    tr { page-break-inside: avoid; }
+                    @media print {
+                        body { margin: 0; padding: 0; }
+                        h2, p { page-break-after: avoid; }
+                        table { page-break-before: avoid; page-break-inside: auto; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 20px; border: 3px solid #000; border-radius: 10px; background: #f9fafb;">
+                    <div style="text-align: left;">
+                        <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: bold; color: #000;">Despacho - Pedido ${escapeHtml(pedidoNumero)}</h2>
+                        <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> ${escapeHtml(cliente)}</p>
+                        <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creación:</strong> ${escapeHtml(fechaCreacion)}</p>
+                        <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Orden de Compra:</strong> ${escapeHtml(ordenCompra)}</p>
+                    </div>
+                    <div style="text-align: center; flex: 1; margin: 0 20px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #000;">Observaciones</h3>
+                        <div style="text-align: center; font-size: 12px; color: #000; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(observaciones)}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 11px; color: #666;"><strong>Fecha de impresión:</strong></p>
+                        <p style="margin: 0; font-size: 10px; color: #666;">${new Date().toLocaleString('es-CO', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })}</p>
+                    </div>
+                </div>
+                ${tablaHTML}
+                ${pendientesHTML}
+                <script>
+                    window.print();
+                    window.onafterprint = function() { window.close(); };
+                <\/script>
+            </body>
+            </html>`;
     }
 
     /**
