@@ -106,7 +106,7 @@ function construirHtmlTarjetasProcesos(procesos, tiposConDatos) {
             ubicacionesValue: datosProcess.ubicaciones,
             imagenesCount: Array.isArray(datosProcess.imagenes) ? datosProcess.imagenes.length : 0,
             imagenesPreview: datosProcess.imagenes ? datosProcess.imagenes.slice(0, 1) : [],
-            tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length,
+            tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length + Object.keys(datosProcess.tallas?.unisex || {}).length + Object.keys(datosProcess.tallas?.sobremedida || {}).length,
             observaciones: datosProcess.observaciones ? 'si' : 'no',
             tieneDatosExtendidos: !!datosProcess.datosExtendidos,
             datosExtendidosClaves: datosProcess.datosExtendidos ? Object.keys(datosProcess.datosExtendidos) : 'N/A'
@@ -318,7 +318,7 @@ const ProcesoEditService = {
             const procesoTieneTallasGuardadas = (() => {
                 const t = proceso?.datos?.tallas;
                 if (!t || typeof t !== 'object') return false;
-                const total = Object.keys(t.dama || {}).length + Object.keys(t.caballero || {}).length + Object.keys(t.sobremedida || {}).length;
+                const total = Object.keys(t.dama || {}).length + Object.keys(t.caballero || {}).length + Object.keys(t.unisex || {}).length + Object.keys(t.sobremedida || {}).length;
                 return total > 0;
             })();
 
@@ -563,4 +563,3 @@ globalThis.RenderizadorTarjetasProcesosModule = Object.freeze({
 });
 
 })();
-

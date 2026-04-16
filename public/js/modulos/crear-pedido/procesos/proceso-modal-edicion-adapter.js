@@ -136,21 +136,31 @@ function _cargarProcesoTallas(datos) {
 
     let damaTallas = datos.tallas.dama || {};
     let caballeroTallas = datos.tallas.caballero || {};
+    const unisexTallas = { ...(datos.tallas.unisex || {}) };
     const sobremedidaTallas = datos.tallas.sobremedida ? { ...datos.tallas.sobremedida } : {};
 
     damaTallas = _extraerSobremedida(damaTallas, sobremedidaTallas);
     caballeroTallas = _extraerSobremedida(caballeroTallas, sobremedidaTallas);
+    if (Object.prototype.hasOwnProperty.call(unisexTallas, 'SOBREMEDIDA')) {
+        const cantidadSobre = Number(unisexTallas.SOBREMEDIDA) || 0;
+        if (cantidadSobre > 0) {
+            sobremedidaTallas.UNISEX = (Number(sobremedidaTallas.UNISEX) || 0) + cantidadSobre;
+        }
+        delete unisexTallas.SOBREMEDIDA;
+    }
 
     _ctxGlobal('tallasSeleccionadasProceso').dama = Object.keys(damaTallas);
     _ctxGlobal('tallasSeleccionadasProceso').caballero = Object.keys(caballeroTallas);
+    _ctxGlobal('tallasSeleccionadasProceso').unisex = Object.keys(unisexTallas);
     _ctxGlobal('tallasSeleccionadasProceso').sobremedida = sobremedidaTallas;
 
     if (!_ctxGlobal('tallasCantidadesProceso')) {
-        _setCtxGlobal('tallasCantidadesProceso', { dama: {}, caballero: {}, sobremedida: {} });
+        _setCtxGlobal('tallasCantidadesProceso', { dama: {}, caballero: {}, unisex: {}, sobremedida: {} });
     }
 
     _ctxGlobal('tallasCantidadesProceso').dama = damaTallas;
     _ctxGlobal('tallasCantidadesProceso').caballero = caballeroTallas;
+    _ctxGlobal('tallasCantidadesProceso').unisex = unisexTallas;
     _ctxGlobal('tallasCantidadesProceso').sobremedida = sobremedidaTallas;
 
     const actualizarResumen = _ctxGlobal('ProcesoModalController')?.tallas?.actualizarResumen || _ctxGlobal('actualizarResumenTallasProceso');

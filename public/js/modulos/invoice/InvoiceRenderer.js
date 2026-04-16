@@ -835,7 +835,8 @@ class InvoiceRenderer {
                 const arr = porColor[color] || [];
                 if (arr.length === 0) return;
                 arr.sort((a, b) => a.talla.localeCompare(b.talla));
-                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                const esSobremedida = generoUpper === 'SOBREMEDIDA';
+                const tallasStr = arr.map(t => esSobremedida ? `${t.talla}: ${t.cantidad}` : `${t.talla}-${t.cantidad}`).join(', ');
                 const labelColor = color === '__SIN_COLOR__' ? '' : `<span style="color: #d32f2f; font-weight: 700;">${color}:</span> `;
                 lineas.push(`<div style="margin: 1px 0;">${labelColor}${tallasStr}</div>`);
             });

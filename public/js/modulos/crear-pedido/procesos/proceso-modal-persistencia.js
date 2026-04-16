@@ -201,6 +201,7 @@ function _procesoGenerico_construirDatosProceso(imagenesValidas) {
         tallas: {
             dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
             caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
+            unisex: { ...globalThis.tallasCantidadesProceso?.unisex } || {},
             sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
         },
         imagenes: imagenesValidas,
@@ -410,4 +411,3 @@ globalThis.obtenerModoActual = function() {
 };
 
 })(globalThis);
-

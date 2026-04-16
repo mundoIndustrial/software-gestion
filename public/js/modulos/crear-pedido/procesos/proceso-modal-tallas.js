@@ -21,11 +21,12 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
     const tallasPrendaArrays = {
         dama: Object.keys(tallasPrendaConCantidades.dama || {}),
         caballero: Object.keys(tallasPrendaConCantidades.caballero || {}),
+        unisex: Object.keys(tallasPrendaConCantidades.unisex || {}),
         sobremedida: tallasPrendaConCantidades.sobremedida || null
     };
     
     // Si hay sobremedida, permitir aplicar
-    const hayTallasNormales = tallasPrendaArrays.dama.length > 0 || tallasPrendaArrays.caballero.length > 0;
+    const hayTallasNormales = tallasPrendaArrays.dama.length > 0 || tallasPrendaArrays.caballero.length > 0 || tallasPrendaArrays.unisex.length > 0;
     const haySobremedida = tallasPrendaArrays.sobremedida !== null;
     
     if (!hayTallasNormales && !haySobremedida) {
@@ -38,6 +39,7 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
     globalThis.tallasSeleccionadasProceso = {
         dama: tallasPrendaArrays.dama,
         caballero: tallasPrendaArrays.caballero,
+        unisex: tallasPrendaArrays.unisex,
         sobremedida: tallasPrendaArrays.sobremedida
     };
     
@@ -46,6 +48,7 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
     globalThis.tallasCantidadesProceso = {
         dama: { ...tallasPrendaConCantidades.dama },
         caballero: { ...tallasPrendaConCantidades.caballero },
+        unisex: { ...tallasPrendaConCantidades.unisex },
         sobremedida: tallasPrendaConCantidades.sobremedida || {}
     };
     
@@ -61,16 +64,24 @@ globalThis.aplicarProcesoParaTodasTallas = function() {
 function obtenerTallasDeLaPrenda() {
     procesoModalDebug('[obtenerTallasDeLaPrenda]  INICIANDO - buscando FUENTE DE VERDAD');
 
+    const esTallaSobremedida = (tallaRaw) => String(tallaRaw || '').trim().toUpperCase() === 'SOBREMEDIDA';
+    const normalizarGeneroSobremedida = (generoRaw) => {
+        const g = String(generoRaw || '').trim().toLowerCase();
+        if (g === 'dama' || g.startsWith('dam')) return 'DAMA';
+        if (g === 'caballero' || g.startsWith('cab')) return 'CABALLERO';
+        return 'UNISEX';
+    };
+
     const normalizarGenero = (generoRaw) => {
         const g = String(generoRaw || '').trim().toLowerCase();
         if (!g) return null;
         if (g === 'dama' || g.startsWith('dam')) return 'dama';
         if (g === 'caballero' || g.startsWith('cab')) return 'caballero';
-        if (g === 'unisex' || g.startsWith('uni')) return 'sobremedida';
+        if (g === 'unisex' || g.startsWith('uni')) return 'unisex';
         return null;
     };
 
-    const crearEstructuraTallas = () => ({ dama: {}, caballero: {}, sobremedida: null });
+    const crearEstructuraTallas = () => ({ dama: {}, caballero: {}, unisex: {}, sobremedida: null });
 
     const extraerTallasDesdeTabla = () => {
         const tablaBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
@@ -112,13 +123,17 @@ function obtenerTallasDeLaPrenda() {
             }
 
             const asignar = (key) => {
-                if (genero === 'dama') {
+                // SOBREMEDIDA se decide por talla/flag, no por genero.
+                if (esTallaSobremedida(tallaText) || esTallaSobremedida(String(key).split('__')[0])) {
+                    if (!tallas.sobremedida) tallas.sobremedida = {};
+                    const generoSobremedida = normalizarGeneroSobremedida(generoRaw);
+                    tallas.sobremedida[generoSobremedida] = (tallas.sobremedida[generoSobremedida] || 0) + cantidad;
+                } else if (genero === 'dama') {
                     tallas.dama[key] = (tallas.dama[key] || 0) + cantidad;
                 } else if (genero === 'caballero') {
                     tallas.caballero[key] = (tallas.caballero[key] || 0) + cantidad;
-                } else {
-                    if (!tallas.sobremedida) tallas.sobremedida = {};
-                    tallas.sobremedida[key] = (tallas.sobremedida[key] || 0) + cantidad;
+                } else if (genero === 'unisex') {
+                    tallas.unisex[key] = (tallas.unisex[key] || 0) + cantidad;
                 }
             };
 
@@ -161,12 +176,18 @@ function obtenerTallasDeLaPrenda() {
                 const color = String(c?.nombre || '').trim().toUpperCase();
                 const cantidad = Number(c?.cantidad, 10) || 0;
                 if (!color || cantidad <= 0) return;
-                const key = `${talla}__${color}`;
-                tallas[genero][key] = (tallas[genero][key] || 0) + cantidad;
+                if (esTallaSobremedida(talla)) {
+                    if (!tallas.sobremedida) tallas.sobremedida = {};
+                    const generoSobremedida = normalizarGeneroSobremedida(asignacion?.genero);
+                    tallas.sobremedida[generoSobremedida] = (tallas.sobremedida[generoSobremedida] || 0) + cantidad;
+                } else {
+                    const key = `${talla}__${color}`;
+                    tallas[genero][key] = (tallas[genero][key] || 0) + cantidad;
+                }
             });
         });
 
-        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
+        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || Object.keys(tallas.unisex).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
             ? tallas
             : null;
     };
@@ -190,17 +211,20 @@ function obtenerTallasDeLaPrenda() {
             const cantidad = Number(cantidadText, 10) || 0;
             if (cantidad <= 0) return;
 
-            if (genero === 'dama') {
+            if (esTallaSobremedida(tallaText)) {
+                if (!tallas.sobremedida) tallas.sobremedida = {};
+                const generoSobremedida = normalizarGeneroSobremedida(generoRaw);
+                tallas.sobremedida[generoSobremedida] = (tallas.sobremedida[generoSobremedida] || 0) + cantidad;
+            } else if (genero === 'dama') {
                 tallas.dama[tallaText] = (tallas.dama[tallaText] || 0) + cantidad;
             } else if (genero === 'caballero') {
                 tallas.caballero[tallaText] = (tallas.caballero[tallaText] || 0) + cantidad;
-            } else {
-                if (!tallas.sobremedida) tallas.sobremedida = {};
-                tallas.sobremedida[tallaText] = (tallas.sobremedida[tallaText] || 0) + cantidad;
+            } else if (genero === 'unisex') {
+                tallas.unisex[tallaText] = (tallas.unisex[tallaText] || 0) + cantidad;
             }
         });
 
-        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
+        return Object.keys(tallas.dama).length || Object.keys(tallas.caballero).length || Object.keys(tallas.unisex).length || (tallas.sobremedida && Object.keys(tallas.sobremedida).length)
             ? tallas
             : null;
     };
@@ -216,10 +240,8 @@ function obtenerTallasDeLaPrenda() {
         const tallas = crearEstructuraTallas();
         if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) tallas.dama = { ...tallasRelacionales.DAMA };
         if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) tallas.caballero = { ...tallasRelacionales.CABALLERO };
+        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) tallas.unisex = { ...tallasRelacionales.UNISEX };
         if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
-        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
-            tallas.sobremedida = { ...tallas.sobremedida, ...tallasRelacionales.UNISEX };
-        }
 
         return tallas;
     };
@@ -252,7 +274,7 @@ function obtenerTallasDeLaPrenda() {
 
     if (globalThis.cantidadSoloSeleccionada) {
         procesoModalDebug('[obtenerTallasDeLaPrenda]  FUENTE 5 USADA: cantidadSoloSeleccionada');
-        return { dama: {}, caballero: {}, sobremedida: { 'UNISEX': globalThis.cantidadSoloSeleccionada } };
+        return { dama: {}, caballero: {}, unisex: { 'SIN_TALLA': globalThis.cantidadSoloSeleccionada }, sobremedida: null };
     }
 
     procesoModalDebug('[obtenerTallasDeLaPrenda]  NINGUNA FUENTE disponible - retornando vacio');
@@ -734,6 +756,7 @@ globalThis.guardarTallasSeleccionadas = function() {
         globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallas = {
             dama: globalThis.tallasCantidadesProceso.dama || {},
             caballero: globalThis.tallasCantidadesProceso.caballero || {},
+            unisex: globalThis.tallasCantidadesProceso.unisex || {},
             sobremedida: globalThis.tallasCantidadesProceso.sobremedida || {}
         };
         
@@ -776,7 +799,7 @@ globalThis.actualizarResumenTallasProceso = function() {
     procesoModalDebug('[actualizarResumenTallasProceso]  globalThis.tallasSeleccionadasProceso:', globalThis.tallasSeleccionadasProceso);
     procesoModalDebug('[actualizarResumenTallasProceso]  globalThis.tallasCantidadesProceso:', globalThis.tallasCantidadesProceso);
     
-    const totalTallas = globalThis.tallasSeleccionadasProceso.dama.length + globalThis.tallasSeleccionadasProceso.caballero.length;
+    const totalTallas = globalThis.tallasSeleccionadasProceso.dama.length + globalThis.tallasSeleccionadasProceso.caballero.length + (globalThis.tallasSeleccionadasProceso.unisex || []).length;
     const haySobremedida = globalThis.tallasSeleccionadasProceso.sobremedida && Object.keys(globalThis.tallasSeleccionadasProceso.sobremedida).length > 0;
     procesoModalDebug('[actualizarResumenTallasProceso] Total de tallas seleccionadas:', totalTallas, ' | Hay sobremedida:', haySobremedida);
     
@@ -789,7 +812,7 @@ globalThis.actualizarResumenTallasProceso = function() {
     let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
     
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
-    const tallasProceso = globalThis.tallasCantidadesProceso || { dama: {}, caballero: {} };
+    const tallasProceso = globalThis.tallasCantidadesProceso || { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
     procesoModalDebug('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
 
     const formatearTallaKey = (tallaKey) => {
@@ -844,6 +867,29 @@ globalThis.actualizarResumenTallasProceso = function() {
             </div>
         `;
     }
+
+    if ((globalThis.tallasSeleccionadasProceso.unisex || []).length > 0) {
+        procesoModalDebug('[actualizarResumenTallasProceso] Renderizando UNISEX:', globalThis.tallasSeleccionadasProceso.unisex);
+        const tallasUnisexHTML = globalThis.tallasSeleccionadasProceso.unisex.map(t => {
+            const cantidad = tallasProceso.unisex?.[t] || 0;
+            procesoModalDebug(`[actualizarResumenTallasProceso]  UNISEX ${t}: cantidad=${cantidad}`);
+            return `<span style="background: #ede9fe; color: #6d28d9; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
+                ${formatearTallaKey(t)}
+                <span style="background: #6d28d9; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+            </span>`;
+        }).join('');
+        
+        html += `
+            <div>
+                <strong style="color: #6d28d9; margin-bottom: 0.5rem; display: block;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">wc</span> UNISEX (${globalThis.tallasSeleccionadasProceso.unisex.length})
+                </strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${tallasUnisexHTML}
+                </div>
+            </div>
+        `;
+    }
     
     // AGREGAR SOBREMEDIDA AL RESUMEN
     if (haySobremedida && globalThis.tallasCantidadesProceso.sobremedida) {
@@ -886,4 +932,3 @@ globalThis.actualizarResumenTallasProceso = function() {
 procesoModalModules.tallas.actualizarResumen = globalThis.actualizarResumenTallasProceso;
 
 })(globalThis);
-

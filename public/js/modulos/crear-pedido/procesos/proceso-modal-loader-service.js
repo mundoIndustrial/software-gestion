@@ -283,17 +283,27 @@
         }
 
         const { damaTallas, caballeroTallas, sobremedidaTallas } = normalizarTallasProceso(datos.tallas);
+        const unisexTallas = { ...(datos.tallas?.unisex || {}) };
+        if (Object.prototype.hasOwnProperty.call(unisexTallas, 'SOBREMEDIDA')) {
+            const cantidadSobre = Number(unisexTallas.SOBREMEDIDA) || 0;
+            if (cantidadSobre > 0) {
+                sobremedidaTallas.UNISEX = (Number(sobremedidaTallas.UNISEX) || 0) + cantidadSobre;
+            }
+            delete unisexTallas.SOBREMEDIDA;
+        }
 
         globalThis.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
         globalThis.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
+        globalThis.tallasSeleccionadasProceso.unisex = Object.keys(unisexTallas);
         globalThis.tallasSeleccionadasProceso.sobremedida = Object.keys(sobremedidaTallas).length > 0 ? sobremedidaTallas : null;
 
         if (!globalThis.tallasCantidadesProceso) {
-            globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+            globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
         }
 
         globalThis.tallasCantidadesProceso.dama = { ...damaTallas };
         globalThis.tallasCantidadesProceso.caballero = { ...caballeroTallas };
+        globalThis.tallasCantidadesProceso.unisex = { ...unisexTallas };
         globalThis.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
 
         const actualizarResumen = globalThis.ProcesoModalController?.tallas?.actualizarResumen || globalThis.actualizarResumenTallasProceso;

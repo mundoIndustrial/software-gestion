@@ -96,8 +96,9 @@ function generarTarjetaProceso(tipo, datos) {
     // Calcular totalTallas
     const damaObj = datos.tallas?.dama || {};
     const caballeroObj = datos.tallas?.caballero || {};
+    const unisexObj = datos.tallas?.unisex || {};
     const sobremedidaObj = datos.tallas?.sobremedida || {};
-    const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length + Object.keys(sobremedidaObj).length;
+    const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length + Object.keys(unisexObj).length + Object.keys(sobremedidaObj).length;
     
     // Procesar ubicaciones
     let ubicacionesArray = datos.ubicaciones || [];
@@ -158,6 +159,7 @@ function generarTarjetaProceso(tipo, datos) {
     if (totalTallas > 0) {
         const damaEntries = Object.entries(damaObj);
         const cabEntries = Object.entries(caballeroObj);
+        const unisexEntries = Object.entries(unisexObj);
         const sobreEntries = Object.entries(sobremedidaObj);
 
         tallasHTML = `
@@ -166,6 +168,7 @@ function generarTarjetaProceso(tipo, datos) {
                 <div style="display: flex; flex-direction: column; gap: 0.6rem;">
                     ${renderGrupoTallas('DAMA', damaEntries, 'background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
                     ${renderGrupoTallas('CABALLERO', cabEntries, 'background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
+                    ${renderGrupoTallas('UNISEX', unisexEntries, 'background: #ede9fe; color: #6d28d9; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
                     ${renderGrupoTallas('SOBREMEDIDA', sobreEntries, 'background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
                 </div>
             </div>
@@ -306,11 +309,12 @@ function generarTarjetaProceso(tipo, datos) {
             const generosConfig = {
                 dama: { titulo: 'DAMA', color: '#be185d', bg: '#fce7f3' },
                 caballero: { titulo: 'CABALLERO', color: '#1d4ed8', bg: '#dbeafe' },
+                unisex: { titulo: 'UNISEX', color: '#6d28d9', bg: '#ede9fe' },
                 sobremedida: { titulo: 'SOBREMEDIDA', color: '#92400e', bg: '#fef3c7' }
             };
             
             let tarjetasTallasGeneral = '';
-            ['dama', 'caballero', 'sobremedida'].forEach(genero => {
+            ['dama', 'caballero', 'unisex', 'sobremedida'].forEach(genero => {
                 const tallasGenero = datos.tallas?.[genero] || {};
                 const extendidosGenero = datosExtendidos[genero] || {};
                 const entries = Object.entries(tallasGenero);
@@ -352,13 +356,14 @@ function generarTarjetaProceso(tipo, datos) {
         const generosConfig = {
             dama: { titulo: 'DAMA', color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db', chipBg: '#e5e7eb' },
             caballero: { titulo: 'CABALLERO', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', chipBg: '#dbeafe' },
+            unisex: { titulo: 'UNISEX', color: '#6d28d9', bg: '#f5f3ff', border: '#c4b5fd', chipBg: '#ede9fe' },
             sobremedida: { titulo: 'SOBREMEDIDA', color: '#92400e', bg: '#fffbeb', border: '#fcd34d', chipBg: '#fef3c7' }
         };
 
         let tarjetasTallas = '';
         let totalDetalle = 0;
 
-        ['dama', 'caballero', 'sobremedida'].forEach(genero => {
+        ['dama', 'caballero', 'unisex', 'sobremedida'].forEach(genero => {
             const tallasGenero = datosExtendidos[genero];
             if (!tallasGenero || Object.keys(tallasGenero).length === 0) return;
 

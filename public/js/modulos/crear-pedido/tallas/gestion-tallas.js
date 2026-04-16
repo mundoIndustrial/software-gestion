@@ -49,6 +49,7 @@ window.sincronizarTallasConModalProceso = function() {
         const hayDatosExistentes = (
             (window.tallasCantidadesProceso.dama && Object.keys(window.tallasCantidadesProceso.dama).length > 0) ||
             (window.tallasCantidadesProceso.caballero && Object.keys(window.tallasCantidadesProceso.caballero).length > 0) ||
+            (window.tallasCantidadesProceso.unisex && Object.keys(window.tallasCantidadesProceso.unisex).length > 0) ||
             (window.tallasCantidadesProceso.sobremedida && Object.keys(window.tallasCantidadesProceso.sobremedida).length > 0)
         );
         const esEdicion = hayDatosExistentes;
@@ -145,11 +146,21 @@ window.sincronizarTallasConModalProceso = function() {
             } else {
                 window.tallasSeleccionadasProceso.caballero = [];
             }
+
+            // Actualizar lista de tallas UNISEX seleccionadas
+            if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
+                window.tallasSeleccionadasProceso.unisex = Object.keys(window.tallasRelacionales.UNISEX);
+                console.log('[sincronizarTallasConModalProceso] Tallas UNISEX seleccionadas:', window.tallasSeleccionadasProceso.unisex);
+            } else {
+                window.tallasSeleccionadasProceso.unisex = [];
+            }
             
             // SOBREMEDIDA - actualizar si existe
             if (window.tallasRelacionales.SOBREMEDIDA && Object.keys(window.tallasRelacionales.SOBREMEDIDA).length > 0) {
                 window.tallasSeleccionadasProceso.sobremedida = window.tallasRelacionales.SOBREMEDIDA;
                 console.log('[sincronizarTallasConModalProceso] Sobremedida seleccionada:', window.tallasSeleccionadasProceso.sobremedida);
+            } else {
+                window.tallasSeleccionadasProceso.sobremedida = null;
             }
         }
         

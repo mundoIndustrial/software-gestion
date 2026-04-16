@@ -648,9 +648,13 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
                     ? $tallaProceso->coloresAsignados->toArray()
                     : null;
                 
-                // Usar el genero de la BD, NO el flag es_sobremedida
-                $genero = strtolower($tallaProceso->genero ?? 'dama');
-                $nomTalla = $tallaProceso->talla;
+                // Regla canónica:
+                // - Si es_sobremedida = 1 => agrupar en "sobremedida" por género
+                // - Si no => usar género y talla normal
+                $esSobremedida = (bool)($tallaProceso->es_sobremedida ?? false);
+                $generoReal = strtolower($tallaProceso->genero ?? 'dama');
+                $genero = $esSobremedida ? 'sobremedida' : $generoReal;
+                $nomTalla = $esSobremedida ? strtoupper($tallaProceso->genero ?? 'UNISEX') : $tallaProceso->talla;
                 
                 // Si hay colores, guardar como array; si no, solo cantidad
                 if ($colores) {

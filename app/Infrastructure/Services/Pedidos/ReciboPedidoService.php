@@ -657,7 +657,7 @@ class ReciboPedidoService implements ReciboPedidoServiceContract
             // Primero buscar en tabla relacional (fuente principal de datos)
             $tallasProceso = \DB::table('pedidos_procesos_prenda_tallas')
                 ->where('proceso_prenda_detalle_id', $proceso->id)
-                ->get(['genero', 'talla', 'cantidad']);
+                ->get(['genero', 'talla', 'cantidad', 'es_sobremedida']);
                 
             \Log::info('[RECIBO-SERVICE] Tallas del proceso desde tabla relacional', [
                 'procesoId' => $proceso->id,
@@ -667,10 +667,14 @@ class ReciboPedidoService implements ReciboPedidoServiceContract
             
             if ($tallasProceso->count() > 0) {
                 foreach ($tallasProceso as $talla) {
-                    $genero = strtolower($talla->genero);
-                    
+                    $esSobremedida = (bool)($talla->es_sobremedida ?? false);
+                    $genero = $esSobremedida ? 'sobremedida' : strtolower($talla->genero);
+                    $nomTalla = $esSobremedida
+                        ? strtoupper($talla->genero ?? 'UNISEX')
+                        : $talla->talla;
+
                     if (isset($tallas[$genero])) {
-                        $tallas[$genero][$talla->talla] = $talla->cantidad;
+                        $tallas[$genero][$nomTalla] = (int)$talla->cantidad;
                     }
                 }
                 

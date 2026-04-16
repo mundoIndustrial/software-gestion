@@ -33,11 +33,11 @@ const procesoModalModules = globalThis.procesoModalModules || {
 };
 globalThis.procesoModalModules = procesoModalModules;
 
-globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
+globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: null };
 globalThis.ubicacionesProcesoSeleccionadas = [];
 // ESTRUCTURA INDEPENDIENTE: Cantidades de TALLAS DEL PROCESO (NO de la prenda)
 // Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 }, sobremedida: { DAMA: 10, CABALLERO: 5 } }
-globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
 
 // configuracion por tipo de proceso
 const procesosConfig = {
@@ -105,8 +105,8 @@ function _procesoGenerico_limpiarStorageUniversal(esEdicion) {
 }
 
 function _procesoGenerico_limpiarCreacion() {
-    globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
-    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+    globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: null };
+    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
 
     if (globalThis.imagenesProcesoActual) {
         globalThis.imagenesProcesoActual = [null, null, null];
@@ -141,6 +141,7 @@ function _procesoGenerico_cargarEdicion(tipoProceso) {
     globalThis.tallasCantidadesProceso = {
         dama: procesoDatos.tallas.dama ?? {},
         caballero: procesoDatos.tallas.caballero ?? {},
+        unisex: procesoDatos.tallas.unisex ?? {},
         sobremedida: procesoDatos.tallas.sobremedida ?? {}
     };
 
@@ -151,6 +152,7 @@ function _procesoGenerico_cargarEdicion(tipoProceso) {
     globalThis.tallasSeleccionadasProceso = {
         dama: Object.keys(procesoDatos.tallas.dama ?? {}),
         caballero: Object.keys(procesoDatos.tallas.caballero ?? {}),
+        unisex: Object.keys(procesoDatos.tallas.unisex ?? {}),
         sobremedida: sobremedidaSel
     };
 
@@ -256,7 +258,7 @@ function _cerrarModalProcesoGenerico_crear(procesoGuardado) {
         checkbox._ignorarOnclick = false;
     }
 
-    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+    globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
 }
 
 function _cerrarModalProcesoGenerico_editar(procesoGuardado) {

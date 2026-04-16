@@ -5,9 +5,15 @@ namespace App\Infrastructure\Services\Pedidos;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PedidosProcesosPrendaTalla;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PedidoProcesoTallaBuilder
 {
+    private function esGeneroSobremedidaValido(string $valor): bool
+    {
+        return in_array(strtoupper(trim($valor)), ['DAMA', 'CABALLERO', 'UNISEX'], true);
+    }
+
     public function crearDesdeDatosExtendidosPorTallas(
         PedidosProcesosPrendaDetalle $proceso,
         array $datosExtendidos,
@@ -130,8 +136,24 @@ class PedidoProcesoTallaBuilder
                 foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
-                        // Solo marcar como sobremedida si la prenda tiene es_sobremedida=1
-                        $esSobremedida = $prendasTallasCs ? 1 : 0;
+                        if (!$this->esGeneroSobremedidaValido((string) $tallaParaSobremedida)) {
+                            Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Entrada de sobremedida inválida, omitida', [
+                                'proceso_id' => $proceso->id,
+                                'talla_raw' => $tallaParaSobremedida,
+                                'cantidad' => $cantidad,
+                            ]);
+                            continue;
+                        }
+                        // En rama "sobremedida" SIEMPRE debe persistirse con flag sobremedida.
+                        // Si la validación en prenda no detectó sobremedida, se registra warning
+                        // pero no se degrada el dato del proceso.
+                        $esSobremedida = 1;
+                        if (!$prendasTallasCs) {
+                            Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Prenda sin es_sobremedida detectado, forzando flag en proceso', [
+                                'proceso_id' => $proceso->id,
+                                'talla' => strtoupper($tallaParaSobremedida),
+                            ]);
+                        }
                         Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Guardando', [
                             'genero' => 'UNISEX',
                             'talla' => strtoupper($tallaParaSobremedida),
@@ -233,8 +255,24 @@ class PedidoProcesoTallaBuilder
                 foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
-                        // Solo marcar como sobremedida si la prenda tiene es_sobremedida=1
-                        $esSobremedida = $prendasTallasCs ? 1 : 0;
+                        if (!$this->esGeneroSobremedidaValido((string) $tallaParaSobremedida)) {
+                            Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Entrada de sobremedida inválida, omitida', [
+                                'proceso_id' => $proceso->id,
+                                'talla_raw' => $tallaParaSobremedida,
+                                'cantidad' => $cantidad,
+                            ]);
+                            continue;
+                        }
+                        // En rama "sobremedida" SIEMPRE debe persistirse con flag sobremedida.
+                        // Si la validación en prenda no detectó sobremedida, se registra warning
+                        // pero no se degrada el dato del proceso.
+                        $esSobremedida = 1;
+                        if (!$prendasTallasCs) {
+                            Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Prenda sin es_sobremedida detectado, forzando flag en proceso', [
+                                'proceso_id' => $proceso->id,
+                                'talla' => strtoupper($tallaParaSobremedida),
+                            ]);
+                        }
                         Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Guardando', [
                             'genero' => 'UNISEX',
                             'talla' => strtoupper($tallaParaSobremedida),
