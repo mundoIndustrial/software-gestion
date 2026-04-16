@@ -179,13 +179,32 @@ class ActualizarBorradorUseCase
 
         foreach ($prendasExistentes as $prendaIndex => $prendaPayload) {
             $prendaId = (int) ($prendaPayload['prenda_id'] ?? $prendaPayload['id'] ?? $prendaPayload['prenda_pedido_id'] ?? 0);
+            
+            Log::debug('[ActualizarBorradorUseCase] Validando prenda existente', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'prenda_index' => $prendaIndex,
+                'es_valido' => $prendaId > 0,
+            ]);
+            
             if ($prendaId <= 0) {
+                Log::warning('[ActualizarBorradorUseCase] ID inválido, ignorando prenda en prendas_existentes', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'prenda_index' => $prendaIndex,
+                ]);
                 continue;
             }
 
             $prendaRef = $this->pedidoRepository->obtenerPrendaDelPedido($pedidoId, $prendaId);
 
             if (!$prendaRef) {
+                Log::error('[ActualizarBorradorUseCase] Prenda no encontrada en pedido', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'prenda_index' => $prendaIndex,
+                    'prenda_ref_es_null' => true,
+                ]);
                 throw ActualizarBorradorException::prendaNoPerteneceAlPedido($prendaId, $pedidoId);
             }
 

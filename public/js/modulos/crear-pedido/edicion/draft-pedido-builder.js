@@ -257,7 +257,10 @@
         };
 
         window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
-            const esPrendaExistente = !!(p?.prenda_pedido_id || p?.id);
+            // Solo es "existente" si tiene prenda_pedido_id que sea un número > 0 (ID real de BD)
+            // NO cuenta los IDs locales como "prenda-local-xxx" que son strings
+            const tieneIdRealBD = p?.prenda_pedido_id && Number.isInteger(p.prenda_pedido_id) && p.prenda_pedido_id > 0;
+            const esPrendaExistente = !!tieneIdRealBD;
             if (esPrendaExistente) {
                 const payloadPrendaExistente = typeof window.serializarPrendaExistenteParaBorrador === 'function'
                     ? window.serializarPrendaExistenteParaBorrador(p, prendaIdx, formData)

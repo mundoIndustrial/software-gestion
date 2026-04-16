@@ -867,14 +867,21 @@ export class Formatters {
         console.log('[Formatters._comparacionSimpleTallas]  Comparación simple:', { tallas1, tallas2 });
         
         const extraerTallasSimple = (tallas) => {
-            const resultado = { dama: {}, caballero: {} };
+            const resultado = { dama: {}, caballero: {}, unisex: {} };
+            const asegurarGenero = (generoRaw) => {
+                const genero = String(generoRaw || 'dama').toLowerCase();
+                if (!resultado[genero]) {
+                    resultado[genero] = {};
+                }
+                return genero;
+            };
             
             if (!tallas) return resultado;
             
             if (Array.isArray(tallas)) {
                 tallas.forEach(item => {
                     if (item && typeof item === 'object') {
-                        const genero = (item.genero || 'dama').toLowerCase();
+                        const genero = asegurarGenero(item.genero);
                         const talla = item.talla || '';
                         const cantidad = item.cantidad || 0;
                         resultado[genero][talla] = cantidad;
@@ -882,7 +889,7 @@ export class Formatters {
                 });
             } else if (typeof tallas === 'object') {
                 Object.entries(tallas).forEach(([genero, datos]) => {
-                    const gen = genero.toLowerCase();
+                    const gen = asegurarGenero(genero);
                     if (typeof datos === 'object' && datos !== null) {
                         Object.entries(datos).forEach(([talla, valores]) => {
                             if (Array.isArray(valores)) {
@@ -905,35 +912,33 @@ export class Formatters {
         
         console.log('[Formatters._comparacionSimpleTallas]Normalizado:', { norm1, norm2 });
         
-        // Comparar DAMA
-        const damaKeys1 = Object.keys(norm1.dama).sort();
-        const damaKeys2 = Object.keys(norm2.dama).sort();
-        
-        if (damaKeys1.length !== damaKeys2.length) {
-            console.log('[Formatters._comparacionSimpleTallas]  Diferente cantidad de tallas DAMA');
-            return false;
-        }
-        
-        for (const talla of damaKeys1) {
-            if (!norm2.dama[talla] || norm1.dama[talla] !== norm2.dama[talla]) {
-                console.log('[Formatters._comparacionSimpleTallas]  Diferente talla DAMA:', talla);
+        const generos = Array.from(new Set([
+            ...Object.keys(norm1),
+            ...Object.keys(norm2)
+        ])).sort();
+
+        for (const genero of generos) {
+            const tallasGenero1 = norm1[genero] || {};
+            const tallasGenero2 = norm2[genero] || {};
+            const keys1 = Object.keys(tallasGenero1).sort();
+            const keys2 = Object.keys(tallasGenero2).sort();
+
+            if (keys1.length !== keys2.length) {
+                console.log('[Formatters._comparacionSimpleTallas]  Diferente cantidad de tallas por género:', { genero, keys1, keys2 });
                 return false;
             }
-        }
-        
-        // Comparar CABALLERO
-        const cabKeys1 = Object.keys(norm1.caballero).sort();
-        const cabKeys2 = Object.keys(norm2.caballero).sort();
-        
-        if (cabKeys1.length !== cabKeys2.length) {
-            console.log('[Formatters._comparacionSimpleTallas]  Diferente cantidad de tallas CABALLERO');
-            return false;
-        }
-        
-        for (const talla of cabKeys1) {
-            if (!norm2.caballero[talla] || norm1.caballero[talla] !== norm2.caballero[talla]) {
-                console.log('[Formatters._comparacionSimpleTallas]  Diferente talla CABALLERO:', talla);
-                return false;
+
+            for (const talla of keys1) {
+                const existeEn2 = Object.prototype.hasOwnProperty.call(tallasGenero2, talla);
+                if (!existeEn2 || tallasGenero1[talla] !== tallasGenero2[talla]) {
+                    console.log('[Formatters._comparacionSimpleTallas]  Diferente talla por género:', {
+                        genero,
+                        talla,
+                        valor1: tallasGenero1[talla],
+                        valor2: tallasGenero2[talla]
+                    });
+                    return false;
+                }
             }
         }
         

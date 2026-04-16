@@ -128,6 +128,9 @@ if ($isApiContext) {
     Route::middleware('api')->get('pedidos/{pedidoId}/epp', [EppController::class, 'obtenerDelPedido'])
         ->name('pedidos.epp.obtener');
 
+    Route::middleware('api')->post('pedidos/{pedidoId}/epp/agregar', [EppController::class, 'agregar'])
+        ->name('pedidos.epp.agregar');
+
     Route::middleware('api')->delete('pedidos/{pedidoId}/epp/{eppId}', [EppController::class, 'eliminar'])
         ->name('pedidos.epp.eliminar');
 

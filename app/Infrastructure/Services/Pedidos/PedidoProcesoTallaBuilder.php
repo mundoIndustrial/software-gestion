@@ -111,10 +111,10 @@ class PedidoProcesoTallaBuilder
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
         // Para determinar si es realmente sobremedida, verificar si la prenda tiene es_sobremedida=1
-        $prendaPedido = $proceso->prendaPedido;
-        $prendasTallasCs = $prendaPedido->tallas()
+        $prendaPedido = $proceso->prenda;
+        $prendasTallasCs = $prendaPedido ? $prendaPedido->tallas()
             ->where('es_sobremedida', 1)
-            ->exists();
+            ->exists() : false;
 
         foreach ($tallas as $generoBD => $tallasCant) {
             if (!is_array($tallasCant) || empty($tallasCant)) {
@@ -214,10 +214,10 @@ class PedidoProcesoTallaBuilder
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
         // Para determinar si es realmente sobremedida, verificar si la prenda tiene es_sobremedida=1
-        $prendaPedido = $proceso->prendaPedido;
-        $prendasTallasCs = $prendaPedido->tallas()
+        $prendaPedido = $proceso->prenda;
+        $prendasTallasCs = $prendaPedido ? $prendaPedido->tallas()
             ->where('es_sobremedida', 1)
-            ->exists();
+            ->exists() : false;
 
         foreach ($tallas as $generoBD => $tallasCant) {
             if (!is_array($tallasCant) || empty($tallasCant)) {
