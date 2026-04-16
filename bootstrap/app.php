@@ -13,7 +13,16 @@ if (!function_exists('js_asset')) {
             return asset($path);
         }
         $minPath = preg_replace('/\.js$/', '.min.js', $path);
-        if (file_exists(public_path($minPath))) {
+        $fullPath = public_path($path);
+        $fullMinPath = public_path($minPath);
+        if (file_exists($fullMinPath)) {
+            if (file_exists($fullPath)) {
+                $mtimeOriginal = @filemtime($fullPath) ?: 0;
+                $mtimeMin = @filemtime($fullMinPath) ?: 0;
+                if ($mtimeOriginal > $mtimeMin) {
+                    return asset($path);
+                }
+            }
             return asset($minPath);
         }
         return asset($path);
