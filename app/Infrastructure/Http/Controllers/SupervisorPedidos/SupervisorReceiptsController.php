@@ -419,4 +419,141 @@ class SupervisorReceiptsController extends Controller
             'opciones' => []
         ]);
     }
+
+    /**
+     * Obtener observación de un recibo/proceso por pedido+prenda+tipo.
+     */
+    public function obtenerObservacionReciboProceso(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            'tipo_proceso' => 'required|string|max:100',
+        ]);
+
+        $pedidoId = (int) $validated['pedido_id'];
+        $prendaId = (int) $validated['prenda_id'];
+        $tipoProceso = $this->normalizarTipoProceso($validated['tipo_proceso']);
+
+        $prenda = PrendaPedido::query()
+            ->where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->first();
+
+        if (!$prenda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La prenda no pertenece al pedido indicado.',
+            ], 422);
+        }
+
+        $row = DB::table('observaciones_recibos_procesos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->where('tipo_proceso', $tipoProceso)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'tipo_proceso' => $tipoProceso,
+                'observacion' => $row?->observacion,
+                'updated_at' => $row?->updated_at,
+            ],
+        ]);
+    }
+
+    /**
+     * Guardar observación de un recibo/proceso por pedido+prenda+tipo.
+     */
+    public function guardarObservacionReciboProceso(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            'tipo_proceso' => 'required|string|max:100',
+            'observacion' => 'nullable|string|max:2000',
+        ]);
+
+        $pedidoId = (int) $validated['pedido_id'];
+        $prendaId = (int) $validated['prenda_id'];
+        $tipoProceso = $this->normalizarTipoProceso($validated['tipo_proceso']);
+        $observacion = trim((string) ($validated['observacion'] ?? ''));
+
+        $prenda = PrendaPedido::query()
+            ->where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->first();
+
+        if (!$prenda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La prenda no pertenece al pedido indicado.',
+            ], 422);
+        }
+
+        if ($observacion === '') {
+            DB::table('observaciones_recibos_procesos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('tipo_proceso', $tipoProceso)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Observación eliminada correctamente.',
+                'data' => [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'tipo_proceso' => $tipoProceso,
+                    'observacion' => null,
+                ],
+            ]);
+        }
+
+        $now = now();
+        $existing = DB::table('observaciones_recibos_procesos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->where('tipo_proceso', $tipoProceso)
+            ->first();
+
+        if ($existing) {
+            DB::table('observaciones_recibos_procesos')
+                ->where('id', $existing->id)
+                ->update([
+                    'observacion' => $observacion,
+                    'usuario_id' => auth()->id(),
+                    'updated_at' => $now,
+                ]);
+        } else {
+            DB::table('observaciones_recibos_procesos')->insert([
+                'pedido_produccion_id' => $pedidoId,
+                'prenda_pedido_id' => $prendaId,
+                'tipo_proceso' => $tipoProceso,
+                'observacion' => $observacion,
+                'usuario_id' => auth()->id(),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observación guardada correctamente.',
+            'data' => [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'tipo_proceso' => $tipoProceso,
+                'observacion' => $observacion,
+            ],
+        ]);
+    }
+
+    private function normalizarTipoProceso(string $tipoProceso): string
+    {
+        return mb_strtoupper(trim($tipoProceso), 'UTF-8');
+    }
 }

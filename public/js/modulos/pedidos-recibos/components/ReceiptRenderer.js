@@ -404,11 +404,62 @@ export class ReceiptRenderer {
 
         descripcionText.innerHTML = html;
         console.log(' [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
+
+        this._anexarObservacionReciboProceso(prendaData, tipoProceso, datosPedido);
         
         // Cargar metrajes por color desde la API
         if (prendaData.prenda_pedido_id && datosPedido) {
             this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido);
         }
+    }
+
+    static async _anexarObservacionReciboProceso(prendaData, tipoProceso, datosPedido) {
+        try {
+            const descripcionEl = document.getElementById('descripcion-text');
+            if (!descripcionEl) return;
+
+            const pedidoId = Number(prendaData?.pedido_produccion_id || datosPedido?.pedido_id || datosPedido?.id || 0);
+            const prendaId = Number(prendaData?.id || prendaData?.prenda_pedido_id || 0);
+            const tipo = String(tipoProceso || '').trim().toUpperCase();
+
+            if (!pedidoId || !prendaId || !tipo) return;
+
+            const params = new URLSearchParams({
+                pedido_id: String(pedidoId),
+                prenda_id: String(prendaId),
+                tipo_proceso: tipo
+            });
+
+            const response = await fetch(`/api/supervisor-pedidos/recibos-procesos/observacion?${params.toString()}`);
+            if (!response.ok) return;
+
+            const result = await response.json();
+            if (!result?.success) return;
+
+            const observacion = String(result?.data?.observacion || '').trim();
+            if (!observacion) return;
+
+            const observacionId = 'observacion-recibo-proceso-extra';
+            const existente = descripcionEl.querySelector(`#${observacionId}`);
+            if (existente) existente.remove();
+
+            const bloque = document.createElement('div');
+            bloque.id = observacionId;
+            bloque.innerHTML = `<br><br><strong>OBSERVACIÓN PROCESO:</strong><br>${this._escapeHtml(observacion).replace(/\n/g, '<br>')}`;
+
+            descripcionEl.appendChild(bloque);
+        } catch (error) {
+            console.warn('[ReceiptRenderer._anexarObservacionReciboProceso] Error:', error);
+        }
+    }
+
+    static _escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     /**

@@ -69,6 +69,42 @@
     </div>
 </div>
 
+<!-- Modal de Observación por Proceso -->
+<div id="modal-observacion-proceso"
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999;"
+     onclick="if(event.target === this) cerrarModalObservacionProceso()">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 10px; padding: 20px; max-width: 520px; width: 92%; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 18px;">Observación del proceso</h3>
+        <p id="modal-observacion-proceso-subtitulo" style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px;"></p>
+
+        <input type="hidden" id="obs-pedido-id">
+        <input type="hidden" id="obs-prenda-id">
+        <input type="hidden" id="obs-tipo-proceso">
+
+        <textarea id="obs-texto-proceso"
+                  class="observacion-proceso-textarea"
+                  placeholder="Escribe la observación..."
+                  maxlength="2000"></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <span id="obs-contador-proceso" style="font-size: 12px; color: #9ca3af;">0/2000</span>
+            <div style="display: flex; gap: 8px;">
+                <button type="button"
+                        onclick="cerrarModalObservacionProceso()"
+                        style="background: #e5e7eb; color: #374151; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    Cancelar
+                </button>
+                <button type="button"
+                        id="btn-guardar-observacion-proceso"
+                        onclick="guardarObservacionProcesoActual()"
+                        style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -305,6 +341,42 @@
         transform: translateY(-1px);
     }
 
+    .btn-observacion-proceso {
+        background: #0ea5e9;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-observacion-proceso:hover {
+        background: #0284c7;
+        transform: translateY(-1px);
+    }
+
+    .observacion-proceso-textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #1f2937;
+        outline: none;
+    }
+
+    .observacion-proceso-textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
     .recibo-activo {
         background: #dcfce7;
         border-left: 3px solid #10b981;
@@ -440,6 +512,131 @@
     let procesoClickCount = 0;
     let lastAccordionClickTime = 0;
     let lastProcesoClickTime = 0;
+
+    function normalizarTipoProcesoFrontend(tipoProceso) {
+        return String(tipoProceso || '').trim().toUpperCase();
+    }
+
+    function actualizarContadorObservacionProceso() {
+        const textarea = document.getElementById('obs-texto-proceso');
+        const contador = document.getElementById('obs-contador-proceso');
+        if (!textarea || !contador) return;
+        contador.textContent = `${textarea.value.length}/2000`;
+    }
+
+    window.abrirModalObservacionReciboProceso = async function(prendaId, tipoProceso, pedidoId = null) {
+        try {
+            const pedido = pedidoId || window.selectorRecibosState?.pedidoId;
+            if (!pedido) {
+                alert('No se pudo determinar el pedido.');
+                return;
+            }
+
+            const tipoNormalizado = normalizarTipoProcesoFrontend(tipoProceso);
+            const modal = document.getElementById('modal-observacion-proceso');
+            const subtitulo = document.getElementById('modal-observacion-proceso-subtitulo');
+            const textarea = document.getElementById('obs-texto-proceso');
+
+            document.getElementById('obs-pedido-id').value = String(pedido);
+            document.getElementById('obs-prenda-id').value = String(prendaId);
+            document.getElementById('obs-tipo-proceso').value = tipoNormalizado;
+
+            if (subtitulo) {
+                subtitulo.textContent = `Prenda #${prendaId} - ${tipoNormalizado}`;
+            }
+            if (textarea) {
+                textarea.value = '';
+                actualizarContadorObservacionProceso();
+            }
+
+            modal.style.display = 'block';
+
+            const params = new URLSearchParams({
+                pedido_id: String(pedido),
+                prenda_id: String(prendaId),
+                tipo_proceso: tipoNormalizado
+            });
+
+            const response = await fetch(`/api/supervisor-pedidos/recibos-procesos/observacion?${params.toString()}`);
+            const contentType = response.headers.get('content-type') || '';
+            if (!response.ok || !contentType.includes('application/json')) return;
+
+            const result = await response.json();
+            if (result?.success && textarea) {
+                textarea.value = result?.data?.observacion || '';
+                actualizarContadorObservacionProceso();
+            }
+        } catch (error) {
+            console.error('[abrirModalObservacionReciboProceso] Error:', error);
+        }
+    };
+
+    window.cerrarModalObservacionProceso = function() {
+        const modal = document.getElementById('modal-observacion-proceso');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.guardarObservacionProcesoActual = async function() {
+        const pedidoId = document.getElementById('obs-pedido-id')?.value;
+        const prendaId = document.getElementById('obs-prenda-id')?.value;
+        const tipoProceso = document.getElementById('obs-tipo-proceso')?.value;
+        const observacion = document.getElementById('obs-texto-proceso')?.value || '';
+        const btnGuardar = document.getElementById('btn-guardar-observacion-proceso');
+
+        if (!pedidoId || !prendaId || !tipoProceso) {
+            alert('Faltan datos para guardar la observación.');
+            return;
+        }
+
+        try {
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = 'Guardando...';
+            }
+
+            const response = await fetch('/api/supervisor-pedidos/recibos-procesos/observacion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({
+                    pedido_id: Number(pedidoId),
+                    prenda_id: Number(prendaId),
+                    tipo_proceso: tipoProceso,
+                    observacion
+                })
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`Respuesta inválida del servidor (${response.status}).`);
+            }
+
+            const result = await response.json();
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.message || 'No fue posible guardar la observación.');
+            }
+
+            mostrarMensajeExito(result.message || 'Observación guardada correctamente.');
+            cerrarModalObservacionProceso();
+        } catch (error) {
+            console.error('[guardarObservacionProcesoActual] Error:', error);
+            alert(error.message || 'Error al guardar observación.');
+        } finally {
+            if (btnGuardar) {
+                btnGuardar.disabled = false;
+                btnGuardar.textContent = 'Guardar';
+            }
+        }
+    };
+
+    document.addEventListener('input', (e) => {
+        if (e.target && e.target.id === 'obs-texto-proceso') {
+            actualizarContadorObservacionProceso();
+        }
+    });
 
     /**
      * Abre el modal selector de recibos
@@ -942,6 +1139,12 @@
                                 ${''}
                             </div>
                             <div class="proceso-acciones">
+                                <button class="btn-observacion-proceso"
+                                        onclick="event.stopPropagation(); abrirModalObservacionReciboProceso(${prenda.id}, '${tipoString}', ${pedidoId})"
+                                        title="Agregar observación">
+                                    <i class="fas fa-comment-alt"></i>
+                                    Observ.
+                                </button>
                                 ${puedeCrearPorTalla ? `
                                     <button class="btn-recibo-parcial" 
                                             onclick="event.stopPropagation(); abrirModalReciboParcial(${prenda.id}, '${tipoString}', ${pedidoId})"
