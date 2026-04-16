@@ -264,6 +264,106 @@
             color_id: t.color_id || 0,
             id: t.id || t._original_id || t.prenda_pedido_colores_telas_id || undefined
         }));
+        const coloresTelasOficiales = Array.isArray(prenda.colores_telas) ? prenda.colores_telas : [];
+
+        const normalizarNombreRelacion = (valor) => {
+            if (typeof valor !== 'string') return '';
+            return valor
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toUpperCase();
+        };
+
+        const aNumeroPositivo = (valor) => {
+            const num = Number(valor || 0);
+            return Number.isFinite(num) && num > 0 ? num : null;
+        };
+
+        const resolverRelacionExplicita = (contexto, color, asignacion) => {
+            const relacionYaExplicita = aNumeroPositivo(contexto?.colorTelaId)
+                || (aNumeroPositivo(contexto?.colorId) && aNumeroPositivo(contexto?.telaId));
+            if (relacionYaExplicita) {
+                return contexto;
+            }
+
+            const colorNombre = normalizarNombreRelacion(
+                contexto?.colorNombre || color?.nombre || color?.color || ''
+            );
+            const telaNombre = normalizarNombreRelacion(
+                contexto?.telaNombre || asignacion?.tela || ''
+            );
+
+            const buscarEnColeccion = (coleccion, extractor) => {
+                if (!Array.isArray(coleccion) || coleccion.length === 0) return null;
+
+                const encontradaExacta = coleccion.find((item) => {
+                    const datos = extractor(item);
+                    if (!datos) return false;
+
+                    const colorCoincide = colorNombre && datos.colorNombre === colorNombre;
+                    const telaCoincide = telaNombre && datos.telaNombre === telaNombre;
+
+                    if (colorNombre && telaNombre) return colorCoincide && telaCoincide;
+                    if (colorNombre) return colorCoincide;
+                    if (telaNombre) return telaCoincide;
+                    return false;
+                });
+                if (encontradaExacta) {
+                    return extractor(encontradaExacta);
+                }
+
+                return null;
+            };
+
+            const oficial = buscarEnColeccion(coloresTelasOficiales, (item) => {
+                const colorId = aNumeroPositivo(item?.color_id);
+                const telaId = aNumeroPositivo(item?.tela_id);
+                const colorTelaId = aNumeroPositivo(item?.prenda_pedido_colores_telas_id || item?.id);
+                if (!colorTelaId && !(colorId && telaId)) return null;
+
+                return {
+                    colorTelaId,
+                    colorId,
+                    telaId,
+                    colorNombre: normalizarNombreRelacion(item?.color_nombre || item?.color || ''),
+                    telaNombre: normalizarNombreRelacion(item?.tela_nombre || item?.tela || '')
+                };
+            });
+            if (oficial) {
+                return {
+                    ...contexto,
+                    colorTelaId: contexto?.colorTelaId || oficial.colorTelaId || null,
+                    colorId: contexto?.colorId || oficial.colorId || null,
+                    telaId: contexto?.telaId || oficial.telaId || null
+                };
+            }
+
+            const desdeTelas = buscarEnColeccion(telasJSON, (item) => {
+                const colorId = aNumeroPositivo(item?.color_id);
+                const telaId = aNumeroPositivo(item?.tela_id);
+                const colorTelaId = aNumeroPositivo(item?.id);
+                if (!colorTelaId && !(colorId && telaId)) return null;
+
+                return {
+                    colorTelaId,
+                    colorId,
+                    telaId,
+                    colorNombre: normalizarNombreRelacion(item?.color || ''),
+                    telaNombre: normalizarNombreRelacion(item?.tela || '')
+                };
+            });
+            if (desdeTelas) {
+                return {
+                    ...contexto,
+                    colorTelaId: contexto?.colorTelaId || desdeTelas.colorTelaId || null,
+                    colorId: contexto?.colorId || desdeTelas.colorId || null,
+                    telaId: contexto?.telaId || desdeTelas.telaId || null
+                };
+            }
+
+            return contexto;
+        };
 
         const tieneAsignacionesWizard = !!(
             asignacionesColores
@@ -276,7 +376,7 @@
             Object.entries(asignacionesColores).forEach(([claveAsignacion, asignacion]) => {
                 const coloresAsignados = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
                 coloresAsignados.forEach((color, idxColor) => {
-                    const contextoRelacion = {
+                    const contextoBase = {
                         colorTelaId:
                             color?.prenda_pedido_colores_telas_id ||
                             color?.color_tela_id ||
@@ -288,6 +388,7 @@
                         colorNombre: color?.nombre || color?.color || '',
                         telaNombre: asignacion?.tela || ''
                     };
+                    const contextoRelacion = resolverRelacionExplicita(contextoBase, color, asignacion);
 
                     const placeholderRelacion = construirPlaceholderFotoTela(
                         contextoRelacion.colorTelaId,
