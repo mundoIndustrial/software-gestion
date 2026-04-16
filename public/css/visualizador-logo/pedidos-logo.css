@@ -269,3 +269,12 @@ select[data-field="area"] option {
 .floating-clear-filters-logo:hover .floating-clear-filters-logo-tooltip {
     opacity: 1;
 }
+
+.recibo-completado-logo {
+    background: #a7cdff !important;
+    border-left: 4px solid #0284c7 !important;
+}
+
+.recibo-completado-logo:hover {
+    background: #82baff !important;
+}

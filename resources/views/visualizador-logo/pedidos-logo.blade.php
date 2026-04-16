@@ -347,6 +347,25 @@ window.__aplicarEstiloAreaDropdownLogo = function(selectEl) {
     selectEl.style.border = `1px solid ${border}`;
 };
 
+window.__obtenerMapaCompletadosLocalLogo = function() {
+    try {
+        const raw = localStorage.getItem('visualizador_logo_bordador_completados');
+        if (!raw) return {};
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return {};
+
+        return parsed;
+    } catch (error) {
+        return {};
+    }
+};
+
+window.__estaCompletadoLocalmenteLogo = function(procesoId) {
+    const mapa = window.__obtenerMapaCompletadosLocalLogo();
+    return mapa[String(procesoId)] === true;
+};
+
 window.__aplicarColoresFilaReciboLogo = function(procesoId) {
     const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoId}"]`);
     if (!row) return;
@@ -354,11 +373,16 @@ window.__aplicarColoresFilaReciboLogo = function(procesoId) {
     const areaSelect = row.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`);
     const area = areaSelect ? areaSelect.value : (row.dataset.area || 'PENDIENTE');
     const totalDias = row.dataset.totalDias || 0;
+    const completado = row.dataset.completado === '1' || window.__estaCompletadoLocalmenteLogo(procesoId);
 
-    const { rowBg, rowHoverBg, rowBorderLeft } = window.__getColoresFilaReciboLogo(area, totalDias);
+    const { rowBg, rowHoverBg, rowBorderLeft } = completado
+        ? { rowBg: '#a7cdff', rowHoverBg: '#82baff', rowBorderLeft: '#0284c7' }
+        : window.__getColoresFilaReciboLogo(area, totalDias);
 
+    row.classList.toggle('recibo-completado-logo', completado);
     row.style.background = rowBg;
     row.style.borderLeft = `4px solid ${rowBorderLeft}`;
+    row.dataset.completado = completado ? '1' : '0';
     row.setAttribute('onmouseover', `this.style.background='${rowHoverBg}'; this.style.boxShadow='inset 0 0 0 1px #e2e8f0'`);
     row.setAttribute('onmouseout', `this.style.background='${rowBg}'; this.style.boxShadow='none'`);
 };
@@ -575,24 +599,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners para la barra de búsqueda
     const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search');
-    
+
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.trim();
-            
-            // Mostrar/ocultar botón de limpiar
-            if (searchTerm) {
-                clearSearchBtn.style.display = 'block';
-            } else {
-                clearSearchBtn.style.display = 'none';
+        searchInput.placeholder = 'Buscar por cliente, número de recibo o anexo...';
+        searchInput.setAttribute('autocomplete', 'off');
+        searchInput.setAttribute('inputmode', 'search');
+    }
+
+    function ejecutarBusquedaLogo() {
+        if (!searchInput) return;
+
+        const searchTerm = searchInput.value.trim();
+
+        if (clearSearchBtn) {
+            clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+        }
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            paginaActual = 1;
+            cargarRecibos(searchTerm);
+        }, 80);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', ejecutarBusquedaLogo);
+        searchInput.addEventListener('keyup', ejecutarBusquedaLogo);
+        searchInput.addEventListener('search', ejecutarBusquedaLogo);
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                ejecutarBusquedaLogo();
             }
-            
-            // Búsqueda en tiempo real con debounce
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                paginaActual = 1;
-                cargarRecibos(searchTerm);
-            }, 300);
+        });
+        searchInput.addEventListener('paste', function() {
+            setTimeout(ejecutarBusquedaLogo, 0);
         });
     }
     
@@ -664,6 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function renderizarRecibos(recibos, searchTerm = '') {
         const tbody = document.getElementById('pedidos-body');
+        const searchRegex = searchTerm ? new RegExp(escapeRegExp(searchTerm), 'gi') : null;
         
         if (recibos.data.length === 0) {
             tbody.innerHTML = `
@@ -679,7 +721,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tbody.innerHTML = recibos.data.map((recibo) => {
             let nombreCliente = recibo.cliente || '-';
-            let numeroRecibo = recibo.numero_recibo || '-';
+            const numeroReciboValor = (recibo.numero_recibo !== null && recibo.numero_recibo !== undefined)
+                ? String(recibo.numero_recibo)
+                : '';
+            let numeroRecibo = numeroReciboValor || '-';
             // Para parciales: si existe fecha_activacion, usarla; sino usar created_at
             let fechaCreacion = (recibo.pedido_parcial_id && recibo.fecha_activacion) 
                 ? recibo.fecha_activacion 
@@ -693,10 +738,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const { rowBg, rowHoverBg, rowBorderLeft } = window.__getColoresFilaReciboLogo(area, totalDias);
 
-            if (searchTerm) {
-                const regex = new RegExp(`(${searchTerm})`, 'gi');
-                numeroRecibo = String(numeroRecibo).replace(regex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$1</mark>');
-                nombreCliente = String(nombreCliente).replace(regex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+            if (searchRegex) {
+                numeroRecibo = String(numeroRecibo).replace(searchRegex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$&</mark>');
+                nombreCliente = String(nombreCliente).replace(searchRegex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$&</mark>');
             }
 
             const pedidoId = recibo.pedido_id;
@@ -706,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pedidoParcialId = recibo.pedido_parcial_id || null;
             const nombreProceso = recibo.nombre_proceso || recibo.tipo_proceso || '';
             const procesoPrendaDetalleId = recibo.id;
-            const completado = recibo.completado || false;
+            const completado = Boolean(recibo.completado || window.__estaCompletadoLocalmenteLogo(procesoPrendaDetalleId));
 
             if (window.__isBordadorRole) {
                 const rowBgColor = completado ? '#a7cdff' : 'white';
@@ -720,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnTitle = completado ? 'Click para deshacer completado' : 'Marcar como completado';
                 
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 180px 140px;
@@ -760,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                         <div style="display: flex; justify-content: center;">
                             <button 
-                               onclick="marcarReciboCompletado(${procesoPrendaDetalleId}, ${numeroRecibo}, this)"
+                               onclick="marcarReciboCompletado(${procesoPrendaDetalleId}, '${escapeJsAttr(numeroReciboValor)}', this)"
                                title="${btnTitle}"
                                style="
                                    background: ${btnBg};
@@ -787,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (window.__isDisenadorLogos) {
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 180px 140px;
@@ -851,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
 
             return `
-                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" style="
+                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                     min-width: 1860px;
                     display: grid;
                     grid-template-columns: 100px 120px 200px 300px 170px 230px 190px 260px 160px;
@@ -998,13 +1042,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Cambiar color de la fila
                     if (nuevoCompletado) {
+                        row.classList.add('recibo-completado-logo');
                         row.style.background = '#a7cdff';
                         row.style.borderLeftColor = '#0284c7';
                     } else {
+                        row.classList.remove('recibo-completado-logo');
                         row.style.background = 'white';
                         row.style.borderLeftColor = 'transparent';
                     }
                 }
+
+                actualizarCompletadoLocal(idRecibo, nuevoCompletado);
                 
                 // Actualizar botón
                 if (nuevoCompletado) {
@@ -1101,6 +1149,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p style="margin: 0; font-size: 1rem; font-weight: 500;">Error al cargar los pedidos</p>
             </div>
         `;
+    }
+
+    function escapeRegExp(value) {
+        return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function escapeJsAttr(value) {
+        return String(value)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r/g, ' ')
+            .replace(/\n/g, ' ')
+            .replace(/\u2028/g, ' ')
+            .replace(/\u2029/g, ' ');
+    }
+
+    function actualizarCompletadoLocal(procesoId, completado) {
+        try {
+            const mapa = window.__obtenerMapaCompletadosLocalLogo();
+            const key = String(procesoId);
+
+            if (completado) {
+                mapa[key] = true;
+            } else {
+                delete mapa[key];
+            }
+
+            localStorage.setItem('visualizador_logo_bordador_completados', JSON.stringify(mapa));
+        } catch (error) {
+            // Si localStorage no está disponible, no bloqueamos la vista.
+        }
     }
 });
 </script>

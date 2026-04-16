@@ -17,6 +17,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             . "WHEN 4 THEN 'DTF' "
             . "WHEN 5 THEN 'SUBLIMADO' "
             . "ELSE NULL END";
+        $searchTerm = $this->normalizarBusqueda($search);
 
         // Query 1: Procesos base sin parciales
         $queryProcesos = PedidosProcesosPrendaDetalle::query()
@@ -50,6 +51,8 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                      ->whereNull('palp.pedido_parcial_id');
             })
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'pedidos_procesos_prenda_detalles.prenda_pedido_id')
+            ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
             ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
                 $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
                     ->on('crp.prenda_id', '=', 'pp.id')
@@ -69,6 +72,17 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->whereNull('ppar.id')
             ->whereIn('pedidos_procesos_prenda_detalles.tipo_proceso_id', $tipoProcesoIds)
             ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
+
+        $this->aplicarBusqueda(
+            $queryProcesos,
+            $searchTerm,
+            [
+                'ped.cliente',
+                'cli.nombre',
+                'crp.consecutivo_actual',
+                'pedidos_procesos_prenda_detalles.numero_recibo',
+            ]
+        );
 
         // Query 2: Todos los parciales individuales
         $queryParciales = DB::table('pedidos_parciales as ppar')
@@ -98,6 +112,8 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 pp.pedido_produccion_id
             ")
             ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+            ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
             ->join('pedidos_procesos_prenda_detalles', function ($join) use ($tipoReciboCase) {
                 $join->on('pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'pp.id')
                     ->whereRaw("({$tipoReciboCase}) = ppar.tipo_recibo");
@@ -118,6 +134,18 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->whereNull('ppar.deleted_at')
             ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id');
 
+        $this->aplicarBusqueda(
+            $queryParciales,
+            $searchTerm,
+            [
+                'ped.cliente',
+                'cli.nombre',
+                'crp.consecutivo_actual',
+                'ppar.consecutivo_actual',
+                'pedidos_procesos_prenda_detalles.numero_recibo',
+            ]
+        );
+
         // Combinar queries
         $results = $queryProcesos->unionAll($queryParciales)
             ->orderBy('numero_recibo_consecutivo', 'DESC')
@@ -135,6 +163,51 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         });
 
         return $results;
+    }
+
+    private function aplicarBusqueda($query, ?string $searchTerm, array $campos): void
+    {
+        if ($searchTerm === null || $searchTerm === '') {
+            return;
+        }
+
+        $like = '%' . $searchTerm . '%';
+        $soloDigitos = preg_replace('/\D+/', '', $searchTerm);
+        $soloDigitosNormalizado = $soloDigitos !== '' ? ltrim($soloDigitos, '0') : '';
+        if ($soloDigitosNormalizado === '') {
+            $soloDigitosNormalizado = $soloDigitos;
+        }
+
+        $query->where(function ($subQuery) use ($campos, $like, $soloDigitos, $soloDigitosNormalizado, $searchTerm) {
+            $this->agregarCondicionesBusqueda($subQuery, $campos, $like);
+
+            if ($soloDigitos !== '' && $soloDigitos !== $searchTerm) {
+                $this->agregarCondicionesBusqueda($subQuery, $campos, '%' . $soloDigitos . '%', true);
+            }
+
+            if ($soloDigitosNormalizado !== '' && $soloDigitosNormalizado !== $soloDigitos) {
+                $this->agregarCondicionesBusqueda($subQuery, $campos, '%' . $soloDigitosNormalizado . '%', true);
+            }
+        });
+    }
+
+    private function agregarCondicionesBusqueda($query, array $campos, string $like, bool $usarOr = false): void
+    {
+        foreach (array_values(array_unique($campos)) as $index => $campo) {
+            $method = $usarOr || $index > 0 ? 'orWhereRaw' : 'whereRaw';
+            $query->$method("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower($like)]);
+        }
+    }
+
+    private function normalizarBusqueda(?string $search): ?string
+    {
+        $search = trim((string) $search);
+
+        if ($search === '') {
+            return null;
+        }
+
+        return preg_replace('/\s+/', ' ', $search);
     }
 
     public function obtenerPedidoProduccionIdPorProceso(int $procesoPrendaDetalleId): ?int

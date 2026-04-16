@@ -54,6 +54,9 @@ class AuthApiController extends Controller
 
         // Determinar la redirección según el rol del usuario
         $redirectTo = '/dashboard';
+        if ($user->hasRole('diseñador-logos') || $user->hasRole('bordador')) {
+            $redirectTo = route('visualizador-logo.pedidos-logo', absolute: false);
+        }
         if ($user->hasRole('revisor_entregas')) {
             $redirectTo = '/recibos-costura';
         }
@@ -93,6 +96,9 @@ class AuthApiController extends Controller
 
         // Determinar la redirección según el rol del usuario
         $redirectTo = '/dashboard';
+        if ($user->hasRole('diseñador-logos') || $user->hasRole('bordador')) {
+            $redirectTo = route('visualizador-logo.pedidos-logo', absolute: false);
+        }
         if ($user->hasRole('revisor_entregas')) {
             $redirectTo = '/recibos-costura';
         }

@@ -56,53 +56,53 @@ class GoogleAuthController extends Controller
     private function redirectByRole($user)
     {
         if ($user && method_exists($user, 'hasRole') && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
-            return redirect()->intended(route('visualizador-logo.pedidos-logo'));
+            return redirect()->route('visualizador-logo.pedidos-logo');
         }
 
         if ($user && method_exists($user, 'hasRole') && $user->hasRole('lider-control-calidad')) {
-            return redirect()->intended(route('control-calidad.dashboard'));
+            return redirect()->route('control-calidad.dashboard');
         }
 
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
             
             if ($roleName === 'asesor') {
-                return redirect()->intended(route('asesores.dashboard'));
+                return redirect()->route('asesores.dashboard');
             }
             
             if ($roleName === 'contador') {
-                return redirect()->intended(route('contador.index'));
+                return redirect()->route('contador.index');
             }
             
             if ($roleName === 'supervisor') {
-                return redirect()->intended(route('registros.index'));
+                return redirect()->route('registros.index');
             }
             
             if ($roleName === 'supervisor_planta') {
-                return redirect()->intended(route('registros.index'));
+                return redirect()->route('registros.index');
             }
             
             if ($roleName === 'insumos') {
-                return redirect()->intended(route('insumos.materiales.index'));
+                return redirect()->route('insumos.materiales.index');
             }
             
             if ($roleName === 'patronista') {
-                return redirect()->intended(route('insumos.materiales.index'));
+                return redirect()->route('insumos.materiales.index');
             }
             
             if ($roleName === 'aprobador_cotizaciones') {
-                return redirect()->intended(route('cotizaciones.pendientes'));
+                return redirect()->route('cotizaciones.pendientes');
             }
             
             if ($roleName === 'supervisor_pedidos') {
-                return redirect()->intended(route('supervisor-pedidos.index'));
+                return redirect()->route('supervisor-pedidos.index');
             }
             
             if ($roleName === 'cartera') {
-                return redirect()->intended(route('cartera.pedidos'));
+                return redirect()->route('cartera.pedidos');
             }
         }
         
-        return redirect()->intended(route('dashboard'));
+        return redirect()->route('dashboard');
     }
 }
