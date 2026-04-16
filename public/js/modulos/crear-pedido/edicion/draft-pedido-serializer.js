@@ -274,6 +274,14 @@
                 .trim()
                 .toUpperCase();
         };
+        const extraerTokensColor = (valor) => {
+            const normalizado = normalizarNombreRelacion(valor);
+            if (!normalizado) return [];
+            return normalizado
+                .split(',')
+                .map((v) => v.trim())
+                .filter(Boolean);
+        };
 
         const aNumeroPositivo = (valor) => {
             const num = Number(valor || 0);
@@ -301,7 +309,10 @@
                     const datos = extractor(item);
                     if (!datos) return false;
 
-                    const colorCoincide = colorNombre && datos.colorNombre === colorNombre;
+                    const colorCoincide = colorNombre && (
+                        datos.colorNombre === colorNombre ||
+                        (Array.isArray(datos.coloresTokens) && datos.coloresTokens.includes(colorNombre))
+                    );
                     const telaCoincide = telaNombre && datos.telaNombre === telaNombre;
 
                     if (colorNombre && telaNombre) return colorCoincide && telaCoincide;
@@ -321,12 +332,14 @@
                 const telaId = aNumeroPositivo(item?.tela_id);
                 const colorTelaId = aNumeroPositivo(item?.prenda_pedido_colores_telas_id || item?.id);
                 if (!colorTelaId && !(colorId && telaId)) return null;
+                const colorNormalizado = normalizarNombreRelacion(item?.color_nombre || item?.color || '');
 
                 return {
                     colorTelaId,
                     colorId,
                     telaId,
-                    colorNombre: normalizarNombreRelacion(item?.color_nombre || item?.color || ''),
+                    colorNombre: colorNormalizado,
+                    coloresTokens: extraerTokensColor(item?.color_nombre || item?.color || ''),
                     telaNombre: normalizarNombreRelacion(item?.tela_nombre || item?.tela || '')
                 };
             });
@@ -344,12 +357,14 @@
                 const telaId = aNumeroPositivo(item?.tela_id);
                 const colorTelaId = aNumeroPositivo(item?.id);
                 if (!colorTelaId && !(colorId && telaId)) return null;
+                const colorNormalizado = normalizarNombreRelacion(item?.color || '');
 
                 return {
                     colorTelaId,
                     colorId,
                     telaId,
-                    colorNombre: normalizarNombreRelacion(item?.color || ''),
+                    colorNombre: colorNormalizado,
+                    coloresTokens: extraerTokensColor(item?.color || ''),
                     telaNombre: normalizarNombreRelacion(item?.tela || '')
                 };
             });
