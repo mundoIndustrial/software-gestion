@@ -49,7 +49,6 @@ class CrearPedidoCompleteUseCase
                 $cliente->id
             );
 
-            $esBorrador = false;
             $cantidadTotalPrendas = 0;
             $cantidadTotalEpps = 0;
 
@@ -69,7 +68,6 @@ class CrearPedidoCompleteUseCase
                 $dtoPedido,
                 $datosParaServicio,
                 &$pedidoId,
-                &$esBorrador,
                 &$cantidadTotalPrendas,
                 &$cantidadTotalEpps
             ) {
@@ -86,7 +84,6 @@ class CrearPedidoCompleteUseCase
                             $borrador,
                             $datosParaServicio
                         );
-                        $esBorrador = true;
                     } else {
                         $pedido = $this->pedidoCreationCoordinator->crearPedidoCompletoDentroTransaccion(
                             $datosParaServicio,
@@ -102,15 +99,13 @@ class CrearPedidoCompleteUseCase
 
                 $pedidoId = $pedido->id;
 
-                if (!$esBorrador) {
-                    $this->pedidoImageManager->procesarCreacionPedido(
-                        $pedidoId,
-                        $dtoPedido,
-                        $input->request,
-                        $input->getPrendas(),
-                        $input->getEpps()
-                    );
-                }
+                $this->pedidoImageManager->procesarCreacionPedido(
+                    $pedidoId,
+                    $dtoPedido,
+                    $input->request,
+                    $input->getPrendas(),
+                    $input->getEpps()
+                );
 
                 $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);
                 $cantidadTotalEpps = $this->pedidoRepository->calcularCantidadTotalEpps($pedidoId);

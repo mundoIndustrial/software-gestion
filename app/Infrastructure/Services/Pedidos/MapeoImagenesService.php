@@ -225,11 +225,10 @@ class MapeoImagenesService
                     continue;
                 }
 
-                \App\Models\PrendaFotoPedido::create([
-                    'prenda_pedido_id' => $prenda->id,
-                    'ruta_webp' => $rutaFinal,
-                    'orden' => $imgIdx + 1,
-                ]);
+                \App\Models\PrendaFotoPedido::firstOrCreate(
+                    ['prenda_pedido_id' => $prenda->id, 'ruta_webp' => $rutaFinal],
+                    ['orden' => $imgIdx + 1]
+                );
 
                 Log::debug('[MapeoImagenesService] PrendaFotoPedido creado', [
                     'prenda_id' => $prenda->id,
@@ -310,11 +309,10 @@ class MapeoImagenesService
                         continue;
                     }
 
-                    \App\Models\PrendaFotoTelaPedido::create([
-                        'prenda_pedido_colores_telas_id' => $telaEnBD->id,
-                        'ruta_webp' => $rutaFinal,
-                        'orden' => $imgIdx + 1,
-                    ]);
+                    \App\Models\PrendaFotoTelaPedido::firstOrCreate(
+                        ['prenda_pedido_colores_telas_id' => $telaEnBD->id, 'ruta_webp' => $rutaFinal],
+                        ['orden' => $imgIdx + 1]
+                    );
 
                     Log::debug('[MapeoImagenesService] PrendaFotoTelaPedido creado', [
                         'tela_id' => $telaEnBD->id,
@@ -446,13 +444,10 @@ class MapeoImagenesService
                         continue;
                     }
 
-                    \App\Models\PedidosProcessImagenes::create([
-                        'proceso_prenda_detalle_id' => $procesoEnBD->id,
-                        'ruta_original' => $rutaFinal,
-                        'ruta_webp' => $rutaFinal,
-                        'orden' => $imgIdx + 1,
-                        'es_principal' => $imgIdx === 0,
-                    ]);
+                    \App\Models\PedidosProcessImagenes::firstOrCreate(
+                        ['proceso_prenda_detalle_id' => $procesoEnBD->id, 'ruta_webp' => $rutaFinal],
+                        ['ruta_original' => $rutaFinal, 'orden' => $imgIdx + 1, 'es_principal' => $imgIdx === 0]
+                    );
 
                     Log::debug('[MapeoImagenesService] PedidosProcessImagenes creado', [
                         'proceso_id' => $procesoEnBD->id,
