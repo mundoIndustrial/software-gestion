@@ -475,6 +475,71 @@ export class PedidosRecibosModule {
                 }
             }
 
+            // Fallback genérico para anexos: si el recibo base/proceso no existe en los
+            // datos del pedido, crear uno sintético usando el tipo solicitado.
+            // Esto cubre casos como REFLECTIVO ANEXO donde existe el parcial, pero la
+            // prenda no trae un proceso reflectivo base en `prenda.procesos`.
+            if (reciboIndice === -1) {
+                const tipoSintetico = String(tipoRecibo || parcialData?.tipo_recibo || '')
+                    .trim()
+                    .toLowerCase();
+                const nombreSintetico = String(
+                    nombreAnexo ||
+                    tipoRecibo ||
+                    parcialData?.tipo_recibo ||
+                    'Proceso'
+                ).trim();
+                const tiposSoportados = new Set([
+                    'costura',
+                    'costura-bodega',
+                    'reflectivo',
+                    'bordado',
+                    'estampado',
+                    'dtf',
+                    'sublimado'
+                ]);
+
+                if (tipoSintetico && tiposSoportados.has(tipoSintetico)) {
+                    console.warn('[PedidosRecibosModule.abrirReciboParcial] Recibo base no encontrado; creando recibo sintético para renderizar anexo', {
+                        solicitado: tipoRecibo,
+                        tipo_sintetico: tipoSintetico,
+                        nombre_sintetico: nombreSintetico,
+                        parcial_id: parcialId
+                    });
+
+                    const imagenesSinteticas = [];
+                    if (Array.isArray(prendaData?.imagenes)) {
+                        imagenesSinteticas.push(...prendaData.imagenes);
+                    }
+                    if (Array.isArray(prendaData?.imagenes_tela)) {
+                        imagenesSinteticas.push(...prendaData.imagenes_tela);
+                    }
+
+                    recibos.unshift({
+                        tipo: tipoSintetico,
+                        tipo_proceso: nombreSintetico,
+                        nombre_proceso: nombreSintetico,
+                        estado: parcialData?.estado || 'Pendiente',
+                        es_base: false,
+                        es_parcial: true,
+                        origen: 'PARCIAL',
+                        ubicaciones: [],
+                        observaciones: '',
+                        imagenes: imagenesSinteticas,
+                        tallas: prendaData?.tallas || {},
+                        activo: parcialData?.estado === 'APROBADO' ? 1 : 0,
+                        tipo_recibo: String(parcialData?.tipo_recibo || tipoSintetico).toUpperCase(),
+                        numero_recibo: consecutivoAnexo,
+                        consecutivo_actual: consecutivoAnexo,
+                        created_at: parcialData?.created_at || null,
+                        fecha_activacion: parcialData?.fecha_activacion || null
+                    });
+
+                    reciboIndice = 0;
+                    tipoRecibo = tipoSintetico;
+                }
+            }
+
             if (reciboIndice === -1) {
                 throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
             }

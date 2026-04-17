@@ -341,6 +341,64 @@
         transform: translateY(-1px);
     }
 
+    .recibo-parcial-select-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-width: 165px;
+    }
+
+    .select-recibo-parcial {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 100%;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 8px 34px 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .select-recibo-parcial:hover,
+    .select-recibo-parcial:focus {
+        background: #7c3aed;
+        outline: none;
+        transform: translateY(-1px);
+    }
+
+    .select-recibo-parcial option {
+        color: #111827;
+        background: white;
+    }
+
+    .recibo-parcial-select-icon,
+    .recibo-parcial-select-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        pointer-events: none;
+        font-size: 12px;
+    }
+
+    .recibo-parcial-select-icon {
+        left: 10px;
+    }
+
+    .recibo-parcial-select-arrow {
+        right: 10px;
+        font-size: 10px;
+    }
+
+    .select-recibo-parcial.has-icon {
+        padding-left: 30px;
+    }
+
     .btn-observacion-proceso {
         background: #0ea5e9;
         color: white;
@@ -433,11 +491,17 @@
         esSupervisor: {{ auth()->user()?->hasRole('supervisor') ? 'true' : 'false' }}
     };
 
-    window.generarReciboCosturaBodega = function(prendaId, pedidoId) {
+    window.generarReciboBodega = function(prendaId, pedidoId, tipoProceso) {
         try {
             const resolvedPedidoId = pedidoId || window.selectorRecibosState?.pedidoId;
+            const resolvedTipoProceso = String(tipoProceso || '').trim().toLowerCase();
             if (!resolvedPedidoId) {
                 alert('Error: no se pudo determinar el pedido');
+                return;
+            }
+
+            if (!resolvedTipoProceso) {
+                alert('Selecciona el tipo de recibo que deseas generar');
                 return;
             }
 
@@ -447,10 +511,27 @@
             }
 
             // Forzar creación de parcial de COSTURA (sin consecutivo). Aplica solo a prendas de bodega.
-            return window.abrirModalReciboParcial(prendaId, 'costura', resolvedPedidoId);
+            return window.abrirModalReciboParcial(prendaId, resolvedTipoProceso, resolvedPedidoId);
         } catch (e) {
-            console.error('[generarReciboCosturaBodega] Error:', e);
+            console.error('[generarReciboBodega] Error:', e);
             alert('Error al abrir el modal de recibo por talla');
+        }
+    };
+
+    window.generarReciboCosturaBodega = function(prendaId, pedidoId) {
+        return window.generarReciboBodega(prendaId, pedidoId, 'costura');
+    };
+
+    window.handleReciboBodegaSelect = function(selectEl, prendaId, pedidoId) {
+        try {
+            const tipoProceso = selectEl?.value || '';
+            if (!tipoProceso) return;
+
+            window.generarReciboBodega(prendaId, pedidoId, tipoProceso);
+        } finally {
+            if (selectEl) {
+                selectEl.value = '';
+            }
         }
     };
     
@@ -999,10 +1080,17 @@
                         </button>`;
 
             const botonGenerarReciboCosturaHtml = (ocultarBotonEntregar || prenda.de_bodega != 1) ? '' : `
-                        <button class="btn-recibo-parcial" onclick="event.stopPropagation(); generarReciboCosturaBodega(${prenda.id || prendaIdx}, ${window.selectorRecibosState?.pedidoId})" title="Generar recibo de costura por talla">
-                            <i class="fas fa-scissors"></i>
-                            Generar recibo costura
-                        </button>`;
+                        <div class="recibo-parcial-select-wrapper" onclick="event.stopPropagation();" title="Selecciona el tipo de recibo por talla">
+                            <i class="fas fa-file-alt recibo-parcial-select-icon"></i>
+                            <select class="select-recibo-parcial has-icon"
+                                    onclick="event.stopPropagation();"
+                                    onchange="event.stopPropagation(); handleReciboBodegaSelect(this, ${prenda.id || prendaIdx}, ${window.selectorRecibosState?.pedidoId})">
+                                <option value="">Generar recibo</option>
+                                <option value="costura">Costura</option>
+                                <option value="reflectivo">Reflectivo</option>
+                            </select>
+                            <span class="recibo-parcial-select-arrow">▼</span>
+                        </div>`;
 
             html += `
                 <div class="prenda-accordion">
@@ -1975,8 +2063,13 @@
             const procesoItem = procesoName.closest('.proceso-item');
             if (procesoItem) {
                 console.log('[PROCESO-NAME-CLICK] .proceso-item encontrado, propagando click');
-                
-                // Simular el click en el padre para ejecutar su onclick
+
+                // Frenar el click original para no duplicar la apertura:
+                // el click natural ya terminaría ejecutando el onclick del padre.
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Simular un único click controlado en el padre.
                 procesoItem.click();
             } else {
                 console.warn('[PROCESO-NAME-CLICK] .proceso-item no encontrado como padre');
