@@ -816,8 +816,8 @@
                 }
                 
                 const reciboBase = {
-                    tipo: reciboCosturaActual ? "costura" : (reciboCosturaBodegaActual ? "costura-bodega" : (prenda.de_bodega == 1 ? "costura-bodega" : "costura")),
-                    nombre: reciboCosturaActual ? "Costura" : (reciboCosturaBodegaActual ? "Bodega" : (prenda.de_bodega == 1 ? "Bodega" : "Costura")),
+                    tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
+                    nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
                     estado: estadoRecibo,
                     es_base: true,
                     numero_recibo: numeroRecibo,
