@@ -27,15 +27,21 @@ class DropdownService {
      * @returns {object} Datos extraídos
      */
     extractButtonData(button) {
+        const esVerdadero = (value) => {
+            const normalizado = String(value ?? '').trim().toLowerCase();
+            return normalizado === 'true' || normalizado === '1';
+        };
+
         return {
             menuId: button.getAttribute('data-menu-id'),
             reciboId: button.getAttribute('data-recibo-id'),
             pedidoId: button.getAttribute('data-pedido-id'),
             prendaId: button.getAttribute('data-prenda-id'),
+            numeroRecibo: button.getAttribute('data-numero-recibo'),
             tipoRecibo: button.getAttribute('data-tipo-recibo') || 'COSTURA',
-            esParcial: String(button.getAttribute('data-es-parcial') || '').toLowerCase() === 'true',
+            esParcial: esVerdadero(button.getAttribute('data-es-parcial')),
             parcialId: button.getAttribute('data-pedido-parcial-id'),
-            tieneParciales: String(button.getAttribute('data-tiene-parciales') || '').toLowerCase() === 'true',
+            tieneParciales: esVerdadero(button.getAttribute('data-tiene-parciales')),
             totalParciales: parseInt(button.getAttribute('data-total-parciales') || '0', 10) || 0
         };
     }
@@ -46,11 +52,11 @@ class DropdownService {
      * @returns {string} HTML de botones
      */
     buildDropdownButtons(data) {
-        const { reciboId, pedidoId, prendaId, tipoRecibo, esParcial, parcialId, tieneParciales, totalParciales } = data;
+        const { reciboId, pedidoId, prendaId, numeroRecibo, tipoRecibo, esParcial, parcialId, tieneParciales, totalParciales } = data;
 
         const onClickDetalles = esParcial && parcialId
-            ? `openOrderDetailModalWithParcial(${parcialId}, ${prendaId || 'null'}, '${tipoRecibo}', ${pedidoId}); DropdownService.getInstance().closeAll()`
-            : `openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, '${tipoRecibo}'); DropdownService.getInstance().closeAll()`;
+            ? `window.openOrderDetailModalWithParcial(${parcialId}, ${prendaId || 'null'}, '${tipoRecibo}', ${pedidoId}); DropdownService.getInstance().closeAll()`
+            : `window.openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, '${tipoRecibo}', null, ${numeroRecibo || 'null'}, ${reciboId || 'null'}); DropdownService.getInstance().closeAll()`;
 
         const botonDistribucion = !esParcial && tieneParciales && reciboId
             ? `
@@ -67,7 +73,7 @@ class DropdownService {
             </button>
             ${botonDistribucion}
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item-btn" onclick="abrirModalSeguimiento(${pedidoId}, ${prendaId || 'null'}); DropdownService.getInstance().closeAll()">
+            <button class="dropdown-item-btn" onclick="abrirModalSeguimiento(${pedidoId}, ${prendaId || 'null'}, ${numeroRecibo || 'null'}, ${reciboId || 'null'}, ${esParcial ? 'true' : 'false'}, ${parcialId || 'null'}); DropdownService.getInstance().closeAll()">
                 <i class="fas fa-tasks"></i> Seguimiento
             </button>
         `;

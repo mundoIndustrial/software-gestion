@@ -1,5 +1,64 @@
 @push('scripts')
 <!-- Scripts para Recibos/Procesos -->
+<script>
+// Bridge temprano para evitar "ReferenceError: openOrderDetailModalWithProcess is not defined"
+// cuando el usuario hace click antes de que loader.js termine de inicializar.
+(function () {
+    function ensureModuleInstance() {
+        if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function') {
+            return window.pedidosRecibosModule;
+        }
+
+        if (typeof window.PedidosRecibosModule === 'function') {
+            window.pedidosRecibosModule = window.pedidosRecibosModule || new window.PedidosRecibosModule();
+            return window.pedidosRecibosModule;
+        }
+
+        return null;
+    }
+
+    if (typeof window.openOrderDetailModalWithProcess !== 'function') {
+        window.openOrderDetailModalWithProcess = function (
+            pedidoId,
+            prendaId,
+            tipoRecibo,
+            prendaIndex,
+            targetConsecutivo,
+            targetReciboId
+        ) {
+            const modulo = ensureModuleInstance();
+            if (modulo) {
+                return modulo.abrirRecibo(
+                    Number(pedidoId),
+                    Number(prendaId),
+                    String(tipoRecibo || 'COSTURA'),
+                    prendaIndex ?? null,
+                    {
+                        targetConsecutivo: targetConsecutivo ?? null,
+                        targetReciboId: targetReciboId ?? null
+                    }
+                );
+            }
+
+            console.warn('[recibos-costura bridge] pedidosRecibosModule aún no está listo');
+            return;
+        };
+    }
+
+    if (typeof window.openOrderDetailModalWithParcial !== 'function') {
+        window.openOrderDetailModalWithParcial = function (parcialId, prendaId, tipoRecibo, pedidoId) {
+            const modulo = ensureModuleInstance();
+            if (modulo && typeof modulo.abrirReciboParcial === 'function') {
+                const nombreAnexo = `${String(tipoRecibo || 'COSTURA').toUpperCase()} ANEXO`;
+                return modulo.abrirReciboParcial(Number(pedidoId), Number(prendaId), String(tipoRecibo || 'COSTURA'), Number(parcialId), nombreAnexo);
+            }
+
+            console.warn('[recibos-costura bridge] abrirReciboParcial aún no está listo');
+            return;
+        };
+    }
+})();
+</script>
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 
 <!-- Script para el modal de seguimiento -->
@@ -1320,6 +1379,8 @@ function updateTableWithData(recibos) {
 // Función para crear una fila de recibo
 function createReciboRow(recibo) {
     const tr = document.createElement('tr');
+    const esParcial = Boolean(recibo.es_parcial || recibo.esParcial);
+    const pedidoParcialId = recibo.pedido_parcial_id || recibo.pedidoParcialId || recibo.parcial_id || '';
     
     // Determinar clases de días
     const dias = recibo.dias_calculados || 0;
@@ -1360,8 +1421,11 @@ function createReciboRow(recibo) {
                 data-menu-id="menu-recibo-${recibo.id}"
                 data-pedido-id="${recibo.pedido_produccion_id}"
                 data-prenda-id="${recibo.prenda_id || ''}"
+                data-numero-recibo="${recibo.consecutivo_actual || ''}"
                 data-recibo-id="${recibo.id}"
                 data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                data-es-parcial="${esParcial ? 'true' : 'false'}"
+                data-pedido-parcial-id="${pedidoParcialId}"
                 data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
                 data-total-parciales="${recibo.total_parciales || 0}">
                 <i class="fas fa-eye"></i>
@@ -1705,6 +1769,8 @@ document.addEventListener('click', function(e) {
         else if (dias > 0) diasBadge = 'bg-success';
 
         const tr = document.createElement('tr');
+        const esParcial = Boolean(recibo.es_parcial || recibo.esParcial);
+        const pedidoParcialId = recibo.pedido_parcial_id || recibo.pedidoParcialId || recibo.parcial_id || '';
         tr.className = diasClase;
         tr.setAttribute('data-orden-id', recibo.id);
         tr.setAttribute('data-pedido-id', recibo.pedido_produccion_id || '');
@@ -1716,8 +1782,11 @@ document.addEventListener('click', function(e) {
                     data-menu-id="menu-recibo-${recibo.id}"
                     data-pedido-id="${recibo.pedido_produccion_id}"
                     data-prenda-id="${recibo.prenda_id || ''}"
+                    data-numero-recibo="${recibo.consecutivo_actual || ''}"
                     data-recibo-id="${recibo.id}"
                     data-tipo-recibo="${recibo.tipo_recibo || 'COSTURA'}"
+                    data-es-parcial="${esParcial ? 'true' : 'false'}"
+                    data-pedido-parcial-id="${pedidoParcialId}"
                     data-tiene-parciales="${recibo.tiene_parciales ? 'true' : 'false'}"
                     data-total-parciales="${recibo.total_parciales || 0}">
                     <i class="fas fa-eye"></i>

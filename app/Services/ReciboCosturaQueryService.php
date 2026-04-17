@@ -127,6 +127,7 @@ class ReciboCosturaQueryService
     {
         $pedido = $recibo->pedido;
         $prenda = $recibo->prenda;
+        $metaParcial = $this->resolvePartialMeta($recibo);
 
         // Calcular cantidad total de la prenda
         $cantidadTotal = 0;
@@ -166,6 +167,38 @@ class ReciboCosturaQueryService
             'fecha_creacion_orden' => $pedido->created_at?->format('d/m/Y') ?? 'N/A',
             'tipo_recibo' => $recibo->tipo_recibo,
             'activo' => $recibo->activo,
+            'es_parcial' => (bool) ($metaParcial['es_parcial'] ?? false),
+            'pedido_parcial_id' => $metaParcial['pedido_parcial_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Determina si este consecutivo corresponde a un pedido parcial activado.
+     *
+     * @param ConsecutivoReciboPedido $recibo
+     * @return array{es_parcial: bool, pedido_parcial_id: ?int}
+     */
+    private function resolvePartialMeta(ConsecutivoReciboPedido $recibo): array
+    {
+        if (!$recibo->pedido_produccion_id || !$recibo->prenda_id || !$recibo->tipo_recibo || $recibo->consecutivo_actual === null) {
+            return ['es_parcial' => false, 'pedido_parcial_id' => null];
+        }
+
+        $row = DB::table('pedidos_parciales')
+            ->where('pedido_produccion_id', (int) $recibo->pedido_produccion_id)
+            ->where('prenda_pedido_id', (int) $recibo->prenda_id)
+            ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper((string) $recibo->tipo_recibo)])
+            ->where('consecutivo_actual', $recibo->consecutivo_actual)
+            ->orderByDesc('id')
+            ->first(['id']);
+
+        if (!$row) {
+            return ['es_parcial' => false, 'pedido_parcial_id' => null];
+        }
+
+        return [
+            'es_parcial' => true,
+            'pedido_parcial_id' => (int) $row->id,
         ];
     }
 
@@ -284,4 +317,3 @@ class ReciboCosturaQueryService
         ];
     }
 }
-

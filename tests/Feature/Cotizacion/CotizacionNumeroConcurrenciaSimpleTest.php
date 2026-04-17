@@ -29,7 +29,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     ->first();
 
                 if (!$secuencia) {
-                    $this->fail('Secuencia no encontrada. Â¿Ejecutaste el seeder?');
+                    $this->fail('Secuencia no encontrada. ¿Ejecutaste el seeder?');
                 }
 
                 $proximoNumero = $secuencia->siguiente;

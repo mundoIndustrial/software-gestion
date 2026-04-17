@@ -61,7 +61,7 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.loadOrderData] âœ“ Respuesta:', result);
+      console.log('[OrderApiService.loadOrderData]  Respuesta:', result);
 
       // Extraer datos desde la estructura del endpoint
       const orderData = result.data || result;
@@ -71,7 +71,7 @@ class OrderApiService {
 
       return orderData;
     } catch (error) {
-      console.error('[OrderApiService.loadOrderData] âœ— Error:', error);
+      console.error('[OrderApiService.loadOrderData]  Error:', error);
       throw this.#formatError('cargar datos del pedido', error);
     }
   }
@@ -92,8 +92,21 @@ class OrderApiService {
     console.log('[OrderApiService.loadPrendasWithTracking] Cargando prendas:', orderId);
 
     try {
+      const trackingCtx = globalThis.currentTrackingReceiptContext || null;
+      const params = new URLSearchParams();
+      if (trackingCtx && String(trackingCtx.pedidoId || '') === String(orderId)) {
+        if (trackingCtx.prendaId !== null && trackingCtx.prendaId !== undefined && String(trackingCtx.prendaId).trim() !== '') {
+          params.set('prenda_id', String(trackingCtx.prendaId).trim());
+        }
+        if (trackingCtx.numeroRecibo !== null && trackingCtx.numeroRecibo !== undefined && String(trackingCtx.numeroRecibo).trim() !== '') {
+          params.set('numero_recibo', String(trackingCtx.numeroRecibo).trim());
+        }
+      }
+
+      const endpoint = `/registros/${orderId}/seguimiento-prenda${params.toString() ? `?${params.toString()}` : ''}`;
+
       const response = await this.#fetchWithTimeout(
-        `/registros/${orderId}/seguimiento-prenda`,
+        endpoint,
         { method: 'GET' }
       );
 
@@ -104,7 +117,7 @@ class OrderApiService {
       }
 
       const data = await response.json();
-      console.log('[OrderApiService.loadPrendasWithTracking] âœ“ Prendas cargadas:', data.prendas?.length);
+      console.log('[OrderApiService.loadPrendasWithTracking]  Prendas cargadas:', data.prendas?.length);
 
       return {
         prendas: data.prendas || [],
@@ -112,7 +125,7 @@ class OrderApiService {
         pedido: data.pedido || {}
       };
     } catch (error) {
-      console.error('[OrderApiService.loadPrendasWithTracking] âœ— Error:', error);
+      console.error('[OrderApiService.loadPrendasWithTracking]  Error:', error);
       throw this.#formatError('cargar prendas con seguimiento', error);
     }
   }
@@ -158,10 +171,10 @@ class OrderApiService {
         throw new Error(`No hay encargados disponibles para: ${area}`);
       }
 
-      console.log('[OrderApiService.loadEncargados] âœ“ Encargados cargados:', data.encargados.length);
+      console.log('[OrderApiService.loadEncargados]  Encargados cargados:', data.encargados.length);
       return data.encargados;
     } catch (error) {
-      console.error('[OrderApiService.loadEncargados] âœ— Error:', error);
+      console.error('[OrderApiService.loadEncargados]  Error:', error);
       throw this.#formatError(`cargar encargados para ${area}`, error);
     }
   }
@@ -196,10 +209,10 @@ class OrderApiService {
       }
 
       const data = await response.json();
-      console.log('[OrderApiService.loadConsecutivoCostura] âœ“ Datos cargados');
+      console.log('[OrderApiService.loadConsecutivoCostura]  Datos cargados');
       return data;
     } catch (error) {
-      console.error('[OrderApiService.loadConsecutivoCostura] âœ— Error:', error);
+      console.error('[OrderApiService.loadConsecutivoCostura]  Error:', error);
       throw this.#formatError('cargar consecutivo-costura', error);
     }
   }
@@ -257,7 +270,7 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.calculateDeliveryDate] âœ“ Fecha calculada:', result);
+      console.log('[OrderApiService.calculateDeliveryDate]  Fecha calculada:', result);
 
       if (!result?.success) {
         throw new Error(result?.message || 'No se pudo guardar el día de entrega');
@@ -265,7 +278,7 @@ class OrderApiService {
 
       return result?.data || result;
     } catch (error) {
-      console.error('[OrderApiService.calculateDeliveryDate] âœ— Error:', error);
+      console.error('[OrderApiService.calculateDeliveryDate]  Error:', error);
       throw this.#formatError('calcular fecha de entrega', error);
     }
   }
@@ -308,11 +321,11 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.saveProceso] âœ“ Proceso guardado');
+      console.log('[OrderApiService.saveProceso]  Proceso guardado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.saveProceso] âœ— Error:', error);
+      console.error('[OrderApiService.saveProceso]  Error:', error);
       throw this.#formatError('guardar proceso', error);
     }
   }
@@ -348,11 +361,11 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.deleteProceso] âœ“ Proceso eliminado');
+      console.log('[OrderApiService.deleteProceso]  Proceso eliminado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.deleteProceso] âœ— Error:', error);
+      console.error('[OrderApiService.deleteProceso]  Error:', error);
       throw this.#formatError('eliminar proceso', error);
     }
   }
@@ -406,11 +419,11 @@ class OrderApiService {
       }
 
       const result = await response.json();
-      console.log('[OrderApiService.updateProceso] âœ“ Proceso actualizado');
+      console.log('[OrderApiService.updateProceso]  Proceso actualizado');
 
       return result;
     } catch (error) {
-      console.error('[OrderApiService.updateProceso] âœ— Error:', error);
+      console.error('[OrderApiService.updateProceso]  Error:', error);
       throw this.#formatError('actualizar proceso', error);
     }
   }

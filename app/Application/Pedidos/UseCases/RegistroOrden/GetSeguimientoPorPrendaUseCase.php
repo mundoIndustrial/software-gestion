@@ -37,7 +37,7 @@ class GetSeguimientoPorPrendaUseCase
      * Ejecutar el use case
      * GET /registros/{pedido}/seguimiento-prenda
      */
-    public function execute(string $pedido): array
+    public function execute(string $pedido, ?string $prendaId = null, ?string $numeroRecibo = null): array
     {
         try {
             \Log::info('[GetSeguimientoPorPrendaUseCase] Iniciando consulta', [
@@ -61,7 +61,7 @@ class GetSeguimientoPorPrendaUseCase
                 'pedido_id' => $pedidoId
             ]);
 
-            $prendas = $this->obtenerPrendasConSeguimiento($pedidoId, $pedidoModel);
+            $prendas = $this->obtenerPrendasConSeguimiento($pedidoId, $pedidoModel, $prendaId, $numeroRecibo);
 
             return [
                 'success' => true,
@@ -97,16 +97,21 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Obtener prendas con seguimiento completo
      */
-    private function obtenerPrendasConSeguimiento(int $pedidoId, $pedidoModel): array
+    private function obtenerPrendasConSeguimiento(int $pedidoId, $pedidoModel, ?string $prendaId = null, ?string $numeroRecibo = null): array
     {
-        $prendasDB = PrendaPedido::where('pedido_produccion_id', $pedidoId)
-            ->with(['variantes', 'procesos.tipoProceso', 'tallas'])
-            ->get();
+        $prendasQuery = PrendaPedido::where('pedido_produccion_id', $pedidoId)
+            ->with(['variantes', 'procesos.tipoProceso', 'tallas']);
+
+        if ($prendaId !== null && trim((string) $prendaId) !== '') {
+            $prendasQuery->where('id', (int) $prendaId);
+        }
+
+        $prendasDB = $prendasQuery->get();
 
         $prendasConSeguimiento = [];
 
         foreach ($prendasDB as $prenda) {
-            $seguimiento = $this->construirSeguimientoPrenda($prenda, $pedidoId, $pedidoModel);
+            $seguimiento = $this->construirSeguimientoPrenda($prenda, $pedidoId, $pedidoModel, $numeroRecibo);
             $prendasConSeguimiento[] = $seguimiento;
         }
 
@@ -116,7 +121,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Construir objeto de seguimiento para una prenda
      */
-    private function construirSeguimientoPrenda($prenda, int $pedidoId, $pedidoModel): array
+    private function construirSeguimientoPrenda($prenda, int $pedidoId, $pedidoModel, ?string $numeroReciboObjetivo = null): array
     {
         $consecutivos = $this->consecutivosRepository->obtenerTodosPorPrenda($prenda->id, $pedidoId);
 
@@ -139,11 +144,27 @@ class GetSeguimientoPorPrendaUseCase
 
         $numeroReciboCostura = null;
         $reciboCosturaId = null;
-        foreach ($consecutivos as $c) {
-            if (($c->tipo_recibo ?? null) === 'COSTURA' && !empty($c->consecutivo_actual)) {
-                $numeroReciboCostura = (int) $c->consecutivo_actual;
-                $reciboCosturaId = $c->id ?? null;
-                break;
+        $numeroReciboObjetivoNormalizado = trim((string) ($numeroReciboObjetivo ?? ''));
+        $tieneNumeroObjetivo = $numeroReciboObjetivoNormalizado !== '' && is_numeric($numeroReciboObjetivoNormalizado);
+
+        if ($tieneNumeroObjetivo) {
+            $numeroObjetivo = (int) $numeroReciboObjetivoNormalizado;
+            foreach ($consecutivos as $c) {
+                if (($c->tipo_recibo ?? null) === 'COSTURA' && (int) ($c->consecutivo_actual ?? 0) === $numeroObjetivo) {
+                    $numeroReciboCostura = $numeroObjetivo;
+                    $reciboCosturaId = $c->id ?? null;
+                    break;
+                }
+            }
+        }
+
+        if ($numeroReciboCostura === null) {
+            foreach ($consecutivos as $c) {
+                if (($c->tipo_recibo ?? null) === 'COSTURA' && !empty($c->consecutivo_actual)) {
+                    $numeroReciboCostura = (int) $c->consecutivo_actual;
+                    $reciboCosturaId = $c->id ?? null;
+                    break;
+                }
             }
         }
 
@@ -151,7 +172,8 @@ class GetSeguimientoPorPrendaUseCase
             $pedidoModel->numero_pedido,
             $prenda->id,
             $numeroReciboCostura,
-            $reciboCosturaId
+            $reciboCosturaId,
+            $tieneNumeroObjetivo
         );
         
         $procesosSeguimiento = $procesosSeguimientoData['procesos'] ?? [];
@@ -226,7 +248,8 @@ class GetSeguimientoPorPrendaUseCase
         string $numeroPedido,
         int $prendaId,
         ?int $numeroReciboCostura,
-        ?int $reciboCosturaId
+        ?int $reciboCosturaId,
+        bool $forzarNumeroRecibo = false
     ): array {
         \Log::info('[GetSeguimientoPorPrendaUseCase::obtenerYCalcularProcesos] Buscando procesos', [
             'numero_pedido' => $numeroPedido,
@@ -235,16 +258,30 @@ class GetSeguimientoPorPrendaUseCase
             'recibo_costura_id' => $reciboCosturaId
         ]);
 
-        $procesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
-            ->whereNull('deleted_at')
-            ->where(function ($q) use ($prendaId, $numeroReciboCostura) {
-                $q->where('prenda_pedido_id', $prendaId);
-                if ($numeroReciboCostura) {
-                    $q->orWhere('numero_recibo', $numeroReciboCostura);
-                }
-            })
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $baseQuery = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+            ->whereNull('deleted_at');
+
+        if ($numeroReciboCostura) {
+            // Filtrar por recibo objetivo para evitar mezclar encargados entre recibos de la misma prenda.
+            $procesos = (clone $baseQuery)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroReciboCostura)
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            // Fallback legacy: usar prenda solo cuando NO se está forzando un recibo objetivo.
+            if ($procesos->isEmpty() && !$forzarNumeroRecibo) {
+                $procesos = (clone $baseQuery)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+            }
+        } else {
+            $procesos = (clone $baseQuery)
+                ->where('prenda_pedido_id', $prendaId)
+                ->orderBy('created_at', 'asc')
+                ->get();
+        }
 
         \Log::info('[GetSeguimientoPorPrendaUseCase::obtenerYCalcularProcesos] Procesos encontrados: ' . $procesos->count(), [
             'count' => $procesos->count(),

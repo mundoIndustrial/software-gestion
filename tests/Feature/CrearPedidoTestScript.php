@@ -57,11 +57,11 @@ class CrearPedidoTestScript extends TestCase
             echo "  Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
 
             // 4. Verificar datos del pedido
-            echo "4ï¸âƒ£  Verificando datos del pedido...\n";
+            echo "  Verificando datos del pedido...\n";
             $this->verificarPedido($pedido);
 
             // 5. Verificar relaciones
-            echo "\n5ï¸âƒ£  Verificando relaciones...\n";
+            echo "\n  Verificando relaciones...\n";
             $this->verificarRelaciones($pedido);
 
             // 6. Resumen final

@@ -726,7 +726,7 @@ class InsumosGaleria {
         
         // boton anterior - LADO IZQUIERDO
         const btnAnterior = document.createElement('button');
-        btnAnterior.innerHTML = 'â€¹';
+        btnAnterior.innerHTML = '<';
         btnAnterior.style.cssText = `
             position: fixed !important;
             left: 30px !important;
@@ -765,7 +765,7 @@ class InsumosGaleria {
         
         // boton siguiente - LADO DERECHO
         const btnSiguiente = document.createElement('button');
-        btnSiguiente.innerHTML = 'â€º';
+        btnSiguiente.innerHTML = '>';
         btnSiguiente.style.cssText = `
             position: fixed !important;
             right: 30px !important;
@@ -1008,7 +1008,7 @@ function toggleFactura() {
     // Determinar estado actual
     const estaEnGaleria = galeria && galeria.style.display === 'flex';
     
-    console.log('[toggleFactura] Â¿esta en Galeria?:', estaEnGaleria);
+    console.log('[toggleFactura] ¿esta en Galeria?:', estaEnGaleria);
     
     if (estaEnGaleria) {
         // Estamos en Galeria, volver al recibo

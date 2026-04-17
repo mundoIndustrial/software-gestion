@@ -45,7 +45,7 @@ class CrearPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('âš¡ [CrearPedidoHandler] Iniciando creación de pedido', [
+            Log::info(' [CrearPedidoHandler] Iniciando creación de pedido', [
                 'numero_pedido' => $command->getNumeroPedido(),
                 'cliente' => $command->getCliente(),
                 'asesor_id' => $command->getAsesorId(),

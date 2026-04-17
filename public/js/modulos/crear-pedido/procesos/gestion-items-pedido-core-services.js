@@ -183,7 +183,7 @@ class PedidoSubmitController {
 
     _logResultadoCreacion(resultado) {
         debugLog('[gestion-items-pedido]  Resultado recibido:', resultado);
-        debugLog('[gestion-items-pedido] Â¿resultado.success?', resultado.success);
+        debugLog('[gestion-items-pedido] ¿resultado.success?', resultado.success);
         debugLog('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
         if (resultado.success) {
             debugLog('[gestion-items-pedido]  ENTRANDO AL IF - Pedido creado exitosamente');
@@ -337,24 +337,24 @@ class PedidoSuccessModalService {
         const { datosPedidoCreado = null, ctx = (key) => globalThis[key] } = options;
 
         debugLog('[mostrarModalExito]  INICIANDO');
-        debugLog('[mostrarModalExito] Â¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
-        debugLog('[mostrarModalExito] Â¿datosPedidoCreado?', datosPedidoCreado);
+        debugLog('[mostrarModalExito] ¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
+        debugLog('[mostrarModalExito] ¿datosPedidoCreado?', datosPedidoCreado);
 
         debugLog('[mostrarModalExito]  LIMPIANDO asignaciones de colores tras creacion exitosa...');
         if (typeof limpiarAsignacionesColores === 'function') {
             limpiarAsignacionesColores();
-            debugLog('[mostrarModalExito] âœ“ Asignaciones limpiadas');
+            debugLog('[mostrarModalExito]  Asignaciones limpiadas');
         } else if (ctx('StateManager') && typeof ctx('StateManager').limpiarAsignaciones === 'function') {
             logDeprecatedFallbackOnce(
                 'modal-exito-state-manager-cleanup',
                 'Se está usando fallback de limpieza via StateManager. Migra a limpiarAsignacionesColores().'
             );
             ctx('StateManager').limpiarAsignaciones();
-            debugLog('[mostrarModalExito] âœ“ Asignaciones limpiadas (StateManager)');
+            debugLog('[mostrarModalExito]  Asignaciones limpiadas (StateManager)');
         }
 
         let modalElement = document.getElementById('modalExitoPedido');
-        debugLog('[mostrarModalExito] Â¿modalElement existe?', !!modalElement);
+        debugLog('[mostrarModalExito] ¿modalElement existe?', !!modalElement);
 
         if (!modalElement) {
             debugLog('[mostrarModalExito]  Creando modal desde HTML...');
@@ -368,7 +368,7 @@ class PedidoSuccessModalService {
         }
 
         const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
-        debugLog('[mostrarModalExito] Â¿btnVolverAPedidos encontrado?', !!btnVolverAPedidos);
+        debugLog('[mostrarModalExito] ¿btnVolverAPedidos encontrado?', !!btnVolverAPedidos);
 
         if (btnVolverAPedidos) {
             debugLog('[mostrarModalExito]  Asignando onclick');

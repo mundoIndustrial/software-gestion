@@ -276,8 +276,8 @@ function cargarPrendas(prendas) {
                 descripcion: prenda.descripcion || '',
                 genero: genero,
                 // cantidad_talla es el formato que usa PrendaCardService._construirTallasYCantidades
-                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } } â€” misma estructura
-                // FIX: Backend envia [] (PHP empty array) cuando no hay tallas â€” [] es truthy en JS
+                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } }  misma estructura
+                // FIX: Backend envia [] (PHP empty array) cuando no hay tallas  [] es truthy en JS
                 cantidad_talla: (Array.isArray(generosConTallas) ? {} : generosConTallas) || {},
                 // generosConTallas vacio para que el renderer lo construya desde cantidad_talla
                 generosConTallas: {},

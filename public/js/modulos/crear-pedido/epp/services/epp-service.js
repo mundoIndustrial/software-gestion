@@ -391,8 +391,8 @@ class EppService {
             // Solo agregar a GestionItemsUI si es NUEVO (no editando)
             if (!eppId) {
                 console.log('[EppService] Agregando EPP nuevo a estado');
-                console.log('[EppService] Â¿globalThis.gestionItemsUI existe?', !!globalThis.gestionItemsUI);
-                console.log('[EppService] Â¿agregarEPPDesdeModal existe?', globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function');
+                console.log('[EppService] ¿globalThis.gestionItemsUI existe?', !!globalThis.gestionItemsUI);
+                console.log('[EppService] ¿agregarEPPDesdeModal existe?', globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function');
                 
                 // Agregar a GestionItemsUI si esta disponible (mantiene sincronizacion)
                 if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.agregarEPPDesdeModal === 'function') {
@@ -419,7 +419,7 @@ class EppService {
      */
     eliminarEPP(eppId) {
         this._mostrarModalConfirmacion(
-            'Â¿Eliminar este EPP?',
+            '¿Eliminar este EPP?',
             'Esta accion no se puede deshacer.',
             () => {
                 this.itemManager.eliminarItem(eppId);
@@ -603,7 +603,7 @@ class EppService {
             
             // Mostrar contador de resultados
             const contador = epps.length > 1 ? `<div style="padding: 0.5rem 1rem; background: #f3f4f6; font-size: 0.8rem; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
-                âœ“ Se encontraron ${epps.length} resultados
+                 Se encontraron ${epps.length} resultados
             </div>` : '';
             
             container.innerHTML = contador + html;
@@ -715,7 +715,7 @@ class EppService {
         if (globalThis.eppNotificationService) {
             globalThis.eppNotificationService.mostrarExitoModal(titulo, mensaje);
         } else {
-            alert('âœ“ ' + titulo + '\n\n' + mensaje);
+            alert(' ' + titulo + '\n\n' + mensaje);
         }
     }
 }

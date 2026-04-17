@@ -467,6 +467,13 @@ export class ReceiptRenderer {
     static _getObservacionProcesoEndpoints() {
         const path = String(window?.location?.pathname || '').toLowerCase();
 
+        if (path.includes('/insumos/')) {
+            return [
+                '/insumos/api/recibos-procesos/observacion',
+                '/api/supervisor-pedidos/recibos-procesos/observacion'
+            ];
+        }
+
         if (path.includes('/operario/')) {
             return [
                 '/operario/api/recibos-procesos/observacion',

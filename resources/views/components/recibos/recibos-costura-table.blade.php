@@ -253,8 +253,8 @@
                                 data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
                                 data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                                 data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'COSTURA' }}"
-                                data-es-parcial="{{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}"
-                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}"
+                                data-es-parcial="{{ (!empty($recibo['es_parcial']) || !empty($recibo['esParcial'])) ? 'true' : 'false' }}"
+                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? ($recibo['pedidoParcialId'] ?? ($recibo['parcial_id'] ?? '')) }}"
                                 data-recibo-id="{{ $recibo['id'] ?? '' }}"
                                 data-tiene-parciales="{{ !empty($recibo['tiene_parciales']) ? 'true' : 'false' }}"
                                 data-total-parciales="{{ $recibo['total_parciales'] ?? 0 }}">

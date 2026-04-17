@@ -5,6 +5,7 @@ namespace App\Application\UseCases\Receipts;
 use App\Application\Services\WorkingDaysCalculator;
 use App\Models\ReciboPorPartes;
 use App\Repositories\ConsecutivoReciboPedidoRepository;
+use Illuminate\Support\Facades\DB;
 
 /**
  * UseCase: Obtener datos de un recibo como JSON
@@ -55,6 +56,17 @@ class GetReceiptJsonUseCase
             ->where('consecutivo_original', $recibo->consecutivo_actual)
             ->count();
 
+        $partialRow = DB::table('pedidos_parciales')
+            ->where('pedido_produccion_id', (int) $recibo->pedido_produccion_id)
+            ->where('prenda_pedido_id', (int) $recibo->prenda_id)
+            ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper((string) $recibo->tipo_recibo)])
+            ->where('consecutivo_actual', $recibo->consecutivo_actual)
+            ->orderByDesc('id')
+            ->first(['id']);
+
+        $pedidoParcialId = $partialRow ? (int) $partialRow->id : null;
+        $esParcial = $pedidoParcialId !== null;
+
         return [
             'id'                   => $recibo->id,
             'consecutivo_actual'   => $recibo->consecutivo_actual,
@@ -73,6 +85,8 @@ class GetReceiptJsonUseCase
             'created_at'           => $recibo->created_at,
             'tiene_parciales'      => $totalParciales > 0,
             'total_parciales'      => $totalParciales,
+            'es_parcial'           => $esParcial,
+            'pedido_parcial_id'    => $pedidoParcialId,
         ];
     }
 }

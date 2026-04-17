@@ -93,14 +93,29 @@ class TrackingModalController {
      * @param {number} pedidoId - ID del pedido
      * @param {number} prendaIdTarget - ID de la prenda a mostrar (opcional)
      */
-    async open(pedidoId, prendaIdTarget) {
+    async open(pedidoId, prendaIdTarget, options = {}) {
         try {
             // Cerrar cualquier dropdown abierto
             if (typeof closeDropdownRecibos === 'function') {
                 closeDropdownRecibos();
             }
 
-            console.log('[TrackingModalController] Abriendo seguimiento para pedido:', pedidoId, 'prenda:', prendaIdTarget);
+            const numeroReciboTarget = String(options?.numeroRecibo ?? '').trim();
+            const reciboIdTarget = String(options?.reciboId ?? '').trim();
+            const pedidoParcialIdTarget = String(options?.pedidoParcialId ?? '').trim();
+            const esParcialTarget = Boolean(options?.esParcial);
+
+            // Contexto para tracking-modal-handler (evita que se muestre el activo en vez del clickeado)
+            window.currentTrackingReceiptContext = {
+                pedidoId: Number(pedidoId) || null,
+                prendaId: prendaIdTarget !== null && prendaIdTarget !== undefined ? Number(prendaIdTarget) : null,
+                numeroRecibo: numeroReciboTarget !== '' ? numeroReciboTarget : null,
+                reciboId: reciboIdTarget !== '' ? reciboIdTarget : null,
+                esParcial: esParcialTarget,
+                pedidoParcialId: pedidoParcialIdTarget !== '' ? pedidoParcialIdTarget : null
+            };
+
+            console.log('[TrackingModalController] Abriendo seguimiento para pedido:', pedidoId, 'prenda:', prendaIdTarget, 'contexto:', window.currentTrackingReceiptContext);
 
             // Inicializar datos del pedido para el tracking modal
             if (typeof openOrderTracking === 'function') {
@@ -287,16 +302,37 @@ class TrackingModalController {
         trackingModal.classList.add('show');
 
         try {
-            // Enriquecer prenda con seguimientos_por_area SIEMPRE
-            if (window.currentPrendaData && !window.currentPrendaData.seguimientos_por_area) {
+            // Enriquecer prenda con seguimientos_por_area.
+            // Si venimos desde fila con numero de recibo objetivo, forzar recarga filtrada.
+            const trackingCtx = window.currentTrackingReceiptContext || null;
+            const numeroReciboTarget = String(trackingCtx?.numeroRecibo || '').trim();
+            const shouldForceTrackingByRecibo =
+                window.currentPrendaData &&
+                numeroReciboTarget !== '' &&
+                String(trackingCtx?.pedidoId || '') === String(pedidoId) &&
+                String(trackingCtx?.prendaId || '') === String(window.currentPrendaData?.id || window.currentPrendaData?.prenda_pedido_id || '');
+
+            if (window.currentPrendaData && (!window.currentPrendaData.seguimientos_por_area || shouldForceTrackingByRecibo)) {
                 try {
                     console.log('[TrackingModalController] Obteniendo seguimientos_por_area para prenda:', {
                         prendaId: window.currentPrendaData.id,
                         prendaNombre: window.currentPrendaData.nombre_prenda,
-                        prendaPedidoId: window.currentPrendaData.prenda_pedido_id
+                        prendaPedidoId: window.currentPrendaData.prenda_pedido_id,
+                        numeroReciboTarget: numeroReciboTarget || null,
+                        forceByRecibo: shouldForceTrackingByRecibo
                     });
-                    const trackingResponse = await fetch(`/registros/${pedidoId}/seguimiento-prenda`);
-                    console.log('[TrackingModalController] GET /registros/' + pedidoId + '/seguimiento-prenda - HTTP ' + trackingResponse.status);
+                    const params = new URLSearchParams();
+                    const prendaCtxId = trackingCtx?.prendaId || window.currentPrendaData.id || window.currentPrendaData.prenda_pedido_id;
+                    if (prendaCtxId !== null && prendaCtxId !== undefined && String(prendaCtxId).trim() !== '') {
+                        params.set('prenda_id', String(prendaCtxId).trim());
+                    }
+                    if (numeroReciboTarget !== '') {
+                        params.set('numero_recibo', numeroReciboTarget);
+                    }
+
+                    const trackingUrl = `/registros/${pedidoId}/seguimiento-prenda${params.toString() ? `?${params.toString()}` : ''}`;
+                    const trackingResponse = await fetch(trackingUrl);
+                    console.log('[TrackingModalController] GET ' + trackingUrl + ' - HTTP ' + trackingResponse.status);
                     
                     if (trackingResponse.ok) {
                         const trackingData = await trackingResponse.json();

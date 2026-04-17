@@ -40,8 +40,24 @@ function verDetallesRecibo(reciboId) {
     return TrackingModalController.getInstance().viewDetails(reciboId);
 }
 
-function abrirModalSeguimiento(pedidoId, prendaIdTarget) {
-    return TrackingModalController.getInstance().open(pedidoId, prendaIdTarget);
+function abrirModalSeguimiento(
+    pedidoId,
+    prendaIdTarget,
+    numeroRecibo = null,
+    reciboId = null,
+    esParcial = false,
+    pedidoParcialId = null
+) {
+    return TrackingModalController.getInstance().open(
+        pedidoId,
+        prendaIdTarget,
+        {
+            numeroRecibo,
+            reciboId,
+            esParcial,
+            pedidoParcialId
+        }
+    );
 }
 
 function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {

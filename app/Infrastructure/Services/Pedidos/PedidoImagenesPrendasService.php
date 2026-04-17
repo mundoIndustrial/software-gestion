@@ -349,7 +349,7 @@ class PedidoImagenesPrendasService
 
     private function procesarImagenesProcesos(Request $request, int $pedidoId, int $itemIdx, array $item, $prenda): void
     {
-        Log::info('[PedidoImagenesService] âš™ï¸ Procesando procesos', [
+        Log::info('[PedidoImagenesService]  Procesando procesos', [
             'prenda_id' => $prenda->id,
             'procesos_count' => count($item['procesos']),
         ]);

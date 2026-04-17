@@ -5,6 +5,7 @@ namespace App\Application\Services;
 use App\Models\PedidoProduccion;
 use App\Models\ReciboPorPartes;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ReceiptEnricherService
@@ -27,6 +28,7 @@ class ReceiptEnricherService
     public function enriquecer(array $recibos): array
     {
         $parcialesPorRecibo = $this->obtenerMapaParcialesPorRecibo($recibos);
+        $metaParcialPorRecibo = $this->obtenerMapaMetaParcialPorRecibo($recibos);
         
         // OPTIMIZACIÓN: Cachear cálculos de días para evitar recálculos innecesarios
         // cuando hay múltiples recibos del mismo pedido
@@ -49,6 +51,7 @@ class ReceiptEnricherService
             );
 
             $totalParciales = (int) ($parcialesPorRecibo[$reciboKey] ?? 0);
+            $metaParcial = $metaParcialPorRecibo[$reciboKey] ?? null;
             
             // OPTIMIZACIÓN: Usar caché de días por pedido
             if ($pedido && !isset($diasPorPedido[$pedidoId])) {
@@ -62,8 +65,76 @@ class ReceiptEnricherService
                 'cantidad_total' => $this->cantidadCalculator->calcular($recibo),
                 'tiene_parciales' => $totalParciales > 0,
                 'total_parciales' => $totalParciales,
+                'es_parcial' => (bool) ($metaParcial['es_parcial'] ?? false),
+                'pedido_parcial_id' => $metaParcial['pedido_parcial_id'] ?? null,
             ]);
         }, $recibos);
+    }
+
+    /**
+     * Obtiene metadata de si cada recibo listado corresponde a un anexo/parcial.
+     * Match por pedido + prenda + tipo + consecutivo_actual (pedidos_parciales.consecutivo_actual).
+     *
+     * @param array $recibos
+     * @return array<string, array{es_parcial: bool, pedido_parcial_id: ?int}>
+     */
+    private function obtenerMapaMetaParcialPorRecibo(array $recibos): array
+    {
+        $pedidoIds = [];
+        $prendaIds = [];
+        $tiposRecibo = [];
+        $consecutivos = [];
+
+        foreach ($recibos as $recibo) {
+            $pedidoId = (int) ($recibo['pedido_produccion_id'] ?? 0);
+            $prendaId = (int) ($recibo['prenda_id'] ?? 0);
+            $tipoRecibo = trim((string) ($recibo['tipo_recibo'] ?? ''));
+            $consecutivo = $this->normalizeConsecutivo($recibo['consecutivo_actual'] ?? '');
+
+            if ($pedidoId <= 0 || $prendaId <= 0 || $tipoRecibo === '' || $consecutivo === '') {
+                continue;
+            }
+
+            $pedidoIds[$pedidoId] = $pedidoId;
+            $prendaIds[$prendaId] = $prendaId;
+            $tiposRecibo[strtoupper($tipoRecibo)] = strtoupper($tipoRecibo);
+            $consecutivos[$consecutivo] = $consecutivo;
+        }
+
+        if ($pedidoIds === [] || $prendaIds === [] || $tiposRecibo === [] || $consecutivos === []) {
+            return [];
+        }
+
+        $rows = DB::table('pedidos_parciales')
+            ->select([
+                'id',
+                'pedido_produccion_id',
+                'prenda_pedido_id',
+                'tipo_recibo',
+                'consecutivo_actual',
+            ])
+            ->whereNotNull('consecutivo_actual')
+            ->whereIn('pedido_produccion_id', array_values($pedidoIds))
+            ->whereIn('prenda_pedido_id', array_values($prendaIds))
+            ->whereIn(DB::raw('UPPER(tipo_recibo)'), array_values($tiposRecibo))
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $key = $this->buildReciboKey(
+                (int) $row->pedido_produccion_id,
+                (int) $row->prenda_pedido_id,
+                (string) $row->tipo_recibo,
+                $this->normalizeConsecutivo($row->consecutivo_actual)
+            );
+
+            $map[$key] = [
+                'es_parcial' => true,
+                'pedido_parcial_id' => (int) $row->id,
+            ];
+        }
+
+        return $map;
     }
 
     /**

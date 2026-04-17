@@ -260,10 +260,17 @@ class RegistroOrdenQueryController extends Controller
      * Obtener seguimiento por prenda para un pedido
      * GET /registros/{pedido}/seguimiento-prenda
      */
-    public function getSeguimientoPorPrenda($pedido)
+    public function getSeguimientoPorPrenda(Request $request, $pedido)
     {
         try {
-            $result = $this->useCasesFacade->getSeguimientoPorPrendaUseCase->execute($pedido);
+            $prendaId = $request->query('prenda_id');
+            $numeroRecibo = $request->query('numero_recibo');
+
+            $result = $this->useCasesFacade->getSeguimientoPorPrendaUseCase->execute(
+                $pedido,
+                $prendaId !== null ? (string) $prendaId : null,
+                $numeroRecibo !== null ? (string) $numeroRecibo : null
+            );
             
             if (!$result['success']) {
                 return response()->json($result, 404);

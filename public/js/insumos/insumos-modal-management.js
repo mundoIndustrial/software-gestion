@@ -392,7 +392,7 @@ function initInsumosModalManagement() {
                 data = JSON.parse(textContent);
             } catch (e) {
                 console.error('[guardarObservaciones] Respuesta no es JSON:', textContent.substring(0, 200));
-                showToast('Error: El servidor no respondio correctamente (Â¿rutas cacheadas?)', 'error');
+                showToast('Error: El servidor no respondio correctamente (¿rutas cacheadas?)', 'error');
                 return;
             }
             

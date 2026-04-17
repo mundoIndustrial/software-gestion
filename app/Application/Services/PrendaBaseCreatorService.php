@@ -58,7 +58,7 @@ class PrendaBaseCreatorService
                     'generos' => array_keys($cantidadTallaFinal),
                 ]);
             } catch (\Exception $e) {
-                \Log::error("âŒ [PRENDA #{$index}] Error guardando tallas relacionales", [
+                \Log::error("[PRENDA #{$index}] Error guardando tallas relacionales", [
                     'prenda_id' => $prenda->id,
                     'error' => $e->getMessage(),
                 ]);

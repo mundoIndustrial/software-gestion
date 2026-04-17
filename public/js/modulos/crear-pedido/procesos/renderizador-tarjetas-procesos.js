@@ -470,7 +470,7 @@ const ProcesoEditService = {
                 });
                 console.log('   - Top elementos con z-index alto:');
                 conZAlto.slice(0, 5).forEach(el => {
-                    console.log(`     âœ“ ${el.tagName}#${el.id || '(sin-id)'}.${el.className || '(sin-class)'}: z=${globalThis.getComputedStyle(el).zIndex}`);
+                    console.log(`      ${el.tagName}#${el.id || '(sin-id)'}.${el.className || '(sin-class)'}: z=${globalThis.getComputedStyle(el).zIndex}`);
                 });
             }, 100);
             

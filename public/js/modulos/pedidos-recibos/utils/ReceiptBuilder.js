@@ -17,11 +17,10 @@ export class ReceiptBuilder {
         // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
         const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
         
-        // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA solo en registros y recibos-costura
-        // PERMITIR en supervisor-pedidos para que pueda ver todos los procesos
+        // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA solo en registros.
+        // En /recibos-costura sí debe poder abrirse el recibo base COSTURA (incluyendo legacy COSTURA-BODEGA).
         const esRegistros = window.location.pathname.includes('/registros');
-        const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
-        const excluirCosturaBodega = (esRegistros || esRecibosCostura) && prenda.de_bodega == 1;
+        const excluirCosturaBodega = esRegistros && prenda.de_bodega == 1;
         
         if (excluirCosturaBodega) {
             console.log(' [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);

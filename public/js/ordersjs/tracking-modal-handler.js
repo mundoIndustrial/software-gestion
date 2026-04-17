@@ -318,6 +318,7 @@ function initTrackingModalListeners() {
   function closeTrackingModal() {
     ModalUtils.close('orderTrackingModal', () => {
       orderState.clear();
+      globalThis.currentTrackingReceiptContext = null;
     });
   }
 
@@ -410,7 +411,7 @@ function initTrackingModalListeners() {
       
       formManager.createEncargadoField(container, 'select', 'procesoEncargado', encargados);
       
-      console.log('[createEncargadoSelect] âœ“ Encargados cargados:', encargados.length);
+      console.log('[createEncargadoSelect]  Encargados cargados:', encargados.length);
     } catch (error) {
       console.error('[createEncargadoSelect] Error:', error);
       createEncargadoInput(container);
@@ -493,7 +494,7 @@ function initTrackingModalListeners() {
       
       // Poblar globalThis.currentOrderData con los datos cargados en orderState
       const snapshot = orderState.getSnapshot();
-      const prendas = orderState.getPrendas(); // â† Obtener prendas directamente, no desde snapshot
+      const prendas = orderState.getPrendas(); //  Obtener prendas directamente, no desde snapshot
       
       globalThis.currentOrderData = {
         id: snapshot.order?.id,
@@ -669,6 +670,11 @@ function initTrackingModalListeners() {
 
     const pedidoId = orderState.getOrderId() || globalThis.currentOrderData?.id || null;
     const prendaId = prenda.id || prenda.prenda_pedido_id || null;
+    const trackingReceiptContext = globalThis.currentTrackingReceiptContext || null;
+    const targetNumeroRecibo = String(trackingReceiptContext?.numeroRecibo || '').trim();
+    const matchPedido = trackingReceiptContext?.pedidoId ? String(trackingReceiptContext.pedidoId) === String(pedidoId) : true;
+    const matchPrenda = trackingReceiptContext?.prendaId ? String(trackingReceiptContext.prendaId) === String(prendaId) : true;
+    const forceTargetRecibo = targetNumeroRecibo !== '' && matchPedido && matchPrenda;
 
     console.log('[enrichPrendaForTracking] Inicio:', {
       pedidoId,
@@ -676,7 +682,9 @@ function initTrackingModalListeners() {
       prendaIdRaw: prenda.id,
       prendaPedidoIdRaw: prenda.prenda_pedido_id,
       reciboDisplayActual: prenda.recibo_display || null,
-      ultimoReciboNumeroActual: prenda.ultimo_recibo_numero || null
+      ultimoReciboNumeroActual: prenda.ultimo_recibo_numero || null,
+      targetNumeroRecibo: targetNumeroRecibo || null,
+      forceTargetRecibo
     });
 
     if (!pedidoId || !prendaId) {
@@ -693,7 +701,7 @@ function initTrackingModalListeners() {
         orderState.setConsecutivoCosturaData(consecutivoData);
         globalThis.currentConsecutivoCosturaData = consecutivoData;
 
-        if (consecutivoData.consecutivo) {
+        if (consecutivoData.consecutivo && !forceTargetRecibo) {
           const reciboTexto = `COSTURA #${consecutivoData.consecutivo}`;
           enrichedPrenda.recibo_display = reciboTexto;
           enrichedPrenda.ultimo_recibo_numero = consecutivoData.consecutivo;
@@ -716,6 +724,24 @@ function initTrackingModalListeners() {
       }
     } catch (error) {
       console.warn('[enrichPrendaForTracking] No se pudo cargar consecutivo-costura:', error);
+    }
+
+    // Prioridad absoluta al recibo seleccionado desde /recibos-costura.
+    if (forceTargetRecibo) {
+      enrichedPrenda.recibo_display = `COSTURA #${targetNumeroRecibo}`;
+      enrichedPrenda.ultimo_recibo_numero = targetNumeroRecibo;
+
+      const trackingOrderReciboEl = document.getElementById('trackingOrderRecibo');
+      if (trackingOrderReciboEl) {
+        trackingOrderReciboEl.textContent = targetNumeroRecibo;
+      }
+
+      console.log('[enrichPrendaForTracking] Recibo objetivo forzado desde contexto:', {
+        targetNumeroRecibo,
+        reciboId: trackingReceiptContext?.reciboId || null,
+        esParcial: Boolean(trackingReceiptContext?.esParcial),
+        pedidoParcialId: trackingReceiptContext?.pedidoParcialId || null
+      });
     }
 
     const hasSeguimientos = enrichedPrenda.seguimientos_por_area && Object.keys(enrichedPrenda.seguimientos_por_area).length > 0;

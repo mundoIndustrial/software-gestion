@@ -34,8 +34,24 @@
     window.Formatters = Formatters;
 
     // Exponer API publica compatibilidad con codigo antiguo
-    window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {
-        return module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+    window.openOrderDetailModalWithProcess = (
+        pedidoId,
+        prendaId,
+        tipoRecibo,
+        prendaIndex = null,
+        targetConsecutivo = null,
+        targetReciboId = null
+    ) => {
+        return module.abrirRecibo(
+            pedidoId,
+            prendaId,
+            tipoRecibo,
+            prendaIndex,
+            {
+                targetConsecutivo,
+                targetReciboId
+            }
+        );
     };
 
     window.cerrarModalRecibos = () => {

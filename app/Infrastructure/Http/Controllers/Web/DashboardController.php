@@ -21,7 +21,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            \Log::warning('âŒ DashboardController: Usuario no autenticado');
+            \Log::warning(' DashboardController: Usuario no autenticado');
             return redirect()->route('login');
         }
 
@@ -62,7 +62,7 @@ class DashboardController extends Controller
                     $redirectUrl = route('insumos.materiales.index');
                     \Log::info(' URL generada correctamente', ['url' => $redirectUrl]);
                 } catch (\Exception $e) {
-                    \Log::error('âŒ ERROR generando URL para insumos.materiales.index', [
+                    \Log::error('ERROR generando URL para insumos.materiales.index', [
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
