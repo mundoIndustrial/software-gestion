@@ -893,9 +893,20 @@
         // Función para buscar globalmente y mostrar resultados en la tabla
         async function searchOrdersGlobal() {
             const searchTerm = searchInput.value.toLowerCase().trim();
-            
+
             if (!searchTerm || searchTerm.length < 1) {
                 return false;
+            }
+
+            // Mostrar indicador de carga
+            const tableContainer = document.querySelector('.table-scroll-container');
+            let loadingMsg = document.getElementById('searchLoadingMsg');
+            if (!loadingMsg) {
+                loadingMsg = document.createElement('div');
+                loadingMsg.id = 'searchLoadingMsg';
+                loadingMsg.style.cssText = 'padding: 1.5rem; text-align: center; color: #6b7280; font-size: 0.9rem;';
+                loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Buscando en todos los registros...';
+                tableContainer.appendChild(loadingMsg);
             }
 
             try {
@@ -909,6 +920,8 @@
                 });
 
                 const data = await response.json();
+
+                if (loadingMsg) loadingMsg.remove();
 
                 if (!data.success || !data.data || data.data.length === 0) {
                     isSearching = false;
@@ -994,6 +1007,7 @@
                 return true;
             } catch (error) {
                 console.error('Error en búsqueda global:', error);
+                if (loadingMsg) loadingMsg.remove();
                 isSearching = false;
                 return false;
             }
@@ -1008,40 +1022,37 @@
             // Limpiar búsqueda
             if (!searchTerm) {
                 if (noResultsMsg) noResultsMsg.remove();
+                const loadingMsg = document.getElementById('searchLoadingMsg');
+                if (loadingMsg) loadingMsg.remove();
                 clearButton.style.display = 'none';
-                
-                // Restaurar filas originales sin recargar la página
                 restaurarFilasOriginales();
                 return;
             }
 
             clearButton.style.display = 'block';
 
-            // Buscar localmente primero
-            const visibleCount = searchOrdersLocal();
+            // Ocultar filas actuales mientras se busca globalmente
+            const rowsActuales = tableContainer.querySelectorAll('[data-pedido-row]');
+            rowsActuales.forEach(row => row.style.display = 'none');
 
-            if (visibleCount > 0) {
-                // Hay resultados en la página actual
+            // Buscar siempre en todas las páginas via API
+            const foundGlobal = await searchOrdersGlobal();
+
+            if (foundGlobal) {
                 if (noResultsMsg) noResultsMsg.remove();
             } else {
-                // No hay resultados locales, buscar globalmente
-                const foundGlobal = await searchOrdersGlobal();
-
-                if (foundGlobal) {
-                    if (noResultsMsg) noResultsMsg.remove();
-                } else {
-                    // Sin resultados en ningún lado
-                    if (!noResultsMsg) {
-                        noResultsMsg = document.createElement('div');
-                        noResultsMsg.id = 'noSearchResults';
-                        noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: #6b7280; font-size: 0.95rem;';
-                        noResultsMsg.innerHTML = `
-                            <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                            <p style="margin: 0; font-weight: 600;">No se encontraron resultados</p>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">Intenta con otro término de búsqueda</p>
-                        `;
-                        tableContainer.appendChild(noResultsMsg);
-                    }
+                // Restaurar filas y mostrar mensaje sin resultados
+                rowsActuales.forEach(row => row.style.display = 'grid');
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.id = 'noSearchResults';
+                    noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: #6b7280; font-size: 0.95rem;';
+                    noResultsMsg.innerHTML = `
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                        <p style="margin: 0; font-weight: 600;">No se encontraron resultados</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">Intenta con otro término de búsqueda</p>
+                    `;
+                    tableContainer.appendChild(noResultsMsg);
                 }
             }
         }
