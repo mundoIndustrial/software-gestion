@@ -51,7 +51,7 @@
                     <input type="text" id="buscar" placeholder="Buscar por nombre..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
                 <div class="flex items-end">
-                    <button type="button" onclick="gestorEpps.limpiarFiltros()" class="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                    <button id="btnLimpiarFiltros" type="button" onclick="gestorEpps.limpiarFiltros()" class="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
                         <span class="material-symbols-rounded">filter_alt_off</span>
                         Limpiar Filtros
                     </button>
@@ -231,6 +231,8 @@
             this.paginaActual = 1;
             this.totalPorPagina = 20;
             this.totalRegistros = 0;
+            this.currentRequestController = null;
+            this.lastRequestId = 0;
             this.filtros = {
                 buscar: ''
             };
@@ -242,6 +244,7 @@
         async init() {
             await this.cargarEpps();
             this.configurarEventListeners();
+            this.actualizarEstadoBotonLimpiar();
         }
 
         configurarEventListeners() {
@@ -251,12 +254,46 @@
                 buscarInput.addEventListener('input', (e) => {
                     this.filtros.buscar = e.target.value;
                     this.paginaActual = 1;
+                    this.actualizarEstadoBotonLimpiar();
                     this.cargarEpps();
                 });
             }
         }
 
+        actualizarEstadoBotonLimpiar() {
+            const boton = document.getElementById('btnLimpiarFiltros');
+            if (!boton) {
+                return;
+            }
+
+            const hayFiltroActivo = Boolean((this.filtros.buscar || '').trim());
+
+            boton.classList.remove(
+                'border-gray-300',
+                'text-gray-700',
+                'hover:bg-gray-50',
+                'border-amber-300',
+                'bg-amber-50',
+                'text-amber-800',
+                'hover:bg-amber-100'
+            );
+
+            if (hayFiltroActivo) {
+                boton.classList.add('border-amber-300', 'bg-amber-50', 'text-amber-800', 'hover:bg-amber-100');
+            } else {
+                boton.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+            }
+        }
+
         async cargarEpps() {
+            const requestId = ++this.lastRequestId;
+
+            if (this.currentRequestController) {
+                this.currentRequestController.abort();
+            }
+
+            this.currentRequestController = new AbortController();
+
             try {
                 console.log('[GestorEpps] Cargando EPPs...');
                 
@@ -270,8 +307,21 @@
                 params.append('per_page', this.totalPorPagina);
 
                 const url = `/api/epp/gestion?${params}`;
-                const response = await fetch(url);
-                const result = await response.json();
+                const response = await fetch(url, {
+                    signal: this.currentRequestController.signal,
+                    cache: 'no-store',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                const result = await this.parsearRespuesta(response);
+
+                // Evita que una respuesta vieja pise una mas reciente
+                if (requestId !== this.lastRequestId) {
+                    return;
+                }
                 
                 if (result.success) {
                     this.epps = result.data;
@@ -286,8 +336,16 @@
                     this.renderizarTablaVacia('Error al cargar datos');
                 }
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
                 console.error('[GestorEpps] Error en carga:', error);
                 this.renderizarTablaVacia('Error de conexion');
+            } finally {
+                if (requestId === this.lastRequestId) {
+                    this.currentRequestController = null;
+                }
             }
         }
 
@@ -451,6 +509,7 @@
                 buscar: ''
             };
             this.paginaActual = 1;
+            this.actualizarEstadoBotonLimpiar();
             this.cargarEpps();
         }
 
@@ -483,6 +542,24 @@
             document.getElementById('modalError').classList.add('hidden');
         }
 
+        async parsearRespuesta(response) {
+            const contentType = response.headers.get('content-type') || '';
+            const bodyText = await response.text();
+
+            if (contentType.includes('application/json')) {
+                try {
+                    return JSON.parse(bodyText);
+                } catch (error) {
+                    console.error('[GestorEpps] JSON invalido:', error);
+                }
+            }
+
+            return {
+                success: false,
+                message: bodyText?.slice(0, 300) || 'Respuesta no valida del servidor'
+            };
+        }
+
         async guardarEPP(event) {
             event.preventDefault();
             
@@ -496,7 +573,7 @@
 
             try {
                 const isEditing = eppId !== '';
-                const url = isEditing ? `/api/epp/${eppId}` : '/api/epp';
+                const url = isEditing ? `/epp/${eppId}` : '/epp';
                 const method = isEditing ? 'PUT' : 'POST';
 
                 const response = await fetch(url, {
@@ -513,13 +590,24 @@
                     })
                 });
 
-                const result = await response.json();
+                const result = await this.parsearRespuesta(response);
 
                 if (result.success || response.ok) {
                     const mensaje = isEditing ? 'EPP actualizado exitosamente' : 'EPP creado exitosamente';
                     this.mostrarModalExito(mensaje);
                     this.cerrarModal();
-                    setTimeout(() => this.cargarEpps(), 1500);
+
+                    if (!isEditing) {
+                        this.paginaActual = 1;
+                        this.filtros.buscar = nombreCompleto.trim();
+                        const buscarInput = document.getElementById('buscar');
+                        if (buscarInput) {
+                            buscarInput.value = this.filtros.buscar;
+                        }
+                        this.actualizarEstadoBotonLimpiar();
+                    }
+
+                    await this.cargarEpps();
                 } else if (result.epp_existente) {
                     // Mostrar modal para EPP duplicado
                     document.getElementById('eppDuplicadoNombre').textContent = result.epp_nombre;
@@ -540,8 +628,8 @@
         async editarEpp(id) {
             try {
                 // Cargar datos del EPP
-                const response = await fetch(`/api/epp/${id}`);
-                const result = await response.json();
+                const response = await fetch(`/epp/${id}`);
+                const result = await this.parsearRespuesta(response);
 
                 if (result.success && result.data) {
                     const epp = result.data;
@@ -615,14 +703,14 @@
             }
 
             try {
-                const response = await fetch(`/api/epp/${id}`, {
+                const response = await fetch(`/epp/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     }
                 });
 
-                const result = await response.json();
+                const result = await this.parsearRespuesta(response);
 
                 // Cerrar modal de confirmación
                 this.cerrarConfirmacionEliminar();
