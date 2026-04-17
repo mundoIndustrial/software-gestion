@@ -21,6 +21,46 @@ class PrendaFormCollector {
         this.notificationService = service;
     }
 
+    _crearFirmaImagen(img) {
+        const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
+        if (file) {
+            return ['file', file.name || '', file.size || 0, file.type || '', file.lastModified || 0].join('|');
+        }
+
+        const idPersistente = img?.id || img?.prenda_foto_id || null;
+        if (idPersistente) {
+            return `id|${idPersistente}`;
+        }
+
+        const rutaPersistente = img?.ruta || img?.ruta_original || img?.ruta_webp || img?.url || img?.previewUrl || '';
+        if (typeof rutaPersistente === 'string' && rutaPersistente.trim() !== '') {
+            return `ruta|${rutaPersistente.trim()}`;
+        }
+
+        return null;
+    }
+
+    _deduplicarImagenes(imagenes = [], contexto = 'imagenes') {
+        if (!Array.isArray(imagenes) || imagenes.length <= 1) {
+            return Array.isArray(imagenes) ? imagenes : [];
+        }
+
+        const vistos = new Set();
+        const resultado = [];
+
+        imagenes.forEach((img, idx) => {
+            const firma = this._crearFirmaImagen(img) || `sin-firma|${idx}`;
+            if (vistos.has(firma)) {
+                console.warn(`[prenda-form-collector] Imagen duplicada omitida en ${contexto}:`, firma);
+                return;
+            }
+            vistos.add(firma);
+            resultado.push(img);
+        });
+
+        return resultado;
+    }
+
     /**
      * Construir objeto de prenda desde el formulario modal
      * Recolecta: nombre, descripción, origen, imágenes, telas, tallas, variaciones, procesos
@@ -65,7 +105,7 @@ class PrendaFormCollector {
             });
             
             // Procesar imágenes: nuevas File objects + rutas de BD (NUNCA blob URLs que se revocaran)
-            const imagenesCopia = imagenesTemporales.map((img, imgIdx) => {
+            const imagenesCopia = this._deduplicarImagenes(imagenesTemporales.map((img, imgIdx) => {
                 console.log(`[prenda-form-collector]  PROCESANDO IMAGEN ${imgIdx}:`);
                 console.log(`[prenda-form-collector]    CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
                     previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
@@ -214,7 +254,7 @@ class PrendaFormCollector {
                 }
                 
                 return esValido;
-            });
+            }), 'prenda');
             
             console.log('[prenda-form-collector]  IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
                 cantidad: imagenesCopia.length,
@@ -455,7 +495,7 @@ class PrendaFormCollector {
                     ? tela.imagenes
                     : (Array.isArray(tela.fotos) ? tela.fotos : []);
 
-                return imagenesFuente
+                return this._deduplicarImagenes(imagenesFuente
                     .map((img) => {
                         if (img instanceof File) {
                             return img;
@@ -500,7 +540,7 @@ class PrendaFormCollector {
                         if (img instanceof File) return true;
                         if (img.file instanceof File) return true;
                         return !!(img.ruta || img.ruta_webp || img.ruta_original || img.url || img.previewUrl);
-                    });
+                    }), 'tela');
             };
 
             const mapearTelaCanonica = (tela = {}) => ({

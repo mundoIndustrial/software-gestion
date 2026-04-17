@@ -131,6 +131,11 @@ class DragDropManager {
         }
 
         document.addEventListener('paste', (e) => {
+            if (e.__prendasPasteHandled === true) {
+                UIHelperService.log('DragDropManager', 'Paste ya procesado previamente, ignorando listener duplicado');
+                return;
+            }
+
             UIHelperService.log('DragDropManager', ' EVENTO PASTE DETECTADO');
             
             // ── PASO 0: Sub-modales registrados tienen prioridad ──
@@ -143,6 +148,7 @@ class DragDropManager {
                     if (items) {
                         for (let i = 0; i < items.length; i++) {
                             if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+                                e.__prendasPasteHandled = true;
                                 e.preventDefault();
                                 e.stopPropagation();
                                 const file = items[i].getAsFile();
@@ -430,6 +436,7 @@ class DragDropManager {
             }
             
             // Si hay imágenes, interceptar el evento para procesarlas
+            e.__prendasPasteHandled = true;
             e.preventDefault();
             e.stopPropagation();
             

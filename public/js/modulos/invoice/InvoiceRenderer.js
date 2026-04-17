@@ -13,6 +13,33 @@ class InvoiceRenderer {
         window.generarHTMLFactura = this.generarHTMLFactura.bind(this);
     }
 
+    obtenerImagenesUnicas(imagenes) {
+        if (!Array.isArray(imagenes) || imagenes.length <= 1) {
+            return Array.isArray(imagenes) ? imagenes : [];
+        }
+
+        const vistas = new Set();
+        const unicas = [];
+
+        imagenes.forEach((img) => {
+            const url = typeof window._extraerURLImagen === 'function'
+                ? window._extraerURLImagen(img)
+                : '';
+            const firma = (typeof url === 'string' && url.trim() !== '')
+                ? url.trim()
+                : JSON.stringify(img || {});
+
+            if (vistas.has(firma)) {
+                return;
+            }
+
+            vistas.add(firma);
+            unicas.push(img);
+        });
+
+        return unicas;
+    }
+
     /**
      * Genera el HTML de la factura con los datos en tiempo real
      */
@@ -80,6 +107,8 @@ class InvoiceRenderer {
      * Renderiza una prenda individual
      */
     renderizarPrenda(prenda, idx) {
+        const imagenesPrenda = this.obtenerImagenesUnicas(prenda.imagenes || []);
+
         // Renderizar variantes
         const variantesHTML = this.renderizarVariantes(prenda);
 
@@ -107,8 +136,8 @@ class InvoiceRenderer {
                     <!-- Columna 1: Imagen + Nombre -->
                     <div style="display: flex; gap: 8px; align-items: flex-start;">
                         <div style="flex-shrink: 0;">
-                            ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
-                                <img src="${window._extraerURLImagen(prenda.imagenes[0])}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
+                            ${(imagenesPrenda.length > 0) ? `
+                                <img src="${window._extraerURLImagen(imagenesPrenda[0])}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(imagenesPrenda, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
                             ` : `
                                 <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;"></div>
                             `}

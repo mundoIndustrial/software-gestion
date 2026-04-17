@@ -19,12 +19,33 @@ globalThis.manejarImagenesPrenda = function(input) {
     }
     
     try {
+        const archivo = input.files[0];
+        const ahora = Date.now();
+        const firmaArchivo = [
+            archivo.name || 'sin-nombre',
+            archivo.size || 0,
+            archivo.type || 'sin-tipo',
+            archivo.lastModified || 0
+        ].join('|');
+
+        if (
+            globalThis.__prendaUltimaImagenSig === firmaArchivo &&
+            (ahora - (globalThis.__prendaUltimaImagenTs || 0)) < 800
+        ) {
+            console.warn('[manejarImagenesPrenda] Imagen duplicada detectada en ventana corta, ignorando');
+            input.value = '';
+            return;
+        }
+
+        globalThis.__prendaUltimaImagenSig = firmaArchivo;
+        globalThis.__prendaUltimaImagenTs = ahora;
+
         if (!globalThis.imagenesPrendaStorage) {
             alert('Error: Servicio de almacenamiento de imágenes no inicializado');
             return;
         }
         
-        globalThis.imagenesPrendaStorage.agregarImagen(input.files[0])
+        globalThis.imagenesPrendaStorage.agregarImagen(archivo)
             .then(() => {
                 //  CRÍTICO: Detectar si estamos en creación o edición
                 const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
@@ -349,4 +370,3 @@ globalThis.agregarControlesNavegacionPrenda = function(preview, imagenes) {
     
     console.log(`[agregarControlesNavegacionPrenda] Controles de navegación agregados para ${imagenes.length} imágenes`);
 }
-

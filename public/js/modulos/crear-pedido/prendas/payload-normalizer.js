@@ -81,10 +81,34 @@
         });
     }
 
+    function crearFirmaImagenNormalizada(img, idx) {
+        const formdataKey = img?.formdata_key || null;
+        if (typeof formdataKey === 'string' && formdataKey.length > 0) {
+            return `formdata|${formdataKey}`;
+        }
+
+        const ruta = img?.url || img?.preview || img?.ruta_webp || img?.ruta_original || img?.ruta || '';
+        if (typeof ruta === 'string' && ruta.length > 0) {
+            return `ruta|${ruta}`;
+        }
+
+        const uid = img?.uid || null;
+        if (uid) {
+            return `uid|${uid}`;
+        }
+
+        const nombre = img?.nombre_archivo || img?.name || '';
+        if (typeof nombre === 'string' && nombre.length > 0) {
+            return `nombre|${nombre}|${idx}`;
+        }
+
+        return `idx|${idx}`;
+    }
+
     function normalizarImagenes(imagenesRaw) {
         if (!Array.isArray(imagenesRaw)) return [];
         
-        return imagenesRaw.filter(function(img) {
+        const normalizadas = imagenesRaw.filter(function(img) {
             return img !== null && img !== undefined;
         }).map(function(img) {
             // Si es una imagen EXISTENTE (viene como URL/ruta), preservar la ruta
@@ -121,6 +145,16 @@
                 nombre_archivo: img.nombre_archivo || img.name || '',
                 formdata_key: img.formdata_key || null
             };
+        });
+
+        const vistas = new Set();
+        return normalizadas.filter(function(img, idx) {
+            const firma = crearFirmaImagenNormalizada(img, idx);
+            if (vistas.has(firma)) {
+                return false;
+            }
+            vistas.add(firma);
+            return true;
         });
     }
 

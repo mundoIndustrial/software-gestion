@@ -226,6 +226,9 @@ globalThis.WizardManager = (function() {
                     btn.style.fontWeight = '500';
                 }
             });
+
+            // Auto-avanzar al paso siguiente tras breve pausa visual
+            setTimeout(() => this.pasoSiguiente(), 250);
         },
 
         /**

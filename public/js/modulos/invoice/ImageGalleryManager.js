@@ -23,6 +23,31 @@ class ImageGalleryManager {
         globalThis._idGaleriaPreview = 0;
     }
 
+    deduplicarImagenes(imagenes) {
+        if (!Array.isArray(imagenes) || imagenes.length <= 1) {
+            return Array.isArray(imagenes) ? imagenes : [];
+        }
+
+        const vistas = new Set();
+        const unicas = [];
+
+        imagenes.forEach((img) => {
+            const url = this.extraerURLImagen(img);
+            const firma = (typeof url === 'string' && url.trim() !== '')
+                ? url.trim()
+                : JSON.stringify(img || {});
+
+            if (vistas.has(firma)) {
+                return;
+            }
+
+            vistas.add(firma);
+            unicas.push(img);
+        });
+
+        return unicas;
+    }
+
     /**
      * Extrae URL de una imagen (puede ser string u objeto)
      */
@@ -92,7 +117,7 @@ class ImageGalleryManager {
         if (!Array.isArray(imagenes) || imagenes.length === 0) return null;
         
         const id = this.idGaleria++;
-        this.galerías[id] = { imagenes, titulo };
+        this.galerías[id] = { imagenes: this.deduplicarImagenes(imagenes), titulo };
         
         // Sincronizar con variable global para compatibilidad
         globalThis._idGaleriaPreview = this.idGaleria;
@@ -122,15 +147,17 @@ class ImageGalleryManager {
             console.warn('[GALERIA-DEBUG] Array de imágenes vacío o inválido');
             return;
         }
+
+        const imagenesUnicas = this.deduplicarImagenes(imagenes);
         
         // Normalizar imagenes
-        const imagenesNormalizadas = imagenes.map(img => {
+        const imagenesNormalizadas = imagenesUnicas.map(img => {
             if (typeof img === 'string') {
                 return this.extraerURLImagen(img);
             } else {
                 return this.extraerURLImagen(img);
             }
-        });
+        }).filter(Boolean);
         
         console.log('[GALERIA-DEBUG] URLs normalizadas:', { cantidad: imagenesNormalizadas.length, primeraURL: imagenesNormalizadas[0] });
         

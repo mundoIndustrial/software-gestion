@@ -28,6 +28,46 @@ class ItemAPIService {
         return document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
 
+    _crearFirmaImagen(img) {
+        const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
+        if (file) {
+            return ['file', file.name || '', file.size || 0, file.type || '', file.lastModified || 0].join('|');
+        }
+
+        const idPersistente = img?.id || img?.prenda_foto_id || img?.uid || null;
+        if (idPersistente) {
+            return `id|${idPersistente}`;
+        }
+
+        const rutaPersistente = img?.ruta || img?.ruta_original || img?.ruta_webp || img?.url || img?.previewUrl || '';
+        if (typeof rutaPersistente === 'string' && rutaPersistente.trim() !== '') {
+            return `ruta|${rutaPersistente.trim()}`;
+        }
+
+        return null;
+    }
+
+    _deduplicarImagenesDeArray(imagenes = [], contexto = 'imagenes') {
+        if (!Array.isArray(imagenes) || imagenes.length <= 1) {
+            return Array.isArray(imagenes) ? imagenes : [];
+        }
+
+        const vistos = new Set();
+        const resultado = [];
+
+        imagenes.forEach((img, idx) => {
+            const firma = this._crearFirmaImagen(img) || `sin-firma|${idx}`;
+            if (vistos.has(firma)) {
+                console.warn(`[ItemAPIService] Imagen duplicada omitida en ${contexto}:`, firma);
+                return;
+            }
+            vistos.add(firma);
+            resultado.push(img);
+        });
+
+        return resultado;
+    }
+
     /**
      * Realizar petición HTTP genérica
      * @private
@@ -784,7 +824,12 @@ class ItemAPIService {
                 // 1. IMÁGENES DE PRENDA
                 // ==========================================
                 if (Array.isArray(item.imagenes)) {
-                    console.log(`[extraerFiles]  Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
+                    const imagenesUnicasPrenda = this._deduplicarImagenesDeArray(
+                        item.imagenes,
+                        `prenda[${prendaIdx}]`
+                    );
+
+                    console.log(`[extraerFiles]  Procesando ${imagenesUnicasPrenda.length} imágenes de prenda:`, imagenesUnicasPrenda.map(img => ({
                         tiene_ruta: !!img.ruta,
                         ruta: img.ruta,
                         uid: img.uid,
@@ -794,7 +839,7 @@ class ItemAPIService {
                         urlDesdeDB: img.urlDesdeDB
                     })));
                     
-                    item.imagenes.forEach((img, imgIdx) => {
+                    imagenesUnicasPrenda.forEach((img, imgIdx) => {
                         if (img instanceof File) {
                             // Generar formdata_key y guardarlo para referencia
                             const formdataKey = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;

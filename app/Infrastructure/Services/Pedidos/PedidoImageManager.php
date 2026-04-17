@@ -26,14 +26,9 @@ class PedidoImageManager
     ): void {
         $this->pedidoImagenesService->crearCarpetasPedido($pedidoId);
         $this->mapeoImagenesService->mapearYCrearFotos($dtoPedido, $pedidoId, $request);
-
-        $prendasDB = \App\Models\PedidoProduccion::findOrFail($pedidoId)
-            ->prendas()
-            ->get();
-
-        foreach ($prendasDB as $indice => $prendaDB) {
-            $this->pedidoImagenesService->procesarImagenesPrenda($request, $pedidoId, $indice, $prendaDB);
-        }
+        // En creacion normal, las imagenes generales de prenda ya quedan
+        // resueltas y persistidas por MapeoImagenesService. Reprocesarlas aqui
+        // vuelve a subir el mismo archivo y duplica PrendaFotoPedido.
 
         if (!empty($epps)) {
             $this->pedidoImagenesService->procesarImagenesDeEpps($request, $pedidoId, $epps);

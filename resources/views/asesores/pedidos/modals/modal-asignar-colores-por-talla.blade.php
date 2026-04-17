@@ -58,7 +58,7 @@
                         <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.85rem;">¿Con qué tela trabajarás?</p>
                         
                         <div style="max-width: 400px; margin: 0 auto;">
-                            <input type="text" id="wizard-tela-input" placeholder="Escribe el nombre de la tela..." list="opciones-telas" class="form-input" style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; text-transform: uppercase; border: 2px solid #d1d5db; border-radius: 8px; text-align: center;" onkeyup="this.value = this.value.toUpperCase();" oninput="wizardValidarTelaInput(this)">
+                            <input type="text" id="wizard-tela-input" placeholder="Escribe el nombre de la tela..." list="opciones-telas" class="form-input" style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; text-transform: uppercase; border: 2px solid #d1d5db; border-radius: 8px; text-align: center;" onkeyup="this.value = this.value.toUpperCase(); if(event.key==='Enter' && this.value.trim()) WizardManager.pasoSiguiente();" oninput="wizardValidarTelaInput(this)">
                         </div>
 
                         <!-- Selector rápido de telas existentes (si hay en telasCreacion) -->

@@ -160,6 +160,11 @@ class DragDropEventHandler {
         // Evento paste
         this.elemento.addEventListener('paste', (e) => {
             if (!this.estaActivo) return;
+
+            if (e.__prendasPasteHandled === true) {
+                UIHelperService.log('DragDropEventHandler', 'Paste ya procesado globalmente, ignorando handler local');
+                return;
+            }
             
             UIHelperService.log('DragDropEventHandler', ' EVENTO PASTE LOCAL DETECTADO');
             
@@ -188,6 +193,7 @@ class DragDropEventHandler {
             
             // Si hay imágenes, interceptar el evento para procesarlas
             UIHelperService.log('DragDropEventHandler', ' Imágenes detectadas en portapapeles local, interceptando para procesar');
+            e.__prendasPasteHandled = true;
             e.preventDefault();
             e.stopPropagation();
             
