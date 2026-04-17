@@ -232,6 +232,23 @@ function crearDropdownAcciones(event, button) {
         </button>
     `;
 
+    if (estado !== 'Anulada') {
+        html += `
+        <button data-insumos-action="dropdown-acciones-anular-recibo"
+            data-recibo-id="${reciboId}"
+            data-consecutivo="${consecutivo}"
+            style="
+            width:100%;text-align:left;padding:0.875rem 1rem;border:none;
+            background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
+            transition:all 0.2s ease;display:flex;align-items:center;gap:0.75rem;
+            font-weight:500;border-bottom:1px solid #f3f4f6;
+        ">
+            <i class="fas fa-ban" style="color:#dc2626;font-size:1rem;"></i>
+            <span>Anular recibo</span>
+        </button>
+        `;
+    }
+
     const estadosProduccion = ['CORTE','EN_CORTE','ENVIADO_PRODUCCION','EN_PRODUCCION','CORTANDO','EN_EJECUCIÓN','En Ejecución','EN_COSTURA'];
     const yaEnProduccion = estadosProduccion.some(s => estado && estado.toUpperCase().includes(s.toUpperCase()));
 

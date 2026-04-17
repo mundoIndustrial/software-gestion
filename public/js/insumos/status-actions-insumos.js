@@ -433,6 +433,78 @@ function actualizarColorSelect(selectElement, estado) {
     }
 }
 
+async function anularReciboInsumos(reciboId, consecutivo) {
+    if (!reciboId) {
+        showToast('No se encontro el recibo a anular', 'error');
+        return;
+    }
+
+    let motivo = '';
+
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+        const result = await window.Swal.fire({
+            title: `Anular recibo #${consecutivo || reciboId}`,
+            text: 'Esta accion cambiara el estado del recibo a Anulada.',
+            input: 'textarea',
+            inputLabel: 'Motivo de anulacion',
+            inputPlaceholder: 'Describe por que se anula este recibo...',
+            inputAttributes: {
+                maxlength: 500,
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Anular recibo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            reverseButtons: true,
+            inputValidator: (value) => {
+                if (!value || value.trim().length < 10) {
+                    return 'El motivo debe tener al menos 10 caracteres.';
+                }
+                return null;
+            }
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        motivo = String(result.value || '').trim();
+    } else {
+        const valor = prompt('Motivo de anulacion (minimo 10 caracteres):');
+        if (valor === null) return;
+        motivo = String(valor).trim();
+        if (motivo.length < 10) {
+            showToast('El motivo debe tener al menos 10 caracteres', 'error');
+            return;
+        }
+    }
+
+    try {
+        const response = await fetch(`/insumos/materiales/${reciboId}/anular`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ motivo })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP ${response.status}`);
+        }
+
+        showToast(data.message || 'Recibo anulado correctamente', 'success');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1200);
+    } catch (error) {
+        console.error('Error anulando recibo:', error);
+        showToast(error.message || 'Error al anular el recibo', 'error');
+    }
+}
+
 function exportStatusActionsInsumos() {
     window.insumosHandlers = window.insumosHandlers || {};
     window.insumosHandlers.statusActions = {
@@ -442,6 +514,7 @@ function exportStatusActionsInsumos() {
         cerrarModalConfirmarProduccion,
         restaurarBotonAprobar,
         confirmarEnvioProduccion,
+        anularReciboInsumos,
     };
     
     // Función para aplicar estilos de color según el estado

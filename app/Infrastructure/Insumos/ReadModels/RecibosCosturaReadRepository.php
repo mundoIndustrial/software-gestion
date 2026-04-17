@@ -7,12 +7,84 @@ use Illuminate\Support\Facades\DB;
 
 class RecibosCosturaReadRepository
 {
+    private function actividadPrendaExpressionJoin(): string
+    {
+        return "CASE
+            WHEN consecutivos_recibos_pedidos.prenda_id IS NULL THEN NULL
+            ELSE GREATEST(
+                COALESCE(prenda_max.updated_at, '1970-01-01 00:00:00'),
+                COALESCE(tallas_max.updated_at, '1970-01-01 00:00:00'),
+                COALESCE(talla_colores_max.updated_at, '1970-01-01 00:00:00'),
+                COALESCE(colores_telas_max.updated_at, '1970-01-01 00:00:00'),
+                COALESCE(variantes_max.updated_at, '1970-01-01 00:00:00')
+            )
+        END";
+    }
+
+    private function applyActividadPrendaJoins($query)
+    {
+        return $query
+            ->leftJoinSub(
+                DB::table('prendas_pedido')
+                    ->select('id as prenda_id', DB::raw('MAX(updated_at) as updated_at'))
+                    ->whereNull('deleted_at')
+                    ->groupBy('id'),
+                'prenda_max',
+                'prenda_max.prenda_id',
+                '=',
+                'consecutivos_recibos_pedidos.prenda_id'
+            )
+            ->leftJoinSub(
+                DB::table('prenda_pedido_tallas')
+                    ->select('prenda_pedido_id', DB::raw('MAX(updated_at) as updated_at'))
+                    ->groupBy('prenda_pedido_id'),
+                'tallas_max',
+                'tallas_max.prenda_pedido_id',
+                '=',
+                'consecutivos_recibos_pedidos.prenda_id'
+            )
+            ->leftJoinSub(
+                DB::table('prenda_pedido_talla_colores as pptc')
+                    ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                    ->select('ppt.prenda_pedido_id', DB::raw('MAX(pptc.updated_at) as updated_at'))
+                    ->groupBy('ppt.prenda_pedido_id'),
+                'talla_colores_max',
+                'talla_colores_max.prenda_pedido_id',
+                '=',
+                'consecutivos_recibos_pedidos.prenda_id'
+            )
+            ->leftJoinSub(
+                DB::table('prenda_pedido_colores_telas')
+                    ->select('prenda_pedido_id', DB::raw('MAX(updated_at) as updated_at'))
+                    ->groupBy('prenda_pedido_id'),
+                'colores_telas_max',
+                'colores_telas_max.prenda_pedido_id',
+                '=',
+                'consecutivos_recibos_pedidos.prenda_id'
+            )
+            ->leftJoinSub(
+                DB::table('prenda_pedido_variantes')
+                    ->select('prenda_pedido_id', DB::raw('MAX(updated_at) as updated_at'))
+                    ->groupBy('prenda_pedido_id'),
+                'variantes_max',
+                'variantes_max.prenda_pedido_id',
+                '=',
+                'consecutivos_recibos_pedidos.prenda_id'
+            );
+    }
+
     public function buildBaseQuery()
     {
-        return DB::table('consecutivos_recibos_pedidos')
+        $actividadPrendaExpr = $this->actividadPrendaExpressionJoin();
+
+        $query = DB::table('consecutivos_recibos_pedidos')
             ->where('tipo_recibo', 'COSTURA')
             ->where('activo', 1)
-            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
+            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
+
+        $query = $this->applyActividadPrendaJoins($query);
+
+        return $query
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
@@ -21,15 +93,17 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.cliente',
                 'pedidos_produccion.estado as pedido_estado',
                 'pedidos_produccion.area as pedido_area',
+                'pedidos_produccion.novedades as pedido_novedades',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
                 'pedidos_produccion.created_at',
                 'pedidos_produccion.dia_de_entrega',
-                'pedidos_produccion.fecha_estimada_de_entrega'
+                'pedidos_produccion.fecha_estimada_de_entrega',
+                DB::raw("{$actividadPrendaExpr} as actividad_prenda_en")
             )
             ->where(function ($q) {
                 // Mostrar recibos que estén en PENDIENTE_INSUMOS (estado del RECIBO, no del pedido)
-                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
+                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'Anulada'])
                     // O también mostrar si el área del RECIBO está en CORTE o COSTURA
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
             })
@@ -43,10 +117,16 @@ class RecibosCosturaReadRepository
      */
     public function buildBaseQueryForFiltering()
     {
-        return DB::table('consecutivos_recibos_pedidos')
+        $actividadPrendaExpr = $this->actividadPrendaExpressionJoin();
+
+        $query = DB::table('consecutivos_recibos_pedidos')
             ->where('tipo_recibo', 'COSTURA')
             ->where('activo', 1)
-            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
+            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
+
+        $query = $this->applyActividadPrendaJoins($query);
+
+        return $query
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
@@ -55,11 +135,13 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.cliente',
                 'pedidos_produccion.estado as pedido_estado',
                 'pedidos_produccion.area as pedido_area',
+                'pedidos_produccion.novedades as pedido_novedades',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
                 'pedidos_produccion.created_at',
                 'pedidos_produccion.dia_de_entrega',
-                'pedidos_produccion.fecha_estimada_de_entrega'
+                'pedidos_produccion.fecha_estimada_de_entrega',
+                DB::raw("{$actividadPrendaExpr} as actividad_prenda_en")
             )
             // Solo la exclusion de PENDIENTE_SUPERVISOR, sin los filtros por defecto
             ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
@@ -134,6 +216,8 @@ class RecibosCosturaReadRepository
                         'Pendiente Insumos' => 'PENDIENTE_INSUMOS',
                         'Pendiente Tela' => 'PENDIENTE_TELA',
                         'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
+                        'Devuelto Asesor' => 'DEVUELTO_ASESOR',
+                        'Devuelto_Asesor' => 'DEVUELTO_ASESOR',
                         default => $v,
                     },
                     $values

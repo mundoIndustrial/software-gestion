@@ -1,3 +1,53 @@
+function normalizarEstadoPedido(estado) {
+    if (!estado || typeof estado !== 'string') {
+        return '';
+    }
+
+    return estado
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function obtenerEstadoPedidoDesdeFila(pedidoId) {
+    if (!pedidoId) {
+        return '';
+    }
+
+    const fila = document.querySelector(`[data-pedido-row][data-pedido-id="${pedidoId}"]`);
+    return fila?.getAttribute('data-estado') || '';
+}
+
+function mostrarBloqueoAnulacionPorEjecucion() {
+    Swal.fire({
+        title: 'No se puede anular',
+        text: 'Este pedido ya se encuentra en ejecución. Comunícate con el líder de producción para poder anularlo.',
+        icon: 'info',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido',
+        position: 'center',
+        didOpen: () => {
+            const modal = document.querySelector('.swal2-popup');
+            if (modal) {
+                modal.style.position = 'fixed';
+                modal.style.top = '50%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translate(-50%, -50%)';
+                modal.style.zIndex = '999999';
+            }
+
+            const container = document.querySelector('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.position = 'fixed';
+                container.style.zIndex = '999998';
+            }
+        }
+    });
+}
 /**
  * Funcionalidad para anular pedidos - Asesores
  */
@@ -5,7 +55,14 @@
 /**
  * Confirmar anulación de pedido
  */
-function confirmarAnularPedido(pedidoId, numeroPedido) {
+function confirmarAnularPedido(pedidoId, numeroPedido, estadoPedido = null) {
+    const estadoActual = estadoPedido ?? obtenerEstadoPedidoDesdeFila(pedidoId);
+    const estadoNormalizado = normalizarEstadoPedido(estadoActual);
+
+    if (estadoNormalizado === 'en ejecucion') {
+        mostrarBloqueoAnulacionPorEjecucion();
+        return;
+    }
     Swal.fire({
         title: '¿Anular Pedido?',
         html: `
@@ -431,3 +488,4 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
         });
     });
 }
+

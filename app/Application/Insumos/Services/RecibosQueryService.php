@@ -6,6 +6,7 @@ use App\Infrastructure\Insumos\ReadModels\RecibosCosturaReadRepository;
 use App\Infrastructure\Insumos\ReadModels\RecibosMaterialesMapBuilder;
 use App\Infrastructure\Insumos\ReadModels\RecibosViewTransformer;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class RecibosQueryService
 {
@@ -61,11 +62,26 @@ class RecibosQueryService
             );
             \Log::info(' Filtros aplicados');
 
-            $allRecibos = $query->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')->get();
-            \Log::info(' Recibos obtenidos de BD', ['total' => $allRecibos->count()]);
+            $page = (int) $request->get('page', 1);
+            $perPage = 10;
+
+            // Orden tipo "correo" por actividad real de la prenda.
+            // Prioriza cambios en prenda/tallas/colores/variantes; si no hay, usa timestamps del recibo.
+            $paginador = $query
+                ->orderByRaw('COALESCE(actividad_prenda_en, consecutivos_recibos_pedidos.updated_at, consecutivos_recibos_pedidos.created_at) DESC')
+                ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            /** @var Collection<int, object> $recibosPagina */
+            $recibosPagina = $paginador->getCollection();
+            \Log::info(' Recibos obtenidos de BD (paginado)', [
+                'pagina' => $paginador->currentPage(),
+                'pagina_total_items' => $recibosPagina->count(),
+                'total_general' => $paginador->total(),
+            ]);
 
             try {
-                $parcialCreatedAtMap = $this->repository->obtenerMapaParciales($allRecibos);
+                $parcialCreatedAtMap = $this->repository->obtenerMapaParciales($recibosPagina);
                 \Log::info(' Mapa de parciales obtenido');
             } catch (\Exception $e) {
                 \Log::warning('Error obteniendo parciales: ' . $e->getMessage());
@@ -73,7 +89,7 @@ class RecibosQueryService
             }
 
             try {
-                $materialesMap = $this->materialesMapBuilder->build($allRecibos);
+                $materialesMap = $this->materialesMapBuilder->build($recibosPagina);
                 \Log::info(' Mapa de materiales obtenido');
             } catch (\Exception $e) {
                 \Log::warning('Error obteniendo materiales: ' . $e->getMessage());
@@ -81,38 +97,24 @@ class RecibosQueryService
             }
 
             $recibosTransformados = $this->transformer->transform(
-                $allRecibos,
+                $recibosPagina,
                 $parcialCreatedAtMap,
                 $calcularDiasCallback,
                 $materialesMap
             );
             \Log::info(' Recibos transformados');
 
-            $page = (int) $request->get('page', 1);
-            $perPage = 10;
-            $total = $recibosTransformados->count();
-            $items = $recibosTransformados->slice(($page - 1) * $perPage, $perPage)->values();
-
             $paginadorUrl = route('insumos.materiales.index');
             \Log::info(' Configurando paginador', [
-                'total' => $total,
+                'total' => $paginador->total(),
                 'plan' => $page,
                 'pagina_url' => $paginadorUrl,
             ]);
 
-            $paginador = new LengthAwarePaginator(
-                $items,
-                $total,
-                $perPage,
-                $page,
-                [
-                    'path' => $paginadorUrl,
-                    'query' => $request->query(),
-                ]
-            );
-
+            $paginador->setCollection($recibosTransformados->values());
+            $paginador->setPath($paginadorUrl);
             $paginador->appends($request->query());
-            \Log::info(" RecibosQueryService completado: Total = {$total} recibos");
+            \Log::info(" RecibosQueryService completado: Total = {$paginador->total()} recibos");
 
             return $paginador;
         } catch (\Exception $e) {

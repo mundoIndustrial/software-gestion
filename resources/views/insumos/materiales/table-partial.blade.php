@@ -85,6 +85,9 @@
                         </div>
                     </th>
                     <th class="text-center py-4 px-6 font-bold">
+                        Novedades
+                    </th>
+                    <th class="text-center py-4 px-6 font-bold">
                         <div class="flex items-center justify-center gap-2">
                             <span>Fecha de Inicio</span>
                             <button
@@ -292,6 +295,32 @@
                             </span>
                         </td>
                         <td class="py-4 px-6 text-center">
+                            @php
+                                $motivoDevolucion = trim((string) ($orden->motivo_devolucion ?? ''));
+                                $ultimaNovedadAsesora = trim((string) ($orden->ultima_novedad_asesora ?? ''));
+                                $previewNovedad = $motivoDevolucion !== ''
+                                    ? $motivoDevolucion
+                                    : ($ultimaNovedadAsesora !== '' ? $ultimaNovedadAsesora : '');
+                            @endphp
+                            @if($previewNovedad !== '')
+                                <button
+                                    type="button"
+                                    class="text-blue-700 text-xs font-semibold underline hover:text-blue-900 transition"
+                                    data-insumos-action="open-novedades-modal"
+                                    data-numero-recibo="{{ $orden->consecutivo_actual ?? '' }}"
+                                    data-numero-pedido="{{ $orden->numero_pedido_original ?? '' }}"
+                                    data-estado-recibo="{{ $orden->estado ?? '' }}"
+                                    data-motivo-devolucion="{{ e($motivoDevolucion) }}"
+                                    data-ultima-novedad-asesora="{{ e($ultimaNovedadAsesora) }}"
+                                    title="Ver detalle de novedades"
+                                >
+                                    Dale click
+                                </button>
+                            @else
+                                <span class="text-gray-400 text-xs">-</span>
+                            @endif
+                        </td>
+                        <td class="py-4 px-6 text-center">
                             <span class="text-gray-600 text-sm">
                                 {{ $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->subHours(5)->format('d/m/Y') : 'N/A' }}
                             </span>
@@ -299,7 +328,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-12 px-6 text-center">
+                        <td colspan="8" class="py-12 px-6 text-center">
                             <p class="text-xl text-gray-500">No hay Órdenes disponibles</p>
                         </td>
                     </tr>

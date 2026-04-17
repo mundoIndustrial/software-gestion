@@ -181,18 +181,30 @@ function renderNotifications(data) {
         data.recibos_devueltos.forEach(recibo => {
             const pedidoNumero = recibo.numero_pedido ? String(recibo.numero_pedido) : '--';
             const reciboNumero = recibo.numero_recibo ? String(recibo.numero_recibo) : '--';
-            const prendaInfo = recibo.prenda_nombre ? ` · ${recibo.prenda_nombre}` : '';
-            const tipoInfo = recibo.tipo_recibo ? ` · ${recibo.tipo_recibo}` : '';
-            const motivoInfo = recibo.motivo ? ` · Motivo: ${recibo.motivo}` : '';
+            const esReciboAnulado = recibo.tipo_notificacion === 'recibo_anulado' || recibo.estado === 'Anulada';
+            const partesMensaje = [];
+
+            if (recibo.prenda_nombre) {
+                partesMensaje.push(recibo.prenda_nombre);
+            }
+            if (recibo.tipo_recibo) {
+                partesMensaje.push(recibo.tipo_recibo);
+            }
+            if (recibo.motivo) {
+                partesMensaje.push(`Motivo: ${recibo.motivo}`);
+            }
+
             notifications.push({
                 id: recibo.id,
-                icon: 'fa-undo',
-                color: '#ef4444',
+                icon: esReciboAnulado ? 'fa-ban' : 'fa-undo',
+                color: esReciboAnulado ? '#dc2626' : '#ef4444',
                 title: `Pedido #${pedidoNumero} · Recibo #${reciboNumero}`,
-                message: `Prenda${prendaInfo}${tipoInfo}${motivoInfo}`,
+                message: partesMensaje.length > 0
+                    ? `${esReciboAnulado ? 'Anulada' : 'Devuelto para corregir'} · ${partesMensaje.join(' · ')}`
+                    : (esReciboAnulado ? 'Anulada' : 'Devuelto para corregir'),
                 time: formatElapsedTime(recibo.updated_at),
                 link: '#',
-                tipo: 'recibo_devuelto',
+                tipo: esReciboAnulado ? 'recibo_anulado' : 'recibo_devuelto',
                 isNew: true
             });
         });

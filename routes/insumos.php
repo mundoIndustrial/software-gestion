@@ -44,6 +44,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
     Route::post('/materiales/{materialId}/toggle-marcado', [RecibosController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');
     Route::post('/materiales/{reciboId}/pasar-revisar', [RecibosController::class, 'pasarRevisar'])->name('materiales.pasar-revisar');
+    Route::post('/materiales/{reciboId}/anular', [RecibosController::class, 'anularRecibo'])->name('materiales.anular-recibo');
     Route::get('/materiales/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('materiales.recibos-costura');
     Route::get('/test', function () {
         return view('insumos.test');

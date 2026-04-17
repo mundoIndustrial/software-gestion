@@ -113,7 +113,7 @@
         </button>
 
         @if($estado !== 'Anulada' && $estado !== 'anulada')
-            <button onclick="confirmarAnularPedido({{ $pedido->id }}, '{{ $numeroPedido }}')"
+            <button onclick="confirmarAnularPedido({{ $pedido->id }}, '{{ $numeroPedido }}', '{{ addslashes($estado) }}')"
                     title="Anular Pedido"
                     style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
                 <i class="fas fa-ban"></i>

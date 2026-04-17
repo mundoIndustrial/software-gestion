@@ -13,6 +13,41 @@ use Illuminate\Support\Facades\DB;
  */
 class NotificacionesService
 {
+    private function extraerMotivoDesdeNotas(?string $notas, string $estado): ?string
+    {
+        $texto = trim((string) $notas);
+        if ($texto === '') {
+            return null;
+        }
+
+        if ($estado === 'Anulada') {
+            $lineas = preg_split('/\R+/', $texto) ?: [];
+            $lineasAnulacion = [];
+
+            foreach ($lineas as $linea) {
+                $lineaLimpia = trim((string) $linea);
+                if ($lineaLimpia === '') {
+                    continue;
+                }
+
+                if (preg_match('/^ANULACION\b/iu', $lineaLimpia)) {
+                    $lineasAnulacion[] = $lineaLimpia;
+                }
+            }
+
+            if (!empty($lineasAnulacion)) {
+                $ultimaLinea = (string) (end($lineasAnulacion) ?: '');
+                if ($ultimaLinea !== '' && preg_match('/^ANULACION\s+.+?:\s*(.+)$/iu', $ultimaLinea, $matches)) {
+                    return trim((string) $matches[1]);
+                }
+
+                return $ultimaLinea;
+            }
+        }
+
+        return $texto;
+    }
+
     /**
      * Obtener todas las notificaciones del asesor
      */
@@ -51,7 +86,7 @@ class NotificacionesService
             ->join('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
             ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'crp.prenda_id')
             ->where('pp.asesor_id', $userId)
-            ->where('crp.estado', 'DEVUELTO_ASESOR')
+            ->whereIn('crp.estado', ['DEVUELTO_ASESOR', 'Anulada'])
             ->whereNotIn('crp.id', $viewedRecibosDevueltos)
             ->orderByDesc('crp.updated_at')
             ->select([
@@ -62,11 +97,14 @@ class NotificacionesService
                 'crp.prenda_id',
                 'pr.nombre_prenda',
                 'crp.tipo_recibo',
+                'crp.estado as estado',
                 'crp.notas as motivo',
                 'crp.updated_at',
             ])
             ->get()
             ->map(function($recibo) {
+                $estadoRecibo = (string) ($recibo->estado ?? '');
+
                 return [
                     'id' => $recibo->id,
                     'tipo' => 'recibo_devuelto',
@@ -76,7 +114,11 @@ class NotificacionesService
                     'prenda_id' => $recibo->prenda_id,
                     'prenda_nombre' => $recibo->nombre_prenda,
                     'tipo_recibo' => $recibo->tipo_recibo,
-                    'motivo' => $recibo->motivo,
+                    'motivo' => $this->extraerMotivoDesdeNotas($recibo->motivo, $estadoRecibo),
+                    'estado' => $estadoRecibo,
+                    'tipo_notificacion' => $estadoRecibo === 'Anulada'
+                        ? 'recibo_anulado'
+                        : 'recibo_devuelto',
                     'updated_at' => $recibo->updated_at,
                 ];
             });
@@ -241,7 +283,7 @@ class NotificacionesService
         $reciboIds = DB::table('consecutivos_recibos_pedidos as crp')
             ->join('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
             ->where('pp.asesor_id', $userId)
-            ->where('crp.estado', 'DEVUELTO_ASESOR')
+            ->whereIn('crp.estado', ['DEVUELTO_ASESOR', 'Anulada'])
             ->pluck('crp.id')
             ->toArray();
 

@@ -2,10 +2,13 @@
 
 namespace App\Infrastructure\Http\Controllers\Insumos;
 
+use App\Events\PedidoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\ConsecutivosRecibosPedidos;
 use App\Models\Plooter;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -113,6 +116,83 @@ class RecibosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al pasar a revisar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Anular recibo y registrar la novedad con motivo.
+     */
+    public function anularRecibo(Request $request, $reciboId)
+    {
+        try {
+            $validated = $request->validate([
+                'motivo' => 'required|string|min:10|max:500',
+            ]);
+
+            $resultado = DB::transaction(function () use ($reciboId, $validated) {
+                $recibo = ConsecutivosRecibosPedidos::query()
+                    ->lockForUpdate()
+                    ->findOrFail($reciboId);
+
+                $usuario = Auth::user();
+                $nombreUsuario = trim((string) ($usuario?->name ?? 'Sistema'));
+                $fechaHora = now()->format('d/m/Y H:i:s');
+                $motivo = trim((string) $validated['motivo']);
+                $lineaNovedad = "ANULACION {$nombreUsuario} - {$fechaHora}: {$motivo}";
+
+                $notasActuales = trim((string) ($recibo->notas ?? ''));
+                $notasActualizadas = $notasActuales === ''
+                    ? $lineaNovedad
+                    : ($notasActuales . PHP_EOL . $lineaNovedad);
+
+                $recibo->update([
+                    'estado' => 'Anulada',
+                    'notas' => $notasActualizadas,
+                ]);
+
+                Log::info('[Insumos][anularRecibo] Recibo anulado', [
+                    'recibo_id' => (int) $recibo->id,
+                    'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
+                    'usuario_id' => (int) ($usuario?->id ?? 0),
+                ]);
+
+                return $recibo->fresh();
+            });
+
+            try {
+                $pedido = \App\Models\PedidoProduccion::find($resultado->pedido_produccion_id);
+                $asesor = $pedido ? User::find($pedido->asesor_id) : null;
+
+                if ($pedido && $asesor) {
+                    broadcast(new PedidoActualizado(
+                        pedido: $pedido->fresh(),
+                        asesor: $asesor,
+                        changedFields: ['recibo_estado' => 'Anulada'],
+                        action: 'updated'
+                    ))->toOthers();
+                }
+            } catch (\Throwable $broadcastError) {
+                Log::warning('[Insumos][anularRecibo] No se pudo emitir broadcast', [
+                    'recibo_id' => (int) $resultado->id,
+                    'error' => $broadcastError->getMessage(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo anulado correctamente',
+                'data' => $resultado,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[Insumos][anularRecibo] Error al anular recibo', [
+                'recibo_id' => $reciboId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular recibo: ' . $e->getMessage(),
             ], 500);
         }
     }

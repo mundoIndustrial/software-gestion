@@ -32,6 +32,24 @@
         loadingPromise: null,
     };
 
+    function getLoadingOverlay() {
+        return document.getElementById('loadingOverlay');
+    }
+
+    function showPageLoading() {
+        const overlay = getLoadingOverlay();
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+
+    function hidePageLoading() {
+        const overlay = getLoadingOverlay();
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
     function getCsrfToken() {
         return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     }
@@ -88,6 +106,85 @@
         }
         console.warn(`[insumos] ${fallbackMessage || `Funcion no disponible: ${globalFnName}`}`);
         return null;
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function decodeHtmlEntities(value) {
+        const textarea = document.createElement('textarea');
+        let current = String(value || '');
+
+        // Algunos textos llegan doble-escapados (ej: &amp;quot;).
+        for (let i = 0; i < 2; i += 1) {
+            textarea.innerHTML = current;
+            const decoded = textarea.value;
+            if (decoded === current) {
+                break;
+            }
+            current = decoded;
+        }
+
+        return current;
+    }
+
+    function abrirModalNovedadesRecibo(btn) {
+        const numeroRecibo = btn.getAttribute('data-numero-recibo') || 'N/A';
+        const numeroPedido = btn.getAttribute('data-numero-pedido') || 'N/A';
+        const estadoRecibo = (btn.getAttribute('data-estado-recibo') || '').trim();
+        const motivoDevolucion = decodeHtmlEntities((btn.getAttribute('data-motivo-devolucion') || '').trim());
+        const ultimaNovedadAsesora = decodeHtmlEntities((btn.getAttribute('data-ultima-novedad-asesora') || '').trim());
+        const etiquetaMotivo = estadoRecibo === 'Anulada'
+            ? 'Motivo de anulacion'
+            : 'Motivo de devolucion';
+
+        const motivoHtml = motivoDevolucion
+            ? `<div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 .35rem 0; color: #991b1b; font-size: .95rem;">${escapeHtml(etiquetaMotivo)}</h4>
+                    <div style="white-space: pre-wrap; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: .75rem; color: #7f1d1d; font-size: .9rem;">${escapeHtml(motivoDevolucion)}</div>
+               </div>`
+            : `<div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 .35rem 0; color: #991b1b; font-size: .95rem;">${escapeHtml(etiquetaMotivo)}</h4>
+                    <div style="background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: .75rem; color: #6b7280; font-size: .9rem;">Sin motivo registrado.</div>
+               </div>`;
+
+        const asesoraHtml = ultimaNovedadAsesora
+            ? `<div>
+                    <h4 style="margin: 0 0 .35rem 0; color: #1e3a8a; font-size: .95rem;">Última novedad de asesora</h4>
+                    <div style="white-space: pre-wrap; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: .75rem; color: #1e3a8a; font-size: .9rem;">${escapeHtml(ultimaNovedadAsesora)}</div>
+               </div>`
+            : `<div>
+                    <h4 style="margin: 0 0 .35rem 0; color: #1e3a8a; font-size: .95rem;">Última novedad de asesora</h4>
+                    <div style="background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: .75rem; color: #6b7280; font-size: .9rem;">No hay novedades recientes de asesora para este pedido.</div>
+               </div>`;
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                title: `Novedades del recibo #${escapeHtml(numeroRecibo)}`,
+                html: `
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: .75rem; color: #4b5563; font-size: .9rem;">
+                            <strong>Pedido:</strong> ${escapeHtml(numeroPedido)}<br>
+                            <strong>Recibo:</strong> ${escapeHtml(numeroRecibo)}
+                        </div>
+                        ${motivoHtml}
+                        ${asesoraHtml}
+                    </div>
+                `,
+                width: 760,
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#2563eb'
+            });
+            return;
+        }
+
+        alert(`Recibo #${numeroRecibo}\n\n${etiquetaMotivo}:\n${motivoDevolucion || 'Sin motivo registrado.'}\n\nUltima novedad de asesora:\n${ultimaNovedadAsesora || 'Sin novedades recientes.'}`);
     }
 
     function bindDelegatedActions() {
@@ -177,6 +274,15 @@
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
                     safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId], 'abrirModalAnchoMetraje no esta disponible');
+                    safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
+                    break;
+                }
+                case 'dropdown-acciones-anular-recibo': {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const reciboId = btn.getAttribute('data-recibo-id');
+                    const consecutivo = btn.getAttribute('data-consecutivo');
+                    safeCall('anularReciboInsumos', [reciboId, consecutivo], 'anularReciboInsumos no esta disponible');
                     safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
                     break;
                 }
@@ -330,6 +436,12 @@
                     safeCall('seleccionarPrendaRecibo', [pedidoId, prendaIndex], 'seleccionarPrendaRecibo no esta disponible');
                     break;
                 }
+                case 'open-novedades-modal': {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    abrirModalNovedadesRecibo(btn);
+                    break;
+                }
                 case 'galeria-mostrar-imagen': {
                     event.preventDefault();
                     event.stopPropagation();
@@ -419,19 +531,24 @@
             return;
         }
 
+        showPageLoading();
+
         state.loadingPromise = (async () => {
-            await loadModuleScripts();
-
             try {
-                await safeCall('inicializarFestivos', [], 'inicializarFestivos no esta disponible');
-            } catch (error) {
-                console.error('[insumos] Error inicializando festivos:', error);
-            }
+                await loadModuleScripts();
 
-            bindDelegatedActions();
-            buildContract();
-            state.initialized = true;
-            console.log('[insumos] Materiales loader inicializado');
+                await safeCall('inicializarFestivos', [], 'inicializarFestivos no esta disponible');
+
+                bindDelegatedActions();
+                buildContract();
+                state.initialized = true;
+                console.log('[insumos] Materiales loader inicializado');
+            } catch (error) {
+                console.error('[insumos] Error inicializando materiales-page-loader:', error);
+                throw error;
+            } finally {
+                hidePageLoading();
+            }
         })();
 
         await state.loadingPromise;
