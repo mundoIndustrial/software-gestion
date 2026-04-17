@@ -108,6 +108,15 @@ class ProcesarTecnicasBordadoService
                             'talla_cantidad' => $prenda['talla_cantidad'] ?? $model->talla_cantidad,
                             'variaciones_prenda' => $prenda['variaciones_prenda'] ?? $model->variaciones_prenda,
                         ]);
+
+                        // Procesar nuevas imágenes adjuntadas al editar la prenda existente
+                        $this->procesarFotosDelPrenda(
+                            $model->id,
+                            $logoCotizacionId,
+                            $tecnicaIdx,
+                            $prendaIdx,
+                            $archivos,
+                        );
                     }
                 }
             }
@@ -241,6 +250,7 @@ class ProcesarTecnicasBordadoService
                         'logo_cotizacion_tecnica_prenda_id' => $prendaTecnicaId,
                         'ruta_original' => $rutas['ruta_original'] ?? $rutas['ruta_webp'],
                         'ruta_webp' => $rutas['ruta_webp'],
+                        'ruta_miniatura' => $rutas['ruta_miniatura'] ?? $rutas['ruta_webp'],
                         'orden' => $orden,
                     ]);
 

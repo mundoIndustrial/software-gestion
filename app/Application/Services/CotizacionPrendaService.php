@@ -412,10 +412,10 @@ class CotizacionPrendaService
                         if (!$mangaExiste) {
                             // Si no existe, obtener el nombre de obs_manga o crear uno genérico
                             $nombreManga = $variantes['obs_manga'] ?? "Manga ID $tipoMangaId";
-                            $mangaCreada = \App\Models\TipoManga::create([
-                                'nombre' => $nombreManga,
-                                'activo' => true
-                            ]);
+                            $mangaCreada = \App\Models\TipoManga::firstOrCreate(
+                                ['nombre' => $nombreManga],
+                                ['activo' => true]
+                            );
                             $tipoMangaId = $mangaCreada->id;
                             Log::info(" Manga personalizada creada", [
                                 'manga_id' => $tipoMangaId,

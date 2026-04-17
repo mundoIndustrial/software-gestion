@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $logo_cotizacion_tecnica_prenda_id
  * @property string $ruta_original
  * @property string $ruta_webp
+ * @property string|null $ruta_miniatura
  * @property int $orden
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -23,6 +24,7 @@ class LogoCotizacionTecnicaPrendaFoto extends Model
         'logo_cotizacion_tecnica_prenda_id',
         'ruta_original',
         'ruta_webp',
+        'ruta_miniatura',
         'orden',
     ];
 
@@ -76,4 +78,3 @@ class LogoCotizacionTecnicaPrendaFoto extends Model
         return str_starts_with($ruta, '/') ? '/storage' . $ruta : '/storage/' . $ruta;
     }
 }
-

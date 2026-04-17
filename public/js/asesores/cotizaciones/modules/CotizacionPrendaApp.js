@@ -141,7 +141,7 @@ class CotizacionPrendaApp {
         }
 
         try {
-            const formData = this.modules.form?.buildFormData?.(action);
+            const formData = await this.modules.form?.buildFormData?.(action);
             if (!formData) {
                 throw new Error('No se pudo construir el formulario');
             }

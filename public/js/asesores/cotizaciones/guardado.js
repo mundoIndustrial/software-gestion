@@ -140,16 +140,10 @@ function tienenInformacionValida(tecnicas) {
 
 async function guardarCotizacion() {
     try {
-        const params = new URLSearchParams(window.location.search);
-        const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
-        if (esEdicionCotizacionCreada && window.cotizacionIdActual) {
-            await procederEnviarCotizacion(false);
-            return;
-        }
+        await procederEnviarCotizacion(true);
+        return;
     } catch (e) {
     }
-
-    await procederEnviarCotizacion(true);
 }
 
 // ============ ENVIAR COTIZACIÓN ============
@@ -536,6 +530,28 @@ async function procederEnviarCotizacion(esBorrador = false) {
         } else {
 
         }
+
+        //  LOGO - FOTOS TÉCNICAS DEL PASO 3 QUE YA EXISTEN EN BD
+        // Cuando se reabre un borrador, estas imágenes viven en tecnicasAgregadasPaso3
+        // y no siempre aparecen en imagenesEnMemoria.logo. Las reenviamos para evitar
+        // que el backend las interprete como eliminadas.
+        if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3)) {
+            window.tecnicasAgregadasPaso3.forEach((tecnica) => {
+                if (!tecnica || !Array.isArray(tecnica.prendas)) return;
+
+                tecnica.prendas.forEach((prenda) => {
+                    if (!prenda || !Array.isArray(prenda.imagenes)) return;
+
+                    prenda.imagenes.forEach((imagen) => {
+                        const ruta = imagen?.ruta || imagen?.url || imagen?.ruta_webp || imagen?.ruta_original;
+                        if (!ruta || typeof ruta !== 'string') return;
+                        if (ruta.includes('data:image')) return;
+
+                        formData.append('logo_fotos_guardadas[]', ruta);
+                    });
+                });
+            });
+        }
         
         //  TÉCNICAS DE LOGO (PASO 3) - Para cotizaciones combinadas (PL) EN ENVÍO
         // Las técnicas se guardan en window.tecnicasAgregadasPaso3
@@ -901,12 +917,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (esEdicionCotizacionCreada) {
             const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
             if (btnGuardarBorradorPaso5) {
-                btnGuardarBorradorPaso5.style.display = 'none';
+                btnGuardarBorradorPaso5.style.display = '';
+                btnGuardarBorradorPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
             }
 
             const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
             if (btnEnviarPaso5) {
-                btnEnviarPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
+                btnEnviarPaso5.innerHTML = '<i class="fas fa-file-circle-check"></i> CREAR COTIZACIÓN';
             }
         }
     } catch (e) {
@@ -945,4 +962,3 @@ document.addEventListener('DOMContentLoaded', function() {
         tipoVentaSelect.addEventListener('change', actualizarEstadoBotones);
     }
 });
-

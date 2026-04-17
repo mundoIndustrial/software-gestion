@@ -37,7 +37,8 @@ class ObtenerDatosCotizacionService
                     },
                     'fotos:id,prenda_cot_id,ruta_original,ruta_webp,ruta_miniatura',
                     'telaFotos:id,prenda_tela_cot_id,ruta_original,ruta_webp,ruta_miniatura',
-                    'tallas:id,prenda_cot_id,talla,cantidad',
+                    'tallas:id,prenda_cot_id,talla,cantidad,genero_id,color',
+                    'tallas.genero:id,nombre',
                     'variantes:id,prenda_cot_id,tipo_prenda,es_jean_pantalon,tipo_jean_pantalon,genero_id,color,tipo_manga_id,tipo_broche_id,obs_broche,tiene_bolsillos,obs_bolsillos,aplica_manga,tipo_manga,obs_manga,aplica_broche,tiene_reflectivo,obs_reflectivo,descripcion_adicional,telas_multiples',
                     'variantes.manga:id,nombre',
                     'variantes.broche:id,nombre',
@@ -121,6 +122,9 @@ class ObtenerDatosCotizacionService
                         'id' => $talla->id,
                         'talla' => $talla->talla,
                         'cantidad' => $talla->cantidad,
+                        'genero_id' => $talla->genero_id,
+                        'genero' => $talla->genero ? $talla->genero->nombre : null,
+                        'color' => $talla->color,
                     ];
                 })->toArray();
             }

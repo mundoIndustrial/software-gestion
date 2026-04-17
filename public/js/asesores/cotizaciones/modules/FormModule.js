@@ -1,5 +1,5 @@
-/**
- * FormModule - Gestión de formularios
+﻿/**
+ * FormModule - GestiÃ³n de formularios
  * 
  * Single Responsibility: Manejo de estados y eventos del formulario
  * 
@@ -20,7 +20,7 @@ class FormModule {
     }
 
     /**
-     * Inicializa el módulo
+     * Inicializa el mÃ³dulo
      */
     init() {
         this.syncHeaderWithForm();
@@ -30,7 +30,7 @@ class FormModule {
 
     /**
      * Sincroniza los valores del header con el formulario oculto
-     * Single Responsibility: Solo sincronización de datos
+     * Single Responsibility: Solo sincronizaciÃ³n de datos
      */
     syncHeaderWithForm() {
         const headerCliente = document.getElementById('header-cliente');
@@ -80,7 +80,7 @@ class FormModule {
     }
 
     /**
-     * Actualiza el estado de los botones según validación
+     * Actualiza el estado de los botones segÃºn validaciÃ³n
      */
     updateButtonStates() {
         const tipoSeleccionado = this.state.tipo_cotizacion;
@@ -98,7 +98,7 @@ class FormModule {
 
     /**
      * Valida el formulario antes de guardar
-     * Single Responsibility: Solo validación
+     * Single Responsibility: Solo validaciÃ³n
      */
     validate() {
         const errors = [];
@@ -112,11 +112,11 @@ class FormModule {
             });
         }
 
-        // Validar tipo de cotización
+        // Validar tipo de cotizaciÃ³n
         if (!this.state.tipo_cotizacion) {
             errors.push({
                 field: 'tipo_cotizacion',
-                message: 'Por favor selecciona el TIPO DE COTIZACIÓN (M, D o X)'
+                message: 'Por favor selecciona el TIPO DE COTIZACIÃ“N (M, D o X)'
             });
         }
 
@@ -169,7 +169,7 @@ class FormModule {
     }
 
     /**
-     * Muestra errores de validación
+     * Muestra errores de validaciÃ³n
      */
     showValidationErrors(errors) {
         errors.forEach(error => {
@@ -185,12 +185,12 @@ class FormModule {
     }
 
     /**
-     * Construye el FormData para envío
+     * Construye el FormData para envÃ­o
      */
     async buildFormData(action) {
         const formData = new FormData();
 
-        // Datos básicos
+        // Datos bÃ¡sicos
         const cliente = document.getElementById('header-cliente')?.value || '';
         const asesora = document.getElementById('header-asesor')?.value || '';
         const fecha = document.getElementById('header-fecha')?.value || '';
@@ -222,21 +222,21 @@ class FormModule {
 
         // REFLECTIVO - Capturar datos de paso 4
         console.log(' FormModule - Intentando capturar reflectivo...');
-        console.log('   ✓ typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
+        console.log('   âœ“ typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
         
         if (typeof capturePrendasReflectivoPaso4 === 'function') {
             const prendasReflectivo = capturePrendasReflectivoPaso4();
             console.log(' Reflectivo capturado:', prendasReflectivo);
             
             if (prendasReflectivo && prendasReflectivo.length > 0) {
-                // Enviar datos JSON sin imágenes
+                // Enviar datos JSON sin imÃ¡genes
                 const prendasSinImagenes = prendasReflectivo.map(p => ({
                     ...p,
-                    imagenes: [] // Limpiar imágenes del JSON
+                    imagenes: [] // Limpiar imÃ¡genes del JSON
                 }));
                 formData.append('reflectivo', JSON.stringify(prendasSinImagenes));
                 
-                // Procesar imágenes por separado
+                // Procesar imÃ¡genes por separado
                 prendasReflectivo.forEach((prenda, prendaIdx) => {
                     if (prenda.imagenes && prenda.imagenes.length > 0) {
                         prenda.imagenes.forEach((img, imgIdx) => {
@@ -249,31 +249,50 @@ class FormModule {
                 console.log(' Reflectivo agregado a FormData');
             } else {
                 formData.append('reflectivo', JSON.stringify([]));
-                console.log(' Reflectivo vacío');
+                console.log(' Reflectivo vacÃ­o');
             }
         } else {
-            console.warn(' capturePrendasReflectivoPaso4 no es función');
+            console.warn(' capturePrendasReflectivoPaso4 no es funciÃ³n');
             formData.append('reflectivo', JSON.stringify([]));
         }
 
-        // LOGO TÉCNICAS - Capturar datos de paso 3
-        console.log(' FormModule - Intentando capturar logo técnicas...');
-        console.log('   ✓ typeof capturarLogotecnicasPaso3:', typeof capturarLogotecnicasPaso3);
-        
-        if (typeof capturarLogotecnicasPaso3 === 'function') {
-            const logoTecnicas = capturarLogotecnicasPaso3();
-            console.log(' Logo técnicas capturado:', logoTecnicas);
-            
-            if (logoTecnicas && logoTecnicas.length > 0) {
-                formData.append('logo_tecnicas', JSON.stringify(logoTecnicas));
-                console.log(' Logo técnicas agregado a FormData');
+        // LOGO TÃ‰CNICAS - Capturar datos de paso 3
+        // Backend expects:
+        // - logo[tecnicas_agregadas]
+        // - logo[imagenes_paso3][tecnica][prenda][imagen]
+        console.log(' FormModule - Intentando capturar logo tÃ©cnicas...');
+
+        if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
+            const tieneInfoValida = tienenInformacionValida(window.tecnicasAgregadasPaso3);
+
+            if (!tieneInfoValida) {
+                if (window.cotizacionIdActual) {
+                    formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
+                }
             } else {
-                formData.append('logo_tecnicas', JSON.stringify([]));
-                console.log(' Logo técnicas vacío');
+                formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
+
+                window.tecnicasAgregadasPaso3.forEach((tecnica, tecnicaIdx) => {
+                    if (!tecnica || !Array.isArray(tecnica.prendas)) return;
+
+                    tecnica.prendas.forEach((prenda, prendaIdx) => {
+                        if (!prenda || !Array.isArray(prenda.imagenes)) return;
+
+                        prenda.imagenes.forEach((img, imgIdx) => {
+                            const file = img?.file;
+                            if (file instanceof File || file instanceof Blob) {
+                                formData.append(`logo[imagenes_paso3][${tecnicaIdx}][${prendaIdx}][${imgIdx}]`, file);
+                            }
+                        });
+                    });
+                });
+
+                console.log(' Logo tecnicas agregado a FormData', {
+                    count: window.tecnicasAgregadasPaso3.length
+                });
             }
         } else {
-            console.warn(' capturarLogotecnicasPaso3 no es función');
-            formData.append('logo_tecnicas', JSON.stringify([]));
+            console.log(' No hay tecnicas de logo en paso 3 para enviar');
         }
 
         // Productos
@@ -306,7 +325,7 @@ class FormModule {
             telasDisponibles: window.telasSeleccionadas ? Object.keys(window.telasSeleccionadas) : []
         });
 
-        // Datos básicos del producto
+        // Datos bÃ¡sicos del producto
         const nombre = card.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = card.querySelector('textarea[name*="descripcion"]')?.value || '';
         const tallasInput = card.querySelector('input[name*="tallas"]')?.value || '';
@@ -314,11 +333,11 @@ class FormModule {
         formData.append(`productos_friendly[${index}][nombre_producto]`, nombre);
         formData.append(`productos_friendly[${index}][descripcion]`, descripcion);
 
-        // Tallas - Enviar el JSON directamente (nuevo formato con géneros)
+        // Tallas - Enviar el JSON directamente (nuevo formato con gÃ©neros)
         formData.append(`productos_friendly[${index}][tallas]`, tallasInput || '');
 
         // Tallas/variaciones avanzadas (modal "Asignar colores a tallas")
-        // Se envía como JSON string en productos_friendly[i][tallas_color]
+        // Se envÃ­a como JSON string en productos_friendly[i][tallas_color]
         if (window.advancedVariationsByProductoId && window.advancedVariationsByProductoId[productoId]) {
             const tallasColor = window.advancedVariationsByProductoId[productoId];
             if (Array.isArray(tallasColor) && tallasColor.length > 0) {
@@ -340,7 +359,7 @@ class FormModule {
 
         }
 
-        // Telas - Procesar múltiples telas por prenda
+        // Telas - Procesar mÃºltiples telas por prenda
         // Capturar datos de cada fila de tela de la tabla
         const tblasRows = card.querySelectorAll('.fila-tela');
 
@@ -354,12 +373,12 @@ class FormModule {
             const telaId = telaIdInput ? telaIdInput.value : null;
             const referencia = referenciaInput ? referenciaInput.value : null;
             
-            // Guardar datos básicos de la tela
+            // Guardar datos bÃ¡sicos de la tela
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][color_id]`, colorId || '');
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][tela_id]`, telaId || '');
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][referencia]`, referencia || '');
             
-            // Agregar fotos de esta tela específica
+            // Agregar fotos de esta tela especÃ­fica
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
                 const fotosDelaTela = window.telasSeleccionadas[productoId][telaIndex];
 
@@ -399,23 +418,23 @@ class FormModule {
     }
 
     /**
-     * Envía el formulario al servidor
+     * EnvÃ­a el formulario al servidor
      */
     async submitForm(formData) {
-        // Determinar la ruta según el tipo de cotización
+        // Determinar la ruta segÃºn el tipo de cotizaciÃ³n
         let url = '/api/asesores/cotizaciones'; // Por defecto para Prenda/Logo
         
-        // Si es cotización de Prenda pura, usar ruta específica
+        // Si es cotizaciÃ³n de Prenda pura, usar ruta especÃ­fica
         if (window.tipoCotizacionGlobal === 'P') {
             url = '/api/asesores/cotizaciones';
         }
         
 
         
-        // Verificar que formData es válido
+        // Verificar que formData es vÃ¡lido
         if (!(formData instanceof FormData)) {
 
-            throw new Error('FormData inválido');
+            throw new Error('FormData invÃ¡lido');
         }
         
 
@@ -424,7 +443,7 @@ class FormModule {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData
-                // NO agregar headers - FormData maneja el Content-Type automáticamente
+                // NO agregar headers - FormData maneja el Content-Type automÃ¡ticamente
             });
 
             const responseData = await response.json();
@@ -441,7 +460,7 @@ class FormModule {
      */
     handleSuccess(data) {
 
-        alert(data.message || 'Cotización guardada correctamente');
+        alert(data.message || 'CotizaciÃ³n guardada correctamente');
         if (data.redirect) {
             window.location.href = data.redirect;
         }
@@ -458,7 +477,7 @@ class FormModule {
             const errorList = Object.entries(data.errors)
                 .map(([field, messages]) => {
                     const errorMsg = Array.isArray(messages) ? messages.join(', ') : messages;
-                    return `• ${field}: ${errorMsg}`;
+                    return `â€¢ ${field}: ${errorMsg}`;
                 })
                 .join('\n');
             mensaje += '\n\nDetalles:\n' + errorList;
@@ -477,3 +496,4 @@ class FormModule {
 
 // Exportar para uso global
 const formModule = new FormModule();
+

@@ -2,6 +2,7 @@
 
 namespace App\Application\Services;
 
+use App\Models\LogoCotizacionTecnicaPrendaFoto;
 use App\Models\PrendaFotoCot;
 use App\Models\PrendaTelaFotoCot;
 use Illuminate\Support\Facades\Storage;
@@ -80,6 +81,86 @@ class EliminarImagenesCotizacionService
             Log::error('Error al eliminar imágenes de tela', [
                 'prenda_id' => $prendaId,
                 'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar fotos del logo técnico que no estén en la lista actual.
+     *
+     * Se usa al actualizar borradores combinados para sincronizar el paso 3.
+     */
+    public function eliminarImagenesLogoNoIncluidas(int $logoCotizacionId, array $fotosActuales): void
+    {
+        try {
+            $normalizarRuta = function (?string $ruta): ?string {
+                if (!is_string($ruta) || trim($ruta) === '') {
+                    return null;
+                }
+
+                $ruta = trim($ruta);
+
+                if (strpos($ruta, 'http') === 0 && preg_match('#/storage/(.+)$#', $ruta, $matches)) {
+                    $ruta = $matches[1];
+                }
+
+                if (strpos($ruta, '/storage/') === 0) {
+                    $ruta = substr($ruta, 9);
+                }
+
+                if (strpos($ruta, 'storage/') === 0) {
+                    $ruta = substr($ruta, 8);
+                }
+
+                return ltrim($ruta, '/');
+            };
+
+            $fotosGuardadas = LogoCotizacionTecnicaPrendaFoto::whereHas('prenda', function ($query) use ($logoCotizacionId) {
+                $query->where('logo_cotizacion_id', $logoCotizacionId);
+            })->get();
+
+            $fotosActualesNormalizadas = collect($fotosActuales)
+                ->map(fn ($foto) => $normalizarRuta(is_string($foto) ? $foto : null))
+                ->filter(fn ($foto) => is_string($foto) && trim($foto) !== '')
+                ->values()
+                ->all();
+
+            foreach ($fotosGuardadas as $fotoGuardada) {
+                $estaEnLista = collect($fotosActualesNormalizadas)->contains(function ($fotoActual) use ($fotoGuardada, $normalizarRuta) {
+                    $rutasFotoGuardada = array_filter([
+                        $fotoGuardada->ruta_original,
+                        $fotoGuardada->ruta_webp,
+                        $fotoGuardada->ruta_miniatura,
+                    ], fn ($v) => is_string($v) && trim($v) !== '');
+
+                    foreach ($rutasFotoGuardada as $rutaGuardada) {
+                        $rutaGuardadaNormalizada = $normalizarRuta($rutaGuardada);
+
+                        if ($fotoActual === $rutaGuardadaNormalizada) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+
+                if ($estaEnLista) {
+                    continue;
+                }
+
+                $this->eliminarFoto($fotoGuardada->ruta_original ?: ($fotoGuardada->ruta_webp ?: $fotoGuardada->ruta_miniatura));
+                $fotoGuardada->delete();
+
+                Log::info('Foto de logo técnico eliminada', [
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'foto_id' => $fotoGuardada->id,
+                    'ruta' => $fotoGuardada->ruta_original,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar imágenes de logo técnico', [
+                'logo_cotizacion_id' => $logoCotizacionId,
+                'error' => $e->getMessage(),
             ]);
         }
     }

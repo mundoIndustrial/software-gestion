@@ -80,7 +80,6 @@ final class ProcesarImagenesCotizacionOrchestratorService
                             'orden' => $orden,
                             'ancho' => $fotoAnterior->ancho,
                             'alto' => $fotoAnterior->alto,
-                            'tamano' => $fotoAnterior->tamano,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

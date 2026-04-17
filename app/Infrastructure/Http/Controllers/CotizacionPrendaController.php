@@ -710,7 +710,6 @@ class CotizacionPrendaController extends Controller
                                         'orden' => $fotoIndex + 1,
                                         'ancho' => null,
                                         'alto' => null,
-                                        'tamano' => $archivoFoto->getSize(),
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
