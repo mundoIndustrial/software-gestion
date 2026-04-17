@@ -57,8 +57,11 @@ class PedidoRepositoryImpl implements PedidoRepository
                 $pedido->setId($pedidoModel->id);
             } else {
                 $pedidoModel = PedidoModel::findOrFail($pedido->id());
-                // En actualizaciones generales del pedido no se modifica el estado.
-                $datos['estado'] = $pedidoModel->estado;
+                // En actualizaciones generales no se modifica el estado,
+                // excepto en anulaciones (CANCELADO → Anulada).
+                if ($pedido->estado()->valor() !== 'CANCELADO') {
+                    $datos['estado'] = $pedidoModel->estado;
+                }
                 $pedidoModel->update($datos);
             }
 
