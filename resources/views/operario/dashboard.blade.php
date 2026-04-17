@@ -467,88 +467,90 @@
                                     @endif
                                     
                                     @if(auth()->user()->hasRole('vista-costura'))
-                                        @php
-                                            $reciboId = $prenda['recibos'][0]['id'] ?? null;
-                                            $tieneParciales = $prenda['recibos'][0]['tiene_parciales'] ?? false;
-                                            $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
-                                            $areaActual = $prenda['recibos'][0]['area'] ?? null;
-                                            $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
-                                            $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
-                                            $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
-                                            $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
-                                            $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
-                                            $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
-                                            $tieneEncargadoCostura = !empty($encargadoCostura);
-                                            // NO mostrar DESHACER COSTURA si hay parciales
-                                            $mostrarComoDeshacerCostura = ($esCosturaProceso && $tieneEncargadoCostura && !$tieneParciales);
-                                        @endphp
+                                        @foreach($prenda['recibos'] ?? [] as $reciboItem)
+                                            @php
+                                                if (strtoupper((string)($reciboItem['tipo_recibo'] ?? '')) !== 'COSTURA') {
+                                                    continue;
+                                                }
 
-                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
-                                        @if($esTipoReciboCostura && !$tieneParciales)
-                                            <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
-                                                    data-visible-filtro="costura"
-                                                    id="btn-costura-{{ $prenda['prenda_id'] }}"
-                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    data-tipo-recibo="COSTURA"
-                                                    data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
-                                                    data-area="{{ $areaActual ?? '' }}"
-                                                    data-proceso-id="{{ $procesoId }}"
-                                                    data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
-                                                    onclick="manejarPasarACostura(this)">
-                                                <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
-                                                {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
-                                            </button>
-                                        @endif
+                                                $reciboId = $reciboItem['id'] ?? null;
+                                                $tieneParciales = $reciboItem['tiene_parciales'] ?? false;
+                                                $areaActual = $reciboItem['area'] ?? null;
+                                                $procesoId = $reciboItem['proceso_id_costura'] ?? null;
+                                                $encargadoCostura = $reciboItem['encargado_costura'] ?? null;
+                                                $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $prenda['numero_pedido'];
 
-                                        {{-- Botón "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
-                                        @if(!$tieneParciales)
-                                        <button class="btn-pasar-cc" 
-                                                data-visible-filtro="costura"
-                                                id="btn-cc-{{ $prenda['prenda_id'] }}"
-                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                data-tipo-recibo="{{ $tipoRecibo }}"
-                                                data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
-                                                data-area="{{ $areaActual ?? 'COSTURA' }}"
-                                                data-proceso-id="{{ $procesoId }}"
-                                                onclick="pasarAControlCalidad(this)">
-                                            <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
-                                            {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
-                                        </button>
-                                        @endif
+                                                $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
+                                                $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
+                                                $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
+                                                $tieneEncargadoCostura = !empty($encargadoCostura);
+                                                $mostrarComoDeshacerCostura = ($esCosturaProceso && $tieneEncargadoCostura && !$tieneParciales);
+                                            @endphp
 
-                                        {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
-                                        @if($reciboId && $tieneParciales)
-                                            <button class="btn-ver-distribucion" 
-                                                    data-visible-filtro="costura"
-                                                    id="btn-distribucion-{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-numero-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
-                                                    onclick="abrirDistribucionRecibo(this)">
-                                                <span class="material-symbols-rounded">share</span>
-                                                VER DISTRIBUCIÓN
-                                            </button>
-                                            <button class="btn-ver-distribucion"
-                                                    data-visible-filtro="costura"
-                                                    id="btn-editar-encargados-{{ $prenda['prenda_id'] }}"
-                                                    data-recibo-id="{{ $reciboId }}"
-                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-numero-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
-                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    data-tipo-recibo="COSTURA"
-                                                    onclick="abrirEditarEncargados(this)">
-                                                <span class="material-symbols-rounded">edit</span>
-                                                EDITAR ENCARGADOS
-                                            </button>
-                                        @endif
+                                            {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
+                                            @if(!$tieneParciales)
+                                                <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}"
+                                                        data-visible-filtro="costura"
+                                                        id="btn-costura-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        data-tipo-recibo="COSTURA"
+                                                        data-recibo="{{ $consecutivoActual }}"
+                                                        data-area="{{ $areaActual ?? '' }}"
+                                                        data-proceso-id="{{ $procesoId }}"
+                                                        data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
+                                                        onclick="manejarPasarACostura(this)">
+                                                    <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
+                                                    {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                                </button>
+
+                                                {{-- Botón "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
+                                                <button class="btn-pasar-cc"
+                                                        data-visible-filtro="costura"
+                                                        id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        data-tipo-recibo="COSTURA"
+                                                        data-recibo="{{ $consecutivoActual }}"
+                                                        data-area="{{ $areaActual ?? 'COSTURA' }}"
+                                                        data-proceso-id="{{ $procesoId }}"
+                                                        onclick="pasarAControlCalidad(this)">
+                                                    <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
+                                                    {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
+                                                </button>
+                                            @endif
+
+                                            {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
+                                            @if($reciboId && $tieneParciales)
+                                                <button class="btn-ver-distribucion"
+                                                        data-visible-filtro="costura"
+                                                        id="btn-distribucion-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                        data-recibo-id="{{ $reciboId }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-numero-recibo="{{ $consecutivoActual }}"
+                                                        onclick="abrirDistribucionRecibo(this)">
+                                                    <span class="material-symbols-rounded">share</span>
+                                                    VER DISTRIBUCIÓN
+                                                </button>
+                                                <button class="btn-ver-distribucion"
+                                                        data-visible-filtro="costura"
+                                                        id="btn-editar-encargados-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                        data-recibo-id="{{ $reciboId }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-numero-recibo="{{ $consecutivoActual }}"
+                                                        data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        data-tipo-recibo="COSTURA"
+                                                        onclick="abrirEditarEncargados(this)">
+                                                    <span class="material-symbols-rounded">edit</span>
+                                                    EDITAR ENCARGADOS
+                                                </button>
+                                            @endif
+                                        @endforeach
                                     @endif
                                     
                                     <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
@@ -977,29 +979,32 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                     @endif
                                     
                                     @if(auth()->user()->hasRole('vista-costura'))
-                                        @php
-                                            $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
-                                            $areaActual = $prenda['recibos'][0]['area'] ?? null;
-                                            $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
-                                            $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
-                                            $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
-                                            $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
-                                            $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
-                                            $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
-                                            $tieneEncargadoCostura = !empty($encargadoCostura);
-                                            $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
-                                        @endphp
+                                        @foreach($prenda['recibos'] ?? [] as $reciboItem)
+                                            @php
+                                                if (strtoupper((string)($reciboItem['tipo_recibo'] ?? '')) !== 'COSTURA') {
+                                                    continue;
+                                                }
 
-                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
-                                        @if($esTipoReciboCostura)
-                                            <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
-                                                    id="btn-costura-{{ $prenda['prenda_id'] }}"
+                                                $areaActual = $reciboItem['area'] ?? null;
+                                                $procesoId = $reciboItem['proceso_id_costura'] ?? null;
+                                                $encargadoCostura = $reciboItem['encargado_costura'] ?? null;
+                                                $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $prenda['numero_pedido'];
+
+                                                $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
+                                                $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
+                                                $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
+                                                $tieneEncargadoCostura = !empty($encargadoCostura);
+                                                $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
+                                            @endphp
+
+                                            {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                            <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}"
+                                                    id="btn-costura-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                     data-tipo-recibo="COSTURA"
-                                                    data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
+                                                    data-recibo="{{ $consecutivoActual }}"
                                                     data-area="{{ $areaActual ?? '' }}"
                                                     data-proceso-id="{{ $procesoId }}"
                                                     data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
@@ -1007,22 +1012,22 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                 <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
                                                 {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                             </button>
-                                        @endif
 
-                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
-                                        <button class="btn-pasar-cc" 
-                                                id="btn-cc-{{ $prenda['prenda_id'] }}"
-                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                data-tipo-recibo="{{ $tipoRecibo }}"
-                                                data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
-                                                data-area="{{ $areaActual ?? 'COSTURA' }}"
-                                                data-proceso-id="{{ $procesoId }}"
-                                                onclick="pasarAControlCalidad(this)">
-                                            <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
-                                            {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
-                                        </button>
+                                            {{-- Botón "Pasar a C.C" o "DESHACER" --}}
+                                            <button class="btn-pasar-cc"
+                                                    id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="COSTURA"
+                                                    data-recibo="{{ $consecutivoActual }}"
+                                                    data-area="{{ $areaActual ?? 'COSTURA' }}"
+                                                    data-proceso-id="{{ $procesoId }}"
+                                                    onclick="pasarAControlCalidad(this)">
+                                                <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
+                                                {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
+                                            </button>
+                                        @endforeach
                                     @endif
                                     
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))

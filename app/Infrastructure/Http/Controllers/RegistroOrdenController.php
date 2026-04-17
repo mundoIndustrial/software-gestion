@@ -683,10 +683,57 @@ class RegistroOrdenController extends Controller
                 ->find($parcialId);
 
             if (!$parcial) {
+                // Fallback para nuevos parciales persistidos en pedidos_parciales/pedidos_parciales_tallas.
+                $parcialNuevo = \DB::table('pedidos_parciales')
+                    ->where('id', $parcialId)
+                    ->whereNull('deleted_at')
+                    ->first([
+                        'id',
+                        'pedido_produccion_id',
+                        'prenda_pedido_id',
+                        'tipo_recibo',
+                        'consecutivo_actual',
+                        'consecutivo_inicial',
+                    ]);
+
+                if (!$parcialNuevo) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Parcial no encontrado',
+                    ], 404);
+                }
+
+                $pedidoProduccion = \App\Models\PedidoProduccion::find((int) $parcialNuevo->pedido_produccion_id);
+                $numeroPedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
+
+                $tallasNuevo = \DB::table('pedidos_parciales_tallas')
+                    ->where('pedido_parcial_id', (int) $parcialNuevo->id)
+                    ->get(['id', 'talla', 'cantidad', 'color_nombre', 'genero']);
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Parcial no encontrado',
-                ], 404);
+                    'success' => true,
+                    'parcial' => [
+                        'id' => (int) $parcialNuevo->id,
+                        'consecutivo_parcial' => (float) ($parcialNuevo->consecutivo_actual ?? 0),
+                        'consecutivo_original' => (float) ($parcialNuevo->consecutivo_inicial ?? 0),
+                        'numero_pedido' => $numeroPedido,
+                        'pedido_produccion_id' => (int) $parcialNuevo->pedido_produccion_id,
+                        'prenda_pedido_id' => (int) $parcialNuevo->prenda_pedido_id,
+                        'encargado_actual' => 'Sin asignar',
+                        'area_actual' => 'Sin area',
+                        'tallas' => $tallasNuevo->map(function ($talla) {
+                            return [
+                                'id' => (int) $talla->id,
+                                'talla' => (string) $talla->talla,
+                                'cantidad' => (int) ($talla->cantidad ?? 0),
+                                'color_nombre' => $talla->color_nombre,
+                                'genero' => strtoupper((string) ($talla->genero ?? 'CABALLERO')),
+                            ];
+                        })->toArray(),
+                    ],
+                    'timeline' => [],
+                    'total_eventos' => 0,
+                ]);
             }
 
             $pedidoProduccion = \App\Models\PedidoProduccion::find($parcial->pedido_produccion_id);

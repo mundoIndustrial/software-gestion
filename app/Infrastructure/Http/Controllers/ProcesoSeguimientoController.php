@@ -42,14 +42,16 @@ class ProcesoSeguimientoController extends Controller
             // Cargar seguimiento actualizado para la respuesta
             $prendaActualizada = null;
             try {
-                $registroController = app()->make(\App\Infrastructure\Http\Controllers\RegistroOrdenQueryController::class);
-                $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
-                $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
+                if ($request->pedido_produccion_id && $proceso->pedido) {
+                    $registroController = app()->make(\App\Infrastructure\Http\Controllers\RegistroOrdenQueryController::class);
+                    $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request, $proceso->pedido->numero_pedido);
+                    $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
 
-                foreach ($seguimientoData['prendas'] ?? [] as $prenda) {
-                    if ($prenda['id'] == $request->prenda_id) {
-                        $prendaActualizada = $prenda;
-                        break;
+                    foreach ($seguimientoData['prendas'] ?? [] as $prenda) {
+                        if ($prenda['id'] == $request->prenda_id) {
+                            $prendaActualizada = $prenda;
+                            break;
+                        }
                     }
                 }
             } catch (\Exception $e) {

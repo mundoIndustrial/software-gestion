@@ -65,8 +65,8 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
 }
 
 // ========== WRAPPERS DE ADDPROCESSMODALCONTROLLER ==========
-window.abrirModalAgregarProcesoDesdeArea = (areaSeleccionada, pedidoId, prendaId) => 
-    AddProcessModalController.getInstance().openFromBadge(areaSeleccionada, pedidoId, prendaId);
+window.abrirModalAgregarProcesoDesdeArea = (areaSeleccionada, pedidoId, prendaId, numeroRecibo) =>
+    AddProcessModalController.getInstance().openFromBadge(areaSeleccionada, pedidoId, prendaId, numeroRecibo);
 
 function verificarDatosAntesDeGuardar(event) {
     return AddProcessModalController.getInstance().verifyAndSave(event);

@@ -305,7 +305,7 @@ class TrackingDataLoader {
         return;
       }
 
-      const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
+      const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}&numero_recibo=${encodeURIComponent(numeroRecibo)}`;
       const resp = await fetch(url);
       if (!resp.ok) {
         throw new Error(`Error HTTP ${resp.status} al refrescar consecutivo-costura`);

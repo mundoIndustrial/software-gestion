@@ -139,7 +139,7 @@ class ReciboCosturaQueryService
         $descripcion = $this->buildDescripcion($prenda);
 
         // Obtener el encargado mas reciente
-        $encargado = $this->getEncargado($pedido, $prenda);
+        $encargado = $this->getEncargado($pedido, $prenda, (int) $recibo->consecutivo_actual);
 
         // Calcular dias transcurridos
         $diasCalculados = $this->calculateDays($recibo);
@@ -247,26 +247,22 @@ class ReciboCosturaQueryService
      * @param PrendaPedido|null $prenda
      * @return string
      */
-    private function getEncargado(?object $pedido, ?object $prenda): string
+    private function getEncargado(?object $pedido, ?object $prenda, int $consecutivoActual): string
     {
         if (!$prenda || !$pedido) {
             return '-';
         }
 
-        // Buscar proceso mas reciente para esta prenda en este pedido
-        // procesos_prenda usa: numero_pedido (no pedido_produccion_id) y prenda_pedido_id
-        $procesoMasReciente = \DB::table('procesos_prenda')
+        $proceso = \DB::table('procesos_prenda')
             ->where('numero_pedido', $pedido->numero_pedido)
             ->where('prenda_pedido_id', $prenda->id)
-            ->where('proceso', 'COSTURA')
+            ->where('numero_recibo', $consecutivoActual)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+            ->whereNull('deleted_at')
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if ($procesoMasReciente) {
-            return $procesoMasReciente->encargado ?? '-';
-        }
-
-        return '-';
+        return $proceso?->encargado ?? '-';
     }
 
     /**

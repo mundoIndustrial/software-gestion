@@ -38,16 +38,17 @@ class PasarACosturaUseCase
                 'encargado' => $cmd->encargado,
             ]);
 
-            $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
+            // Try to find recibo by specific receipt number first, then fallback to prenda if not found
+            $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
                 pedidoProduccionId: (int) $pedido->id,
-                prendaId: (int) $cmd->prendaId,
+                consecutivoActual: (int) $cmd->numeroRecibo,
                 tipoRecibo: (string) $cmd->tipoRecibo,
             );
 
             if (!$recibo) {
-                $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
+                $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
                     pedidoProduccionId: (int) $pedido->id,
-                    consecutivoActual: (int) $cmd->numeroRecibo,
+                    prendaId: (int) $cmd->prendaId,
                     tipoRecibo: (string) $cmd->tipoRecibo,
                 );
             }

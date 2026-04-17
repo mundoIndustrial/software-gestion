@@ -353,8 +353,48 @@ function generarFallbackHTML(prendaData) {
 }
 
 // Función para obtener datos de la prenda asociada al recibo (igual que en registros)
-function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
-    console.log('[obtenerDatosPrendaRecibo] FUNCION LLAMADA - Parametros:', titulo, pedidoId, prendaId);
+function construirTallasDesdeParcial(tallasParcial) {
+    const tallas = {
+        DAMA: {},
+        CABALLERO: {},
+        UNISEX: {}
+    };
+
+    (tallasParcial || []).forEach((item) => {
+        const genero = String(item?.genero || 'CABALLERO').toUpperCase();
+        const talla = String(item?.talla || '').trim();
+        const cantidad = Number(item?.cantidad || 0);
+
+        if (!talla || cantidad <= 0) return;
+
+        if (!tallas[genero]) {
+            tallas[genero] = {};
+        }
+
+        tallas[genero][talla] = (Number(tallas[genero][talla] || 0) + cantidad);
+    });
+
+    return tallas;
+}
+
+async function obtenerTallasParcial(pedidoParcialId) {
+    if (!pedidoParcialId) return [];
+
+    const response = await fetch(`/api/recibos-costura/parciales/${pedidoParcialId}/seguimiento`);
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data?.success) {
+        throw new Error(data?.message || 'No fue posible obtener el seguimiento del parcial');
+    }
+
+    return data?.parcial?.tallas || [];
+}
+
+function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId, numeroRecibo = null, esParcial = false, pedidoParcialId = null) {
+    console.log('[obtenerDatosPrendaRecibo] FUNCION LLAMADA - Parametros:', { titulo, pedidoId, prendaId, numeroRecibo, esParcial, pedidoParcialId });
     console.log(`[obtenerDatosPrendaRecibo]  Obteniendo datos para pedido ID: ${pedidoId}, prenda ID: ${prendaId}`);
     
     // Obtener datos de la prenda del pedido (igual que en registros)
@@ -365,7 +405,7 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             }
             return response.json();
         })
-        .then(datosRecibo => {
+        .then(async (datosRecibo) => {
             console.log(`[obtenerDatosPrendaRecibo]  Datos del recibo recibidos:`, datosRecibo);
             
             if (!datosRecibo.success || !datosRecibo.data || !datosRecibo.data.prendas) {
@@ -391,8 +431,32 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
                 return;
             }
             
-            // Usar solo la prenda filtrada
-            abrirModalCeldaConFormato(titulo, prendaFiltrada);
+            // Usar solo la prenda filtrada y, si es parcial, reemplazar tallas por las del parcial específico.
+            const prendaParaModal = { ...prendaFiltrada[0] };
+
+            if (esParcial && pedidoParcialId) {
+                try {
+                    const tallasParcial = await obtenerTallasParcial(pedidoParcialId);
+                    const tallasNormalizadas = construirTallasDesdeParcial(tallasParcial);
+                    const cantidadParcial = tallasParcial.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+
+                    prendaParaModal.tallas = tallasNormalizadas;
+                    prendaParaModal.talla_colores = [];
+                    prendaParaModal.cantidad = cantidadParcial;
+                    prendaParaModal.cantidad_total = cantidadParcial;
+
+                    console.log('[obtenerDatosPrendaRecibo]  Tallas de parcial aplicadas:', {
+                        pedidoParcialId,
+                        numeroRecibo,
+                        cantidadParcial,
+                        tallasNormalizadas
+                    });
+                } catch (err) {
+                    console.warn('[obtenerDatosPrendaRecibo] No se pudieron obtener tallas del parcial, usando tallas base de la prenda:', err);
+                }
+            }
+
+            abrirModalCeldaConFormato(titulo, [prendaParaModal]);
         })
         .catch(error => {
             console.error('[obtenerDatosPrendaRecibo] Error al obtener datos del recibo:', error);
@@ -1444,7 +1508,7 @@ function createReciboRow(recibo) {
         </td>
         <td>
             <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); console.log('[ONCLICK TABLE CELL]  Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
+                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); console.log('[ONCLICK TABLE CELL]  Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id}, '${recibo.consecutivo_actual || ''}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? `'${pedidoParcialId}'` : 'null'})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                         <span class="descripcion-prenda-texto">${recibo.nombre_prenda || 'Sin prendas'}</span> <span style="color: #3b82f6; font-weight: 600;">...</span>
                     </span>

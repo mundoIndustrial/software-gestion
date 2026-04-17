@@ -19,6 +19,7 @@ final class GuardarProcesoSeguimientoDTO
         public readonly string $estado,
         public readonly string $encargado,
         public readonly ?string $observaciones,
+        public readonly ?int   $numeroRecibo = null,
     ) {}
 
     public static function fromRequest(GuardarProcesoSeguimientoRequest $request): self
@@ -30,6 +31,7 @@ final class GuardarProcesoSeguimientoDTO
             estado:             (string) $request->estado,
             encargado:          (string) $request->encargado,
             observaciones:      $request->observaciones,
+            numeroRecibo:       $request->numero_recibo ? (int) $request->numero_recibo : null,
         );
     }
 }

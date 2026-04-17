@@ -35,7 +35,7 @@ class GetConsecutivoCosturaUseCase
      * @return array Datos del consecutivo de costura
      * @throws GetConsecutivoCosturaException
      */
-    public function execute(string $pedido, ?string $prendaId = null): array
+    public function execute(string $pedido, ?string $prendaId = null, ?string $numeroRecibo = null): array
     {
         // Validar entrada
         if (empty($pedido)) {
@@ -59,8 +59,8 @@ class GetConsecutivoCosturaUseCase
             ]);
 
             // Obtener consecutivo y área
-            $consecutivoData = $this->obtenerConsecutivoYArea($pedidoId, $prendaId);
-            
+            $consecutivoData = $this->obtenerConsecutivoYArea($pedidoId, $prendaId, $numeroRecibo);
+
             if (!$consecutivoData['consecutivo'] && !$pedidoModel->created_at) {
                 throw GetConsecutivoCosturaException::sinDatos($pedido);
             }
@@ -92,16 +92,30 @@ class GetConsecutivoCosturaUseCase
      * @param string|null $prendaId
      * @return array ['consecutivo' => ?string, 'area' => ?string, 'dia_de_entrega' => ?int, 'fecha_estimada_de_entrega' => ?string]
      */
-    private function obtenerConsecutivoYArea(int $pedidoId, ?string $prendaId): array
+    private function obtenerConsecutivoYArea(int $pedidoId, ?string $prendaId, ?string $numeroRecibo): array
     {
-        $registro = $prendaId
-            ? $this->consecutivosRepository->obtenerCosinturaPorPrenda($pedidoId, (int) $prendaId)
-            : $this->consecutivosRepository->obtenerCosturaDelPedido($pedidoId);
+        $registro = null;
+
+        if ($prendaId && $numeroRecibo) {
+            $registro = \DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_id', (int) $prendaId)
+                ->where('consecutivo_actual', (int) $numeroRecibo)
+                ->whereRaw('UPPER(tipo_recibo) = ?', ['COSTURA'])
+                ->where('activo', 1)
+                ->first();
+        }
+
+        if (!$registro) {
+            $registro = $prendaId
+                ? $this->consecutivosRepository->obtenerCosinturaPorPrenda($pedidoId, (int) $prendaId)
+                : $this->consecutivosRepository->obtenerCosturaDelPedido($pedidoId);
+        }
 
         return [
-            'consecutivo' => $registro->consecutivo_actual ?? null,
-            'area' => $registro->area ?? null,
-            'dia_de_entrega' => isset($registro->dia_de_entrega) ? (int) $registro->dia_de_entrega : null,
+            'consecutivo'              => $registro->consecutivo_actual ?? null,
+            'area'                     => $registro->area ?? null,
+            'dia_de_entrega'           => isset($registro->dia_de_entrega) ? (int) $registro->dia_de_entrega : null,
             'fecha_estimada_de_entrega' => $registro->fecha_estimada_de_entrega ?? null,
         ];
     }
@@ -127,13 +141,10 @@ class GetConsecutivoCosturaUseCase
         }
 
         $ultimoProceso = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+            ->when($prendaId, fn($q) => $q->where('prenda_pedido_id', $prendaId))
+            ->where('numero_recibo', (int) $consecutivo)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
             ->whereNull('deleted_at')
-            ->where(function ($q) use ($prendaId, $consecutivo) {
-                if ($prendaId) {
-                    $q->where('prenda_pedido_id', $prendaId);
-                }
-                $q->orWhere('numero_recibo', (int) $consecutivo);
-            })
             ->orderByDesc('created_at')
             ->first();
 

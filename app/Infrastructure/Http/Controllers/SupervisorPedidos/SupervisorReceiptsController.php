@@ -431,37 +431,62 @@ class SupervisorReceiptsController extends Controller
     {
         $validated = $request->validate([
             'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
-            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            'prenda_id' => 'nullable|integer',
+            'parcial_id' => 'nullable|integer',
             'tipo_proceso' => 'required|string|max:100',
         ]);
 
         $pedidoId = (int) $validated['pedido_id'];
-        $prendaId = (int) $validated['prenda_id'];
+        $prendaId = (int) ($validated['prenda_id'] ?? 0);
+        $parcialId = (int) ($validated['parcial_id'] ?? 0);
         $tipoProceso = $this->normalizarTipoProceso($validated['tipo_proceso']);
-
-        $prenda = PrendaPedido::query()
-            ->where('id', $prendaId)
-            ->where('pedido_produccion_id', $pedidoId)
-            ->first();
-
-        if (!$prenda) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La prenda no pertenece al pedido indicado.',
-            ], 422);
+        $prendaIdsCandidatas = [];
+        if ($prendaId > 0) {
+            $prendaIdsCandidatas[] = $prendaId;
         }
+        if ($parcialId > 0) {
+            $prendaParcialId = (int) DB::table('pedidos_parciales')
+                ->where('id', $parcialId)
+                ->where('pedido_produccion_id', $pedidoId)
+                ->value('prenda_pedido_id');
+            if ($prendaParcialId > 0) {
+                $prendaIdsCandidatas[] = $prendaParcialId;
+            }
+        }
+        $prendaIdsCandidatas = array_values(array_unique(array_filter($prendaIdsCandidatas, fn($id) => (int) $id > 0)));
 
-        $row = DB::table('observaciones_recibos_procesos')
-            ->where('pedido_produccion_id', $pedidoId)
-            ->where('prenda_pedido_id', $prendaId)
-            ->where('tipo_proceso', $tipoProceso)
-            ->first();
+        $row = null;
+        foreach ($this->tiposProcesoCandidatos($tipoProceso) as $tipoCandidato) {
+            if (!empty($prendaIdsCandidatas)) {
+                foreach ($prendaIdsCandidatas as $prendaCandidataId) {
+                    $row = DB::table('observaciones_recibos_procesos')
+                        ->where('pedido_produccion_id', $pedidoId)
+                        ->where('prenda_pedido_id', (int) $prendaCandidataId)
+                        ->where('tipo_proceso', $tipoCandidato)
+                        ->orderByDesc('updated_at')
+                        ->first();
+
+                    if ($row) {
+                        break 2;
+                    }
+                }
+            } else {
+                $row = DB::table('observaciones_recibos_procesos')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('tipo_proceso', $tipoCandidato)
+                    ->orderByDesc('updated_at')
+                    ->first();
+                if ($row) {
+                    break;
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
                 'pedido_id' => $pedidoId,
-                'prenda_id' => $prendaId,
+                'prenda_id' => (int) ($row->prenda_pedido_id ?? $prendaId),
                 'tipo_proceso' => $tipoProceso,
                 'observacion' => $row?->observacion,
                 'updated_at' => $row?->updated_at,
@@ -559,5 +584,26 @@ class SupervisorReceiptsController extends Controller
     private function normalizarTipoProceso(string $tipoProceso): string
     {
         return mb_strtoupper(trim($tipoProceso), 'UTF-8');
+    }
+
+    /**
+     * Permite recuperar observaciones de anexos aunque se hayan guardado con
+     * etiqueta PARCIAL o COSTURA de forma indistinta.
+     *
+     * @return string[]
+     */
+    private function tiposProcesoCandidatos(string $tipoProceso): array
+    {
+        $tipo = $this->normalizarTipoProceso($tipoProceso);
+
+        if ($tipo === 'PARCIAL') {
+            return ['PARCIAL', 'COSTURA', 'COSTURA-BODEGA'];
+        }
+
+        if ($tipo === 'COSTURA' || $tipo === 'COSTURA-BODEGA') {
+            return [$tipo, 'COSTURA', 'COSTURA-BODEGA', 'PARCIAL'];
+        }
+
+        return [$tipo];
     }
 }

@@ -96,6 +96,7 @@ class ReciboCosturaController extends Controller
                     ->where('numero_pedido', $pedido->numero_pedido)
                     ->where('prenda_pedido_id', $prendaId)
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->where('numero_recibo', $consecutivoOriginal)
                     ->where(function ($query) {
                         // El proceso padre NO debe tener numero_recibo_parcial
                         $query->whereNull('numero_recibo_parcial')
@@ -118,7 +119,7 @@ class ReciboCosturaController extends Controller
                     $procesoPadre = ProcesoPrenda::create([
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_pedido_id' => $prendaId,
-                        'numero_recibo' => null,  // El proceso padre NO tiene número de recibo específico
+                        'numero_recibo' => $consecutivoOriginal,
                         'numero_recibo_parcial' => null,
                         'proceso' => 'Costura',
                         'fecha_inicio' => now(),
@@ -148,8 +149,9 @@ class ReciboCosturaController extends Controller
                     ->where('numero_pedido', $pedido->numero_pedido)
                     ->where('prenda_pedido_id', $prendaId)
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                    ->whereNull('numero_recibo')
                     ->whereNotNull('numero_recibo_parcial')
+                    ->where('numero_recibo_parcial', '>=', $consecutivoOriginal)
+                    ->where('numero_recibo_parcial', '<', $consecutivoOriginal + 1)
                     ->whereNull('deleted_at')
                     ->max('numero_recibo_parcial');
 

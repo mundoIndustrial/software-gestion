@@ -168,8 +168,20 @@ class GetSeguimientoPorPrendaUseCase
             }
         }
 
+        $numeroPedido = $pedidoModel ? (string) $pedidoModel->numero_pedido : null;
+
+        if (!$numeroPedido) {
+            return [
+                'id' => $prenda->id,
+                'nombre' => $prenda->nombre_prenda ?? 'Sin nombre',
+                'seguimientos' => [],
+                'procesos' => [],
+                'recibos_especiales' => [],
+            ];
+        }
+
         $procesosSeguimientoData = $this->obtenerYCalcularProcesos(
-            $pedidoModel->numero_pedido,
+            $numeroPedido,
             $prenda->id,
             $numeroReciboCostura,
             $reciboCosturaId,

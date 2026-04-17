@@ -40,10 +40,13 @@ class AddProcessModalController {
      * @param {string} areaSeleccionada - Área seleccionada
      * @param {number} pedidoId - ID del pedido
      * @param {number} prendaId - ID de la prenda
+     * @param {number} numeroRecibo - Número del recibo (consecutivo_actual)
      */
-    async openFromBadge(areaSeleccionada, pedidoId, prendaId) {
+    async openFromBadge(areaSeleccionada, pedidoId, prendaId, numeroRecibo) {
         try {
-            console.log('[AddProcessModalController]  Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
+            console.log('[AddProcessModalController] openFromBadge - Parámetros recibidos:', {
+                areaSeleccionada, pedidoId, prendaId, numeroRecibo
+            });
 
             // Cerrar cualquier dropdown abierto
             if (typeof closeDropdownRecibos === 'function') {
@@ -58,7 +61,7 @@ class AddProcessModalController {
             }
 
             // Cargar datos del pedido y prenda antes de abrir el modal
-            await this.loadData(pedidoId, prendaId, areaSeleccionada);
+            await this.loadData(pedidoId, prendaId, areaSeleccionada, numeroRecibo);
 
             // Verificación adicional antes de abrir el modal
             console.log('[AddProcessModalController] Verificación pre-apertura:', {
@@ -85,8 +88,9 @@ class AddProcessModalController {
      * @param {number} pedidoId - ID del pedido
      * @param {number} prendaId - ID de la prenda
      * @param {string} areaSeleccionada - Área seleccionada
+     * @param {number} numeroRecibo - Número del recibo (consecutivo_actual)
      */
-    async loadData(pedidoId, prendaId, areaSeleccionada) {
+    async loadData(pedidoId, prendaId, areaSeleccionada, numeroRecibo) {
         console.log('[AddProcessModalController] Cargando datos para pedido:', pedidoId, 'prenda:', prendaId);
 
         try {
@@ -116,6 +120,7 @@ class AddProcessModalController {
             window.currentPedidoId = pedidoId;
             window.currentPrendaId = prendaId;
             window.currentArea = areaSeleccionada;
+            window.currentNumeroRecibo = numeroRecibo;
 
             // Buscar la prenda específica en los datos del pedido
             if (data.prendas && Array.isArray(data.prendas)) {
@@ -223,7 +228,8 @@ class AddProcessModalController {
                 area,
                 encargado,
                 pedido_produccion_id: window.currentOrderData.numero_pedido,
-                prenda_id: window.currentPrendaData.id
+                prenda_id: window.currentPrendaData.id,
+                numero_recibo: window.currentNumeroRecibo
             });
 
             // Enviar datos al backend
@@ -236,6 +242,7 @@ class AddProcessModalController {
                 body: JSON.stringify({
                     pedido_produccion_id: window.currentOrderData.numero_pedido,
                     prenda_id: window.currentPrendaData.id,
+                    numero_recibo: window.currentNumeroRecibo,
                     area: area,
                     encargado: encargado,
                     estado: 'Pendiente'

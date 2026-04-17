@@ -41,7 +41,7 @@ final class GuardarProcesoSeguimientoUseCase
     {
         // ── 1. Upsert por área ─────────────────────────────────────────────
         $procesoExistente = $this->procesosRepo->encontrarActivoPorArea(
-            $dto->pedidoProduccionId, $dto->prendaId, $dto->area
+            $dto->pedidoProduccionId, $dto->prendaId, $dto->area, $dto->numeroRecibo
         );
 
         if ($procesoExistente) {
@@ -59,9 +59,9 @@ final class GuardarProcesoSeguimientoUseCase
             $proceso = $procesoExistente;
             $accion  = 'actualizado';
         } else {
-            // Obtener numero_recibo del consecutivo para procesos de Control de Calidad
-            $numeroRecibo = null;
-            if ($dto->area === 'Control de Calidad') {
+            // Usar numero_recibo del DTO si se proporciona, si no obtener del consecutivo
+            $numeroRecibo = $dto->numeroRecibo;
+            if ($numeroRecibo === null && $dto->area === 'Control de Calidad') {
                 $numeroRecibo = $this->obtenerNumeroReciboCostura($dto->pedidoProduccionId, $dto->prendaId);
             }
 

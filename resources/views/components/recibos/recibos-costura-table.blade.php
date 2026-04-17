@@ -301,11 +301,11 @@
                                     $areaBadge = 'bg-purple'; // Púrpura - elegante para bordado (cambio de bg-danger)
                                 }
                             @endphp
-                            <span class="badge {{ $areaBadge }} area-badge-clickable" 
+                            <span class="badge {{ $areaBadge }} area-badge-clickable"
                                   style="cursor: {{ $puedeAgregarProceso ? 'pointer' : 'default' }}; transition: all 0.2s ease;"
                                   title="{{ $puedeAgregarProceso ? 'Click para agregar proceso' : 'Área actual sin acción disponible' }}"
                                   @if($puedeAgregarProceso)
-                                  onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }})"
+                                  onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }}, {{ $recibo['consecutivo_actual'] ?? 'null' }})"
                                   @endif
                                   onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';"
                                   onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
@@ -356,7 +356,7 @@
                             @endphp
                             
                             <div class="table-cell" style="flex: 10;">
-                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }})">
+                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }}, '{{ $recibo['consecutivo_actual'] ?? '' }}', {{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}, {{ $recibo['pedido_parcial_id'] ?? 'null' }})">
                                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                         {{ $nombreMostrar ?: 'Sin prenda' }}
                                     </span>

@@ -189,14 +189,16 @@ class RegistroOrdenQueryController extends Controller
     public function getConsecutivoCostura($pedido)
     {
         try {
-            $prendaId = request()->query('prenda_id');
-            
+            $prendaId    = request()->query('prenda_id');
+            $numeroRecibo = request()->query('numero_recibo');
+
             \Log::info('[getConsecutivoCostura] Obteniendo consecutivo', [
-                'pedido' => $pedido,
-                'prenda_id' => $prendaId
+                'pedido'        => $pedido,
+                'prenda_id'     => $prendaId,
+                'numero_recibo' => $numeroRecibo,
             ]);
-            
-            $result = $this->useCasesFacade->getConsecutivoCosturaUseCase->execute($pedido, $prendaId);
+
+            $result = $this->useCasesFacade->getConsecutivoCosturaUseCase->execute($pedido, $prendaId, $numeroRecibo);
             
             \Log::info('[getConsecutivoCostura] Resultado exitoso', [
                 'consecutivo' => $result['consecutivo'] ?? null,

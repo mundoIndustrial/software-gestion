@@ -17,10 +17,10 @@ class CantidadCalculator
     ) {}
 
     /**
-     * Calcular cantidad total de una prenda
-     * 
-     * @param array $recibo Datos del recibo
-     * @return int Cantidad total
+     * Calcular cantidad total de un recibo específico
+     *
+     * @param array $recibo Datos del recibo (con prenda_id y consecutivo_actual)
+     * @return int Cantidad total del recibo
      */
     public function calcular(array $recibo): int
     {
@@ -28,6 +28,31 @@ class CantidadCalculator
             return 0;
         }
 
-        return $this->prendaTallaRepository->calcularCantidadTotalPrenda($recibo['prenda_id']);
+        $prendaId = (int) $recibo['prenda_id'];
+        $pedidoProduccionId = isset($recibo['pedido_produccion_id']) ? (int) $recibo['pedido_produccion_id'] : null;
+        $tipoRecibo = isset($recibo['tipo_recibo']) ? (string) $recibo['tipo_recibo'] : null;
+        $numeroRecibo = $recibo['consecutivo_actual'] ?? null;
+
+        if ($numeroRecibo !== null) {
+            return $this->prendaTallaRepository->calcularCantidadPorRecibo(
+                prendaPedidoId: $prendaId,
+                numeroRecibo: $numeroRecibo,
+                pedidoProduccionId: $pedidoProduccionId,
+                tipoRecibo: $tipoRecibo
+            );
+        }
+
+        return $this->prendaTallaRepository->calcularCantidadTotalPrenda($prendaId);
+    }
+
+    /**
+     * Calcular cantidades para varios recibos en bloque.
+     *
+     * @param array $recibos
+     * @return array<string, int> Mapa por key: pedido|prenda|tipo|consecutivo
+     */
+    public function calcularMasivo(array $recibos): array
+    {
+        return $this->prendaTallaRepository->calcularCantidadesPorRecibos($recibos);
     }
 }

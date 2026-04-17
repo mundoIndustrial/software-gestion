@@ -147,8 +147,42 @@
 @endif
 
 <script>
+window.__pedidosRecibosLoaderUrl = @json(asset('js/modulos/pedidos-recibos/loader.js') . '?v=' . time());
+window.__pedidosRecibosLoaderPromise = null;
+
+window.__ensurePedidosRecibosModule = async function() {
+    const tieneApiGlobal = typeof window.openOrderDetailModalWithProcess === 'function';
+    const tieneInstancia = !!(window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function');
+    if (tieneApiGlobal || tieneInstancia) return true;
+
+    const loaderUrl = String(window.__pedidosRecibosLoaderUrl || '').trim();
+    if (!loaderUrl) return false;
+
+    try {
+        if (!window.__pedidosRecibosLoaderPromise) {
+            window.__pedidosRecibosLoaderPromise = import(loaderUrl);
+        }
+        await window.__pedidosRecibosLoaderPromise;
+    } catch (error) {
+        console.error('[pedidos-logo] Error cargando loader de recibos:', error);
+        return false;
+    }
+
+    return (
+        typeof window.openOrderDetailModalWithProcess === 'function' ||
+        !!(window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function')
+    );
+};
+
 // Función global para ver recibo directamente (sin selector)
-window.verRecibo = function(pedidoId, prendaId, tipoProceso, esParcial = false, pedidoParcialId = null, nombreProceso = null) {
+window.verRecibo = async function(pedidoId, prendaId, tipoProceso, esParcial = false, pedidoParcialId = null, nombreProceso = null) {
+    const moduloListo = await window.__ensurePedidosRecibosModule();
+    if (!moduloListo) {
+        console.error('El módulo de recibos no está disponible');
+        alert('Error: El módulo de recibos no está disponible. Por favor recargue la página.');
+        return;
+    }
+
     const tipo = String(tipoProceso);
 
     // Si es anexo (recibo parcial), abrir usando el flujo de parcial para que cargue sus tallas/consecutivo.
@@ -166,6 +200,10 @@ window.verRecibo = function(pedidoId, prendaId, tipoProceso, esParcial = false, 
     // Caso normal: abrir recibo base
     if (typeof window.openOrderDetailModalWithProcess === 'function') {
         return window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipo);
+    }
+
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function') {
+        return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipo);
     }
 
     console.error('La función openOrderDetailModalWithProcess no está disponible');

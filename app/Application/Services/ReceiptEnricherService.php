@@ -9,9 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * ReceiptEnricherService
- * 
- * Responsabilidad: Enriquecer recibos con información adicional
- * Orquesta cálculos y transformaciones de datos
+ *
+ * Responsabilidad: enriquecer recibos con informacion adicional.
  */
 class ReceiptEnricherService
 {
@@ -20,28 +19,49 @@ class ReceiptEnricherService
     ) {}
 
     /**
-     * Enriquecer recibos con información de pedidos y cálculos
-     * 
-     * @param array $recibos Array de recibos sin enriquecer
-     * @return array Recibos enriquecidos
+     * Enriquecer recibos con informacion de pedidos y calculos.
+     *
+     * @param array $recibos
+     * @return array
      */
     public function enriquecer(array $recibos): array
     {
+        if ($recibos === []) {
+            return [];
+        }
+
         $parcialesPorRecibo = $this->obtenerMapaParcialesPorRecibo($recibos);
         $metaParcialPorRecibo = $this->obtenerMapaMetaParcialPorRecibo($recibos);
-        
-        // OPTIMIZACIÓN: Cachear cálculos de días para evitar recálculos innecesarios
-        // cuando hay múltiples recibos del mismo pedido
+        $cantidadesPorRecibo = $this->cantidadCalculator->calcularMasivo($recibos);
+
+        $pedidoIds = collect($recibos)
+            ->pluck('pedido_produccion_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $pedidosById = PedidoProduccion::with([
+            'prendas.coloresTelas.tela',
+            'prendas.coloresTelas.color',
+            'prendas.tallas',
+        ])
+            ->whereIn('id', $pedidoIds)
+            ->get()
+            ->keyBy('id');
+
         $diasPorPedido = [];
 
-        return array_map(function($recibo) use ($parcialesPorRecibo, &$diasPorPedido) {
+        return array_map(function (array $recibo) use (
+            $parcialesPorRecibo,
+            $metaParcialPorRecibo,
+            $cantidadesPorRecibo,
+            $pedidosById,
+            &$diasPorPedido
+        ) {
             $pedidoId = (int) ($recibo['pedido_produccion_id'] ?? 0);
-            
-            $pedido = PedidoProduccion::with([
-                'prendas.coloresTelas.tela',
-                'prendas.coloresTelas.color',
-                'prendas.tallas'
-            ])->find($pedidoId);
+            $pedido = $pedidosById->get($pedidoId);
 
             $reciboKey = $this->buildReciboKey(
                 $pedidoId,
@@ -52,8 +72,7 @@ class ReceiptEnricherService
 
             $totalParciales = (int) ($parcialesPorRecibo[$reciboKey] ?? 0);
             $metaParcial = $metaParcialPorRecibo[$reciboKey] ?? null;
-            
-            // OPTIMIZACIÓN: Usar caché de días por pedido
+
             if ($pedido && !isset($diasPorPedido[$pedidoId])) {
                 $diasPorPedido[$pedidoId] = $this->calcularDiasHabiles($pedido->created_at);
             }
@@ -61,8 +80,8 @@ class ReceiptEnricherService
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
-                'dias_calculados' => $diasPorPedido[$pedidoId] ?? 0,
-                'cantidad_total' => $this->cantidadCalculator->calcular($recibo),
+                'dias_calculados' => (int) ($diasPorPedido[$pedidoId] ?? 0),
+                'cantidad_total' => (int) ($cantidadesPorRecibo[$reciboKey] ?? 0),
                 'tiene_parciales' => $totalParciales > 0,
                 'total_parciales' => $totalParciales,
                 'es_parcial' => (bool) ($metaParcial['es_parcial'] ?? false),
@@ -72,9 +91,6 @@ class ReceiptEnricherService
     }
 
     /**
-     * Obtiene metadata de si cada recibo listado corresponde a un anexo/parcial.
-     * Match por pedido + prenda + tipo + consecutivo_actual (pedidos_parciales.consecutivo_actual).
-     *
      * @param array $recibos
      * @return array<string, array{es_parcial: bool, pedido_parcial_id: ?int}>
      */
@@ -256,8 +272,6 @@ class ReceiptEnricherService
     }
 
     /**
-     * Extraer información relevante del pedido
-     * 
      * @param PedidoProduccion $pedido
      * @return array
      */
@@ -275,8 +289,6 @@ class ReceiptEnricherService
     }
 
     /**
-     * Generar descripción detallada del recibo
-     * 
      * @param PedidoProduccion|null $pedido
      * @param array $recibo
      * @return string
@@ -292,12 +304,12 @@ class ReceiptEnricherService
             return '';
         }
 
-        $desc = "PRENDA: " . $prenda->nombre_prenda;
+        $desc = 'PRENDA: ' . $prenda->nombre_prenda;
 
         if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
             $tela = $prenda->coloresTelas->first();
-            $desc .= " | TELA: " . ($tela->tela->nombre ?? 'Sin tela');
-            $desc .= " | COLOR: " . ($tela->color->nombre ?? 'Sin color');
+            $desc .= ' | TELA: ' . ($tela->tela->nombre ?? 'Sin tela');
+            $desc .= ' | COLOR: ' . ($tela->color->nombre ?? 'Sin color');
         }
 
         return $desc;

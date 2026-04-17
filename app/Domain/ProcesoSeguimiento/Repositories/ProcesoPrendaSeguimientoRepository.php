@@ -13,10 +13,10 @@ use App\Models\ProcesoPrenda;
 interface ProcesoPrendaSeguimientoRepository
 {
     /**
-     * Buscar un proceso activo (no Completado) por pedido, prenda y área.
-     * Usado para el upsert: reutilizar en lugar de duplicar la misma área.
+     * Buscar un proceso activo (no Completado) por pedido, prenda, área y opcionalmente por número de recibo.
+     * Usado para el upsert: reutilizar en lugar de duplicar la misma área para el mismo recibo.
      */
-    public function encontrarActivoPorArea(int $numeroPedido, int $prendaId, string $area): ?ProcesoPrenda;
+    public function encontrarActivoPorArea(int $numeroPedido, int $prendaId, string $area, ?int $numeroRecibo = null): ?ProcesoPrenda;
 
     /**
      * Buscar el proceso más reciente de una prenda en un pedido.

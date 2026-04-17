@@ -5,6 +5,7 @@ use App\Infrastructure\Http\Controllers\Pdf\LogoPdfController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\VisualizadorLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController;
 use App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController;
+use App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorReceiptsController;
 
 // ========================================
 // RUTAS PARA VISUALIZADOR DE COTIZACIONES LOGO
@@ -20,6 +21,8 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     // Pedidos Logo
     Route::get('/pedidos-logo', [VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
     Route::get('/pedidos-logo/data', [PedidosLogoController::class, 'data'])->name('pedidos-logo.data');
+    Route::get('/pedidos-logo/recibos-procesos/observacion', [SupervisorReceiptsController::class, 'obtenerObservacionReciboProceso'])
+        ->name('pedidos-logo.recibos-procesos.observacion.obtener');
     Route::post('/pedidos-logo/area-novedad', [PedidosLogoController::class, 'guardarAreaNovedad'])->name('pedidos-logo.area-novedad');
     Route::post('/pedidos-logo/marcar-completado', [PedidosLogoController::class, 'marcarCompletado'])
         ->middleware('role:bordador,admin')

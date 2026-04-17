@@ -1803,6 +1803,9 @@
 
                 // Construir objeto para llenarReciboCosturaMobile con la misma estructura
                 const pedidoData = {
+                    id: data.id || data.pedido_id || data.pedido_produccion_id || null,
+                    pedido_id: data.id || data.pedido_id || data.pedido_produccion_id || null,
+                    pedido_produccion_id: data.id || data.pedido_id || data.pedido_produccion_id || null,
                     fecha: fechaRecibo,
                     asesora: data.asesor || 'N/A',
                     formaPago: data.forma_de_pago || 'N/A',

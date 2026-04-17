@@ -14,14 +14,20 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class EloquentProcesoPrendaSeguimientoRepository implements ProcesoPrendaSeguimientoRepository
 {
-    public function encontrarActivoPorArea(int $numeroPedido, int $prendaId, string $area): ?ProcesoPrenda
+    public function encontrarActivoPorArea(int $numeroPedido, int $prendaId, string $area, ?int $numeroRecibo = null): ?ProcesoPrenda
     {
-        return ProcesoPrenda::where([
+        $query = ProcesoPrenda::where([
             ['numero_pedido',    '=', $numeroPedido],
             ['prenda_pedido_id', '=', $prendaId],
             ['proceso',         '=', $area],
             ['estado_proceso',  '!=', 'Completado'],
-        ])->first();
+        ]);
+
+        if ($numeroRecibo !== null) {
+            $query->where('numero_recibo', '=', $numeroRecibo);
+        }
+
+        return $query->first();
     }
 
     public function encontrarMasReciente(int $prendaId, int $numeroPedido): ?ProcesoPrenda

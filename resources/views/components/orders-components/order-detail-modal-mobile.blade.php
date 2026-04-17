@@ -464,11 +464,16 @@ function escapeHtmlMobile(value) {
 }
 
 async function obtenerObservacionReciboProcesoMobile(pedidoId, prendaId, tipoProceso) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const parcialId = String(urlParams.get('parcial_id') || urlParams.get('pedido_parcial_id') || '').trim();
     const params = new URLSearchParams({
         pedido_id: String(pedidoId),
         prenda_id: String(prendaId),
         tipo_proceso: String(tipoProceso || '').trim().toUpperCase()
     });
+    if (parcialId) {
+        params.set('parcial_id', parcialId);
+    }
 
     const endpoints = [
         '/operario/api/recibos-procesos/observacion',
