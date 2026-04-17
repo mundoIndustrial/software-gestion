@@ -9,8 +9,6 @@ use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Services\CalculadorDiasService;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -24,8 +22,6 @@ class GetSeguimientoPorPrendaUseCase
     private PedidoProduccionTrackingRepository $pedidoRepository;
     private ConsecutivosRecibosRepository $consecutivosRepository;
     private PrendaPedidoQuantityCalculator $prendaQuantityCalculator;
-    private array $festivosPorAnioEnMemoria = [];
-    private array $festivosPorRangoEnMemoria = [];
 
     public function __construct(
         PedidoProduccionTrackingRepository $pedidoRepository,
@@ -481,7 +477,7 @@ class GetSeguimientoPorPrendaUseCase
     }
 
     /**
-     * Calcular días hábiles SOLO desde API (SIN FALLBACKS)
+     * Calcular dias habiles con cmixin/business-day (sin API externa)
      * @param Carbon|string|null $fechaInicio
      * @param Carbon|string|null $fechaFin
      * @return int|null
@@ -492,148 +488,35 @@ class GetSeguimientoPorPrendaUseCase
             return null;
         }
 
-        // Convertir a Carbon si es string
         $inicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
         $fin = $fechaFin instanceof Carbon ? $fechaFin : Carbon::parse($fechaFin);
 
-        // Si las fechas son iguales o fin es antes de inicio, retornar 0
         if ($inicio->format('Y-m-d') === $fin->format('Y-m-d') || $fin < $inicio) {
             return 0;
         }
 
         try {
             $diasHabiles = 0;
-            
-            // Obtener festivos SOLO de la API (sin fallbacks)
-            $festivos = $this->obtenerFestivosDesdeAPI($inicio->year, $fin->year);
-            
-            $actual = $inicio->copy();
-            
+            $actual = $inicio->copy()->startOfDay();
+            $fin = $fin->copy()->startOfDay();
+
             while ($actual->lte($fin)) {
-                $dateStr = $actual->toDateString();
-                $isDayOfWeek = ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6);
-                $isFestivo = isset($festivos[$dateStr]);
-                
-                if ($isDayOfWeek && !$isFestivo) {
+                if ($actual->isBusinessDay()) {
                     $diasHabiles++;
                 }
-                
                 $actual->addDay();
             }
 
-            // Restar 1 (igual que CalculadorDiasService para mantener consistencia)
+            // Mantener comportamiento historico del modulo
             return max(0, $diasHabiles - 1);
         } catch (\Exception $e) {
-            Log::error('[GetSeguimientoPorPrendaUseCase] Error calculando días hábiles con API', [
+            Log::error('[GetSeguimientoPorPrendaUseCase] Error calculando dias habiles', [
                 'error' => $e->getMessage(),
                 'fecha_inicio' => $inicio->format('Y-m-d'),
-                'fecha_fin' => $fin->format('Y-m-d')
+                'fecha_fin' => $fin->format('Y-m-d'),
             ]);
             return null;
         }
-    }
-
-    /**
-     * Obtener festivos DIRECTAMENTE de la API - CON FALLBACK
-     * Intenta múltiples endpoints de Nager.Date
-     * Si falla, retorna array vacío (sin festivos) para permitir cálculo normal
-     */
-    private function obtenerFestivosDesdeAPI(int $yearInicio, int $yearFin): array
-    {
-        $rangoKey = "{$yearInicio}-{$yearFin}";
-        if (isset($this->festivosPorRangoEnMemoria[$rangoKey])) {
-            return $this->festivosPorRangoEnMemoria[$rangoKey];
-        }
-
-        $festivos = [];
-
-        for ($year = $yearInicio; $year <= $yearFin; $year++) {
-            $festivosDelAnio = $this->obtenerFestivosDelAnioDesdeAPI($year);
-            $festivos = array_merge($festivos, $festivosDelAnio);
-        }
-
-        // Si no hay festivos, log de advertencia pero retorna array vacío (no lanza excepción)
-        if (empty($festivos)) {
-            Log::warning('[GetSeguimientoPorPrendaUseCase] No se obtuvieron festivos de la API, continuando sin considerarlos', [
-                'year_inicio' => $yearInicio,
-                'year_fin' => $yearFin
-            ]);
-        }
-
-        $this->festivosPorRangoEnMemoria[$rangoKey] = $festivos;
-        return $festivos;
-    }
-
-    /**
-     * Obtener festivos de UN AÑO desde la API
-     * Intenta dos endpoints de Nager.Date
-     * Si falla, retorna array vacío en lugar de lanzar excepción
-     */
-    private function obtenerFestivosDelAnioDesdeAPI(int $year): array
-    {
-        if (isset($this->festivosPorAnioEnMemoria[$year])) {
-            return $this->festivosPorAnioEnMemoria[$year];
-        }
-
-        $cacheKey = "seguimiento_prenda_festivos_{$year}";
-        $festivosCacheados = Cache::get($cacheKey);
-        if (is_array($festivosCacheados)) {
-            $this->festivosPorAnioEnMemoria[$year] = $festivosCacheados;
-            return $festivosCacheados;
-        }
-
-        // Priorizar date.nager.at porque api.nager.date está fallando por DNS en este entorno.
-        $endpoints = [
-            "https://date.nager.at/api/v3/PublicHolidays/{$year}/CO",
-            "https://api.nager.date/v3/PublicHolidays/{$year}/CO",
-        ];
-
-        foreach ($endpoints as $url) {
-            try {
-                $response = Http::timeout(5)
-                    ->withoutVerifying()
-                    ->withHeaders(['User-Agent' => 'Laravel-App/1.0'])
-                    ->get($url);
-
-                if ($response->successful()) {
-                    $festivosData = $response->json();
-                    $festivos = [];
-
-                    if (is_array($festivosData)) {
-                        foreach ($festivosData as $festivo) {
-                            if (isset($festivo['date'])) {
-                                $festivos[$festivo['date']] = true;
-                            }
-                        }
-                    }
-
-                    Log::info('[GetSeguimientoPorPrendaUseCase] Festivos obtenidos de API', [
-                        'year' => $year,
-                        'url' => $url,
-                        'count' => count($festivos)
-                    ]);
-
-                    Cache::put($cacheKey, $festivos, now()->addDays(30));
-                    $this->festivosPorAnioEnMemoria[$year] = $festivos;
-                    return $festivos;
-                }
-            } catch (\Exception $e) {
-                Log::debug('[GetSeguimientoPorPrendaUseCase] Error en endpoint API', [
-                    'url' => $url,
-                    'year' => $year,
-                    'error' => $e->getMessage()
-                ]);
-                continue;
-            }
-        }
-
-        // Si llega aquí, AMBOS endpoints fallaron - retornar array vacío (sin festivos)
-        Log::warning('[GetSeguimientoPorPrendaUseCase] No se pudo obtener festivos para el año', [
-            'year' => $year,
-            'message' => 'Ambos endpoints de Nager.Date fallaron, continuando sin festivos'
-        ]);
-        $this->festivosPorAnioEnMemoria[$year] = [];
-        return [];
     }
 
     /**
@@ -645,7 +528,7 @@ class GetSeguimientoPorPrendaUseCase
             foreach ($prenda['consecutivos'] as $c) {
                 // Cast defensivo: pueden ser stdClass o array
                 $cArray = is_array($c) ? $c : (array) $c;
-                
+
                 if (($cArray['tipo_recibo'] ?? null) === 'COSTURA' && ($cArray['activo'] ?? 0) == 1) {
                     return (string) ($cArray['consecutivo_actual'] ?? '-');
                 }
@@ -655,8 +538,8 @@ class GetSeguimientoPorPrendaUseCase
     }
 
     /**
-     * Obtener el área desde la tabla consecutivos_recibos_pedidos
-     * Retorna directamente el área del registro
+     * Obtener el area desde la tabla consecutivos_recibos_pedidos
+     * Retorna directamente el area del registro
      */
     private function obtenerAreaMasReciente($consecutivos): ?string
     {

@@ -430,13 +430,24 @@ export class ReceiptRenderer {
                 tipo_proceso: tipo
             });
 
-            const response = await fetch(`/api/supervisor-pedidos/recibos-procesos/observacion?${params.toString()}`);
-            if (!response.ok) return;
+            const endpoints = this._getObservacionProcesoEndpoints();
+            let observacion = '';
 
-            const result = await response.json();
-            if (!result?.success) return;
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${endpoint}?${params.toString()}`);
+                    if (!response.ok) continue;
 
-            const observacion = String(result?.data?.observacion || '').trim();
+                    const result = await response.json();
+                    if (!result?.success) continue;
+
+                    observacion = String(result?.data?.observacion || '').trim();
+                    break;
+                } catch (_) {
+                    // Intentar siguiente endpoint
+                }
+            }
+
             if (!observacion) return;
 
             const observacionId = 'observacion-recibo-proceso-extra';
@@ -451,6 +462,26 @@ export class ReceiptRenderer {
         } catch (error) {
             console.warn('[ReceiptRenderer._anexarObservacionReciboProceso] Error:', error);
         }
+    }
+
+    static _getObservacionProcesoEndpoints() {
+        const path = String(window?.location?.pathname || '').toLowerCase();
+
+        if (path.includes('/operario/')) {
+            return [
+                '/operario/api/recibos-procesos/observacion',
+                '/api/supervisor-pedidos/recibos-procesos/observacion'
+            ];
+        }
+
+        if (path.includes('/control-calidad/')) {
+            return [
+                '/operario/api/recibos-procesos/observacion',
+                '/api/supervisor-pedidos/recibos-procesos/observacion'
+            ];
+        }
+
+        return ['/api/supervisor-pedidos/recibos-procesos/observacion'];
     }
 
     static _escapeHtml(value) {

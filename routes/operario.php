@@ -28,6 +28,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
     Route::delete('/api/parciales/{id}/deshacer', [OperarioController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
     Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
+    Route::get('/api/recibos-procesos/observacion', [OperarioController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
     Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
     Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
     Route::get('/debug', [OperarioController::class, 'debug'])->name('debug');

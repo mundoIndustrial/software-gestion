@@ -454,6 +454,74 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
 };
 
 // Función para llenar el recibo móvil
+function escapeHtmlMobile(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+async function obtenerObservacionReciboProcesoMobile(pedidoId, prendaId, tipoProceso) {
+    const params = new URLSearchParams({
+        pedido_id: String(pedidoId),
+        prenda_id: String(prendaId),
+        tipo_proceso: String(tipoProceso || '').trim().toUpperCase()
+    });
+
+    const endpoints = [
+        '/operario/api/recibos-procesos/observacion',
+        '/api/supervisor-pedidos/recibos-procesos/observacion'
+    ];
+
+    for (const endpoint of endpoints) {
+        try {
+            const response = await fetch(`${endpoint}?${params.toString()}`);
+            if (!response.ok) continue;
+
+            const result = await response.json();
+            if (!result?.success) continue;
+
+            return String(result?.data?.observacion || '').trim();
+        } catch (_) {
+            // Intentar siguiente endpoint
+        }
+    }
+
+    return '';
+}
+
+window.anexarObservacionReciboProcesoMobile = async function({ pedidoId, tipoProceso, prendasMostradas }) {
+    const descripcionContenedor = document.getElementById('mobile-descripcion');
+    if (!descripcionContenedor) return;
+
+    descripcionContenedor.querySelectorAll('.observacion-recibo-proceso-extra-mobile').forEach((el) => el.remove());
+
+    const pedidoIdInt = Number(pedidoId || 0);
+    const tipoProcesoNorm = String(tipoProceso || '').trim().toUpperCase();
+    if (!pedidoIdInt || !tipoProcesoNorm || !Array.isArray(prendasMostradas) || prendasMostradas.length === 0) {
+        return;
+    }
+
+    const itemsPrenda = descripcionContenedor.querySelectorAll('.prenda-item');
+    if (!itemsPrenda.length) return;
+
+    await Promise.all(Array.from(itemsPrenda).map(async (itemPrenda, index) => {
+        const prenda = prendasMostradas[index];
+        const prendaId = Number(prenda?.id || prenda?.prenda_pedido_id || prenda?.prenda_id || 0);
+        if (!prendaId) return;
+
+        const observacion = await obtenerObservacionReciboProcesoMobile(pedidoIdInt, prendaId, tipoProcesoNorm);
+        if (!observacion) return;
+
+        const bloque = document.createElement('div');
+        bloque.className = 'observacion-recibo-proceso-extra-mobile';
+        bloque.innerHTML = `<br><br><strong>OBSERVACIÓN PROCESO:</strong><br>${escapeHtmlMobile(observacion).replace(/\n/g, '<br>')}`;
+        itemPrenda.appendChild(bloque);
+    }));
+};
+
 window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE]  ========== INICIANDO llenarReciboCosturaMobile ==========');
     console.log('📱 [RECIBO MOBILE] Datos recibidos:', data);
@@ -464,7 +532,10 @@ window.llenarReciboCosturaMobile = function(data) {
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
     const urlParams = new URLSearchParams(window.location.search);
     const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
-    const esReciboParcial = tipoReciboUpper === 'PARCIAL' && consecutivoParcialParam !== '';
+    const pedidoParcialIdParam = String(
+        urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || ''
+    ).trim();
+    const esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
         if (tipoReciboUpper) {
@@ -1523,10 +1594,7 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                     }
                     
-                    // OBSERVACIONES
-                    if (proceso.observaciones) {
-                        datosProcesoHTML += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
-                    }
+                    const observacionProceso = String(proceso.observaciones || '').trim();
 
                     // TALLAS DEL PROCESO (como en /registros)
                     if (proceso.tallas) {
@@ -1564,6 +1632,11 @@ window.llenarReciboCosturaMobile = function(data) {
                             tallasIncluidasEnDatosProceso = true;
                             datosProcesoHTML += `<strong>TALLAS</strong><br>${lineasTallas.join('<br>')}<br>`;
                         }
+                    }
+
+                    // OBSERVACIONES (debajo de tallas)
+                    if (observacionProceso) {
+                        datosProcesoHTML += `<strong>OBSERVACIONES:</strong><br>${observacionProceso.toUpperCase()}<br>`;
                     }
                 });
             }
@@ -1858,10 +1931,7 @@ window.llenarReciboCosturaMobile = function(data) {
                             }
                         }
                         
-                        // Observaciones del reflectivo
-                        if (procesoReflectivo.observaciones && procesoReflectivo.observaciones.trim()) {
-                            html += `<strong>OBSERVACIONES:</strong><br>${procesoReflectivo.observaciones.toUpperCase()}<br>`;
-                        }
+                        const observacionReflectivo = String(procesoReflectivo.observaciones || '').trim();
                         
                         // Tallas del reflectivo
                         // Lógica: 
@@ -1941,17 +2011,87 @@ window.llenarReciboCosturaMobile = function(data) {
                                 }
                             }
                         }
+
+                        // Observaciones del reflectivo (debajo de tallas)
+                        if (observacionReflectivo) {
+                            html += `<strong>OBSERVACIONES:</strong><br>${observacionReflectivo.toUpperCase()}<br>`;
+                        }
                     }
                 }
             } else {
                 // === NO-COSTURA (ESTAMPADO, BORDADO, DTF, etc.): Solo el proceso seleccionado ===
                 // (Igual que Formatters.construirDescripcionProceso en recibos-costura)
                 if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
-                    const procesosFiltrados = prenda.procesos.filter(p => {
+                    const procesosFiltradosRaw = prenda.procesos.filter(p => {
                         const tipo = (p.proceso || p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
                         return tipo === procesoActualSeleccionado.toUpperCase();
                     });
+
+                    let procesosFiltrados = procesosFiltradosRaw;
+                    if (esReciboParcial) {
+                        const procesosParciales = procesosFiltradosRaw.filter((p) => {
+                            const parcialIdProceso = String(p.pedido_parcial_id || p.parcial_id || '').trim();
+                            const matchById = pedidoParcialIdParam !== '' && parcialIdProceso === pedidoParcialIdParam;
+                            return matchById || !!p.es_parcial;
+                        });
+
+                        if (procesosParciales.length > 0) {
+                            procesosFiltrados = procesosParciales;
+                        }
+                    }
                     
+                    // Fallback para anexos/parciales: puede no existir `prenda.procesos` con el tipo actual
+                    // (ej. REFLECTIVO parcial), pero sí venir en `prenda.recibos[REFLECTIVO]`.
+                    if (procesosFiltrados.length === 0) {
+                        let reciboParcial = null;
+                        const recibosPrenda = prenda?.recibos;
+                        const procesoActualUpper = String(procesoActualSeleccionado || '').trim().toUpperCase();
+                        const parcialIdEsperado = String(pedidoParcialIdParam || '').trim();
+
+                        if (recibosPrenda && typeof recibosPrenda === 'object' && !Array.isArray(recibosPrenda)) {
+                            reciboParcial = recibosPrenda[procesoActualSeleccionado] || null;
+
+                            if (!reciboParcial) {
+                                for (const [key, value] of Object.entries(recibosPrenda)) {
+                                    if (String(key || '').trim().toUpperCase() === procesoActualUpper && value) {
+                                        reciboParcial = value;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!reciboParcial) {
+                                for (const value of Object.values(recibosPrenda)) {
+                                    if (!value || typeof value !== 'object') continue;
+                                    const tipoInterno = String(value.tipo_recibo || value.proceso || '').trim().toUpperCase();
+                                    const parcialInterno = String(value.parcial_id || value.pedido_parcial_id || value.id || '').trim();
+                                    const coincideTipo = tipoInterno !== '' && tipoInterno === procesoActualUpper;
+                                    const coincideParcial = parcialIdEsperado !== '' && parcialInterno === parcialIdEsperado;
+                                    if (coincideTipo || coincideParcial) {
+                                        reciboParcial = value;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (reciboParcial && typeof reciboParcial === 'object') {
+                            procesosFiltrados = [{
+                                proceso: procesoActualSeleccionado,
+                                tipo_proceso: procesoActualSeleccionado,
+                                nombre_proceso: procesoActualSeleccionado,
+                                es_parcial: true,
+                                pedido_parcial_id: reciboParcial?.id || pedidoParcialIdParam || null,
+                                tallas: reciboParcial?.tallas || [],
+                                talla_colores: reciboParcial?.talla_colores || [],
+                                ubicaciones: reciboParcial?.ubicaciones || null,
+                                observaciones: reciboParcial?.observaciones || ''
+                            }];
+
+                            console.log('📱 [RECIBO MOBILE] Fallback parcial desde prenda.recibos aplicado:', procesosFiltrados[0]);
+                        }
+                    }
+
                     console.log('📱 [RECIBO MOBILE] Procesos filtrados para', procesoActualSeleccionado + ':', procesosFiltrados.length);
                     
                     procesosFiltrados.forEach((proceso) => {
@@ -1966,21 +2106,36 @@ window.llenarReciboCosturaMobile = function(data) {
                             }
                         }
                         
-                        // OBSERVACIONES del proceso
-                        if (proceso.observaciones && proceso.observaciones.trim()) {
-                            html += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
-                        }
+                        const observacionProceso = String(proceso.observaciones || '').trim();
                         
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
                         // NEW: Enriquecer con talla_colores si disponibles
                         let tallasObj = proceso.tallas;
                         if (esReciboParcial) {
-                            if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                            if (Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando proceso.talla_colores:', proceso.talla_colores);
+                                tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
+                            } else if (Array.isArray(proceso.tallas) && proceso.tallas.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando proceso.tallas:', proceso.tallas);
+                                tallasObj = transformarTallasListaParcialAEstructura(proceso.tallas);
+                            } else if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                 console.log('[OPERARIO] Parcial detectado, usando talla_colores del parcial:', prenda.talla_colores);
                                 tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
                             } else if (Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
                                 console.log('[OPERARIO] Parcial detectado, usando tallas del parcial:', prenda.tallas);
                                 tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
+                            }
+
+                            if ((!tallasObj || Object.keys(tallasObj).length === 0) && Array.isArray(proceso.tallas_detalle) && proceso.tallas_detalle.length > 0) {
+                                console.log('[OPERARIO] Parcial detectado, usando proceso.tallas_detalle:', proceso.tallas_detalle);
+                                tallasObj = transformarTallasListaParcialAEstructura(
+                                    proceso.tallas_detalle.map((t) => ({
+                                        genero: t?.genero,
+                                        talla: t?.talla,
+                                        cantidad: t?.cantidad,
+                                        color_nombre: t?.color_nombre || ''
+                                    }))
+                                );
                             }
                         }
                         
@@ -2008,6 +2163,12 @@ window.llenarReciboCosturaMobile = function(data) {
                             prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0
                         ) {
                             tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                        }
+
+                        // Fallback final para anexos: si aún no hay tallas, usar prenda.tallas (lista de pedidos_parciales_tallas)
+                        if (esReciboParcial && (!tallasObj || Object.keys(tallasObj).length === 0) && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                            console.log('[OPERARIO] Parcial fallback final usando prenda.tallas:', prenda.tallas);
+                            tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
                         }
 
                         if (tallasObj && typeof tallasObj === 'object') {
@@ -2116,6 +2277,11 @@ window.llenarReciboCosturaMobile = function(data) {
                                 html += `<strong>TALLAS</strong><br>${tallasLineas.join('<br>')}<br>`;
                             }
                         }
+
+                        // OBSERVACIONES del proceso (debajo de tallas)
+                        if (observacionProceso) {
+                            html += `<strong>OBSERVACIONES:</strong><br>${observacionProceso.toUpperCase()}<br>`;
+                        }
                     });
                 }
             }
@@ -2146,6 +2312,12 @@ window.llenarReciboCosturaMobile = function(data) {
     
     // ACTUALIZAR TÍTULO DEL RECIBO CON EL PROCESO ACTUAL
     // Actualizar SIEMPRE que haya un procesoActualSeleccionado (incluso cuando regresas a índice 0)
+    window.anexarObservacionReciboProcesoMobile({
+        pedidoId: Number(data?.id || data?.pedido_id || data?.pedido_produccion_id || 0),
+        tipoProceso: String(procesoActualSeleccionado || '').trim().toUpperCase(),
+        prendasMostradas: Array.isArray(prendasActuales) ? prendasActuales : []
+    });
+
     if (procesoActualSeleccionado) {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {

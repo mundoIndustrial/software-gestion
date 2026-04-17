@@ -4,6 +4,7 @@ namespace App\Application\Services;
 
 use App\Models\PedidoProduccion;
 use App\Models\ReciboPorPartes;
+use Carbon\Carbon;
 
 /**
  * ReceiptEnricherService
@@ -14,7 +15,6 @@ use App\Models\ReciboPorPartes;
 class ReceiptEnricherService
 {
     public function __construct(
-        private DiaLaboralCalculator $diaLaboralCalculator,
         private CantidadCalculator $cantidadCalculator
     ) {}
 
@@ -52,7 +52,7 @@ class ReceiptEnricherService
             
             // OPTIMIZACIÓN: Usar caché de días por pedido
             if ($pedido && !isset($diasPorPedido[$pedidoId])) {
-                $diasPorPedido[$pedidoId] = $this->diaLaboralCalculator->calcular($pedido->created_at);
+                $diasPorPedido[$pedidoId] = $this->calcularDiasHabiles($pedido->created_at);
             }
 
             return array_merge($recibo, [
@@ -122,6 +122,32 @@ class ReceiptEnricherService
                 $carry[$key] = (int) ($carry[$key] ?? 0) + 1;
                 return $carry;
             }, []);
+    }
+
+    private function calcularDiasHabiles(?Carbon $fechaCreacion): int
+    {
+        if (!$fechaCreacion) {
+            return 0;
+        }
+
+        $inicioConteo = $fechaCreacion->copy()->startOfDay()->addDay();
+        $hoy = now()->startOfDay();
+
+        if ($inicioConteo->gt($hoy)) {
+            return 0;
+        }
+
+        $dias = 0;
+        $fecha = $inicioConteo->copy();
+
+        while ($fecha->lte($hoy)) {
+            if ($fecha->isBusinessDay()) {
+                $dias++;
+            }
+            $fecha->addDay();
+        }
+
+        return $dias;
     }
 
     private function buildReciboKey(int $pedidoId, int $prendaId, string $tipoRecibo, string $consecutivo): string

@@ -394,6 +394,11 @@ class ObtenerDatosRecibosOperarioUseCase
                         }
 
                         $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
+                        $observacionProceso = (string) (DB::table('observaciones_recibos_procesos')
+                            ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+                            ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                            ->where('tipo_proceso', $reciboKey)
+                            ->value('observacion') ?? '');
 
                         // Mantener `recibos` como objeto (no array) para que el front lo detecte.
                         $prenda['recibos'] = [
@@ -406,6 +411,7 @@ class ObtenerDatosRecibosOperarioUseCase
                                 'area' => $parcial->area,
                                 'encargado' => $parcial->encargado,
                                 'tallas' => $tallasParcial,
+                                'observaciones' => $observacionProceso,
                             ],
                         ];
 
@@ -488,6 +494,11 @@ class ObtenerDatosRecibosOperarioUseCase
                 }
 
                 $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
+                $observacionProceso = (string) (DB::table('observaciones_recibos_procesos')
+                    ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                    ->where('tipo_proceso', $reciboKey)
+                    ->value('observacion') ?? '');
                 $responseData['prendas'] = [[
                     'id' => (int) $parcial->prenda_pedido_id,
                     'prenda_id' => (int) $parcial->prenda_pedido_id,
@@ -518,6 +529,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             'area' => $parcial->area ?? 'Costura',
                             'encargado' => $parcial->encargado ?? null,
                             'tallas' => $tallasParcial,
+                            'observaciones' => $observacionProceso,
                         ],
                     ],
                 ]];

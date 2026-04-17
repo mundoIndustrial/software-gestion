@@ -121,7 +121,7 @@ class ConsecutivoReciboPedidoRepository
     {
         return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
             ->where('activo', true)
-            ->where('area', '!=', 'INSUMOS')
+            ->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS')
             ->distinct()
             ->pluck('estado')
             ->filter()
@@ -138,7 +138,7 @@ class ConsecutivoReciboPedidoRepository
     {
         return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
             ->where('activo', true)
-            ->where('area', '!=', 'INSUMOS')
+            ->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS')
             ->distinct()
             ->pluck('area')
             ->filter()
@@ -155,7 +155,7 @@ class ConsecutivoReciboPedidoRepository
     {
         return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
             ->where('activo', true)
-            ->where('area', '!=', 'INSUMOS')
+            ->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS')
             ->distinct()
             ->pluck('consecutivo_actual')
             ->filter()
@@ -172,7 +172,7 @@ class ConsecutivoReciboPedidoRepository
     {
         return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
             ->where('activo', true)
-            ->where('area', '!=', 'INSUMOS')
+            ->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->distinct()
             ->pluck('pedidos_produccion.cliente')
@@ -190,7 +190,7 @@ class ConsecutivoReciboPedidoRepository
     {
         return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
             ->where('activo', true)
-            ->where('area', '!=', 'INSUMOS')
+            ->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->distinct()
             ->pluck('pedidos_produccion.dia_de_entrega')

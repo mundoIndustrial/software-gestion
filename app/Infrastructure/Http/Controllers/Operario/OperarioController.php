@@ -24,6 +24,7 @@ use App\Application\Operario\UseCases\ObtenerRecibosControlCalidadUseCase;
 use App\Application\Operario\UseCases\ObtenerDistribucionControlCalidadUseCase;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
+use App\Models\PrendaPedido;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
 use App\Models\ConsecutivoReciboPedido;
@@ -641,6 +642,52 @@ class OperarioController extends Controller
     }
 
     /**
+     * GET /operario/api/recibos-procesos/observacion
+     * Obtiene observacion de proceso por pedido + prenda + tipo.
+     */
+    public function obtenerObservacionReciboProceso(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            'tipo_proceso' => 'required|string|max:100',
+        ]);
+
+        $pedidoId = (int) $validated['pedido_id'];
+        $prendaId = (int) $validated['prenda_id'];
+        $tipoProceso = $this->normalizarTipoProceso((string) $validated['tipo_proceso']);
+
+        $prenda = PrendaPedido::query()
+            ->where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->first();
+
+        if (!$prenda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La prenda no pertenece al pedido indicado.',
+            ], 422);
+        }
+
+        $row = DB::table('observaciones_recibos_procesos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->where('tipo_proceso', $tipoProceso)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'tipo_proceso' => $tipoProceso,
+                'observacion' => $row?->observacion,
+                'updated_at' => $row?->updated_at,
+            ],
+        ]);
+    }
+
+    /**
      * API: Completar recibo (normal o parcial)
      * POST /operario/api/recibos/{idRecibo}/completar
      */
@@ -792,6 +839,11 @@ class OperarioController extends Controller
                 'message' => 'Error al eliminar parcial: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function normalizarTipoProceso(string $tipoProceso): string
+    {
+        return mb_strtoupper(trim($tipoProceso), 'UTF-8');
     }
 
 }

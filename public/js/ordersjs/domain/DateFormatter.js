@@ -1,58 +1,22 @@
 /**
  * Domain Value Object: DateFormatter
- * 
- * Representa el concepto de una "Fecha de Orden" en el dominio.
- * Un Value Object es un objeto sin identidad que es reemplazable por otro con los mismos valores.
- * 
- * Responsabilidades:
- * - Convertir múltiples formatos de fecha a Date nativo
- * - Formatear fechas de manera consistente
- * - Manejar distintas fuentes: string ISO, objeto Date, objeto Laravel/Carbon
- * 
- * Beneficios:
- * - Elimina duplicación de lógica de formateo (estaba en 3+ lugares)
- * - Point of change único para cambios de formato
- * - Testeable independientemente
  */
 
 class DateFormatter {
-  /**
-   * Configuración de formato por defecto
-   * @type {Object}
-   */
   static FORMAT_OPTIONS = {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   };
 
-  /**
-   * Locale por defecto (español)
-   * @type {String}
-   */
   static DEFAULT_LOCALE = 'es-ES';
 
-  /**
-   * Formatear una fecha desde cualquier fuente
-   * 
-   * @param {Date|String|Object|null} dateInput - Fecha en cualquier formato
-   * @param {String} locale - Locale para formateo (default: 'es-ES')
-   * @returns {String} Fecha formateada o '-' si no es válida
-   * 
-   * Soporta:
-   * - Date nativo: new Date()
-   * - String ISO: "2026-03-24T10:30:00"
-   * - Objeto Laravel/Carbon: { date: "2026-03-24 10:30:00" }
-   * - null/undefined: retorna '-'
-   */
   static format(dateInput, locale = this.DEFAULT_LOCALE) {
     if (!dateInput) {
       return '-';
     }
 
     const dateObject = this.#toDateObject(dateInput);
-    
-    // Si no se puede convertir, retornar '-'
     if (!dateObject) {
       console.warn('[DateFormatter] No se pudo convertir fecha:', dateInput);
       return '-';
@@ -67,62 +31,80 @@ class DateFormatter {
   }
 
   /**
-   * Convertir entrada a objeto Date
-   * 
-   * @private
-   * @param {Date|String|Object} input - Entrada en varios formatos
-   * @returns {Date|null} Objeto Date o null si no puede convertir
+   * Convierte entradas de fecha a Date evitando corrimientos por zona horaria
+   * para valores YYYY-MM-DD.
    */
   static #toDateObject(input) {
-    // Caso 1: Ya es un Date
     if (input instanceof Date) {
       return isNaN(input.getTime()) ? null : input;
     }
 
-    // Caso 2: String ISO (formato estándar)
     if (typeof input === 'string') {
-      // Intenta primero como ISO
+      // YYYY-MM-DD (solo fecha): interpretar como fecha local fija
+      const ymdMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (ymdMatch) {
+        const [, year, month, day] = ymdMatch;
+        const date = new Date(
+          parseInt(year, 10),
+          parseInt(month, 10) - 1,
+          parseInt(day, 10),
+          12,
+          0,
+          0
+        );
+        return isNaN(date.getTime()) ? null : date;
+      }
+
       let date = new Date(input);
       if (!isNaN(date.getTime())) {
         return date;
       }
 
-      // Caso 2b: Formato DD/MM/YYYY (del backend formateado)
       const ddmmyyyyMatch = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
       if (ddmmyyyyMatch) {
         const [, day, month, year] = ddmmyyyyMatch;
-        date = new Date(year, parseInt(month) - 1, day);
+        date = new Date(
+          parseInt(year, 10),
+          parseInt(month, 10) - 1,
+          parseInt(day, 10),
+          12,
+          0,
+          0
+        );
         return isNaN(date.getTime()) ? null : date;
       }
 
       return null;
     }
 
-    // Caso 3: Objeto Laravel/Carbon con propiedad .date
-    // Viene del backend laravel como: { date: "2026-03-24 10:30:00", ... }
     if (input && typeof input === 'object' && input.date) {
+      if (typeof input.date === 'string') {
+        const ymdMatch = input.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (ymdMatch) {
+          const [, year, month, day] = ymdMatch;
+          const date = new Date(
+            parseInt(year, 10),
+            parseInt(month, 10) - 1,
+            parseInt(day, 10),
+            12,
+            0,
+            0
+          );
+          return isNaN(date.getTime()) ? null : date;
+        }
+      }
+
       const date = new Date(input.date);
       return isNaN(date.getTime()) ? null : date;
     }
 
-    // No puede convertirse
     return null;
   }
 
-  /**
-   * Obtener fecha de inicio de una orden
-   * 
-   * Las órdenes pueden tener varios campos de fecha según el backend.
-   * Este método normaliza: ¿cuál es la fecha de inicio?
-   * 
-   * @param {Object} orderData - Datos de la orden
-   * @returns {String} Fecha formateada o '-'
-   */
   static getOrderStartDate(orderData) {
     if (!orderData) return '-';
 
-    // Intentar en este orden de prioridad
-    const dateInput = 
+    const dateInput =
       orderData.fecha_creacion ||
       orderData.created_at ||
       orderData.created_at ||
@@ -131,18 +113,10 @@ class DateFormatter {
     return this.format(dateInput);
   }
 
-  /**
-   * Obtener fecha estimada de entrega de una orden
-   * 
-   * Normaliza el campo de fecha estimada (puede venir con diferentes nombres).
-   * 
-   * @param {Object} orderData - Datos de la orden
-   * @returns {String} Fecha formateada o '-'
-   */
   static getOrderEstimatedDate(orderData) {
     if (!orderData) return '-';
 
-    const dateInput = 
+    const dateInput =
       orderData.fecha_estimada_de_entrega ||
       orderData.fecha_estimada_entrega ||
       null;
@@ -150,13 +124,6 @@ class DateFormatter {
     return this.format(dateInput);
   }
 
-  /**
-   * Comparar dos fechas
-   * 
-   * @param {Date|String|Object} date1 - Primera fecha
-   * @param {Date|String|Object} date2 - Segunda fecha
-   * @returns {Number} -1 si date1 < date2, 0 si iguales, 1 si date1 > date2
-   */
   static compare(date1, date2) {
     const d1 = this.#toDateObject(date1);
     const d2 = this.#toDateObject(date2);
@@ -170,32 +137,14 @@ class DateFormatter {
     return 0;
   }
 
-  /**
-   * Verificar si una fecha es válida
-   * 
-   * @param {Any} dateInput - Fecha en cualquier formato
-   * @returns {Boolean}
-   */
   static isValid(dateInput) {
     return this.#toDateObject(dateInput) !== null;
   }
 
-  /**
-   * Obtener fecha actual formateada
-   * 
-   * @returns {String} Fecha de hoy en formato dd/mm/yyyy
-   */
   static getCurrentDate() {
     return this.format(new Date());
   }
 
-  /**
-   * Calcular diferencia en días entre dos fechas
-   * 
-   * @param {Date|String|Object} startDate - Fecha inicio
-   * @param {Date|String|Object} endDate - Fecha fin
-   * @returns {Number} Diferencia en días (números positivos/negativos)
-   */
   static diffInDays(startDate, endDate) {
     const d1 = this.#toDateObject(startDate);
     const d2 = this.#toDateObject(endDate);
@@ -210,3 +159,4 @@ class DateFormatter {
 }
 
 export default DateFormatter;
+

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 class RecibosParcialesController extends Controller
 {
+    private const TIPO_RECIBO_NO_PERMITIDO_EN_ANEXOS = 'COSTURA-BODEGA';
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -47,6 +49,12 @@ class RecibosParcialesController extends Controller
             Log::info('[RecibosParcialesController@store] Datos recibidos:', $validated);
 
             $tipoReciboDB = strtoupper($validated['tipo_proceso']);
+            if ($tipoReciboDB === self::TIPO_RECIBO_NO_PERMITIDO_EN_ANEXOS) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El tipo COSTURA-BODEGA no aplica para anexos',
+                ], 422);
+            }
 
             DB::beginTransaction();
 
@@ -384,8 +392,7 @@ class RecibosParcialesController extends Controller
 
             DB::transaction(function () use ($parcial, $id, &$consecutivoGenerado) {
                 $tipoReciboParcial = strtoupper((string) ($parcial->tipo_recibo ?? ''));
-                // Regla de negocio: anexo de bodega debe generar recibo de COSTURA.
-                $tipoRecibo = $tipoReciboParcial === 'COSTURA-BODEGA' ? 'COSTURA' : $tipoReciboParcial;
+                $tipoRecibo = $this->resolverTipoReciboAnexo($tipoReciboParcial);
 
                 // Obtener siguiente consecutivo de tabla maestra
                 $registroMaestro = DB::table('consecutivos_recibos')
@@ -591,8 +598,7 @@ class RecibosParcialesController extends Controller
             // Anulación: estado visible del recibo se controla en consecutivos_recibos_pedidos.
             // El parcial también debe quedar en estado ANULADO.
             $tipoReciboParcial = strtoupper((string)($parcial->tipo_recibo ?? ''));
-            // Mantener simetria con activar(): anexos COSTURA-BODEGA se tratan como COSTURA en recibos.
-            $tipoRecibo = $tipoReciboParcial === 'COSTURA-BODEGA' ? 'COSTURA' : $tipoReciboParcial;
+            $tipoRecibo = $this->resolverTipoReciboAnexo($tipoReciboParcial);
             $notaNeedle = 'parcial_id:' . $id;
 
             $consecutivo = DB::table('consecutivos_recibos_pedidos')
@@ -658,5 +664,20 @@ class RecibosParcialesController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Los anexos deben usar su tipo real (COSTURA, REFLECTIVO, etc.) y no mezclar
+     * con flujos de COSTURA-BODEGA.
+     */
+    private function resolverTipoReciboAnexo(string $tipoReciboParcial): string
+    {
+        $tipoRecibo = strtoupper(trim($tipoReciboParcial));
+
+        if ($tipoRecibo === '' || $tipoRecibo === self::TIPO_RECIBO_NO_PERMITIDO_EN_ANEXOS) {
+            throw new \DomainException('Tipo de recibo de anexo invalido: ' . ($tipoRecibo ?: 'VACIO'));
+        }
+
+        return $tipoRecibo;
     }
 }

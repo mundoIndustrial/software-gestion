@@ -418,6 +418,24 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     ]);
                 }
             }
+
+            // Agregar recibos REFLECTIVO de anexos (pedidos_parciales) aunque estén en área Insumos.
+            // Estos recibos se identifican por notas con "parcial_id:".
+            $recibosReflectivoAnexos = ConsecutivoReciboPedido::query()
+                ->where('activo', 1)
+                ->where('tipo_recibo', 'REFLECTIVO')
+                ->whereNotNull('notas')
+                ->whereRaw('LOWER(notas) LIKE ?', ['%parcial_id:%'])
+                ->get();
+
+            if ($recibosReflectivoAnexos->isNotEmpty()) {
+                $recibos = $recibos->concat($recibosReflectivoAnexos);
+
+                \Log::info(' [REFLECTIVO ANEXOS] Recibos reflectivo parciales agregados al dashboard operario', [
+                    'total_agregados' => $recibosReflectivoAnexos->count(),
+                    'ids' => $recibosReflectivoAnexos->pluck('id')->values()->all(),
+                ]);
+            }
             
             // Re-ordenar por fecha y eliminar duplicados (misma prenda_id + tipo_recibo)
             $recibos = $recibos->sortByDesc('created_at')
@@ -1022,10 +1040,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return null;
             }
 
+            $tipoParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
+            $procesoObjetivo = $tipoParcial === 'REFLECTIVO' ? 'reflectivo' : 'costura';
+
             $proceso = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', [$procesoObjetivo])
                 ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
                 ->whereNull('deleted_at')
                 ->latest('created_at')
@@ -1042,7 +1063,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->filter()
             ->filter(function (array $item) use ($modoTodosCostura, $tipoOperario, $encargadoNormalizado, $esLiderReflectivo) {
                 $encargado = $item['encargado_normalizado'];
+                $tipoParcial = strtoupper(trim((string) ($item['parcial']->tipo_recibo ?? '')));
                 if ($encargado === '') {
+                    // Para reflectivo en dashboard costura-reflectivo/lider-reflectivo:
+                    // mostrar también anexos sin encargado para que sean visibles.
+                    if ($tipoOperario === 'costura-reflectivo' && $tipoParcial === 'REFLECTIVO') {
+                        return true;
+                    }
                     return false;
                 }
 

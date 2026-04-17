@@ -3,11 +3,9 @@
 namespace App\Services;
 
 use App\Models\ConsecutivoReciboPedido;
-use App\Models\Festivo;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Repositories\ConsecutivoReciboPedidoRepository;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -239,9 +237,10 @@ class ReciboCosturaQueryService
     }
 
     /**
-     * Calcular dias transcurridos desde creacion
-     * @param ConsecutivoReciboPedido $recibo
-     * @return int
+     * Calcular dias habiles transcurridos desde creacion.
+     * Excluye fines de semana y festivos colombianos (via cmixin/business-day co-national).
+     * El conteo empieza desde el dia siguiente a la creacion: si se crea un viernes,
+     * el primer dia habil es el lunes siguiente = 1 dia.
      */
     private function calculateDays(ConsecutivoReciboPedido $recibo): int
     {
@@ -250,7 +249,6 @@ class ReciboCosturaQueryService
             return 0;
         }
 
-        // El conteo inicia desde el dia siguiente a la creacion.
         $inicioConteo = $fechaCreacion->copy()->startOfDay()->addDay();
         $hoy = now()->startOfDay();
 
@@ -258,47 +256,17 @@ class ReciboCosturaQueryService
             return 0;
         }
 
-        $festivosSet = $this->getFestivosSet($inicioConteo, $hoy);
-
         $diasHabiles = 0;
         $fecha = $inicioConteo->copy();
 
         while ($fecha->lte($hoy)) {
-            $dateString = $fecha->toDateString();
-            $esFinDeSemana = $fecha->isWeekend();
-            $esFestivo = isset($festivosSet[$dateString]);
-
-            if (!$esFinDeSemana && !$esFestivo) {
+            if ($fecha->isBusinessDay()) {
                 $diasHabiles++;
             }
-
             $fecha->addDay();
         }
 
         return $diasHabiles;
-    }
-
-    /**
-     * Obtener set de festivos (Y-m-d => true) para el rango.
-     */
-    private function getFestivosSet(Carbon $inicio, Carbon $fin): array
-    {
-        $festivos = Festivo::query()
-            ->whereDate('fecha', '>=', $inicio->toDateString())
-            ->whereDate('fecha', '<=', $fin->toDateString())
-            ->pluck('fecha')
-            ->toArray();
-
-        $set = [];
-        foreach ($festivos as $fecha) {
-            try {
-                $set[Carbon::parse($fecha)->toDateString()] = true;
-            } catch (\Exception $e) {
-                // Ignorar fechas invalidas.
-            }
-        }
-
-        return $set;
     }
     /**
      * Obtener opciones para filtros dinamicos

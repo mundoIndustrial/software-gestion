@@ -5,7 +5,6 @@ namespace App\Infrastructure\Http\Controllers\Personal;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Festivo;
 use Carbon\Carbon;
@@ -233,96 +232,31 @@ class FestivosController extends Controller
     public function sincronizarFestivos($year)
     {
         try {
-            // Validar que el aÃ±o sea vÃ¡lido
             if (!is_numeric($year) || $year < 2020 || $year > 2100) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'AÃ±o invÃ¡lido. Ingresa un aÃ±o entre 2020 y 2100'
+                    'message' => 'Año inválido. Ingresa un año entre 2020 y 2100'
                 ], 422);
             }
 
-            Log::info('[FestivosController] Iniciando sincronizaciÃ³n de festivos', ['year' => $year]);
+            Log::info('[FestivosController] Iniciando sincronizacion local de festivos', ['year' => (int) $year]);
 
-            // Consumir API de Nager.Date
-            $response = Http::timeout(10)->get("https://api.nager.date/v3/PublicHolidays/{$year}/CO");
-
-            if ($response->failed()) {
-                Log::error('[FestivosController] Error al consumir API de Nager.Date', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al obtener festivos de la API externa'
-                ], 500);
-            }
-
-            $festivos = $response->json();
-
-            if (!is_array($festivos) || empty($festivos)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se encontraron festivos para el aÃ±o ' . $year
-                ], 404);
-            }
-
-            // Sincronizar festivos en BD
-            $created = 0;
-            $updated = 0;
-            $errors = [];
-
-            foreach ($festivos as $festivo) {
-                try {
-                    $result = Festivo::updateOrCreate(
-                        ['fecha' => $festivo['date']],
-                        [
-                            'nombre' => $festivo['localName'] ?? $festivo['name'] ?? 'Festivo',
-                            'descripcion' => $festivo['name'] ?? '',
-                            'es_trasladado' => $festivo['type'] === 'Public' ? 0 : 1,
-                        ]
-                    );
-
-                    if ($result->wasRecentlyCreated) {
-                        $created++;
-                    } else {
-                        $updated++;
-                    }
-                } catch (\Exception $e) {
-                    Log::error('[FestivosController] Error al guardar festivo', [
-                        'festivo' => $festivo,
-                        'error' => $e->getMessage()
-                    ]);
-
-                    $errors[] = "Error al guardar festivo del {$festivo['date']}";
-                }
-            }
-
-            Log::info('[FestivosController] SincronizaciÃ³n completada', [
-                'year' => $year,
-                'created' => $created,
-                'updated' => $updated,
-                'errors' => count($errors)
-            ]);
+            [$created, $updated] = $this->syncYearFestivos((int) $year);
 
             return response()->json([
                 'success' => true,
                 'message' => "Festivos de {$year} sincronizados correctamente",
                 'data' => [
-                    'year' => $year,
+                    'year' => (int) $year,
                     'created' => $created,
                     'updated' => $updated,
                     'total' => $created + $updated,
-                    'errors_count' => count($errors),
-                    'errors' => $errors
-                ]
-            ], 200);
-
+                ],
+            ]);
         } catch (\Exception $e) {
-            Log::error('[FestivosController] Error general en sincronizaciÃ³n', [
+            Log::error('[FestivosController] Error general en sincronizacion', [
                 'year' => $year,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -333,15 +267,8 @@ class FestivosController extends Controller
     }
 
     /**
-     * Sincronizar mÃºltiples aÃ±os de una vez
-     * 
-     * POST /api/festivos/sincronizar-rango
-     * Body: { "years": [2026, 2027, 2028] }
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function sincronizarRango(Request $request)
+     * Sincronizar múltiples años de una vez.
+     */public function sincronizarRango(Request $request)
     {
         try {
             $years = $request->input('years', []);
@@ -349,7 +276,7 @@ class FestivosController extends Controller
             if (!is_array($years) || empty($years)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Debes proporcionar un array de aÃ±os'
+                    'message' => 'Debes proporcionar un array de años'
                 ], 422);
             }
 
@@ -359,73 +286,103 @@ class FestivosController extends Controller
                 if (!is_numeric($year) || $year < 2020 || $year > 2100) {
                     $results[$year] = [
                         'success' => false,
-                        'message' => 'AÃ±o invÃ¡lido'
+                        'message' => 'Año inválido'
                     ];
                     continue;
                 }
 
                 try {
-                    $response = Http::timeout(10)->get("https://api.nager.date/v3/PublicHolidays/{$year}/CO");
-
-                    if ($response->failed()) {
-                        $results[$year] = [
-                            'success' => false,
-                            'message' => 'Error al obtener datos de la API'
-                        ];
-                        continue;
-                    }
-
-                    $festivosList = $response->json();
-                    $created = 0;
-                    $updated = 0;
-
-                    foreach ($festivosList as $festivo) {
-                        $result = Festivo::updateOrCreate(
-                            ['fecha' => $festivo['date']],
-                            [
-                                'nombre' => $festivo['localName'] ?? $festivo['name'] ?? 'Festivo',
-                                'descripcion' => $festivo['name'] ?? '',
-                                'es_trasladado' => $festivo['type'] === 'Public' ? 0 : 1,
-                            ]
-                        );
-
-                        if ($result->wasRecentlyCreated) {
-                            $created++;
-                        } else {
-                            $updated++;
-                        }
-                    }
+                    [$created, $updated] = $this->syncYearFestivos((int) $year);
 
                     $results[$year] = [
                         'success' => true,
                         'created' => $created,
                         'updated' => $updated,
-                        'total' => $created + $updated
+                        'total' => $created + $updated,
                     ];
-
                 } catch (\Exception $e) {
                     $results[$year] = [
                         'success' => false,
-                        'message' => $e->getMessage()
+                        'message' => $e->getMessage(),
                     ];
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'SincronizaciÃ³n de rango completada',
-                'results' => $results
+                'message' => 'Sincronizacion de rango completada',
+                'results' => $results,
             ], 200);
-
         } catch (\Exception $e) {
-            Log::error('[FestivosController] Error en sincronizaciÃ³n de rango', [
-                'error' => $e->getMessage()
+            Log::error('[FestivosController] Error en sincronizacion de rango', [
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al sincronizar rango de aÃ±os'
+                'message' => 'Error al sincronizar rango de años'
             ], 500);
         }
+    }
+
+    /**
+     * Sincroniza un año de festivos colombianos usando cmixin/business-day.
+     *
+     * @return array{0:int,1:int} [created, updated]
+     */
+    private function syncYearFestivos(int $year): array
+    {
+        $created = 0;
+        $updated = 0;
+
+        foreach ($this->buildYearHolidays($year) as $holiday) {
+            $model = Festivo::updateOrCreate(
+                ['fecha' => $holiday['fecha']],
+                [
+                    'nombre' => $holiday['nombre'],
+                    'descripcion' => $holiday['descripcion'],
+                    'es_trasladado' => $holiday['es_trasladado'],
+                ]
+            );
+
+            if ($model->wasRecentlyCreated) {
+                $created++;
+            } else {
+                $updated++;
+            }
+        }
+
+        return [$created, $updated];
+    }
+
+    /**
+     * Construye los festivos del año con identificación y nombre de la librería.
+     *
+     * @return array<int, array{fecha:string,nombre:string,descripcion:string,es_trasladado:int}>
+     */
+    private function buildYearHolidays(int $year): array
+    {
+        $items = [];
+        $date = Carbon::create($year, 1, 1)->startOfDay();
+        $end = $date->copy()->endOfYear()->startOfDay();
+
+        while ($date->lte($end)) {
+            if ($date->isHoliday()) {
+                $holidayId = $date->getHolidayId();
+                $holidayName = $date->getHolidayName() ?: 'Festivo Colombia';
+                $isTrasladado = is_string($holidayId) && str_contains($holidayId, 'monday-after-') ? 1 : 0;
+
+                $items[] = [
+                    'fecha' => $date->toDateString(),
+                    'nombre' => $holidayName,
+                    'descripcion' => is_string($holidayId) ? $holidayId : $holidayName,
+                    'es_trasladado' => $isTrasladado,
+                ];
+            }
+
+            $date->addDay();
+        }
+
+        return $items;
     }
 }

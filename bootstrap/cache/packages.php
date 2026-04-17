@@ -11,6 +11,13 @@
       0 => 'Barryvdh\\DomPDF\\ServiceProvider',
     ),
   ),
+  'cmixin/business-day' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Cmixin\\BusinessDay\\Laravel\\ServiceProvider',
+    ),
+  ),
   'laravel/breeze' => 
   array (
     'providers' => 

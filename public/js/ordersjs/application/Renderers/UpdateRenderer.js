@@ -364,7 +364,31 @@ export class UpdateRenderer {
     if (!dateString) return null;
 
     try {
-      const date = new Date(dateString);
+      let date = null;
+
+      if (typeof dateString === 'string') {
+        const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (ymdMatch) {
+          const [, year, month, day] = ymdMatch;
+          date = new Date(
+            parseInt(year, 10),
+            parseInt(month, 10) - 1,
+            parseInt(day, 10),
+            12,
+            0,
+            0
+          );
+        }
+      }
+
+      if (!date) {
+        date = new Date(dateString);
+      }
+
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+
       return date.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',

@@ -206,7 +206,6 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->singleton(\App\Application\Services\ReceiptEnricherService::class, function ($app) {
             return new \App\Application\Services\ReceiptEnricherService(
-                $app->make(\App\Application\Services\DiaLaboralCalculator::class),
                 $app->make(\App\Application\Services\CantidadCalculator::class)
             );
         });
@@ -274,6 +273,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Cmixin\BusinessDay::enable('Carbon\Carbon', 'co-national');
+
         // Blade directive: @jsDefer('js/path/file.js')
         // En producción carga .min.js, en desarrollo el original
         Blade::directive('jsDefer', function (string $expression) {

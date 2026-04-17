@@ -15,6 +15,27 @@ if (typeof DateUtils !== 'undefined') {
     if (!dateString) return '---';
     
     try {
+      // YYYY-MM-DD: tratar como fecha local para evitar corrimiento por zona horaria
+      if (typeof dateString === 'string') {
+        const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (ymdMatch) {
+          const [, year, month, day] = ymdMatch;
+          const date = new Date(
+            parseInt(year, 10),
+            parseInt(month, 10) - 1,
+            parseInt(day, 10),
+            12,
+            0,
+            0
+          );
+          return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        }
+      }
+
       // Si el formato es d/m/Y, convertirlo a Y-m-d para el constructor Date
       if (typeof dateString === 'string' && dateString.includes('/')) {
         const parts = dateString.split('/');
