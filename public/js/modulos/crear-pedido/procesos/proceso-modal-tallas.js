@@ -106,42 +106,47 @@ function obtenerTallasDeLaPrenda() {
             const cantidad = Number(cantidadText, 10) || 0;
             if (cantidad <= 0) return;
 
-            const colors = [];
+            const coloresConCantidad = [];
             if (colorCell) {
                 const colorDiv = colorCell.querySelector('div');
                 if (colorDiv) {
                     Array.from(colorDiv.querySelectorAll('span')).forEach(span => {
                         let value = String(span.textContent || '').trim().replaceAll(/\s+/g, ' ');
                         if (!value) return;
+                        const matchCantidad = value.match(/\((\d+)\)\s*$/);
+                        const cantidadColor = matchCantidad ? parseInt(matchCantidad[1]) : 0;
                         let base = value.split('(')[0].trim();
                         if (!base || base === value) {
                             base = value.replaceAll(/\s*\(\d+\)\s*/g, '').trim();
                         }
-                        if (base && !colors.includes(base)) colors.push(base);
+                        if (base && !coloresConCantidad.find(c => c.nombre === base)) {
+                            coloresConCantidad.push({ nombre: base, cantidad: cantidadColor });
+                        }
                     });
                 }
             }
 
-            const asignar = (key) => {
+            const asignar = (key, cantidadAUsar) => {
+                cantidadAUsar = (cantidadAUsar > 0) ? cantidadAUsar : cantidad;
                 // SOBREMEDIDA se decide por talla/flag, no por genero.
                 if (esTallaSobremedida(tallaText) || esTallaSobremedida(String(key).split('__')[0])) {
                     if (!tallas.sobremedida) tallas.sobremedida = {};
                     const generoSobremedida = normalizarGeneroSobremedida(generoRaw);
-                    tallas.sobremedida[generoSobremedida] = (tallas.sobremedida[generoSobremedida] || 0) + cantidad;
+                    tallas.sobremedida[generoSobremedida] = (tallas.sobremedida[generoSobremedida] || 0) + cantidadAUsar;
                 } else if (genero === 'dama') {
-                    tallas.dama[key] = (tallas.dama[key] || 0) + cantidad;
+                    tallas.dama[key] = (tallas.dama[key] || 0) + cantidadAUsar;
                 } else if (genero === 'caballero') {
-                    tallas.caballero[key] = (tallas.caballero[key] || 0) + cantidad;
+                    tallas.caballero[key] = (tallas.caballero[key] || 0) + cantidadAUsar;
                 } else if (genero === 'unisex') {
-                    tallas.unisex[key] = (tallas.unisex[key] || 0) + cantidad;
+                    tallas.unisex[key] = (tallas.unisex[key] || 0) + cantidadAUsar;
                 }
             };
 
-            if (colors.length > 0) {
-                colors.forEach(color => asignar(`${tallaText}__${color}`));
+            if (coloresConCantidad.length > 0) {
+                coloresConCantidad.forEach(c => asignar(`${tallaText}__${c.nombre}`, c.cantidad));
                 contadorColores++;
             } else {
-                asignar(tallaText);
+                asignar(tallaText, 0);
             }
 
             contadorFilas++;
