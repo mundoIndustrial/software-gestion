@@ -34,7 +34,8 @@ class GetPendingQualityControlReceiptsUseCaseTest extends TestCase
             cliente: null,
             asesor: 'Carlos',
             prendas: null,
-            fechaCreacion: null
+            fechaCreacion: null,
+            busqueda: '6'
         );
 
         $this->receiptRepository
@@ -46,6 +47,7 @@ class GetPendingQualityControlReceiptsUseCaseTest extends TestCase
                 'asesor' => ['Carlos'],
                 'prendas' => [],
                 'fecha_creacion' => null,
+                'busqueda' => '6',
             ])
             ->andReturn([
                 (object) [

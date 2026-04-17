@@ -34,7 +34,8 @@ class GetPendingSewingReceiptsUseCaseTest extends TestCase
             cliente: 'ACME',
             asesor: 'Laura',
             prendas: 'Polo, Camisa',
-            fechaCreacion: ' 2026-03-10 '
+            fechaCreacion: ' 2026-03-10 ',
+            busqueda: '6'
         );
 
         $this->receiptRepository
@@ -46,6 +47,7 @@ class GetPendingSewingReceiptsUseCaseTest extends TestCase
                 'asesor' => ['Laura'],
                 'prendas' => ['Polo', 'Camisa'],
                 'fecha_creacion' => '2026-03-10',
+                'busqueda' => '6',
             ])
             ->andReturn([
                 (object) [

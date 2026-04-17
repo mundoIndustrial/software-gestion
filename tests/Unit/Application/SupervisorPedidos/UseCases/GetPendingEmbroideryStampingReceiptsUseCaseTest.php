@@ -37,7 +37,7 @@ class GetPendingEmbroideryStampingReceiptsUseCaseTest extends TestCase
         $this->receiptRepository
             ->shouldReceive('findPendingEmbroideryStampingReceipts')
             ->once()
-            ->with(['BORDADO', 'DTF'])
+            ->with(['BORDADO', 'DTF'], null)
             ->andReturn($procesos);
 
         $this->receiptRepository
@@ -61,4 +61,3 @@ class GetPendingEmbroideryStampingReceiptsUseCaseTest extends TestCase
         $this->assertSame(7, $items[2]->cantidad_total_prendas);
     }
 }
-

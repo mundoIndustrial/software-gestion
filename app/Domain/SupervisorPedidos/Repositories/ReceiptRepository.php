@@ -32,7 +32,7 @@ interface ReceiptRepository
     /**
      * @return array<int, object>
      */
-    public function findPendingEmbroideryStampingReceipts(array $receiptTypes): array;
+    public function findPendingEmbroideryStampingReceipts(array $receiptTypes, ?string $busqueda = null): array;
 
     /**
      * @param array<int, int|string> $prendaIds

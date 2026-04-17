@@ -20,10 +20,12 @@ class SupervisorReceiptsApiController extends Controller
         private readonly GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase
     ) {}
 
-    public function pendingEmbroideryStamping(): JsonResponse
+    public function pendingEmbroideryStamping(Request $request): JsonResponse
     {
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute(
-            new GetPendingEmbroideryStampingReceiptsRequest()
+            new GetPendingEmbroideryStampingReceiptsRequest(
+                busqueda: $request->input('busqueda')
+            )
         );
 
         return response()->json([
@@ -41,6 +43,7 @@ class SupervisorReceiptsApiController extends Controller
             asesor: $request->filled('asesor') ? $request->input('asesor') : null,
             prendas: $request->filled('prendas') ? $request->input('prendas') : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->input('fecha_creacion') : null,
+            busqueda: $request->input('busqueda'),
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
@@ -60,6 +63,7 @@ class SupervisorReceiptsApiController extends Controller
             asesor: $request->filled('asesor') ? $request->input('asesor') : null,
             prendas: $request->filled('prendas') ? $request->input('prendas') : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->input('fecha_creacion') : null,
+            busqueda: $request->input('busqueda'),
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);

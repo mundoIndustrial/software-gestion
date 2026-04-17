@@ -209,9 +209,9 @@ class EloquentReceiptRepository implements ReceiptRepository
         return $result;
     }
 
-    public function findPendingEmbroideryStampingReceipts(array $receiptTypes): array
+    public function findPendingEmbroideryStampingReceipts(array $receiptTypes, ?string $busqueda = null): array
     {
-        return DB::table('consecutivos_recibos_pedidos as crp')
+        $query = DB::table('consecutivos_recibos_pedidos as crp')
             ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
             ->join('users as u', 'p.asesor_id', '=', 'u.id')
             ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
@@ -246,7 +246,26 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'crp.color_bordado_estampado',
             ])
             ->whereIn('crp.tipo_recibo', $receiptTypes)
-            ->where('crp.activo', 1)
+            ->where('crp.activo', 1);
+
+        if ($busqueda !== null) {
+            $like = '%' . $busqueda . '%';
+            $busquedaEsNumerica = ctype_digit($busqueda);
+
+            $query->where(function ($subQuery) use ($like, $busqueda, $busquedaEsNumerica) {
+                $subQuery->where('p.cliente', 'like', $like);
+
+                if ($busquedaEsNumerica) {
+                    $subQuery->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(p.id AS CHAR) = ?', [$busqueda]);
+                } else {
+                    $subQuery->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$like])
+                        ->orWhereRaw('CAST(p.id AS CHAR) LIKE ?', [$like]);
+                }
+            });
+        }
+
+        return $query
             ->orderBy('p.created_at', 'desc')
             ->get()
             ->all();
@@ -570,6 +589,24 @@ class EloquentReceiptRepository implements ReceiptRepository
      */
     private function applyPendingReceiptFilters($query, array $filters): void
     {
+        $busqueda = trim((string) ($filters['busqueda'] ?? ''));
+        if ($busqueda !== '') {
+            $like = '%' . $busqueda . '%';
+            $busquedaEsNumerica = ctype_digit($busqueda);
+
+            $query->where(function ($subQuery) use ($like, $busqueda, $busquedaEsNumerica) {
+                $subQuery->where('p.cliente', 'like', $like);
+
+                if ($busquedaEsNumerica) {
+                    $subQuery->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(p.id AS CHAR) = ?', [$busqueda]);
+                } else {
+                    $subQuery->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$like])
+                        ->orWhereRaw('CAST(p.id AS CHAR) LIKE ?', [$like]);
+                }
+            });
+        }
+
         $numeroRecibo = $filters['numero_recibo'] ?? [];
         if (!empty($numeroRecibo)) {
             $query->whereIn('crp.consecutivo_actual', $numeroRecibo);

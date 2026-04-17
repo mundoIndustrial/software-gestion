@@ -283,7 +283,9 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesBordadoEstampado(Request $request)
     {
-        $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest();
+        $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
+            busqueda: $request->input('busqueda')
+        );
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
 
         $allProcesses = collect($response->getProcesses());
@@ -316,7 +318,8 @@ class SupervisorReceiptsController extends Controller
             cliente: $request->filled('cliente') ? $request->cliente : null,
             asesor: $request->filled('asesor') ? $request->asesor : null,
             prendas: $request->filled('prendas') ? $request->prendas : null,
-            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null
+            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            busqueda: $request->input('busqueda')
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
@@ -350,7 +353,8 @@ class SupervisorReceiptsController extends Controller
             cliente: $request->filled('cliente') ? $request->cliente : null,
             asesor: $request->filled('asesor') ? $request->asesor : null,
             prendas: $request->filled('prendas') ? $request->prendas : null,
-            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null
+            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            busqueda: $request->input('busqueda')
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);

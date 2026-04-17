@@ -582,19 +582,34 @@ function actualizarIndicadoresFiltros() { receiptsFilters.refreshIndicators(); }
 receiptsFilters.bindUi();
 actualizarIndicadoresFiltros();
 
-function aplicarBusquedaGeneralCostura() {
-    const textoBusqueda = (document.getElementById('busqueda')?.value || '').trim().toLowerCase();
-    const filas = document.querySelectorAll('#costurasRows [data-row="processo"]');
-    if (!filas.length) return;
+function debounce(fn, wait) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
 
-    filas.forEach((fila) => {
-        const celdas = fila.children;
-        const numeroRecibo = String(celdas[2]?.textContent || '').trim().toLowerCase();
-        const cliente = String(celdas[3]?.textContent || '').trim().toLowerCase();
-        const coincide = textoBusqueda === '' || numeroRecibo.includes(textoBusqueda) || cliente.includes(textoBusqueda);
+function ejecutarBusquedaGeneralCostura() {
+    const inputBusqueda = document.getElementById('busqueda');
+    const textoBusqueda = (inputBusqueda?.value || '').trim();
+    const url = new URL(window.location.href);
+    const busquedaActualEnUrl = (url.searchParams.get('busqueda') || '').trim();
 
-        fila.style.display = coincide ? 'grid' : 'none';
-    });
+    if (textoBusqueda === '') {
+        url.searchParams.delete('busqueda');
+    } else {
+        url.searchParams.set('busqueda', textoBusqueda);
+    }
+
+    url.searchParams.delete('page');
+
+    const destino = url.toString();
+    if (textoBusqueda === busquedaActualEnUrl && destino === window.location.href) {
+        return;
+    }
+
+    window.navegarPendientesCostura(destino);
 }
 
 function inicializarBusquedaGeneralCostura() {
@@ -603,22 +618,21 @@ function inicializarBusquedaGeneralCostura() {
 
     const formBusqueda = inputBusqueda.closest('form');
     if (formBusqueda) {
-        formBusqueda.removeAttribute('onsubmit');
         if (formBusqueda.getAttribute('data-costura-search-init') !== '1') {
             formBusqueda.setAttribute('data-costura-search-init', '1');
             formBusqueda.addEventListener('submit', function(event) {
                 event.preventDefault();
-                aplicarBusquedaGeneralCostura();
+                ejecutarBusquedaGeneralCostura();
             });
         }
     }
 
     if (inputBusqueda.getAttribute('data-costura-search-input-init') !== '1') {
         inputBusqueda.setAttribute('data-costura-search-input-init', '1');
-        inputBusqueda.addEventListener('input', aplicarBusquedaGeneralCostura);
+        inputBusqueda.addEventListener('input', debounce(function() {
+            ejecutarBusquedaGeneralCostura();
+        }, 350));
     }
-
-    aplicarBusquedaGeneralCostura();
 }
 
 inicializarBusquedaGeneralCostura();

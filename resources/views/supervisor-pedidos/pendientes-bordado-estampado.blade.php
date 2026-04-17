@@ -474,7 +474,13 @@ async function recargarTablaPendientes() {
     mostrarCargandoTablaPendientes();
 
     try {
-        const resp = await fetch('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado', {
+        const apiUrl = new URL('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado', window.location.origin);
+        const busquedaActual = (document.getElementById('busqueda')?.value || '').trim();
+        if (busquedaActual !== '') {
+            apiUrl.searchParams.set('busqueda', busquedaActual);
+        }
+
+        const resp = await fetch(apiUrl.toString(), {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
@@ -550,23 +556,43 @@ function inicializarBusquedaGeneralPendientes() {
 
     const formBusqueda = inputBusqueda.closest('form');
     if (formBusqueda) {
-        formBusqueda.removeAttribute('onsubmit');
-
         if (formBusqueda.getAttribute('data-pendientes-search-init') !== '1') {
             formBusqueda.setAttribute('data-pendientes-search-init', '1');
             formBusqueda.addEventListener('submit', function(event) {
                 event.preventDefault();
-                aplicarFiltrosEnVista();
+                ejecutarBusquedaGeneralPendientes();
             });
         }
     }
 
     if (inputBusqueda.getAttribute('data-pendientes-search-input-init') !== '1') {
         inputBusqueda.setAttribute('data-pendientes-search-input-init', '1');
-        inputBusqueda.addEventListener('input', function() {
-            aplicarFiltrosEnVista();
-        });
+        inputBusqueda.addEventListener('input', debounce(function() {
+            ejecutarBusquedaGeneralPendientes();
+        }, 350));
     }
+}
+
+function ejecutarBusquedaGeneralPendientes() {
+    const inputBusqueda = document.getElementById('busqueda');
+    const textoBusqueda = (inputBusqueda?.value || '').trim();
+    const url = new URL(window.location.href);
+    const busquedaActualEnUrl = (url.searchParams.get('busqueda') || '').trim();
+
+    if (textoBusqueda === '') {
+        url.searchParams.delete('busqueda');
+    } else {
+        url.searchParams.set('busqueda', textoBusqueda);
+    }
+
+    url.searchParams.delete('page');
+
+    const destino = url.toString();
+    if (textoBusqueda === busquedaActualEnUrl && destino === window.location.href) {
+        return;
+    }
+
+    window.location.assign(destino);
 }
 
 let filtroActual = null;

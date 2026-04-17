@@ -499,19 +499,34 @@ function actualizarIndicadoresFiltros() { receiptsFilters.refreshIndicators(); }
 receiptsFilters.bindUi();
 actualizarIndicadoresFiltros();
 
-function aplicarBusquedaGeneralControlCalidad() {
-    const textoBusqueda = (document.getElementById('busqueda')?.value || '').trim().toLowerCase();
-    const filas = document.querySelectorAll('#controlCalidadRows [data-row="processo"]');
-    if (!filas.length) return;
+function debounce(fn, wait) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
 
-    filas.forEach((fila) => {
-        const celdas = fila.children;
-        const numeroRecibo = String(celdas[1]?.textContent || '').trim().toLowerCase();
-        const cliente = String(celdas[2]?.textContent || '').trim().toLowerCase();
-        const coincide = textoBusqueda === '' || numeroRecibo.includes(textoBusqueda) || cliente.includes(textoBusqueda);
+function ejecutarBusquedaGeneralControlCalidad() {
+    const inputBusqueda = document.getElementById('busqueda');
+    const textoBusqueda = (inputBusqueda?.value || '').trim();
+    const url = new URL(window.location.href);
+    const busquedaActualEnUrl = (url.searchParams.get('busqueda') || '').trim();
 
-        fila.style.display = coincide ? 'grid' : 'none';
-    });
+    if (textoBusqueda === '') {
+        url.searchParams.delete('busqueda');
+    } else {
+        url.searchParams.set('busqueda', textoBusqueda);
+    }
+
+    url.searchParams.delete('page');
+
+    const destino = url.toString();
+    if (textoBusqueda === busquedaActualEnUrl && destino === window.location.href) {
+        return;
+    }
+
+    window.navegarPendientesControlCalidad(destino);
 }
 
 function inicializarBusquedaGeneralControlCalidad() {
@@ -520,22 +535,21 @@ function inicializarBusquedaGeneralControlCalidad() {
 
     const formBusqueda = inputBusqueda.closest('form');
     if (formBusqueda) {
-        formBusqueda.removeAttribute('onsubmit');
         if (formBusqueda.getAttribute('data-control-calidad-search-init') !== '1') {
             formBusqueda.setAttribute('data-control-calidad-search-init', '1');
             formBusqueda.addEventListener('submit', function(event) {
                 event.preventDefault();
-                aplicarBusquedaGeneralControlCalidad();
+                ejecutarBusquedaGeneralControlCalidad();
             });
         }
     }
 
     if (inputBusqueda.getAttribute('data-control-calidad-search-input-init') !== '1') {
         inputBusqueda.setAttribute('data-control-calidad-search-input-init', '1');
-        inputBusqueda.addEventListener('input', aplicarBusquedaGeneralControlCalidad);
+        inputBusqueda.addEventListener('input', debounce(function() {
+            ejecutarBusquedaGeneralControlCalidad();
+        }, 350));
     }
-
-    aplicarBusquedaGeneralControlCalidad();
 }
 
 inicializarBusquedaGeneralControlCalidad();
@@ -715,4 +729,3 @@ async function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
-

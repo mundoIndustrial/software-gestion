@@ -48,6 +48,7 @@ class GetPendingSewingReceiptsUseCase
             'asesor' => $this->parseCsvFilter($request->getAsesor()),
             'prendas' => $this->parseCsvFilter($request->getPrendas()),
             'fecha_creacion' => ($fecha = trim((string) $request->getFechaCreacion())) !== '' ? $fecha : null,
+            'busqueda' => $request->getBusqueda(),
         ];
     }
 

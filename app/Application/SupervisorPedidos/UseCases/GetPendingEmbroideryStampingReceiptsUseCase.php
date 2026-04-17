@@ -16,8 +16,9 @@ class GetPendingEmbroideryStampingReceiptsUseCase
     {
         try {
             $receiptTypes = $request->getReceiptTypes();
+            $busqueda = $request->getBusqueda();
             $procesosPendientes = collect(
-                $this->receiptRepository->findPendingEmbroideryStampingReceipts($receiptTypes)
+                $this->receiptRepository->findPendingEmbroideryStampingReceipts($receiptTypes, $busqueda)
             );
 
             $prendaIds = $procesosPendientes

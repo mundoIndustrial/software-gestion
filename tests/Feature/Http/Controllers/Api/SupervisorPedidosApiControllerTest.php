@@ -172,6 +172,52 @@ class SupervisorPedidosApiControllerTest extends TestCase
             ->assertJsonPath('data.procesosConCantidad.0.numero_recibo', 'RQC-1');
     }
 
+    public function test_supervisor_receipts_api_passes_search_term_to_embroidery_use_case(): void
+    {
+        $supervisor = $this->createUserWithRole('supervisor_pedidos');
+
+        $embroideryMock = Mockery::mock(GetPendingEmbroideryStampingReceiptsUseCase::class);
+        $embroideryMock->shouldReceive('execute')
+            ->once()
+            ->with(Mockery::on(function ($request) {
+                return $request instanceof \App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest
+                    && $request->getBusqueda() === '32';
+            }))
+            ->andReturn(new GetPendingEmbroideryStampingReceiptsResponse([
+                ['numero_recibo' => '32'],
+            ]));
+        $this->app->instance(GetPendingEmbroideryStampingReceiptsUseCase::class, $embroideryMock);
+
+        $this->actingAs($supervisor, 'web')
+            ->getJson('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado?busqueda=32')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.procesosConCantidad.0.numero_recibo', '32');
+    }
+
+    public function test_supervisor_receipts_api_passes_numeric_exact_search_term_to_embroidery_use_case(): void
+    {
+        $supervisor = $this->createUserWithRole('supervisor_pedidos');
+
+        $embroideryMock = Mockery::mock(GetPendingEmbroideryStampingReceiptsUseCase::class);
+        $embroideryMock->shouldReceive('execute')
+            ->once()
+            ->with(Mockery::on(function ($request) {
+                return $request instanceof \App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest
+                    && $request->getBusqueda() === '6';
+            }))
+            ->andReturn(new GetPendingEmbroideryStampingReceiptsResponse([
+                ['numero_recibo' => '6'],
+            ]));
+        $this->app->instance(GetPendingEmbroideryStampingReceiptsUseCase::class, $embroideryMock);
+
+        $this->actingAs($supervisor, 'web')
+            ->getJson('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado?busqueda=6')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.procesosConCantidad.0.numero_recibo', '6');
+    }
+
     public function test_asesor_user_can_access_shared_order_data_and_comparison_api(): void
     {
         $asesor = $this->createUserWithRole('asesor');
