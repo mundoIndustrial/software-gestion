@@ -439,6 +439,24 @@
 </div>
 
 <script>
+    function restaurarEstadoModalNovedad() {
+        const botonGuardar = document.querySelector('#modal-novedad-epp button[onclick="confirmarNovedad()"]');
+        const botonCancelar = document.querySelector('#modal-novedad-epp button[onclick="cerrarModalNovedad()"]');
+
+        if (botonGuardar) {
+            botonGuardar.disabled = false;
+            botonGuardar.style.opacity = '1';
+            botonGuardar.style.cursor = 'pointer';
+            botonGuardar.textContent = 'Guardar Novedad y Aplicar Cambios';
+        }
+
+        if (botonCancelar) {
+            botonCancelar.disabled = false;
+            botonCancelar.style.opacity = '1';
+            botonCancelar.style.cursor = 'pointer';
+        }
+    }
+
     // Funciones para abrir/cerrar el modal de edición de EPP
     function abrirModalEditarEppForm(eppData) {
         console.log('[Modal Editar EPP] Abriendo formulario con datos:', eppData);
@@ -604,12 +622,19 @@
         };
         
         // Mostrar modal para registrar la novedad
+        restaurarEstadoModalNovedad();
         document.getElementById('modal-novedad-epp').style.display = 'flex';
         document.getElementById('noveladaEPP').value = '';
         document.getElementById('noveladaEPP').focus();
     }
     
     function cerrarModalNovedad() {
+        const modalNovedad = document.getElementById('modal-novedad-epp');
+        if (modalNovedad?.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
+
+        restaurarEstadoModalNovedad();
         document.getElementById('modal-novedad-epp').style.display = 'none';
         window.cambiosEppPendientes = null;
     }
@@ -632,10 +657,25 @@
             return;
         }
         
+        const cambios = window.cambiosEppPendientes;
+        if (!cambios) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No hay cambios pendientes para guardar',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: { container: 'swal-toast-container' }
+            });
+            return;
+        }
+
         // Obtener el botón y desactivarlo
         const botonGuardar = document.querySelector('#modal-novedad-epp button[onclick="confirmarNovedad()"]');
         const botonCancelar = document.querySelector('#modal-novedad-epp button[onclick="cerrarModalNovedad()"]');
-        const textoOriginal = botonGuardar?.textContent || 'Guardar Novedad y Aplicar Cambios';
         
         if (botonGuardar) {
             botonGuardar.disabled = true;
@@ -647,10 +687,9 @@
         if (botonCancelar) {
             botonCancelar.disabled = true;
             botonCancelar.style.opacity = '0.6';
+            botonCancelar.style.cursor = 'not-allowed';
         }
-        
-        const cambios = window.cambiosEppPendientes;
-        
+
         try {
             // Procesar eliminaciones de imágenes primero
             if (cambios.imagenesAEliminar && cambios.imagenesAEliminar.length > 0) {
@@ -872,22 +911,6 @@
         } catch (error) {
             console.error(' Error guardando cambios:', error);
             
-            // Restaurar el botón en caso de error
-            const botonGuardar = document.querySelector('#modal-novedad-epp button[onclick="confirmarNovedad()"]');
-            const botonCancelar = document.querySelector('#modal-novedad-epp button[onclick="cerrarModalNovedad()"]');
-            
-            if (botonGuardar) {
-                botonGuardar.disabled = false;
-                botonGuardar.style.opacity = '1';
-                botonGuardar.style.cursor = 'pointer';
-                botonGuardar.textContent = textoOriginal;
-            }
-            
-            if (botonCancelar) {
-                botonCancelar.disabled = false;
-                botonCancelar.style.opacity = '1';
-            }
-            
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -899,6 +922,8 @@
                 timerProgressBar: true,
                 customClass: { container: 'swal-toast-container' }
             });
+        } finally {
+            restaurarEstadoModalNovedad();
         }
     }
     
@@ -1221,6 +1246,7 @@
         };
         
         // Mostrar modal para registrar la novedad
+        restaurarEstadoModalNovedad();
         document.getElementById('modal-novedad-epp').style.display = 'flex';
         document.getElementById('noveladaEPP').value = '';
         document.getElementById('noveladaEPP').focus();
@@ -1397,5 +1423,3 @@
     window.eliminarImagenNuevaEPP = eliminarImagenNuevaEPP;
     window.abrirModalHomologarEpp = abrirModalHomologarEpp;
 </script>
-
-
