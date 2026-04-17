@@ -20,6 +20,7 @@ class ConsecutivoReciboPedido extends Model
         'activo',
         'estado',
         'area',
+        'aprobado_insumos_en',
         'notas',
         'dia_de_entrega',
         'fecha_estimada_de_entrega',
@@ -31,6 +32,7 @@ class ConsecutivoReciboPedido extends Model
         'activo' => 'boolean',
         'dia_de_entrega' => 'integer',
         'fecha_estimada_de_entrega' => 'datetime',
+        'aprobado_insumos_en' => 'datetime',
     ];
 
     /**

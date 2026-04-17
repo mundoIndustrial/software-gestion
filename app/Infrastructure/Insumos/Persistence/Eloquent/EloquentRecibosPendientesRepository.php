@@ -46,10 +46,17 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 'area' => $area,
             ]);
 
-            $updateResult = $recibo->update([
+            $dataUpdate = [
                 'estado' => $estadoReciboNormalizado,
                 'area' => $area,
-            ]);
+            ];
+
+            // Guardar fecha/hora exacta en que Insumos aprueba el recibo para Corte.
+            if (in_array($estadoReciboNormalizado, ['En Ejecución', 'En Ejecucion'], true)) {
+                $dataUpdate['aprobado_insumos_en'] = now();
+            }
+
+            $updateResult = $recibo->update($dataUpdate);
 
             Log::info('[cambiarEstadoRecibo] Resultado del update', [
                 'updateResult' => $updateResult,
@@ -299,4 +306,3 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         ]);
     }
 }
-

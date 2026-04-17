@@ -246,6 +246,14 @@ class ConsecutivoReciboPedidoRepository
             });
         }
 
+        if ($tipoRecibo === 'COSTURA') {
+            return $query
+                ->orderByRaw('CASE WHEN aprobado_insumos_en IS NULL THEN 1 ELSE 0 END ASC')
+                ->orderBy('aprobado_insumos_en', 'desc')
+                ->orderBy('consecutivo_actual', 'desc')
+                ->get();
+        }
+
         return $query->orderBy('consecutivo_actual', 'desc')->get();
     }
 }
