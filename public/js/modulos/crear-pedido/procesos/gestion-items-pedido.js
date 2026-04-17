@@ -491,6 +491,10 @@ class GestionItemsUI {
         this.prendaEditIndex = null;
         this.prendaEnModoEdicion = false;
 
+        // Resetear select de origen al placeholder vacío
+        const origenSelect = document.getElementById('nueva-prenda-origen-select');
+        if (origenSelect) origenSelect.value = '';
+
         // Limpiar estado UNISEX persistente
         globalThis.cantidadSoloSeleccionada = null;
         if (typeof globalThis.eliminarUnisex === 'function') {

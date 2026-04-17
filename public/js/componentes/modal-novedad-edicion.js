@@ -527,7 +527,7 @@ class ModalNovedadEdicion {
             
             //  FIX: Leer origen del SELECT actualizado en el modal (NO de this.prendaData que es estático)
             const origenSelect = document.getElementById('nueva-prenda-origen-select');
-            const origenActual = origenSelect?.value || this.prendaData.origen || 'bodega';
+            const origenActual = origenSelect?.value || this.prendaData.origen || (this.prendaData.de_bodega == 1 ? 'bodega' : 'confeccion');
             const deBodegaValue = origenActual === 'bodega' ? 1 : 0;
             
             formData.append('origen', origenActual);

@@ -99,7 +99,7 @@ class PrendaDataTransformer {
             id: prendaRaw.id || null,
             nombre_producto: prendaRaw.nombre_producto || prendaRaw.nombre_prenda || prendaRaw.nombre || '',
             descripcion: prendaRaw.descripcion || '',
-            origen: prendaRaw.origen || 'bodega',
+            origen: prendaRaw.origen || (prendaRaw.de_bodega == 1 ? 'bodega' : 'confeccion'),
 
             // Imágenes
             imagenes: prendaRaw.imagenes || prendaRaw.fotos || [],

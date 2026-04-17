@@ -90,7 +90,7 @@ class PrendaDataBuilder {
             nombre_producto: datos.nombrePrenda,
             descripcion: datos.descripcion || '',
             genero: datos.genero,
-            origen: datos.origen || 'bodega',
+            origen: datos.origen || (datos.de_bodega == 1 ? 'bodega' : 'confeccion'),
             imagenes: datos.imagenesConUrls || [],
             telas: [],
             telasAgregadas: datos.telasConUrls || [],

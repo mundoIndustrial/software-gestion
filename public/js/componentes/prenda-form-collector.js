@@ -36,7 +36,7 @@ class PrendaFormCollector {
             // ============================================
             const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
             const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
-            const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
+            const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'confeccion';
             
             // Convertir origen a de_bodega (boolean)
             // 'bodega' -> true (de_bodega=1), 'confeccion' -> false (de_bodega=0)

@@ -67,6 +67,9 @@ globalThis.abrirModalPrendaNueva = function() {
         modal.style.display = 'flex';
         // Limpiar formulario
         limpiarFormulario();
+        // Resetear select de origen al placeholder
+        const origenSelect = document.getElementById('nueva-prenda-origen-select');
+        if (origenSelect) origenSelect.value = '';
     }
 };
 
@@ -98,6 +101,13 @@ globalThis.cerrarModalPrendaNueva = function() {
  * Delega a GestionItemsUI.agregarPrendaNueva()
  */
 globalThis.agregarPrendaNueva = function() {
+    // Validar que se seleccionó origen antes de proceder
+    const origenSelect = document.getElementById('nueva-prenda-origen-select');
+    if (origenSelect && !origenSelect.value) {
+        _mostrarModalOrigenRequerido();
+        return;
+    }
+
     if (globalThis.__guardandoPrendaEnCurso) {
         console.debug('[agregarPrendaNueva] Bloqueado: ya hay un guardado en curso');
         return;
@@ -137,6 +147,41 @@ globalThis.agregarPrendaNueva = function() {
     liberarGuardado();
     return null;
 };
+
+function _mostrarModalOrigenRequerido() {
+    // Resaltar el select con borde rojo
+    const select = document.getElementById('nueva-prenda-origen-select');
+    if (select) {
+        select.style.borderColor = '#ef4444';
+        select.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.2)';
+        setTimeout(() => {
+            select.style.borderColor = '';
+            select.style.boxShadow = '';
+        }, 3000);
+    }
+
+    // Crear overlay del modal
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-origen-requerido-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:9999999;display:flex;align-items:center;justify-content:center;';
+
+    overlay.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+            <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+            <h3 style="margin:0 0 10px;color:#1f2937;font-size:18px;font-weight:700;">Selecciona el origen de la prenda</h3>
+            <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6;">
+                Debes indicar si la prenda se <strong>confecciona</strong> o si se <strong>saca de bodega</strong> antes de agregarla.
+            </p>
+            <button onclick="document.getElementById('modal-origen-requerido-overlay').remove(); document.getElementById('nueva-prenda-origen-select')?.focus();"
+                style="background:#3b82f6;color:white;border:none;padding:10px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+                Entendido
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
 
 /**
  * WRAPPER: Carga un item en el modal para editar

@@ -27,8 +27,8 @@ export class PedidoSanitizer {
             tipo: item.tipo || 'prenda_nueva',
             nombre_prenda: item.nombre_prenda || item.nombre_producto || '',
             descripcion: this.cleanString(item.descripcion),
-            origen: item.origen || 'bodega',
-            de_bodega: item.origen === 'bodega' ? 1 : 0,
+            origen: item.origen || (item.de_bodega == 1 ? 'bodega' : 'confeccion'),
+            de_bodega: PedidoSanitizer._resolverDeBodega(item),
             
             // Cantidades por talla
             cantidad_talla: this.sanitizeCantidadTalla(item.cantidad_talla),
@@ -220,6 +220,11 @@ export class PedidoSanitizer {
     /**
      * Helpers
      */
+    static _resolverDeBodega(item) {
+        if (item.origen) return item.origen === 'bodega' ? 1 : 0;
+        return item.de_bodega == 1 ? 1 : 0;
+    }
+
     static cleanString(value) {
         if (value === null || value === undefined) return null;
         if (typeof value === 'string') return value.trim() || null;
