@@ -295,10 +295,36 @@
 }
 
 .asesoras-timeline-area {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 0.95rem;
-    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #93c5fd;
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+    margin-bottom: 8px;
+    box-shadow: 0 1px 0 rgba(30, 58, 138, 0.08);
+    width: fit-content;
+    max-width: 100%;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.asesoras-timeline-item.in-progress .asesoras-timeline-area {
+    color: #1e40af;
+    border-color: #60a5fa;
+    background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.asesoras-timeline-item.completed .asesoras-timeline-area {
+    color: #065f46;
+    border-color: #6ee7b7;
+    background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%);
 }
 
 .asesoras-timeline-date {
@@ -308,6 +334,27 @@
 
 .asesoras-timeline-date strong {
     color: #1e40af;
+}
+
+.asesoras-timeline-date.asesoras-status-area {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 10px;
+    width: fit-content;
+    margin: 4px 0 2px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+}
+
+.asesoras-timeline-date.asesoras-status-area.is-pending {
+    color: #92400e;
+    background: #fef3c7;
+    border-color: #f59e0b;
 }
 
 /* Info Message */
@@ -510,103 +557,69 @@ async function fillAsesorasTimeline(pedido, order = null) {
         } catch (renderError) {
             console.warn('[fillAsesorasTimeline] Error renderizando recibos, se usara fallback por procesos:', renderError);
         }
-        // Obtener los procesos del pedido (misma lógica que en tracking)
+
         let responseData = null;
-        
-        // Intentar primero con /api/ordenes/{id}/procesos
         try {
             const response = await fetch(`/api/ordenes/${pedido}/procesos`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
-            
-            if (response.ok) {
-                responseData = await response.json();
-            }
-        } catch (error) {
-        }
-        
-        // Si falla, intentar con /api/tabla-original/{pedido}/procesos
+            if (response.ok) responseData = await response.json();
+        } catch (error) {}
+
         if (!responseData) {
             try {
                 const response = await fetch(`/api/tabla-original/${pedido}/procesos`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                if (response.ok) {
-                    responseData = await response.json();
-                }
-            } catch (error) {
-            }
+                if (response.ok) responseData = await response.json();
+            } catch (error) {}
         }
-        
-        // Si aún no hay datos, intentar con /api/tabla-original-bodega
+
         if (!responseData) {
             try {
                 const response = await fetch(`/api/tabla-original-bodega/${pedido}/procesos`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                if (response.ok) {
-                    responseData = await response.json();
-                }
-            } catch (error) {
-            }
+                if (response.ok) responseData = await response.json();
+            } catch (error) {}
         }
-        
-        // Extraer array de procesos del objeto de respuesta
+
         let procesos = null;
         if (responseData) {
-            // El endpoint puede retornar directamente un array o un objeto con propiedad 'procesos'
-            if (Array.isArray(responseData)) {
-                procesos = responseData;
-            } else if (responseData.procesos && Array.isArray(responseData.procesos)) {
-                procesos = responseData.procesos;
-            }
+            if (Array.isArray(responseData)) procesos = responseData;
+            else if (responseData.procesos && Array.isArray(responseData.procesos)) procesos = responseData.procesos;
         }
-        
+
         if (!procesos || procesos.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
                     <svg style="width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
                     </svg>
-                    <p style="margin: 0; font-size: 14px; font-weight: 500;">No hay procesos registrados aún</p>
-                    <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Los procesos se mostrarán conforme avance el pedido</p>
+                    <p style="margin: 0; font-size: 14px; font-weight: 500;">No hay procesos registrados aun</p>
+                    <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Los procesos se mostraran conforme avance el pedido</p>
                 </div>
             `;
             return;
         }
-        // Ordenar procesos por fecha de inicio
+
         procesos.sort((a, b) => {
             const fechaA = new Date(a.fecha_inicio || a.createdAt || 0);
             const fechaB = new Date(b.fecha_inicio || b.createdAt || 0);
             return fechaA - fechaB;
         });
-        
-        // Llenar timeline
+
         container.innerHTML = '';
         procesos.forEach((proceso, index) => {
             const isCompleted = proceso.fecha_finalizacion || proceso.estado_proceso === 'Completado' || proceso.completed === true;
             const isCurrentArea = index === procesos.length - 1 && !isCompleted;
-            
+
             const timelineItem = document.createElement('div');
             timelineItem.className = `asesoras-timeline-item ${isCompleted ? 'completed' : ''} ${isCurrentArea ? 'in-progress' : ''}`;
-            
-            // Formatear fecha - usar fecha_inicio como referencia de "cuándo llegó"
+
             const fechaInicio = new Date(proceso.fecha_inicio || proceso.createdAt);
             let fechaFormato = 'No especificada';
-            
             if (!isNaN(fechaInicio.getTime())) {
-                // Convertir a zona horaria de Bogotá (UTC-5)
                 const formatter = new Intl.DateTimeFormat('es-ES', {
                     timeZone: 'America/Bogota',
                     month: 'short',
@@ -617,17 +630,17 @@ async function fillAsesorasTimeline(pedido, order = null) {
                 });
                 fechaFormato = formatter.format(fechaInicio);
             }
-            
-            // Obtener nombre del área - intentar varias propiedades posibles
-            let nombreArea = 'Área desconocida';
-            if (proceso.proceso) {
-                nombreArea = proceso.proceso;
-            } else if (proceso.area) {
-                nombreArea = proceso.area;
-            } else if (proceso.nombre_area) {
-                nombreArea = proceso.nombre_area;
-            }
-            
+
+            let nombreArea = 'Area desconocida';
+            if (proceso.proceso) nombreArea = proceso.proceso;
+            else if (proceso.area) nombreArea = proceso.area;
+            else if (proceso.nombre_area) nombreArea = proceso.nombre_area;
+
+            const detalle = getAsesorasPrendaDetalle(proceso, order);
+            const lineaPrenda = detalle.nombre ? `<div class="asesoras-timeline-date">Prenda: <strong>${detalle.nombre}</strong></div>` : '';
+            const lineaDescripcion = detalle.descripcion ? `<div class="asesoras-timeline-date">Descripcion: <strong>${detalle.descripcion}</strong></div>` : '';
+            const lineaTallas = detalle.tallas ? `<div class="asesoras-timeline-date">Tallas: <strong>${detalle.tallas}</strong></div>` : '';
+
             timelineItem.innerHTML = `
                 <div class="asesoras-timeline-icon">
                     ${isCompleted ? '✓' : (isCurrentArea ? '●' : index + 1)}
@@ -635,13 +648,15 @@ async function fillAsesorasTimeline(pedido, order = null) {
                 <div class="asesoras-timeline-content">
                     <div class="asesoras-timeline-area">${nombreArea}</div>
                     <div class="asesoras-timeline-date">
-                        ${isCompleted ? 'Completado: ' : 'Llegó: '}<strong>${fechaFormato}</strong>
+                        ${isCompleted ? 'Completado: ' : 'Llego: '}<strong>${fechaFormato}</strong>
                     </div>
+                    ${lineaPrenda}
+                    ${lineaDescripcion}
+                    ${lineaTallas}
                 </div>
             `;
             container.appendChild(timelineItem);
         });
-        
     } catch (error) {
         console.error('[fillAsesorasTimeline] Error no controlado:', error);
         const container = document.getElementById('asesorasTimelineContainer');
@@ -692,10 +707,17 @@ function renderAsesorasRecibosTimeline(container, order) {
         const tipoRecibo = formatAsesorasReadableText(recibo && recibo.tipo_recibo, 'Recibo');
         const consecutivo = (recibo && recibo.consecutivo_actual) ? recibo.consecutivo_actual : '-';
         const area = formatAsesorasReadableText(recibo && recibo.area, 'Sin area');
+        const areaClass = String(area).trim().toUpperCase() === 'PENDIENTE' ? ' is-pending' : '';
+        const areaLabel = `AREA: ${area}`;
         const fechaEntrega = formatAsesorasDateOnly(recibo && recibo.fecha_estimada_de_entrega);
         const tituloRecibo = String(tipoRecibo).toUpperCase() === 'COSTURA-BODEGA'
             ? `#${consecutivo}`
             : `${tipoRecibo} #${consecutivo}`;
+
+        const detalle = getAsesorasPrendaDetalle(recibo, order);
+        const lineaPrenda = detalle.nombre ? `<div class="asesoras-timeline-date">Prenda: <strong>${detalle.nombre}</strong></div>` : '';
+        const lineaDescripcion = detalle.descripcion ? `<div class="asesoras-timeline-date">Descripcion: <strong>${detalle.descripcion}</strong></div>` : '';
+        const lineaTallas = detalle.tallas ? `<div class="asesoras-timeline-date">Tallas: <strong>${detalle.tallas}</strong></div>` : '';
 
         timelineItem.innerHTML = `
             <div class="asesoras-timeline-icon">
@@ -704,7 +726,10 @@ function renderAsesorasRecibosTimeline(container, order) {
             <div class="asesoras-timeline-content">
                 <div class="asesoras-timeline-area">${tituloRecibo}</div>
                 <div class="asesoras-timeline-date">Entrega estimada: <strong>${fechaEntrega}</strong></div>
-                <div class="asesoras-timeline-date">${area}</div>
+                <div class="asesoras-timeline-date asesoras-status-area${areaClass}">${areaLabel}</div>
+                ${lineaPrenda}
+                ${lineaDescripcion}
+                ${lineaTallas}
             </div>
         `;
 
@@ -712,6 +737,72 @@ function renderAsesorasRecibosTimeline(container, order) {
     });
 
     return true;
+}
+
+function getAsesorasPrendaDetalle(source, order = null) {
+    const prendaId = Number((source && (source.prenda_id ?? source.prendaId ?? source.prenda_pedido_id ?? source.prendaPedidoId)) || 0);
+
+    let nombre = formatAsesorasReadableText(
+        source && (source.prenda_nombre || source.nombre_prenda || source.prenda || source.nombre),
+        ''
+    );
+    let descripcion = formatAsesorasReadableText(
+        source && (source.prenda_descripcion || source.descripcion_prenda || source.descripcion),
+        ''
+    );
+    let tallas = formatAsesorasTallasResumen(
+        source && (source.tallas_resumen || source.cantidad_talla || source.tallas || source.tallas_detalle || source.tallasDetalle)
+    );
+
+    const prendasOrder = (order && Array.isArray(order.prendas)) ? order.prendas : [];
+    if (prendasOrder.length > 0 && (!nombre || !descripcion || !tallas)) {
+        const prendaMatch = prendasOrder.find(item => {
+            const itemId = Number((item && (item.id ?? item.prenda_pedido_id ?? item.prendaPedidoId)) || 0);
+            return prendaId > 0 ? itemId === prendaId : false;
+        }) || (prendasOrder.length === 1 ? prendasOrder[0] : null);
+
+        if (prendaMatch) {
+            if (!nombre) nombre = formatAsesorasReadableText(prendaMatch.nombre || prendaMatch.prenda_nombre || prendaMatch.nombre_prenda || prendaMatch.prenda, '');
+            if (!descripcion) descripcion = formatAsesorasReadableText(prendaMatch.descripcion || prendaMatch.prenda_descripcion || prendaMatch.descripcion_prenda, '');
+            if (!tallas) tallas = formatAsesorasTallasResumen(prendaMatch.tallas_resumen || prendaMatch.cantidad_talla || prendaMatch.tallas || prendaMatch.tallas_detalle);
+        }
+    }
+
+    return { nombre: nombre || '', descripcion: descripcion || '', tallas: tallas || '' };
+}
+
+function formatAsesorasTallasResumen(rawTallas) {
+    if (!rawTallas) return '';
+
+    if (typeof rawTallas === 'string') {
+        const valor = rawTallas.trim();
+        return (valor && valor !== '-') ? valor : '';
+    }
+
+    if (Array.isArray(rawTallas)) {
+        const partes = rawTallas.map(item => {
+            if (!item || typeof item !== 'object') return '';
+            const genero = String(item.genero || '').trim();
+            const talla = String(item.talla || '').trim() || 'SOBREMEDIDA';
+            const cantidad = Number(item.cantidad || 0);
+            if (!Number.isFinite(cantidad) || cantidad <= 0) return '';
+            const prefijo = genero ? `${formatAsesorasReadableText(genero, '')} ` : '';
+            return `${prefijo}${String(talla).toUpperCase()}: ${cantidad}`;
+        }).filter(Boolean);
+        return partes.join(', ');
+    }
+
+    if (typeof rawTallas === 'object') {
+        const partes = [];
+        Object.keys(rawTallas).forEach(key => {
+            const valor = Number(rawTallas[key] || 0);
+            if (!Number.isFinite(valor) || valor <= 0) return;
+            partes.push(`${String(key).toUpperCase()}: ${valor}`);
+        });
+        return partes.join(', ');
+    }
+
+    return '';
 }
 
 /**
@@ -846,7 +937,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-
-
-

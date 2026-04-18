@@ -103,14 +103,17 @@ class GetOrderDetailsReadService
             ->map(fn ($recibo) => (array) $recibo)
             ->toArray();
 
-        $ordenArray['recibos'] = $this->resolverAreasRecibos($recibos);
-
-        $ordenArray['descripcion_prendas'] = $this->buildDescripcionConTallas($pedido);
-
         $prendasFormato = $this->formatPrendas($pedido);
         if (!empty($prendasFormato)) {
             $ordenArray['prendas'] = $prendasFormato;
         }
+
+        $ordenArray['recibos'] = $this->adjuntarDetallePrendaEnRecibos(
+            $this->resolverAreasRecibos($recibos),
+            $prendasFormato
+        );
+
+        $ordenArray['descripcion_prendas'] = $this->buildDescripcionConTallas($pedido);
 
         Log::info('Detalles de orden obtenidos', [
             'order_id' => $orderId->value(),
@@ -162,6 +165,13 @@ class GetOrderDetailsReadService
         }
 
         if ($procesoIds === []) {
+            foreach ($recibos as &$recibo) {
+                $tipoRecibo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                if (isset(self::RECIBOS_AREA_LOGO_MAP[$tipoRecibo])) {
+                    $recibo['area'] = 'PENDIENTE';
+                }
+            }
+            unset($recibo);
             return $recibos;
         }
 
@@ -190,12 +200,15 @@ class GetOrderDetailsReadService
 
             $procesoId = $procesoPorPrendaYTipo[$prendaId][$tipoProcesoId] ?? null;
             if ($procesoId === null) {
+                $recibo['area'] = 'PENDIENTE';
                 continue;
             }
 
             $areaLogo = $areaMasRecientePorProceso[$procesoId] ?? null;
             if (!empty($areaLogo)) {
                 $recibo['area'] = $areaLogo;
+            } else {
+                $recibo['area'] = 'PENDIENTE';
             }
         }
         unset($recibo);
@@ -210,6 +223,9 @@ class GetOrderDetailsReadService
         if (!$pedido->prendas || $pedido->prendas->count() === 0) {
             return $prendasFormato;
         }
+
+        $prendaIds = $pedido->prendas->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+        $tallasPorPrenda = $this->obtenerTallasPorPrenda($prendaIds);
 
         foreach ($pedido->prendas as $index => $prenda) {
             $colorNombre = null;
@@ -257,12 +273,19 @@ class GetOrderDetailsReadService
                 Log::warning('Error obteniendo broche', ['error' => $e->getMessage()]);
             }
 
+            $tallasPrenda = $tallasPorPrenda[(int) $prenda->id] ?? [];
+            $tallasResumen = $this->construirResumenTallas($tallasPrenda);
+
             $prendasFormato[] = [
                 'numero' => $index + 1,
                 'nombre' => $prenda->nombre_prenda ?? '-',
+                'prenda_nombre' => $prenda->nombre_prenda ?? '-',
                 'descripcion' => $prenda->descripcion ?? '-',
+                'prenda_descripcion' => $prenda->descripcion ?? '-',
                 'descripcion_variaciones' => $prenda->descripcion_variaciones ?? '',
                 'cantidad_talla' => $prenda->cantidad_talla ?? '-',
+                'tallas' => $tallasPrenda,
+                'tallas_resumen' => $tallasResumen,
                 'color' => $colorNombre,
                 'tela' => $telaNombre,
                 'tela_referencia' => $telaReferencia,
@@ -278,6 +301,95 @@ class GetOrderDetailsReadService
         }
 
         return $prendasFormato;
+    }
+
+    private function obtenerTallasPorPrenda(array $prendaIds): array
+    {
+        if ($prendaIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('prenda_pedido_tallas')
+            ->whereIn('prenda_pedido_id', $prendaIds)
+            ->orderBy('prenda_pedido_id')
+            ->orderBy('genero')
+            ->orderBy('talla')
+            ->get(['prenda_pedido_id', 'genero', 'talla', 'cantidad']);
+
+        $tallasPorPrenda = [];
+
+        foreach ($rows as $row) {
+            $prendaId = (int) $row->prenda_pedido_id;
+            $tallasPorPrenda[$prendaId][] = [
+                'genero' => (string) ($row->genero ?? ''),
+                'talla' => (string) ($row->talla ?? ''),
+                'cantidad' => (int) ($row->cantidad ?? 0),
+            ];
+        }
+
+        return $tallasPorPrenda;
+    }
+
+    private function construirResumenTallas(array $tallas): string
+    {
+        if ($tallas === []) {
+            return '-';
+        }
+
+        $partes = [];
+        foreach ($tallas as $item) {
+            $cantidad = (int) ($item['cantidad'] ?? 0);
+            if ($cantidad <= 0) {
+                continue;
+            }
+
+            $genero = trim((string) ($item['genero'] ?? ''));
+            $talla = trim((string) ($item['talla'] ?? ''));
+            $nombreTalla = $talla !== '' ? strtoupper($talla) : 'SOBREMEDIDA';
+            $prefijoGenero = $genero !== '' ? ucfirst(strtolower($genero)) . ' ' : '';
+            $partes[] = trim($prefijoGenero . $nombreTalla) . ': ' . $cantidad;
+        }
+
+        if ($partes === []) {
+            return '-';
+        }
+
+        return implode(', ', $partes);
+    }
+
+    private function adjuntarDetallePrendaEnRecibos(array $recibos, array $prendasFormato): array
+    {
+        if ($recibos === []) {
+            return [];
+        }
+
+        $mapaPrendas = [];
+        foreach ($prendasFormato as $prenda) {
+            $prendaId = (int) ($prenda['id'] ?? $prenda['prenda_pedido_id'] ?? 0);
+            if ($prendaId <= 0) {
+                continue;
+            }
+
+            $mapaPrendas[$prendaId] = [
+                'nombre' => (string) ($prenda['nombre'] ?? $prenda['prenda_nombre'] ?? '-'),
+                'descripcion' => (string) ($prenda['descripcion'] ?? $prenda['prenda_descripcion'] ?? '-'),
+                'tallas_resumen' => (string) ($prenda['tallas_resumen'] ?? '-'),
+                'tallas' => $prenda['tallas'] ?? [],
+            ];
+        }
+
+        foreach ($recibos as &$recibo) {
+            $prendaId = (int) ($recibo['prenda_id'] ?? 0);
+            $detalle = $mapaPrendas[$prendaId] ?? null;
+
+            $recibo['prenda_nombre'] = $detalle['nombre'] ?? '-';
+            $recibo['prenda_descripcion'] = $detalle['descripcion'] ?? '-';
+            $recibo['tallas_resumen'] = $detalle['tallas_resumen'] ?? '-';
+            $recibo['tallas'] = $detalle['tallas'] ?? [];
+        }
+        unset($recibo);
+
+        return $recibos;
     }
 
     private function formatPrendaFotos($prenda): array
