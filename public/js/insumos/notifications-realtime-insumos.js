@@ -296,8 +296,87 @@ function initNotificationsRealtimeInsumos() {
                     };
                 };
 
+                function buildRefreshUrl() {
+                    const url = new URL(window.location.href);
+                    const params = new URLSearchParams();
+                    const page = url.searchParams.get('page') || '1';
+
+                    params.set('page', page);
+
+                    try {
+                        const rawFilters = sessionStorage.getItem('insumos_filters');
+                        if (rawFilters) {
+                            const parsedFilters = JSON.parse(rawFilters);
+                            if (parsedFilters && typeof parsedFilters === 'object') {
+                                Object.entries(parsedFilters).forEach(([column, values]) => {
+                                    if (!Array.isArray(values)) return;
+                                    values.forEach((value) => {
+                                        params.append('filter_columns[]', column);
+                                        params.append('filter_values[]', String(value));
+                                    });
+                                });
+                            }
+                        }
+                    } catch (_e) {
+                        // noop
+                    }
+
+                    const searchInput = document.querySelector('input[name="search"]');
+                    const searchTerm = searchInput ? String(searchInput.value || '').trim() : '';
+                    if (searchTerm) {
+                        params.set('search', searchTerm);
+                    }
+
+                    return `${url.pathname}?${params.toString()}`;
+                }
+
+                async function refreshMaterialesTableOnly() {
+                    try {
+                        const response = await fetch(buildRefreshUrl(), {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'text/html',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        const html = await response.text();
+                        if (typeof window.updateTableFromHtml === 'function') {
+                            await window.updateTableFromHtml(html);
+                            return;
+                        }
+
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const currentTable = document.querySelector('table');
+                        const nextTable = doc.querySelector('table');
+                        if (currentTable && nextTable) {
+                            const currentTbody = currentTable.querySelector('tbody');
+                            const nextTbody = nextTable.querySelector('tbody');
+                            if (currentTbody && nextTbody) {
+                                currentTbody.innerHTML = nextTbody.innerHTML;
+                            }
+                        }
+
+                        const currentPagination = document.querySelector('#tablePagination');
+                        const nextPagination = doc.querySelector('#tablePagination');
+                        if (currentPagination && nextPagination) {
+                            currentPagination.innerHTML = nextPagination.innerHTML;
+                        }
+
+                        document.dispatchEvent(new CustomEvent('insumosTableUpdated', {
+                            detail: { action: 'realtime-refresh' },
+                        }));
+                    } catch (error) {
+                        console.error('[Realtime Insumos] Error refrescando tabla:', error);
+                    }
+                }
+
                 const refreshMateriales = debounce(() => {
-                    location.reload();
+                    refreshMaterialesTableOnly();
                 }, 2000);
 
                 const subscribeIfMatch = (data) => {
@@ -409,4 +488,3 @@ if (document.readyState === 'loading') {
 } else {
     initNotificationsRealtimeInsumos();
 }
-
