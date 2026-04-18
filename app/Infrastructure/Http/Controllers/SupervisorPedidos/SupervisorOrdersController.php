@@ -454,6 +454,25 @@ class SupervisorOrdersController extends Controller
             ];
         });
 
+        // Clientes por asesora en el período actual
+        $clientesPorAsesora = $baseQuery()
+            ->leftJoin('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
+            ->whereBetween('pedidos_produccion.created_at', [$inicioActual, $finActual])
+            ->whereNotNull('cliente')
+            ->whereRaw("TRIM(cliente) <> ''")
+            ->selectRaw('pedidos_produccion.asesor_id, COALESCE(u.name, "Sin asesora") as asesora_nombre, COUNT(DISTINCT LOWER(TRIM(pedidos_produccion.cliente))) as clientes_unicos')
+            ->groupBy('pedidos_produccion.asesor_id', 'u.name')
+            ->orderByDesc('clientes_unicos')
+            ->get()
+            ->keyBy('asesor_id');
+
+        // Enriquecer ranking de asesoras con clientes únicos
+        $rankingAsesoras = $rankingAsesoras->map(function ($asesora) use ($clientesPorAsesora) {
+            $clientesUnicos = $clientesPorAsesora[$asesora['asesor_id']]->clientes_unicos ?? 0;
+            $asesora['clientes_unicos'] = (int) $clientesUnicos;
+            return $asesora;
+        });
+
         $clientesActualPeriodo = $baseQuery()
             ->whereBetween('created_at', [$inicioActual, $finActual])
             ->whereNotNull('cliente')

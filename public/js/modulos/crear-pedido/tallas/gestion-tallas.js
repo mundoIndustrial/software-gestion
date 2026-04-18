@@ -30,12 +30,114 @@ if (window.catálogoTallasDisponibles === undefined) {
 window.generoActualModal = null;
 
 /**
+ * Construye un snapshot de tallas de la prenda en formato de proceso.
+ * Salida: { dama: {}, caballero: {}, unisex: {}, sobremedida: {} }
+ */
+window.obtenerSnapshotTallasParaProcesos = function() {
+    _ensureTallasRelacionales();
+    return {
+        dama: { ...(window.tallasRelacionales.DAMA || {}) },
+        caballero: { ...(window.tallasRelacionales.CABALLERO || {}) },
+        unisex: { ...(window.tallasRelacionales.UNISEX || {}) },
+        sobremedida: { ...(window.tallasRelacionales.SOBREMEDIDA || {}) }
+    };
+};
+
+/**
+ * Sincroniza las tallas de prenda hacia tarjetas de procesos renderizadas.
+ * Esto permite ver cambios de cantidades/tallas en tiempo real en cada tarjeta.
+ */
+window.sincronizarTallasConTarjetasProcesos = function() {
+    try {
+        const crearDetalleExtendidoVacio = () => ({
+            ubicaciones: [],
+            observaciones: '',
+            imagenes: [],
+            imagenesFiles: []
+        });
+
+        const obtenerDetalleExtendido = (extendidosGenero, tallaKey) => {
+            if (!extendidosGenero || typeof extendidosGenero !== 'object') return null;
+            if (extendidosGenero[tallaKey] && typeof extendidosGenero[tallaKey] === 'object') {
+                return extendidosGenero[tallaKey];
+            }
+
+            const tallaNormalizada = String(tallaKey).replace(/_/g, ' ').trim();
+            const keyEquivalente = Object.keys(extendidosGenero).find((k) => {
+                return String(k).replace(/_/g, ' ').trim() === tallaNormalizada;
+            });
+
+            return keyEquivalente ? extendidosGenero[keyEquivalente] : null;
+        };
+
+        const sincronizarDatosExtendidosPorTallas = (datosProceso, tallasSnapshot) => {
+            if (!datosProceso || typeof datosProceso !== 'object') return;
+
+            if (!datosProceso.datosExtendidos || typeof datosProceso.datosExtendidos !== 'object') {
+                datosProceso.datosExtendidos = {};
+            }
+
+            ['dama', 'caballero', 'unisex', 'sobremedida'].forEach((generoKey) => {
+                const tallasGenero = tallasSnapshot[generoKey] || {};
+                const extendidosGenero = (datosProceso.datosExtendidos[generoKey] && typeof datosProceso.datosExtendidos[generoKey] === 'object')
+                    ? datosProceso.datosExtendidos[generoKey]
+                    : {};
+
+                const siguiente = {};
+                Object.keys(tallasGenero).forEach((tallaKey) => {
+                    const detalleExistente = obtenerDetalleExtendido(extendidosGenero, tallaKey);
+                    siguiente[tallaKey] = (detalleExistente && typeof detalleExistente === 'object')
+                        ? detalleExistente
+                        : crearDetalleExtendidoVacio();
+                });
+
+                datosProceso.datosExtendidos[generoKey] = siguiente;
+            });
+        };
+
+        const procesos = window.procesosSeleccionados || {};
+        const tipos = Object.keys(procesos);
+        if (tipos.length === 0) return;
+
+        const tallasSnapshot = window.obtenerSnapshotTallasParaProcesos();
+        let huboCambios = false;
+
+        tipos.forEach((tipo) => {
+            const proceso = procesos[tipo];
+            if (!proceso || typeof proceso !== 'object') return;
+            if (!proceso.datos || typeof proceso.datos !== 'object') return;
+
+            const modoTallas = proceso.datos.modo_tallas || 'generico';
+            proceso.datos.tallas = {
+                ...tallasSnapshot
+            };
+
+            // Mantener detalle por talla alineado al editar tallas en modo GENERAL/ESPECIFICO.
+            if (modoTallas === 'general' || modoTallas === 'especifico') {
+                sincronizarDatosExtendidosPorTallas(proceso.datos, tallasSnapshot);
+            }
+
+            huboCambios = true;
+        });
+
+        if (huboCambios && typeof window.renderizarTarjetasProcesos === 'function') {
+            window.renderizarTarjetasProcesos();
+        }
+    } catch (error) {
+        console.error('[sincronizarTallasConTarjetasProcesos] Error:', error);
+    }
+};
+
+/**
  * ========== SINCRONIZACIÓN CON MODAL DE PROCESO ==========
  * Cuando se actualizan las tallas de la prenda, sincronizar automáticamente
  * el resumen de tallas en el modal del proceso (si está abierto)
  */
 window.sincronizarTallasConModalProceso = function() {
     try {
+        // Siempre mantener las tarjetas de proceso alineadas con las tallas de prenda.
+        window.sincronizarTallasConTarjetasProcesos();
+
         // Solo sincronizar si el modal del proceso está visible
         const modalProceso = document.getElementById('modal-proceso-generico');
         if (!modalProceso || modalProceso.style.display === 'none') {
@@ -672,6 +774,7 @@ window.abrirModalSeleccionarTallas = async function(genero) {
         cerrarModalTallas(genero);
         crearTarjetaGenero(genero);
         actualizarTotalPrendas();
+        window.sincronizarTallasConModalProceso();
     };
     footer.appendChild(btnConfirmar);
     
@@ -1013,6 +1116,7 @@ window.limpiarTallasSeleccionadas = function() {
     });
     
     actualizarTotalPrendas();
+    window.sincronizarTallasConModalProceso();
 
 };
 
@@ -1131,6 +1235,7 @@ window.abrirModalSobremedida = async function() {
         cerrarModalSobremedida();
         crearTarjetaSobremedida(genero, cantidad);
         actualizarTotalPrendas();
+        window.sincronizarTallasConModalProceso();
     };
     footer.appendChild(btnConfirmar);
     
@@ -1264,6 +1369,7 @@ window.crearTarjetaSobremedida = function(genero, cantidad) {
         }
         
         actualizarTotalPrendas();
+        window.sincronizarTallasConModalProceso();
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
@@ -1436,6 +1542,7 @@ window.confirmarCantidadSinTalla = function() {
     
     // Actualizar total
     actualizarTotalPrendas();
+    window.sincronizarTallasConModalProceso();
 };
 
 /**
@@ -1558,6 +1665,7 @@ window.crearTarjetaUnisexSinTalla = function(cantidad) {
         }
         
         actualizarTotalPrendas();
+        window.sincronizarTallasConModalProceso();
     };
     btnGroupAcciones.appendChild(btnEliminar);
     

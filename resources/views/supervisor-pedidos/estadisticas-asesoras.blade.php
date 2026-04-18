@@ -110,8 +110,9 @@
                     <tr>
                         <th>Posicion</th>
                         <th>Asesora</th>
-                        <th>Periodo actual</th>
-                        <th>{{ $comparativoTitulo }}</th>
+                        <th>Pedidos {{ $periodoNombre }}</th>
+                        <th>Clientes</th>
+                        <th>Pedidos {{ strtolower($comparativoTitulo) }}</th>
                         <th>Diferencia</th>
                     </tr>
                 </thead>
@@ -121,6 +122,11 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $fila['asesora_nombre'] }}</td>
                             <td>{{ number_format($fila['total_actual'], 0, ',', '.') }}</td>
+                            <td>
+                                <button type="button" class="stats-cliente-btn" data-open-modal="clientesAsesoraModal{{ $loop->index }}" style="background: none; border: none; color: #0066cc; cursor: pointer; text-decoration: underline;">
+                                    {{ number_format($fila['clientes_unicos'], 0, ',', '.') }}
+                                </button>
+                            </td>
                             <td>{{ number_format($fila['total_anterior'], 0, ',', '.') }}</td>
                             <td class="{{ $fila['diferencia'] >= 0 ? 'text-up' : 'text-down' }}">
                                 {{ $fila['diferencia'] >= 0 ? '+' : '' }}{{ number_format($fila['diferencia'], 0, ',', '.') }}
@@ -128,7 +134,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">No hay pedidos para mostrar.</td>
+                            <td colspan="6">No hay pedidos para mostrar.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -426,6 +432,98 @@
         </div>
     </div>
 </div>
+
+@foreach($clientesConPedidos as $clienteIndex => $cliente)
+    @php
+        $asesorasDelCliente = collect($cliente['pedidos'])
+            ->unique('asesora_nombre')
+            ->pluck('asesora_nombre')
+            ->values();
+    @endphp
+    @foreach($rankingAsesoras as $asesoraIndex => $asesora)
+        @php
+            $clientesAsesoraActual = collect($clientesConPedidos)
+                ->filter(function ($c) use ($asesora) {
+                    return collect($c['pedidos'])->contains(function ($p) use ($asesora) {
+                        return $p['asesora_nombre'] === $asesora['asesora_nombre'];
+                    });
+                })
+                ->values();
+        @endphp
+        @if($asesoraIndex === 0 && $clienteIndex === 0)
+        @endif
+    @endforeach
+@endforeach
+
+@foreach($rankingAsesoras as $asesoraIndex => $asesora)
+    <div id="clientesAsesoraModal{{ $asesoraIndex }}" class="stats-modal" aria-hidden="true">
+        <div class="stats-modal-panel">
+            <div class="stats-modal-header">
+                <h3>Clientes de {{ $asesora['asesora_nombre'] }} - {{ $periodoActual }}</h3>
+                <button type="button" class="stats-modal-close" data-close-modal>&times;</button>
+            </div>
+            <div class="stats-modal-body">
+                <p class="modal-metric">Total clientes: <strong>{{ number_format($asesora['clientes_unicos'], 0, ',', '.') }}</strong></p>
+                <div class="stats-table-wrapper">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Pedidos de esta asesora</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                $clientesAsesora = collect($clientesConPedidos)
+                                    ->filter(function ($cliente) use ($asesora) {
+                                        return collect($cliente['pedidos'])->contains(function ($pedido) use ($asesora) {
+                                            return $pedido['asesora_nombre'] === $asesora['asesora_nombre'];
+                                        });
+                                    })
+                                    ->sortByDesc(function ($cliente) use ($asesora) {
+                                        return collect($cliente['pedidos'])->filter(function ($p) use ($asesora) {
+                                            return $p['asesora_nombre'] === $asesora['asesora_nombre'];
+                                        })->count();
+                                    })
+                                    ->values();
+                            @endphp
+                            @forelse($clientesAsesora as $cliente)
+                                @php
+                                    $pedidosAsesora = collect($cliente['pedidos'])
+                                        ->filter(fn ($p) => $p['asesora_nombre'] === $asesora['asesora_nombre'])
+                                        ->values();
+                                @endphp
+                                <tr>
+                                    <td>{{ $cliente['cliente_nombre'] }}</td>
+                                    <td>{{ $pedidosAsesora->count() }}</td>
+                                    <td>
+                                        <details>
+                                            <summary>Ver {{ $pedidosAsesora->count() }} pedido(s)</summary>
+                                            <ul class="pedidos-list">
+                                                @foreach($pedidosAsesora as $pedido)
+                                                    <li>
+                                                        <strong>#{{ $pedido['numero_pedido'] }}</strong>
+                                                        <span>{{ $pedido['fecha'] }}</span>
+                                                        <span>{{ $pedido['estado'] }}</span>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </details>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3">No hay clientes para esta asesora en este periodo.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
 
 @push('scripts')
 <script>
