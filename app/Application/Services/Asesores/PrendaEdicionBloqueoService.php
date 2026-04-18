@@ -46,9 +46,30 @@ final class PrendaEdicionBloqueoService
         'REFLECTIVO',
     ];
 
+    private const ESTADOS_PEDIDO_HABILITAN_EDICION = [
+        'DEVUELTO_A_ASESORA',
+        'DEVUELTO_ASESOR',
+        'DEVUELTO_A_ASESOR',
+        'DEVUELTO_ASESORA',
+    ];
+
+    private const ESTADOS_CONSECUTIVO_HABILITAN_EDICION = [
+        'DEVUELTO_A_ASESORA',
+        'DEVUELTO_A_ASESOR',
+        'DEVUELTO_ASESORA',
+        'DEVUELTO_ASESOR',
+    ];
+    private const ESTADO_PEDIDO_PENDIENTE_INSUMOS = 'PENDIENTE_INSUMOS';
+
     public function evaluar(int $pedidoId, int $prendaId): array
     {
         $estadoPedido = $this->obtenerEstadoPedido($pedidoId);
+
+        $bloqueoPorReglasPedido = $this->resolverBloqueoReglasPedido($pedidoId, $prendaId, $estadoPedido);
+        if ($bloqueoPorReglasPedido !== null) {
+            return $bloqueoPorReglasPedido;
+        }
+
         if ($this->pedidoBloqueadoPorEstado($estadoPedido)) {
             return [
                 'bloqueada' => true,
@@ -161,11 +182,18 @@ final class PrendaEdicionBloqueoService
      */
     private function validarConsecutivosCostura(int $pedidoId, int $prendaId): ?array
     {
+        $estadoPedido = $this->obtenerEstadoPedido($pedidoId);
+        $estadoNormalizado = $this->normalizarTexto((string) $estadoPedido);
+        if ($estadoNormalizado !== self::ESTADO_PEDIDO_PENDIENTE_INSUMOS) {
+            return null;
+        }
+
         // Obtener todos los consecutivos COSTURA para esta prenda
         $consecutivosCostura = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('prenda_id', $prendaId)
             ->where('tipo_recibo', 'COSTURA')
+            ->whereNotNull('consecutivo_actual')
             ->get();
 
         // Si no hay consecutivos de costura, permitir edición
@@ -379,5 +407,102 @@ final class PrendaEdicionBloqueoService
             'area' => $this->normalizarArea($consecutivo->area ?? null),
             'estado_pedido' => $this->obtenerEstadoPedido($pedidoId),
         ];
+    }
+
+    private function resolverBloqueoReglasPedido(int $pedidoId, int $prendaId, ?string $estadoPedido): ?array
+    {
+        $estadoNormalizado = $this->normalizarTexto((string) $estadoPedido);
+        $estadoPermiteEdicion = in_array($estadoNormalizado, self::ESTADOS_PEDIDO_HABILITAN_EDICION, true);
+        if ($estadoPermiteEdicion) {
+            return null;
+        }
+
+        $pedidoTienePrendasDeBodega = DB::table('prendas_pedido')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereNull('deleted_at')
+            ->where('de_bodega', 1)
+            ->exists();
+
+        if ($pedidoTienePrendasDeBodega) {
+            if ($this->prendaTieneConsecutivoDevueltoAsesor($pedidoId, $prendaId)) {
+                return null;
+            }
+
+            $mensaje = 'Este pedido tiene al menos una prenda de bodega. Solo se pueden editar o eliminar prendas cuando el pedido este en DEVUELTO_A_ASESORA/DEVUELTO_ASESOR o cuando la prenda tenga consecutivo DEVUELTO.';
+
+            Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_PEDIDO_CON_PRENDAS_BODEGA', [
+                'pedido_id' => $pedidoId,
+                'estado_pedido' => $estadoPedido,
+            ]);
+
+            return [
+                'bloqueada' => true,
+                'puede_editar' => false,
+                'mensaje' => $mensaje,
+                'consecutivo' => null,
+                'estado' => null,
+                'area' => null,
+                'estado_pedido' => $estadoPedido,
+            ];
+        }
+
+        $esPendienteInsumos = $estadoNormalizado === self::ESTADO_PEDIDO_PENDIENTE_INSUMOS;
+        if (!$esPendienteInsumos) {
+            return null;
+        }
+
+        $pedidoTieneConsecutivosCostura = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereIn(DB::raw('UPPER(TRIM(tipo_recibo))'), ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereNotNull('consecutivo_actual')
+            ->exists();
+
+        if (!$pedidoTieneConsecutivosCostura) {
+            return null;
+        }
+
+        if ($this->prendaTieneConsecutivoDevueltoAsesor($pedidoId, $prendaId)) {
+            return null;
+        }
+
+        $mensaje = 'Este pedido ya tiene consecutivos de COSTURA generados en estado PENDIENTE_INSUMOS. Solo se pueden editar o eliminar prendas cuando el pedido este en DEVUELTO_A_ASESORA.';
+
+        Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_COSTURA_PENDIENTE_INSUMOS', [
+            'pedido_id' => $pedidoId,
+            'estado_pedido' => $estadoPedido,
+        ]);
+
+        return [
+            'bloqueada' => true,
+            'puede_editar' => false,
+            'mensaje' => $mensaje,
+            'consecutivo' => null,
+            'estado' => null,
+            'area' => null,
+            'estado_pedido' => $estadoPedido,
+        ];
+    }
+
+    private function prendaTieneConsecutivoDevueltoAsesor(int $pedidoId, int $prendaId): bool
+    {
+        $consecutivos = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_id', $prendaId)
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereNotNull('consecutivo_actual')
+            ->get(['estado']);
+
+        if ($consecutivos->isEmpty()) {
+            return false;
+        }
+
+        foreach ($consecutivos as $consecutivo) {
+            $estadoNormalizado = $this->normalizarTexto((string) ($consecutivo->estado ?? ''));
+            if (in_array($estadoNormalizado, self::ESTADOS_CONSECUTIVO_HABILITAN_EDICION, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
