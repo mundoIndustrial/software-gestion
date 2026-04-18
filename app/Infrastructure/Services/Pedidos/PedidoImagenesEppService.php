@@ -145,13 +145,23 @@ class PedidoImagenesEppService
     {
         $eppId = (int) ($eppData['epp_id'] ?? 0);
         $modo = strtolower(trim((string) ($eppData['modo_imagenes'] ?? '')));
+        $imagenes = $eppData['imagenes'] ?? [];
 
         if ($modo === '') {
-            $imagenes = $eppData['imagenes'] ?? [];
             if (!is_array($imagenes) || empty($imagenes)) {
                 return null;
             }
-            throw ModoImagenesEppInvalidoException::modoRequerido($eppId);
+            $tieneArchivosEnFormData = $request->hasFile("epps_{$eppIdx}_imagenes_0");
+            if ($tieneArchivosEnFormData) {
+                $modo = 'upload';
+            } else {
+                $modo = 'reuse';
+            }
+            Log::info('[PedidoImagenesEppService] modo_imagenes vacío, asignando automáticamente', [
+                'epp_id' => $eppId,
+                'modo_asignado' => $modo,
+                'tiene_archivos' => $tieneArchivosEnFormData,
+            ]);
         }
 
         if (!in_array($modo, ['upload', 'reuse'], true)) {
