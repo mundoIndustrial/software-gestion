@@ -61,7 +61,7 @@ class PedidoImagenesEppService
                 continue;
             }
 
-            $modoImagenes = $this->resolverModoImagenesEpp($eppData);
+            $modoImagenes = $this->resolverModoImagenesEpp($request, $eppIdx, $eppData);
             if ($modoImagenes === null) {
                 continue;
             }
@@ -141,7 +141,7 @@ class PedidoImagenesEppService
         return $imagenesGuardadas;
     }
 
-    private function resolverModoImagenesEpp(array $eppData): ?string
+    private function resolverModoImagenesEpp($request, int $eppIdx, array $eppData): ?string
     {
         $eppId = (int) ($eppData['epp_id'] ?? 0);
         $modo = strtolower(trim((string) ($eppData['modo_imagenes'] ?? '')));
@@ -156,6 +156,22 @@ class PedidoImagenesEppService
 
         if (!in_array($modo, ['upload', 'reuse'], true)) {
             throw ModoImagenesEppInvalidoException::modoNoSoportado($eppId, $modo);
+        }
+
+        if ($modo === 'upload') {
+            $tieneArchivosEnFormData = $request->hasFile("epps_{$eppIdx}_imagenes_0");
+            if (!$tieneArchivosEnFormData) {
+                $imagenes = $eppData['imagenes'] ?? [];
+                if (is_array($imagenes) && !empty($imagenes)) {
+                    Log::info('[PedidoImagenesEppService] EPP en modo upload sin archivos, cambiando a reuse', [
+                        'epp_id' => $eppId,
+                        'eppIdx' => $eppIdx,
+                        'imagenes_existentes' => count($imagenes),
+                    ]);
+                    return 'reuse';
+                }
+                return null;
+            }
         }
 
         return $modo;
