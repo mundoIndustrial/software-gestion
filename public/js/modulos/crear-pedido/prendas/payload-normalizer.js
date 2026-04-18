@@ -31,12 +31,19 @@
     function normalizarEpp(eppRaw) {
         if (!eppRaw || typeof eppRaw !== 'object') return {};
         const imagenesRaw = Array.isArray(eppRaw.imagenes) ? eppRaw.imagenes : [];
+
         const tieneArchivosNuevos = imagenesRaw.some(function(img) {
-            return img && typeof img === 'object' && img.file instanceof File;
+            if (!img || typeof img !== 'object') return false;
+
+            if (img.file instanceof File) return true;
+            if (img.nombre && !img.id && !img.ruta_web && !img.url) return true;
+            if (img.id && typeof img.id === 'string' && img.id.includes('_paste_')) return true;
+
+            return false;
         });
 
         return {
-            uid: eppRaw.uid || null,  // ← NUEVO: Preservar UID del EPP
+            uid: eppRaw.uid || null,
             epp_id: eppRaw.epp_id,
             nombre_epp: eppRaw.nombre_epp || '',
             categoria: eppRaw.categoria || '',
