@@ -43,11 +43,11 @@ class CrearPrendaRequest extends FormRequest
             'telas.*.nombre' => 'required|string|max:255',
             'telas.*.referencia' => 'nullable|string|max:100',
             'telas.*.color' => 'nullable|string|max:100',
-            'telas.*.foto' => 'nullable|image|mimes:jpeg,png,webp|max:5120',
+            'telas.*.foto' => 'nullable|image|mimes:jpeg,png,webp,avif|max:5120',
 
             // Fotos
             'fotos' => 'nullable|array',
-            'fotos.*.archivo' => 'required|image|mimes:jpeg,png,webp|max:5120',
+            'fotos.*.archivo' => 'required|image|mimes:jpeg,png,webp,avif|max:5120',
             'fotos.*.tipo' => 'required|in:foto_prenda,foto_tela',
             'fotos.*.orden' => 'nullable|integer|min:1',
         ];
@@ -70,7 +70,7 @@ class CrearPrendaRequest extends FormRequest
             'telas.required' => 'Debe agregar al menos una tela',
             'telas.*.nombre.required' => 'El nombre de la tela es requerido',
             'fotos.*.archivo.image' => 'El archivo debe ser una imagen válida',
-            'fotos.*.archivo.mimes' => 'La imagen debe ser JPEG, PNG o WebP',
+            'fotos.*.archivo.mimes' => 'La imagen debe ser JPEG, PNG, WebP o AVIF',
             'fotos.*.archivo.max' => 'La imagen no puede exceder 5MB',
         ];
     }

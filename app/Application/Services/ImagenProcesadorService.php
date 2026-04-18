@@ -83,7 +83,7 @@ class ImagenProcesadorService
      */
     public function validarFormato(UploadedFile $archivo): bool
     {
-        $extensionesValidas = ['jpg', 'jpeg', 'png', 'webp'];
+        $extensionesValidas = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
         $extension = strtolower($archivo->getClientOriginalExtension());
 
         if (!in_array($extension, $extensionesValidas)) {
@@ -91,7 +91,7 @@ class ImagenProcesadorService
         }
 
         // Validar MIME type
-        $mimeValidos = ['image/jpeg', 'image/png', 'image/webp'];
+        $mimeValidos = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
         if (!in_array($archivo->getMimeType(), $mimeValidos)) {
             throw new Exception("MIME type no válido");
         }

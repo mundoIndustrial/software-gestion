@@ -351,7 +351,7 @@ class ImagenCotizacionService
      */
     public function validarArchivo(UploadedFile $archivo): bool
     {
-        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
         $extension = strtolower($archivo->getClientOriginalExtension());
         $tamanioMaximo = 5 * 1024 * 1024; // 5MB
 

@@ -32,7 +32,7 @@ class ImagenDTO
     public function validar(): bool
     {
         $tiposValidos = ['foto_prenda', 'foto_tela'];
-        $extensionesValidas = ['jpg', 'jpeg', 'png', 'webp'];
+        $extensionesValidas = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
 
         if (!in_array($this->tipo, $tiposValidos)) {
             return false;

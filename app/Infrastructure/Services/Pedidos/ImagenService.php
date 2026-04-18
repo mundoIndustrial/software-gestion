@@ -155,9 +155,9 @@ class ImagenService
      */
     public function esImagenValida(UploadedFile $file): bool
     {
-        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
         $extension = strtolower($file->getClientOriginalExtension());
-        
+
         return in_array($extension, $extensionesPermitidas) && $file->isValid();
     }
 }
