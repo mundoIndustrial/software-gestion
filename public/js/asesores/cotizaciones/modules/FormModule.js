@@ -1,5 +1,5 @@
 ﻿/**
- * FormModule - GestiÃ³n de formularios
+ * FormModule - Gestion de formularios
  * 
  * Single Responsibility: Manejo de estados y eventos del formulario
  * 
@@ -20,7 +20,7 @@ class FormModule {
     }
 
     /**
-     * Inicializa el mÃ³dulo
+     * Inicializa el modulo
      */
     init() {
         this.syncHeaderWithForm();
@@ -30,7 +30,7 @@ class FormModule {
 
     /**
      * Sincroniza los valores del header con el formulario oculto
-     * Single Responsibility: Solo sincronizaciÃ³n de datos
+     * Single Responsibility: Solo sincronizacion de datos
      */
     syncHeaderWithForm() {
         const headerCliente = document.getElementById('header-cliente');
@@ -80,7 +80,7 @@ class FormModule {
     }
 
     /**
-     * Actualiza el estado de los botones segÃºn validaciÃ³n
+     * Actualiza el estado de los botones segun validacion
      */
     updateButtonStates() {
         const tipoSeleccionado = this.state.tipo_cotizacion;
@@ -98,7 +98,7 @@ class FormModule {
 
     /**
      * Valida el formulario antes de guardar
-     * Single Responsibility: Solo validaciÃ³n
+     * Single Responsibility: Solo validacion
      */
     validate() {
         const errors = [];
@@ -112,11 +112,11 @@ class FormModule {
             });
         }
 
-        // Validar tipo de cotizaciÃ³n
+        // Validar tipo de cotizacion
         if (!this.state.tipo_cotizacion) {
             errors.push({
                 field: 'tipo_cotizacion',
-                message: 'Por favor selecciona el TIPO DE COTIZACIÃ“N (M, D o X)'
+                message: 'Por favor selecciona el TIPO DE COTIZACION (M, D o X)'
             });
         }
 
@@ -169,7 +169,7 @@ class FormModule {
     }
 
     /**
-     * Muestra errores de validaciÃ³n
+     * Muestra errores de validacion
      */
     showValidationErrors(errors) {
         errors.forEach(error => {
@@ -185,12 +185,12 @@ class FormModule {
     }
 
     /**
-     * Construye el FormData para envÃ­o
+     * Construye el FormData para envi­o
      */
     async buildFormData(action) {
         const formData = new FormData();
 
-        // Datos bÃ¡sicos
+        // Datos basicos
         const cliente = document.getElementById('header-cliente')?.value || '';
         const asesora = document.getElementById('header-asesor')?.value || '';
         const fecha = document.getElementById('header-fecha')?.value || '';
@@ -229,14 +229,14 @@ class FormModule {
             console.log(' Reflectivo capturado:', prendasReflectivo);
             
             if (prendasReflectivo && prendasReflectivo.length > 0) {
-                // Enviar datos JSON sin imÃ¡genes
+                // Enviar datos JSON sin imagenes
                 const prendasSinImagenes = prendasReflectivo.map(p => ({
                     ...p,
-                    imagenes: [] // Limpiar imÃ¡genes del JSON
+                    imagenes: [] // Limpiar imagenes del JSON
                 }));
                 formData.append('reflectivo', JSON.stringify(prendasSinImagenes));
                 
-                // Procesar imÃ¡genes por separado
+                // Procesar imagenes por separado
                 prendasReflectivo.forEach((prenda, prendaIdx) => {
                     if (prenda.imagenes && prenda.imagenes.length > 0) {
                         prenda.imagenes.forEach((img, imgIdx) => {
@@ -249,18 +249,18 @@ class FormModule {
                 console.log(' Reflectivo agregado a FormData');
             } else {
                 formData.append('reflectivo', JSON.stringify([]));
-                console.log(' Reflectivo vacÃ­o');
+                console.log(' Reflectivo vaci­o');
             }
         } else {
-            console.warn(' capturePrendasReflectivoPaso4 no es funciÃ³n');
+            console.warn(' capturePrendasReflectivoPaso4 no es funcion');
             formData.append('reflectivo', JSON.stringify([]));
         }
 
-        // LOGO TÃ‰CNICAS - Capturar datos de paso 3
+        // LOGO TECNICAS - Capturar datos de paso 3
         // Backend expects:
         // - logo[tecnicas_agregadas]
         // - logo[imagenes_paso3][tecnica][prenda][imagen]
-        console.log(' FormModule - Intentando capturar logo tÃ©cnicas...');
+        console.log(' FormModule - Intentando capturar logo tecnicas...');
 
         if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
             const tieneInfoValida = tienenInformacionValida(window.tecnicasAgregadasPaso3);
@@ -325,7 +325,7 @@ class FormModule {
             telasDisponibles: window.telasSeleccionadas ? Object.keys(window.telasSeleccionadas) : []
         });
 
-        // Datos bÃ¡sicos del producto
+        // Datos basicos del producto
         const nombre = card.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = card.querySelector('textarea[name*="descripcion"]')?.value || '';
         const tallasInput = card.querySelector('input[name*="tallas"]')?.value || '';
@@ -333,11 +333,11 @@ class FormModule {
         formData.append(`productos_friendly[${index}][nombre_producto]`, nombre);
         formData.append(`productos_friendly[${index}][descripcion]`, descripcion);
 
-        // Tallas - Enviar el JSON directamente (nuevo formato con gÃ©neros)
+        // Tallas - Enviar el JSON directamente (nuevo formato con generos)
         formData.append(`productos_friendly[${index}][tallas]`, tallasInput || '');
 
         // Tallas/variaciones avanzadas (modal "Asignar colores a tallas")
-        // Se envÃ­a como JSON string en productos_friendly[i][tallas_color]
+        // Se envi­a como JSON string en productos_friendly[i][tallas_color]
         if (window.advancedVariationsByProductoId && window.advancedVariationsByProductoId[productoId]) {
             const tallasColor = window.advancedVariationsByProductoId[productoId];
             if (Array.isArray(tallasColor) && tallasColor.length > 0) {
@@ -359,7 +359,7 @@ class FormModule {
 
         }
 
-        // Telas - Procesar mÃºltiples telas por prenda
+        // Telas - Procesar multiples telas por prenda
         // Capturar datos de cada fila de tela de la tabla
         const tblasRows = card.querySelectorAll('.fila-tela');
 
@@ -373,12 +373,12 @@ class FormModule {
             const telaId = telaIdInput ? telaIdInput.value : null;
             const referencia = referenciaInput ? referenciaInput.value : null;
             
-            // Guardar datos bÃ¡sicos de la tela
+            // Guardar datos basicos de la tela
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][color_id]`, colorId || '');
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][tela_id]`, telaId || '');
             formData.append(`productos_friendly[${index}][telas][${telaIndex}][referencia]`, referencia || '');
             
-            // Agregar fotos de esta tela especÃ­fica
+            // Agregar fotos de esta tela especi­fica
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
                 const fotosDelaTela = window.telasSeleccionadas[productoId][telaIndex];
 
@@ -418,23 +418,23 @@ class FormModule {
     }
 
     /**
-     * EnvÃ­a el formulario al servidor
+     * Envia el formulario al servidor
      */
     async submitForm(formData) {
-        // Determinar la ruta segÃºn el tipo de cotizaciÃ³n
+        // Determinar la ruta segun el tipo de cotizacion
         let url = '/api/asesores/cotizaciones'; // Por defecto para Prenda/Logo
         
-        // Si es cotizaciÃ³n de Prenda pura, usar ruta especÃ­fica
+        // Si es cotizacion de Prenda pura, usar ruta especi­fica
         if (window.tipoCotizacionGlobal === 'P') {
             url = '/api/asesores/cotizaciones';
         }
         
 
         
-        // Verificar que formData es vÃ¡lido
+        // Verificar que formData es valido
         if (!(formData instanceof FormData)) {
 
-            throw new Error('FormData invÃ¡lido');
+            throw new Error('FormData invalido');
         }
         
 
@@ -443,7 +443,7 @@ class FormModule {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData
-                // NO agregar headers - FormData maneja el Content-Type automÃ¡ticamente
+                // NO agregar headers - FormData maneja el Content-Type automaticamente
             });
 
             const responseData = await response.json();
@@ -460,7 +460,7 @@ class FormModule {
      */
     handleSuccess(data) {
 
-        alert(data.message || 'CotizaciÃ³n guardada correctamente');
+        alert(data.message || 'Cotizacion guardada correctamente');
         if (data.redirect) {
             window.location.href = data.redirect;
         }

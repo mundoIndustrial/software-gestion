@@ -379,6 +379,257 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Resumen para dropdown "Ver":
+     * cantidad de pendientes de bodega-costura para el pedido.
+     */
+    public function resumenNovedadesBodegaCostura(int $pedidoId): JsonResponse
+    {
+        $pedido = DB::table('pedidos_produccion')
+            ->select('id', 'numero_pedido')
+            ->where('id', $pedidoId)
+            ->first();
+
+        if (!$pedido) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado',
+            ], 404);
+        }
+
+        $numeroPedidoNormalizado = str_replace('#', '', trim((string) $pedido->numero_pedido));
+
+        $pendientesCount = DB::table('bodega_detalles_talla as bdt')
+            ->whereNull('bdt.deleted_at')
+            ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
+            ->whereRaw("LOWER(TRIM(COALESCE(bdt.estado_bodega, ''))) = 'pendiente'")
+            ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
+                $q->where('bdt.pedido_produccion_id', $pedidoId)
+                    ->orWhere('bdt.numero_pedido', (string) $pedido->numero_pedido)
+                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bdt.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
+            })
+            ->count();
+
+        $notesCount = DB::table('bodega_notas as bn')
+            ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
+                $q->where('bn.pedido_produccion_id', $pedidoId)
+                    ->orWhere('bn.numero_pedido', (string) $pedido->numero_pedido)
+                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bn.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
+            })
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'pedido_id' => $pedidoId,
+            'numero_pedido' => (string) $pedido->numero_pedido,
+            'pending_count' => (int) $pendientesCount,
+            'has_pending' => $pendientesCount > 0,
+            'notes_count' => (int) $notesCount,
+            'has_notes' => $notesCount > 0,
+        ]);
+    }
+
+    /**
+     * Listado de notas de bodega asociadas a pendientes de Costura del pedido.
+     */
+    public function obtenerNovedadesBodegaCostura(int $pedidoId): JsonResponse
+    {
+        $pedido = DB::table('pedidos_produccion')
+            ->select('id', 'numero_pedido')
+            ->where('id', $pedidoId)
+            ->first();
+
+        if (!$pedido) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado',
+            ], 404);
+        }
+
+        $numeroPedidoNormalizado = str_replace('#', '', trim((string) $pedido->numero_pedido));
+
+        // Para enriquecer notas (prenda/descripcion/cantidad) NO restringimos por estado_bodega,
+        // porque la nota puede existir aunque el detalle ya no esté en Pendiente.
+        // Priorizamos match por pedido_produccion_id y usamos numero_pedido como respaldo.
+        $baseDetallesQuery = DB::table('bodega_detalles_talla as bdt')
+            ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'bdt.prenda_id')
+            ->whereNull('bdt.deleted_at')
+            ->where(function ($q) use ($pedidoId, $numeroPedidoNormalizado) {
+                $q->where('bdt.pedido_produccion_id', $pedidoId)
+                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bdt.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
+            })
+            ->select([
+                DB::raw("LOWER(TRIM(COALESCE(bdt.talla, ''))) as talla_normalizada"),
+                'bdt.talla_color_id',
+                'bdt.prenda_id',
+                DB::raw('COALESCE(NULLIF(TRIM(bdt.prenda_nombre), ""), NULLIF(TRIM(pp.nombre_prenda), ""), "-") as prenda_nombre'),
+                DB::raw('COALESCE(pp.descripcion, "-") as prenda_descripcion'),
+                DB::raw('COALESCE(bdt.cantidad, 0) as cantidad'),
+                DB::raw('COALESCE(bdt.asesor, "") as asesor'),
+                DB::raw('COALESCE(bdt.empresa, "") as empresa'),
+            ]);
+
+        $detallesCosturaParaNotas = (clone $baseDetallesQuery)
+            ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
+            ->get();
+
+        $detallesSource = 'costura';
+        if ($detallesCosturaParaNotas->isEmpty()) {
+            // Fallback defensivo: si no hay detalle marcado como Costura,
+            // intentamos con cualquier área para no perder el nombre de prenda.
+            $detallesCosturaParaNotas = (clone $baseDetallesQuery)->get();
+            $detallesSource = 'fallback_any_area';
+        }
+
+        // Fallback adicional desde tallas de prenda del pedido.
+        // Esto cubre casos donde bodega_detalles_talla no tiene filas para el pedido.
+        $detallesTallasFallback = DB::table('prenda_pedido_tallas as ppt')
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppt.prenda_pedido_id')
+            ->whereNull('pp.deleted_at')
+            ->where('pp.pedido_produccion_id', $pedidoId)
+            ->select([
+                DB::raw("LOWER(TRIM(COALESCE(ppt.talla, ''))) as talla_normalizada"),
+                DB::raw('COALESCE(NULLIF(TRIM(pp.nombre_prenda), ""), "-") as prenda_nombre'),
+                DB::raw('COALESCE(NULLIF(TRIM(pp.descripcion), ""), "-") as prenda_descripcion'),
+                DB::raw('COALESCE(ppt.cantidad, 0) as cantidad'),
+            ])
+            ->get();
+
+        $pedidoMeta = DB::table('pedidos_produccion as p')
+            ->leftJoin('users as u', 'u.id', '=', 'p.asesor_id')
+            ->where('p.id', $pedidoId)
+            ->select([
+                DB::raw('COALESCE(u.name, "") as asesora'),
+                DB::raw('COALESCE(p.cliente, "") as cliente'),
+            ])
+            ->first();
+
+        $asesoraHeader = trim((string) ($pedidoMeta->asesora ?? ''));
+        $clienteHeader = trim((string) ($pedidoMeta->cliente ?? ''));
+
+        if ($asesoraHeader === '') {
+            $asesoraHeader = trim((string) ($detallesCosturaParaNotas->first()->asesor ?? ''));
+        }
+        if ($clienteHeader === '') {
+            $clienteHeader = trim((string) ($detallesCosturaParaNotas->first()->empresa ?? ''));
+        }
+
+        $novedades = DB::table('bodega_notas as bn')
+            ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
+                $q->where('bn.pedido_produccion_id', $pedidoId)
+                    ->orWhere('bn.numero_pedido', (string) $pedido->numero_pedido)
+                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bn.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
+            })
+            ->select([
+                'bn.id',
+                'bn.pedido_produccion_id',
+                'bn.numero_pedido',
+                'bn.talla',
+                'bn.talla_color_id',
+                'bn.contenido',
+                'bn.usuario_nombre',
+                'bn.usuario_rol',
+                'bn.visto_at',
+                'bn.created_at',
+                'bn.updated_at',
+            ])
+            ->orderByDesc('bn.created_at')
+            ->limit(200)
+            ->get()
+            ->map(function ($nota) use ($detallesCosturaParaNotas, $detallesTallasFallback) {
+                $tallaNormalizada = mb_strtolower(trim((string) ($nota->talla ?? '')));
+                $tallaColorId = $nota->talla_color_id;
+
+                $detallesExactos = $detallesCosturaParaNotas->filter(function ($d) use ($tallaNormalizada, $tallaColorId) {
+                    return (string) $d->talla_normalizada === (string) $tallaNormalizada
+                        && (
+                            ((int) ($d->talla_color_id ?? 0) === (int) ($tallaColorId ?? 0))
+                            || ($d->talla_color_id === null && $tallaColorId === null)
+                        );
+                });
+
+                $detallesPorTalla = $detallesCosturaParaNotas->filter(function ($d) use ($tallaNormalizada) {
+                    return (string) $d->talla_normalizada === (string) $tallaNormalizada;
+                });
+
+                $detallesPorTallaColor = $detallesCosturaParaNotas->filter(function ($d) use ($tallaColorId) {
+                    return (
+                        ((int) ($d->talla_color_id ?? 0) === (int) ($tallaColorId ?? 0))
+                        || ($d->talla_color_id === null && $tallaColorId === null)
+                    );
+                });
+
+                $detallesRelacionados = $detallesExactos;
+                if ($detallesRelacionados->isEmpty()) {
+                    $detallesRelacionados = $detallesPorTalla;
+                }
+                if ($detallesRelacionados->isEmpty()) {
+                    $detallesRelacionados = $detallesPorTallaColor;
+                }
+                if ($detallesRelacionados->isEmpty()) {
+                    // Ultimo fallback: usar el primer detalle de costura del pedido.
+                    $detallesRelacionados = $detallesCosturaParaNotas->take(1);
+                }
+
+                $prendaNombre = $detallesRelacionados->pluck('prenda_nombre')->filter()->unique()->values()->implode(', ');
+                $prendaDescripcion = $detallesRelacionados->pluck('prenda_descripcion')->filter()->unique()->values()->implode(' | ');
+                $cantidad = (int) $detallesRelacionados->sum(function ($d) {
+                    return (int) ($d->cantidad ?? 0);
+                });
+
+                // Si seguimos sin datos útiles desde bodega, usar tallas fallback.
+                $sinPrendaUtil = $prendaNombre === '' || $prendaNombre === '-';
+                $sinDescripcionUtil = $prendaDescripcion === '' || $prendaDescripcion === '-';
+                $sinCantidadUtil = $cantidad <= 0;
+
+                if ($sinPrendaUtil || $sinDescripcionUtil || $sinCantidadUtil) {
+                    $fallbackPorTalla = $detallesTallasFallback->filter(function ($d) use ($tallaNormalizada) {
+                        return (string) $d->talla_normalizada === (string) $tallaNormalizada;
+                    });
+
+                    if ($fallbackPorTalla->isNotEmpty()) {
+                        if ($sinPrendaUtil) {
+                            $prendaNombre = $fallbackPorTalla->pluck('prenda_nombre')->filter()->unique()->values()->implode(', ');
+                        }
+                        if ($sinDescripcionUtil) {
+                            $prendaDescripcion = $fallbackPorTalla->pluck('prenda_descripcion')->filter()->unique()->values()->implode(' | ');
+                        }
+                        if ($sinCantidadUtil) {
+                            $cantidad = (int) $fallbackPorTalla->sum(function ($d) {
+                                return (int) ($d->cantidad ?? 0);
+                            });
+                        }
+                    }
+                }
+
+                $nota->prenda_nombre = $prendaNombre !== '' ? $prendaNombre : '-';
+                $nota->prenda_descripcion = $prendaDescripcion !== '' ? $prendaDescripcion : '-';
+                $nota->cantidad = $cantidad;
+
+                return $nota;
+            });
+
+        \Log::info('[SupervisorPedidos][BodegaNovedades] Resultado de armado de modal', [
+            'pedido_id' => $pedidoId,
+            'numero_pedido' => (string) $pedido->numero_pedido,
+            'detalles_costura_encontrados' => $detallesCosturaParaNotas->count(),
+            'detalles_source' => $detallesSource,
+            'detalles_tallas_fallback_encontrados' => $detallesTallasFallback->count(),
+            'notas_encontradas' => $novedades->count(),
+            'notas_sin_prenda' => $novedades->filter(fn ($n) => ($n->prenda_nombre ?? '-') === '-')->count(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'pedido_id' => $pedidoId,
+            'numero_pedido' => (string) $pedido->numero_pedido,
+            'asesora' => $asesoraHeader !== '' ? $asesoraHeader : '-',
+            'cliente' => $clienteHeader !== '' ? $clienteHeader : '-',
+            'count' => $novedades->count(),
+            'data' => $novedades,
+        ]);
+    }
+
+    /**
      * Obtener contador de recibos COSTURA activos en control de calidad.
      * Endpoint: GET /supervisor-pedidos/pendientes-control-calidad-count
      */

@@ -42,6 +42,12 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
         Route::post('/ordenes/{id}/mostrar', [SupervisorOrdersApiController::class, 'show'])
             ->whereNumber('id')
             ->name('ordenes.mostrar');
+        Route::get('/ordenes/{pedidoId}/bodega-novedades-resumen', [SupervisorReceiptsController::class, 'resumenNovedadesBodegaCostura'])
+            ->whereNumber('pedidoId')
+            ->name('ordenes.bodega-novedades.resumen');
+        Route::get('/ordenes/{pedidoId}/bodega-novedades', [SupervisorReceiptsController::class, 'obtenerNovedadesBodegaCostura'])
+            ->whereNumber('pedidoId')
+            ->name('ordenes.bodega-novedades.index');
         Route::patch('/ordenes/{id}/estado', [SupervisorOrdersApiController::class, 'changeStatus'])
             ->whereNumber('id')
             ->name('ordenes.cambiar-estado');

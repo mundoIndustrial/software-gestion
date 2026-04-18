@@ -13,13 +13,64 @@ if (!window.supervisorPedidos?.isReady) {
 const _spFilter = window.supervisorPedidos.filterService;
 const _spNotify = window.shared.notify;
 
-// Ocultar overlay de carga inicial
-(function() {
+// Ocultar overlay inicial solo cuando la página y módulos críticos estén listos.
+(function initInitialLoadingOverlayController() {
     const overlay = document.getElementById('sp-loading-overlay');
-    if (overlay) {
+    if (!overlay) return;
+
+    const MAX_WAIT_MS = 10000;
+    const POLL_MS = 150;
+    const startedAt = Date.now();
+    let hidden = false;
+    let pollTimer = null;
+
+    const clearPoll = () => {
+        if (!pollTimer) return;
+        window.clearTimeout(pollTimer);
+        pollTimer = null;
+    };
+
+    const hideOverlay = (reason = 'ready') => {
+        if (hidden) return;
+        hidden = true;
+        clearPoll();
         overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 300);
-    }
+        window.setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+        console.log('[SP Loader] Overlay inicial oculto', { reason });
+    };
+
+    const shouldHide = () => {
+        const appReady = Boolean(window.supervisorPedidos?.isReady);
+        const entryReady = Boolean(window.supervisorPedidosEntry?.isReady);
+        const pageLoaded = document.readyState === 'complete';
+        return appReady && entryReady && pageLoaded;
+    };
+
+    const tick = () => {
+        if (shouldHide()) {
+            hideOverlay('all-ready');
+            return;
+        }
+
+        if (Date.now() - startedAt >= MAX_WAIT_MS) {
+            hideOverlay('max-wait');
+            return;
+        }
+
+        pollTimer = window.setTimeout(tick, POLL_MS);
+    };
+
+    document.addEventListener('supervisor-pedidos:entry-ready', () => {
+        if (shouldHide()) hideOverlay('entry-ready');
+    }, { once: true });
+
+    window.addEventListener('load', () => {
+        if (shouldHide()) hideOverlay('window-load');
+    }, { once: true });
+
+    tick();
 })();
 
 // ===== VARIABLES GLOBALES =====
@@ -150,7 +201,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                         <input type="checkbox" class="pedido-checkbox" data-pedido-id="${orden.id}" title="Seleccionar pedido" style="width: 18px; height: 18px; cursor: pointer;" ${isSelected ? 'checked' : ''}>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                        <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones"><i class="fas fa-eye"></i></button>
+                        <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones" style="position:relative;overflow:visible;"><i class="fas fa-eye"></i><span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span></button>
                         ${canApprove ? `<button class="btn-accion btn-accion--aprobar" onclick="abrirModalAprobacion(${orden.id}, '${jsNumero}')" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
                         ${canApprove ? `<button class="btn-accion btn-accion--anular" onclick="abrirModalAnulacion(${orden.id}, '${jsNumeroHash}')" title="Pasar a Revisión"><i class="fas fa-ban"></i></button>` : ''}
                         <button class="btn-accion btn-accion--ocultar" onclick="abrirModalOcultar(${orden.id}, '${jsNumero}')" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
@@ -210,6 +261,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
     }
 
     container.innerHTML = `${header}${body}${footerTop}${pagination}`;
+    refreshVerButtonsBodegaBadges();
 };
 
 // ===== TOGGLE MENU ACCIONES =====
@@ -300,6 +352,7 @@ function resolveFilterColumn(btn) {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarIndicadoresFiltros();
+    refreshVerButtonsBodegaBadges();
 
     // La tabla ya llega renderizada por Blade en la carga inicial.
     // Evitamos un segundo fetch AJAX inmediato que duplicaba trabajo y retrasaba la vista.
@@ -310,6 +363,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== MENU VER ORDEN =====
 const SP_VER_MENU_CLASS = 'sp-ver-dropdown-menu';
+const SP_BODEGA_RESUMEN_ENDPOINT = (pedidoId) => `/api/supervisor-pedidos/ordenes/${pedidoId}/bodega-novedades-resumen`;
+const SP_BODEGA_NOVEDADES_ENDPOINT = (pedidoId) => `/api/supervisor-pedidos/ordenes/${pedidoId}/bodega-novedades`;
+const spBodegaResumenCache = new Map();
 
 function closeAllVerMenus(exceptId = null) {
     document.querySelectorAll(`.${SP_VER_MENU_CLASS}`).forEach((menu) => {
@@ -319,13 +375,267 @@ function closeAllVerMenus(exceptId = null) {
     });
 }
 
+function _spNormalizePendingCount(value) {
+    const n = Number(value || 0);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.floor(n);
+}
+
+async function _spFetchBodegaResumen(pedidoId) {
+    const cacheKey = String(pedidoId || '');
+    if (!cacheKey) return null;
+    if (spBodegaResumenCache.has(cacheKey)) return spBodegaResumenCache.get(cacheKey);
+
+    try {
+        const response = await fetch(SP_BODEGA_RESUMEN_ENDPOINT(cacheKey), {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+        const payload = await response.json();
+        if (response.ok && payload?.success) {
+            spBodegaResumenCache.set(cacheKey, payload);
+            return payload;
+        }
+    } catch (error) {
+        console.error('[BodegaResumen] Error:', error);
+    }
+
+    return null;
+}
+
+async function _spRenderBodegaBadge(opcionBodega, pedidoId) {
+    if (!opcionBodega) return;
+    const badge = opcionBodega.querySelector('[data-bodega-pendientes-badge]');
+    if (!badge) return;
+
+    const payload = await _spFetchBodegaResumen(pedidoId);
+    const notesCount = _spNormalizePendingCount(payload?.notes_count);
+
+    if (notesCount > 0) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = notesCount > 99 ? '99+' : String(notesCount);
+        opcionBodega.style.backgroundColor = '#fef2f2';
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '0';
+        opcionBodega.style.backgroundColor = '#ffffff';
+    }
+}
+
+function _spRenderBadgeOnVerButton(button, pendingCount) {
+    if (!button) return;
+    const badge = button.querySelector('[data-bodega-button-badge]');
+    if (!badge) return;
+
+    const count = _spNormalizePendingCount(pendingCount);
+    if (count > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = count > 99 ? '99+' : String(count);
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '0';
+    }
+}
+
+async function refreshVerButtonsBodegaBadges() {
+    const buttons = Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'));
+    if (buttons.length === 0) return;
+
+    await Promise.all(buttons.map(async (button) => {
+        const pedidoId = String(button.getAttribute('data-pedido-id') || '').trim();
+        if (!pedidoId) {
+            _spRenderBadgeOnVerButton(button, 0);
+            return;
+        }
+
+        const payload = await _spFetchBodegaResumen(pedidoId);
+        _spRenderBadgeOnVerButton(button, payload?.notes_count ?? 0);
+    }));
+}
+
+function _spEnsureBodegaNovedadesModal() {
+    if (!document.getElementById('spBodegaNovedadesModalStyles')) {
+        const style = document.createElement('style');
+        style.id = 'spBodegaNovedadesModalStyles';
+        style.textContent = '@keyframes spSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    }
+
+    let modal = document.getElementById('spBodegaNovedadesModal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'spBodegaNovedadesModal';
+    modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 1000000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    `;
+
+    modal.innerHTML = `
+        <div style="width:min(980px, 96vw); max-height:90vh; background:#ffffff; border-radius:14px; box-shadow:0 20px 45px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+            <div style="background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%); color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                <div style="display:flex; flex-direction:column; gap:.25rem; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:.6rem;">
+                        <i class="fas fa-sticky-note"></i>
+                        <strong id="spBodegaNovedadesTitle">Novedades Bodega</strong>
+                    </div>
+                    <div id="spBodegaNovedadesMeta" style="font-size:12px; opacity:.95; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                </div>
+                <button type="button" id="spBodegaNovedadesClose" style="border:none; background:rgba(255,255,255,.18); color:#fff; width:34px; height:34px; border-radius:8px; cursor:pointer; font-size:18px; line-height:1;">&times;</button>
+            </div>
+            <div id="spBodegaNovedadesBody" style="padding:14px 16px; overflow:auto; background:#f8fafc;"></div>
+        </div>
+    `;
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    modal.querySelector('#spBodegaNovedadesClose')?.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function _spRenderBodegaNovedadesLoading() {
+    const modal = _spEnsureBodegaNovedadesModal();
+    const body = modal.querySelector('#spBodegaNovedadesBody');
+    if (!body) return;
+    body.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center; gap:.75rem; padding:2rem; color:#374151;">
+            <span class="material-symbols-rounded" style="animation: spSpin 1s linear infinite;">progress_activity</span>
+            <span>Cargando novedades de bodega...</span>
+        </div>
+    `;
+}
+
+function _spRenderBodegaNovedadesContent(payload) {
+    const modal = _spEnsureBodegaNovedadesModal();
+    const body = modal.querySelector('#spBodegaNovedadesBody');
+    const meta = modal.querySelector('#spBodegaNovedadesMeta');
+    if (!body) return;
+    if (meta) {
+        const asesora = _spEscapeHtml(payload?.asesora || '-');
+        const cliente = _spEscapeHtml(payload?.cliente || '-');
+        meta.innerHTML = `<strong>Asesora:</strong> ${asesora} | <strong>Cliente:</strong> ${cliente}`;
+    }
+
+    const data = Array.isArray(payload?.data) ? payload.data : [];
+    if (data.length === 0) {
+        body.innerHTML = `
+            <div style="padding:2rem; text-align:center; color:#6b7280;">
+                <i class="fas fa-inbox" style="font-size:2rem; color:#cbd5e1; margin-bottom:.75rem;"></i>
+                <div>No hay novedades de bodega para este pedido en Costura pendiente.</div>
+            </div>
+        `;
+        return;
+    }
+
+    const rows = data.map((item) => {
+        const contenido = _spEscapeHtml(item?.contenido || '').replace(/\n/g, '<br>');
+        const prendaNombre = _spEscapeHtml(item?.prenda_nombre || '-');
+        const prendaDescripcion = _spEscapeHtml(item?.prenda_descripcion || '-');
+        const numeroPedido = _spEscapeHtml(item?.numero_pedido || payload?.numero_pedido || '-');
+        const talla = _spEscapeHtml(item?.talla || '-');
+        const cantidad = _spNormalizePendingCount(item?.cantidad);
+        const fecha = _spFormatDateTime(item?.created_at);
+
+        return `
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:8px;">
+                    <div></div>
+                    <span style="font-size:12px; color:#6b7280;">${fecha}</span>
+                </div>
+                <div style="font-size:13px; color:#334155; margin-bottom:6px;">
+                    <strong>Prenda:</strong> ${prendaNombre}
+                </div>
+                <div style="font-size:13px; color:#475569; margin-bottom:6px;">
+                    <strong>Descripción:</strong> ${prendaDescripcion}
+                </div>
+                <div style="font-size:12px; color:#64748b; margin-bottom:4px; font-weight:700;">--Del Pedido</div>
+                <div style="font-size:13px; color:#475569; margin-bottom:8px;">
+                    <strong>Talla:</strong> ${talla}
+                    <span style="margin:0 .4rem; color:#94a3b8;">|</span>
+                    <strong>Cantidad:</strong> ${cantidad}
+                </div>
+                <div style="font-size:14px; color:#111827; line-height:1.45; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                    ${contenido || '<span style="color:#94a3b8;">Sin contenido</span>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    body.innerHTML = rows;
+}
+
+async function abrirModalNovedadesBodega(pedidoId, numeroPedido) {
+    const modal = _spEnsureBodegaNovedadesModal();
+    const title = modal.querySelector('#spBodegaNovedadesTitle');
+    const meta = modal.querySelector('#spBodegaNovedadesMeta');
+    if (title) {
+        title.textContent = `Novedades Bodega - Pedido #${numeroPedido || pedidoId}`;
+    }
+    if (meta) {
+        meta.textContent = 'Cargando datos del pedido...';
+    }
+    modal.style.display = 'flex';
+    _spRenderBodegaNovedadesLoading();
+
+    try {
+        const response = await fetch(SP_BODEGA_NOVEDADES_ENDPOINT(pedidoId), {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+        const payload = await response.json();
+
+        if (!response.ok || !payload?.success) {
+            throw new Error(payload?.message || 'No se pudo cargar la información');
+        }
+
+        _spRenderBodegaNovedadesContent(payload);
+    } catch (error) {
+        const body = modal.querySelector('#spBodegaNovedadesBody');
+        if (body) {
+            body.innerHTML = `
+                <div style="padding:2rem; text-align:center; color:#991b1b;">
+                    <i class="fas fa-triangle-exclamation" style="font-size:1.8rem; margin-bottom:.65rem;"></i>
+                    <div>No se pudieron cargar las novedades de bodega.</div>
+                    <div style="font-size:12px; color:#b91c1c; margin-top:.4rem;">${_spEscapeHtml(error?.message || '')}</div>
+                </div>
+            `;
+        }
+    }
+}
+
 function getOrCreateVerMenu(button) {
     const pedidoId = button.getAttribute('data-pedido-id');
     const numeroPedido = button.getAttribute('data-pedido') || pedidoId;
     const menuId = button.getAttribute('data-menu-id') || `menu-ver-${pedidoId}`;
     let menu = document.getElementById(menuId);
 
-    if (menu) return menu;
+    if (menu) {
+        const opcionBodega = menu.querySelector('button[data-action="bodega-novedades"]');
+        _spRenderBodegaBadge(opcionBodega, pedidoId);
+        return menu;
+    }
 
     menu = document.createElement('div');
     menu.id = menuId;
@@ -342,11 +652,12 @@ function getOrCreateVerMenu(button) {
         display: none;
     `;
 
-    const buildMenuOption = (btn, iconClass, text) => {
+    const buildMenuOption = (btn, iconClass, text, suffixHtml = '') => {
         btn.innerHTML = `
             <span style="display:inline-flex;align-items:center;gap:10px;">
                 <i class="${iconClass}" style="width:16px;text-align:center;color:#374151;"></i>
                 <span>${text}</span>
+                ${suffixHtml}
             </span>
         `;
     };
@@ -382,6 +693,30 @@ function getOrCreateVerMenu(button) {
         menu.appendChild(separadorRecibos);
         menu.appendChild(opcionRecibos);
     }
+
+    const separadorBodega = document.createElement('div');
+    separadorBodega.style.cssText = 'height:1px;background:#e5e7eb;';
+
+    const opcionBodega = document.createElement('button');
+    opcionBodega.type = 'button';
+    opcionBodega.dataset.action = 'bodega-novedades';
+    buildMenuOption(
+        opcionBodega,
+        'fas fa-sticky-note',
+        'Novedades Bodega',
+        '<span data-bodega-pendientes-badge style="margin-left:auto;display:none;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;">0</span>'
+    );
+    opcionBodega.style.cssText = 'width:100%;border:none;background:#ffffff;padding:12px 14px;text-align:left;cursor:pointer;color:#111827;font-size:15px;font-weight:600;line-height:1.2;transition:background-color .15s ease;';
+    opcionBodega.onmouseover = () => { opcionBodega.style.backgroundColor = '#eef2ff'; };
+    opcionBodega.onmouseout = () => { opcionBodega.style.backgroundColor = '#ffffff'; };
+    opcionBodega.onclick = () => {
+        closeAllVerMenus();
+        abrirModalNovedadesBodega(pedidoId, numeroPedido);
+    };
+    _spRenderBodegaBadge(opcionBodega, pedidoId);
+
+    menu.appendChild(separadorBodega);
+    menu.appendChild(opcionBodega);
 
     const separadorSeguimiento = document.createElement('div');
     separadorSeguimiento.style.cssText = 'height:1px;background:#e5e7eb;';
@@ -906,4 +1241,3 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
-

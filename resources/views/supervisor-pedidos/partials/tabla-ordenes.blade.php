@@ -118,8 +118,10 @@
                             data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}"
                             data-pedido="{{ str_replace('#', '', $numeroPedido) }}"
                             data-pedido-id="{{ $pedidoId }}"
-                            title="Ver Opciones">
+                            title="Ver Opciones"
+                            style="position: relative; overflow: visible;">
                             <i class="fas fa-eye"></i>
+                            <span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none; position:absolute; top:-7px; right:-7px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#dc2626; color:#fff; font-size:10px; font-weight:700; line-height:18px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span>
                         </button>
 
                         {{-- <!-- Botón Editar -->
@@ -306,5 +308,4 @@
         </span>
     </div>
 @endif
-
 

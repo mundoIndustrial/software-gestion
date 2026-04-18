@@ -61,7 +61,17 @@ class BodegaNotaService implements BodegaNotaServiceContract
 
             $nota = BodegaNota::create($datosCrear);
 
-            BodegaNotaCreada::dispatch($nota);
+            // El broadcast no debe bloquear el guardado de la nota.
+            // Si Reverb/Pusher está caído, se registra warning y se continúa.
+            try {
+                BodegaNotaCreada::dispatch($nota);
+            } catch (\Throwable $broadcastError) {
+                \Log::warning('[BodegaNotaService] Nota guardada sin broadcast por error de conexión', [
+                    'nota_id' => $nota->id,
+                    'numero_pedido' => $nota->numero_pedido,
+                    'error' => $broadcastError->getMessage(),
+                ]);
+            }
 
             // Disparar evento para tiempo real (temporalmente deshabilitado hasta solucionar Reverb)
             // BodegaNotasGuardada::dispatch(
