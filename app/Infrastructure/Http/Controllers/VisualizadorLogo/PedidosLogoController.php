@@ -21,8 +21,20 @@ final class PedidosLogoController extends Controller
     {
         $search = $request->filled('search') ? (string) $request->get('search') : null;
         $filtro = (string) $request->get('filtro', 'bordado');
+        $page = (int) $request->get('page', 1);
+        
+        // Obtener filtros de columnas del request
+        $columnFilters = null;
+        if ($request->filled('filters')) {
+            $filters = $request->get('filters');
+            if (is_string($filters)) {
+                $columnFilters = json_decode($filters, true);
+            } elseif (is_array($filters)) {
+                $columnFilters = $filters;
+            }
+        }
 
-        $recibos = $this->listPedidosLogoUseCase->execute($search, $filtro, 20);
+        $recibos = $this->listPedidosLogoUseCase->execute($search, $filtro, 20, $columnFilters);
 
         return response()->json([
             'success' => true,
@@ -53,6 +65,60 @@ final class PedidosLogoController extends Controller
     }
 
     /**
+     * Obtener todas las áreas únicas disponibles para filtrar
+     */
+    public function obtenerAreasUnicas(Request $request): JsonResponse
+    {
+        $filtro = (string) $request->get('filtro', 'bordado');
+        
+        $areas = $this->listPedidosLogoUseCase->obtenerAreasUnicas($filtro);
+
+        return response()->json([
+            'success' => true,
+            'areas' => $areas,
+        ]);
+    }
+
+    /**
+     * Obtener todas las asesoras únicas disponibles para filtrar
+     */
+    public function obtenerAsesorasUnicas(Request $request): JsonResponse
+    {
+        $filtro = (string) $request->get('filtro', 'bordado');
+        
+        $asesoras = $this->listPedidosLogoUseCase->obtenerAsesorasUnicas($filtro);
+
+        return response()->json([
+            'success' => true,
+            'asesoras' => $asesoras,
+        ]);
+    }
+
+    /**
+     * Buscar valores en una columna (para la búsqueda del modal)
+     */
+    public function buscarValoresColumna(Request $request): JsonResponse
+    {
+        $columna = (string) $request->get('columna', '');
+        $busqueda = (string) $request->get('busqueda', '');
+        $filtro = (string) $request->get('filtro', 'bordado');
+
+        if (empty($columna)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Columna es requerida',
+            ], 400);
+        }
+
+        $valores = $this->listPedidosLogoUseCase->buscarValoresColumna($columna, $busqueda, $filtro);
+
+        return response()->json([
+            'success' => true,
+            'valores' => $valores,
+        ]);
+    }
+
+    /**
      * Marcar un recibo como completado por el bordador
      */
     public function marcarCompletado(Request $request): JsonResponse
@@ -73,6 +139,15 @@ final class PedidosLogoController extends Controller
         if ($existente) {
             // Si ya existe, eliminarlo (deshacer completado)
             $existente->delete();
+            
+            // También revertir el área a BORDANDO
+            $this->guardarAreaNovedadPedidoLogoUseCase->execute([
+                'proceso_prenda_detalle_id' => $request->id_recibo,
+                'area' => 'BORDANDO',
+                'novedades' => null,
+                'pedido_parcial_id' => null,
+            ]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Completado deshecho.',
@@ -80,7 +155,7 @@ final class PedidosLogoController extends Controller
             ]);
         }
 
-        // Crear nuevo registro
+        // Crear nuevo registro de completado
         $completado = PrendaReciboCompletado::create([
             'id_recibo' => $request->id_recibo,
             'numero_recibo' => $request->numero_recibo,
@@ -89,11 +164,20 @@ final class PedidosLogoController extends Controller
             'fecha_completado' => now(),
         ]);
 
+        // Actualizar el área a BORDADO
+        $areaResult = $this->guardarAreaNovedadPedidoLogoUseCase->execute([
+            'proceso_prenda_detalle_id' => $request->id_recibo,
+            'area' => 'BORDADO',
+            'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
+            'pedido_parcial_id' => null,
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => 'Recibo marcado como completado.',
+            'message' => 'Recibo marcado como completado y área actualizada a BORDADO.',
             'completado' => true,
             'data' => $completado,
+            'area_actualizada' => $areaResult['ok'] ?? false,
         ]);
     }
 }

@@ -32,6 +32,7 @@ final class AreasPermitidasPolicy
             AreaProcesoLogo::CORTE_Y_APLIQUE,
             AreaProcesoLogo::HACIENDO_MUESTRA,
             AreaProcesoLogo::BORDANDO,
+            AreaProcesoLogo::BORDADO,
             AreaProcesoLogo::ENTREGADO,
             AreaProcesoLogo::ANULADO,
             AreaProcesoLogo::PENDIENTE,

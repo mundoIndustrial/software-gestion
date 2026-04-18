@@ -14,7 +14,7 @@ final class ListPedidosLogoUseCase
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository
     ) {}
 
-    public function execute(?string $search, string $filtro, int $perPage = 20): LengthAwarePaginator
+    public function execute(?string $search, string $filtro, int $perPage = 20, ?array $columnFilters = null): LengthAwarePaginator
     {
         $user = Auth::user();
         $isDisenadorLogos = $user && $user->hasRole('diseñador-logos');
@@ -41,7 +41,8 @@ final class ListPedidosLogoUseCase
             $search,
             $soloMinimalRole,
             $areaFija,
-            $perPage
+            $perPage,
+            $columnFilters
         );
 
         // Obtener IDs de recibos completados para bordador
@@ -131,6 +132,48 @@ final class ListPedidosLogoUseCase
             ];
         });
 
+        // Aplicar filtro de total_días en el use case (después de calcular los días)
+        if ($columnFilters && isset($columnFilters['total_dias']) && !empty($columnFilters['total_dias'])) {
+            $recibos->getCollection()->transform(function ($proceso) use ($columnFilters) {
+                $proceso->total_dias = $proceso->total_dias ?? 0;
+                return $proceso;
+            });
+            $filtered = $recibos->getCollection()->filter(function ($proceso) use ($columnFilters) {
+                return in_array(String($proceso->total_dias ?? 0), $columnFilters['total_dias']);
+            });
+            $recibos->setCollection($filtered);
+        }
+
         return $recibos;
+    }
+
+    public function obtenerAreasUnicas(string $filtro): array
+    {
+        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
+        $esFiltroEstampado = $filtro === 'estampado';
+
+        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+
+        return $this->procesoReadRepository->obtenerAreasUnicas($tipoProcesoIds);
+    }
+
+    public function obtenerAsesorasUnicas(string $filtro): array
+    {
+        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
+        $esFiltroEstampado = $filtro === 'estampado';
+
+        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+
+        return $this->procesoReadRepository->obtenerAsesorasUnicas($tipoProcesoIds);
+    }
+
+    public function buscarValoresColumna(string $columna, string $busqueda, string $filtro): array
+    {
+        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
+        $esFiltroEstampado = $filtro === 'estampado';
+
+        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+
+        return $this->procesoReadRepository->buscarValoresColumna($columna, $busqueda, $tipoProcesoIds);
     }
 }

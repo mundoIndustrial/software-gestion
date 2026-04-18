@@ -219,6 +219,7 @@ window.__areasPermitidasLogo = [
     'HACIENDO_MUESTRA',
     'ESTAMPANDO',
     'BORDANDO',
+    'BORDADO',
     'ENTREGADO',
     'ANULADO',
     'PENDIENTE',
@@ -368,6 +369,7 @@ window.__getEstiloAreaDropdownLogo = function(area) {
         'CORTE_Y_APLIQUE': { bg: '#d4a574', color: '#78350f', border: '#92400e' },
         'HACIENDO_MUESTRA': { bg: '#e9d5ff', color: '#6b21a8', border: '#a855f7' },
         'BORDANDO': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
+        'BORDADO': { bg: '#10b981', color: '#ffffff', border: '#059669' },
         'ENTREGADO': { bg: '#a7cdff', color: '#0b3a67', border: '#0284c7' },
         'ANULADO': { bg: '#374151', color: '#ffffff', border: '#111827' },
         'PENDIENTE': { bg: '#e2e8f0', color: '#0f172a', border: '#94a3b8' },
@@ -520,18 +522,52 @@ document.addEventListener('DOMContentLoaded', function() {
         window.__logoColumnFilters = {};
         persistFilters();
         updateFilterBadges();
-        renderizarRecibosFiltrados(recibosUltimaCarga);
+        // Recargar datos desde el backend sin filtros
+        paginaActual = 1;
+        const searchTerm = document.getElementById('search-input').value.trim();
+        cargarRecibos(searchTerm);
     };
 
-    window.openLogoColumnFilter = function(columnKey, title) {
+    window.openLogoColumnFilter = async function(columnKey, title) {
         window.__logoFilterModalState.columnKey = columnKey;
         window.__logoFilterModalState.title = title;
 
         const activeValues = (window.__logoColumnFilters && window.__logoColumnFilters[columnKey]) ? window.__logoColumnFilters[columnKey] : [];
         window.__logoFilterModalState.selected = new Set(activeValues);
 
-        const options = getUniqueOptionsForColumn(columnKey, recibosUltimaCarga);
+        // Columnas que cargan todos los valores del backend
+        const columnasCompletas = ['area', 'asesora'];
+        
+        let options = [];
+        if (columnKey === 'area') {
+            try {
+                const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.areas-unicas') }}?filtro=${window.__filtroRecibosLogo || 'bordado'}`);
+                const data = await response.json();
+                if (data.success && data.areas) {
+                    options = data.areas.sort((a, b) => a.localeCompare(b, 'es'));
+                }
+            } catch (error) {
+                console.error('Error cargando áreas del backend:', error);
+                options = getUniqueOptionsForColumn(columnKey, recibosUltimaCarga);
+            }
+        } else if (columnKey === 'asesora') {
+            try {
+                const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.asesoras-unicas') }}?filtro=${window.__filtroRecibosLogo || 'bordado'}`);
+                const data = await response.json();
+                if (data.success && data.asesoras) {
+                    options = data.asesoras.sort((a, b) => a.localeCompare(b, 'es'));
+                }
+            } catch (error) {
+                console.error('Error cargando asesoras del backend:', error);
+                options = getUniqueOptionsForColumn(columnKey, recibosUltimaCarga);
+            }
+        } else {
+            // Para otras columnas, mostrar solo los primeros 5 valores de la página actual
+            options = getUniqueOptionsForColumn(columnKey, recibosUltimaCarga).slice(0, 5);
+        }
+        
         window.__logoFilterModalState.options = options;
+        window.__logoFilterModalState.allOptionsLoaded = columnasCompletas.includes(columnKey);
 
         const overlay = document.getElementById('logo-filter-modal-overlay');
         const titleEl = document.getElementById('logo-filter-title');
@@ -560,7 +596,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.__logoColumnFilters[key] = [];
         persistFilters();
         updateFilterBadges();
-        renderizarRecibosFiltrados(recibosUltimaCarga);
+        // Recargar datos desde el backend sin el filtro
+        paginaActual = 1;
+        const searchTerm = document.getElementById('search-input').value.trim();
+        cargarRecibos(searchTerm);
         window.closeLogoFilterModal();
     };
 
@@ -571,7 +610,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.__logoColumnFilters[key] = values;
         persistFilters();
         updateFilterBadges();
-        renderizarRecibosFiltrados(recibosUltimaCarga);
+        // Recargar datos desde el backend con los filtros aplicados
+        paginaActual = 1;
+        const searchTerm = document.getElementById('search-input').value.trim();
+        cargarRecibos(searchTerm);
         window.closeLogoFilterModal();
     };
 
@@ -588,10 +630,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
     }
 
-    function renderFilterOptions(search) {
+    async function renderFilterOptions(search) {
         const container = document.getElementById('logo-filter-options');
         const s = (search || '').toLowerCase();
-        const opts = (window.__logoFilterModalState.options || []).filter(o => String(o).toLowerCase().includes(s));
+        const columnKey = window.__logoFilterModalState.columnKey;
+        
+        let opts = window.__logoFilterModalState.options || [];
+        
+        // Si hay búsqueda y no es una columna completa, buscar en el backend
+        if (s && !window.__logoFilterModalState.allOptionsLoaded) {
+            try {
+                container.innerHTML = '<div style="padding: 1rem; text-align: center; color: #64748b;"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+                const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.buscar-valores-columna') }}?columna=${columnKey}&busqueda=${encodeURIComponent(s)}&filtro=${window.__filtroRecibosLogo || 'bordado'}`);
+                const data = await response.json();
+                if (data.success && data.valores) {
+                    opts = data.valores;
+                }
+            } catch (error) {
+                console.error('Error buscando valores:', error);
+            }
+        } else {
+            // Filtrar localmente si es una columna completa o no hay búsqueda
+            opts = opts.filter(o => String(o).toLowerCase().includes(s));
+        }
 
         container.innerHTML = opts.map((opt) => {
             const checked = window.__logoFilterModalState.selected.has(opt) ? 'checked' : '';
@@ -602,6 +663,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </label>
             `;
         }).join('');
+
+        if (opts.length === 0) {
+            container.innerHTML = '<div style="padding: 1rem; text-align: center; color: #64748b;">No se encontraron resultados</div>';
+        }
 
         container.querySelectorAll('input[data-filter-option="1"]').forEach(cb => {
             cb.addEventListener('change', function() {
@@ -615,6 +680,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterSearchEl = document.getElementById('logo-filter-search');
     if (filterSearchEl) {
         filterSearchEl.addEventListener('input', function() {
+            renderFilterOptions(this.value);
+        });
+        filterSearchEl.addEventListener('keyup', function() {
             renderFilterOptions(this.value);
         });
     }
@@ -696,17 +764,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         params.append('filtro', window.__filtroRecibosLogo || 'bordado');
         
+        // Enviar filtros de columnas al backend
+        if (window.__logoColumnFilters && Object.keys(window.__logoColumnFilters).length > 0) {
+            params.append('filters', JSON.stringify(window.__logoColumnFilters));
+        }
+        
         fetch(`{{ route("visualizador-logo.pedidos-logo.data") }}?${params}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Guardar datos originales para filtrado local si es necesario
-                    if (pedidosOriginales.length === 0 && !searchTerm) {
-                        pedidosOriginales = data.recibos.data;
-                    }
                     recibosUltimaCarga = data.recibos.data || [];
                     updateFilterBadges();
-                    renderizarRecibosFiltrados(recibosUltimaCarga, data.recibos, searchTerm);
+                    // Ya no aplicamos filtros localmente, el backend ya lo hace
+                    renderizarRecibos(data.recibos, searchTerm);
                 }
             })
             .catch(error => {
@@ -736,9 +806,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderizarRecibosFiltrados(recibosPagina, recibosPaginados = null, searchTerm = '') {
-        const filtrados = applyActiveColumnFilters(recibosPagina);
-        const paginados = recibosPaginados ? { ...recibosPaginados, data: filtrados } : { data: filtrados, last_page: 1, current_page: 1 };
-        renderizarRecibos(paginados, searchTerm);
+        // Esta función ya no se usa para filtrado local, pero se mantiene por compatibilidad
+        // El filtrado ahora se hace en el backend
+        renderizarRecibos(recibosPaginados || { data: recibosPagina, last_page: 1, current_page: 1 }, searchTerm);
     }
     
     function renderizarRecibos(recibos, searchTerm = '') {
@@ -907,7 +977,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
                         <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
                         <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
-                        <div style="color: #0f172a; font-size: 0.95rem; font-weight: 700;">${area}</div>
+                        <div style="font-size: 0.95rem; font-weight: 700;">
+                            ${(() => {
+                                const estiloArea = window.__getEstiloAreaDropdownLogo(area);
+                                return `<span style="background: ${estiloArea.bg}; color: ${estiloArea.color}; border: 1px solid ${estiloArea.border}; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block;">${area}</span>`;
+                            })()}
+                        </div>
                     </div>
                 `;
             }
@@ -1092,17 +1167,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 actualizarCompletadoLocal(idRecibo, nuevoCompletado);
                 
-                // Actualizar botón
-                if (nuevoCompletado) {
-                    buttonElement.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                    buttonElement.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.2)';
-                    buttonElement.title = 'Click para deshacer completado';
-                    buttonElement.style.cursor = 'pointer';
-                } else {
-                    buttonElement.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                    buttonElement.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.2)';
-                    buttonElement.title = 'Marcar como completado';
-                }
+                // Recargar datos para mostrar el área actualizada (BORDADO)
+                cargarRecibos('');
                 
                 buttonElement.innerHTML = '<i class="fas fa-check"></i>';
                 buttonElement.disabled = false;

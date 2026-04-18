@@ -21,6 +21,9 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     // Pedidos Logo
     Route::get('/pedidos-logo', [VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
     Route::get('/pedidos-logo/data', [PedidosLogoController::class, 'data'])->name('pedidos-logo.data');
+    Route::get('/pedidos-logo/areas-unicas', [PedidosLogoController::class, 'obtenerAreasUnicas'])->name('pedidos-logo.areas-unicas');
+    Route::get('/pedidos-logo/asesoras-unicas', [PedidosLogoController::class, 'obtenerAsesorasUnicas'])->name('pedidos-logo.asesoras-unicas');
+    Route::get('/pedidos-logo/buscar-valores-columna', [PedidosLogoController::class, 'buscarValoresColumna'])->name('pedidos-logo.buscar-valores-columna');
     Route::get('/pedidos-logo/recibos-procesos/observacion', [SupervisorReceiptsController::class, 'obtenerObservacionReciboProceso'])
         ->name('pedidos-logo.recibos-procesos.observacion.obtener');
     Route::post('/pedidos-logo/area-novedad', [PedidosLogoController::class, 'guardarAreaNovedad'])->name('pedidos-logo.area-novedad');

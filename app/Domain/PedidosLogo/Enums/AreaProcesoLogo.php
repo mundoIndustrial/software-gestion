@@ -12,6 +12,7 @@ final class AreaProcesoLogo
     public const HACIENDO_MUESTRA = 'HACIENDO_MUESTRA';
     public const ESTAMPANDO = 'ESTAMPANDO';
     public const BORDANDO = 'BORDANDO';
+    public const BORDADO = 'BORDADO';
     public const ENTREGADO = 'ENTREGADO';
     public const ANULADO = 'ANULADO';
     public const PENDIENTE = 'PENDIENTE';
@@ -27,6 +28,7 @@ final class AreaProcesoLogo
             self::HACIENDO_MUESTRA,
             self::ESTAMPANDO,
             self::BORDANDO,
+            self::BORDADO,
             self::ENTREGADO,
             self::ANULADO,
             self::PENDIENTE,

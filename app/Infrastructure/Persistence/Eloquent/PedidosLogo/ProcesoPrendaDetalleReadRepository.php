@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleReadRepositoryInterface
 {
-    public function paginarRecibosAprobados(array $tipoProcesoIds, ?string $search, bool $soloMinimalRole, ?string $areaFija, int $perPage = 20): LengthAwarePaginator
+    public function paginarRecibosAprobados(array $tipoProcesoIds, ?string $search, bool $soloMinimalRole, ?string $areaFija, int $perPage = 20, ?array $columnFilters = null): LengthAwarePaginator
     {
         $tipoReciboCase = "CASE pedidos_procesos_prenda_detalles.tipo_proceso_id "
             . "WHEN 2 THEN 'BORDADO' "
@@ -84,6 +84,14 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ]
         );
 
+        // Aplicar filtros de columnas
+        $this->aplicarFiltrosColumnas($queryProcesos, $columnFilters);
+
+        // Aplicar filtro de área fija si se proporciona
+        if ($areaFija) {
+            $queryProcesos->having('area', '=', $areaFija);
+        }
+
         // Query 2: Todos los parciales individuales
         $queryParciales = DB::table('pedidos_parciales as ppar')
             ->selectRaw("
@@ -145,6 +153,14 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 'pedidos_procesos_prenda_detalles.numero_recibo',
             ]
         );
+
+        // Aplicar filtros de columnas
+        $this->aplicarFiltrosColumnas($queryParciales, $columnFilters);
+
+        // Aplicar filtro de área fija si se proporciona
+        if ($areaFija) {
+            $queryParciales->having('area', '=', $areaFija);
+        }
 
         // Combinar queries
         $results = $queryProcesos->unionAll($queryParciales)
@@ -231,5 +247,377 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         return PedidosProcesosPrendaDetalle::query()
             ->where('id', $procesoPrendaDetalleId)
             ->value('tipo_proceso_id');
+    }
+
+    public function obtenerAreasUnicas(array $tipoProcesoIds): array
+    {
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id "
+            . "WHEN 2 THEN 'BORDADO' "
+            . "WHEN 3 THEN 'ESTAMPADO' "
+            . "WHEN 4 THEN 'DTF' "
+            . "WHEN 5 THEN 'SUBLIMADO' "
+            . "ELSE NULL END";
+
+        // Obtener áreas de procesos base (sin parciales)
+        $areasProcesos = DB::table('prenda_areas_logo_pedido as palp')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'palp.proceso_prenda_detalle_id')
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppd.prenda_pedido_id')
+            ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('crp.prenda_id', '=', 'pp.id')
+                    ->where('crp.activo', 1)
+                    ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+            })
+            ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+            })
+            ->where('ppd.estado', 'APROBADO')
+            ->whereNotNull('crp.consecutivo_actual')
+            ->whereNull('palp.pedido_parcial_id')
+            ->whereNull('ppar.id')
+            ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+            ->whereNotNull('palp.area')
+            ->pluck('palp.area')
+            ->toArray();
+
+        // Obtener áreas de parciales
+        $areasParciales = DB::table('prenda_areas_logo_pedido as palp')
+            ->join('pedidos_parciales as ppar', 'ppar.id', '=', 'palp.pedido_parcial_id')
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'palp.proceso_prenda_detalle_id')
+            ->where('ppar.estado', 'APROBADO')
+            ->where('ppar.activo', 1)
+            ->whereNull('ppar.deleted_at')
+            ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+            ->whereNotNull('palp.area')
+            ->pluck('palp.area')
+            ->toArray();
+
+        // Combinar y eliminar duplicados
+        $areas = array_unique(array_merge($areasProcesos, $areasParciales));
+        sort($areas);
+
+        return $areas;
+    }
+
+    public function obtenerAsesorasUnicas(array $tipoProcesoIds): array
+    {
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id "
+            . "WHEN 2 THEN 'BORDADO' "
+            . "WHEN 3 THEN 'ESTAMPADO' "
+            . "WHEN 4 THEN 'DTF' "
+            . "WHEN 5 THEN 'SUBLIMADO' "
+            . "ELSE NULL END";
+
+        // Obtener asesoras de procesos base (sin parciales)
+        $asesorasProcesos = DB::table('pedidos_produccion as ped')
+            ->join('prendas_pedido as pp', 'pp.pedido_produccion_id', '=', 'ped.id')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('crp.prenda_id', '=', 'pp.id')
+                    ->where('crp.activo', 1)
+                    ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+            })
+            ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+            })
+            ->leftJoin('users as u_asesor', 'u_asesor.id', '=', 'ped.asesor_id')
+            ->leftJoin('users as u_asesora', 'u_asesora.id', '=', 'ped.anulado_por_asesora_id')
+            ->where('ppd.estado', 'APROBADO')
+            ->whereNotNull('crp.consecutivo_actual')
+            ->whereNull('ppar.id')
+            ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+            ->where(function ($q) {
+                $q->whereNotNull('ped.asesor_id')
+                  ->orWhereNotNull('ped.anulado_por_asesora_id');
+            })
+            ->pluck('u_asesor.name')
+            ->merge(
+                DB::table('pedidos_produccion as ped')
+                    ->join('prendas_pedido as pp', 'pp.pedido_produccion_id', '=', 'ped.id')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                    ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                        $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('crp.prenda_id', '=', 'pp.id')
+                            ->where('crp.activo', 1)
+                            ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                        $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                            ->where('ppar.estado', 'APROBADO')
+                            ->where('ppar.activo', 1)
+                            ->whereNull('ppar.deleted_at')
+                            ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->leftJoin('users as u_asesora', 'u_asesora.id', '=', 'ped.anulado_por_asesora_id')
+                    ->where('ppd.estado', 'APROBADO')
+                    ->whereNotNull('crp.consecutivo_actual')
+                    ->whereNull('ppar.id')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->whereNotNull('ped.anulado_por_asesora_id')
+                    ->pluck('u_asesora.name')
+            )
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // Obtener asesoras de parciales
+        $asesorasParciales = DB::table('pedidos_parciales as ppar')
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+            ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+            ->leftJoin('users as u_asesor', 'u_asesor.id', '=', 'ped.asesor_id')
+            ->leftJoin('users as u_asesora', 'u_asesora.id', '=', 'ped.anulado_por_asesora_id')
+            ->where('ppar.estado', 'APROBADO')
+            ->where('ppar.activo', 1)
+            ->whereNull('ppar.deleted_at')
+            ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+            ->where(function ($q) {
+                $q->whereNotNull('ped.asesor_id')
+                  ->orWhereNotNull('ped.anulado_por_asesora_id');
+            })
+            ->pluck('u_asesor.name')
+            ->merge(
+                DB::table('pedidos_parciales as ppar')
+                    ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+                    ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                    ->leftJoin('users as u_asesora', 'u_asesora.id', '=', 'ped.anulado_por_asesora_id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->whereNotNull('ped.anulado_por_asesora_id')
+                    ->pluck('u_asesora.name')
+            )
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // Combinar y eliminar duplicados
+        $asesoras = array_unique(array_merge($asesorasProcesos, $asesorasParciales));
+        sort($asesoras);
+
+        return array_values(array_filter($asesoras));
+    }
+
+    public function buscarValoresColumna(string $columna, string $busqueda, array $tipoProcesoIds): array
+    {
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id "
+            . "WHEN 2 THEN 'BORDADO' "
+            . "WHEN 3 THEN 'ESTAMPADO' "
+            . "WHEN 4 THEN 'DTF' "
+            . "WHEN 5 THEN 'SUBLIMADO' "
+            . "ELSE NULL END";
+
+        $busqueda = trim($busqueda);
+        if (empty($busqueda)) {
+            return [];
+        }
+
+        switch ($columna) {
+            case 'cliente':
+                $valores = DB::table('pedidos_produccion as ped')
+                    ->join('prendas_pedido as pp', 'pp.pedido_produccion_id', '=', 'ped.id')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                    ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                        $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('crp.prenda_id', '=', 'pp.id')
+                            ->where('crp.activo', 1)
+                            ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                        $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                            ->where('ppar.estado', 'APROBADO')
+                            ->where('ppar.activo', 1)
+                            ->whereNull('ppar.deleted_at')
+                            ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->where('ppd.estado', 'APROBADO')
+                    ->whereNotNull('crp.consecutivo_actual')
+                    ->whereNull('ppar.id')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->where(function ($q) use ($busqueda) {
+                        $q->where('ped.cliente', 'like', '%' . $busqueda . '%');
+                    })
+                    ->pluck('ped.cliente')
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                // Agregar clientes de parciales
+                $valoresParciales = DB::table('pedidos_parciales as ppar')
+                    ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+                    ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->where('ped.cliente', 'like', '%' . $busqueda . '%')
+                    ->pluck('ped.cliente')
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                return array_unique(array_merge($valores, $valoresParciales));
+
+            case 'numero_recibo':
+                $valores = DB::table('consecutivos_recibos_pedidos as crp')
+                    ->join('prendas_pedido as pp', function ($join) {
+                        $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('crp.prenda_id', '=', 'pp.id');
+                    })
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                    ->where('crp.activo', 1)
+                    ->where('ppd.estado', 'APROBADO')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->where('crp.consecutivo_actual', 'like', '%' . $busqueda . '%')
+                    ->pluck('crp.consecutivo_actual')
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                return $valores;
+
+            case 'novedades':
+                $valores = DB::table('prenda_areas_logo_pedido as palp')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'palp.proceso_prenda_detalle_id')
+                    ->join('prendas_pedido as pp', 'pp.id', '=', 'ppd.prenda_pedido_id')
+                    ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+                    ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                        $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('crp.prenda_id', '=', 'pp.id')
+                            ->where('crp.activo', 1)
+                            ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                        $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                            ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                            ->where('ppar.estado', 'APROBADO')
+                            ->where('ppar.activo', 1)
+                            ->whereNull('ppar.deleted_at')
+                            ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+                    })
+                    ->where('ppd.estado', 'APROBADO')
+                    ->whereNotNull('crp.consecutivo_actual')
+                    ->whereNull('palp.pedido_parcial_id')
+                    ->whereNull('ppar.id')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->where('palp.novedades', 'like', '%' . $busqueda . '%')
+                    ->pluck('palp.novedades')
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                // Agregar novedades de parciales
+                $valoresParciales = DB::table('prenda_areas_logo_pedido as palp')
+                    ->join('pedidos_parciales as ppar', 'ppar.id', '=', 'palp.pedido_parcial_id')
+                    ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'palp.proceso_prenda_detalle_id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereIn('ppd.tipo_proceso_id', $tipoProcesoIds)
+                    ->where('palp.novedades', 'like', '%' . $busqueda . '%')
+                    ->pluck('palp.novedades')
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                return array_unique(array_merge($valores, $valoresParciales));
+
+            default:
+                return [];
+        }
+    }
+
+    private function aplicarFiltrosColumnas($query, ?array $columnFilters): void
+    {
+        if ($columnFilters === null || empty($columnFilters)) {
+            return;
+        }
+
+        foreach ($columnFilters as $column => $values) {
+            if (empty($values) || !is_array($values)) {
+                continue;
+            }
+
+            switch ($column) {
+                case 'area':
+                    $query->where(function ($q) use ($values) {
+                        foreach ($values as $value) {
+                            $q->orWhere('palp.area', $value);
+                        }
+                    });
+                    break;
+                case 'cliente':
+                    $query->where(function ($q) use ($values) {
+                        foreach ($values as $value) {
+                            $q->orWhere('ped.cliente', 'like', '%' . $value . '%')
+                              ->orWhere('cli.nombre', 'like', '%' . $value . '%');
+                        }
+                    });
+                    break;
+                case 'numero_recibo':
+                    $query->where(function ($q) use ($values) {
+                        foreach ($values as $value) {
+                            $q->orWhere('crp.consecutivo_actual', 'like', '%' . $value . '%');
+                        }
+                    });
+                    break;
+                case 'asesora':
+                    $query->where(function ($q) use ($values) {
+                        foreach ($values as $value) {
+                            $q->orWhereExists(function ($subQ) use ($value) {
+                                $subQ->select(DB::raw(1))
+                                    ->from('users as u')
+                                    ->whereColumn('u.id', 'ped.asesor_id')
+                                    ->where('u.name', 'like', '%' . $value . '%');
+                            })
+                            ->orWhereExists(function ($subQ) use ($value) {
+                                $subQ->select(DB::raw(1))
+                                    ->from('users as u')
+                                    ->whereColumn('u.id', 'ped.anulado_por_asesora_id')
+                                    ->where('u.name', 'like', '%' . $value . '%');
+                            });
+                        }
+                    });
+                    break;
+                case 'novedades':
+                    $query->where(function ($q) use ($values) {
+                        foreach ($values as $value) {
+                            $q->orWhere('palp.novedades', 'like', '%' . $value . '%');
+                        }
+                    });
+                    break;
+                case 'total_dias':
+                    // Este filtro se maneja en el use case después de calcular los días
+                    break;
+            }
+        }
     }
 }
