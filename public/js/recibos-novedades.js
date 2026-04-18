@@ -16,6 +16,34 @@ function getCsrfToken() {
 }
 
 /**
+ * Forzar estilo de overlay/modal para vistas sin utilidades CSS
+ */
+function forzarEstiloModalDinamico(modalId, zIndex = '100004') {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.left = '0';
+    modal.style.background = 'rgba(0, 0, 0, 0.75)';
+    modal.style.zIndex = zIndex;
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.padding = '1rem';
+    modal.style.overflow = 'auto';
+
+    const panel = modal.firstElementChild;
+    if (panel) {
+        panel.style.width = '100%';
+        panel.style.maxWidth = '32rem';
+        panel.style.margin = '0 auto';
+    }
+}
+
+/**
  * Mostrar alerta
  */
 function mostrarAlerta(titulo, mensaje, tipo = 'info') {
@@ -93,6 +121,51 @@ function cerrarModalAlerta() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         modal.style.display = 'none';
+    }
+}
+
+/**
+ * Mostrar modal de éxito (sin depender de componentes de la vista)
+ */
+function mostrarModalExito(mensaje, titulo = 'Éxito') {
+    const modalExistente = document.getElementById('modalExitoNovedades');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+
+    const modalHTML = `
+        <div id="modalExitoNovedades" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100006;display:flex;align-items:center;justify-content:center;padding:1rem;">
+            <div style="background:#fff;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.25);width:min(100%,460px);overflow:hidden;">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #bbf7d0;background:#16a34a;display:flex;align-items:center;gap:.55rem;">
+                    <span class="material-symbols-rounded" style="color:#fff;font-size:20px;line-height:1;">check_circle</span>
+                    <h3 style="margin:0;color:#fff;font-size:1rem;font-weight:700;">${titulo}</h3>
+                </div>
+                <div style="padding:1rem 1.25rem;">
+                    <p style="margin:0;color:#374151;font-size:.95rem;">${mensaje}</p>
+                </div>
+                <div style="background:#f9fafb;padding:1rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;">
+                    <button type="button" onclick="cerrarModalExitoNovedades()" style="border:0;border-radius:10px;background:#16a34a;color:#fff;font-weight:600;padding:.6rem .95rem;cursor:pointer;">Entendido</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = document.getElementById('modalExitoNovedades');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModalExitoNovedades();
+            }
+        });
+    }
+}
+
+function cerrarModalExitoNovedades() {
+    const modal = document.getElementById('modalExitoNovedades');
+    if (modal) {
+        modal.remove();
     }
 }
 
@@ -351,7 +424,7 @@ async function guardarNovedad() {
 
         if (result.success) {
             console.log('[guardarNovedad]  Éxito al guardar');
-            mostrarAlerta(' Éxito', 'Novedad agregada correctamente', 'success');
+            mostrarModalExito('Novedad agregada correctamente', 'Éxito');
             
             // Limpiar textarea
             nuevaContent.value = '';
@@ -400,9 +473,9 @@ async function eliminarNovedad(novedadId) {
         // Crear modal de confirmación
         const modalHTML = `
             <div id="modalConfirmarEliminar" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999" style="z-index: 100004;">
-                <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+                <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4" style="background:#fff;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.25);width:min(100%,560px);margin:1rem;overflow:hidden;">
                     <div class="bg-red-600 px-6 py-4 border-b border-red-200 flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2" style="margin:0;color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.5rem;">
                             <span class="material-symbols-rounded">warning</span>
                             Confirmar Eliminación
                         </h3>
@@ -428,6 +501,102 @@ async function eliminarNovedad(novedadId) {
         
         // Agregar modal al body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        forzarEstiloModalDinamico('modalConfirmarEliminar', '100004');
+
+        const modalEliminar = document.getElementById('modalConfirmarEliminar');
+        if (modalEliminar) {
+            const panel = modalEliminar.firstElementChild;
+            if (panel) {
+                panel.style.background = '#fff';
+                panel.style.borderRadius = '12px';
+                panel.style.boxShadow = '0 20px 40px rgba(0,0,0,.25)';
+                panel.style.width = 'min(100%, 560px)';
+                panel.style.margin = '1rem';
+                panel.style.overflow = 'hidden';
+            }
+
+            const header = modalEliminar.querySelector('.bg-red-600');
+            if (header) {
+                header.style.padding = '1rem 1.25rem';
+                header.style.borderBottom = '1px solid #fecaca';
+                header.style.background = '#dc2626';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.gap = '.75rem';
+            }
+
+            const titulo = modalEliminar.querySelector('h3');
+            if (titulo) {
+                titulo.style.margin = '0';
+                titulo.style.color = '#fff';
+                titulo.style.fontSize = '1rem';
+                titulo.style.fontWeight = '700';
+                titulo.style.display = 'flex';
+                titulo.style.alignItems = 'center';
+                titulo.style.gap = '.5rem';
+            }
+
+            const cerrarBtn = modalEliminar.querySelector('button[onclick="cerrarModalConfirmarEliminar()"]');
+            if (cerrarBtn) {
+                cerrarBtn.innerHTML = '&times;';
+                cerrarBtn.style.border = '0';
+                cerrarBtn.style.background = 'transparent';
+                cerrarBtn.style.color = '#fff';
+                cerrarBtn.style.fontSize = '1.6rem';
+                cerrarBtn.style.lineHeight = '1';
+                cerrarBtn.style.cursor = 'pointer';
+                cerrarBtn.style.padding = '0 .25rem';
+            }
+
+            const cuerpo = modalEliminar.querySelector('.px-6.py-4');
+            if (cuerpo) {
+                cuerpo.style.padding = '1rem 1.25rem';
+            }
+
+            const parrafos = cuerpo ? cuerpo.querySelectorAll('p') : [];
+            if (parrafos.length > 0) {
+                parrafos[0].style.margin = '0 0 .55rem 0';
+                parrafos[0].style.color = '#374151';
+                parrafos[0].style.fontSize = '.95rem';
+            }
+            if (parrafos.length > 1) {
+                parrafos[1].style.margin = '0';
+                parrafos[1].style.color = '#6b7280';
+                parrafos[1].style.fontSize = '.82rem';
+                parrafos[1].style.fontStyle = 'italic';
+            }
+
+            const footer = modalEliminar.querySelector('.bg-gray-50');
+            if (footer) {
+                footer.style.background = '#f9fafb';
+                footer.style.padding = '1rem 1.25rem';
+                footer.style.borderTop = '1px solid #e5e7eb';
+                footer.style.display = 'flex';
+                footer.style.gap = '.6rem';
+                footer.style.justifyContent = 'flex-end';
+            }
+
+            const botones = footer ? footer.querySelectorAll('button') : [];
+            if (botones.length > 0) {
+                botones[0].style.border = '0';
+                botones[0].style.borderRadius = '10px';
+                botones[0].style.background = '#e5e7eb';
+                botones[0].style.color = '#1f2937';
+                botones[0].style.fontWeight = '600';
+                botones[0].style.padding = '.6rem .9rem';
+                botones[0].style.cursor = 'pointer';
+            }
+            if (botones.length > 1) {
+                botones[1].style.border = '0';
+                botones[1].style.borderRadius = '10px';
+                botones[1].style.background = '#dc2626';
+                botones[1].style.color = '#fff';
+                botones[1].style.fontWeight = '600';
+                botones[1].style.padding = '.6rem .9rem';
+                botones[1].style.cursor = 'pointer';
+            }
+        }
         console.log('[eliminarNovedad]  Modal agregado al DOM');
         
         // Obtener botones inmediatamente (sin timeout)
@@ -471,7 +640,7 @@ async function eliminarNovedad(novedadId) {
 
                     if (result.success) {
                         console.log('[eliminarNovedad]  Eliminación exitosa');
-                        mostrarAlerta(' Éxito', 'Novedad eliminada correctamente', 'success');
+                        mostrarModalExito('Novedad eliminada correctamente', 'Éxito');
                         cerrarModalConfirmarEliminar();
                         
                         // Recargar novedades en tiempo real
@@ -543,9 +712,9 @@ function editarNovedad(novedadId, textoActual) {
         const modalHTML = `
             <div id="modalEditarNovedad" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999" style="z-index: 100003;">
                 <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
-                    <div class="bg-blue-600 px-6 py-4 border-b border-blue-200 flex justify-between items-center">
+                    <div class="bg-blue-600 px-6 py-4 border-b border-blue-200 flex justify-between items-center" style="padding:1rem 1.25rem;border-bottom:1px solid #bfdbfe;background:#2563eb;display:flex;justify-content:space-between;align-items:center;gap:.75rem;">
                         <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <span class="material-symbols-rounded">edit</span>
+                            <span class="material-symbols-rounded" style="font-size:18px;line-height:1;">edit</span>
                             Editar Novedad
                         </h3>
                         <button onclick="cerrarModalEditarNovedad()" class="text-white hover:text-blue-200 text-2xl leading-none">✕</button>
@@ -577,17 +746,133 @@ function editarNovedad(novedadId, textoActual) {
         
         // Agregar modal al body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        forzarEstiloModalDinamico('modalEditarNovedad', '100005');
+
+        const modalEditar = document.getElementById('modalEditarNovedad');
+        if (modalEditar) {
+            const panel = modalEditar.firstElementChild;
+            if (panel) {
+                panel.style.background = '#fff';
+                panel.style.borderRadius = '12px';
+                panel.style.boxShadow = '0 20px 40px rgba(0,0,0,.25)';
+                panel.style.width = 'min(100%, 560px)';
+                panel.style.margin = '1rem';
+                panel.style.overflow = 'hidden';
+            }
+
+            const header = modalEditar.querySelector('.bg-blue-600');
+            if (header) {
+                header.style.padding = '1rem 1.25rem';
+                header.style.borderBottom = '1px solid #bfdbfe';
+                header.style.background = '#2563eb';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.gap = '.75rem';
+            }
+
+            const titulo = modalEditar.querySelector('h3');
+            if (titulo) {
+                titulo.style.margin = '0';
+                titulo.style.color = '#fff';
+                titulo.style.fontSize = '1rem';
+                titulo.style.fontWeight = '700';
+                titulo.style.display = 'flex';
+                titulo.style.alignItems = 'center';
+                titulo.style.gap = '.5rem';
+            }
+
+            const cerrarBtn = modalEditar.querySelector('button[onclick="cerrarModalEditarNovedad()"]');
+            if (cerrarBtn) {
+                cerrarBtn.innerHTML = '&times;';
+                cerrarBtn.style.border = '0';
+                cerrarBtn.style.background = 'transparent';
+                cerrarBtn.style.color = '#fff';
+                cerrarBtn.style.fontSize = '1.6rem';
+                cerrarBtn.style.lineHeight = '1';
+                cerrarBtn.style.cursor = 'pointer';
+                cerrarBtn.style.padding = '0 .25rem';
+            }
+
+            const cuerpo = modalEditar.querySelector('.px-6.py-4');
+            if (cuerpo) {
+                cuerpo.style.padding = '1rem 1.25rem';
+            }
+
+            const label = modalEditar.querySelector('label[for], label');
+            if (label) {
+                label.style.display = 'block';
+                label.style.color = '#0f172a';
+                label.style.fontSize = '.9rem';
+                label.style.fontWeight = '700';
+                label.style.margin = '0 0 .6rem 0';
+            }
+
+            const contador = modalEditar.querySelector('#editarCharCount')?.parentElement;
+            if (contador) {
+                contador.style.marginTop = '.5rem';
+                contador.style.fontSize = '.78rem';
+                contador.style.color = '#6b7280';
+            }
+
+            const footer = modalEditar.querySelector('.bg-gray-50');
+            if (footer) {
+                footer.style.background = '#f9fafb';
+                footer.style.padding = '1rem 1.25rem';
+                footer.style.borderTop = '1px solid #e5e7eb';
+                footer.style.display = 'flex';
+                footer.style.gap = '.6rem';
+                footer.style.justifyContent = 'flex-end';
+            }
+
+            const botones = footer ? footer.querySelectorAll('button') : [];
+            if (botones.length > 0) {
+                botones[0].style.border = '0';
+                botones[0].style.borderRadius = '10px';
+                botones[0].style.background = '#e5e7eb';
+                botones[0].style.color = '#1f2937';
+                botones[0].style.fontWeight = '600';
+                botones[0].style.padding = '.6rem .9rem';
+                botones[0].style.cursor = 'pointer';
+            }
+            if (botones.length > 1) {
+                botones[1].style.border = '0';
+                botones[1].style.borderRadius = '10px';
+                botones[1].style.background = '#2563eb';
+                botones[1].style.color = '#fff';
+                botones[1].style.fontWeight = '600';
+                botones[1].style.padding = '.6rem .9rem';
+                botones[1].style.cursor = 'pointer';
+            }
+        }
         
         // Configurar contador de caracteres
         const textarea = document.getElementById('editarNovedadTextarea');
         const charCount = document.getElementById('editarCharCount');
+
+        if (textarea) {
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '110px';
+            textarea.style.maxHeight = '240px';
+            textarea.style.padding = '.75rem .9rem';
+            textarea.style.border = '1px solid #cbd5e1';
+            textarea.style.borderRadius = '10px';
+            textarea.style.fontSize = '.92rem';
+            textarea.style.color = '#1f2937';
+            textarea.style.outline = 'none';
+            textarea.style.resize = 'vertical';
+            textarea.style.boxSizing = 'border-box';
+        }
         
-        textarea.addEventListener('input', function() {
-            charCount.textContent = this.value.length;
-        });
+        if (textarea && charCount) {
+            textarea.addEventListener('input', function() {
+                charCount.textContent = this.value.length;
+            });
+        }
         
         // Enfocar textarea
         setTimeout(() => {
+            if (!textarea) return;
             textarea.focus();
             textarea.setSelectionRange(textarea.value.length, textarea.value.length);
         }, 100);
@@ -633,7 +918,7 @@ async function guardarEdicionNovedad(novedadId) {
         const result = await response.json();
         
         if (result.success) {
-            mostrarAlerta(' Éxito', 'Novedad actualizada correctamente', 'success');
+            mostrarModalExito('Novedad actualizada correctamente', 'Éxito');
             cerrarModalEditarNovedad();
             
             // Recargar novedades en tiempo real

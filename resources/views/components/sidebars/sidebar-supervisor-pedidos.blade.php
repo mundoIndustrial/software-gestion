@@ -44,6 +44,14 @@
                     </a>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.pendientes-reflectivo') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-reflectivo') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">flare</span>
+                        <span class="menu-label">Pendiente Reflectivo</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.pendientes-control-calidad') }}"
                        class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-control-calidad') ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">

@@ -1,8 +1,8 @@
 ﻿@extends('supervisor-pedidos.layout')
 
-@section('title', 'Pendiente Control Calidad')
-@section('page-title', 'Pendiente Control Calidad')
-@section('search-action', route('supervisor-pedidos.pendientes-control-calidad'))
+@section('title', 'Pendiente Reflectivo')
+@section('page-title', 'Pendiente Reflectivo')
+@section('search-action', route('supervisor-pedidos.pendientes-reflectivo'))
 
 @push('styles')
 <style>
@@ -197,7 +197,7 @@
             max-height: 65vh !important;
         }
 
-        .control-calidad-pagination {
+        .costura-pagination {
             justify-content: center !important;
         }
     }
@@ -209,9 +209,9 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
-                <div id="supervisorPendientesControlCalidadContent">
+                <div id="supervisorPendientesReflectivoContent">
                 <!-- Tabla de Ordenes -->
-                <div class="control-calidad-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
+                <div class="costura-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
                     <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
                         <!-- Header Azul -->
@@ -220,7 +220,7 @@
                             color: white;
                             padding: 0.75rem 1rem;
                             display: grid;
-                            grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                            grid-template-columns: 110px 170px 110px 200px 120px 200px 160px 130px 100px;
                             gap: 0.15rem;
                             font-weight: 600;
                             font-size: 0.8rem;
@@ -229,6 +229,9 @@
                             min-width: min-content;
                             border-radius: 6px;
                         ">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <span>Actions</span>
+                            </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha de Creacion</span>
                                 <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
@@ -273,7 +276,7 @@
                             </div>
                         </div>
 
-                        <div id="controlCalidadRows">
+                        <div id="costurasRows">
                             <!-- Filas -->
                             @if($procesosConCantidad->count() === 0)
                                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
@@ -282,10 +285,10 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-color-stored="{{ $proceso['color_control_calidad'] ?? '' }}" style="
-                                        --row-bg-color: {{ $proceso['color_control_calidad'] ?: '#ffffff' }};
+                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}" data-color-stored="{{ $proceso['color_reflectivo'] ?? '' }}" style="
+                                        --row-bg-color: {{ $proceso['color_reflectivo'] ?: '#ffffff' }};
                                         display: grid;
-                                        grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                                        grid-template-columns: 110px 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
                                         padding: 1rem;
                                         border-bottom: 1px solid #e5e7eb;
@@ -294,6 +297,22 @@
                                         transition: background 0.2s ease;
                                     ">
                                         
+                                        <!-- Actions -->
+                                        <div style="display: flex; align-items: center; justify-content: center;">
+                                            <button
+                                                type="button"
+                                                data-pedido-id="{{ $proceso['pedido_id'] }}"
+                                                data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}"
+                                                data-numero-recibo="{{ $proceso['numero_recibo'] }}"
+                                                data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}"
+                                                data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}"
+                                                onclick="event.stopPropagation(); openReciboReflectivoModalFromRow(this)"
+                                                style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;"
+                                            >
+                                                Ver
+                                            </button>
+                                        </div>
+
                                         <!-- Fecha de Creacion -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
@@ -331,16 +350,12 @@
                                                         if(!empty($prenda->color_nombre) && !empty($prenda->cantidad_color)) {
                                                             // Con color
                                                             $key = $prenda->nombre_prenda . '|' . $prenda->color_nombre;
-                                                            if(!isset($prendasAgrupadas[$key])) {
-                                                                $prendasAgrupadas[$key] = $prenda->cantidad_color;
-                                                            }
+                                                            $prendasAgrupadas[$key] = ($prendasAgrupadas[$key] ?? 0) + (int) $prenda->cantidad_color;
                                                         } elseif(!empty($prenda->cantidad_talla) && empty($prenda->color_nombre)) {
                                                             // Sin color
                                                             $tela = !empty($prenda->tela) ? ' ' . $prenda->tela : '';
                                                             $key = $prenda->nombre_prenda . $tela . '|sin-color';
-                                                            if(!isset($prendasAgrupadas[$key])) {
-                                                                $prendasAgrupadas[$key] = $prenda->cantidad_talla;
-                                                            }
+                                                            $prendasAgrupadas[$key] = ($prendasAgrupadas[$key] ?? 0) + (int) $prenda->cantidad_talla;
                                                         }
                                                     }
                                                 @endphp
@@ -443,12 +458,13 @@
                                                 <button type="button" class="color-btn" data-color="#fecaca" title="Rojo claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fecaca; cursor: pointer; transition: all 0.2s;"></button>
                                             </div>
                                         </div>
+
                                     </div>
                                 @endforeach
                             @endif
                         </div>
                     </div>
-                    <div class="control-calidad-pagination" style="padding: 0.85rem 0.25rem 0.25rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <div class="costura-pagination" style="padding: 0.85rem 0.25rem 0.25rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                         {{ $procesosConCantidad->onEachSide(1)->links('vendor.pagination.bootstrap-custom') }}
                     </div>
                 </div>
@@ -458,8 +474,34 @@
     </div>
 </div>
 
+<!-- Modal detalle recibo (estilo Recibos Costura) -->
+<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal />
+</div>
+
 <!-- Modal de Novedades (mismo componente de /recibos-costura) -->
 <x-modals.novedades-edit-modal />
+
+<!-- Modal de Alerta para Novedades -->
+<div id="modalAlerta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100003; display: none;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" style="background:#fff;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.25);width:min(100%,520px);margin:1rem;">
+        <div id="alertaHeader" class="px-6 py-4 border-b" style="padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;background:#2563eb;">
+            <h3 id="alertaTitulo" class="text-lg font-semibold text-white flex items-center gap-2" style="margin:0;color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.5rem;">
+                <span id="alertaIcono" class="material-symbols-rounded">info</span>
+                Mensaje
+            </h3>
+        </div>
+        <div class="px-6 py-4" style="padding:1rem 1.25rem;">
+            <p id="alertaMensaje" class="text-gray-700" style="margin:0;color:#374151;">Mensaje del sistema</p>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end" style="background:#f9fafb;padding:1rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;">
+            <button type="button" onclick="cerrarModalAlerta()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition" style="border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:600;padding:.6rem .9rem;cursor:pointer;">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Modal Filtro Dinamico -->
 <div id="modalFiltro" class="modal-overlay">
@@ -482,8 +524,8 @@
 @push('scripts')
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/supervisor-pedidos/sidebar-badge-manager.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
 
@@ -517,10 +559,10 @@ function escapeHtml(str) {
 }
 
 const receiptsFilters = window.SupervisorReceiptsApiFilters.create({
-    contentSelector: '#supervisorPendientesControlCalidadContent',
-    openButtonSelector: '#supervisorPendientesControlCalidadContent .btn-filter-column',
-    filterOptionsEndpoint: (columna) => `/api/supervisor-pedidos/recibos/pendientes-control-calidad/filtro-opciones/${columna}`,
-    navigate: (url) => window.navegarPendientesControlCalidad(url),
+    contentSelector: '#supervisorPendientesReflectivoContent',
+    openButtonSelector: '#supervisorPendientesReflectivoContent .btn-filter-column',
+    filterOptionsEndpoint: (columna) => `/api/supervisor-pedidos/recibos/pendientes-reflectivo/filtro-opciones/${columna}`,
+    navigate: (url) => window.navegarPendientesReflectivo(url),
     titleMap: {
         fecha_creacion: 'Filtrar Fecha de Creación',
         numero_recibo: 'Filtrar N° Recibo',
@@ -548,7 +590,7 @@ function debounce(fn, wait) {
     };
 }
 
-function ejecutarBusquedaGeneralControlCalidad() {
+function ejecutarBusquedaGeneralReflectivo() {
     const inputBusqueda = document.getElementById('busqueda');
     const textoBusqueda = (inputBusqueda?.value || '').trim();
     const url = new URL(window.location.href);
@@ -567,45 +609,184 @@ function ejecutarBusquedaGeneralControlCalidad() {
         return;
     }
 
-    window.navegarPendientesControlCalidad(destino);
+    window.navegarPendientesReflectivo(destino);
 }
 
-function inicializarBusquedaGeneralControlCalidad() {
+function inicializarBusquedaGeneralReflectivo() {
     const inputBusqueda = document.getElementById('busqueda');
     if (!inputBusqueda) return;
 
     const formBusqueda = inputBusqueda.closest('form');
     if (formBusqueda) {
-        if (formBusqueda.getAttribute('data-control-calidad-search-init') !== '1') {
-            formBusqueda.setAttribute('data-control-calidad-search-init', '1');
+        if (formBusqueda.getAttribute('data-reflectivo-search-init') !== '1') {
+            formBusqueda.setAttribute('data-reflectivo-search-init', '1');
             formBusqueda.addEventListener('submit', function(event) {
                 event.preventDefault();
-                ejecutarBusquedaGeneralControlCalidad();
+                ejecutarBusquedaGeneralReflectivo();
             });
         }
     }
 
-    if (inputBusqueda.getAttribute('data-control-calidad-search-input-init') !== '1') {
-        inputBusqueda.setAttribute('data-control-calidad-search-input-init', '1');
+    if (inputBusqueda.getAttribute('data-reflectivo-search-input-init') !== '1') {
+        inputBusqueda.setAttribute('data-reflectivo-search-input-init', '1');
         inputBusqueda.addEventListener('input', debounce(function() {
-            ejecutarBusquedaGeneralControlCalidad();
+            ejecutarBusquedaGeneralReflectivo();
         }, 350));
     }
 }
 
-inicializarBusquedaGeneralControlCalidad();
+inicializarBusquedaGeneralReflectivo();
 
-function construirUrlApiPendientesControlCalidad(urlString) {
+function construirUrlApiPendientesReflectivo(urlString) {
     const source = new URL(urlString, window.location.origin);
-    return `/api/supervisor-pedidos/recibos/pendientes-control-calidad${source.search || ''}`;
+    return `/api/supervisor-pedidos/recibos/pendientes-reflectivo${source.search || ''}`;
 }
+
+async function resolverReciboCosturaContexto(pedidoId, numeroRecibo) {
+    try {
+        const response = await fetch(`/registros/${pedidoId}/recibos-datos`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const payload = await response.json();
+        const data = payload?.data || payload || {};
+        const prendas = Array.isArray(data?.prendas) ? data.prendas : [];
+        let primeraPrendaValida = 0;
+        const numeroNormalizado = String(numeroRecibo || '').trim();
+
+        for (const prenda of prendas) {
+            const prendaId = Number(prenda?.id || 0);
+            if (!prendaId) continue;
+            if (!primeraPrendaValida) primeraPrendaValida = prendaId;
+
+            const recibos = Array.isArray(prenda?.recibos) ? prenda.recibos : [];
+            const reciboReflectivo = recibos.find((recibo) => {
+                const tipo = String(recibo?.tipo_recibo || recibo?.tipo || '').toUpperCase();
+                const consecutivo = String(recibo?.consecutivo_actual ?? recibo?.numero_recibo ?? '').trim();
+                return tipo === 'REFLECTIVO' && consecutivo === numeroNormalizado;
+            });
+
+            if (reciboReflectivo) {
+                const esParcial = Boolean(
+                    reciboReflectivo?.es_parcial ||
+                    reciboReflectivo?.origen === 'PARCIAL' ||
+                    reciboReflectivo?.pedido_parcial_id
+                );
+
+                return {
+                    prendaId,
+                    esParcial,
+                    pedidoParcialId: Number(reciboReflectivo?.pedido_parcial_id || 0) || null,
+                };
+            }
+        }
+
+        // Fallback: usar primera prenda disponible para abrir modal y evitar redirecciones.
+        if (primeraPrendaValida) {
+            return {
+                prendaId: primeraPrendaValida,
+                esParcial: false,
+                pedidoParcialId: null,
+            };
+        }
+    } catch (error) {
+        console.error('[resolverReciboCosturaContexto] Error:', error);
+    }
+
+    return null;
+}
+
+function esperarModuloRecibos(timeoutMs = 1200) {
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            const ready = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function';
+            if (ready) {
+                clearInterval(timer);
+                resolve(true);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                clearInterval(timer);
+                resolve(false);
+            }
+        }, 80);
+    });
+}
+
+window.openReciboReflectivoModalFromRow = async function(button) {
+    const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
+    let prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
+    const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
+    let esParcial = String(button?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    let pedidoParcialId = Number(button?.getAttribute('data-pedido-parcial-id') || 0);
+
+    if (!pedidoId) {
+        console.error('[openReciboReflectivoModalFromRow] Falta pedido_id', { pedidoId, prendaId, numeroRecibo });
+        return;
+    }
+
+    if ((!prendaId || !pedidoParcialId) && numeroRecibo) {
+        const contexto = await resolverReciboCosturaContexto(pedidoId, numeroRecibo);
+        if (contexto) {
+            if (!prendaId) prendaId = Number(contexto.prendaId || 0);
+            if (!pedidoParcialId) pedidoParcialId = Number(contexto.pedidoParcialId || 0);
+            esParcial = esParcial || Boolean(contexto.esParcial);
+        }
+    }
+
+    if (!prendaId) {
+        console.error('[openReciboReflectivoModalFromRow] No se pudo resolver prenda_id para abrir modal.', { pedidoId, numeroRecibo, esParcial, pedidoParcialId });
+        if (typeof mostrarAlerta === 'function') {
+            mostrarAlerta('Error', 'No se pudo abrir el recibo en modal para este registro.', 'error');
+        }
+        return;
+    }
+
+    const moduleReady = await esperarModuloRecibos();
+    if (moduleReady) {
+        if (esParcial && pedidoParcialId > 0 && typeof window.openOrderDetailModalWithParcial === 'function') {
+            window.openOrderDetailModalWithParcial(pedidoParcialId, prendaId, 'REFLECTIVO', pedidoId, 'REFLECTIVO ANEXO');
+            return;
+        }
+
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'reflectivo');
+        return;
+    }
+
+    if (typeof mostrarAlerta === 'function') {
+        mostrarAlerta('Error', 'El visor del recibo no está listo. Intenta nuevamente en unos segundos.', 'warning');
+    }
+};
+
+window.closeModalOverlay = function() {
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+        window.pedidosRecibosModule.cerrarRecibo();
+        return;
+    }
+
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalWrapper) modalWrapper.style.display = 'none';
+    if (modalOverlay) modalOverlay.style.display = 'none';
+};
 
 const receiptsRenderers = window.SupervisorReceiptsRenderers;
 
-window.navegarPendientesControlCalidad = async function navegarPendientesControlCalidad(urlString, options = {}) {
+window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(urlString, options = {}) {
     const { pushState = true } = options;
-    const container = document.getElementById('supervisorPendientesControlCalidadContent');
-    const rows = document.getElementById('controlCalidadRows');
+    const container = document.getElementById('supervisorPendientesReflectivoContent');
+    const rows = document.getElementById('costurasRows');
     if (!container) {
         window.location.href = urlString;
         return;
@@ -616,7 +797,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
         container.style.opacity = '0.6';
         container.style.pointerEvents = 'none';
 
-        const apiUrl = construirUrlApiPendientesControlCalidad(urlString);
+        const apiUrl = construirUrlApiPendientesReflectivo(urlString);
         const res = await fetch(apiUrl, {
             method: 'GET',
             headers: {
@@ -636,7 +817,11 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
         if (procesos.length === 0) {
             rows.innerHTML = receiptsRenderers.emptyStateHtml();
         } else {
-            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml)).join('');
+            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml, {
+                gridTemplate: '110px 170px 110px 200px 120px 200px 160px 130px 100px',
+                showActions: true,
+                actionMode: 'modal'
+            })).join('');
         }
 
         if (pushState) {
@@ -645,7 +830,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
 
         actualizarIndicadoresFiltros();
         inicializarSelectorColores();
-        inicializarBusquedaGeneralControlCalidad();
+        inicializarBusquedaGeneralReflectivo();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
     } catch (e) {
         window.location.href = urlString;
@@ -657,13 +842,28 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
 }
 
 window.addEventListener('popstate', function() {
-    navegarPendientesControlCalidad(window.location.href, { pushState: false });
+    navegarPendientesReflectivo(window.location.href, { pushState: false });
 });
 
 document.addEventListener('click', function(e) {
-    const a = e.target.closest('#supervisorPendientesControlCalidadContent a');
+    const legacyReciboLink = e.target.closest('a[href*="/recibos-costura"]');
+    if (legacyReciboLink) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const row = legacyReciboLink.closest('[data-row="processo"]');
+        if (!row) return;
+
+        const pseudoButton = {
+            getAttribute: (name) => row.getAttribute(name),
+        };
+        openReciboReflectivoModalFromRow(pseudoButton);
+        return;
+    }
+
+    const a = e.target.closest('#supervisorPendientesReflectivoContent a');
     if (!a) return;
-    if (e.target.closest('.control-calidad-pagination')) return;
+    if (e.target.closest('.costura-pagination')) return;
     const href = a.getAttribute('href');
     if (!href) return;
     if (href.startsWith('#')) return;
@@ -679,9 +879,9 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (!path.startsWith('/supervisor-pedidos/pendientes-control-calidad')) return;
+    if (!path.startsWith('/supervisor-pedidos/pendientes-reflectivo')) return;
     e.preventDefault();
-    navegarPendientesControlCalidad(urlAbs);
+    navegarPendientesReflectivo(urlAbs);
 });
 
 function inicializarSelectorColores() {
@@ -723,7 +923,7 @@ function inicializarSelectorColores() {
             this.style.boxShadow = '0 0 0 2px #1e40af';
             
             // Guardar en BD
-            guardarColorCostura(reciboId, color);
+            guardarColorReflectivo(reciboId, color);
         });
     });
 }
@@ -736,11 +936,11 @@ if (document.readyState === 'loading') {
 }
 
 // Funcion para guardar el color en la BD
-async function guardarColorCostura(reciboId, color) {
+async function guardarColorReflectivo(reciboId, color) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
-        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-control-calidad', {
+        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-reflectivo', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -770,3 +970,5 @@ async function guardarColorCostura(reciboId, color) {
 @endpush
 
 @endsection
+
+

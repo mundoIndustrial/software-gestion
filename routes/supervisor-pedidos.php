@@ -27,6 +27,8 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])
             ->name('pendientes-bordado-estampado');
         Route::get('/pendientes-costura', [SupervisorReceiptsController::class, 'pendientesCostura'])
             ->name('pendientes-costura');
+        Route::get('/pendientes-reflectivo', [SupervisorReceiptsController::class, 'pendientesReflectivo'])
+            ->name('pendientes-reflectivo');
         Route::get('/pendientes-control-calidad', [SupervisorReceiptsController::class, 'pendientesControlCalidad'])
             ->name('pendientes-control-calidad');
         Route::get('/estadisticas-asesoras', [SupervisorOrdersController::class, 'estadisticasAsesoras'])

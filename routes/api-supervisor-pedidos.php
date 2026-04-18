@@ -87,16 +87,22 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
             ->name('recibos.pendientes-bordado-estampado');
         Route::get('/recibos/pendientes-costura', [SupervisorReceiptsApiController::class, 'pendingSewing'])
             ->name('recibos.pendientes-costura');
+        Route::get('/recibos/pendientes-reflectivo', [SupervisorReceiptsApiController::class, 'pendingReflective'])
+            ->name('recibos.pendientes-reflectivo');
         Route::get('/recibos/pendientes-control-calidad', [SupervisorReceiptsApiController::class, 'pendingQualityControl'])
             ->name('recibos.pendientes-control-calidad');
         Route::get('/recibos/pendientes-control-calidad-count', [SupervisorReceiptsApiController::class, 'pendingQualityControlCount'])
             ->name('recibos.pendientes-control-calidad-count');
         Route::get('/recibos/pendientes-costura/filtro-opciones/{campo}', [SupervisorReceiptsController::class, 'obtenerOpcionesFiltroPendientesCostura'])
             ->name('recibos.pendientes-costura.filtro-opciones');
+        Route::get('/recibos/pendientes-reflectivo/filtro-opciones/{campo}', [SupervisorReceiptsController::class, 'obtenerOpcionesFiltroPendientesReflectivo'])
+            ->name('recibos.pendientes-reflectivo.filtro-opciones');
         Route::get('/recibos/pendientes-control-calidad/filtro-opciones/{campo}', [SupervisorReceiptsController::class, 'obtenerOpcionesFiltroPendientesControlCalidad'])
             ->name('recibos.pendientes-control-calidad.filtro-opciones');
         Route::post('/recibos/guardar-color-costura', [SupervisorReceiptsController::class, 'guardarColorCostura'])
             ->name('recibos.guardar-color-costura');
+        Route::post('/recibos/guardar-color-reflectivo', [SupervisorReceiptsController::class, 'guardarColorReflectivo'])
+            ->name('recibos.guardar-color-reflectivo');
         Route::post('/recibos/guardar-color-control-calidad', [SupervisorReceiptsController::class, 'guardarColorControlCalidad'])
             ->name('recibos.guardar-color-control-calidad');
         Route::post('/recibos/guardar-color-bordado-estampado', [SupervisorReceiptsController::class, 'guardarColorBordadoEstampado'])

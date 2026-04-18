@@ -56,6 +56,12 @@ interface ReceiptRepository
      * @param array<string, mixed> $filters
      * @return array<int, object>
      */
+    public function findPendingReflectiveReceipts(array $filters): array;
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<int, object>
+     */
     public function findPendingQualityControlReceipts(array $filters): array;
 
     /**

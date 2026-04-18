@@ -363,6 +363,42 @@ class EloquentReceiptRepository implements ReceiptRepository
         return $query->get()->all();
     }
 
+    public function findPendingReflectiveReceipts(array $filters): array
+    {
+        $query = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+            ->join('users as u', 'p.asesor_id', '=', 'u.id')
+            ->leftJoin('pedidos_parciales as ppar', function ($join) {
+                $join->on('ppar.pedido_produccion_id', '=', 'crp.pedido_produccion_id')
+                    ->whereRaw('COALESCE(ppar.prenda_pedido_id, 0) = COALESCE(crp.prenda_id, 0)')
+                    ->whereColumn('ppar.consecutivo_actual', 'crp.consecutivo_actual')
+                    ->where('ppar.tipo_recibo', 'REFLECTIVO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at');
+            })
+            ->select([
+                'p.created_at as fecha_creacion',
+                'crp.consecutivo_actual as numero_recibo',
+                'crp.prenda_id as prenda_id',
+                'p.cliente',
+                'p.id as pedido_id',
+                'u.name as asesor',
+                'crp.color_reflectivo',
+                DB::raw("COALESCE(NULLIF(TRIM(crp.area), ''), p.area) as area"),
+                'crp.tipo_recibo',
+                'crp.notas as recibo_notas',
+                DB::raw('CASE WHEN ppar.id IS NULL THEN 0 ELSE 1 END as es_parcial'),
+                'ppar.id as pedido_parcial_id',
+            ])
+            ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) = ?', ['REFLECTIVO'])
+            ->where('crp.activo', 1)
+            ->orderBy('p.created_at', 'desc');
+
+        $this->applyPendingReceiptFilters($query, $filters);
+
+        return $query->get()->all();
+    }
+
     public function findPendingQualityControlReceipts(array $filters): array
     {
         $query = DB::table('consecutivos_recibos_pedidos as crp')
@@ -577,7 +613,7 @@ class EloquentReceiptRepository implements ReceiptRepository
 
         return DB::table('consecutivos_recibos_pedidos')
             ->where('consecutivo_actual', $normalizedReceiptNumber)
-            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
             ->update([
                 'color_costura' => $normalizedColor,
                 'updated_at' => now(),

@@ -9,6 +9,7 @@ use App\Application\SupervisorPedidos\UseCases\GetReceiptDetailsUseCase;
 use App\Application\SupervisorPedidos\UseCases\ApproveReceiptUseCase;
 use App\Application\SupervisorPedidos\UseCases\SaveSewingReceiptColorUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingSewingReceiptsUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetPendingReflectiveReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingQualityControlReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingEmbroideryStampingReceiptsUseCase;
 use App\Application\SupervisorPedidos\DTOs\ActivateReceiptRequest;
@@ -50,6 +51,7 @@ class SupervisorReceiptsController extends Controller
     private ApproveReceiptUseCase $approveReceiptUseCase;
     private SaveSewingReceiptColorUseCase $saveSewingReceiptColorUseCase;
     private GetPendingSewingReceiptsUseCase $getPendingSewingReceiptsUseCase;
+    private GetPendingReflectiveReceiptsUseCase $getPendingReflectiveReceiptsUseCase;
     private GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase;
     private GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase;
 
@@ -61,6 +63,7 @@ class SupervisorReceiptsController extends Controller
         ApproveReceiptUseCase $approveReceiptUseCase,
         SaveSewingReceiptColorUseCase $saveSewingReceiptColorUseCase,
         GetPendingSewingReceiptsUseCase $getPendingSewingReceiptsUseCase,
+        GetPendingReflectiveReceiptsUseCase $getPendingReflectiveReceiptsUseCase,
         GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase,
         GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase
     ) {
@@ -71,6 +74,7 @@ class SupervisorReceiptsController extends Controller
         $this->approveReceiptUseCase = $approveReceiptUseCase;
         $this->saveSewingReceiptColorUseCase = $saveSewingReceiptColorUseCase;
         $this->getPendingSewingReceiptsUseCase = $getPendingSewingReceiptsUseCase;
+        $this->getPendingReflectiveReceiptsUseCase = $getPendingReflectiveReceiptsUseCase;
         $this->getPendingQualityControlReceiptsUseCase = $getPendingQualityControlReceiptsUseCase;
         $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
     }
@@ -191,6 +195,38 @@ class SupervisorReceiptsController extends Controller
         $response = $this->saveSewingReceiptColorUseCase->execute($colorRequest);
 
         return response()->json($response->toArray());
+    }
+
+    /**
+     * Guardar color de fila en vista de Reflectivo
+     */
+    public function guardarColorReflectivo(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'numero_recibo' => 'required|string',
+            'color' => 'required|string|max:100',
+        ]);
+
+        $updated = DB::table('consecutivos_recibos_pedidos')
+            ->where('consecutivo_actual', trim((string) $validated['numero_recibo']))
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['REFLECTIVO'])
+            ->update([
+                'color_reflectivo' => trim((string) $validated['color']),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró recibo reflectivo para actualizar color',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Color de Reflectivo guardado correctamente',
+            'receiptNumber' => $validated['numero_recibo'],
+        ]);
     }
 
     /**
@@ -341,6 +377,41 @@ class SupervisorReceiptsController extends Controller
         );
 
         return view('supervisor-pedidos.pendientes-costura', compact('procesosConCantidad'));
+    }
+
+    /**
+     * Pendientes de Reflectivo
+     */
+    public function pendientesReflectivo(Request $request)
+    {
+        $requestDTO = new GetPendingSewingReceiptsRequest(
+            numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
+            cliente: $request->filled('cliente') ? $request->cliente : null,
+            asesor: $request->filled('asesor') ? $request->asesor : null,
+            prendas: $request->filled('prendas') ? $request->prendas : null,
+            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            busqueda: $request->input('busqueda')
+        );
+
+        $response = $this->getPendingReflectiveReceiptsUseCase->execute($requestDTO);
+        $allReceipts = collect($response->getReceipts());
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(10, min($perPage, 100));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allReceipts->slice($offset, $perPage)->values(),
+            $allReceipts->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('supervisor-pedidos.pendientes-reflectivo', compact('procesosConCantidad'));
     }
 
     /**
@@ -655,6 +726,11 @@ class SupervisorReceiptsController extends Controller
      * - GET /supervisor-pedidos/pendientes-control-calidad/filtro-opciones/{campo}
      */
     public function obtenerOpcionesFiltroPendientesCostura($campo): JsonResponse
+    {
+        return $this->_obtenerOpcionesFiltroGenerico($campo);
+    }
+
+    public function obtenerOpcionesFiltroPendientesReflectivo($campo): JsonResponse
     {
         return $this->_obtenerOpcionesFiltroGenerico($campo);
     }

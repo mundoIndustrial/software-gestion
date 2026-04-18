@@ -78,7 +78,7 @@
         const showActions = options.showActions === true;
         const actionMode = options.actionMode || 'link';
         const getReceiptUrl = typeof options.getReceiptUrl === 'function' ? options.getReceiptUrl : null;
-        const color = proceso?.color_control_calidad || proceso?.color_costura || '';
+        const color = proceso?.color_control_calidad || proceso?.color_reflectivo || proceso?.color_costura || '';
         const rowBaseColor = color || '#ffffff';
         const area = proceso?.area || '';
         const numeroRecibo = String(proceso?.numero_recibo || '');
