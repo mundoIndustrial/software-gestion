@@ -1191,4 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Search Module - Sistema de búsqueda AJAX -->
+<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
 @endpush

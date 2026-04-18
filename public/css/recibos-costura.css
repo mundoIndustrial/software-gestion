@@ -728,6 +728,279 @@ input[type="range"]::-moz-range-thumb {
     pointer-events: none;
 }
 
+/* Estilos para filtros de columnas (estilo pedidos-logo) */
+.th-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-filter-column {
+    background: none;
+    border: none;
+    color: white;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    position: relative;
+    opacity: 0.7;
+}
+
+.btn-filter-column:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.btn-filter-column i {
+    font-size: 1.1rem;
+}
+
+.filter-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+}
+
+.btn-filter-column.has-filter .filter-badge {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.logo-filter-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 10002;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-filter-modal-overlay.active {
+    display: flex;
+}
+
+.logo-filter-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.logo-filter-modal-header {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo-filter-modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #1e40af;
+    font-weight: 800;
+}
+
+.logo-filter-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.35rem;
+    cursor: pointer;
+    color: #374151;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.logo-filter-modal-close:hover {
+    background: #f3f4f6;
+}
+
+.logo-filter-modal-body {
+    padding: 1rem 1.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.logo-filter-search {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s ease;
+}
+
+.logo-filter-search:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.logo-filter-options {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.logo-filter-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.logo-filter-option:hover {
+    background: #f9fafb;
+}
+
+.logo-filter-option input[type="checkbox"] {
+    margin-right: 12px;
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+}
+
+.logo-filter-option span {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.logo-filter-modal-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+}
+
+.logo-filter-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logo-filter-btn.reset {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.logo-filter-btn.reset:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.logo-filter-btn.apply {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: 1px solid #2563eb;
+}
+
+.logo-filter-btn.apply:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Botón flotante para limpiar filtros */
+.floating-clear-filters {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0) translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.floating-clear-filters.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateY(0);
+}
+
+.floating-clear-filters:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    transform: scale(1.1) translateY(0);
+}
+
+.floating-clear-filters i {
+    font-size: 1.25rem;
+}
+
+.floating-clear-filters-tooltip {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: #1f2937;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.floating-clear-filters:hover .floating-clear-filters-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Estilos adicionales para modales de distribución y tracking */
 .distribution-modal {
     position: fixed;

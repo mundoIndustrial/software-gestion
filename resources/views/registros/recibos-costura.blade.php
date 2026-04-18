@@ -389,4 +389,7 @@
 
 <!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
 <script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
+
+<!-- Search Module - Sistema de búsqueda AJAX -->
+<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
 @endpush

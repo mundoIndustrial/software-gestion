@@ -77,6 +77,19 @@ class ReceiptEnricherService
                 $diasPorPedido[$pedidoId] = $this->calcularDiasHabiles($pedido->created_at);
             }
 
+            // Obtener encargado del proceso más reciente
+            $encargadoOrden = $this->obtenerEncargadoProceso(
+                $pedido->numero_pedido ?? null,
+                (int) ($recibo['prenda_id'] ?? 0),
+                (int) ($recibo['consecutivo_actual'] ?? 0)
+            );
+
+            // Obtener novedades del recibo
+            $novedadesTexto = $this->obtenerNovedadesRecibo(
+                $pedido,
+                (int) ($recibo['consecutivo_actual'] ?? 0)
+            );
+
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
@@ -86,6 +99,8 @@ class ReceiptEnricherService
                 'total_parciales' => $totalParciales,
                 'es_parcial' => (bool) ($metaParcial['es_parcial'] ?? false),
                 'pedido_parcial_id' => $metaParcial['pedido_parcial_id'] ?? null,
+                'encargado_orden' => $encargadoOrden,
+                'novedades' => $novedadesTexto,
             ]);
         }, $recibos);
     }
@@ -313,5 +328,77 @@ class ReceiptEnricherService
         }
 
         return $desc;
+    }
+
+    /**
+     * Obtener novedades del recibo
+     */
+    private function obtenerNovedadesRecibo(?PedidoProduccion $pedido, ?int $numeroRecibo): string
+    {
+        if (!$pedido || !$numeroRecibo) {
+            return 'Sin novedades';
+        }
+
+        try {
+            $novedadesRecibo = [];
+            
+            if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                foreach ($pedido->prendas as $prenda) {
+                    // Obtener novedades de esta prenda para este número de recibo
+                    $novedadesPrenda = $prenda->novedadesRecibo()
+                        ->where('numero_recibo', $numeroRecibo)
+                        ->orderBy('creado_en', 'desc')
+                        ->get();
+                    
+                    foreach ($novedadesPrenda as $novedad) {
+                        // Limpiar el texto de la novedad
+                        $textoLimpio = str_replace(["\r", "\n", "'", '"'], " ", $novedad->novedad_texto);
+                        $novedadesRecibo[] = trim($textoLimpio);
+                    }
+                }
+            }
+            
+            // Concatenar todas las novedades para mostrar
+            if (!empty($novedadesRecibo)) {
+                return implode(" | ", $novedadesRecibo);
+            }
+        } catch (\Exception $e) {
+            \Log::error('[ReceiptEnricher] Error obteniendo novedades por recibo: ' . $e->getMessage());
+        }
+
+        return 'Sin novedades';
+    }
+
+    /**
+     * Obtener encargado del proceso más reciente para un recibo
+     */
+    private function obtenerEncargadoProceso(?int $numeroPedido, ?int $prendaId, ?int $numeroRecibo): string
+    {
+        if (!$numeroPedido || !$numeroRecibo) {
+            return '-';
+        }
+
+        try {
+            $query = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->where('numero_recibo', $numeroRecibo)
+                ->whereNull('deleted_at');
+
+            if ($prendaId) {
+                $query->where('prenda_pedido_id', $prendaId);
+            }
+
+            $procesoMasReciente = $query
+                ->orderByDesc('fecha_fin')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
+                return htmlspecialchars(trim($procesoMasReciente->encargado));
+            }
+        } catch (\Exception $e) {
+            \Log::error('[ReceiptEnricher] Error obteniendo encargado por recibo: ' . $e->getMessage());
+        }
+
+        return '-';
     }
 }

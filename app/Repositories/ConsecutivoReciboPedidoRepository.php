@@ -252,6 +252,34 @@ class ConsecutivoReciboPedidoRepository
             });
         }
 
+        // Aplicar filtro de área
+        if (isset($filtros['area']) && !empty($filtros['area'])) {
+            $query->whereIn('area', $filtros['area']);
+        }
+
+        // Aplicar filtro de cliente
+        if (isset($filtros['cliente']) && !empty($filtros['cliente'])) {
+            $query->whereHas('pedido', function($q) use ($filtros) {
+                $q->whereIn('cliente', $filtros['cliente']);
+            });
+        }
+
+        // Aplicar filtro de novedades
+        if (isset($filtros['novedades']) && !empty($filtros['novedades'])) {
+            $query->whereIn('novedades', $filtros['novedades']);
+        }
+
+        // Aplicar búsqueda general (por número de recibo o cliente)
+        if (isset($filtros['search']) && !empty($filtros['search'])) {
+            $searchTerm = $filtros['search'];
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('consecutivo_actual', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhereHas('pedido', function($pq) use ($searchTerm) {
+                      $pq->where('cliente', 'LIKE', '%' . $searchTerm . '%');
+                  });
+            });
+        }
+
         if ($tipoRecibo === 'COSTURA') {
             $query->orderByRaw('CASE WHEN aprobado_insumos_en IS NULL THEN 1 ELSE 0 END ASC')
                 ->orderBy('aprobado_insumos_en', 'desc')

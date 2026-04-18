@@ -326,6 +326,144 @@ class RegistroOrdenController extends Controller
     }
 
     /**
+     * Búsqueda AJAX de recibos de costura
+     */
+    public function searchRecibosCostura(Request $request)
+    {
+        $searchTerm = $request->input('search', '');
+        $page = $request->input('page', 1);
+        $perPage = 25;
+
+        // Crear un request con el término de búsqueda
+        $searchRequest = new Request(['search' => $searchTerm, 'page' => $page]);
+
+        $datos = $this->getSewingReceiptsUseCase->execute($searchRequest);
+
+        $recibos = $datos['recibos'];
+        
+        // Debug: Ver qué tipo de objeto es
+        \Log::info('Search Debug - Tipo de recibos: ' . get_class($recibos));
+        \Log::info('Search Debug - Es Collection: ' . ($recibos instanceof \Illuminate\Support\Collection ? 'true' : 'false'));
+        \Log::info('Search Debug - Es LengthAwarePaginator: ' . ($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator ? 'true' : 'false'));
+        
+        // Si es una Collection (sin paginación)
+        if ($recibos instanceof \Illuminate\Support\Collection) {
+            $recibosArray = $recibos->toArray();
+            return response()->json([
+                'success' => true,
+                'recibos' => $recibosArray,
+                'total' => count($recibosArray),
+                'total_cantidad' => $datos['total_cantidad'],
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => count($recibosArray) > 0 ? 1 : 0,
+                'to' => count($recibosArray)
+            ]);
+        }
+        
+        // Si es un paginator, extraer los datos y la información de paginación
+        if ($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            // Calcular from y to manualmente para evitar el error
+            $currentPage = $recibos->currentPage();
+            $perPage = $recibos->perPage();
+            $total = $recibos->total();
+            $from = $total > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+            $to = $from + $recibos->count() - 1;
+            
+            return response()->json([
+                'success' => true,
+                'recibos' => $recibos->items(),
+                'total' => $total,
+                'total_cantidad' => $datos['total_cantidad'],
+                'current_page' => $currentPage,
+                'last_page' => $recibos->lastPage(),
+                'from' => $from,
+                'to' => $to
+            ]);
+        }
+
+        // Si es un array
+        return response()->json([
+            'success' => true,
+            'recibos' => $recibos,
+            'total' => count($recibos),
+            'total_cantidad' => $datos['total_cantidad'],
+            'current_page' => 1,
+            'last_page' => 1,
+            'from' => count($recibos) > 0 ? 1 : 0,
+            'to' => count($recibos)
+        ]);
+    }
+
+    /**
+     * Búsqueda AJAX de recibos de reflectivo
+     */
+    public function searchRecibosReflectivo(Request $request)
+    {
+        $searchTerm = $request->input('search', '');
+        $page = $request->input('page', 1);
+        $perPage = 25;
+
+        // Crear un request con el término de búsqueda
+        $searchRequest = new Request(['search' => $searchTerm, 'page' => $page]);
+
+        $datos = $this->getReflectiveReceiptsUseCase->execute($searchRequest);
+
+        $recibos = $datos['recibos'];
+        
+        // Debug: Ver qué tipo de objeto es
+        \Log::info('Search Debug Reflectivo - Tipo de recibos: ' . get_class($recibos));
+        
+        // Si es una Collection (sin paginación)
+        if ($recibos instanceof \Illuminate\Support\Collection) {
+            $recibosArray = $recibos->toArray();
+            return response()->json([
+                'success' => true,
+                'recibos' => $recibosArray,
+                'total' => count($recibosArray),
+                'total_cantidad' => $datos['total_cantidad'],
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => count($recibosArray) > 0 ? 1 : 0,
+                'to' => count($recibosArray)
+            ]);
+        }
+        
+        // Si es un paginator, extraer los datos y la información de paginación
+        if ($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            // Calcular from y to manualmente para evitar el error
+            $currentPage = $recibos->currentPage();
+            $perPage = $recibos->perPage();
+            $total = $recibos->total();
+            $from = $total > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+            $to = $from + $recibos->count() - 1;
+            
+            return response()->json([
+                'success' => true,
+                'recibos' => $recibos->items(),
+                'total' => $total,
+                'total_cantidad' => $datos['total_cantidad'],
+                'current_page' => $currentPage,
+                'last_page' => $recibos->lastPage(),
+                'from' => $from,
+                'to' => $to
+            ]);
+        }
+
+        // Si es un array
+        return response()->json([
+            'success' => true,
+            'recibos' => $recibos,
+            'total' => count($recibos),
+            'total_cantidad' => $datos['total_cantidad'],
+            'current_page' => 1,
+            'last_page' => 1,
+            'from' => count($recibos) > 0 ? 1 : 0,
+            'to' => count($recibos)
+        ]);
+    }
+
+    /**
      * Obtener datos de un recibo de reflectivo especifico como JSON
      */
     public function getReciboReflectivoJson($reciboId)

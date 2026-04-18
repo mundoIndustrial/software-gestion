@@ -26,7 +26,7 @@ class GetSewingReceiptsUseCase
      */
     public function execute(Request $request): array
     {
-        $filtros = $request->all();
+        $filtros = $this->procesarFiltros($request);
         $perPage = 25; // Máximo 25 registros por página
 
         // Obtener recibos del repositorio (con filtros aplicados y paginación)
@@ -61,6 +61,34 @@ class GetSewingReceiptsUseCase
             'total_cantidad' => $totalCantidad,
             'filtros_aplicados' => $filtros
         ];
+    }
+
+    /**
+     * Procesar filtros del request para convertir strings separados por coma en arrays
+     */
+    private function procesarFiltros(Request $request): array
+    {
+        $filtros = [];
+        $camposFiltro = ['estado', 'area', 'total_dias', 'numero_recibo', 'cliente', 'descripcion', 'cantidad', 'novedades', 'fecha_creacion', 'fecha_estimada'];
+
+        foreach ($camposFiltro as $campo) {
+            if ($request->has($campo) && !empty($request->input($campo))) {
+                $valor = $request->input($campo);
+                // Si es un string separado por comas, convertir a array
+                if (is_string($valor)) {
+                    $filtros[$campo] = array_map('trim', explode(',', $valor));
+                } else {
+                    $filtros[$campo] = $valor;
+                }
+            }
+        }
+
+        // Agregar término de búsqueda
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $filtros['search'] = $request->input('search');
+        }
+
+        return $filtros;
     }
 
 
