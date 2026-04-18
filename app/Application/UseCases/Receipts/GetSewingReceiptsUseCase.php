@@ -27,14 +27,32 @@ class GetSewingReceiptsUseCase
     public function execute(Request $request): array
     {
         $filtros = $request->all();
+        $perPage = 25; // Máximo 25 registros por página
 
-        // Obtener recibos del repositorio (con filtros aplicados)
-        $recibosCostura = $this->recibosRepository->getConFiltros('COSTURA', $filtros);
+        // Obtener recibos del repositorio (con filtros aplicados y paginación)
+        $recibosCostura = $this->recibosRepository->getConFiltros('COSTURA', $filtros, $perPage);
 
-        // Enriquecer con información de pedidos (delegado al servicio)
+        // Verificar si es paginación o colección
+        $esPaginado = $recibosCostura instanceof \Illuminate\Pagination\LengthAwarePaginator;
+
+        if ($esPaginado) {
+            // Enriquecer solo los items de la página actual
+            $recibosItems = $recibosCostura->getCollection()->toArray();
+            $recibosConInfo = $this->enricher->enriquecer($recibosItems);
+            $recibosCostura->setCollection(collect($recibosConInfo));
+
+            $totalCantidad = $this->calcularCantidadTotal($recibosConInfo);
+
+            return [
+                'recibos' => $recibosCostura,
+                'total' => $recibosCostura->total(),
+                'total_cantidad' => $totalCantidad,
+                'filtros_aplicados' => $filtros
+            ];
+        }
+
+        // Comportamiento original sin paginación
         $recibosConInfo = $this->enricher->enriquecer($recibosCostura->toArray());
-
-        // Calcular totales
         $totalCantidad = $this->calcularCantidadTotal($recibosConInfo);
 
         return [

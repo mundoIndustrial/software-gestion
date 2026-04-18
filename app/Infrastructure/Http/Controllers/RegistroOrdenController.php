@@ -305,7 +305,10 @@ class RegistroOrdenController extends Controller
     public function recibosCostura(Request $request)
     {
         $datos = $this->getSewingReceiptsUseCase->execute($request);
-        $datos['recibos'] = collect($datos['recibos']);
+        // No convertir a collect si ya es un paginator
+        if (!($datos['recibos'] instanceof \Illuminate\Pagination\LengthAwarePaginator)) {
+            $datos['recibos'] = collect($datos['recibos']);
+        }
         return view('registros.recibos-costura', $datos);
     }
 
@@ -315,7 +318,10 @@ class RegistroOrdenController extends Controller
     public function recibosReflectivo(Request $request)
     {
         $datos = $this->getReflectiveReceiptsUseCase->execute($request);
-        $datos['recibos'] = collect($datos['recibos']);
+        // No convertir a collect si ya es un paginator
+        if (!($datos['recibos'] instanceof \Illuminate\Pagination\LengthAwarePaginator)) {
+            $datos['recibos'] = collect($datos['recibos']);
+        }
         return view('registros.recibos-reflectivo', $datos);
     }
 

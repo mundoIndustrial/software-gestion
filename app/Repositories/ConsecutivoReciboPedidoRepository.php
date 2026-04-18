@@ -204,9 +204,10 @@ class ConsecutivoReciboPedidoRepository
      * 
      * @param string $tipoRecibo Tipo de recibo (COSTURA, REFLECTIVO, etc.)
      * @param array $filtros Array con filtros a aplicar
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param int $perPage Número de registros por página (default: todos sin paginación)
+     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator
      */
-    public function getConFiltros(string $tipoRecibo, array $filtros = [])
+    public function getConFiltros(string $tipoRecibo, array $filtros = [], int $perPage = 0)
     {
         $query = ConsecutivoReciboPedido::query()
             ->where('tipo_recibo', $tipoRecibo)
@@ -228,12 +229,17 @@ class ConsecutivoReciboPedidoRepository
             // Excluir áreas: corte, insumos, creacion orden
             $query->whereNotIn(DB::raw('LOWER(TRIM(area))'), ['corte', 'insumos', 'creacion orden']);
         } else {
-            // Aplicar filtro de estado para otros roles
-            if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+            // Aplicar filtro de estado para otros roles (solo para COSTURA)
+            if ($tipoRecibo === 'COSTURA') {
+                if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+                    $query->whereIn('estado', $filtros['estado']);
+                } elseif (empty($filtros)) {
+                    // Si no hay filtros, excluir PENDIENTE_INSUMOS (solo para COSTURA)
+                    $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+                }
+            } elseif (isset($filtros['estado']) && !empty($filtros['estado'])) {
+                // Para otros tipos de recibo, aplicar filtro de estado solo si se proporciona
                 $query->whereIn('estado', $filtros['estado']);
-            } elseif (empty($filtros)) {
-                // Si no hay filtros, excluir PENDIENTE_INSUMOS
-                $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
             }
         }
 
@@ -247,13 +253,18 @@ class ConsecutivoReciboPedidoRepository
         }
 
         if ($tipoRecibo === 'COSTURA') {
-            return $query
-                ->orderByRaw('CASE WHEN aprobado_insumos_en IS NULL THEN 1 ELSE 0 END ASC')
+            $query->orderByRaw('CASE WHEN aprobado_insumos_en IS NULL THEN 1 ELSE 0 END ASC')
                 ->orderBy('aprobado_insumos_en', 'desc')
-                ->orderBy('consecutivo_actual', 'desc')
-                ->get();
+                ->orderBy('consecutivo_actual', 'desc');
+        } else {
+            $query->orderBy('consecutivo_actual', 'desc');
         }
 
-        return $query->orderBy('consecutivo_actual', 'desc')->get();
+        // Aplicar paginación si se especifica perPage
+        if ($perPage > 0) {
+            return $query->paginate($perPage);
+        }
+
+        return $query->get();
     }
 }

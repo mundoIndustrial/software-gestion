@@ -512,6 +512,20 @@
     </table>
 </div>
 
+<!-- Controles de Paginación -->
+@if($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator)
+    <div class="pagination-container mt-4" data-pagination-current-url="{{ request()->fullUrl() }}">
+        <div class="pagination-info text-muted mb-2">
+            Mostrando {{ $recibos->firstItem() }} a {{ $recibos->lastItem() }} de {{ $recibos->total() }} registros
+        </div>
+        <div class="pagination-wrapper" id="pagination-wrapper">
+            {{ $recibos->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+
+    <script src="{{ asset('js/recibos-costura/pagination.js') }}?v={{ time() }}"></script>
+@endif
+
 <!-- Modal de Filtros Dinámico -->
 <div class="filter-modal" id="filterModal" style="display: none;">
     <div class="filter-modal-content">

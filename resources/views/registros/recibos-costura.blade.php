@@ -74,8 +74,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 @push('styles')
-<!-- Styles Component -->
-<x-recibos.recibos-costura-styles />
+<link rel="stylesheet" href="{{ asset('css/recibos-costura.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/dropdowns-recibos.css') }}?v={{ time() }}">
 

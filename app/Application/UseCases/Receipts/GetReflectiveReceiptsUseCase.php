@@ -25,11 +25,31 @@ class GetReflectiveReceiptsUseCase
     public function execute(Request $request): array
     {
         $filtros = $request->all();
+        $perPage = 25; // Máximo 25 registros por página
 
-        $recibosReflectivo = $this->recibosRepository->getConFiltros('REFLECTIVO', $filtros);
+        $recibosReflectivo = $this->recibosRepository->getConFiltros('REFLECTIVO', $filtros, $perPage);
 
+        // Verificar si es paginación o colección
+        $esPaginado = $recibosReflectivo instanceof \Illuminate\Pagination\LengthAwarePaginator;
+
+        if ($esPaginado) {
+            // Enriquecer solo los items de la página actual
+            $recibosItems = $recibosReflectivo->getCollection()->toArray();
+            $recibosConInfo = $this->enricher->enriquecer($recibosItems);
+            $recibosReflectivo->setCollection(collect($recibosConInfo));
+
+            $totalCantidad = $this->calcularCantidadTotal($recibosConInfo);
+
+            return [
+                'recibos' => $recibosReflectivo,
+                'total' => $recibosReflectivo->total(),
+                'total_cantidad' => $totalCantidad,
+                'filtros_aplicados' => $filtros
+            ];
+        }
+
+        // Comportamiento original sin paginación
         $recibosConInfo = $this->enricher->enriquecer($recibosReflectivo->toArray());
-
         $totalCantidad = $this->calcularCantidadTotal($recibosConInfo);
 
         return [
