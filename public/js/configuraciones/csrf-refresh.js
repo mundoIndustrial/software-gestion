@@ -16,7 +16,7 @@
     // ============ CONFIGURACIÓN ============
     const CONFIG = {
         REFRESH_INTERVAL: 30 * 60 * 1000,      // 30 minutos
-        SESSION_LIFETIME: 120 * 60 * 1000,     // 120 minutos (2 horas)
+        SESSION_LIFETIME: 720 * 60 * 1000,     // 720 minutos (12 horas)
         WARNING_BEFORE_EXPIRY: 10 * 60 * 1000, // Advertir 10 minutos antes
         REFRESH_URL: '/refresh-csrf',
         DEBUG: false  // Cambiar a true para ver logs en consola

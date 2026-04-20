@@ -314,12 +314,8 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
             estado:                estado     || 'PENDIENTE_INSUMOS',
             tipo_recibo:           tipoRecibo || 'COSTURA',
             area:                  estado === 'En Ejecución' ? 'Costura' : (estado || 'Insumos'),
-            seguimientos_por_area: procesos.reduce((acc, proceso) => {
-                const area = proceso.proceso || 'Desconocida';
-                if (!acc[area]) acc[area] = [];
-                acc[area].push(proceso);
-                return acc;
-            }, {})
+            readonly:              Boolean(globalThis.isInsumos || globalThis.location?.pathname?.includes('/insumos/materiales')),
+            seguimientos_por_area: {}
         };
 
         if (typeof showPrendaTracking === 'function') {

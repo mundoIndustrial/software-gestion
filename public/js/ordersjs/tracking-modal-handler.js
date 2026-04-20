@@ -142,6 +142,14 @@ let daysSelector = null;
 globalThis.trackingDaysSelector = null;
 let trackingModalListenersInitialized = false;
 
+function isInsumosReadonlyContext() {
+  return Boolean(
+    globalThis.isInsumos
+    || globalThis.userRole === 'insumos'
+    || globalThis.location?.pathname?.includes('/insumos/materiales')
+  );
+}
+
 /**
  * Reinitialize the days selector when the modal opens
  * This ensures the selector is ready when data is loaded 
@@ -215,15 +223,18 @@ function initTrackingModalListeners() {
   const binder = new ModalEventBinder('orderTrackingModal');
   
   binder.bindCloseButtons({
-    closeButtonId: null,
-    cancelButtonId: null,
+    closeButtonId: 'closeTrackingModal',
     overlaySelector: '#trackingModalOverlay',
     callback: closeTrackingModal
   });
 
-  const closeBtn = document.querySelector('.tracking-modal-close');
+  const closeBtn = document.getElementById('closeTrackingModal');
   if (closeBtn) {
-    closeBtn.onclick = closeTrackingModal;
+    closeBtn.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeTrackingModal();
+    };
   }
 
   setupAddProcesoModalListeners();
@@ -668,8 +679,17 @@ function initTrackingModalListeners() {
       return prenda;
     }
 
-    const pedidoId = orderState.getOrderId() || globalThis.currentOrderData?.id || null;
-    const prendaId = prenda.id || prenda.prenda_pedido_id || null;
+    const pedidoId = orderState.getOrderId()
+      || globalThis.currentOrderData?.id
+      || prenda.pedido_produccion_id
+      || prenda.pedido_id
+      || globalThis.currentTrackingReceiptContext?.pedidoId
+      || null;
+    const prendaId = prenda.id
+      || prenda.prenda_pedido_id
+      || prenda.numero_prenda
+      || globalThis.currentTrackingReceiptContext?.prendaId
+      || null;
     const trackingReceiptContext = globalThis.currentTrackingReceiptContext || null;
     const targetNumeroRecibo = String(trackingReceiptContext?.numeroRecibo || '').trim();
     const matchPedido = trackingReceiptContext?.pedidoId ? String(trackingReceiptContext.pedidoId) === String(pedidoId) : true;
@@ -744,10 +764,33 @@ function initTrackingModalListeners() {
       });
     }
 
-    const hasSeguimientos = enrichedPrenda.seguimientos_por_area && Object.keys(enrichedPrenda.seguimientos_por_area).length > 0;
-    if (!hasSeguimientos) {
+    const hasStructuredSeguimientos = (() => {
+      const source = enrichedPrenda.seguimientos_por_area;
+      if (!source || typeof source !== 'object') {
+        return false;
+      }
+      const values = Object.values(source);
+      if (values.length === 0) {
+        return false;
+      }
+      // En /insumos llega un fallback con arrays de procesos; eso NO sirve para timeline.
+      // Consideramos "estructurado" solo cuando las áreas traen objeto enriquecido del backend.
+      return values.some((value) => {
+        if (!value || Array.isArray(value) || typeof value !== 'object') {
+          return false;
+        }
+        return Boolean(
+          value.duraciones
+          || value.fechas_formateadas
+          || Object.prototype.hasOwnProperty.call(value, 'fecha_inicio')
+          || Object.prototype.hasOwnProperty.call(value, 'estado')
+        );
+      });
+    })();
+
+    if (!hasStructuredSeguimientos) {
       try {
-        const response = await fetch(`/registros/${pedidoId}/seguimiento-prenda`);
+        const response = await fetch(`/registros/${pedidoId}/seguimiento-prenda?prenda_id=${encodeURIComponent(String(prendaId))}`);
         console.log('[enrichPrendaForTracking] GET seguimiento-prenda status:', response.status);
         if (response.ok) {
           const trackingData = await response.json();
@@ -784,7 +827,11 @@ function initTrackingModalListeners() {
   }
 
   globalThis.showPrendaTracking = async function(prenda) {
+    initTrackingModalListeners();
     const prendaEnriquecida = await enrichPrendaForTracking(prenda);
+    if (isInsumosReadonlyContext()) {
+      prendaEnriquecida.readonly = true;
+    }
     await trackingTimelineController.showPrendaTracking(prendaEnriquecida);
   };
 
