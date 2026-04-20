@@ -160,16 +160,6 @@ class ProcesarImagenesCotizacionService
         // Guardar en storage/app/public
         $contenidoWebP = $imagen->toWebp(self::CALIDAD_WEBP);
         Storage::disk('public')->put($rutaCompleta, $contenidoWebP);
-        
-        // También guardar en public/storage para acceso directo
-        $rutaPublica = public_path("storage/{$rutaCompleta}");
-        $directorioPublico = dirname($rutaPublica);
-        
-        if (!is_dir($directorioPublico)) {
-            @mkdir($directorioPublico, 0755, true);
-        }
-        
-        @file_put_contents($rutaPublica, $contenidoWebP);
 
         // Retornar ruta relativa SIN prefijo 'storage/' para evitar URLs duplicadas
         return $rutaCompleta;

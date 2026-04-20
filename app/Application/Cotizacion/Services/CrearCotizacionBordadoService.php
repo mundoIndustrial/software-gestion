@@ -99,6 +99,7 @@ class CrearCotizacionBordadoService
                         $cotizacion->id,
                         $request->tecnicas,
                         $request->archivos_tecnicas,
+                        $request->logos_compartidos_metadata,
                     );
                     Log::info('✓ Técnicas procesadas', [
                         'count' => count($request->tecnicas),

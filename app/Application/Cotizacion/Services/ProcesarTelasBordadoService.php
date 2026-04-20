@@ -133,12 +133,12 @@ class ProcesarTelasBordadoService
     /**
      * Guardar imagen de tela asociada a prenda
      */
-    public function guardarImagenTela(int $prendaCotId, int $logoCotizacionId, $archivo): string
+    public function guardarImagenTela(int $prendaCotId, int $cotizacionId, $archivo): string
     {
         try {
             $rutas = $this->imagenService->guardarImagen(
                 $archivo,
-                $logoCotizacionId,
+                $cotizacionId,
                 'TELA'
             );
 

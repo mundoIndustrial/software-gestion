@@ -178,7 +178,8 @@ class ActualizarBorradorCotizacionService
             $logoCotizacion->id,
             $logoCotizacion->cotizacion_id,
             $request->tecnicas,
-            $request->archivos_tecnicas
+            $request->archivos_tecnicas,
+            $request->logos_compartidos_metadata,
         );
         Log::info('✓ Técnicas sincronizadas');
 

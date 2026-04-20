@@ -17,6 +17,8 @@ class CrearCotizacionBordadoRequest
         public readonly array $archivos_tecnicas = [],
         public readonly array $archivos_telas = [],
         public readonly array $tecnicas_fotos_a_borrar = [],
+        /** @var array<string, array<string, mixed>> */
+        public readonly array $logos_compartidos_metadata = [],
     ) {
     }
 
@@ -49,6 +51,7 @@ class CrearCotizacionBordadoRequest
             es_borrador: ($request->input('action') ?? $request->input('accion')) === 'borrador',
             archivos_tecnicas: $request->files->all(),
             archivos_telas: $request->files->all(),
+            logos_compartidos_metadata: LogosCompartidosMetadata::fromHttpRequest($request),
         );
     }
 }

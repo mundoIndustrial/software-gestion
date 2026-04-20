@@ -180,13 +180,6 @@ class EliminarImagenesCotizacionService
                 Storage::disk('public')->delete($rutaRelativa);
                 Log::info('Archivo eliminado de storage/app/public', ['ruta' => $rutaRelativa]);
             }
-
-            // Eliminar de public/storage
-            $rutaPublica = public_path("storage/{$rutaRelativa}");
-            if (file_exists($rutaPublica)) {
-                @unlink($rutaPublica);
-                Log::info('Archivo eliminado de public/storage', ['ruta' => $rutaPublica]);
-            }
         } catch (\Exception $e) {
             Log::error('Error al eliminar archivo de foto', [
                 'ruta' => $ruta,

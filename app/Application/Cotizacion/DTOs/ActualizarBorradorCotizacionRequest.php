@@ -19,6 +19,8 @@ class ActualizarBorradorCotizacionRequest
         public readonly array $tecnicas_fotos_a_borrar = [],
         public readonly array $archivos_tecnicas = [],
         public readonly bool $editar_cotizacion = false,
+        /** @var array<string, array<string, mixed>> */
+        public readonly array $logos_compartidos_metadata = [],
     ) {
     }
 
@@ -67,6 +69,7 @@ class ActualizarBorradorCotizacionRequest
             tecnicas_fotos_a_borrar: $tecnicasFotosABorrar,
             archivos_tecnicas: $request->files->all(),
             editar_cotizacion: $request->boolean('editar_cotizacion'),
+            logos_compartidos_metadata: LogosCompartidosMetadata::fromHttpRequest($request),
         );
     }
 }

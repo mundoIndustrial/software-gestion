@@ -148,6 +148,7 @@ class LogoCotizacionTecnicaController extends Controller
 
             // Obtener datos de la cotizacion y tipo de logo
             $logoCotizacion = LogoCotizacion::findOrFail($logoCotizacionId);
+            $cotizacionId = $logoCotizacion->cotizacion_id;
             $tipoLogo = TipoLogoCotizacion::findOrFail($tipoLogoId);
 
             // Auto-generar grupo_combinado si es tecnica combinada
@@ -195,9 +196,49 @@ class LogoCotizacionTecnicaController extends Controller
                 'count' => count($imagenesCompartidas),
                 'claves' => array_keys($imagenesCompartidas)
             ]);
-            
-            // PASO 1C: Procesar SOLO las imagenes compartidas que esta tecnica debe referenciar
-            // (Las imagenes ya fueron guardadas una sola vez en CotizacionBordadoController)
+
+            // PASO 1C: Persistir archivos logo compartido enviados en esta petición
+            // (el front envía imagenes_logo_compartido_{N} + logo_compartido_metadata_{N}; antes solo se
+            // esperaba logos_compartidos_guardados en JSON y los archivos nunca se guardaban).
+            foreach ($request->all() as $metaKey => $metaRaw) {
+                if (!preg_match('/^logo_compartido_metadata_(\d+)$/', $metaKey, $m) || !is_string($metaRaw)) {
+                    continue;
+                }
+                $idx = $m[1];
+                $metaLogo = json_decode($metaRaw, true);
+                if (!$metaLogo || empty($metaLogo['nombreCompartido'])) {
+                    continue;
+                }
+                $clave = $metaLogo['nombreCompartido'];
+                $archivoCompartido = $request->file('imagenes_logo_compartido_' . $idx);
+                if (!$archivoCompartido || !$archivoCompartido->isValid()) {
+                    Log::warning(' Logo compartido: metadata sin archivo válido', [
+                        'idx' => $idx,
+                        'clave' => $clave,
+                    ]);
+                    continue;
+                }
+                try {
+                    $rutasComp = $imagenService->guardarImagen(
+                        $archivoCompartido,
+                        $cotizacionId,
+                        $tipoLogo->nombre,
+                        $grupoCombinado
+                    );
+                    if (!empty($rutasComp['ruta_webp'])) {
+                        $logosCompartidosGuardados[$clave] = $rutasComp['ruta_webp'];
+                        Log::info(' Logo compartido guardado desde upload', [
+                            'clave' => $clave,
+                            'ruta_webp' => $rutasComp['ruta_webp'],
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error(' Error guardando archivo de logo compartido', [
+                        'clave' => $clave,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
             
             // PASO 2: Procesar prendas e imagenes no compartidas
             foreach ($prendasData as $prendasIndex => $prendaData) {
@@ -291,7 +332,7 @@ class LogoCotizacionTecnicaController extends Controller
                             // Guardar imagen normal (no compartida)
                             $rutasImagen = $imagenService->guardarImagen(
                                 $archivo,
-                                $logoCotizacionId,
+                                $cotizacionId,
                                 $tipoLogo->nombre,
                                 $grupoCombinado
                             );

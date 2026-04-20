@@ -31,13 +31,6 @@ final class ActualizarImagenesCotizacionService
                     Log::info('Archivo eliminado de storage/app/public', ['ruta' => $rutaRelativa]);
                 }
 
-                // Eliminar de public/storage
-                $rutaPublica = public_path("storage/{$rutaRelativa}");
-                if (file_exists($rutaPublica)) {
-                    @unlink($rutaPublica);
-                    Log::info('Archivo eliminado de public/storage', ['ruta' => $rutaPublica]);
-                }
-
                 // Eliminar registro de la base de datos
                 \App\Models\PrendaFotoCot::where('ruta_original', $rutaFoto)
                     ->orWhere('ruta_webp', $rutaFoto)

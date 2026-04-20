@@ -2,7 +2,6 @@
 
 namespace App\Application\Cotizacion\Services;
 
-use App\Models\LogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoCotizacionTecnicaPrendaFoto;
 use App\Models\PrendaCot;
@@ -30,21 +29,25 @@ class ProcesarTecnicasBordadoService
     /**
      * Ejecutar: Procesar técnicas nuevas
      */
-    public function ejecutar(int $logoCotizacionId, int $cotizacionId, array $tecnicas, array $archivos = []): void
-    {
+    public function ejecutar(
+        int $logoCotizacionId,
+        int $cotizacionId,
+        array $tecnicas,
+        array $archivos = [],
+        array $logosCompartidosMetadata = [],
+    ): void {
         Log::info('Procesando técnicas nuevas', [
             'logo_cotizacion_id' => $logoCotizacionId,
             'cotizacion_id' => $cotizacionId,
             'tecnicas_count' => count($tecnicas),
         ]);
 
-        // Procesar logos compartidos globalmente
         $logosCompartidosGuardados = $this->procesarLogosCompartidos(
-            $logoCotizacionId,
-            $archivos
+            $cotizacionId,
+            $archivos,
+            $logosCompartidosMetadata
         );
 
-        // Procesar cada técnica
         foreach ($tecnicas as $tecnicaIdx => $tecnica) {
             $this->procesarTecnicaIndividual(
                 $logoCotizacionId,
@@ -52,7 +55,8 @@ class ProcesarTecnicasBordadoService
                 $tecnicaIdx,
                 $tecnica,
                 $archivos,
-                $logosCompartidosGuardados
+                $logosCompartidosGuardados,
+                $logosCompartidosMetadata
             );
         }
     }
@@ -60,12 +64,23 @@ class ProcesarTecnicasBordadoService
     /**
      * Sincronizar: Actualizar técnicas existentes
      */
-    public function sincronizar(int $logoCotizacionId, int $cotizacionId, array $tecnicas, array $archivos = []): void
-    {
+    public function sincronizar(
+        int $logoCotizacionId,
+        int $cotizacionId,
+        array $tecnicas,
+        array $archivos = [],
+        array $logosCompartidosMetadata = [],
+    ): void {
         Log::info('Sincronizando técnicas existentes', [
             'logo_cotizacion_id' => $logoCotizacionId,
             'tecnicas_count' => count($tecnicas),
         ]);
+
+        $logosCompartidosGuardados = $this->procesarLogosCompartidos(
+            $cotizacionId,
+            $archivos,
+            $logosCompartidosMetadata
+        );
 
         // Obtener técnicas existentes
         $existentes = LogoCotizacionTecnicaPrenda::with('fotos')
@@ -87,7 +102,6 @@ class ProcesarTecnicasBordadoService
                 $prendaTecnicaId = $prenda['id'] ?? null;
 
                 if (!$prendaTecnicaId) {
-                    // Nueva prenda técnica: crearla
                     $this->crearPrendaTecnica(
                         $logoCotizacionId,
                         $cotizacionId,
@@ -96,9 +110,10 @@ class ProcesarTecnicasBordadoService
                         $tecnica,
                         $prenda,
                         $archivos,
+                        $logosCompartidosGuardados,
+                        $logosCompartidosMetadata,
                     );
                 } else {
-                    // Actualizar existente
                     $model = $existentes->firstWhere('id', (int) $prendaTecnicaId);
                     if ($model) {
                         $model->update([
@@ -109,13 +124,19 @@ class ProcesarTecnicasBordadoService
                             'variaciones_prenda' => $prenda['variaciones_prenda'] ?? $model->variaciones_prenda,
                         ]);
 
-                        // Procesar nuevas imágenes adjuntadas al editar la prenda existente
                         $this->procesarFotosDelPrenda(
                             $model->id,
                             $logoCotizacionId,
+                            $cotizacionId,
                             $tecnicaIdx,
                             $prendaIdx,
                             $archivos,
+                        );
+                        $this->vincularLogosCompartidos(
+                            $model,
+                            $tecnica,
+                            $logosCompartidosGuardados,
+                            $logosCompartidosMetadata
                         );
                     }
                 }
@@ -128,11 +149,63 @@ class ProcesarTecnicasBordadoService
     }
 
     /**
-     * Procesar logos compartidos (guardarse una sola vez)
+     * Guardar en disco cada logo compartido (un archivo por clave) y devolver rutas por nombreCompartido.
+     *
+     * @param  array<string, array<string, mixed>>  $metadataPorClave
+     * @return array<string, string>
      */
-    private function procesarLogosCompartidos(int $logoCotizacionId, array $archivos): array
+    private function procesarLogosCompartidos(int $cotizacionId, array $archivos, array $metadataPorClave): array
     {
+        $archivoPorClave = [];
+        foreach ($archivos as $fieldName => $archivo) {
+            if (!is_string($fieldName)) {
+                continue;
+            }
+            if (!preg_match('/^tecnica_\d+_logo_compartido_(.+)$/', $fieldName, $m)) {
+                continue;
+            }
+            if (is_array($archivo)) {
+                $archivo = $archivo[0] ?? null;
+            }
+            if (!$archivo || !is_object($archivo) || !method_exists($archivo, 'isValid') || !$archivo->isValid()) {
+                continue;
+            }
+            $clave = $m[1];
+            if (!isset($archivoPorClave[$clave])) {
+                $archivoPorClave[$clave] = $archivo;
+            }
+        }
+
         $logosGuardados = [];
+        foreach ($metadataPorClave as $clave => $meta) {
+            if (empty($archivoPorClave[$clave])) {
+                Log::warning('Logo compartido: metadata sin archivo en request', ['clave' => $clave]);
+                continue;
+            }
+            $tecnicas = $meta['tecnicasCompartidas'] ?? [];
+            $tipoNombre = is_array($tecnicas) && $tecnicas !== [] ? (string) $tecnicas[0] : 'TÉCNICA';
+            try {
+                $rutas = $this->imagenService->guardarImagen(
+                    $archivoPorClave[$clave],
+                    $cotizacionId,
+                    $tipoNombre,
+                    null
+                );
+                if (!empty($rutas['ruta_webp'])) {
+                    $logosGuardados[$clave] = $rutas['ruta_webp'];
+                    Log::info('✓ Logo compartido guardado (bordado)', [
+                        'clave' => $clave,
+                        'ruta_webp' => $rutas['ruta_webp'],
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error guardando logo compartido (bordado)', [
+                    'clave' => $clave,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $logosGuardados;
     }
 
@@ -145,7 +218,8 @@ class ProcesarTecnicasBordadoService
         int $tecnicaIdx,
         array $tecnica,
         array $archivos,
-        array $logosGuardados
+        array $logosRutasPorClave,
+        array $logosMetadataPorClave,
     ): void {
         Log::info("Procesando técnica [$tecnicaIdx]", [
             'tipo' => $tecnica['tipo_logo']['nombre'] ?? 'desconocida',
@@ -165,7 +239,8 @@ class ProcesarTecnicasBordadoService
                 $tecnica,
                 $prenda,
                 $archivos,
-                $logosGuardados
+                $logosRutasPorClave,
+                $logosMetadataPorClave
             );
         }
     }
@@ -181,7 +256,8 @@ class ProcesarTecnicasBordadoService
         array $tecnica,
         array $prenda,
         array $archivos,
-        array $logosGuardados = []
+        array $logosRutasPorClave = [],
+        array $logosMetadataPorClave = [],
     ): void {
         // Obtener o crear prenda base
         $prendaCotId = $this->obtenerOCrearPrendaCot(
@@ -212,10 +288,92 @@ class ProcesarTecnicasBordadoService
         $this->procesarFotosDelPrenda(
             $prendaTecnica->id,
             $logoCotizacionId,
+            $cotizacionId,
             $tecnicaIdx,
             $prendaIdx,
             $archivos
         );
+
+        $this->vincularLogosCompartidos(
+            $prendaTecnica,
+            $tecnica,
+            $logosRutasPorClave,
+            $logosMetadataPorClave
+        );
+    }
+
+    /**
+     * Crear filas foto que apuntan a la misma ruta cuando esta técnica participa en un logo compartido.
+     *
+     * @param  array<string, string>  $rutasPorClave
+     * @param  array<string, array<string, mixed>>  $metadataPorClave
+     */
+    private function vincularLogosCompartidos(
+        LogoCotizacionTecnicaPrenda $prendaTecnica,
+        array $tecnica,
+        array $rutasPorClave,
+        array $metadataPorClave,
+    ): void {
+        $nombreTipo = (string) ($tecnica['tipo_logo']['nombre'] ?? '');
+
+        foreach ($metadataPorClave as $clave => $metadatos) {
+            $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
+            if (!is_array($tecnicasCompartidas)) {
+                continue;
+            }
+            $participa = false;
+            foreach ($tecnicasCompartidas as $t) {
+                if (strcasecmp((string) $t, $nombreTipo) === 0) {
+                    $participa = true;
+                    break;
+                }
+            }
+            if (!$participa) {
+                continue;
+            }
+
+            $rutaCompartida = $rutasPorClave[$clave] ?? null;
+            if (!$rutaCompartida || !is_string($rutaCompartida)) {
+                Log::warning('Logo compartido sin ruta al vincular (bordado)', [
+                    'clave' => $clave,
+                    'tecnica' => $nombreTipo,
+                    'prenda_tecnica_id' => $prendaTecnica->id,
+                ]);
+                continue;
+            }
+
+            $rutaNormalizada = $rutaCompartida;
+            if (str_starts_with($rutaNormalizada, '/storage/')) {
+                $rutaNormalizada = substr($rutaNormalizada, strlen('/storage/'));
+            }
+            $rutaNormalizada = ltrim($rutaNormalizada, '/');
+
+            $rutasAComparar = array_values(array_unique(array_filter([
+                $rutaNormalizada,
+                '/storage/' . ltrim($rutaNormalizada, '/'),
+            ], fn ($v) => is_string($v) && $v !== '')));
+
+            $yaExiste = LogoCotizacionTecnicaPrendaFoto::where('logo_cotizacion_tecnica_prenda_id', (int) $prendaTecnica->id)
+                ->whereIn('ruta_webp', $rutasAComparar)
+                ->exists();
+            if ($yaExiste) {
+                continue;
+            }
+
+            LogoCotizacionTecnicaPrendaFoto::create([
+                'logo_cotizacion_tecnica_prenda_id' => $prendaTecnica->id,
+                'ruta_original' => $rutaNormalizada,
+                'ruta_webp' => $rutaNormalizada,
+                'ruta_miniatura' => $rutaNormalizada,
+                'orden' => 999,
+            ]);
+
+            Log::info('✓ Logo compartido vinculado a prenda técnica (bordado)', [
+                'prenda_tecnica_id' => $prendaTecnica->id,
+                'clave' => $clave,
+                'ruta' => $rutaNormalizada,
+            ]);
+        }
     }
 
     /**
@@ -224,6 +382,7 @@ class ProcesarTecnicasBordadoService
     private function procesarFotosDelPrenda(
         int $prendaTecnicaId,
         int $logoCotizacionId,
+        int $cotizacionId,
         int $tecnicaIdx,
         int $prendaIdx,
         array $archivos
@@ -242,7 +401,7 @@ class ProcesarTecnicasBordadoService
                 try {
                     $rutas = $this->imagenService->guardarImagen(
                         $archivo,
-                        $logoCotizacionId,
+                        $cotizacionId,
                         'TÉCNICA'
                     );
 
