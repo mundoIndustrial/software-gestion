@@ -578,7 +578,7 @@
                                             @php
                                                 $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
                                                 $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
-                                                $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboId;
+                                                $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboReflectivoId;
                                                 $esReciboReflectivoParcial = !empty($pedidoParcialId);
                                             @endphp
                                             
