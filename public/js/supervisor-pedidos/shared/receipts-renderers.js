@@ -217,7 +217,7 @@
                 <div><span>${escapeHtml(fechaCreacion)}</span></div>
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>
-                <div><span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">${escapeHtml(String(cantidad))} ${escapeHtml(String(nombrePrenda))}</span></div>
+                <div><span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; border: 1px solid #bfdbfe; display: inline-block; max-width: 100%;">${escapeHtml(String(cantidad))} ${escapeHtml(String(nombrePrenda))}</span></div>
                 <div><span>${escapeHtml(String(asesor))}</span></div>
                 <div>${tipoRecibo}</div>
                 <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>

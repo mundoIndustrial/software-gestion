@@ -133,7 +133,7 @@
                                         </div>
 
                                         <div>
-                                            <span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">
+                                            <span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; border: 1px solid #bfdbfe; display: inline-block; max-width: 100%;">
                                                 {{ $proceso->cantidad_total_prendas }} {{ $proceso->nombre_prenda ?: '' }}
                                             </span>
                                         </div>
