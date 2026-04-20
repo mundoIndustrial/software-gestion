@@ -26,6 +26,7 @@ use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
@@ -445,8 +446,92 @@ class SupervisorReceiptsController extends Controller
                 'query' => $request->query(),
             ]
         );
+        $procesosConCantidad->setCollection(
+            $this->adjuntarNovedadesControlCalidad($procesosConCantidad->getCollection())
+        );
 
         return view('supervisor-pedidos.pendientes-control-calidad', compact('procesosConCantidad'));
+    }
+
+    /**
+     * Evita consultas N+1 en Blade para novedades por recibo.
+     */
+    private function adjuntarNovedadesControlCalidad(Collection $procesos): Collection
+    {
+        if ($procesos->isEmpty()) {
+            return $procesos;
+        }
+
+        $combinaciones = $procesos
+            ->map(function ($proceso) {
+                $prendaId = (int) data_get($proceso, 'prenda_id', 0);
+                $numeroRecibo = trim((string) data_get($proceso, 'numero_recibo', ''));
+
+                if ($prendaId <= 0 || $numeroRecibo === '') {
+                    return null;
+                }
+
+                return [
+                    'prenda_id' => $prendaId,
+                    'numero_recibo' => $numeroRecibo,
+                    'key' => $prendaId . '|' . $numeroRecibo,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        if ($combinaciones->isEmpty()) {
+            return $procesos;
+        }
+
+        $prendaIds = $combinaciones->pluck('prenda_id')->unique()->values()->all();
+        $numeroRecibos = $combinaciones->pluck('numero_recibo')->unique()->values()->all();
+        $keysPermitidas = array_fill_keys($combinaciones->pluck('key')->all(), true);
+
+        $rows = DB::table('prendas_pedido_novedades_recibo')
+            ->select(['prenda_pedido_id', 'numero_recibo', 'novedad_texto', 'creado_en', 'created_at'])
+            ->whereIn('prenda_pedido_id', $prendaIds)
+            ->whereIn('numero_recibo', $numeroRecibos)
+            ->orderByDesc(DB::raw('COALESCE(creado_en, created_at)'))
+            ->get();
+
+        $novedadesPorRecibo = [];
+
+        foreach ($rows as $row) {
+            $key = (int) ($row->prenda_pedido_id ?? 0) . '|' . trim((string) ($row->numero_recibo ?? ''));
+            if (!isset($keysPermitidas[$key])) {
+                continue;
+            }
+
+            $texto = trim(str_replace(["\r", "\n", "'", '"'], ' ', (string) ($row->novedad_texto ?? '')));
+            if ($texto === '') {
+                continue;
+            }
+
+            if (!isset($novedadesPorRecibo[$key])) {
+                $novedadesPorRecibo[$key] = [];
+            }
+            $novedadesPorRecibo[$key][] = $texto;
+        }
+
+        return $procesos->map(function ($proceso) use ($novedadesPorRecibo) {
+            $key = (int) data_get($proceso, 'prenda_id', 0) . '|' . trim((string) data_get($proceso, 'numero_recibo', ''));
+            $novedadesTexto = isset($novedadesPorRecibo[$key]) && !empty($novedadesPorRecibo[$key])
+                ? implode(' | ', $novedadesPorRecibo[$key])
+                : '';
+
+            if (is_array($proceso)) {
+                $proceso['novedades_texto'] = $novedadesTexto;
+                return $proceso;
+            }
+
+            if (is_object($proceso)) {
+                $proceso->novedades_texto = $novedadesTexto;
+                return $proceso;
+            }
+
+            return $proceso;
+        });
     }
 
     /**

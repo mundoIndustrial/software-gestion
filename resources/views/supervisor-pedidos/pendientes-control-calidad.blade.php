@@ -405,35 +405,7 @@
 
                                         <!-- Novedades -->
                                         <div style="display: flex; align-items: center; font-size: 0.85rem; color: #374151;">
-                                            @php
-                                                $novedadesTexto = '';
-                                                try {
-                                                    $pedido = \App\Models\PedidoProduccion::find($proceso['pedido_id']);
-                                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                                                        $prendaTarget = $pedido->prendas->firstWhere('id', $proceso['prenda_id'] ?? null);
-                                                        $prendasIter = $prendaTarget ? collect([$prendaTarget]) : $pedido->prendas;
-
-                                                        $novedadesRecibo = [];
-                                                        foreach ($prendasIter as $prenda) {
-                                                            $novedadesPrenda = $prenda->novedadesRecibo()
-                                                                ->where('numero_recibo', $proceso['numero_recibo'])
-                                                                ->orderBy('creado_en', 'desc')
-                                                                ->get();
-
-                                                            foreach ($novedadesPrenda as $novedad) {
-                                                                $textoLimpio = str_replace(["\r", "\n", "'", '"'], ' ', $novedad->novedad_texto);
-                                                                $novedadesRecibo[] = $textoLimpio;
-                                                            }
-                                                        }
-
-                                                        if (!empty($novedadesRecibo)) {
-                                                            $novedadesTexto = implode(' | ', $novedadesRecibo);
-                                                        }
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    $novedadesTexto = '';
-                                                }
-                                            @endphp
+                                            @php($novedadesTexto = trim((string) ($proceso['novedades_texto'] ?? '')))
 
                                             <button
                                                 type="button"
@@ -528,7 +500,6 @@
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/supervisor-pedidos/sidebar-badge-manager.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
 

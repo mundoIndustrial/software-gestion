@@ -24,9 +24,181 @@ if (!window.shared?.notify) {
 }
 
 const _rtRepo = window.supervisorPedidos.repository;
-const _rtNotify = window.shared.notify;
 const SUPERVISOR_GRID_TEMPLATE = '60px 220px 120px 200px 150px 140px 150px 150px 150px';
 const SUPERVISOR_GRID_GAP = '1.2rem';
+const _RT_MODAL_IDS = [
+    'modal-overlay',
+    'order-detail-modal-wrapper',
+    'order-detail-modal-wrapper-logo',
+    'modalEditarPedido',
+    'modal-agregar-prenda-nueva',
+    'orderTrackingModal',
+    'spBodegaNovedadesModal',
+    'modalNovedades',
+    'modalFiltro',
+    'novedadesEditModal',
+    'modalConfirmarEliminar',
+];
+let _rtObserverStarted = false;
+let _rtQueuedRefresh = false;
+let _rtRefreshInFlight = false;
+
+function _rtInstallSwalNuevoPedidoGuard() {
+    if (window.__spSwalNuevoPedidoGuardInstalled) return;
+    window.__spSwalNuevoPedidoGuardInstalled = true;
+
+    if (!window.Swal || typeof window.Swal.fire !== 'function') return;
+
+    const originalFire = window.Swal.fire.bind(window.Swal);
+
+    window.Swal.fire = function patchedSwalFire(...args) {
+        try {
+            const config = args[0];
+            const title = typeof config === 'string'
+                ? config
+                : String(config?.title || '');
+            const isToast = typeof config === 'object' && config?.toast === true;
+
+            // Bloquear solamente el toast legado "Nuevo pedido ..." en supervisor-pedidos.
+            if (isToast && /^nuevo pedido\b/i.test(title.trim())) {
+                return Promise.resolve({ isDismissed: true, dismiss: 'blocked_legacy_nuevo_pedido_toast' });
+            }
+        } catch (e) { /* noop */ }
+
+        return originalFire(...args);
+    };
+}
+
+function _rtShowCompactCornerToast(message, duration = 3200) {
+    try {
+        const containerId = 'sp-compact-toast-container';
+        let container = document.getElementById(containerId);
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = containerId;
+            container.style.cssText = [
+                'position:fixed',
+                'top:20px',
+                'right:20px',
+                'z-index:2147483646',
+                'display:flex',
+                'flex-direction:column',
+                'gap:10px',
+                'pointer-events:none',
+                'max-width:420px',
+            ].join(';');
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.style.cssText = [
+            'background:linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+            'color:#ffffff',
+            'font-size:14px',
+            'font-weight:600',
+            'line-height:1.35',
+            'padding:12px 14px',
+            'border-radius:12px',
+            'border:1px solid rgba(255,255,255,0.18)',
+            'box-shadow:0 12px 26px rgba(30,58,138,0.35)',
+            'display:flex',
+            'align-items:center',
+            'gap:10px',
+            'transform:translateX(115%)',
+            'transition:transform 0.25s ease',
+            'pointer-events:auto',
+            'max-width:420px',
+        ].join(';');
+
+        toast.innerHTML = `
+            <span style="
+                width:26px;
+                height:26px;
+                border-radius:999px;
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                background:rgba(255,255,255,0.2);
+                font-size:14px;
+                flex:0 0 auto;
+            ">✓</span>
+            <span style="
+                display:block;
+                font-size:14px;
+                font-weight:700;
+                letter-spacing:0.1px;
+                word-break:break-word;
+            ">${String(message)}</span>
+        `;
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+
+        window.setTimeout(() => {
+            toast.style.transform = 'translateX(115%)';
+            window.setTimeout(() => {
+                toast.remove();
+                if (container && container.children.length === 0) {
+                    container.remove();
+                }
+            }, 220);
+        }, duration);
+    } catch (e) { /* noop */ }
+}
+
+function _rtIsElementVisible(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    if (Number(style.opacity) === 0) return false;
+    return true;
+}
+
+function _rtHasBlockingModalOpen() {
+    if (document.querySelector('.modal.show')) return true;
+
+    for (const id of _RT_MODAL_IDS) {
+        const el = document.getElementById(id);
+        if (_rtIsElementVisible(el)) return true;
+    }
+
+    const statsModals = document.querySelectorAll('.stats-modal[aria-hidden="false"]');
+    return statsModals.length > 0;
+}
+
+function _rtTryFlushQueuedRefresh() {
+    if (!_rtQueuedRefresh || _rtRefreshInFlight) return;
+    if (_rtHasBlockingModalOpen()) return;
+
+    _rtQueuedRefresh = false;
+    _refreshTablaConDelay({}, 'queued:after-modal-close');
+}
+
+function _rtStartUiStabilityObserver() {
+    if (_rtObserverStarted) return;
+    _rtObserverStarted = true;
+
+    document.addEventListener('hidden.bs.modal', _rtTryFlushQueuedRefresh, true);
+    document.addEventListener('click', () => {
+        if (!_rtQueuedRefresh) return;
+        window.setTimeout(_rtTryFlushQueuedRefresh, 80);
+    }, true);
+
+    const observer = new MutationObserver(() => {
+        if (!_rtQueuedRefresh) return;
+        window.setTimeout(_rtTryFlushQueuedRefresh, 40);
+    });
+
+    observer.observe(document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['style', 'class', 'aria-hidden'],
+    });
+}
 
 function _formatFechaPedido(fechaRaw) {
     if (!fechaRaw) return new Date().toLocaleString('es-CO', {
@@ -75,7 +247,7 @@ function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
     try {
         const numero  = orden?.numero_pedido || orden?.numero || '';
         const cliente = orden?.cliente ? ` - ${orden.cliente}` : '';
-        const mensaje = `Nuevo pedido${numero ? ' #' + numero : ''}${cliente}`;
+        const mensaje = `Aprobado por cartera${numero ? ' #' + numero : ''}${cliente}`;
 
         try {
             if (window.__supervisorPedidosNotifSyncT) clearTimeout(window.__supervisorPedidosNotifSyncT);
@@ -88,18 +260,34 @@ function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
             }, 250);
         } catch (e) { /* noop */ }
 
-        _rtNotify.success(mensaje);
+        _rtShowCompactCornerToast(mensaje, 3400);
     } catch (e) { /* silencioso */ }
 }
 
 function supervisorPedidosMaybeNotifyFromActualizado(payload) {
     try {
-        const pedido   = payload?.pedido || payload?.orden || payload || {};
-        const nuevo    = payload?.nuevo_estado?.new || payload?.nuevo_estado || pedido?.estado || '';
+        const pedido = payload?.pedido || payload?.orden || payload || {};
+        const action = String(payload?.action || '').toLowerCase();
+        const changedFields = Array.isArray(payload?.changedFields) ? payload.changedFields.map(String) : [];
+        const nuevo = payload?.nuevo_estado?.new || payload?.nuevo_estado || pedido?.estado || '';
         const anterior = payload?.anterior_estado || payload?.nuevo_estado?.old || '';
 
-        if (String(nuevo).toUpperCase() !== 'PENDIENTE_SUPERVISOR') return;
-        if (String(anterior).toUpperCase() === 'PENDIENTE_SUPERVISOR') return;
+        // Solo aprobación de cartera:
+        // - Evento OrdenUpdated desde cartera usa action=created y changedFields incluye estado.
+        // - Estado final visible para supervisor debe ser PENDIENTE_SUPERVISOR.
+        const isCarteraApprovalBySignature =
+            action === 'created' &&
+            changedFields.includes('estado') &&
+            String(nuevo).toUpperCase() === 'PENDIENTE_SUPERVISOR';
+
+        // Compatibilidad adicional: cambios de estado hacia PENDIENTE_SUPERVISOR
+        // cuando vienen sin firma completa.
+        const isStatusTransitionToSupervisor =
+            String(nuevo).toUpperCase() === 'PENDIENTE_SUPERVISOR' &&
+            String(anterior).toUpperCase() !== 'PENDIENTE_SUPERVISOR' &&
+            (action === 'updated' || changedFields.includes('estado'));
+
+        if (!isCarteraApprovalBySignature && !isStatusTransitionToSupervisor) return;
 
         if (!window.__supervisorPedidosNotifiedIds) window.__supervisorPedidosNotifiedIds = new Set();
         const key = String(pedido?.id || payload?.pedido_id || payload?.id || '');
@@ -229,6 +417,8 @@ if (!document.querySelector('style[data-realtime]')) {
  * Inicializa todas las suscripciones a canales WebSocket
  */
 function initializeRealtimeListener() {
+    _rtInstallSwalNuevoPedidoGuard();
+
     // Esperar a que Echo esté listo (resources/js/bootstrap.js lo proporciona)
     if (typeof window.waitForEcho !== 'function') {
         setTimeout(initializeRealtimeListener, 100);
@@ -237,6 +427,7 @@ function initializeRealtimeListener() {
 
     window.waitForEcho(() => {
         try {
+            _rtStartUiStabilityObserver();
             // Obtener instancia de WebSocket (lazy initialized)
             const ws = window.shared.websocket;
             
@@ -266,8 +457,11 @@ function _setupCustomEventHandlers() {
 
     window.addEventListener('supervisorPedidos:realtimePedidoCreado', (e) => {
         const pedido = e?.detail?.pedido || e?.detail?.raw?.pedido || {};
-        supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
-        supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+        if (_rtHasBlockingModalOpen()) {
+            _rtQueuedRefresh = true;
+        } else {
+            supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+        }
     });
 
     window.addEventListener('supervisorPedidos:realtimePedidoActualizado', (e) => {
@@ -290,10 +484,34 @@ function _subscribeToChannels(ws) {
     } catch (error) {
     }
 
+    // Compatibilidad: eventos estándar de OrdenUpdated (broadcastAs = orden.updated)
+    try {
+        ws.subscribe('pedidos.general', '.orden.updated', (data) => {
+            _refreshTablaConDelay(data, 'pedidos.general:.orden.updated');
+        });
+    } catch (error) {
+    }
+
     // Canal: supervisor-pedidos - Cambios de estado
+    try {
+        ws.subscribe('supervisor-pedidos', '.orden.updated', (data) => {
+            _refreshTablaConDelay(data, 'supervisor-pedidos:.orden.updated');
+        });
+    } catch (error) {
+    }
+
+    // Compatibilidad legacy (si existe algún emisor sin broadcastAs)
     try {
         ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
             _refreshTablaConDelay(data, 'supervisor-pedidos:OrdenUpdated');
+        });
+    } catch (error) {
+    }
+
+    // Canal adicional usado por varios módulos legacy
+    try {
+        ws.subscribe('ordenes', '.orden.updated', (data) => {
+            _refreshTablaConDelay(data, 'ordenes:.orden.updated');
         });
     } catch (error) {
     }
@@ -302,8 +520,11 @@ function _subscribeToChannels(ws) {
     try {
         ws.subscribe('pedidos.creados', '.pedido.creado', (data) => {
             const pedido = data?.pedido || data?.orden || data || {};
-            supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
-            supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+            if (_rtHasBlockingModalOpen()) {
+                _rtQueuedRefresh = true;
+            } else {
+                supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+            }
         });
     } catch (error) {
     }
@@ -314,8 +535,18 @@ function _subscribeToChannels(ws) {
  */
 function _refreshTablaConDelay(payload, eventName) {
     // Detectar si es actualización de estado para notificar
-    if (String(eventName).includes('pedidos.general:.pedido.actualizado')) {
+    const eventNameSafe = String(eventName);
+    if (
+        eventNameSafe.includes('.pedido.actualizado') ||
+        eventNameSafe.includes('.orden.updated') ||
+        eventNameSafe.includes('OrdenUpdated')
+    ) {
         supervisorPedidosMaybeNotifyFromActualizado(payload);
+    }
+
+    if (_rtHasBlockingModalOpen()) {
+        _rtQueuedRefresh = true;
+        return;
     }
 
     // Debouncer: evitar múltiples requests al servidor
@@ -324,6 +555,7 @@ function _refreshTablaConDelay(payload, eventName) {
     }
 
     window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
+        _rtRefreshInFlight = true;
         try {
             const html = await _rtRepo.fetchPageContent(window.location.href);
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -336,6 +568,9 @@ function _refreshTablaConDelay(payload, eventName) {
 
             tablaActual.innerHTML = nuevaTabla.innerHTML;
         } catch (error) {
+        } finally {
+            _rtRefreshInFlight = false;
+            _rtTryFlushQueuedRefresh();
         }
     }, 450);  // 450ms debounce
 }
@@ -348,4 +583,3 @@ if (document.readyState === 'loading') {
     // Si el script se carga después de DOMContentLoaded, iniciar inmediatamente
     initializeRealtimeListener();
 }
-

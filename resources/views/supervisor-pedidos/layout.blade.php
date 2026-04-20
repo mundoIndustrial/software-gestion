@@ -574,6 +574,7 @@
     </div>
 
     <!-- Scripts are loaded via Vite in the main layout -->
+    <script src="{{ asset('js/shared/echo-ready-utils.js') }}"></script>
     <script src="{{ asset('js/supervisor-pedidos/layout/notifications-and-filters.js') }}"></script>
 
     @stack('scripts')

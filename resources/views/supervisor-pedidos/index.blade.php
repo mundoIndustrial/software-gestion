@@ -175,6 +175,7 @@
     <script defer src="{{ asset('js/supervisor-pedidos/seleccion-pedidos.js') }}"></script>
 
     <!-- Realtime: suscripción WebSocket para actualizaciones en vivo -->
+    <script defer src="{{ asset('js/supervisor-pedidos/realtime-supervisor.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/realtime-supervisor.js')) }}"></script>
 
 @endpush
 

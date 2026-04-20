@@ -47,6 +47,19 @@
         const notifState = {
             novedades: new Map(),
         };
+        let notifRealtimeSubscribed = false;
+        let badgesRealtimeSubscribed = false;
+
+        function onEchoReady(callback) {
+            if (window.SharedEchoReady && typeof window.SharedEchoReady.wait === 'function') {
+                window.SharedEchoReady.wait(callback);
+                return;
+            }
+
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }
 
         function formatFecha(fechaRaw) {
             if (!fechaRaw) return '';
@@ -197,8 +210,9 @@
         }
 
         function suscribirNotificacionesRealtime() {
-            const echo = window.EchoInstance;
+            const echo = window.EchoInstance || window.Echo;
             if (!echo || typeof echo.channel !== 'function') return;
+            if (notifRealtimeSubscribed) return;
 
             try {
                 echo.channel('notifications')
@@ -208,6 +222,14 @@
                         notifState.novedades.set(String(notif.id), { ...notif, visto: false });
                         renderNotificacionesDesdeEstado();
                     });
+
+                if (echo.connector?.pusher?.connection?.bind) {
+                    echo.connector.pusher.connection.bind('connected', () => {
+                        cargarNotificacionesPendientes();
+                    });
+                }
+
+                notifRealtimeSubscribed = true;
             } catch (e) {
                 // noop
             }
@@ -263,25 +285,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof isCartera === 'undefined' || !isCartera) {
                 cargarNotificacionesPendientes();
-                setInterval(cargarNotificacionesPendientes, 30000);
-
-                let triesNotif = 0;
-                const maxTriesNotif = 100;
-                const timerNotif = setInterval(() => {
-                    triesNotif++;
-                    if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
-                        clearInterval(timerNotif);
-                        suscribirNotificacionesRealtime();
-                    } else if (triesNotif >= maxTriesNotif) {
-                        clearInterval(timerNotif);
-                    }
-                }, 200);
+                onEchoReady(() => suscribirNotificacionesRealtime());
             }
         });
 
         /**
          * Cargar contador de órdenes pendientes de aprobación
          */
+        document.addEventListener('visibilitychange', function() {
+            if (typeof isCartera !== 'undefined' && isCartera) return;
+            if (document.visibilityState === 'visible') {
+                renderNotificacionesDesdeEstado();
+            }
+        });
+
         // function cargarContadorOrdenesPendientes() {
         //     fetch('/api/supervisor-pedidos/ordenes-pendientes-count')
         //         .then(response => response.json())
@@ -396,8 +413,9 @@
 
         function iniciarRealtimeBadgeSidebarPedidos() {
             if (isCarteraRoute()) return;
+            if (badgesRealtimeSubscribed) return;
 
-            const echo = window.EchoInstance;
+            const echo = window.EchoInstance || window.Echo;
             if (!echo || typeof echo.channel !== 'function') return;
 
             try {
@@ -406,6 +424,11 @@
 
                 echo.channel('pedidos.creados')
                     .listen('.pedido.creado', () => refreshBadgeDebounced());
+
+                echo.channel('recibos-costura')
+                    .listen('.recibo.pasado.control.calidad', () => refreshBadgeDebounced());
+
+                badgesRealtimeSubscribed = true;
             } catch (e) {
                 // noop
             }
@@ -416,18 +439,7 @@
 
             cargarBadgeSidebarPedidos();
             cargarBadgeSidebarControlCalidad();
-
-            let tries = 0;
-            const maxTries = 100;
-            const timer = setInterval(() => {
-                tries++;
-                if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
-                    clearInterval(timer);
-                    iniciarRealtimeBadgeSidebarPedidos();
-                } else if (tries >= maxTries) {
-                    clearInterval(timer);
-                }
-            }, 200);
+            onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
         });
 
         // Recargar contador cada 30 segundos (solo en supervisores)
@@ -483,4 +495,3 @@
         window.addEventListener('supervisorPedidos:filtersUpdated', function() {
             updateClearButtonVisibility();
         });
-
