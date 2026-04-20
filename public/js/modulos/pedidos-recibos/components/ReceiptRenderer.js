@@ -456,6 +456,7 @@ export class ReceiptRenderer {
 
             const bloque = document.createElement('div');
             bloque.id = observacionId;
+            bloque.style.color = '#dc2626';
             bloque.innerHTML = `<br><br><strong>OBSERVACIÓN PROCESO:</strong><br>${this._escapeHtml(observacion).replace(/\n/g, '<br>')}`;
 
             descripcionEl.appendChild(bloque);
