@@ -275,6 +275,13 @@ class AppServiceProvider extends ServiceProvider
     {
         \Cmixin\BusinessDay::enable('Carbon\Carbon', 'co-national');
 
+        // Registrar helper global para versioning de assets
+        if (!function_exists('asset_with_version')) {
+            function asset_with_version(string $path): string {
+                return \App\Helpers\AssetVersionHelper::asset_with_version($path);
+            }
+        }
+
         // Blade directive: @jsDefer('js/path/file.js')
         // En producción carga .min.js, en desarrollo el original
         Blade::directive('jsDefer', function (string $expression) {

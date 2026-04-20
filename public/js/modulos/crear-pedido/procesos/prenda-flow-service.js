@@ -327,10 +327,13 @@ class PrendaFlowService {
 
         // FIX DUPLICADOS: No re-renderizar TODO, solo actualizar la tarjeta específica
         // Para evitar duplicados al editar, solo re-renderizamos la tarjeta editada
-        if (typeof globalThis.reRenderizarTarjetaPrendaEditada === 'function') {
-            globalThis.reRenderizarTarjetaPrendaEditada(this.ui.prendaEditIndex);
-        } else {
-            // Fallback si la función no está disponible
+        const actualizacionExitosa = typeof globalThis.reRenderizarTarjetaPrendaEditada === 'function'
+            ? globalThis.reRenderizarTarjetaPrendaEditada(this.ui.prendaEditIndex)
+            : false;
+
+        // SOLO si la actualización específica falló, re-renderizar todo
+        if (!actualizacionExitosa) {
+            debugLog('[guardarPrenda] Actualización específica falló, re-renderizando todo');
             this.ui?._actualizarRenderItemsOrdenadosSinBloquear?.();
         }
         

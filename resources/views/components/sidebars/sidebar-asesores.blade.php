@@ -181,10 +181,11 @@
         <div class="menu-section">
             <span class="menu-section-title">Inventario</span>
             <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="{{ route('inventario-telas.index') }}"
-                       class="menu-link {{ request()->routeIs('inventario-telas.index') ? 'active' : '' }}">
-                        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="menu-icon-svg">
+                <x-auth.can-access roles="asesor,supervisor_pedidos,admin">
+                    <li class="menu-item">
+                        <a href="{{ route('inventario-telas.index') }}"
+                           class="menu-link {{ request()->routeIs('inventario-telas.index') ? 'active' : '' }}">
+                            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="menu-icon-svg">
                             <g>
                                 <g>
                                     <g>
@@ -238,6 +239,7 @@
                         <span class="menu-label">Inventario de Telas</span>
                     </a>
                 </li>
+                </x-auth.can-access>
             </ul>
         </div>
 

@@ -40,15 +40,64 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen flex items-center justify-center p-4" data-status="{{ $statusCode ?? 500 }}" data-error-code="{{ $errorCode ?? '' }}">
+@php
+    $bgClass = match($statusCode ?? 500) {
+        401 => 'from-blue-50 to-cyan-50',     // Sesión expirada - Azul
+        403 => 'from-yellow-50 to-orange-50', // Acceso denegado - Naranja
+        404 => 'from-purple-50 to-pink-50',   // No encontrado - Púrpura
+        default => 'from-red-50 to-orange-50', // General - Rojo
+    };
+@endphp
+<body class="bg-gradient-to-br {{ $bgClass }} min-h-screen flex items-center justify-center p-4" data-status="{{ $statusCode ?? 500 }}" data-error-code="{{ $errorCode ?? '' }}">
     <div class="max-w-2xl w-full bg-white rounded-lg shadow-xl overflow-hidden">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-red-500 to-orange-500 p-6 text-white text-center">
+        @php
+            $isSessionExpired = $statusCode === 401 || strpos($friendlyMessage ?? '', 'sesión') !== false || strpos($friendlyMessage ?? '', 'expiró') !== false;
+            $isForbidden = $statusCode === 403;
+            $isNotFound = $statusCode === 404;
+        @endphp
+        @php
+            $headerClass = match($statusCode ?? 500) {
+                401 => 'from-blue-500 to-cyan-500',      // Sesión expirada
+                403 => 'from-yellow-500 to-orange-500',  // Acceso denegado
+                404 => 'from-purple-500 to-pink-500',    // No encontrado
+                default => 'from-red-500 to-orange-500',  // General
+            };
+        @endphp
+        <div class="bg-gradient-to-r {{ $headerClass }} p-6 text-white text-center">
             <div class="error-animation inline-block text-6xl mb-4">
-                <i class="fas fa-exclamation-triangle"></i>
+                @if($isSessionExpired)
+                    <i class="fas fa-clock"></i>
+                @elseif($isForbidden)
+                    <i class="fas fa-ban"></i>
+                @elseif($isNotFound)
+                    <i class="fas fa-search"></i>
+                @else
+                    <i class="fas fa-exclamation-triangle"></i>
+                @endif
             </div>
-            <h1 class="text-3xl font-bold mb-2">¡Ups! Algo salió mal</h1>
-            <p class="text-red-100">No te preocupes, estamos trabajando para solucionarlo</p>
+            <h1 class="text-3xl font-bold mb-2">
+                @if($isSessionExpired)
+                    Tu sesión ha expirado
+                @elseif($isForbidden)
+                    Acceso denegado
+                @elseif($isNotFound)
+                    Página no encontrada
+                @else
+                    ¡Ups! Algo salió mal
+                @endif
+            </h1>
+            <p class="text-red-100">
+                @if($isSessionExpired)
+                    Por tu seguridad, tu sesión fue cerrada. Por favor, inicia sesión nuevamente.
+                @elseif($isForbidden)
+                    No tienes permisos para acceder a esta sección.
+                @elseif($isNotFound)
+                    La página que buscas no existe o ha sido movida.
+                @else
+                    No te preocupes, estamos trabajando para solucionarlo
+                @endif
+            </p>
         </div>
 
         <!-- Content -->
@@ -81,11 +130,25 @@
 
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                <a href="{{ url('/') }}" 
-                   class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
-                    <i class="fas fa-home"></i>
-                    <span>Ir al inicio</span>
-                </a>
+                @if($isSessionExpired)
+                    <a href="{{ route('login') }}"
+                       class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Iniciar sesión</span>
+                    </a>
+                @elseif($isForbidden)
+                    <button onclick="window.history.back()"
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Volver atrás</span>
+                    </button>
+                @else
+                    <a href="{{ url('/') }}"
+                       class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-home"></i>
+                        <span>Ir al inicio</span>
+                    </a>
+                @endif
             </div>
 
             <!-- Technical details toggle -->

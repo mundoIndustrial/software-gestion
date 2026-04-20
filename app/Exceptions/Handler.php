@@ -74,18 +74,20 @@ class Handler extends ExceptionHandler
             return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
         }
 
-        // IMPORTANTE: Manejar TODOS los errores 403 (AccessDeniedHttpException)
-        // Hacer logout inmediato y redirigir a login sin renderizar
+        // Manejar errores 403 (AccessDeniedHttpException)
+        // NO hacer logout - el usuario está autenticado pero sin permisos
         if ($e instanceof AccessDeniedHttpException) {
-            if (auth()->check()) {
-                // Hacer logout de forma segura
-                auth()->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+            $message = $e->getMessage() ?: 'No tienes permisos para realizar esta acción.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => $message,
+                    'code' => 'FORBIDDEN'
+                ], 403);
             }
-            
-            // Redirigir a login directo
-            return redirect('/login')->with('error', 'No tienes permisos para acceder. Por favor inicia sesión nuevamente.');
+
+            return redirect()->back()->with('error', $message);
         }
 
         // Si usuario no está autenticado y accede a ruta protegida, redirigir a login

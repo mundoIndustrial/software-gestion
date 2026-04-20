@@ -17,11 +17,11 @@
         })();
     </script>
     
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/asesores/sidebar-responsive.css') }}">
+    <!-- CSS con versioning para evitar cache viejo -->
+    <link rel="stylesheet" href="{{ asset('css/asesores/layout.css?v=' . filemtime(public_path('css/asesores/layout.css'))) }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/module.css?v=' . filemtime(public_path('css/asesores/module.css'))) }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css?v=' . filemtime(public_path('css/asesores/dashboard.css'))) }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/sidebar-responsive.css?v=' . filemtime(public_path('css/asesores/sidebar-responsive.css'))) }}">
     
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -198,12 +198,14 @@
         </main>
     </div>
 
-    <!-- Scripts -->
-    <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
-    <script src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
-    <script src="{{ asset('js/asesores/layout.js') }}"></script>
-    <script src="{{ asset('js/asesores/notifications.js') }}"></script>
-    <script src="{{ asset('js/asesores/sidebar-responsive.js') }}"></script>
+    <!-- Scripts con versioning para evitar cache viejo -->
+    <script src="{{ asset('js/configuraciones/toast-notifications.js?v=' . (file_exists(public_path('js/configuraciones/toast-notifications.js')) ? filemtime(public_path('js/configuraciones/toast-notifications.js')) : time())) }}"></script>
+    <script src="{{ asset('js/configuraciones/sidebar.js?v=' . (file_exists(public_path('js/configuraciones/sidebar.js')) ? filemtime(public_path('js/configuraciones/sidebar.js')) : time())) }}"></script>
+    <script src="{{ asset('js/asesores/layout.js?v=' . (file_exists(public_path('js/asesores/layout.js')) ? filemtime(public_path('js/asesores/layout.js')) : time())) }}"></script>
+    <script src="{{ asset('js/asesores/notifications.js?v=' . (file_exists(public_path('js/asesores/notifications.js')) ? filemtime(public_path('js/asesores/notifications.js')) : time())) }}"></script>
+    <script src="{{ asset('js/asesores/sidebar-responsive.js?v=' . (file_exists(public_path('js/asesores/sidebar-responsive.js')) ? filemtime(public_path('js/asesores/sidebar-responsive.js')) : time())) }}"></script>
+    <!-- Protección contra double-click en botones -->
+    <script src="{{ asset('js/asesores/double-click-protection.js?v=' . (file_exists(public_path('js/asesores/double-click-protection.js')) ? filemtime(public_path('js/asesores/double-click-protection.js')) : time())) }}"></script>
     @stack('scripts')
 </body>
 </html>

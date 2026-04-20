@@ -613,47 +613,69 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
 
 /**
  * Re-renderizar tarjeta de prenda editada
+ *
+ * FIX: Mejorado con múltiples fallbacks para evitar que el servicio retorne temprano.
+ * Esto previene que se duplique la prenda cuando se edita una talla en borrador.
  */
 function reRenderizarTarjetaPrendaEditada(prendaIndex) {
+    console.log('[reRenderizarTarjetaPrendaEditada] Actualizando tarjeta de prenda:', prendaIndex);
 
-    
-    if (!globalThis.gestorPrendaSinCotizacion || !globalThis.generarTarjetaPrendaReadOnly) {
+    // Fallback si el gestor no existe: obtener prenda desde gestionItemsUI
+    let prenda = null;
 
-        return;
+    if (typeof globalThis.gestorPrendaSinCotizacion?.obtenerPorIndice === 'function') {
+        prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+    } else if (globalThis.gestionItemsUI?.prendas) {
+        // FALLBACK: Obtener directamente desde gestionItemsUI.prendas
+        prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
     }
-    
-    const prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+
     if (!prenda) {
-
-        return;
+        console.warn('[reRenderizarTarjetaPrendaEditada] No se encontró prenda en índice:', prendaIndex);
+        return false;
     }
-    
-    // FIX DUPLICADOS: Buscar TODAS las tarjetas con este índice (puede haber duplicados)
+
+    // Obtener función de generación de tarjeta
+    if (typeof globalThis.generarTarjetaPrendaReadOnly !== 'function') {
+        console.warn('[reRenderizarTarjetaPrendaEditada] generarTarjetaPrendaReadOnly no disponible');
+        return false;
+    }
+
+    // Buscar TODAS las tarjetas DOM con este índice
     const tarjetas = document.querySelectorAll(`[data-prenda-index="${prendaIndex}"]`);
     if (tarjetas.length === 0) {
-
-        return;
+        console.warn('[reRenderizarTarjetaPrendaEditada] No hay tarjetas en DOM para índice:', prendaIndex);
+        return false;
     }
-    
-    // Re-generar HTML
+
+    console.log('[reRenderizarTarjetaPrendaEditada] Encontradas', tarjetas.length, 'tarjeta(s)');
+
+    // Re-generar HTML de la tarjeta
     const nuevoHTML = globalThis.generarTarjetaPrendaReadOnly(prenda, prendaIndex);
     const nuevoElemento = document.createElement('div');
     nuevoElemento.innerHTML = nuevoHTML;
     const nuevaTarjeta = nuevoElemento.firstElementChild;
-    
-    // FIX DUPLICADOS: Reemplazar la PRIMERA tarjeta y eliminar el resto de duplicados
+
+    if (!nuevaTarjeta) {
+        console.error('[reRenderizarTarjetaPrendaEditada] Error al generar HTML de tarjeta');
+        return false;
+    }
+
+    // Reemplazar la PRIMERA tarjeta y eliminar duplicados
     let primeraReemplazada = false;
-    tarjetas.forEach((tarjeta) => {
+    tarjetas.forEach((tarjeta, idx) => {
         if (!primeraReemplazada) {
             // Reemplazar la primera tarjeta
             tarjeta.replaceWith(nuevaTarjeta);
+            console.log('[reRenderizarTarjetaPrendaEditada] Tarjeta actualizada');
             primeraReemplazada = true;
         } else {
             // Eliminar los duplicados
-            console.warn('[reRenderizarTarjetaPrendaEditada] Tarjeta duplicada eliminada - prendaIndex:', prendaIndex);
+            console.warn('[reRenderizarTarjetaPrendaEditada] DUPLICADO eliminado - índice:', idx);
             tarjeta.remove();
         }
     });
 
+    return true;
 }
 

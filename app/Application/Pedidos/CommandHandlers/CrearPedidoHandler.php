@@ -95,6 +95,7 @@ class CrearPedidoHandler implements CommandHandler
             // Invalidar caches
             cache()->forget('pedidos_lista');
             cache()->forget('pedidos_recientes');
+            cache()->forget('pedidos_estados_list'); // Invalidar lista de estados
 
             Log::info(' [CrearPedidoHandler] Pedido creado exitosamente', [
                 'pedido_id' => $pedido->id,

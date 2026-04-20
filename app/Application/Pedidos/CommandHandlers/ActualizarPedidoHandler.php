@@ -80,6 +80,7 @@ class ActualizarPedidoHandler implements CommandHandler
             cache()->forget("pedido_{$command->getPedidoId()}_completo");
             cache()->forget("pedido_numero_{$pedido->numero_pedido}");
             cache()->forget('pedidos_lista');
+            cache()->forget('pedidos_estados_list'); // Invalidar lista de estados
 
             return $pedido;
 
