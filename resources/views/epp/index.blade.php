@@ -595,7 +595,7 @@
                 if (result.success || response.ok) {
                     const mensaje = isEditing ? 'EPP actualizado exitosamente' : 'EPP creado exitosamente';
                     this.mostrarModalExito(mensaje);
-                    this.cerrarModal();
+                    // No cerrar el modal automáticamente - el usuario lo cierra manualmente
 
                     if (!isEditing) {
                         this.paginaActual = 1;

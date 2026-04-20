@@ -389,7 +389,6 @@ class GestorEpps {
 
             if (result.success) {
                 this.mostrarExito('EPP creado exitosamente');
-                bootstrap.Modal.getInstance(document.getElementById('crearEppModal')).hide();
                 this.cargarEpps();
             } else {
                 this.mostrarError('Error al crear EPP: ' + result.message);
@@ -473,7 +472,6 @@ class GestorEpps {
 
             if (result) {
                 this.mostrarExito('EPP actualizado exitosamente');
-                bootstrap.Modal.getInstance(document.getElementById('editarEppModal')).hide();
                 this.cargarEpps();
             } else {
                 this.mostrarError('Error al actualizar EPP');

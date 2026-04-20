@@ -401,7 +401,7 @@
       <span class="menu-section-title">Gestionar Producción</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('registros.*') ? 'active' : '' }}"
+        <button class="menu-link submenu-toggle {{ request()->routeIs('registros.*', 'bodega.*') ? 'active' : '' }}"
                 aria-label="Gestionar pedidos">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
           <span class="menu-label">Pedidos</span>
@@ -432,6 +432,16 @@
               <span class="menu-label">Recibos de Reflectivo</span>
             </a>
           </li>
+          @if(auth()->user()->hasRole('admin'))
+          <li class="submenu-item">
+            <a href="/recibos-costura"
+               class="menu-link {{ request()->is('recibos-costura') ? 'active' : '' }}"
+               aria-label="Ver recibos de costura">
+              <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+              <span class="menu-label">Recibos Bodega</span>
+            </a>
+          </li>
+          @endif
         </ul>
       </li>
       <li class="menu-item">
