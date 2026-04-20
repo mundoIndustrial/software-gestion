@@ -81,15 +81,42 @@ class ImageGalleryManager {
         
         // Procesar la URL para evitar duplicación de /storage/
         if (url && typeof url === 'string') {
-            if (url.startsWith('/storage/')) {
-                return url;
-            } else if (url.startsWith('storage/')) {
-                url = '/' + url;
-                return url;
-            } else {
-                url = '/storage/' + url;
-                return url;
+            // Sanitizar caracteres invisibles que pueden cortar la URL en el navegador
+            const limpia = url
+                .replace(/[\u0000\r\n\t]/g, '')
+                .trim();
+
+            // Rutas que no deben tocarse
+            if (
+                limpia.startsWith('blob:') ||
+                limpia.startsWith('data:') ||
+                limpia.startsWith('http://') ||
+                limpia.startsWith('https://')
+            ) {
+                return limpia;
             }
+
+            // Evitar colisión con carpeta física public/storage
+            if (limpia.startsWith('/storage-serve/')) {
+                return limpia.length > '/storage-serve/'.length ? limpia : '';
+            }
+
+            if (limpia.startsWith('/storage/')) {
+                const normalizada = limpia.replace('/storage/', '/storage-serve/');
+                return normalizada.length > '/storage-serve/'.length ? normalizada : '';
+            }
+
+            if (limpia.startsWith('storage/')) {
+                const normalizada = '/' + limpia.replace('storage/', 'storage-serve/');
+                return normalizada.length > '/storage-serve/'.length ? normalizada : '';
+            }
+
+            // Ruta relativa (ej: pedidos/474/prenda/archivo.webp)
+            const relativa = limpia.replace(/^\/+/, '');
+            if (!relativa) {
+                return '';
+            }
+            return '/storage-serve/' + relativa;
         }
         
         return '';

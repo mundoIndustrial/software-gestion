@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * Helper para assets JS con minificacion automatica.
