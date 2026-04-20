@@ -27,7 +27,7 @@
                                 color: white;
                                 padding: 0.75rem 1rem;
                                 display: grid;
-                                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                grid-template-columns: 110px 170px 110px 200px 150px 140px 130px 160px 130px 100px;
                                 gap: 0.15rem;
                                 font-weight: 600;
                                 font-size: 0.8rem;
@@ -36,6 +36,9 @@
                                 min-width: min-content;
                                 border-radius: 6px;
                             ">
+                                <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <span>Actions</span>
+                                </div>
                                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span>Fecha de Creación</span>
                                     <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
@@ -95,7 +98,7 @@
                                         <div data-row="proceso" data-color-guardado="{{ $proceso->color_bordado_estampado ?? '' }}" style="
                                             --row-bg-color: {{ $proceso->color_bordado_estampado ?: 'white' }};
                                             display: grid;
-                                            grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                            grid-template-columns: 110px 170px 110px 200px 150px 140px 130px 160px 130px 100px;
                                             gap: 0.15rem;
                                             padding: 1rem;
                                             border-bottom: 1px solid #e5e7eb;
@@ -104,6 +107,19 @@
                                             background: var(--row-bg-color, white);
                                             transition: background 0.2s ease;
                                         ">
+                                        <div style="display: flex; align-items: center; justify-content: center;">
+                                            <button
+                                                type="button"
+                                                data-pedido-id="{{ $proceso->pedido_id ?? '' }}"
+                                                data-prenda-id="{{ $proceso->prenda_id ?? '' }}"
+                                                data-tipo-recibo="{{ $proceso->tipo_recibo ?? '' }}"
+                                                onclick="event.stopPropagation(); openReceiptFromLogoPendingRow(this)"
+                                                style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;"
+                                            >
+                                                Ver
+                                            </button>
+                                        </div>
+
                                         <div>
                                             <span>{{ \Carbon\Carbon::parse($proceso->fecha_creacion)->format('d/m/Y H:i') }}</span>
                                         </div>
@@ -184,6 +200,12 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal detalle recibo (estilo Recibos Costura) -->
+<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal />
 </div>
 
 <button id="btnLimpiarFiltrosFlotante" type="button" onclick="limpiarTodosLosFiltrosPendientes()" style="display: none; position: fixed; right: 18px; bottom: 18px; z-index: 9998; background: #111827; color: #ffffff; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.25); cursor: pointer;">
@@ -293,6 +315,7 @@
 
 @push('scripts')
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script>
 function verDetalles(procesoId, tipoRecibo) {
     // Mostrar modal con loading
@@ -448,6 +471,60 @@ function verPedido(pedidoId) {
     window.open(`/supervisor-pedidos/${pedidoId}`, '_blank');
 }
 
+function esperarModuloRecibos(timeoutMs = 1600) {
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            const ready = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function';
+            if (ready) {
+                clearInterval(timer);
+                resolve(true);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                clearInterval(timer);
+                resolve(false);
+            }
+        }, 80);
+    });
+}
+
+window.openReceiptFromLogoPendingRow = async function(button) {
+    const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
+    const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
+    const tipoRecibo = String(button?.getAttribute('data-tipo-recibo') || '').trim().toUpperCase();
+
+    if (!pedidoId || !prendaId || !tipoRecibo) {
+        if (typeof mostrarAlerta === 'function') {
+            mostrarAlerta('Error', 'No se pudo abrir el recibo para este registro.', 'error');
+        }
+        return;
+    }
+
+    const moduleReady = await esperarModuloRecibos();
+    if (moduleReady) {
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo);
+        return;
+    }
+
+    if (typeof mostrarAlerta === 'function') {
+        mostrarAlerta('Error', 'El visor del recibo no está listo. Intenta nuevamente en unos segundos.', 'warning');
+    }
+};
+
+window.closeModalOverlay = function() {
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+        window.pedidosRecibosModule.cerrarRecibo();
+        return;
+    }
+
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalWrapper) modalWrapper.style.display = 'none';
+    if (modalOverlay) modalOverlay.style.display = 'none';
+};
+
 function recargarDatos() {
     window.location.reload();
 }
@@ -495,7 +572,11 @@ async function recargarTablaPendientes() {
         if (procesos.length === 0) {
             cont.innerHTML = receiptsRenderers.emptyStateHtml();
         } else {
-            cont.innerHTML = procesos.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml)).join('');
+            cont.innerHTML = procesos.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
+                gridTemplate: '110px 170px 110px 200px 150px 140px 130px 160px 130px 100px',
+                showActions: true,
+                actionHandlerName: 'openReceiptFromLogoPendingRow'
+            })).join('');
         }
 
         inicializarPendientesUI();

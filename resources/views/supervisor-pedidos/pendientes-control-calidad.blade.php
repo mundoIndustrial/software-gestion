@@ -220,7 +220,7 @@
                             color: white;
                             padding: 0.75rem 1rem;
                             display: grid;
-                            grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                            grid-template-columns: 110px 170px 110px 110px 200px 120px 200px 160px 130px 100px;
                             gap: 0.15rem;
                             font-weight: 600;
                             font-size: 0.8rem;
@@ -229,6 +229,9 @@
                             min-width: min-content;
                             border-radius: 6px;
                         ">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <span>Actions</span>
+                            </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha de Creacion</span>
                                 <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
@@ -240,6 +243,9 @@
                                 <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
+                            </div>
+                            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Tipo</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Cliente</span>
@@ -282,10 +288,10 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-color-stored="{{ $proceso['color_control_calidad'] ?? '' }}" style="
+                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}" data-color-stored="{{ $proceso['color_control_calidad'] ?? '' }}" style="
                                         --row-bg-color: {{ $proceso['color_control_calidad'] ?: '#ffffff' }};
                                         display: grid;
-                                        grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
+                                        grid-template-columns: 110px 170px 110px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
                                         padding: 1rem;
                                         border-bottom: 1px solid #e5e7eb;
@@ -293,7 +299,21 @@
                                         min-width: min-content;
                                         transition: background 0.2s ease;
                                     ">
-                                        
+                                        <!-- Actions -->
+                                        <div style="display: flex; align-items: center; justify-content: center;">
+                                            <button
+                                                type="button"
+                                                data-pedido-id="{{ $proceso['pedido_id'] }}"
+                                                data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}"
+                                                data-numero-recibo="{{ $proceso['numero_recibo'] }}"
+                                                data-tipo-recibo="{{ $proceso['tipo_recibo'] ?? '' }}"
+                                                onclick="event.stopPropagation(); openReciboControlCalidadModalFromRow(this)"
+                                                style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;"
+                                            >
+                                                Ver
+                                            </button>
+                                        </div>
+
                                         <!-- Fecha de Creacion -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
@@ -302,6 +322,24 @@
                                         <!-- Numero de Recibo -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">
                                             {{ $proceso['numero_recibo'] }}
+                                        </div>
+
+                                        <!-- Tipo -->
+                                        <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
+                                            @php
+                                                $tipoRecibo = strtoupper(trim((string) ($proceso['tipo_recibo'] ?? '')));
+                                                $tipoLabel = $tipoRecibo === 'COSTURA'
+                                                    ? 'Costura'
+                                                    : ($tipoRecibo === 'REFLECTIVO' ? 'Reflectivo' : ($tipoRecibo !== '' ? $tipoRecibo : 'Sin tipo'));
+                                                $tipoStyle = $tipoRecibo === 'COSTURA'
+                                                    ? 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;'
+                                                    : ($tipoRecibo === 'REFLECTIVO'
+                                                        ? 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;'
+                                                        : 'background: #f3f4f6; color: #6b7280;');
+                                            @endphp
+                                            <span style="{{ $tipoStyle }} padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">
+                                                {{ $tipoLabel }}
+                                            </span>
                                         </div>
 
                                         <!-- Cliente -->
@@ -344,7 +382,7 @@
                                                         }
                                                     }
                                                 @endphp
-                                                @foreach($prendasAgrupadas as $prenda => $cantidad)
+                                                @foreach(($prendasAgrupadas ?? []) as $prenda => $cantidad)
                                                     <div style="margin-bottom: 0.25rem;">
                                                         @php
                                                             $partes = explode('|', $prenda);
@@ -359,7 +397,7 @@
                                                         @endphp
                                                     </div>
                                                 @endforeach
-                                                @if(count($prendasAgrupadas) === 0)
+                                                @if(count((array)($prendasAgrupadas ?? [])) === 0)
                                                     <div>-</div>
                                                 @endif
                                             </div>
@@ -458,6 +496,12 @@
     </div>
 </div>
 
+<!-- Modal detalle recibo (estilo Recibos Costura) -->
+<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal />
+</div>
+
 <!-- Modal de Novedades (mismo componente de /recibos-costura) -->
 <x-modals.novedades-edit-modal />
 
@@ -482,6 +526,7 @@
 @push('scripts')
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-api-filters.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-api-filters.js')) }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/supervisor-pedidos/sidebar-badge-manager.js') }}?v={{ time() }}"></script>
 <script>
@@ -515,6 +560,62 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+function esperarModuloRecibos(timeoutMs = 1200) {
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            const ready = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function';
+            if (ready) {
+                clearInterval(timer);
+                resolve(true);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                clearInterval(timer);
+                resolve(false);
+            }
+        }, 80);
+    });
+}
+
+window.openReciboControlCalidadModalFromRow = async function(button) {
+    const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
+    const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
+    const tipoRecibo = String(button?.getAttribute('data-tipo-recibo') || '').trim().toUpperCase();
+    const tipoProceso = tipoRecibo === 'REFLECTIVO' ? 'reflectivo' : 'costura';
+
+    if (!pedidoId || !prendaId) {
+        console.error('[openReciboControlCalidadModalFromRow] Datos incompletos para abrir modal', { pedidoId, prendaId, tipoRecibo });
+        if (typeof mostrarAlerta === 'function') {
+            mostrarAlerta('Error', 'No se pudo abrir el recibo en modal para este registro.', 'error');
+        }
+        return;
+    }
+
+    const moduleReady = await esperarModuloRecibos();
+    if (moduleReady) {
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoProceso);
+        return;
+    }
+
+    if (typeof mostrarAlerta === 'function') {
+        mostrarAlerta('Error', 'El visor del recibo no está listo. Intenta nuevamente en unos segundos.', 'warning');
+    }
+};
+
+window.closeModalOverlay = function() {
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+        window.pedidosRecibosModule.cerrarRecibo();
+        return;
+    }
+
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalWrapper) modalWrapper.style.display = 'none';
+    if (modalOverlay) modalOverlay.style.display = 'none';
+};
 
 const receiptsFilters = window.SupervisorReceiptsApiFilters.create({
     contentSelector: '#supervisorPendientesControlCalidadContent',
@@ -636,7 +737,13 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
         if (procesos.length === 0) {
             rows.innerHTML = receiptsRenderers.emptyStateHtml();
         } else {
-            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml)).join('');
+            rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml, {
+                gridTemplate: '110px 170px 110px 110px 200px 120px 200px 160px 130px 100px',
+                showActions: true,
+                actionMode: 'modal',
+                actionHandlerName: 'openReciboControlCalidadModalFromRow',
+                showReceiptType: true
+            })).join('');
         }
 
         if (pushState) {
@@ -733,6 +840,15 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inicializarSelectorColores);
 } else {
     inicializarSelectorColores();
+}
+
+// Re-render inicial desde API para evitar desalineaciones del HTML server-side.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.navegarPendientesControlCalidad(window.location.href, { pushState: false });
+    });
+} else {
+    window.navegarPendientesControlCalidad(window.location.href, { pushState: false });
 }
 
 // Funcion para guardar el color en la BD

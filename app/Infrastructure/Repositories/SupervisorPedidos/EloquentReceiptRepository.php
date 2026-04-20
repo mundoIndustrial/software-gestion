@@ -133,7 +133,7 @@ class EloquentReceiptRepository implements ReceiptRepository
             ->select([
                 'crp.*',
                 'p.cliente',
-                'p.created_at as fecha_creacion',
+                'crp.created_at as fecha_creacion',
                 'u.name as asesor',
                 'pp.nombre_prenda',
                 'ppd.estado',
@@ -315,7 +315,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                     ->whereNull('ppar.deleted_at');
             })
             ->select([
-                'p.created_at as fecha_creacion',
+                'crp.created_at as fecha_creacion',
                 'crp.consecutivo_actual as numero_recibo',
                 'crp.prenda_id as prenda_id',
                 'p.cliente',
@@ -356,9 +356,9 @@ class EloquentReceiptRepository implements ReceiptRepository
                     });
             })
             ->where('crp.activo', 1)
-            ->orderBy('p.created_at', 'desc');
+            ->orderBy('crp.created_at', 'desc');
 
-        $this->applyPendingReceiptFilters($query, $filters);
+        $this->applyPendingReceiptFilters($query, $filters, 'crp.created_at');
 
         return $query->get()->all();
     }
@@ -411,11 +411,12 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.cliente',
                 'p.id as pedido_id',
                 'u.name as asesor',
+                'crp.tipo_recibo',
                 'crp.color_costura',
                 'crp.color_control_calidad',
                 'crp.area',
             ])
-            ->where('crp.tipo_recibo', 'COSTURA')
+            ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) IN (?, ?)', ['COSTURA', 'REFLECTIVO'])
             ->where('crp.activo', 1)
             ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->orderBy('p.created_at', 'desc');
@@ -623,7 +624,7 @@ class EloquentReceiptRepository implements ReceiptRepository
     /**
      * @param array<string, mixed> $filters
      */
-    private function applyPendingReceiptFilters($query, array $filters): void
+    private function applyPendingReceiptFilters($query, array $filters, string $fechaCreacionColumn = 'p.created_at'): void
     {
         $busqueda = trim((string) ($filters['busqueda'] ?? ''));
         if ($busqueda !== '') {
@@ -670,7 +671,7 @@ class EloquentReceiptRepository implements ReceiptRepository
 
         $fechaCreacion = $filters['fecha_creacion'] ?? null;
         if (!empty($fechaCreacion)) {
-            $query->whereDate('p.created_at', $fechaCreacion);
+            $query->whereDate($fechaCreacionColumn, $fechaCreacion);
         }
     }
 

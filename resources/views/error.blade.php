@@ -41,7 +41,8 @@
     </style>
 </head>
 @php
-    $bgClass = match($statusCode ?? 500) {
+    $statusCode = (int) ($statusCode ?? 500);
+    $bgClass = match($statusCode) {
         401 => 'from-blue-50 to-cyan-50',     // Sesión expirada - Azul
         403 => 'from-yellow-50 to-orange-50', // Acceso denegado - Naranja
         404 => 'from-purple-50 to-pink-50',   // No encontrado - Púrpura

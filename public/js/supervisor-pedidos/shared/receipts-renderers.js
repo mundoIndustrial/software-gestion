@@ -76,7 +76,9 @@
     function renderSewingRow(proceso, escapeHtml, options = {}) {
         const gridTemplate = options.gridTemplate || '110px 170px 110px 200px 120px 200px 160px 130px 100px';
         const showActions = options.showActions === true;
+        const showReceiptType = options.showReceiptType === true;
         const actionMode = options.actionMode || 'link';
+        const actionHandlerName = String(options.actionHandlerName || 'openReciboCosturaModalFromRow');
         const getReceiptUrl = typeof options.getReceiptUrl === 'function' ? options.getReceiptUrl : null;
         const color = proceso?.color_control_calidad || proceso?.color_reflectivo || proceso?.color_costura || '';
         const rowBaseColor = color || '#ffffff';
@@ -96,7 +98,7 @@
             ? `
                 <div style="display: flex; align-items: center; justify-content: center;">
                     ${actionMode === 'modal'
-                        ? `<button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-es-parcial="${esParcial ? 'true' : 'false'}" data-pedido-parcial-id="${escapeHtml(pedidoParcialId)}" onclick="event.stopPropagation(); openReciboCosturaModalFromRow(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>`
+                        ? `<button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-es-parcial="${esParcial ? 'true' : 'false'}" data-pedido-parcial-id="${escapeHtml(pedidoParcialId)}" data-tipo-recibo="${escapeHtml(String(proceso?.tipo_recibo || ''))}" onclick="event.stopPropagation(); ${actionHandlerName}(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>`
                         : receiptUrl
                         ? `<a href="${escapeHtml(receiptUrl)}" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">Ver</a>`
                         : '<span style="color:#9ca3af;font-size:0.8rem;">-</span>'}
@@ -107,6 +109,14 @@
         const areaHtml = area
             ? `<span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">${escapeHtml(area)}</span>`
             : `<span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">Sin area</span>`;
+        const tipoRecibo = String(proceso?.tipo_recibo || '').trim().toUpperCase();
+        const tipoReciboHtml = !showReceiptType
+            ? ''
+            : tipoRecibo === 'COSTURA'
+                ? '<span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">Costura</span>'
+                : tipoRecibo === 'REFLECTIVO'
+                    ? '<span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #fde68a; display: inline-block;">Reflectivo</span>'
+                    : `<span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">${escapeHtml(tipoRecibo || 'Sin tipo')}</span>`;
 
         return `
             <div data-row="processo" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(prendaId)}" data-numero-recibo="${escapeHtml(numeroRecibo)}" data-es-parcial="${esParcial ? 'true' : 'false'}" data-pedido-parcial-id="${escapeHtml(pedidoParcialId)}" data-color-stored="${escapeHtml(color)}" style="
@@ -123,6 +133,7 @@
                 ${actionsCellHtml}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(formatDateShort(proceso?.fecha_creacion))}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(numeroRecibo)}</div>
+                ${showReceiptType ? `<div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${tipoReciboHtml}</div>` : ''}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))}</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${areaHtml}</div>
                 <div style="display: flex; align-items: start; font-size: 0.9rem; color: #374151;"><div class="prenda-list">${prendasHtml}</div></div>
@@ -163,17 +174,28 @@
         return `<span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">${escapeHtml(String(tipoRecibo || ''))}</span>`;
     }
 
-    function renderEmbroideryRow(proceso, escapeHtml) {
+    function renderEmbroideryRow(proceso, escapeHtml, options = {}) {
+        const showActions = options.showActions === true;
+        const actionHandlerName = String(options.actionHandlerName || 'openReceiptFromLogoPendingRow');
+        const gridTemplate = options.gridTemplate || '170px 110px 200px 150px 140px 130px 160px 130px 100px';
         const fechaCreacion = formatDateTime(proceso?.fecha_creacion);
         const numeroRecibo = proceso?.numero_recibo || 'Sin asignar';
         const cliente = proceso?.cliente || '';
         const cantidad = proceso?.cantidad_total_prendas ?? 0;
         const nombrePrenda = proceso?.nombre_prenda || '';
         const asesor = proceso?.asesor || '';
+        const pedidoId = String(proceso?.pedido_id || '');
         const tipoRecibo = renderReceiptTypeBadge(proceso?.tipo_recibo || '', escapeHtml);
         const tipoReciboRaw = proceso?.tipo_recibo || '';
         const fechaAprobacion = formatDateTime(proceso?.fecha_aprobacion);
         const colorBordadoEstampado = proceso?.color_bordado_estampado || '';
+        const actionsCellHtml = showActions
+            ? `
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    <button type="button" data-pedido-id="${escapeHtml(pedidoId)}" data-prenda-id="${escapeHtml(String(proceso?.prenda_id || ''))}" data-tipo-recibo="${escapeHtml(String(proceso?.tipo_recibo || ''))}" onclick="event.stopPropagation(); ${actionHandlerName}(this)" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">Ver</button>
+                </div>
+            `
+            : '';
 
         if (!tipoReciboRaw) {
             console.warn('[RENDER-EMBROIDERY] Falta tipo_recibo en proceso:', proceso);
@@ -182,7 +204,7 @@
         return `
             <div data-row="proceso" data-color-guardado="${colorBordadoEstampado}" style="
                 display: grid;
-                grid-template-columns: 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                grid-template-columns: ${escapeHtml(gridTemplate)};
                 gap: 0.15rem;
                 padding: 1rem;
                 border-bottom: 1px solid #e5e7eb;
@@ -191,6 +213,7 @@
                 background: ${colorBordadoEstampado || 'white'};
                 transition: background 0.2s ease;
             " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=this.getAttribute('data-color-guardado') || 'white'">
+                ${actionsCellHtml}
                 <div><span>${escapeHtml(fechaCreacion)}</span></div>
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>

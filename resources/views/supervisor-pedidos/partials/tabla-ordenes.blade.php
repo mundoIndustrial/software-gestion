@@ -1,5 +1,5 @@
 @php
-    $columnTemplate = '60px 220px 120px 200px 150px 140px 150px 150px 150px';
+    $columnTemplate = '60px 220px 130px 120px 220px 150px 150px 150px 150px 150px 150px';
     $gridGap = '1.2rem';
 @endphp
 
@@ -14,6 +14,13 @@
 
     .sp-orders-grid > div {
         min-width: 0;
+    }
+
+    .sp-date-cell {
+        white-space: nowrap;
+        display: inline-block;
+        font-size: 0.85rem;
+        color: #6b7280;
     }
 </style>
 <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
@@ -56,6 +63,12 @@
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>Asesora</span>
+                <button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                </button>
+            </div>
+            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Estado</span>
                 <button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
@@ -65,16 +78,16 @@
                 <span>Novedades</span>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                <span>Asesora</span>
-                <button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                    <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Forma Pago</span>
                 <button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
+            </div>
+            <div class="th-wrapper" style="display: flex; align-items: center;">
+                <span>Aprob. Cartera</span>
+            </div>
+            <div class="th-wrapper" style="display: flex; align-items: center;">
+                <span>Aprob. Supervisor</span>
             </div>
         </div>
 
@@ -176,10 +189,10 @@
 
                     <!-- Fecha -->
                     <div>
-                        <span style="font-size: 0.85rem; color: #6b7280;">{{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y H:i') }}</span>
+                        <span class="sp-date-cell">{{ \Carbon\Carbon::parse($orden->created_at)->timezone('America/Bogota')->format('d/m/Y h:i A') }}</span>
                     </div>
 
-                    <!-- Número -->
+                    <!-- Numero -->
                     <div>
                         <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido ?? '-' }}</span>
                     </div>
@@ -187,6 +200,11 @@
                     <!-- Cliente -->
                     <div>
                         <span>{{ $orden->cliente }}</span>
+                    </div>
+
+                    <!-- Asesora -->
+                    <div>
+                        <span>{{ $orden->asesora?->name ?? 'N/A' }}</span>
                     </div>
 
                     <!-- Estado -->
@@ -225,14 +243,23 @@
                         @endif
                     </div>
 
-                    <!-- Asesora -->
-                    <div>
-                        <span>{{ $orden->asesora?->name ?? 'N/A' }}</span>
-                    </div>
-
                     <!-- Forma Pago -->
                     <div>
                         <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
+                    </div>
+
+                    <!-- Fecha aprobacion cartera -->
+                    <div>
+                        <span class="sp-date-cell">
+                            {{ $orden->aprobado_por_cartera_en ? \Carbon\Carbon::parse($orden->aprobado_por_cartera_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
+                        </span>
+                    </div>
+
+                    <!-- Fecha aprobacion supervisor -->
+                    <div>
+                        <span class="sp-date-cell">
+                            {{ $orden->aprobado_por_supervisor_en ? \Carbon\Carbon::parse($orden->aprobado_por_supervisor_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
+                        </span>
                     </div>
                 </div>
             @endforeach

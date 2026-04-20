@@ -220,6 +220,7 @@
                     <thead>
                         <tr>
                             <th>Cliente nuevo</th>
+                            <th>Asesor(a)</th>
                             <th>Pedidos en periodo actual</th>
                             <th>Detalle de pedidos</th>
                         </tr>
@@ -228,6 +229,7 @@
                         @forelse($clientesNuevos as $cliente)
                             <tr>
                                 <td>{{ $cliente['cliente_nombre'] }}</td>
+                                <td>{{ $cliente['asesoras'] }}</td>
                                 <td>{{ number_format($cliente['total_pedidos'], 0, ',', '.') }}</td>
                                 <td>
                                     <details>
@@ -247,7 +249,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3">No hay clientes nuevos en este periodo.</td>
+                                <td colspan="4">No hay clientes nuevos en este periodo.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -270,6 +272,7 @@
                     <thead>
                         <tr>
                             <th>Cliente</th>
+                            <th>Asesor(a)</th>
                             <th>Pedidos en periodo actual</th>
                             <th>Detalle de pedidos</th>
                         </tr>
@@ -278,6 +281,7 @@
                         @forelse($clientesRecurrentes as $cliente)
                             <tr>
                                 <td>{{ $cliente['cliente_nombre'] }}</td>
+                                <td>{{ $cliente['asesoras'] }}</td>
                                 <td>{{ number_format($cliente['total_pedidos'], 0, ',', '.') }}</td>
                                 <td>
                                     <details>
@@ -297,7 +301,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3">No hay clientes repetidos en este periodo.</td>
+                                <td colspan="4">No hay clientes repetidos en este periodo.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -358,6 +362,7 @@
                 <thead>
                     <tr>
                         <th>Cliente</th>
+                        <th>Asesor(a)</th>
                         <th>Total pedidos</th>
                         <th>Cliente recurrente</th>
                         <th>Detalle de pedidos</th>
@@ -367,6 +372,7 @@
                     @forelse($clientesConPedidos as $cliente)
                         <tr>
                             <td>{{ $cliente['cliente_nombre'] }}</td>
+                            <td>{{ $cliente['asesoras'] }}</td>
                             <td>{{ number_format($cliente['total_pedidos'], 0, ',', '.') }}</td>
                             <td>
                                 <span class="pill {{ $cliente['es_recurrente'] ? 'pill-up' : 'pill-neutral' }}">
@@ -391,7 +397,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4">No hay clientes para mostrar en este periodo.</td>
+                            <td colspan="5">No hay clientes para mostrar en este periodo.</td>
                         </tr>
                     @endforelse
                 </tbody>

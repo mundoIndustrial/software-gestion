@@ -57,6 +57,7 @@ class GetPendingQualityControlReceiptsUseCase
         $proceso = [
             'fecha_creacion' => $recibo->fecha_creacion,
             'numero_recibo' => $recibo->numero_recibo,
+            'tipo_recibo' => $recibo->tipo_recibo ?? null,
             'prenda_id' => $recibo->prenda_id,
             'cliente' => $recibo->cliente,
             'area' => $recibo->area,

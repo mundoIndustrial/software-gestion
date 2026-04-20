@@ -820,7 +820,8 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
             rows.innerHTML = procesos.map((proceso) => receiptsRenderers.renderSewingRow(proceso, escapeHtml, {
                 gridTemplate: '110px 170px 110px 200px 120px 200px 160px 130px 100px',
                 showActions: true,
-                actionMode: 'modal'
+                actionMode: 'modal',
+                actionHandlerName: 'openReciboReflectivoModalFromRow'
             })).join('');
         }
 

@@ -23,6 +23,7 @@ class ListOrdersUseCase
 
             $ordenes->getCollection()->each(function ($orden) {
                 $orden->es_solo_epp = $this->readService->esSoloEpp($orden);
+                $orden->novedades_count = $this->readService->getNovedadesCount($orden);
             });
 
             $estados = $this->readService->listDistinctStates();

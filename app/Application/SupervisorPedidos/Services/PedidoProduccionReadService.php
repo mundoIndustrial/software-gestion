@@ -41,6 +41,8 @@ class PedidoProduccionReadService
                 'novedades',
                 'asesor_id',
                 'forma_de_pago',
+                'aprobado_por_cartera_en',
+                'aprobado_por_supervisor_en',
                 'estado',
                 'created_at',
                 'updated_at',
@@ -528,11 +530,28 @@ class PedidoProduccionReadService
 
     public function getNovedadesCount(PedidoProduccion $pedido): int
     {
-        if (empty($pedido->novedades)) {
+        $raw = trim((string) ($pedido->novedades ?? ''));
+        if ($raw === '') {
             return 0;
         }
 
-        return count(array_filter(explode("\n\n", $pedido->novedades)));
+        // Soporta novedades guardadas como JSON (array) o texto plano.
+        if (str_starts_with($raw, '[') || str_starts_with($raw, '{')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return count(array_filter(array_map(
+                    static fn ($item) => trim((string) $item),
+                    $decoded
+                )));
+            }
+        }
+
+        $normalized = str_replace(["\r\n", "\r"], "\n", $raw);
+        $items = preg_split('/\n{2,}/', $normalized) ?: [];
+        $count = count(array_filter(array_map('trim', $items)));
+
+        // Si existe texto pero no separadores dobles, cuenta al menos 1 novedad.
+        return $count > 0 ? $count : 1;
     }
 
     public function getNombresPrendas(PedidoProduccion $pedido): string

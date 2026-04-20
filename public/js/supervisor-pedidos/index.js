@@ -129,6 +129,64 @@ function _spStateBadge(estado) {
     return map[estado] || { bg: '#e2e3e5', text: '#383d41', label: estado || '-' };
 }
 
+function _spNormalizeNovedadesInput(input) {
+    if (Array.isArray(input)) {
+        return input.map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+
+    if (input && typeof input === 'object') {
+        return Object.values(input).map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+
+    const text = String(input ?? '').trim();
+    if (!text) return [];
+
+    return text
+        .split(/\n\s*\n+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function abrirNovedades(ordenId, novedadesData) {
+    const modal = document.getElementById('modalNovedades');
+    const content = document.getElementById('modalNovedadesContent');
+
+    if (!modal || !content) {
+        console.error('[Novedades] Modal no encontrado en el DOM');
+        return;
+    }
+
+    const novedades = _spNormalizeNovedadesInput(novedadesData);
+
+    if (novedades.length === 0) {
+        content.innerHTML = `
+            <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:1rem;color:#6b7280;">
+                Sin novedades registradas para la orden #${_spEscapeHtml(ordenId)}.
+            </div>
+        `;
+    } else {
+        content.innerHTML = novedades
+            .map((novedad, index) => `
+                <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+                    <div style="font-size:12px;color:#6b7280;font-weight:700;margin-bottom:.35rem;">Novedad ${index + 1}</div>
+                    <div style="white-space:pre-wrap;color:#111827;line-height:1.45;">${_spEscapeHtml(novedad)}</div>
+                </div>
+            `)
+            .join('');
+    }
+
+    modal.style.display = 'flex';
+}
+
+function cerrarModalNovedades() {
+    const modal = document.getElementById('modalNovedades');
+    if (!modal) return;
+    modal.style.display = 'none';
+}
+
+window.abrirNovedades = abrirNovedades;
+window.cerrarModalNovedades = cerrarModalNovedades;
+
 function _spBuildPageUrl(page) {
     const url = new URL(window.location.href);
     url.searchParams.set('page', String(page));

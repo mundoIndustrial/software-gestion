@@ -407,7 +407,10 @@ class SupervisorOrdersController extends Controller
             ->where('numero_pedido', '!=', '')
             ->where(function ($query) {
                 $query->whereNull('estado')
-                    ->orWhere('estado', '!=', 'Anulada');
+                    ->orWhere(function ($q) {
+                        $q->where('estado', '!=', 'Anulada')
+                          ->where('estado', '!=', 'Borrador');
+                    });
             });
 
         $totalActual = $baseQuery()
@@ -553,9 +556,12 @@ class SupervisorOrdersController extends Controller
                     ];
                 })->values();
 
+                $asesorasUnicas = $rows->pluck('asesora_nombre')->unique()->values()->implode(', ');
+
                 return [
                     'cliente_key' => $clienteKey,
                     'cliente_nombre' => $clienteNombre,
+                    'asesoras' => $asesorasUnicas,
                     'total_pedidos' => $rows->count(),
                     'es_recurrente' => isset($clientesHistoricosSet[$clienteKey]),
                     'pedidos' => $pedidos,

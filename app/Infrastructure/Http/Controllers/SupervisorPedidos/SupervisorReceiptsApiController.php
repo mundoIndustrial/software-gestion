@@ -99,10 +99,13 @@ class SupervisorReceiptsApiController extends Controller
 
     public function pendingQualityControlCount(): JsonResponse
     {
-        $count = DB::table('consecutivos_recibos_pedidos')
-            ->whereRaw('UPPER(TRIM(tipo_recibo)) IN (?, ?, ?)', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
-            ->where('activo', 1)
-            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+        // Mantener el mismo criterio que la tabla de pendientes-control-calidad
+        // para evitar desfases entre el listado visible y el badge del sidebar.
+        $count = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+            ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) IN (?, ?)', ['COSTURA', 'REFLECTIVO'])
+            ->where('crp.activo', 1)
+            ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->count();
 
         return response()->json([
