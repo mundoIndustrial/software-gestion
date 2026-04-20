@@ -8,6 +8,7 @@ use App\Domain\ProcesoSeguimiento\Repositories\ConsecutivoReciboPedidoRepository
 use App\Domain\ProcesoSeguimiento\Repositories\ProcesoPrendaSeguimientoRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -28,14 +29,15 @@ final class ActualizarProcesoSeguimientoUseCase
     public function execute(ActualizarProcesoSeguimientoDTO $dto): ProcesoPrenda
     {
         $proceso = ProcesoPrenda::findOrFail($dto->procesoId);
+        $encargadoNormalizado = $this->resolverNombreEncargado($dto->encargado);
 
         $encargadoAnterior = (string) ($proceso->encargado ?? '');
-        $encargadoNuevo    = (string) ($dto->encargado ?? '');
+        $encargadoNuevo    = (string) ($encargadoNormalizado ?? '');
 
         // ── 1. Actualizar campos ───────────────────────────────────────────
         $proceso->proceso         = $dto->area;
         $proceso->estado_proceso  = $dto->estado;
-        $proceso->encargado       = $dto->encargado;
+        $proceso->encargado       = $encargadoNormalizado;
         $proceso->observaciones   = $dto->observaciones;
 
         if ($encargadoNuevo !== '' && $encargadoNuevo !== $encargadoAnterior) {
@@ -68,7 +70,7 @@ final class ActualizarProcesoSeguimientoUseCase
         // ── 2. Broadcasts ─────────────────────────────────────────────────
         $this->broadcastService->disparar(
             area:         $dto->area,
-            encargado:    $dto->encargado ?? '',
+            encargado:    $encargadoNormalizado,
             accion:       'actualizado',
             numeroPedido: (int) ($proceso->numero_pedido ?? 0),
             prendaId:     (int) ($proceso->prenda_pedido_id ?? 0),
@@ -103,5 +105,22 @@ final class ActualizarProcesoSeguimientoUseCase
         } catch (\Exception $e) {
             Log::warning('[ActualizarProcesoSeguimientoUseCase] Error sincronizando consecutivo: ' . $e->getMessage());
         }
+    }
+
+    private function resolverNombreEncargado(?string $encargado): string
+    {
+        $valor = trim((string) ($encargado ?? ''));
+        if ($valor === '') {
+            return '';
+        }
+
+        if (ctype_digit($valor)) {
+            $usuario = User::find((int) $valor);
+            if ($usuario && trim((string) $usuario->name) !== '') {
+                return (string) $usuario->name;
+            }
+        }
+
+        return $valor;
     }
 }

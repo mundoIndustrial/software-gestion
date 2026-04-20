@@ -409,7 +409,7 @@ function initTrackingModalListeners() {
       console.log('[createEncargadoSelect] Cargando encargados para:', area);
       const encargados = await OrderApiService.loadEncargados(area);
       
-      formManager.createEncargadoField(container, 'select', 'procesoEncargado', encargados);
+      formManager.createEncargadoField(container, 'select', 'procesoEncargadoSelect', encargados);
       
       console.log('[createEncargadoSelect]  Encargados cargados:', encargados.length);
     } catch (error) {

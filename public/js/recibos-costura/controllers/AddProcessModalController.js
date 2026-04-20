@@ -75,7 +75,7 @@ class AddProcessModalController {
                 throw new Error('No se pudieron cargar los datos necesarios');
             }
 
-            this._openModalUI(pedidoId, prendaId, areaSeleccionada);
+            this._openModalUI(pedidoId, prendaId, areaSeleccionada, numeroRecibo);
         } catch (error) {
             console.error('[AddProcessModalController] Error al abrir modal:', error);
             alert('Error al cargar los datos del pedido: ' + error.message);
@@ -166,7 +166,8 @@ class AddProcessModalController {
 
                 if (pedidoId) {
                     try {
-                        await this.loadData(pedidoId, prendaId, area);
+                        const numeroRecibo = modal.getAttribute('data-numero-recibo') || window.currentNumeroRecibo;
+                        await this.loadData(pedidoId, prendaId, area, numeroRecibo);
                         console.log('[AddProcessModalController] Datos recargados exitosamente');
                     } catch (error) {
                         console.error('[AddProcessModalController] Error al recargar datos:', error);
@@ -224,12 +225,21 @@ class AddProcessModalController {
                 return false;
             }
 
+            const numeroReciboValue = window.currentNumeroRecibo;
+            if (
+                String(window.location.pathname || '').includes('/recibos-costura') &&
+                (numeroReciboValue === null || numeroReciboValue === undefined || String(numeroReciboValue).trim() === '')
+            ) {
+                this._showError('No se pudo identificar el número de recibo. Vuelve a abrir el modal desde la fila del recibo.');
+                return false;
+            }
+
             console.log('[AddProcessModalController] Enviando proceso:', {
                 area,
                 encargado,
                 pedido_produccion_id: window.currentOrderData.numero_pedido,
                 prenda_id: window.currentPrendaData.id,
-                numero_recibo: window.currentNumeroRecibo
+                numero_recibo: numeroReciboValue
             });
 
             // Enviar datos al backend
@@ -242,7 +252,7 @@ class AddProcessModalController {
                 body: JSON.stringify({
                     pedido_produccion_id: window.currentOrderData.numero_pedido,
                     prenda_id: window.currentPrendaData.id,
-                    numero_recibo: window.currentNumeroRecibo,
+                    numero_recibo: numeroReciboValue,
                     area: area,
                     encargado: encargado,
                     estado: 'Pendiente'
@@ -286,11 +296,10 @@ class AddProcessModalController {
                 }
             }
 
-            await this._refreshReciboRowInTable({ encargadoFallback: encargado });
-
-            if (typeof actualizarAreaEnTablaRecibos === 'function') {
-                await actualizarAreaEnTablaRecibos();
-            }
+            await this._refreshReciboRowInTable({
+                areaFallback: area,
+                encargadoFallback: encargado
+            });
 
             return true;
         } catch (error) {
@@ -320,9 +329,10 @@ class AddProcessModalController {
      * PRIVADO: Refrescar fila de la tabla de recibos-costura sin recargar la página
      * @private
      * @param {Object} options
+     * @param {string} options.areaFallback
      * @param {string} options.encargadoFallback
      */
-    async _refreshReciboRowInTable({ encargadoFallback = '' } = {}) {
+    async _refreshReciboRowInTable({ areaFallback = '', encargadoFallback = '' } = {}) {
         try {
             if (!String(window.location.pathname || '').includes('/recibos-costura')) {
                 return;
@@ -330,13 +340,20 @@ class AddProcessModalController {
 
             const pedidoId = window.currentOrderData?.id || window.currentPedidoId || window.currentOrderData?.numero_pedido;
             const prendaId = window.currentPrendaData?.id || window.currentPrendaId;
+            const numeroReciboContexto = window.currentNumeroRecibo ?? null;
             if (!pedidoId || !prendaId) {
                 return;
             }
 
             let reciboData = null;
             try {
-                const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
+                const params = new URLSearchParams({
+                    prenda_id: String(prendaId)
+                });
+                if (numeroReciboContexto !== null && numeroReciboContexto !== undefined && String(numeroReciboContexto).trim() !== '') {
+                    params.set('numero_recibo', String(numeroReciboContexto).trim());
+                }
+                const url = `/registros/${pedidoId}/consecutivo-costura?${params.toString()}`;
                 const response = await fetch(url);
                 if (response.ok) {
                     const json = await response.json();
@@ -349,26 +366,27 @@ class AddProcessModalController {
                 console.warn('[AddProcessModalController] No se pudo refrescar consecutivo-costura:', error);
             }
 
-            const numeroRecibo = reciboData?.consecutivo ?? reciboData?.consecutivo_actual ?? null;
+            const numeroRecibo = reciboData?.consecutivo ?? reciboData?.consecutivo_actual ?? numeroReciboContexto ?? null;
             const row = this._findReciboRow(pedidoId, prendaId, numeroRecibo);
             if (!row) {
                 return;
             }
 
             // Actualizar encargado (última columna)
-            const encargadoValue = String(reciboData?.encargado ?? encargadoFallback ?? '').trim();
+            const encargadoValue = String(encargadoFallback || reciboData?.encargado || '').trim();
             const encargadoSpan = row.querySelector('td:last-child span');
             if (encargadoSpan) {
                 encargadoSpan.textContent = encargadoValue || '-';
             }
 
             // Actualizar área si viene en respuesta
-            if (reciboData?.area) {
+            const areaValue = String(areaFallback || reciboData?.area || '').trim();
+            if (areaValue) {
                 const areaBadge = row.querySelector('td:nth-child(3) .badge');
                 if (areaBadge) {
-                    areaBadge.textContent = String(reciboData.area);
+                    areaBadge.textContent = areaValue;
                     areaBadge.classList.remove('bg-secondary', 'bg-success', 'bg-info', 'bg-primary', 'bg-warning', 'bg-purple');
-                    areaBadge.classList.add(this._resolveAreaBadgeClass(reciboData.area));
+                    areaBadge.classList.add(this._resolveAreaBadgeClass(areaValue));
                 }
             }
 
@@ -394,8 +412,12 @@ class AddProcessModalController {
      * @returns {HTMLElement|null}
      */
     _findReciboRow(pedidoId, prendaId, numeroRecibo = null) {
+        if (numeroRecibo === null || numeroRecibo === undefined || String(numeroRecibo).trim() === '') {
+            // Evitar actualizar filas ambiguas cuando un pedido/prenda tenga múltiples consecutivos.
+            return null;
+        }
+
         const rows = document.querySelectorAll('#tablaRecibosBody tr[data-pedido-id]');
-        let fallbackRow = null;
 
         for (const row of rows) {
             if (String(row.getAttribute('data-pedido-id') || '') !== String(pedidoId)) {
@@ -414,13 +436,9 @@ class AddProcessModalController {
                     return row;
                 }
             }
-
-            if (!fallbackRow) {
-                fallbackRow = row;
-            }
         }
 
-        return fallbackRow;
+        return null;
     }
 
     /**
@@ -528,7 +546,7 @@ class AddProcessModalController {
      * PRIVADO: Abrir modal (UI)
      * @private
      */
-    _openModalUI(pedidoId, prendaId, areaSeleccionada) {
+    _openModalUI(pedidoId, prendaId, areaSeleccionada, numeroRecibo = null) {
         const modal = document.getElementById('addProcesoModal');
         if (!modal) {
             console.error('[AddProcessModalController] Modal no encontrado');
@@ -548,6 +566,7 @@ class AddProcessModalController {
         modal.setAttribute('data-pedido-id', pedidoId);
         modal.setAttribute('data-prenda-id', prendaId || '');
         modal.setAttribute('data-area', areaSeleccionada);
+        modal.setAttribute('data-numero-recibo', numeroRecibo ?? '');
         modal.setAttribute('data-encargado-actual', encargadoActual);
 
         // Mostrar el modal

@@ -8,6 +8,7 @@ use App\Domain\ProcesoSeguimiento\Repositories\ConsecutivoReciboPedidoRepository
 use App\Domain\ProcesoSeguimiento\Repositories\ProcesoPrendaSeguimientoRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -39,6 +40,8 @@ final class GuardarProcesoSeguimientoUseCase
      */
     public function execute(GuardarProcesoSeguimientoDTO $dto): GuardarProcesoSeguimientoResultado
     {
+        $encargadoNormalizado = $this->resolverNombreEncargado($dto->encargado);
+
         // ── 1. Upsert por área ─────────────────────────────────────────────
         $procesoExistente = $this->procesosRepo->encontrarActivoPorArea(
             $dto->pedidoProduccionId, $dto->prendaId, $dto->area, $dto->numeroRecibo
@@ -46,10 +49,10 @@ final class GuardarProcesoSeguimientoUseCase
 
         if ($procesoExistente) {
             $encargadoAnterior = (string) ($procesoExistente->encargado ?? '');
-            $encargadoNuevo    = (string) ($dto->encargado ?? '');
+            $encargadoNuevo    = (string) ($encargadoNormalizado ?? '');
 
             $procesoExistente->estado_proceso = $dto->estado;
-            $procesoExistente->encargado      = $dto->encargado;
+            $procesoExistente->encargado      = $encargadoNormalizado;
             $procesoExistente->observaciones  = $dto->observaciones ?? $procesoExistente->observaciones;
 
             if ($encargadoNuevo !== '' && $encargadoNuevo !== $encargadoAnterior) {
@@ -72,8 +75,8 @@ final class GuardarProcesoSeguimientoUseCase
                 'proceso'           => $dto->area,
                 'fecha_inicio'      => now(),
                 'estado_proceso'    => $dto->estado,
-                'encargado'         => $dto->encargado,
-                'fecha_de_asignacion_encargado' => ((string) ($dto->encargado ?? '')) !== '' ? now() : null,
+                'encargado'         => $encargadoNormalizado,
+                'fecha_de_asignacion_encargado' => ((string) ($encargadoNormalizado ?? '')) !== '' ? now() : null,
                 'observaciones'     => $dto->observaciones,
                 'codigo_referencia' => $this->generarCodigoReferencia($dto->area, $dto->prendaId),
             ]);
@@ -90,7 +93,7 @@ final class GuardarProcesoSeguimientoUseCase
         // ── 2. Broadcasts a operarios ──────────────────────────────────────
         $this->broadcastService->disparar(
             area:          $dto->area,
-            encargado:     $dto->encargado,
+            encargado:     (string) $encargadoNormalizado,
             accion:        $accion,
             numeroPedido:  $dto->pedidoProduccionId,
             prendaId:      $dto->prendaId,
@@ -154,5 +157,22 @@ final class GuardarProcesoSeguimientoUseCase
         } catch (\Exception $e) {
             Log::warning('[GuardarProcesoSeguimientoUseCase] Error sincronizando consecutivo: ' . $e->getMessage());
         }
+    }
+
+    private function resolverNombreEncargado(?string $encargado): string
+    {
+        $valor = trim((string) ($encargado ?? ''));
+        if ($valor === '') {
+            return '';
+        }
+
+        if (ctype_digit($valor)) {
+            $usuario = User::find((int) $valor);
+            if ($usuario && trim((string) $usuario->name) !== '') {
+                return (string) $usuario->name;
+            }
+        }
+
+        return $valor;
     }
 }

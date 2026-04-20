@@ -354,19 +354,26 @@ class GetSeguimientoPorPrendaUseCase
         $resultado = [];
 
         foreach ($procesos as $proceso) {
-            // Obtener nombre del encargado si existe
+            // Compatibilidad: aceptar encargado guardado como nombre (nuevo) o como ID legacy.
+            $encargadoRaw = trim((string) ($proceso->encargado ?? ''));
             $encargadoNombre = '';
-            if (!empty($proceso->encargado)) {
-                $encargado = \App\Models\User::find($proceso->encargado);
-                $encargadoNombre = $encargado ? $encargado->name : '';
+            $encargadoValorSalida = $encargadoRaw;
+            if ($encargadoRaw !== '') {
+                if (ctype_digit($encargadoRaw)) {
+                    $encargado = \App\Models\User::find((int) $encargadoRaw);
+                    $encargadoNombre = $encargado ? (string) $encargado->name : '';
+                    $encargadoValorSalida = $encargadoNombre !== '' ? $encargadoNombre : $encargadoRaw;
+                } else {
+                    $encargadoNombre = $encargadoRaw;
+                }
             }
 
             $resultado[$proceso->proceso] = [
                 'id' => $proceso->id,
                 'area' => $proceso->proceso,
                 'estado' => $proceso->estado_proceso,
-                'encargado' => $proceso->encargado, // ID
-                'encargado_nombre' => $encargadoNombre, // Nombre
+                'encargado' => $encargadoValorSalida,
+                'encargado_nombre' => $encargadoNombre,
                 'fecha_inicio' => $proceso->fecha_inicio,
                 'fecha_fin' => $proceso->fecha_fin,
                 'fecha_de_asignacion_encargado' => $proceso->fecha_de_asignacion_encargado,

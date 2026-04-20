@@ -123,7 +123,14 @@ export class ProcessFormManager {
       return selectedOption ? selectedOption.text : '';
     }
 
-    // Si no, usar el input
+    // Compatibilidad: si el "input" en realidad es un SELECT (markup legacy),
+    // devolver el texto mostrado y no el value (id).
+    if (elements.encargadoInput && elements.encargadoInput.tagName === 'SELECT') {
+      const selectedOption = elements.encargadoInput.options[elements.encargadoInput.selectedIndex];
+      return selectedOption ? selectedOption.text : '';
+    }
+
+    // Si no, usar el input de texto
     return elements.encargadoInput?.value || '';
   }
 
@@ -149,7 +156,18 @@ export class ProcessFormManager {
         return false;
       }
 
-      // Si no, establecer el input
+      // Compatibilidad legacy: si el "input" es realmente un SELECT.
+      if (elements.encargadoInput && elements.encargadoInput.tagName === 'SELECT') {
+        const options = elements.encargadoInput.options;
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].text.toLowerCase() === encargadoValue.toLowerCase()) {
+            elements.encargadoInput.value = options[i].value;
+            return true;
+          }
+        }
+      }
+
+      // Si no, establecer el input de texto
       if (elements.encargadoInput) {
         elements.encargadoInput.value = encargadoValue ? encargadoValue.toUpperCase() : '';
         return true;
