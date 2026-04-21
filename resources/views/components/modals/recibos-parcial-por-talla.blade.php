@@ -101,7 +101,9 @@
         prendaNombre: null,
         tallas: [],
         tallasCantidad: {},
-        pedidoId: null
+        pedidoId: null,
+        mode: 'crear_recibo',
+        consecutivoReciboId: null
     };
 
     /**
@@ -110,7 +112,7 @@
      * @param {string} tipoProceso - Tipo de proceso (Costura, Bordado, etc.)
      * @param {number} pedidoId - ID del pedido
      */
-    window.abrirModalReciboParcial = async function(prendaId, tipoProceso, pedidoId) {
+    window.abrirModalReciboParcial = async function(prendaId, tipoProceso, pedidoId, options = {}) {
         // Encontrar datos de la prenda en el estado global
         const penda = window.selectorRecibosState.prendas.find(p => p.id === prendaId);
         if (!penda) {
@@ -124,6 +126,8 @@
         window.modalReciboParcialState.pedidoId = pedidoId;
         window.modalReciboParcialState.tallas = [];
         window.modalReciboParcialState.tallasCantidad = {};
+        window.modalReciboParcialState.mode = options.mode || 'crear_recibo';
+        window.modalReciboParcialState.consecutivoReciboId = options.consecutivoReciboId || null;
 
         // Reset visual para evitar que se arrastre selección/notas de un anexo anterior
         const notasEl = document.getElementById('parcial-notas');
@@ -153,14 +157,31 @@
         error.style.display = 'none';
 
         // Actualizar información de la prenda
+        const modoEntregaParcial = window.modalReciboParcialState.mode === 'entrega_parcial';
         document.getElementById('parcial-prenda-nombre').textContent = penda.nombre || '-';
-        document.getElementById('parcial-proceso-nombre').textContent = `RECIBO DE ${tipoProceso.toUpperCase()}`;
+        document.getElementById('parcial-proceso-nombre').textContent = modoEntregaParcial
+            ? 'ENTREGA PARCIAL DE COSTURA'
+            : `RECIBO DE ${tipoProceso.toUpperCase()}`;
+        const tituloEl = document.querySelector('#modal-recibo-parcial h2');
+        const subtituloHeaderEl = document.querySelector('#modal-recibo-parcial h2 + p');
+        const botonGuardarEl = document.getElementById('parcial-guardar-btn');
+        if (tituloEl) {
+            tituloEl.textContent = modoEntregaParcial ? 'Registrar Entrega Parcial' : 'Crear Recibo Parcial';
+        }
+        if (subtituloHeaderEl) {
+            subtituloHeaderEl.textContent = modoEntregaParcial ? 'Selecciona tallas y cantidades entregadas' : 'Selecciona tallas y cantidades';
+        }
+        if (botonGuardarEl) {
+            botonGuardarEl.innerHTML = modoEntregaParcial
+                ? '<i class="fas fa-check"></i> Guardar entrega'
+                : '<i class="fas fa-check"></i> Crear Recibo';
+        }
 
         // Cargar tallas disponibles
         try {
             // Extraer tallas del proceso específico (no de la prenda)
             let tallas = [];
-            const tipoProcesoUpper = String(tipoProceso || '').toUpperCase();
+            const tipoProcesoUpper = modoEntregaParcial ? 'COSTURA' : String(tipoProceso || '').toUpperCase();
             const esCosturaBase = tipoProcesoUpper === 'COSTURA' || tipoProcesoUpper === 'COSTURA-BODEGA';
 
             // Helper: normaliza estructura relacional de tallas con colores desde la prenda
@@ -468,6 +489,7 @@
      */
     window.guardarReciboParcial = async function() {
         const tallasCantidad = window.modalReciboParcialState.tallasCantidad;
+        const modoEntregaParcial = window.modalReciboParcialState.mode === 'entrega_parcial';
 
         // Validar que hay tallas seleccionadas
         if (Object.keys(tallasCantidad).length === 0) {
@@ -505,25 +527,55 @@
                 });
             });
 
-            const payload = {
-                pedido_id: window.modalReciboParcialState.pedidoId,
-                prenda_id: window.modalReciboParcialState.prendaId,
-                tipo_proceso: window.modalReciboParcialState.tipoProceso,
-                tallas: tallasSeleccionadas,
-                notas: document.getElementById('parcial-notas').value || null
-            };
+            const totalCantidad = tallasSeleccionadas.reduce((sum, item) => sum + (parseInt(item.cantidad) || 0), 0);
+            let response;
 
-            console.log('[Recibo Parcial] Guardando:', payload);
+            if (modoEntregaParcial) {
+                const consecutivoReciboId = Number(window.modalReciboParcialState.consecutivoReciboId || 0);
 
-            const response = await fetch('/api/recibos-parciales', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
+                const payload = {
+                    entregado: true,
+                    modo: 'parcial',
+                    cantidad_entregada: totalCantidad,
+                    detalle_tallas: tallasSeleccionadas,
+                };
+
+                if (consecutivoReciboId > 0) {
+                    payload.consecutivo_recibo_id = consecutivoReciboId;
+                }
+
+                console.log('[Entrega Parcial] Guardando:', payload);
+
+                response = await fetch(`/api/prendas-entregas/${window.modalReciboParcialState.prendaId}/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                const payload = {
+                    pedido_id: window.modalReciboParcialState.pedidoId,
+                    prenda_id: window.modalReciboParcialState.prendaId,
+                    tipo_proceso: window.modalReciboParcialState.tipoProceso,
+                    tallas: tallasSeleccionadas,
+                    notas: document.getElementById('parcial-notas').value || null
+                };
+
+                console.log('[Recibo Parcial] Guardando:', payload);
+
+                response = await fetch('/api/recibos-parciales', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -532,9 +584,15 @@
             const result = await response.json();
 
             if (result.success) {
-                console.log('[Recibo Parcial] Creado exitosamente:', result.data);
-                mostrarMensajeExito(`Recibo ${result.data.tipo_recibo} parcial creado. Recarga el modal para verlo actualizado.`);
-                const pedidoId = result.data.pedido_id; // Guardar antes de limpiar estado
+                console.log(modoEntregaParcial ? '[Entrega Parcial] Guardada exitosamente:' : '[Recibo Parcial] Creado exitosamente:', result.data);
+                mostrarMensajeExito(
+                    modoEntregaParcial
+                        ? (result.message || 'Entrega parcial registrada correctamente.')
+                        : `Recibo ${result.data.tipo_recibo} parcial creado. Recarga el modal para verlo actualizado.`
+                );
+                const pedidoId = modoEntregaParcial
+                    ? window.modalReciboParcialState.pedidoId
+                    : result.data.pedido_id;
                 cerrarModalReciboParcial();
                 
                 // Recargar datos del selector con el pedido_id de la respuesta
@@ -585,7 +643,9 @@
             prendaNombre: null,
             tallas: [],
             tallasCantidad: {},
-            pedidoId: null
+            pedidoId: null,
+            mode: 'crear_recibo',
+            consecutivoReciboId: null
         };
     };
 

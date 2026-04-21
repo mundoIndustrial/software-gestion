@@ -105,6 +105,25 @@
     </div>
 </div>
 
+<div id="modal-historial-entregas"
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999;"
+     onclick="if(event.target === this) cerrarModalHistorialEntregas()">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; width: 92%; max-width: 760px; max-height: 80vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, #0f766e, #0ea5a4); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 id="historial-entregas-titulo" style="margin: 0; font-size: 20px; font-weight: 700;">Entregas parciales</h3>
+                <p id="historial-entregas-subtitulo" style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Historial enviado a despacho</p>
+            </div>
+            <button onclick="cerrarModalHistorialEntregas()" style="background: rgba(255,255,255,0.24); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+        </div>
+        <div style="padding: 20px 24px; overflow-y: auto; max-height: calc(80vh - 84px);">
+            <div id="historial-entregas-loading" style="display: none; text-align: center; padding: 32px; color: #6b7280;">Cargando historial...</div>
+            <div id="historial-entregas-error" style="display: none; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; margin-bottom: 16px;"></div>
+            <div id="historial-entregas-content"></div>
+        </div>
+    </div>
+</div>
+
 <style>
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -179,6 +198,28 @@
         background: #d97706;
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-ver-entregas-prenda {
+        background: #0f766e;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+    }
+
+    .btn-ver-entregas-prenda:hover {
+        background: #0d9488;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(15, 118, 110, 0.28);
     }
 
     .prenda-title {
@@ -902,7 +943,8 @@
                     estado: estadoRecibo,
                     es_base: true,
                     numero_recibo: numeroRecibo,
-                    activo: activoValue // Agregar campo activo para referencia
+                    activo: activoValue, // Agregar campo activo para referencia
+                    consecutivo_recibo_id: reciboBaseActual?.id || null,
                 };
                 
                 console.log('[renderizarPrendasEnSelector] Recibo base construido FINAL:', {
@@ -947,7 +989,8 @@
                     // Copiar propiedades de anexos si existen
                     es_parcial: proc.es_parcial || false,
                     pedido_parcial_id: proc.pedido_parcial_id || null,
-                    numero_recibo: proc.numero_recibo || null
+                    numero_recibo: proc.numero_recibo || null,
+                    consecutivo_recibo_id: proc.consecutivo_recibo_id || null
                 });
             });
 
@@ -979,6 +1022,7 @@
                     pedido_parcial_id: parcial.id,
                     numero_recibo: parcial.consecutivo_actual || null,
                     activo: parcial.activo || 0,
+                    consecutivo_recibo_id: parcial.consecutivo_recibo_id || null,
                     created_at: parcial.created_at,
                     origen: 'PARCIAL'
                 });
@@ -1001,12 +1045,17 @@
             const todosRecibosEnDespacho = Array.isArray(recibos)
                 && recibos.length > 0
                 && recibos.every((recibo) => String(recibo?.area || '').trim().toUpperCase() === 'DESPACHO');
-            const estaEntregada = Boolean(prenda.entrega?.entregado || todosRecibosEnDespacho);
+            const estadoEntrega = String(
+                prenda.entrega?.estado_entrega
+                || (prenda.entrega?.entregado ? 'completo' : (todosRecibosEnDespacho ? 'completo' : 'pendiente'))
+            ).toLowerCase();
+            const estaEntregada = estadoEntrega === 'completo';
+            const entregaParcial = estadoEntrega === 'parcial';
             const claseEntregada = estaEntregada ? 'entregada' : '';
             const claseBotonEntregado = estaEntregada ? 'entregado' : '';
-            const textoBoton = estaEntregada ? 'Deshacer' : 'Entregar';
-            const colorBoton = estaEntregada ? '#f59e0b' : '#10b981';
-            const iconoBoton = estaEntregada ? 'fa-rotate-left' : 'fa-check-circle';
+            const textoBoton = estaEntregada ? 'Deshacer' : (entregaParcial ? 'Parcial' : 'Entregar');
+            const colorBoton = estaEntregada ? '#f59e0b' : (entregaParcial ? '#2563eb' : '#10b981');
+            const iconoBoton = estaEntregada ? 'fa-rotate-left' : (entregaParcial ? 'fa-layer-group' : 'fa-check-circle');
             const ocultarBotonEntregar = window.location.pathname.includes('/registros');
             
             // Depuración completa de datos de la prenda
@@ -1016,6 +1065,7 @@
                 entrega: prenda.entrega,
                 entrega_existe: !!prenda.entrega,
                 entregado: estaEntregada,
+                estado_entrega: estadoEntrega,
                 usuario: prenda.entrega?.usuario,
                 usuario_id: prenda.entrega?.usuario_id,
                 usuario_nombre: prenda.entrega?.usuario?.name,
@@ -1074,9 +1124,15 @@
             }
             
             const botonEntregarHtml = ocultarBotonEntregar ? '' : `
-                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};">
+                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};" title="${entregaParcial ? 'La prenda tiene entregas parciales registradas' : ''}">
                             <i class="fas ${iconoBoton}"></i>
                             <span>${textoBoton}</span>
+                        </button>`;
+
+            const botonVerEntregasHtml = `
+                        <button class="btn-ver-entregas-prenda" onclick="event.stopPropagation(); abrirHistorialEntregasPrenda(${prenda.id || prendaIdx})" title="Ver entregas parciales enviadas a despacho">
+                            <i class="fas fa-history"></i>
+                            <span>Ver entregas</span>
                         </button>`;
 
             const botonGenerarReciboCosturaHtml = (ocultarBotonEntregar || prenda.de_bodega != 1) ? '' : `
@@ -1094,12 +1150,13 @@
 
             html += `
                 <div class="prenda-accordion">
-                    <div class="prenda-header ${claseEntregada}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}">
+                    <div class="prenda-header ${claseEntregada}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}" data-estado-entrega="${estadoEntrega}">
                         <div style="flex: 1;">
                             <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}</p>
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
                         ${botonEntregarHtml}
+                        ${botonVerEntregasHtml}
                         ${botonGenerarReciboCosturaHtml}
                         ${fechaEntregaHtml}
                         <div class="prenda-chevron">▼</div>
@@ -1932,6 +1989,228 @@
         }, 3000);
     }
 
+    function obtenerPrendaSelector(prendaId) {
+        return window.selectorRecibosState?.prendas?.find((prenda) => Number(prenda.id) === Number(prendaId)) || null;
+    }
+
+    function obtenerRecibosEntregablesPrenda(prendaId) {
+        const prenda = obtenerPrendaSelector(prendaId);
+        if (!prenda) {
+            console.warn('[Entrega Parcial][obtenerRecibosEntregablesPrenda] Prenda no encontrada en selector:', {
+                prendaId,
+                prendasDisponibles: window.selectorRecibosState?.prendas || [],
+            });
+            return [];
+        }
+
+        const recibos = [];
+        const recibosData = prenda.recibos || {};
+        const consecutivosData = prenda.consecutivos || {};
+        const totalCantidadPrenda = Array.isArray(prenda.tallas)
+            ? prenda.tallas.reduce((sum, talla) => sum + Number(talla.cantidad || 0), 0)
+            : 1;
+
+        const obtenerIdRecibo = (recibo) => {
+            if (recibo == null) {
+                return null;
+            }
+
+            if (typeof recibo === 'object') {
+                return Number(
+                    recibo.consecutivo_recibo_id
+                    || recibo.id
+                    || recibo.recibo_id
+                    || 0
+                ) || null;
+            }
+
+            return null;
+        };
+
+        const reciboCostura = recibosData.COSTURA || consecutivosData.COSTURA || null;
+        console.log('[Entrega Parcial][obtenerRecibosEntregablesPrenda] Busqueda recibo COSTURA:', {
+            prendaId,
+            prendaNombre: prenda.nombre,
+            recibosData,
+            consecutivosData,
+            reciboCostura,
+            tipoReciboCostura: typeof reciboCostura,
+            reciboCosturaId: obtenerIdRecibo(reciboCostura),
+            tallas: prenda.tallas,
+            totalCantidadPrenda,
+        });
+
+        if (reciboCostura) {
+            const consecutivoReciboId = obtenerIdRecibo(reciboCostura);
+            const numeroRecibo = (typeof reciboCostura === 'object'
+                ? (reciboCostura.consecutivo_actual || reciboCostura.numero_recibo || reciboCostura.consecutivo_inicial)
+                : reciboCostura) || 'S/N';
+
+            recibos.push({
+                key: `base-${consecutivoReciboId || prendaId}`,
+                label: `Costura #${numeroRecibo}`,
+                consecutivo_recibo_id: consecutivoReciboId,
+                cantidad_sugerida: totalCantidadPrenda,
+            });
+        }
+
+        console.log('[Entrega Parcial][obtenerRecibosEntregablesPrenda] Resultado recibos entregables:', {
+            prendaId,
+            prendaNombre: prenda.nombre,
+            recibosEntregables: recibos,
+        });
+
+        return recibos;
+    }
+
+    async function abrirDecisionEntregaPrenda(prendaId) {
+        const prenda = obtenerPrendaSelector(prendaId);
+        const recibos = obtenerRecibosEntregablesPrenda(prendaId);
+
+        if (!prenda) {
+            throw new Error('No se encontro la prenda en el selector.');
+        }
+
+        console.log('[Entrega Parcial][abrirDecisionEntregaPrenda] Decision modal:', {
+            prendaId,
+            prendaNombre: prenda.nombre,
+            recibosDetectados: recibos,
+            tieneReciboCosturaParaParcial: recibos.length > 0,
+        });
+
+        if (typeof Swal === 'undefined') {
+            return { modo: 'completo' };
+        }
+
+        const decision = await Swal.fire({
+            title: `Entrega de ${prenda.nombre || 'prenda'}`,
+            text: recibos.length > 0
+                ? 'Elige si vas a registrar toda la prenda o solo una entrega parcial.'
+                : 'Esta prenda no tiene recibo de costura disponible para entrega parcial. Puedes entregarla completa.',
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: recibos.length > 0,
+            confirmButtonText: 'Completo',
+            denyButtonText: 'Parcial',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            confirmButtonColor: '#10b981',
+            denyButtonColor: '#2563eb',
+        });
+
+        if (decision.isDismissed) {
+            return null;
+        }
+
+        if (decision.isConfirmed) {
+            return { modo: 'completo' };
+        }
+
+        if (recibos.length === 0) {
+            return null;
+        }
+
+        if (typeof window.abrirModalReciboParcial !== 'function') {
+            throw new Error('El modal de entrega parcial no esta disponible.');
+        }
+
+        cerrarSelectorRecibos();
+        await window.abrirModalReciboParcial(prendaId, 'costura', window.selectorRecibosState?.pedidoId, {
+            mode: 'entrega_parcial',
+            consecutivoReciboId: recibos[0]?.consecutivo_recibo_id || null,
+        });
+
+        return null;
+    }
+
+    window.cerrarModalHistorialEntregas = function() {
+        const modal = document.getElementById('modal-historial-entregas');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    window.abrirHistorialEntregasPrenda = async function(prendaId) {
+        const prenda = obtenerPrendaSelector(prendaId);
+        const modal = document.getElementById('modal-historial-entregas');
+        const loading = document.getElementById('historial-entregas-loading');
+        const error = document.getElementById('historial-entregas-error');
+        const content = document.getElementById('historial-entregas-content');
+        const titulo = document.getElementById('historial-entregas-titulo');
+        const subtitulo = document.getElementById('historial-entregas-subtitulo');
+
+        if (!modal || !loading || !error || !content) {
+            return;
+        }
+
+        titulo.textContent = `Entregas parciales de ${prenda?.nombre || 'la prenda'}`;
+        subtitulo.textContent = 'Movimientos enviados a despacho';
+        content.innerHTML = '';
+        error.style.display = 'none';
+        error.textContent = '';
+        loading.style.display = 'block';
+        modal.style.display = 'block';
+
+        try {
+            const response = await fetch(`/api/prendas-entregas/${prendaId}/movimientos`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || `HTTP ${response.status}`);
+            }
+
+            const movimientos = Array.isArray(result.data?.movimientos) ? result.data.movimientos : [];
+            if (movimientos.length === 0) {
+                content.innerHTML = `
+                    <div style="padding: 20px; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; text-align: center;">
+                        Esta prenda todavía no tiene entregas parciales registradas.
+                    </div>
+                `;
+                return;
+            }
+
+            content.innerHTML = movimientos.map((movimiento, index) => {
+                const detalleTallas = Array.isArray(movimiento.detalle_tallas) ? movimiento.detalle_tallas : [];
+                const detalleHtml = detalleTallas.length > 0
+                    ? detalleTallas.map((item) => {
+                        const talla = item?.talla || 'Sin talla';
+                        const genero = item?.genero ? ` - ${item.genero}` : '';
+                        const color = item?.color_nombre ? ` - ${item.color_nombre}` : '';
+                        const cantidad = Number(item?.cantidad || 0);
+                        return `<span style="display:inline-flex; gap:4px; align-items:center; background:#f1f5f9; color:#0f172a; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:600;">${talla}${genero}${color}: ${cantidad}</span>`;
+                    }).join(' ')
+                    : '<span style="font-size:12px; color:#6b7280;">Sin detalle por talla</span>';
+
+                return `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 12px; background: ${index === 0 ? '#f8fafc' : 'white'};">
+                        <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                            <div>
+                                <div style="font-size:14px; font-weight:700; color:#111827;">Recibo ${movimiento.tipo_recibo || 'COSTURA'} #${movimiento.numero_recibo || 'S/N'}</div>
+                                <div style="font-size:12px; color:#6b7280;">Usuario: ${movimiento.usuario || `#${movimiento.usuario_id || 'N/A'}`}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:13px; font-weight:700; color:#0f766e;">Cantidad: ${movimiento.cantidad_entregada}</div>
+                                <div style="font-size:12px; color:#6b7280;">${movimiento.fecha_entrega || 'Sin fecha'}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            ${detalleHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            error.style.display = 'block';
+            error.textContent = err.message || 'No se pudo cargar el historial de entregas';
+        } finally {
+            loading.style.display = 'none';
+        }
+    };
+
     /**
      * Toggle del estado de entrega de una prenda
      * @param {HTMLElement} button - Botón que se clickeó
@@ -1941,8 +2220,12 @@
         const header = button.closest('.prenda-header');
         const buttonText = button.querySelector('span');
         const icon = button.querySelector('i');
-        const isEntregada = header.classList.contains('entregada');
+        const estadoEntrega = String(header?.dataset?.estadoEntrega || 'pendiente').toLowerCase();
+        const isEntregada = estadoEntrega === 'completo';
         const nuevoEstado = !isEntregada;
+        let payload = {
+            entregado: nuevoEstado
+        };
         
         // Deshabilitar botón mientras se procesa
         button.disabled = true;
@@ -1950,6 +2233,18 @@
         button.style.cursor = 'not-allowed';
         
         try {
+            if (nuevoEstado) {
+                const decision = await abrirDecisionEntregaPrenda(prendaId);
+                if (!decision) {
+                    return;
+                }
+
+                payload = {
+                    ...payload,
+                    ...decision,
+                };
+            }
+
             // Guardar en base de datos
             const response = await fetch(`/api/prendas-entregas/${prendaId}/toggle`, {
                 method: 'POST',
@@ -1958,9 +2253,7 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    entregado: nuevoEstado
-                })
+                body: JSON.stringify(payload)
             });
             
             if (!response.ok) {
@@ -1974,9 +2267,20 @@
             }
             
             // Actualizar UI solo si la petición fue exitosa
-            if (nuevoEstado) {
+            if (nuevoEstado && result.data?.estado_entrega === 'parcial') {
+                header.classList.remove('entregada');
+                header.dataset.estadoEntrega = 'parcial';
+                button.classList.remove('entregado');
+                buttonText.textContent = 'Parcial';
+                button.style.background = '#2563eb';
+                icon.className = 'fas fa-layer-group';
+
+                console.log(`[Prenda ${prendaId}] Estado cambiado a: PARCIAL`, result.data);
+                mostrarMensajeExito(result.message || 'Entrega parcial registrada');
+            } else if (nuevoEstado) {
                 // Cambiar a entregada (en UI dejamos opcion de deshacer)
                 header.classList.add('entregada');
+                header.dataset.estadoEntrega = 'completo';
                 button.classList.add('entregado');
                 buttonText.textContent = 'Deshacer';
                 button.style.background = '#f59e0b';
@@ -1987,6 +2291,7 @@
             } else {
                 // Cambiar a NO entregada
                 header.classList.remove('entregada');
+                header.dataset.estadoEntrega = 'pendiente';
                 button.classList.remove('entregado');
                 buttonText.textContent = 'Entregar';
                 button.style.background = '#10b981';

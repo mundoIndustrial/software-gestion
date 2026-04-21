@@ -292,11 +292,16 @@ class ObtenerDetalleCompletoUseCase
 
                 // Cargar estado de entrega para reflejar correctamente el boton Entregar/Deshacer.
                 $entrega = $this->readService->findPrendaEntrega((int) $prendaId);
+                $estadoEntrega = $this->readService->getPrendaEntregaEstado((int) $prendaId);
                 $prenda['entrega'] = $entrega ? [
                     'entregado' => (bool) $entrega->entregado,
                     'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
                     'usuario' => $entrega->usuario?->name,
-                ] : null;
+                    'estado_entrega' => $estadoEntrega['estado_entrega'],
+                    'total_recibos' => $estadoEntrega['total_recibos'],
+                    'recibos_entregados' => $estadoEntrega['recibos_entregados'],
+                    'completa' => $estadoEntrega['completa'],
+                ] : $estadoEntrega;
             } else {
                 $prenda['ancho_metraje'] = null;
                 $prenda['recibos'] = null;

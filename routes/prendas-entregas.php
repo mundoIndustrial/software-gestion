@@ -20,4 +20,8 @@ Route::withoutMiddleware(['api'])
     // Obtener estado de entrega de una prenda
     Route::get('{prendaPedidoId}/estado', [PrendaEntregaController::class, 'obtenerEstado'])
         ->name('estado');
+
+    // Obtener historial de entregas parciales de una prenda
+    Route::get('{prendaPedidoId}/movimientos', [PrendaEntregaController::class, 'obtenerMovimientos'])
+        ->name('movimientos');
 });

@@ -31,3 +31,16 @@ if (isOperarioRoute) {
         console.error('[app.js] Error cargando modulo operario:', error);
     });
 }
+
+/*
+|--------------------------------------------------------------------------
+| Recepcion Despacho Module - Load scripts for recepcion-despacho
+|--------------------------------------------------------------------------
+*/
+const isRecepcionRoute = currentPath.startsWith('/recepcion-despacho');
+
+if (isRecepcionRoute) {
+    import('./recepcion-despacho/entry.js').catch((error) => {
+        console.error('[app.js] Error cargando modulo recepcion-despacho:', error);
+    });
+}

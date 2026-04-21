@@ -8,6 +8,8 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaEntrega;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
 {
@@ -106,7 +108,7 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
 
     public function getConsecutivosPrenda(int $pedidoId, int $prendaId): Collection
     {
-        return DB::table('consecutivos_recibos_pedidos')
+        $consecutivos = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where(function ($query) use ($prendaId) {
                 $query->where('prenda_id', $prendaId)
@@ -123,16 +125,46 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 'created_at',
             ])
             ->get();
+
+        Log::debug('[PedidoDetalleReadServiceImpl] getConsecutivosPrenda resultado crudo', [
+            'pedido_id' => $pedidoId,
+            'prenda_id' => $prendaId,
+            'cantidad' => $consecutivos->count(),
+            'consecutivos' => $consecutivos->map(function ($row) {
+                return (array) $row;
+            })->values()->all(),
+        ]);
+
+        return $consecutivos;
     }
 
     public function getParcialesPrenda(int $pedidoId, int $prendaId): Collection
     {
-        return DB::table('pedidos_parciales')
-            ->where('pedido_produccion_id', $pedidoId)
-            ->where('prenda_pedido_id', $prendaId)
-            ->whereNull('deleted_at')
-            ->select(['id', 'tipo_recibo', 'consecutivo_actual', 'consecutivo_inicial', 'activo', 'estado', 'created_at'])
-            ->get();
+        $query = DB::table('pedidos_parciales as pp')
+            ->where('pp.pedido_produccion_id', $pedidoId)
+            ->where('pp.prenda_pedido_id', $prendaId)
+            ->whereNull('pp.deleted_at')
+            ->select([
+                'pp.id',
+                'pp.tipo_recibo',
+                'pp.consecutivo_actual',
+                'pp.consecutivo_inicial',
+                'pp.activo',
+                'pp.estado',
+                'pp.created_at',
+            ]);
+
+        if (Schema::hasColumn('consecutivos_recibos_pedidos', 'pedido_parcial_id')) {
+            $query->leftJoin('consecutivos_recibos_pedidos as crp', function ($join) {
+                $join->on('crp.pedido_parcial_id', '=', 'pp.id')
+                    ->where('crp.activo', 1)
+                    ->whereRaw("UPPER(COALESCE(crp.estado, '')) <> 'ANULADO'");
+            })->addSelect('crp.id as consecutivo_recibo_id');
+        } else {
+            $query->addSelect(DB::raw('NULL as consecutivo_recibo_id'));
+        }
+
+        return $query->get();
     }
 
     public function findReciboCosturaByPedidoId(int $pedidoId): ?object
@@ -222,6 +254,98 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
     public function findPrendaEntrega(int $prendaId): ?object
     {
         return PrendaEntrega::query()->where('prenda_pedido_id', $prendaId)->first();
+    }
+
+    public function getPrendaEntregaEstado(int $prendaId): array
+    {
+        static $tienePedidoParcialIdCache = null;
+        $tienePedidoParcialId = $tienePedidoParcialIdCache ??= Schema::hasColumn('consecutivos_recibos_pedidos', 'pedido_parcial_id');
+
+        $columns = ['id'];
+        if ($tienePedidoParcialId) {
+            $columns[] = 'pedido_parcial_id';
+        }
+
+        $recibos = DB::table('consecutivos_recibos_pedidos')
+            ->where('prenda_id', $prendaId)
+            ->where('activo', 1)
+            ->whereRaw("UPPER(COALESCE(estado, '')) <> 'ANULADO'")
+            ->get($columns);
+
+        $totalRecibos = $recibos->count();
+        if ($totalRecibos === 0) {
+            return [
+                'total_recibos' => 0,
+                'recibos_entregados' => 0,
+                'recibos_con_movimiento' => 0,
+                'estado_entrega' => 'pendiente',
+                'completa' => false,
+            ];
+        }
+
+        $cantidadBasePrenda = (int) DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prendaId)
+            ->sum('cantidad');
+
+        $cantidadesEntregadas = DB::table('prenda_entrega_movimientos')
+            ->where('prenda_pedido_id', $prendaId)
+            ->select('consecutivo_recibo_id', DB::raw('SUM(cantidad_entregada) as total_entregado'))
+            ->groupBy('consecutivo_recibo_id')
+            ->pluck('total_entregado', 'consecutivo_recibo_id');
+
+        $cantidadesParciales = collect();
+        if ($tienePedidoParcialId) {
+            $pedidoParcialIds = $recibos
+                ->pluck('pedido_parcial_id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($pedidoParcialIds->isNotEmpty()) {
+                $cantidadesParciales = DB::table('pedidos_parciales_tallas')
+                    ->whereIn('pedido_parcial_id', $pedidoParcialIds)
+                    ->select('pedido_parcial_id', DB::raw('SUM(cantidad) as total_cantidad'))
+                    ->groupBy('pedido_parcial_id')
+                    ->pluck('total_cantidad', 'pedido_parcial_id');
+            }
+        }
+
+        $recibosEntregados = 0;
+        $recibosConMovimiento = 0;
+
+        foreach ($recibos as $recibo) {
+            $pedidoParcialId = $tienePedidoParcialId ? ($recibo->pedido_parcial_id ?? null) : null;
+            $cantidadTotal = $pedidoParcialId
+                ? (int) ($cantidadesParciales[$pedidoParcialId] ?? 0)
+                : $cantidadBasePrenda;
+
+            $cantidadEntregada = (int) ($cantidadesEntregadas[$recibo->id] ?? 0);
+
+            if ($cantidadEntregada > 0) {
+                $recibosConMovimiento++;
+            }
+
+            if ($cantidadTotal > 0 && $cantidadEntregada >= $cantidadTotal) {
+                $recibosEntregados++;
+            }
+        }
+
+        $completa = $totalRecibos > 0 && $recibosEntregados >= $totalRecibos;
+        $estado = 'pendiente';
+
+        if ($completa) {
+            $estado = 'completo';
+        } elseif ($recibosConMovimiento > 0) {
+            $estado = 'parcial';
+        }
+
+        return [
+            'total_recibos' => (int) $totalRecibos,
+            'recibos_entregados' => (int) $recibosEntregados,
+            'recibos_con_movimiento' => (int) $recibosConMovimiento,
+            'estado_entrega' => $estado,
+            'completa' => $completa,
+        ];
     }
 
     public function getRecibosParcialesPrenda(int $pedidoId, int $prendaId): Collection

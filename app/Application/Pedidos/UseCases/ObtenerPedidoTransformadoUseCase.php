@@ -227,11 +227,16 @@ class ObtenerPedidoTransformadoUseCase
     {
         try {
             $entrega = $this->readService->findPrendaEntrega((int) $prenda['id']);
+            $estadoEntrega = $this->readService->getPrendaEntregaEstado((int) $prenda['id']);
             $prenda['entrega'] = $entrega ? [
                 'entregado' => $entrega->entregado,
                 'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
                 'usuario' => $entrega->usuario?->name,
-            ] : null;
+                'estado_entrega' => $estadoEntrega['estado_entrega'],
+                'total_recibos' => $estadoEntrega['total_recibos'],
+                'recibos_entregados' => $estadoEntrega['recibos_entregados'],
+                'completa' => $estadoEntrega['completa'],
+            ] : $estadoEntrega;
         } catch (\Exception $e) {
             Log::warning('[ObtenerPedidoTransformadoUseCase] Error cargando estado entrega', [
                 'pedido_id' => $pedidoId,

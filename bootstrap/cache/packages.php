@@ -34,6 +34,10 @@
   ),
   'laravel/reverb' => 
   array (
+    'aliases' => 
+    array (
+      'Output' => 'Laravel\\Reverb\\Output',
+    ),
     'providers' => 
     array (
       0 => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',

@@ -43,6 +43,8 @@ interface PedidoDetalleReadService
 
     public function findPrendaEntrega(int $prendaId): ?object;
 
+    public function getPrendaEntregaEstado(int $prendaId): array;
+
     public function getRecibosParcialesPrenda(int $pedidoId, int $prendaId): Collection;
 
     public function getReciboParcialTallas(int $pedidoParcialId): Collection;
