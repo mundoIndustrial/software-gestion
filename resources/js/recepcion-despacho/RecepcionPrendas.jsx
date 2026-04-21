@@ -55,9 +55,13 @@ function IconScan() {
 function formatFechaHora(iso) {
   if (!iso) return null;
   const d = new Date(iso);
-  const fecha = d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-  const hora = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
-  return `${fecha} · ${hora}`;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+  return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
 }
 
 // Card component
@@ -514,6 +518,9 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const [novedadesLoading, setNovedadesLoading] = useState(false);
   const [novedadForm, setNovedadForm] = useState({ novedad_texto: '' });
   const [submittingNovedad, setSubmittingNovedad] = useState(false);
+  const [editingNovedadId, setEditingNovedadId] = useState(null);
+  const [deletingNovedadId, setDeletingNovedadId] = useState(null);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState(null);
   const toastTimer = useRef(null);
 
   const accent = '#2563eb';
@@ -564,8 +571,14 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
 
     setSubmittingNovedad(true);
     try {
-      const response = await fetch(`/api/recepcion-despacho/${selectedItemForNovedades.id}/novedades`, {
-        method: 'POST',
+      const url = editingNovedadId
+        ? `/api/recepcion-despacho/novedades/${editingNovedadId}`
+        : `/api/recepcion-despacho/${selectedItemForNovedades.id}/novedades`;
+
+      const method = editingNovedadId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
           'Content-Type': 'application/json',
@@ -578,10 +591,10 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
       });
 
       if (!response.ok) throw new Error('Error guardando novedad');
-      const data = await response.json();
 
-      setNovedadForm({ novedad_texto: '', tipo_novedad: 'observacion' });
-      setToast('✓ Novedad guardada');
+      setNovedadForm({ novedad_texto: '' });
+      setEditingNovedadId(null);
+      setToast(editingNovedadId ? '✓ Novedad actualizada' : '✓ Novedad guardada');
       clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 2500);
 
@@ -594,6 +607,47 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
     } finally {
       setSubmittingNovedad(false);
     }
+  };
+
+  const deleteNovedad = async (novedadId) => {
+    setConfirmDeleteModal(novedadId);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteModal) return;
+
+    setDeletingNovedadId(confirmDeleteModal);
+    try {
+      const response = await fetch(`/api/recepcion-despacho/novedades/${confirmDeleteModal}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Error eliminando novedad');
+
+      setToast('✓ Novedad eliminada');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+
+      await loadNovedades(selectedItemForNovedades.id);
+    } catch (error) {
+      console.error('Error deleting novedad:', error);
+      setToast('❌ Error al eliminar novedad');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+    } finally {
+      setDeletingNovedadId(null);
+      setConfirmDeleteModal(null);
+    }
+  };
+
+  const editNovedad = (nov) => {
+    setEditingNovedadId(nov.id);
+    setNovedadForm({ novedad_texto: nov.novedad_texto });
+    window.scrollTo({ top: document.querySelector('textarea')?.offsetTop - 100, behavior: 'smooth' });
   };
 
   const confirmReceipt = async () => {
@@ -1315,8 +1369,8 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                     <div
                       key={nov.id}
                       style={{
-                        background: dark ? '#1f2937' : '#f9fafb',
-                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        background: editingNovedadId === nov.id ? accent + '10' : (dark ? '#1f2937' : '#f9fafb'),
+                        border: `1px solid ${editingNovedadId === nov.id ? accent : (dark ? '#374151' : '#e5e7eb')}`,
                         borderRadius: 12,
                         padding: '12px',
                       }}
@@ -1331,26 +1385,49 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                               fontSize: 10,
                               fontWeight: 700,
                               textTransform: 'uppercase',
-                              background:
-                                nov.tipo_novedad === 'problema'
-                                  ? '#fecaca'
-                                  : nov.tipo_novedad === 'observacion'
-                                    ? '#bfdbfe'
-                                    : '#d1d5db',
-                              color:
-                                nov.tipo_novedad === 'problema'
-                                  ? '#991b1b'
-                                  : nov.tipo_novedad === 'observacion'
-                                    ? '#1e40af'
-                                    : '#374151',
+                              background: '#bfdbfe',
+                              color: '#1e40af',
                               marginBottom: 4,
                             }}
                           >
-                            {nov.tipo_novedad}
+                            Observación
                           </div>
                         </div>
                         {nov.es_mio && (
-                          <span style={{ fontSize: 10, color: accent, fontWeight: 600 }}>Mía</span>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              onClick={() => editNovedad(nov)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: accent,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                padding: 0,
+                              }}
+                              title="Editar"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              onClick={() => deleteNovedad(nov.id)}
+                              disabled={deletingNovedadId === nov.id}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: deletingNovedadId === nov.id ? 'not-allowed' : 'pointer',
+                                color: '#ef4444',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                padding: 0,
+                                opacity: deletingNovedadId === nov.id ? 0.5 : 1,
+                              }}
+                              title="Eliminar"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         )}
                       </div>
                       <div style={{ fontSize: 13, color: textPrimary, marginBottom: 6, lineHeight: 1.4 }}>
@@ -1365,8 +1442,13 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
               )}
             </div>
 
-            {/* Add Novedad Form */}
+            {/* Add/Edit Novedad Form */}
             <div style={{ borderTop: dark ? '1px solid #374151' : '1px solid #e5e7eb', paddingTop: 16 }}>
+              {editingNovedadId && (
+                <div style={{ marginBottom: 12, padding: '8px 12px', background: accent + '10', borderRadius: 8, fontSize: 12, color: accent, fontWeight: 600 }}>
+                  ✎ Editando novedad
+                </div>
+              )}
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: textSecondary, display: 'block', marginBottom: 6 }}>
                   Observación
@@ -1374,7 +1456,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 <textarea
                   value={novedadForm.novedad_texto}
                   onChange={(e) => setNovedadForm({ ...novedadForm, novedad_texto: e.target.value })}
-                  placeholder="Escribe la novedad..."
+                  placeholder="Escribe la observación..."
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -1391,23 +1473,121 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 />
               </div>
 
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={submitNovedad}
+                  disabled={submittingNovedad}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: submittingNovedad ? '#9ca3af' : accent,
+                    color: '#fff',
+                    cursor: submittingNovedad ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  {submittingNovedad ? 'Guardando...' : editingNovedadId ? 'Actualizar' : 'Guardar Observación'}
+                </button>
+                {editingNovedadId && (
+                  <button
+                    onClick={() => {
+                      setEditingNovedadId(null);
+                      setNovedadForm({ novedad_texto: '' });
+                    }}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 10,
+                      border: `1.5px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                      background: 'transparent',
+                      color: textSecondary,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 14,
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 60,
+            backdropFilter: 'blur(2px)',
+          }}
+          onClick={() => setConfirmDeleteModal(null)}
+        >
+          <div
+            style={{
+              background: bgHeader,
+              borderRadius: 20,
+              padding: '24px',
+              maxWidth: 320,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
+              ¿Eliminar novedad?
+            </div>
+
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 20, lineHeight: 1.5 }}>
+              Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar esta observación?
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={submitNovedad}
-                disabled={submittingNovedad}
+                onClick={() => setConfirmDeleteModal(null)}
                 style={{
-                  width: '100%',
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: '1.5px solid #e5e7eb',
+                  background: '#fff',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deletingNovedadId === confirmDeleteModal}
+                style={{
+                  flex: 1,
                   padding: '12px',
                   borderRadius: 10,
                   border: 'none',
-                  background: submittingNovedad ? '#9ca3af' : accent,
+                  background: '#ef4444',
                   color: '#fff',
-                  cursor: submittingNovedad ? 'not-allowed' : 'pointer',
+                  cursor: deletingNovedadId === confirmDeleteModal ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                   fontSize: 14,
-                  transition: 'opacity 0.2s',
+                  opacity: deletingNovedadId === confirmDeleteModal ? 0.7 : 1,
                 }}
               >
-                {submittingNovedad ? 'Guardando...' : 'Guardar Novedad'}
+                {deletingNovedadId === confirmDeleteModal ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>

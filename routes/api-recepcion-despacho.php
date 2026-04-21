@@ -17,4 +17,6 @@ Route::middleware(['web', 'auth:web'])
         Route::post('/{id}/confirmar', [RecepcionDespachoController::class, 'confirmarRecepcion']);
         Route::get('/{id}/novedades', [RecepcionDespachoController::class, 'getNovedades']);
         Route::post('/{id}/novedades', [RecepcionDespachoController::class, 'crearNovedad']);
+        Route::put('/novedades/{novedadId}', [RecepcionDespachoController::class, 'actualizarNovedad']);
+        Route::delete('/novedades/{novedadId}', [RecepcionDespachoController::class, 'eliminarNovedad']);
     });

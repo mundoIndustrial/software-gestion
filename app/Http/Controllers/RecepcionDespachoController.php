@@ -8,6 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use App\Application\UseCases\RecibosNovedades\ObtenerNovedadesReciboUseCase;
 use App\Application\UseCases\RecibosNovedades\GuardarNovedadesReciboUseCase;
+use App\Application\UseCases\RecibosNovedades\ActualizarNovedadReciboUseCase;
+use App\Application\UseCases\RecibosNovedades\EliminarNovedadReciboUseCase;
 
 class RecepcionDespachoController extends Controller
 {
@@ -296,7 +298,7 @@ class RecepcionDespachoController extends Controller
             // Obtener pedidoId y numeroRecibo a partir del consecutivo_recibo_id
             $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')
                 ->join('pedidos_produccion as pedp', 'crp.pedido_produccion_id', '=', 'pedp.id')
-                ->select('pedp.numero_pedido', 'crp.consecutivo_actual')
+                ->select('pedp.id', 'crp.consecutivo_actual')
                 ->where('crp.id', $id)
                 ->first();
 
@@ -304,24 +306,37 @@ class RecepcionDespachoController extends Controller
                 return response()->json(['error' => 'Recibo no encontrado'], 404);
             }
 
-            $pedidoId = (int) $consecutivo->numero_pedido;
-            $numeroRecibo = (string) $consecutivo->consecutivo_actual;
+            $pedidoId = (int) $consecutivo->id;
+            $numeroRecibo = (int) $consecutivo->consecutivo_actual;
 
             // Obtener novedades usando el UseCase existente
             $novedadesDb = $obtenerNovedadesUseCase->execute($pedidoId, $numeroRecibo);
 
+            $usuarioActual = \Auth::id();
             $novedades = [];
             foreach ($novedadesDb as $novedad) {
-                $novedades[] = [
-                    'id' => $novedad->id,
-                    'tipo_novedad' => $novedad->tipo_novedad,
-                    'estado_novedad' => $novedad->estado_novedad,
-                    'novedad_texto' => $novedad->novedad_texto,
-                    'notas_adicionales' => $novedad->notas_adicionales,
-                    'creado_por_nombre' => $novedad->creadoPor ? $novedad->creadoPor->name : null,
-                    'creado_en' => $novedad->creado_en ? \Carbon\Carbon::parse($novedad->creado_en)->toIso8601String() : null,
-                    'es_mio' => $novedad->creado_por === \Auth::id(),
-                ];
+                if ((int) $novedad->creado_por === $usuarioActual) {
+                    $fechaFormato = null;
+                    if ($novedad->creado_en) {
+                        $fecha = \Carbon\Carbon::parse($novedad->creado_en);
+                        $ampm = $fecha->hour >= 12 ? 'PM' : 'AM';
+                        $horaFormato = str_pad($fecha->hour, 2, '0', STR_PAD_LEFT);
+                        $minutosFormato = str_pad($fecha->minute, 2, '0', STR_PAD_LEFT);
+                        $diaFormato = str_pad($fecha->day, 2, '0', STR_PAD_LEFT);
+                        $mesFormato = str_pad($fecha->month, 2, '0', STR_PAD_LEFT);
+                        $fechaFormato = "{$diaFormato}/{$mesFormato}/{$fecha->year} {$horaFormato}:{$minutosFormato} {$ampm}";
+                    }
+                    $novedades[] = [
+                        'id' => $novedad->id,
+                        'tipo_novedad' => $novedad->tipo_novedad,
+                        'estado_novedad' => $novedad->estado_novedad,
+                        'novedad_texto' => $novedad->novedad_texto,
+                        'notas_adicionales' => $novedad->notas_adicionales,
+                        'creado_por_nombre' => $novedad->creadoPor ? $novedad->creadoPor->name : null,
+                        'creado_en' => $fechaFormato,
+                        'es_mio' => true,
+                    ];
+                }
             }
 
             return response()->json([
@@ -359,7 +374,7 @@ class RecepcionDespachoController extends Controller
             // Obtener pedidoId y numeroRecibo a partir del consecutivo_recibo_id
             $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')
                 ->join('pedidos_produccion as pedp', 'crp.pedido_produccion_id', '=', 'pedp.id')
-                ->select('pedp.numero_pedido', 'crp.consecutivo_actual', 'crp.prenda_id')
+                ->select('pedp.id', 'crp.consecutivo_actual', 'crp.prenda_id')
                 ->where('crp.id', $id)
                 ->first();
 
@@ -367,8 +382,8 @@ class RecepcionDespachoController extends Controller
                 return response()->json(['error' => 'Recibo no encontrado'], 404);
             }
 
-            $pedidoId = (int) $consecutivo->numero_pedido;
-            $numeroRecibo = (string) $consecutivo->consecutivo_actual;
+            $pedidoId = (int) $consecutivo->id;
+            $numeroRecibo = (int) $consecutivo->consecutivo_actual;
 
             // Guardar novedad usando el UseCase existente
             $result = $guardarNovedadesUseCase->execute(
@@ -388,6 +403,73 @@ class RecepcionDespachoController extends Controller
         } catch (\Exception $e) {
             \Log::error('[RecepcionDespacho] Error en crearNovedad:', [
                 'consecutivo_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Actualizar una novedad existente
+     * PUT /api/recepcion-despacho/novedades/{novedadId}
+     *
+     * @param Request $request
+     * @param string $novedadId
+     * @param ActualizarNovedadReciboUseCase $useCase
+     */
+    public function actualizarNovedad(
+        Request $request,
+        string $novedadId,
+        ActualizarNovedadReciboUseCase $actualizarNovedadUseCase
+    ): JsonResponse {
+        try {
+            $validated = $request->validate([
+                'novedad_texto' => 'required|string|max:5000',
+            ]);
+
+            $novedad = $actualizarNovedadUseCase->execute(
+                $novedadId,
+                $validated['novedad_texto'],
+                'observacion',
+                null,
+                null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad actualizada correctamente',
+                'data' => $novedad,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RecepcionDespacho] Error en actualizarNovedad:', [
+                'novedad_id' => $novedadId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Eliminar una novedad
+     * DELETE /api/recepcion-despacho/novedades/{novedadId}
+     *
+     * @param string $novedadId
+     * @param EliminarNovedadReciboUseCase $useCase
+     */
+    public function eliminarNovedad(
+        string $novedadId,
+        EliminarNovedadReciboUseCase $eliminarNovedadUseCase
+    ): JsonResponse {
+        try {
+            $eliminarNovedadUseCase->execute($novedadId);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad eliminada correctamente',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RecepcionDespacho] Error en eliminarNovedad:', [
+                'novedad_id' => $novedadId,
                 'error' => $e->getMessage(),
             ]);
             return response()->json(['error' => $e->getMessage()], 500);
