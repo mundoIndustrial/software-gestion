@@ -1706,7 +1706,7 @@ function renderizarTecnicasAgregadasPaso3() {
                 align-items: center;
                 gap: 0.4rem;
             " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
-                
+                <i class="fas fa-trash-alt" style="font-size: 0.9rem;"></i> Eliminar
             </button>
         `;
         headerHTML += '</div>';
@@ -2088,7 +2088,7 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
     contenido.innerHTML = `
         <div style="margin-bottom: 14px;">
             <h3 style="margin: 0 0 10px 0; font-size: 0.9rem; font-weight: 700; color: #334155;">Prenda</h3>
-            <div style="padding: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 700; color: #0f172a;">${nombrePrenda}</div>
+            <input type="text" id="p3EditarNombrePrenda" value="${nombrePrenda}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; font-weight: 700; color: #0f172a; text-transform: uppercase;" />
         </div>
 
         <div style="margin-bottom: 14px; padding: 12px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 8px;">
@@ -2739,7 +2739,20 @@ function guardarEdicionPrendaPaso3DesdeModal() {
     }
 
     const { nombrePrenda, tecnicasConPrenda, ubicacionesPorTecnica, imagenesPorTecnica, imagenesExistentesPorTecnica, logoCompartido, basePrenda } = window.p3EdicionContexto;
+    const nuevoNombrePrenda = document.getElementById('p3EditarNombrePrenda') ? document.getElementById('p3EditarNombrePrenda').value.trim().toUpperCase() : nombrePrenda;
     const obs = document.getElementById('p3EditarObservaciones') ? document.getElementById('p3EditarObservaciones').value.trim() : '';
+
+    if (!nuevoNombrePrenda) {
+        try {
+            Swal.fire({
+                icon: 'error',
+                title: 'Nombre requerido',
+                text: 'Debes ingresar un nombre para la prenda.',
+                confirmButtonColor: '#111827'
+            });
+        } catch (_) {}
+        return;
+    }
 
     // Validación: al menos 1 técnica seleccionada
     const tecnicasRoot = document.getElementById('p3EditarTecnicas');
@@ -2799,8 +2812,19 @@ function guardarEdicionPrendaPaso3DesdeModal() {
             if (id === undefined || id === null) return tecnicaData;
             const tipoId = Number(id);
             if (Number.isNaN(tipoId)) return tecnicaData;
-            if (!idsSelSet.has(tipoId) && Array.isArray(tecnicaData.prendas)) {
-                tecnicaData.prendas = tecnicaData.prendas.filter((p) => p && p.nombre_prenda !== nombrePrenda);
+            
+            if (Array.isArray(tecnicaData.prendas)) {
+                if (!idsSelSet.has(tipoId)) {
+                    // Remover si ya no está seleccionada
+                    tecnicaData.prendas = tecnicaData.prendas.filter((p) => p && p.nombre_prenda !== nombrePrenda);
+                } else {
+                    // Si sigue seleccionada, actualizar el nombre por si cambió
+                    tecnicaData.prendas.forEach(p => {
+                        if (p && p.nombre_prenda === nombrePrenda) {
+                            p.nombre_prenda = nuevoNombrePrenda;
+                        }
+                    });
+                }
             }
             return tecnicaData;
         })
@@ -2872,7 +2896,7 @@ function guardarEdicionPrendaPaso3DesdeModal() {
         }
 
         const dataNuevaPrenda = {
-            nombre_prenda: (basePrenda && basePrenda.nombre_prenda) ? basePrenda.nombre_prenda : nombrePrenda,
+            nombre_prenda: nuevoNombrePrenda,
             prenda_paso2_index: basePrenda?.prenda_paso2_index ?? null,
             ubicaciones: Array.isArray(ubicacionesPorTecnica[key]) ? ubicacionesPorTecnica[key] : [],
             observaciones: obs,
@@ -2880,7 +2904,7 @@ function guardarEdicionPrendaPaso3DesdeModal() {
             cantidad: basePrenda?.cantidad ?? 1
         };
 
-        const idx = tecnicaData.prendas.findIndex(p => p && p.nombre_prenda === nombrePrenda);
+        const idx = tecnicaData.prendas.findIndex(p => p && p.nombre_prenda === nuevoNombrePrenda);
         if (idx >= 0) {
             tecnicaData.prendas[idx] = { ...tecnicaData.prendas[idx], ...dataNuevaPrenda };
         } else {
