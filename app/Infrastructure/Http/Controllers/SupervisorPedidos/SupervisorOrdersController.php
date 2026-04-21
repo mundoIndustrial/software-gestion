@@ -140,7 +140,7 @@ class SupervisorOrdersController extends Controller
                 'crpb.prenda_id',
                 DB::raw('MAX(crpb.consecutivo_actual) as consecutivo_actual'),
             ])
-            ->whereIn('crpb.tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->where('crpb.tipo_recibo', 'COSTURA')
             ->whereRaw("UPPER(COALESCE(crpb.estado, '')) <> 'ANULADO'")
             ->groupBy('crpb.pedido_produccion_id', 'crpb.prenda_id');
 
@@ -156,6 +156,14 @@ class SupervisorOrdersController extends Controller
             })
             ->leftJoin('users as ue', 'ue.id', '=', 'pe.usuario_id')
             ->leftJoin('users as ur', 'ur.id', '=', 'pem.usuario_recibido_id')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('consecutivos_recibos_pedidos as crp_filter')
+                    ->whereColumn('crp_filter.pedido_produccion_id', 'ped.id')
+                    ->whereColumn('crp_filter.prenda_id', 'pp.id')
+                    ->where('crp_filter.tipo_recibo', 'COSTURA')
+                    ->whereRaw("UPPER(COALESCE(crp_filter.estado, '')) <> 'ANULADO'");
+            })
             ->select([
                 'ped.numero_pedido',
                 'c.nombre as cliente',

@@ -1635,48 +1635,47 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
         </div>
       )}
 
-      {/* Clear Filter Button */}
+      {/* Clear Filter Button - Red Circle */}
       {hasDateFilter && (
-        <div
+        <button
+          onClick={clearDateFilter}
+          title="Limpiar filtro de fecha"
           style={{
             position: 'fixed',
-            bottom: 90,
-            left: 16,
-            right: 16,
+            bottom: 100,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            border: 'none',
+            background: '#ef4444',
+            color: '#fff',
+            fontSize: 24,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             zIndex: 40,
-            animation: 'slideUp 0.3s ease',
+            transition: 'all 0.3s ease',
+            animation: 'scaleIn 0.3s ease',
+            WebkitTapHighlightColor: 'transparent',
           }}
+          onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
+          onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          onTouchStart={(e) => (e.currentTarget.style.opacity = '0.85')}
+          onTouchEnd={(e) => (e.currentTarget.style.opacity = '1')}
         >
-          <button
-            onClick={clearDateFilter}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: 12,
-              border: 'none',
-              background: accent,
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            ✕ Limpiar filtro de fecha
-          </button>
+          ✕
           <style>
             {`
-              @keyframes slideUp {
-                from { transform: translateY(100%); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
+              @keyframes scaleIn {
+                from { transform: scale(0); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
               }
             `}
           </style>
-        </div>
+        </button>
       )}
 
       {/* Toast */}
