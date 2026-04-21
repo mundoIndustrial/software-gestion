@@ -61,17 +61,6 @@ final class PrendaEntregaController extends Controller
 
             $modoParcialSolicitado = (string) $request->input('modo', '') === 'parcial';
 
-            Log::info('[PrendaEntregaController] Solicitud toggle entrega recibida', [
-                'prenda_pedido_id' => $prendaPedidoId,
-                'pedido_produccion_id' => $pedidoProduccionId,
-                'modo_parcial_solicitado' => $modoParcialSolicitado,
-                'entregado' => $validated['entregado'] ?? null,
-                'consecutivo_recibo_id_request' => $validated['consecutivo_recibo_id'] ?? null,
-                'cantidad_entregada' => $cantidadEntregada,
-                'detalle_tallas' => $detalleTallas,
-                'usuario_id' => Auth::id(),
-            ]);
-
             if ($modoParcialSolicitado && !$consecutivoReciboId) {
                 $recibosCosturaCandidatos = DB::table('consecutivos_recibos_pedidos')
                     ->where('prenda_id', $prendaPedidoId)
@@ -81,22 +70,8 @@ final class PrendaEntregaController extends Controller
                     ->orderByDesc('id')
                     ->get(['id', 'tipo_recibo', 'consecutivo_actual', 'activo', 'estado', 'area', 'prenda_id']);
 
-                Log::info('[PrendaEntregaController] Busqueda fallback recibo COSTURA para entrega parcial', [
-                    'prenda_pedido_id' => $prendaPedidoId,
-                    'candidatos_encontrados' => $recibosCosturaCandidatos->count(),
-                    'candidatos' => $recibosCosturaCandidatos->map(function ($row) {
-                        return (array) $row;
-                    })->values()->all(),
-                ]);
-
                 $consecutivoReciboId = (int) optional($recibosCosturaCandidatos->first())->id;
             }
-
-            Log::info('[PrendaEntregaController] Resultado resolucion recibo para entrega parcial', [
-                'prenda_pedido_id' => $prendaPedidoId,
-                'modo_parcial_solicitado' => $modoParcialSolicitado,
-                'consecutivo_recibo_id_resuelto' => $consecutivoReciboId,
-            ]);
 
             if ($consecutivoReciboId) {
                 $estadoParcial = null;

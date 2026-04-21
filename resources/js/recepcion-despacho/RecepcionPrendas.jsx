@@ -135,6 +135,35 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
             {isRecibido ? <IconCheck /> : <IconPending />}
             {isRecibido ? 'Recibido' : 'Pendiente'}
           </div>
+          {item.tipoEntrega && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 8px',
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                background: item.tipoEntrega === 'parcial' ? '#fff7ed' : '#ecfdf5',
+                color: item.tipoEntrega === 'parcial' ? '#c2410c' : '#047857',
+                border: item.tipoEntrega === 'parcial' ? '1px solid #fed7aa' : '1px solid #a7f3d0',
+              }}
+            >
+              {item.tipoEntrega === 'parcial' ? 'Parcial' : 'Completo'}
+            </div>
+          )}
+          {item.fechaEntrega && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#6b7280', fontWeight: 600 }}>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <circle cx="5.5" cy="5.5" r="4.5" stroke="#6b7280" strokeWidth="1.4" />
+                <path d="M5.5 3v2.5l1.5 1" stroke="#6b7280" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              Entregado (Supervisor): {formatFechaHora(item.fechaEntrega)}
+            </div>
+          )}
           {item.fechaLlegada && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -217,22 +246,6 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
       <div style={{ display: 'flex', gap: 8, paddingLeft: 10, marginBottom: isRecibido ? 10 : 14 }}>
         <div
           style={{
-            background: '#f9fafb',
-            borderRadius: 8,
-            padding: '5px 10px',
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            border: '1px solid #f0f0f0',
-          }}
-        >
-          <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            N° Pedido
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginTop: 1 }}>{item.pedido}</span>
-        </div>
-        <div
-          style={{
             background: '#faf5ff',
             borderRadius: 8,
             padding: '5px 10px',
@@ -243,9 +256,25 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
           }}
         >
           <span style={{ fontSize: 10, color: '#7c3aed', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            N° Pedido
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', marginTop: 1 }}>{item.pedido}</span>
+        </div>
+        <div
+          style={{
+            background: '#f9fafb',
+            borderRadius: 8,
+            padding: '5px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            border: '1px solid #f0f0f0',
+          }}
+        >
+          <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             N° Recibo
           </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', marginTop: 1 }}>{item.recibo}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginTop: 1 }}>{item.recibo}</span>
         </div>
       </div>
 
@@ -267,7 +296,7 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
             <circle cx="6.5" cy="6.5" r="5.5" stroke="#16a34a" strokeWidth="1.5" />
             <path d="M6.5 3.5v3l2 1.5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          Recibido: {formatFechaHora(item.fechaHora)}
+          Recibido (Recepcion-Despacho): {formatFechaHora(item.fechaHora)}
         </div>
       )}
 
@@ -434,36 +463,81 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const [toast, setToast] = useState(null);
   const [currentPage, setCurrentPage] = useState(pagination?.current_page || 1);
   const [paginationData, setPaginationData] = useState(pagination);
+  const [pagesByFilter, setPagesByFilter] = useState({
+    todos: pagination?.current_page || 1,
+    pendientes: 1,
+    recibidos: 1,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [itemCounts, setItemCounts] = useState(counts || { total: 0, pendientes: 0, recibidos: 0 });
   const [showDateModal, setShowDateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingConfirmId, setPendingConfirmId] = useState(null);
   const toastTimer = useRef(null);
 
   const accent = '#2563eb';
   const dark = false;
 
   const confirm = (id) => {
-    setAnimatingId(id);
-    const item = items.find((i) => i.id === id);
-    const now = new Date().toISOString();
-    setTimeout(() => {
-      setItems((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, status: 'recibido', fechaHora: now } : i))
-      );
-      setAnimatingId(null);
-      setToast(`✓ ${item.prenda} recibida`);
-      clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => setToast(null), 2500);
-    }, 400);
+    setPendingConfirmId(id);
+    setConfirmDialogOpen(true);
   };
 
-  const loadPage = async (page) => {
+  const confirmReceipt = async () => {
+    if (!pendingConfirmId) return;
+
+    setAnimatingId(pendingConfirmId);
+    const item = items.find((i) => i.id === pendingConfirmId);
+    const now = new Date().toISOString();
+
+    try {
+      const response = await fetch(`/api/recepcion-despacho/${pendingConfirmId}/confirmar`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'recibido',
+          fechaHora: now,
+          tallas: item.tallas,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar la confirmación');
+      }
+
+      setTimeout(() => {
+        setItems((prev) =>
+          prev.map((i) => (i.id === pendingConfirmId ? { ...i, status: 'recibido', fechaHora: now } : i))
+        );
+        setAnimatingId(null);
+        setToast(`✓ ${item.prenda} recibida`);
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 2500);
+
+        setConfirmDialogOpen(false);
+        setPendingConfirmId(null);
+      }, 400);
+    } catch (error) {
+      console.error('Error confirming receipt:', error);
+      setAnimatingId(null);
+      setToast('❌ Error al guardar la confirmación');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+    }
+  };
+
+  const loadPage = async (page, targetFilter = filter) => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
       params.append('page', page);
+      params.append('status', targetFilter);
       if (dateFrom) params.append('date_from', dateFrom);
       if (dateTo) params.append('date_to', dateTo);
 
@@ -483,6 +557,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
         setItemCounts(data.counts);
       }
       setCurrentPage(page);
+      setPagesByFilter((prev) => ({ ...prev, [targetFilter]: page }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('Error loading page:', error);
@@ -648,7 +723,11 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
             return (
               <button
                 key={tab.key}
-                onClick={() => setFilter(tab.key)}
+                onClick={() => {
+                  setFilter(tab.key);
+                  const pageForTab = pagesByFilter[tab.key] || 1;
+                  loadPage(pageForTab, tab.key);
+                }}
                 style={{
                   flex: 1,
                   padding: '10px 4px',
@@ -706,7 +785,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 }}
               >
                 <button
-                  onClick={() => loadPage(1)}
+                  onClick={() => loadPage(1, filter)}
                   disabled={currentPage === 1}
                   style={{
                     padding: '8px 10px',
@@ -724,7 +803,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 </button>
 
                 <button
-                  onClick={() => loadPage(currentPage - 1)}
+                  onClick={() => loadPage(currentPage - 1, filter)}
                   disabled={currentPage === 1}
                   style={{
                     flex: 1,
@@ -746,7 +825,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 </div>
 
                 <button
-                  onClick={() => loadPage(currentPage + 1)}
+                  onClick={() => loadPage(currentPage + 1, filter)}
                   disabled={currentPage === paginationData.last_page}
                   style={{
                     flex: 1,
@@ -764,7 +843,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 </button>
 
                 <button
-                  onClick={() => loadPage(paginationData.last_page)}
+                  onClick={() => loadPage(paginationData.last_page, filter)}
                   disabled={currentPage === paginationData.last_page}
                   style={{
                     padding: '8px 10px',
@@ -785,6 +864,86 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
           </>
         )}
       </div>
+
+      {/* Confirmation dialog */}
+      {confirmDialogOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            backdropFilter: 'blur(2px)',
+          }}
+          onClick={() => {
+            setConfirmDialogOpen(false);
+            setPendingConfirmId(null);
+          }}
+        >
+          <div
+            style={{
+              background: bgHeader,
+              borderRadius: 20,
+              padding: '24px',
+              maxWidth: 320,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
+              ¿Estás seguro?
+            </div>
+
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 20, lineHeight: 1.5 }}>
+              ¿Confirmas que recibiste {items.find((i) => i.id === pendingConfirmId)?.prenda}?
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => {
+                  setConfirmDialogOpen(false);
+                  setPendingConfirmId(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: '1.5px solid #e5e7eb',
+                  background: '#fff',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmReceipt}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: accent,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Date filter modal */}
       {showDateModal && (
@@ -816,7 +975,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 16 }}>
-              Filtrar por fecha de llegada
+              Filtrar por fecha de entrega
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
@@ -879,7 +1038,12 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
               </button>
               <button
                 onClick={() => {
-                  loadPage(1);
+                  setPagesByFilter({
+                    todos: 1,
+                    pendientes: 1,
+                    recibidos: 1,
+                  });
+                  loadPage(1, filter);
                   setShowDateModal(false);
                 }}
                 style={{

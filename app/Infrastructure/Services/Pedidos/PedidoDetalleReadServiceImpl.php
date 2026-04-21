@@ -8,7 +8,6 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaEntrega;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
@@ -125,15 +124,6 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 'created_at',
             ])
             ->get();
-
-        Log::debug('[PedidoDetalleReadServiceImpl] getConsecutivosPrenda resultado crudo', [
-            'pedido_id' => $pedidoId,
-            'prenda_id' => $prendaId,
-            'cantidad' => $consecutivos->count(),
-            'consecutivos' => $consecutivos->map(function ($row) {
-                return (array) $row;
-            })->values()->all(),
-        ]);
 
         return $consecutivos;
     }

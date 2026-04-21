@@ -134,6 +134,16 @@
         to { transform: rotate(360deg); }
     }
 
+    .swal2-container {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .swal2-popup {
+        margin: auto !important;
+    }
+
     .prenda-accordion {
         margin-bottom: 16px;
         border: 1px solid #e5e7eb;
@@ -787,16 +797,12 @@
         // Resetear contadores al abrir modal
         prendaAccordionClickCount = 0;
         procesoClickCount = 0;
-        console.log('[PRENDA-DEBUG] Modal abierto - Contadores reseteados');
-
         // Cargar datos de recibos
         try {
             // Usar siempre la ruta completa que retorna procesos pendientes
             // /pedidos-public/{id}/recibos-datos retorna datos completos (ObtenerDetalleCompletoUseCase)
             // /registros/{id}/recibos-datos retorna solo procesos aprobados (GetRecibosDatosUseCase)
             const apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
-            
-            console.log('[abrirSelectorRecibos] Fetching URL:', apiUrl);
             
             const response = await fetch(apiUrl);
             
@@ -805,11 +811,7 @@
             }
 
             const result = await response.json();
-            console.log('[abrirSelectorRecibos] API Response:', result);
-            
             const datos = result.data || result;
-            console.log('[abrirSelectorRecibos] datos:', datos);
-            console.log('[abrirSelectorRecibos] prendas array:', datos.prendas);
             
             window.selectorRecibosState.prendas = datos.prendas || [];
             window.selectorRecibosState.pedidoEstado = datos.estado || null;
@@ -819,7 +821,6 @@
             document.getElementById('selector-pedido-numero').textContent = `#${numeroPedido}`;
 
             // Renderizar prendas
-            console.log('[abrirSelectorRecibos] Renderizando prendas, cantidad:', (datos.prendas || []).length);
             renderizarPrendasEnSelector(datos.prendas);
 
             // Restaurar scroll del modal después de renderizar
@@ -878,29 +879,11 @@
             const esRegistros = window.location.pathname.includes('/registros');
             const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
             
-            if (excluirCosturaBodega) {
-                console.log(' [renderizarPrendasEnSelector] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
-            }
-            
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
                 const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
                 const reciboCosturaBodegaActual = prenda?.recibos?.['COSTURA-BODEGA'] || prenda?.consecutivos?.['COSTURA-BODEGA'] || null;
                 const reciboBaseActual = reciboCosturaActual || reciboCosturaBodegaActual || null;
-                
-                console.log('[renderizarPrendasEnSelector] DEBUG - Datos de costura:', {
-                    prendaId: prenda.id,
-                    prendaNombre: prenda.nombre,
-                    recibos: prenda?.recibos,
-                    consecutivos: prenda?.consecutivos,
-                    reciboCosturaActual,
-                    reciboCosturaBodegaActual,
-                    reciboBaseActual,
-                    tipoReciboCosturaActual: typeof reciboCosturaActual,
-                    esNull: reciboCosturaActual === null,
-                    esUndefined: reciboCosturaActual === undefined,
-                    esObject: typeof reciboCosturaActual === 'object'
-                });
                 
                 // Determinar el estado correcto usando el campo 'activo' de la BD
                 let estadoRecibo = 'PENDIENTE';
@@ -913,28 +896,13 @@
                         estadoRecibo = reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE';
                         numeroRecibo = reciboBaseActual.consecutivo_actual || null;
                         activoValue = reciboBaseActual.activo;
-                        
-                        console.log('[renderizarPrendasEnSelector] DEBUG - Usando nuevo formato:', {
-                            activo: reciboBaseActual.activo,
-                            consecutivo_actual: reciboBaseActual.consecutivo_actual,
-                            estadoDeterminado: estadoRecibo,
-                            numeroRecibo
-                        });
                     } 
                     // Formato antiguo: solo el número de consecutivo
                     else if (reciboBaseActual) {
                         estadoRecibo = 'APROBADO';
                         numeroRecibo = reciboBaseActual;
                         activoValue = 1;
-                        
-                        console.log('[renderizarPrendasEnSelector] DEBUG - Usando formato antiguo:', {
-                            reciboBaseActual,
-                            estadoDeterminado: estadoRecibo,
-                            numeroRecibo
-                        });
                     }
-                } else {
-                    console.log('[renderizarPrendasEnSelector] DEBUG - No hay datos de recibo, manteniendo PENDIENTE');
                 }
                 
                 const reciboBase = {
@@ -946,16 +914,6 @@
                     activo: activoValue, // Agregar campo activo para referencia
                     consecutivo_recibo_id: reciboBaseActual?.id || null,
                 };
-                
-                console.log('[renderizarPrendasEnSelector] Recibo base construido FINAL:', {
-                    prendaId: prenda.id,
-                    tipo: reciboBase.tipo,
-                    estado: reciboBase.estado,
-                    numero_recibo: reciboBase.numero_recibo,
-                    activo: reciboBase.activo,
-                    reciboCosturaActual
-                });
-                
                 // Agregar recibo base (permite tanto costura como costura-bodega)
                 recibos.push(reciboBase);
             }
@@ -996,12 +954,6 @@
 
             //  RECIBOS PARCIALES (ANEXOS)
             const parciales = prenda.recibos?.parciales || [];
-            console.log('[renderizarPrendasEnSelector] Parciales encontrados para prenda:', {
-                prendaId: prenda.id,
-                prendaNombre: prenda.nombre,
-                totalParciales: parciales.length,
-                parciales
-            });
             
             parciales.forEach((parcial, index) => {
                 // Determinar el estado del parcial
@@ -1026,15 +978,6 @@
                     created_at: parcial.created_at,
                     origen: 'PARCIAL'
                 });
-                
-                console.log('[renderizarPrendasEnSelector] Parcial agregado:', {
-                    prendaId: prenda.id,
-                    parcialId: parcial.id,
-                    tipo: parcial.tipo_recibo,
-                    nombre: nombreParcial,
-                    estado: estadoParcial,
-                    activo: parcial.activo
-                });
             });
 
             const idAccordion = `prenda-${prenda.id || prendaIdx}`;
@@ -1045,10 +988,18 @@
             const todosRecibosEnDespacho = Array.isArray(recibos)
                 && recibos.length > 0
                 && recibos.every((recibo) => String(recibo?.area || '').trim().toUpperCase() === 'DESPACHO');
-            const estadoEntrega = String(
-                prenda.entrega?.estado_entrega
-                || (prenda.entrega?.entregado ? 'completo' : (todosRecibosEnDespacho ? 'completo' : 'pendiente'))
-            ).toLowerCase();
+            const estadoEntregaBackend = String(prenda.entrega?.estado_entrega || '').toLowerCase();
+            const entregadoFlag = prenda.entrega?.entregado === true
+                || prenda.entrega?.entregado === 1
+                || prenda.entrega?.entregado === '1';
+
+            // Prioridad de estado:
+            // 1) Si la BD marcó entregado=true, siempre mostrar completo.
+            // 2) Si no está entregado, usar estado_entrega del backend (parcial/pendiente/completo).
+            // 3) Como fallback, inferir por área de recibos.
+            const estadoEntrega = entregadoFlag
+                ? 'completo'
+                : (estadoEntregaBackend || (todosRecibosEnDespacho ? 'completo' : 'pendiente'));
             const estaEntregada = estadoEntrega === 'completo';
             const entregaParcial = estadoEntrega === 'parcial';
             const claseEntregada = estaEntregada ? 'entregada' : '';
@@ -2066,6 +2017,8 @@
     async function abrirDecisionEntregaPrenda(prendaId) {
         const prenda = obtenerPrendaSelector(prendaId);
         const recibos = obtenerRecibosEntregablesPrenda(prendaId);
+        const pedidoEstado = String(window.selectorRecibosState?.pedidoEstado || '').toUpperCase();
+        const pedidoPendienteSupervisor = pedidoEstado === 'PENDIENTE_SUPERVISOR';
 
         if (!prenda) {
             throw new Error('No se encontro la prenda en el selector.');
@@ -2084,12 +2037,14 @@
 
         const decision = await Swal.fire({
             title: `Entrega de ${prenda.nombre || 'prenda'}`,
-            text: recibos.length > 0
+            text: pedidoPendienteSupervisor
+                ? 'El pedido todavía no ha sido aprobado. Solo puedes revisar la información por ahora.'
+                : (recibos.length > 0
                 ? 'Elige si vas a registrar toda la prenda o solo una entrega parcial.'
-                : 'Esta prenda no tiene recibo de costura disponible para entrega parcial. Puedes entregarla completa.',
+                : 'Esta prenda no tiene recibo de costura disponible para entrega parcial. Puedes entregarla completa.'),
             icon: 'question',
             showCancelButton: true,
-            showDenyButton: recibos.length > 0,
+            showDenyButton: recibos.length > 0 || pedidoPendienteSupervisor,
             confirmButtonText: 'Completo',
             denyButtonText: 'Parcial',
             cancelButtonText: 'Cancelar',
@@ -2099,6 +2054,16 @@
         });
 
         if (decision.isDismissed) {
+            return null;
+        }
+
+        if (pedidoPendienteSupervisor) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Pedido sin aprobar',
+                text: 'El pedido todavia no ha sido aprobado, por eso no se puede realizar una entrega.',
+                confirmButtonColor: '#f59e0b',
+            });
             return null;
         }
 
@@ -2386,3 +2351,4 @@
 
 <!-- Incluir modal de recibos parciales por talla -->
 @include('components.modals.recibos-parcial-por-talla')
+
