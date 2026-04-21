@@ -230,6 +230,13 @@ class EloquentReceiptRepository implements ReceiptRepository
                             ->orWhere('ppd.numero_recibo', '=', DB::raw('crp.consecutivo_actual'));
                     });
             })
+            ->leftJoin('pedidos_parciales as ppar', function ($join) {
+                $join->on('ppar.pedido_produccion_id', '=', 'crp.pedido_produccion_id')
+                    ->whereRaw('COALESCE(ppar.prenda_pedido_id, 0) = COALESCE(crp.prenda_id, 0)')
+                    ->whereColumn('ppar.tipo_recibo', 'crp.tipo_recibo')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at');
+            })
             ->select([
                 'p.created_at as fecha_creacion',
                 'crp.consecutivo_actual as numero_recibo',
@@ -241,7 +248,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'crp.id as recibo_id',
                 'pp.id as prenda_id',
                 'crp.notas as recibo_notas',
-                'ppd.fecha_aprobacion',
+                DB::raw('COALESCE(crp.aprobado_insumos_en, ppd.fecha_aprobacion, ppar.updated_at, crp.created_at) as fecha_aprobacion'),
                 'rfl.fecha_llegada',
                 'crp.color_bordado_estampado',
             ])
@@ -377,7 +384,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                     ->whereNull('ppar.deleted_at');
             })
             ->select([
-                'p.created_at as fecha_creacion',
+                'crp.aprobado_insumos_en as fecha_creacion',
                 'crp.consecutivo_actual as numero_recibo',
                 'crp.prenda_id as prenda_id',
                 'p.cliente',
@@ -392,7 +399,7 @@ class EloquentReceiptRepository implements ReceiptRepository
             ])
             ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) = ?', ['REFLECTIVO'])
             ->where('crp.activo', 1)
-            ->orderBy('p.created_at', 'desc');
+            ->orderBy('crp.aprobado_insumos_en', 'desc');
 
         $this->applyPendingReceiptFilters($query, $filters);
 

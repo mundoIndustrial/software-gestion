@@ -351,6 +351,43 @@ export class PedidosRecibosModule {
                 throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
             }
 
+            // Detectar si es un parcial (independientemente de la vista)
+            // Buscar en prendaData.recibos.parciales si hay un parcial para este tipo_recibo
+            let esParcialDetectado = false;
+            let pedidoParcialIdDetectado = 0;
+
+            if (prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
+                const parcialMatch = prendaData.recibos.parciales.find(p =>
+                    String(p.tipo_recibo || '').toUpperCase() === String(tipoRecibo || '').toUpperCase()
+                );
+                if (parcialMatch && parcialMatch.id) {
+                    esParcialDetectado = true;
+                    pedidoParcialIdDetectado = Number(parcialMatch.id || 0);
+                    console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado en prendaData.recibos.parciales:', {
+                        tipoRecibo,
+                        parcialId: pedidoParcialIdDetectado,
+                        parcial: parcialMatch
+                    });
+                }
+            }
+
+            if (esParcialDetectado && pedidoParcialIdDetectado > 0) {
+                const nombreAnexo = `${String(tipoRecibo || 'PROCESO').toUpperCase()} ANEXO`;
+                console.log('[PedidosRecibosModule.abrirRecibo] Recibo parcial detectado, redirigiendo a abrirReciboParcial:', {
+                    pedidoId,
+                    prendaId,
+                    tipoRecibo,
+                    pedidoParcialId: pedidoParcialIdDetectado
+                });
+                return this.abrirReciboParcial(
+                    Number(pedidoId),
+                    Number(prendaId),
+                    String(tipoRecibo || 'COSTURA'),
+                    pedidoParcialIdDetectado,
+                    nombreAnexo
+                );
+            }
+
             // Si el endpoint de pedido trae solo el recibo activo por tipo, forzar la metadata
             // de la fila seleccionada en /recibos-costura para respetar el consecutivo clickeado.
             if (esVistaRecibosCostura && reciboIndice !== -1) {
@@ -645,12 +682,50 @@ export class PedidosRecibosModule {
                 ? tallasFormatoColores
                 : tallasFormato;
 
-            // Si el parcial trae colores por talla, inyectarlos para que Formatters
-            // renderice agrupado por color.
+            // Guardar originals para restaurar después (antes de filtrar)
+            const tallaColoresOriginal = prendaData.talla_colores;
+            const tallasOriginal = prendaData.tallas;
+
+            // Filtrar tallas del parcial para que el renderer solo muestre las del parcial
+            // Esto asegura que no muestre todas las tallas de la prenda
+            const tallasParcialSet = new Set();
             if (Array.isArray(tallasArrayParcial) && tallasArrayParcial.length > 0) {
+                tallasArrayParcial.forEach(t => {
+                    const genero = String(t.genero || 'CABALLERO').toUpperCase();
+                    const talla = String(t.talla || '').toUpperCase();
+                    tallasParcialSet.add(`${genero}|${talla}`);
+                });
                 recibo.talla_colores = tallasArrayParcial;
             } else {
                 delete recibo.talla_colores;
+            }
+
+            // Filtrar talla_colores de prendaData si existen
+            if (prendaData.talla_colores && Array.isArray(prendaData.talla_colores)) {
+                prendaData.talla_colores = prendaData.talla_colores.filter(tc => {
+                    const genero = String(tc.genero || 'CABALLERO').toUpperCase();
+                    const talla = String(tc.talla || '').toUpperCase();
+                    return tallasParcialSet.has(`${genero}|${talla}`);
+                });
+            }
+
+            // Filtrar prendaData.tallas (objeto con estructura {DAMA: {...}, CABALLERO: {...}, UNISEX: {...}})
+            // para solo incluir tallas del parcial
+            if (prendaData.tallas && typeof prendaData.tallas === 'object') {
+                const tallasFiltradas = {};
+                Object.keys(prendaData.tallas).forEach(genero => {
+                    const tallasDelGenero = prendaData.tallas[genero];
+                    tallasFiltradas[genero] = Array.isArray(tallasDelGenero)
+                        ? tallasDelGenero.filter(t => tallasParcialSet.has(`${genero}|${String(t.talla || '').toUpperCase()}`))
+                        : typeof tallasDelGenero === 'object'
+                            ? Object.fromEntries(
+                                Object.entries(tallasDelGenero).filter(([tallaKey]) =>
+                                    tallasParcialSet.has(`${genero}|${String(tallaKey).toUpperCase()}`)
+                                )
+                            )
+                            : tallasDelGenero;
+                });
+                prendaData.tallas = tallasFiltradas;
             }
 
             // Marcar como parcial para que el renderer sepa limpiar consecutivo
@@ -660,7 +735,7 @@ export class PedidosRecibosModule {
             if (consecutivoAnexo) {
                 recibo.numero_recibo = consecutivoAnexo;
             }
-            
+
             // Inyectar fecha_activacion del parcial (si existe)
             recibo.fecha_activacion = parcialData?.fecha_activacion || null;
 
@@ -677,18 +752,12 @@ export class PedidosRecibosModule {
                 procesoActualIndice: reciboIndice
             });
 
-            // Temporalmente limpiar talla_colores de prendaData para que el renderer
-            // use los colores del parcial (si existen) y no los de la prenda base.
-            const tallaColoresOriginal = prendaData.talla_colores;
-            if (recibo.talla_colores && Array.isArray(recibo.talla_colores) && recibo.talla_colores.length > 0) {
-                prendaData.talla_colores = recibo.talla_colores;
-            }
-
             // Renderizar con la pipeline normal (tallas ya están inyectadas)
             this._renderizarRecibo(prendaData, reciboIndice, tipoRecibo, datos, recibos);
 
-            // Restaurar talla_colores para no mutar el estado permanentemente
+            // Restaurar originales para no mutar el estado permanentemente
             prendaData.talla_colores = tallaColoresOriginal;
+            prendaData.tallas = tallasOriginal;
 
             // Post-renderizado: ajustar título y consecutivo para el anexo
             const titleEl = document.querySelector('.receipt-title');

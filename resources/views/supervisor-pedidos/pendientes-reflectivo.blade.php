@@ -233,8 +233,8 @@
                                 <span>Actions</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>Fecha de Creacion</span>
-                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                <span>Fecha</span>
+                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
@@ -564,7 +564,7 @@ const receiptsFilters = window.SupervisorReceiptsApiFilters.create({
     filterOptionsEndpoint: (columna) => `/api/supervisor-pedidos/recibos/pendientes-reflectivo/filtro-opciones/${columna}`,
     navigate: (url) => window.navegarPendientesReflectivo(url),
     titleMap: {
-        fecha_creacion: 'Filtrar Fecha de Creación',
+        fecha_creacion: 'Filtrar Fecha',
         numero_recibo: 'Filtrar N° Recibo',
         cliente: 'Filtrar Cliente',
         area: 'Filtrar Área',
