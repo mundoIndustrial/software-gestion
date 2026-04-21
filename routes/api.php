@@ -104,6 +104,12 @@ require_once base_path('routes/api-supervisor-pedidos.php');
 require_once base_path('routes/api-asesores.php');
 
 /**
+ * Recepción Despacho API Routes
+ * Gestión de recepción de prendas en el área de despacho
+ */
+require_once base_path('routes/api-recepcion-despacho.php');
+
+/**
  * Test Routes - Diagnóstico (solo en desarrollo)
  */
 if (config('app.debug')) {

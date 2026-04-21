@@ -158,6 +158,7 @@ require base_path('routes/supervisor-asesores.php');
 require base_path('routes/visualizador-logo.php');
 require base_path('routes/insumos.php');
 require base_path('routes/supervisor-pedidos.php');
+require base_path('routes/recepcion-despacho.php');
 require base_path('routes/tableros.php');
 require base_path('routes/registros-pedidos.php');
 require base_path('routes/asistencia-personal.php');

@@ -47,6 +47,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/supervisor-pedidos/entry.js',
+                'resources/js/recepcion-despacho/entry.js',
             ],
             refresh: true,
         }),

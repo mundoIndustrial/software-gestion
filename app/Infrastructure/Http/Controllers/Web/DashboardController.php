@@ -131,6 +131,11 @@ class DashboardController extends Controller
                 return redirect()->route('insumos.plooter.index');
             }
 
+            if ($roleName === 'recepcion_despacho') {
+                \Log::info(' Redirigiendo a recepcion-despacho.index');
+                return redirect()->route('recepcion-despacho.index');
+            }
+
             \Log::warning(' Rol no mapeado a ninguna ruta', ['role' => $roleName]);
         } else {
             \Log::warning(' Usuario sin roles asignados');
