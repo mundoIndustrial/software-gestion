@@ -167,6 +167,7 @@ class SupervisorOrdersController extends Controller
             ->select([
                 'ped.numero_pedido',
                 'c.nombre as cliente',
+                'pp.id as prenda_id',
                 'pp.nombre_prenda',
                 DB::raw('COALESCE(crp.consecutivo_actual, crp_base.consecutivo_actual) as numero_recibo'),
                 'pe.fecha_entrega',
@@ -175,6 +176,7 @@ class SupervisorOrdersController extends Controller
                 'ur.name as usuario_recibido',
                 'pem.estado as estado_recibido',
                 'pem.cantidad_entregada',
+                'pem.detalle_tallas',
             ]);
 
         if ($busqueda !== '') {
@@ -191,6 +193,61 @@ class SupervisorOrdersController extends Controller
             ->orderByRaw('COALESCE(pem.fecha_recibido, pe.fecha_entrega) DESC')
             ->paginate(25)
             ->withQueryString();
+
+        // Enriquecer con tallas/cantidades para mostrar en columna "Prenda"
+        $prendaIds = collect($registros->items())
+            ->pluck('prenda_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $tallasPorPrenda = DB::table('prenda_pedido_tallas')
+            ->whereIn('prenda_pedido_id', $prendaIds)
+            ->select('prenda_pedido_id', 'talla', DB::raw('SUM(cantidad) as cantidad'))
+            ->groupBy('prenda_pedido_id', 'talla')
+            ->get()
+            ->groupBy('prenda_pedido_id')
+            ->map(function ($items) {
+                return collect($items)->map(function ($item) {
+                    return [
+                        'talla' => (string) $item->talla,
+                        'cantidad' => (int) $item->cantidad,
+                    ];
+                })->values()->toArray();
+            });
+
+        $registros->getCollection()->transform(function ($fila) use ($tallasPorPrenda) {
+            $tallasTotales = $tallasPorPrenda->get($fila->prenda_id, []);
+            $detalleMovimiento = [];
+
+            if (!empty($fila->detalle_tallas)) {
+                $decoded = json_decode($fila->detalle_tallas, true);
+                if (is_array($decoded)) {
+                    $detalleMovimiento = collect($decoded)
+                        ->map(function ($item) {
+                            return [
+                                'talla' => (string) ($item['talla'] ?? ''),
+                                'cantidad' => (int) ($item['cantidad'] ?? 0),
+                            ];
+                        })
+                        ->filter(fn($item) => $item['talla'] !== '' && $item['cantidad'] > 0)
+                        ->values()
+                        ->toArray();
+                }
+            }
+
+            $tallasMostrar = !empty($detalleMovimiento) ? $detalleMovimiento : $tallasTotales;
+
+            $fila->tallas_texto = collect($tallasMostrar)
+                ->map(fn($t) => "{$t['talla']}: {$t['cantidad']}")
+                ->implode(' · ');
+
+            $cantidadTotalTallas = (int) collect($tallasTotales)->sum('cantidad');
+            $cantidadMovimiento = (int) ($fila->cantidad_entregada ?? 0);
+            $fila->cantidad_mostrada = $cantidadMovimiento > 0 ? $cantidadMovimiento : $cantidadTotalTallas;
+
+            return $fila;
+        });
 
         return view('supervisor-pedidos.entregas-recibidas', compact('registros', 'busqueda'));
     }

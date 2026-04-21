@@ -17,6 +17,14 @@ function IconCheck() {
   );
 }
 
+function IconClean() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M3 6h18M8 6V4c0-1 .5-1.5 1.5-1.5h5c1 0 1.5.5 1.5 1.5v2M5 6l1 12c0 1 .5 2 1.5 2h9c1 0 1.5-1 1.5-2l1-12M10 10v8M14 10v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconPending() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1650,7 +1658,6 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
             border: 'none',
             background: '#ef4444',
             color: '#fff',
-            fontSize: 24,
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
             display: 'flex',
@@ -1660,13 +1667,14 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
             transition: 'all 0.3s ease',
             animation: 'scaleIn 0.3s ease',
             WebkitTapHighlightColor: 'transparent',
+            padding: 0,
           }}
           onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
           onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           onTouchStart={(e) => (e.currentTarget.style.opacity = '0.85')}
           onTouchEnd={(e) => (e.currentTarget.style.opacity = '1')}
         >
-          ✕
+          <IconClean />
           <style>
             {`
               @keyframes scaleIn {

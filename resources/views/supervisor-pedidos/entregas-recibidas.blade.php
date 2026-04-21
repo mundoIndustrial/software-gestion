@@ -1,4 +1,4 @@
-@extends('supervisor-pedidos.layout')
+﻿@extends('supervisor-pedidos.layout')
 
 @section('title', 'Entregas y Recibidas')
 @section('page-title', 'Entregas y Recibidas')
@@ -142,12 +142,19 @@
                             <tr>
                                 <td><strong>#{{ $fila->numero_pedido ?? '-' }}</strong></td>
                                 <td>{{ $fila->cliente ?? '-' }}</td>
-                                <td>{{ $fila->nombre_prenda ?? '-' }}</td>
-                                <td>{{ $fila->numero_recibo ? ('#' . $fila->numero_recibo) : '—' }}</td>
-                                <td>{{ $fila->fecha_entrega ? \Carbon\Carbon::parse($fila->fecha_entrega)->format('d/m/Y H:i') : '—' }}</td>
-                                <td>{{ $fila->usuario_entrega ?? '—' }}</td>
-                                <td>{{ $fila->fecha_recibido ? \Carbon\Carbon::parse($fila->fecha_recibido)->format('d/m/Y H:i') : '—' }}</td>
-                                <td>{{ $fila->usuario_recibido ?? '—' }}</td>
+                                <td>
+                                    <div style="font-weight: 600;">{{ $fila->nombre_prenda ?? '-' }}</div>
+                                    @if(!empty($fila->tallas_texto))
+                                        <div class="er-muted" style="font-size: 0.76rem; margin-top: 2px;">
+                                            {{ $fila->tallas_texto }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td>{{ $fila->numero_recibo ? ('#' . $fila->numero_recibo) : 'â€”' }}</td>
+                                <td>{{ $fila->fecha_entrega ? \Carbon\Carbon::parse($fila->fecha_entrega)->format('d/m/Y H:i') : 'â€”' }}</td>
+                                <td>{{ $fila->usuario_entrega ?? 'â€”' }}</td>
+                                <td>{{ $fila->fecha_recibido ? \Carbon\Carbon::parse($fila->fecha_recibido)->format('d/m/Y H:i') : 'â€”' }}</td>
+                                <td>{{ $fila->usuario_recibido ?? 'â€”' }}</td>
                                 <td>
                                     @if(($fila->estado_recibido ?? null) === 'recibido')
                                         <span class="er-chip er-chip-ok">Recibido</span>
@@ -157,7 +164,7 @@
                                         <span class="er-chip er-chip-empty">Sin recibir</span>
                                     @endif
                                 </td>
-                                <td>{{ $fila->cantidad_entregada ?? '—' }}</td>
+                                <td>{{ $fila->cantidad_mostrada ?? ($fila->cantidad_entregada ?? 'â€”') }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -177,3 +184,4 @@
     </div>
 </div>
 @endsection
+
