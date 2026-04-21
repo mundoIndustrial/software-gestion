@@ -320,7 +320,8 @@ class RecepcionDespachoController extends Controller
                     if ($novedad->creado_en) {
                         $fecha = \Carbon\Carbon::parse($novedad->creado_en);
                         $ampm = $fecha->hour >= 12 ? 'PM' : 'AM';
-                        $horaFormato = str_pad($fecha->hour, 2, '0', STR_PAD_LEFT);
+                        $hora12 = $fecha->hour % 12 ?: 12;
+                        $horaFormato = str_pad($hora12, 2, '0', STR_PAD_LEFT);
                         $minutosFormato = str_pad($fecha->minute, 2, '0', STR_PAD_LEFT);
                         $diaFormato = str_pad($fecha->day, 2, '0', STR_PAD_LEFT);
                         $mesFormato = str_pad($fecha->month, 2, '0', STR_PAD_LEFT);
