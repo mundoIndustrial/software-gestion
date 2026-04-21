@@ -128,6 +128,66 @@ class SupervisorOrdersController extends Controller
     }
 
     /**
+     * Tabla de entregas (supervisor) y recibidas (recepcion-despacho)
+     */
+    public function entregasRecibidas(Request $request)
+    {
+        $busqueda = trim((string) $request->query('q', ''));
+
+        $consecutivoBaseSubquery = DB::table('consecutivos_recibos_pedidos as crpb')
+            ->select([
+                'crpb.pedido_produccion_id',
+                'crpb.prenda_id',
+                DB::raw('MAX(crpb.consecutivo_actual) as consecutivo_actual'),
+            ])
+            ->whereIn('crpb.tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereRaw("UPPER(COALESCE(crpb.estado, '')) <> 'ANULADO'")
+            ->groupBy('crpb.pedido_produccion_id', 'crpb.prenda_id');
+
+        $registros = DB::table('prenda_entregas as pe')
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'pe.prenda_pedido_id')
+            ->join('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->join('clientes as c', 'c.id', '=', 'ped.cliente_id')
+            ->leftJoin('prenda_entrega_movimientos as pem', 'pem.prenda_pedido_id', '=', 'pe.prenda_pedido_id')
+            ->leftJoin('consecutivos_recibos_pedidos as crp', 'crp.id', '=', 'pem.consecutivo_recibo_id')
+            ->leftJoinSub($consecutivoBaseSubquery, 'crp_base', function ($join) {
+                $join->on('crp_base.pedido_produccion_id', '=', 'ped.id')
+                    ->on('crp_base.prenda_id', '=', 'pp.id');
+            })
+            ->leftJoin('users as ue', 'ue.id', '=', 'pe.usuario_id')
+            ->leftJoin('users as ur', 'ur.id', '=', 'pem.usuario_recibido_id')
+            ->select([
+                'ped.numero_pedido',
+                'c.nombre as cliente',
+                'pp.nombre_prenda',
+                DB::raw('COALESCE(crp.consecutivo_actual, crp_base.consecutivo_actual) as numero_recibo'),
+                'pe.fecha_entrega',
+                'ue.name as usuario_entrega',
+                'pem.fecha_recibido',
+                'ur.name as usuario_recibido',
+                'pem.estado as estado_recibido',
+                'pem.cantidad_entregada',
+            ]);
+
+        if ($busqueda !== '') {
+            $registros = $registros->where(function ($query) use ($busqueda) {
+                $query->where('ped.numero_pedido', 'like', '%' . $busqueda . '%')
+                    ->orWhere('c.nombre', 'like', '%' . $busqueda . '%')
+                    ->orWhere('pp.nombre_prenda', 'like', '%' . $busqueda . '%')
+                    ->orWhere('ue.name', 'like', '%' . $busqueda . '%')
+                    ->orWhere('ur.name', 'like', '%' . $busqueda . '%');
+            });
+        }
+
+        $registros = $registros
+            ->orderByRaw('COALESCE(pem.fecha_recibido, pe.fecha_entrega) DESC')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('supervisor-pedidos.entregas-recibidas', compact('registros', 'busqueda'));
+    }
+
+    /**
      * Ver detalle de la orden
      */
     public function show($id)

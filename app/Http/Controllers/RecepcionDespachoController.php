@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use App\Application\UseCases\RecibosNovedades\ObtenerNovedadesReciboUseCase;
+use App\Application\UseCases\RecibosNovedades\GuardarNovedadesReciboUseCase;
 
 class RecepcionDespachoController extends Controller
 {
@@ -276,6 +278,119 @@ class RecepcionDespachoController extends Controller
                 'error' => 'Error al obtener prendas',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Obtener novedades de un recibo por su consecutivo
+     * GET /api/recepcion-despacho/{id}/novedades
+     *
+     * @param string $id consecutivo_recibo_id
+     * @param ObtenerNovedadesReciboUseCase $useCase
+     */
+    public function getNovedades(
+        string $id,
+        ObtenerNovedadesReciboUseCase $obtenerNovedadesUseCase
+    ): JsonResponse {
+        try {
+            // Obtener pedidoId y numeroRecibo a partir del consecutivo_recibo_id
+            $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as pedp', 'crp.pedido_produccion_id', '=', 'pedp.id')
+                ->select('pedp.numero_pedido', 'crp.consecutivo_actual')
+                ->where('crp.id', $id)
+                ->first();
+
+            if (!$consecutivo) {
+                return response()->json(['error' => 'Recibo no encontrado'], 404);
+            }
+
+            $pedidoId = (int) $consecutivo->numero_pedido;
+            $numeroRecibo = (string) $consecutivo->consecutivo_actual;
+
+            // Obtener novedades usando el UseCase existente
+            $novedadesDb = $obtenerNovedadesUseCase->execute($pedidoId, $numeroRecibo);
+
+            $novedades = [];
+            foreach ($novedadesDb as $novedad) {
+                $novedades[] = [
+                    'id' => $novedad->id,
+                    'tipo_novedad' => $novedad->tipo_novedad,
+                    'estado_novedad' => $novedad->estado_novedad,
+                    'novedad_texto' => $novedad->novedad_texto,
+                    'notas_adicionales' => $novedad->notas_adicionales,
+                    'creado_por_nombre' => $novedad->creadoPor ? $novedad->creadoPor->name : null,
+                    'creado_en' => $novedad->creado_en ? \Carbon\Carbon::parse($novedad->creado_en)->toIso8601String() : null,
+                    'es_mio' => $novedad->creado_por === \Auth::id(),
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $novedades,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RecepcionDespacho] Error en getNovedades:', [
+                'consecutivo_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Crear una novedad en un recibo
+     * POST /api/recepcion-despacho/{id}/novedades
+     *
+     * @param Request $request
+     * @param string $id consecutivo_recibo_id
+     * @param GuardarNovedadesReciboUseCase $useCase
+     */
+    public function crearNovedad(
+        Request $request,
+        string $id,
+        GuardarNovedadesReciboUseCase $guardarNovedadesUseCase
+    ): JsonResponse {
+        try {
+            $validated = $request->validate([
+                'novedad_texto' => 'required|string|max:5000',
+                'tipo_novedad' => 'required|in:observacion,problema,cambio,aprobacion,rechazo,correccion',
+            ]);
+
+            // Obtener pedidoId y numeroRecibo a partir del consecutivo_recibo_id
+            $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as pedp', 'crp.pedido_produccion_id', '=', 'pedp.id')
+                ->select('pedp.numero_pedido', 'crp.consecutivo_actual', 'crp.prenda_id')
+                ->where('crp.id', $id)
+                ->first();
+
+            if (!$consecutivo) {
+                return response()->json(['error' => 'Recibo no encontrado'], 404);
+            }
+
+            $pedidoId = (int) $consecutivo->numero_pedido;
+            $numeroRecibo = (string) $consecutivo->consecutivo_actual;
+
+            // Guardar novedad usando el UseCase existente
+            $result = $guardarNovedadesUseCase->execute(
+                $pedidoId,
+                $numeroRecibo,
+                $validated['novedad_texto'],
+                $validated['tipo_novedad'],
+                \Auth::id(),
+                [(int) $consecutivo->prenda_id]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad guardada correctamente',
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RecepcionDespacho] Error en crearNovedad:', [
+                'consecutivo_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

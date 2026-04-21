@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 const TWEAK_DEFAULTS = {
   theme: 'light',
@@ -61,7 +61,7 @@ function formatFechaHora(iso) {
 }
 
 // Card component
-function PrendaCard({ item, onConfirm, accent, animatingId }) {
+function PrendaCard({ item, onConfirm, onNovedades, accent, animatingId }) {
   const isRecibido = item.status === 'recibido';
   const isAnimating = animatingId === item.id;
   const totalUds = item.tallas.reduce((s, t) => s + t.cantidad, 0);
@@ -300,17 +300,46 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
         </div>
       )}
 
-      {/* Confirm button */}
-      {!isRecibido && (
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {!isRecibido && (
+          <button
+            onClick={() => onConfirm(item.id)}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 12,
+              background: accent,
+              color: '#fff',
+              border: 'none',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              letterSpacing: '0.03em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'opacity 0.15s, transform 0.1s',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            onTouchStart={(e) => (e.currentTarget.style.opacity = '0.85')}
+            onTouchEnd={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            <IconCheck /> Confirmar
+          </button>
+        )}
         <button
-          onClick={() => onConfirm(item.id)}
+          onClick={() => onNovedades(item.id, item.pedido, item.recibo, item.prenda)}
           style={{
-            width: '100%',
+            flex: isRecibido ? 1 : 0.4,
             padding: '12px 0',
             borderRadius: 12,
-            background: accent,
-            color: '#fff',
-            border: 'none',
+            background: '#f3f4f6',
+            color: '#374151',
+            border: '1.5px solid #e5e7eb',
             fontSize: 14,
             fontWeight: 700,
             cursor: 'pointer',
@@ -326,10 +355,14 @@ function PrendaCard({ item, onConfirm, accent, animatingId }) {
           onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           onTouchStart={(e) => (e.currentTarget.style.opacity = '0.85')}
           onTouchEnd={(e) => (e.currentTarget.style.opacity = '1')}
+          title="Ver y agregar novedades"
         >
-          <IconCheck /> Confirmar
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1C4.13 1 1 4.13 1 8s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <path d="M8 5v6M5 8h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
         </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -475,6 +508,12 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const [dateTo, setDateTo] = useState('');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingConfirmId, setPendingConfirmId] = useState(null);
+  const [showNovedadesModal, setShowNovedadesModal] = useState(false);
+  const [selectedItemForNovedades, setSelectedItemForNovedades] = useState(null);
+  const [novedades, setNovedades] = useState([]);
+  const [novedadesLoading, setNovedadesLoading] = useState(false);
+  const [novedadForm, setNovedadForm] = useState({ novedad_texto: '' });
+  const [submittingNovedad, setSubmittingNovedad] = useState(false);
   const toastTimer = useRef(null);
 
   const accent = '#2563eb';
@@ -483,6 +522,78 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const confirm = (id) => {
     setPendingConfirmId(id);
     setConfirmDialogOpen(true);
+  };
+
+  const openNovedadesModal = (id, pedido, recibo, prenda) => {
+    setSelectedItemForNovedades({ id, pedido, recibo, prenda });
+    setNovedadForm({ novedad_texto: '' });
+    setShowNovedadesModal(true);
+    loadNovedades(id);
+  };
+
+  const loadNovedades = async (itemId) => {
+    setNovedadesLoading(true);
+    try {
+      const response = await fetch(`/api/recepcion-despacho/${itemId}/novedades`, {
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Error cargando novedades');
+      const data = await response.json();
+      setNovedades(data.data || []);
+    } catch (error) {
+      console.error('Error loading novedades:', error);
+      setToast('❌ Error al cargar novedades');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+    } finally {
+      setNovedadesLoading(false);
+    }
+  };
+
+  const submitNovedad = async () => {
+    if (!novedadForm.novedad_texto.trim()) {
+      setToast('⚠ Escribe una novedad');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+      return;
+    }
+
+    setSubmittingNovedad(true);
+    try {
+      const response = await fetch(`/api/recepcion-despacho/${selectedItemForNovedades.id}/novedades`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          ...novedadForm,
+          tipo_novedad: 'observacion',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Error guardando novedad');
+      const data = await response.json();
+
+      setNovedadForm({ novedad_texto: '', tipo_novedad: 'observacion' });
+      setToast('✓ Novedad guardada');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+
+      await loadNovedades(selectedItemForNovedades.id);
+    } catch (error) {
+      console.error('Error submitting novedad:', error);
+      setToast('❌ Error al guardar novedad');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+    } finally {
+      setSubmittingNovedad(false);
+    }
   };
 
   const confirmReceipt = async () => {
@@ -763,6 +874,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
                 key={item.id}
                 item={item}
                 onConfirm={confirm}
+                onNovedades={openNovedadesModal}
                 accent={accent}
                 animatingId={animatingId}
               />
@@ -1122,6 +1234,183 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
               }
             `}
           </style>
+        </div>
+      )}
+
+      {/* Novedades Modal */}
+      {showNovedadesModal && selectedItemForNovedades && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            zIndex: 50,
+            backdropFilter: 'blur(2px)',
+          }}
+          onClick={() => setShowNovedadesModal(false)}
+        >
+          <div
+            style={{
+              background: bgHeader,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: '24px 16px 32px',
+              width: '100%',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: textSecondary, textTransform: 'uppercase' }}>
+                  {selectedItemForNovedades.prenda}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: textPrimary }}>
+                  Novedades
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNovedadesModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: textSecondary,
+                  padding: 0,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Novedades List */}
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16, minHeight: 0 }}>
+              {novedadesLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: textSecondary }}>
+                  <div style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</div>
+                  <div style={{ marginTop: 8 }}>Cargando novedades...</div>
+                </div>
+              ) : novedades.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: textSecondary }}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>📝</div>
+                  <div>Sin novedades aún</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {novedades.map((nov) => (
+                    <div
+                      key={nov.id}
+                      style={{
+                        background: dark ? '#1f2937' : '#f9fafb',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: 12,
+                        padding: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div>
+                          <div
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              background:
+                                nov.tipo_novedad === 'problema'
+                                  ? '#fecaca'
+                                  : nov.tipo_novedad === 'observacion'
+                                    ? '#bfdbfe'
+                                    : '#d1d5db',
+                              color:
+                                nov.tipo_novedad === 'problema'
+                                  ? '#991b1b'
+                                  : nov.tipo_novedad === 'observacion'
+                                    ? '#1e40af'
+                                    : '#374151',
+                              marginBottom: 4,
+                            }}
+                          >
+                            {nov.tipo_novedad}
+                          </div>
+                        </div>
+                        {nov.es_mio && (
+                          <span style={{ fontSize: 10, color: accent, fontWeight: 600 }}>Mía</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, color: textPrimary, marginBottom: 6, lineHeight: 1.4 }}>
+                        {nov.novedad_texto}
+                      </div>
+                      <div style={{ fontSize: 11, color: textSecondary }}>
+                        {nov.creado_por_nombre} • {nov.creado_en}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add Novedad Form */}
+            <div style={{ borderTop: dark ? '1px solid #374151' : '1px solid #e5e7eb', paddingTop: 16 }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textSecondary, display: 'block', marginBottom: 6 }}>
+                  Observación
+                </label>
+                <textarea
+                  value={novedadForm.novedad_texto}
+                  onChange={(e) => setNovedadForm({ ...novedadForm, novedad_texto: e.target.value })}
+                  placeholder="Escribe la novedad..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: `1.5px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                    background: bgHeader,
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontFamily: "'Inter', sans-serif",
+                    boxSizing: 'border-box',
+                    minHeight: 80,
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={submitNovedad}
+                disabled={submittingNovedad}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: submittingNovedad ? '#9ca3af' : accent,
+                  color: '#fff',
+                  cursor: submittingNovedad ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {submittingNovedad ? 'Guardando...' : 'Guardar Novedad'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
