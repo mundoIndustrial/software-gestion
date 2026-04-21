@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Schema;
+use App\Models\Role;
 use App\Application\UseCases\RecibosNovedades\ObtenerNovedadesReciboUseCase;
 use App\Application\UseCases\RecibosNovedades\GuardarNovedadesReciboUseCase;
 use App\Application\UseCases\RecibosNovedades\ActualizarNovedadReciboUseCase;
@@ -28,22 +30,34 @@ class RecepcionDespachoController extends Controller
     public function getUsuarios(): JsonResponse
     {
         try {
-            $role = \App\Models\Role::where('name', 'recepcion_despacho')->first();
+            $query = \DB::table('users')
+                ->select('id', 'name', 'email')
+                ->orderBy('name');
 
-            if (!$role) {
+            // Compatibilidad entre entornos: algunas BD no tienen columna "active".
+            if (Schema::hasColumn('users', 'active')) {
+                $query->where('active', 1);
+            }
+
+            // Filtrar solo usuarios con rol recepcion_despacho.
+            $rolRecepcionDespacho = Role::query()
+                ->whereRaw('LOWER(name) = ?', ['recepcion_despacho'])
+                ->first();
+
+            if (!$rolRecepcionDespacho) {
                 return response()->json([
                     'success' => true,
                     'data' => [],
                 ]);
             }
 
-            $usuarios = \App\Models\User::where('active', 1)
-                ->whereHas('roles', function ($query) use ($role) {
-                    $query->where('roles.id', $role->id);
-                })
-                ->select('id', 'name', 'email')
-                ->orderBy('name')
-                ->get();
+            $query->where(function ($subQuery) use ($rolRecepcionDespacho) {
+                $subQuery
+                    ->whereJsonContains('roles_ids', (int) $rolRecepcionDespacho->id)
+                    ->orWhere('role_id', (int) $rolRecepcionDespacho->id);
+            });
+
+            $usuarios = $query->get();
 
             return response()->json([
                 'success' => true,
@@ -54,7 +68,7 @@ class RecepcionDespachoController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
         }
     }
 
@@ -525,10 +539,34 @@ class RecepcionDespachoController extends Controller
                 'status' => 'required|string|in:recibido,pendiente',
                 'fechaHora' => 'required|date',
                 'tallas' => 'required|array',
-                'usuario_id' => 'nullable|integer|exists:users,id',
+                'usuario_id' => 'required|integer|exists:users,id',
             ]);
 
-            $usuarioRecibido = $validated['usuario_id'] ?? \Auth::id();
+            $rolRecepcionDespacho = Role::query()
+                ->whereRaw('LOWER(name) = ?', ['recepcion_despacho'])
+                ->first();
+
+            if (!$rolRecepcionDespacho) {
+                return response()->json([
+                    'error' => 'No existe el rol recepcion_despacho en el sistema',
+                ], 422);
+            }
+
+            $usuarioRecibido = (int) $validated['usuario_id'];
+            $usuarioEsRecepcion = \DB::table('users')
+                ->where('id', $usuarioRecibido)
+                ->where(function ($query) use ($rolRecepcionDespacho) {
+                    $query
+                        ->whereJsonContains('roles_ids', (int) $rolRecepcionDespacho->id)
+                        ->orWhere('role_id', (int) $rolRecepcionDespacho->id);
+                })
+                ->exists();
+
+            if (!$usuarioEsRecepcion) {
+                return response()->json([
+                    'error' => 'El usuario seleccionado no tiene rol recepcion_despacho',
+                ], 422);
+            }
 
             // Obtener el consecutivo con sus detalles
             $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')

@@ -689,6 +689,12 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
 
   const confirmReceipt = async () => {
     if (!pendingConfirmId) return;
+    if (!usuarioSeleccionado) {
+      setToast('⚠ Selecciona un usuario de recepción antes de confirmar');
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+      return;
+    }
 
     setAnimatingId(pendingConfirmId);
     const item = items.find((i) => i.id === pendingConfirmId);

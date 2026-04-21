@@ -61,6 +61,14 @@
                     </a>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.entregas-recibidas') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.entregas-recibidas') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">inventory_2</span>
+                        <span class="menu-label">Entregas/Recibidas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <a href="{{ route('gestion-bodega.pendientes-costura') }}"
                        class="menu-link"
                        style="display:flex;align-items:center;gap:0.5rem;">
@@ -90,14 +98,6 @@
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">insights</span>
                         <span class="menu-label">Stats Asesoras</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.entregas-recibidas') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.entregas-recibidas') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">inventory_2</span>
-                        <span class="menu-label">Entregas/Recibidas</span>
                     </a>
                 </li>
             </ul>

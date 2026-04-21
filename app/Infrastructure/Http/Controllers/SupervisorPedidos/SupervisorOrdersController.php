@@ -165,12 +165,15 @@ class SupervisorOrdersController extends Controller
                     ->whereRaw("UPPER(COALESCE(crp_filter.estado, '')) <> 'ANULADO'");
             })
             ->select([
+                'ped.id as pedido_id',
                 'ped.numero_pedido',
                 'c.nombre as cliente',
                 'pp.id as prenda_id',
                 'pp.nombre_prenda',
+                'pp.descripcion',
                 DB::raw('COALESCE(crp.consecutivo_actual, crp_base.consecutivo_actual) as numero_recibo'),
                 'pe.fecha_entrega',
+                'pem.fecha_entrega as fecha_entrega_movimiento',
                 'ue.name as usuario_entrega',
                 'pem.fecha_recibido',
                 'ur.name as usuario_recibido',
@@ -216,8 +219,34 @@ class SupervisorOrdersController extends Controller
                 })->values()->toArray();
             });
 
-        $registros->getCollection()->transform(function ($fila) use ($tallasPorPrenda) {
+        // Obtener tallas con colores
+        $tallasPorColorPorPrenda = DB::table('prenda_pedido_talla_colores')
+            ->whereIn('prenda_pedido_talla_colores.prenda_pedido_talla_id', function ($query) use ($prendaIds) {
+                $query->select('id')
+                    ->from('prenda_pedido_tallas')
+                    ->whereIn('prenda_pedido_id', $prendaIds);
+            })
+            ->select('prenda_pedido_talla_colores.prenda_pedido_talla_id', 'prenda_pedido_talla_colores.color_nombre', 'prenda_pedido_talla_colores.cantidad', 'prenda_pedido_tallas.prenda_pedido_id', 'prenda_pedido_tallas.talla')
+            ->join('prenda_pedido_tallas', 'prenda_pedido_tallas.id', '=', 'prenda_pedido_talla_colores.prenda_pedido_talla_id')
+            ->get()
+            ->groupBy('prenda_pedido_id')
+            ->map(function ($items) {
+                $agrupados = [];
+                foreach ($items as $item) {
+                    if (!isset($agrupados[$item->color_nombre])) {
+                        $agrupados[$item->color_nombre] = [];
+                    }
+                    $agrupados[$item->color_nombre][] = [
+                        'talla' => (string) $item->talla,
+                        'cantidad' => (int) $item->cantidad,
+                    ];
+                }
+                return $agrupados;
+            });
+
+        $registros->getCollection()->transform(function ($fila) use ($tallasPorPrenda, $tallasPorColorPorPrenda) {
             $tallasTotales = $tallasPorPrenda->get($fila->prenda_id, []);
+            $tallasPorColor = $tallasPorColorPorPrenda->get($fila->prenda_id, []);
             $detalleMovimiento = [];
 
             if (!empty($fila->detalle_tallas)) {
@@ -241,6 +270,9 @@ class SupervisorOrdersController extends Controller
             $fila->tallas_texto = collect($tallasMostrar)
                 ->map(fn($t) => "{$t['talla']}: {$t['cantidad']}")
                 ->implode(' · ');
+
+            // Formatear tallas por color para mostrar en la vista
+            $fila->tallas_por_color = $tallasPorColor;
 
             $cantidadTotalTallas = (int) collect($tallasTotales)->sum('cantidad');
             $cantidadMovimiento = (int) ($fila->cantidad_entregada ?? 0);
