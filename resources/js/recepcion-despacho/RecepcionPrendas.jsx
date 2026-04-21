@@ -512,6 +512,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const [showDateModal, setShowDateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const hasDateFilter = dateFrom || dateTo;
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingConfirmId, setPendingConfirmId] = useState(null);
   const [showNovedadesModal, setShowNovedadesModal] = useState(false);
@@ -696,6 +697,44 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
       setToast('❌ Error al guardar la confirmación');
       clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 2500);
+    }
+  };
+
+  const clearDateFilter = async () => {
+    setDateFrom('');
+    setDateTo('');
+    setPagesByFilter({
+      todos: 1,
+      pendientes: 1,
+      recibidos: 1,
+    });
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('page', 1);
+      params.append('status', filter);
+
+      const response = await fetch(`/api/recepcion-despacho/items?${params.toString()}`, {
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Error cargando página');
+      const data = await response.json();
+
+      setItems(data.data || []);
+      setPaginationData(data.pagination);
+      if (data.counts) {
+        setItemCounts(data.counts);
+      }
+      setCurrentPage(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Error loading page:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1593,6 +1632,50 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Clear Filter Button */}
+      {hasDateFilter && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 90,
+            left: 16,
+            right: 16,
+            zIndex: 40,
+            animation: 'slideUp 0.3s ease',
+          }}
+        >
+          <button
+            onClick={clearDateFilter}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 12,
+              border: 'none',
+              background: accent,
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            ✕ Limpiar filtro de fecha
+          </button>
+          <style>
+            {`
+              @keyframes slideUp {
+                from { transform: translateY(100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+              }
+            `}
+          </style>
         </div>
       )}
 
