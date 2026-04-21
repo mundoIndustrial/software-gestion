@@ -26,6 +26,8 @@ final class ObtenerValoresFiltrosCotizacionesAsesorUseCase
             'PL' => 'Combinada',
             'L' => 'Logo',
             'RF' => 'Reflectivo',
+            'P' => 'Prenda',
+            'EPP' => 'EPP',
         ];
 
         $fechas = [];

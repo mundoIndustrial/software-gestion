@@ -90,16 +90,16 @@ final class CotizacionesViewController extends Controller
 
             $cotizacionesEnviadas = $cotizaciones->filter(fn($c) => $c->es_borrador !== true && $c->es_borrador !== 1);
 
-            $cotizacionesTodas = $this->paginate($cotizacionesEnviadas, 15);
-            $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
-            $cotizacionesLogo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'L'), 15);
-            $cotizacionesPrendaBordado = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
+            $cotizacionesTodas = $this->paginate($cotizacionesEnviadas, 10);
+            $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 10);
+            $cotizacionesLogo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'L'), 10);
+            $cotizacionesPrendaBordado = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 10);
 
             $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);
-            $borradoresTodas = $this->paginate($borradoresCollection, 15);
-            $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
-            $borradoresLogo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'L'), 15);
-            $borradorespPrendaBordado = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
+            $borradoresTodas = $this->paginate($borradoresCollection, 10);
+            $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 10);
+            $borradoresLogo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'L'), 10);
+            $borradorespPrendaBordado = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 10);
 
             return view('asesores.cotizaciones.index', compact(
                 'cotizacionesTodas',
@@ -184,7 +184,7 @@ final class CotizacionesViewController extends Controller
         }
     }
 
-    private function paginate($items, $perPage = 15)
+    private function paginate($items, $perPage = 10)
     {
         $page = request()->get('page', 1);
         $items = $items->slice(($page - 1) * $perPage, $perPage)->values();

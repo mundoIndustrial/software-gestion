@@ -1541,6 +1541,7 @@ function renderizarTecnicasAgregadasPaso3() {
     
     // Agrupar por nombre de prenda
     const prendasMap = {};
+    const logosCompartidosProcesadosPorPrenda = new Map(); // nombrePrenda -> Set(nombreCompartido)
     
     window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
         if (!tecnicaData.prendas) return;
@@ -1584,6 +1585,18 @@ function renderizarTecnicasAgregadasPaso3() {
             
             if (imagenesAoProcesar.length > 0) {
                 imagenesAoProcesar.forEach(imagen => {
+                    // DEDUPLICACIÓN DE LOGOS COMPARTIDOS
+                    if (imagen && typeof imagen === 'object' && imagen.nombreCompartido) {
+                        if (!logosCompartidosProcesadosPorPrenda.has(nombrePrenda)) {
+                            logosCompartidosProcesadosPorPrenda.set(nombrePrenda, new Set());
+                        }
+                        
+                        if (logosCompartidosProcesadosPorPrenda.get(nombrePrenda).has(imagen.nombreCompartido)) {
+                            return; // Saltar si ya procesamos este logo compartido para esta prenda
+                        }
+                        logosCompartidosProcesadosPorPrenda.get(nombrePrenda).add(imagen.nombreCompartido);
+                    }
+
                     imagenesParaCargar.push({
                         imagen: imagen,
                         nombrePrenda: nombrePrenda,

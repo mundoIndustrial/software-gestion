@@ -2157,8 +2157,6 @@ function renderizarTecnicasAgregadas() {
     // PASO 1: Agrupar por NOMBRE DE PRENDA (no por técnica)
     const prendasMap = {};
     const imagenesParaCargar = [];
-    const imagenesCompartidasYaProcesadas = new Set(); // Para evitar duplicados
-    
     tecnicasAgregadas.forEach((tecnica, tecnicaIndex) => {
         tecnica.prendas.forEach(prenda => {
             const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
@@ -2171,7 +2169,8 @@ function renderizarTecnicasAgregadas() {
                     imagenes: [],
                     _imagenesKeys: new Set(),
                     _imagenesDataKeys: new Set(),
-                    _imgIndexByData: new Map()
+                    _imgIndexByData: new Map(),
+                    _logosCompartidosYaProcesados: new Set() // Deduplicación por prenda
                 };
             }
 
@@ -2179,40 +2178,26 @@ function renderizarTecnicasAgregadas() {
                 const dataKey = imgObj.data || '';
                 const tecnicaKey = imgObj.tecnica || '';
                 const compartidaKey = imgObj.esCompartida ? 'C' : 'N';
-                // Dedupe principal por imagen (ruta/data_url). Si la misma imagen aparece en múltiples técnicas
-                // (logo compartido), se renderiza UNA sola vez en el card.
+                
+                // Generar una clave única basada en el contenido de la imagen (URL/Base64)
+                // Esto evita que la misma imagen se renderice dos veces en la misma tarjeta
                 const dataOnlyKey = `${compartidaKey}|${dataKey}`;
 
-                // Si la imagen NO es compartida pero aparece en otra técnica, convertir a compartida
-                // (caso borrador: misma URL en múltiples técnicas).
+                // Si la imagen ya fue agregada a esta prenda, no la agregamos de nuevo
+                if (prendasMap[nombrePrenda]._imagenesDataKeys.has(dataOnlyKey)) return;
+
+                // Caso especial: Si una imagen normal (N) ya existe pero con una URL idéntica, 
+                // podría ser que sea una imagen compartida que no fue marcada como tal (ej. desde borrador)
                 if (compartidaKey === 'N') {
                     const prevIndex = prendasMap[nombrePrenda]._imgIndexByData.get(dataOnlyKey);
                     if (typeof prevIndex === 'number') {
-                        const prev = prendasMap[nombrePrenda].imagenes[prevIndex];
-                        if (prev && !prev.esCompartida && prev.data === dataKey) {
-                            const prevTec = prev.tecnica || '';
-                            const nuevasTec = [prevTec, tecnicaKey].filter(Boolean);
-                            const uniq = Array.from(new Set(nuevasTec));
-                            if (uniq.length > 1) {
-                                prev.esCompartida = true;
-                                prev.tecnica = '⭐ COMPARTIDA';
-                                prev.tecnicaColor = '#e0a853';
-                                prev.tecnicasCompartidas = uniq;
-                            }
-                        }
-
-                        // No agregar duplicado visual
-                        return;
+                        return; // Ya existe
                     }
                 }
 
-                if (prendasMap[nombrePrenda]._imagenesDataKeys.has(dataOnlyKey)) return;
                 prendasMap[nombrePrenda]._imagenesDataKeys.add(dataOnlyKey);
-
-                const key = `${compartidaKey}|${tecnicaKey}|${dataKey}`;
-                if (prendasMap[nombrePrenda]._imagenesKeys.has(key)) return;
-                prendasMap[nombrePrenda]._imagenesKeys.add(key);
                 prendasMap[nombrePrenda].imagenes.push(imgObj);
+                
                 if (dataKey) {
                     prendasMap[nombrePrenda]._imgIndexByData.set(dataOnlyKey, prendasMap[nombrePrenda].imagenes.length - 1);
                 }
@@ -2224,8 +2209,38 @@ function renderizarTecnicasAgregadas() {
                 tecnicaIndex: tecnicaIndex
             });
             
-            // Procesar imágenes - SOLO desde imagenes_files si NO hay imagenes_data_urls
-            // (en combinadas suele existir ambos, y eso causa duplicados en el card)
+            // Procesar imágenes_data_urls (pueden venir del paso 3 con referencias a tecnicas)
+            if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+                prenda.imagenes_data_urls.forEach(img => {
+                    const esCompartida = img.esCompartida === true || !!img.nombreCompartido;
+                    
+                    if (esCompartida) {
+                        const claveCompartida = img.nombreCompartido || 'compartida';
+                        // Deduplicar logos compartidos POR PRENDA
+                        if (!prendasMap[nombrePrenda]._logosCompartidosYaProcesados.has(claveCompartida)) {
+                            prendasMap[nombrePrenda]._logosCompartidosYaProcesados.add(claveCompartida);
+                            agregarImagenDedupe({
+                                data: cotizacionLogoImgSrc(img) || img,
+                                tecnica: '⭐ COMPARTIDA',
+                                tecnicaColor: '#e0a853',
+                                esCompartida: true,
+                                nombreCompartido: img.nombreCompartido || null,
+                                tecnicasCompartidas: img.tecnicasCompartidas || []
+                            });
+                        }
+                    } else {
+                        // Imágenes normales
+                        agregarImagenDedupe({
+                            data: cotizacionLogoImgSrc(img) || img,
+                            tecnica: tecnica.tipo_logo.nombre,
+                            tecnicaColor: tecnica.tipo_logo.color,
+                            esCompartida: false
+                        });
+                    }
+                });
+            }
+
+            // Procesar imágenes_files (solo si no hay data_urls para evitar duplicados visuales)
             const tieneDataUrls = prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0;
             if (!tieneDataUrls && prenda.imagenes_files && prenda.imagenes_files.length > 0) {
                 prenda.imagenes_files.forEach(archivo => {
@@ -2236,37 +2251,6 @@ function renderizarTecnicasAgregadas() {
                         tecnicaColor: tecnica.tipo_logo.color,
                         esCompartida: false
                     });
-                });
-            }
-            
-            // Procesar imágenes_data_urls (pueden venir del paso 3 con referencias a tecnicas)
-            if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
-                prenda.imagenes_data_urls.forEach(img => {
-                    const esCompartida = img.esCompartida === true || !!img.nombreCompartido;
-                    
-                    // Para imágenes compartidas: evitar duplicación
-                    if (esCompartida) {
-                        const claveCompartida = img.nombreCompartido || 'compartida';
-                        if (!imagenesCompartidasYaProcesadas.has(claveCompartida)) {
-                            imagenesCompartidasYaProcesadas.add(claveCompartida);
-                            agregarImagenDedupe({
-                                data: cotizacionLogoImgSrc(img) || img,
-                                tecnica: '⭐ COMPARTIDA',
-                                tecnicaColor: '#e0a853', // Dorado para imágenes compartidas
-                                esCompartida: true,
-                                nombreCompartido: img.nombreCompartido || null,
-                                tecnicasCompartidas: img.tecnicasCompartidas || []
-                            });
-                        }
-                    } else {
-                        // Imágenes normales (no compartidas)
-                        agregarImagenDedupe({
-                            data: cotizacionLogoImgSrc(img) || img,
-                            tecnica: tecnica.tipo_logo.nombre,
-                            tecnicaColor: tecnica.tipo_logo.color,
-                            esCompartida: false
-                        });
-                    }
                 });
             }
         });
