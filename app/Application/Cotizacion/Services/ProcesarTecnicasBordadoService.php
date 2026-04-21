@@ -2,6 +2,7 @@
 
 namespace App\Application\Cotizacion\Services;
 
+use App\Application\Services\Cotizacion\ValidarRutaImagenCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoCotizacionTecnicaPrendaFoto;
 use App\Models\PrendaCot;
@@ -273,10 +274,10 @@ class ProcesarTecnicasBordadoService
             'logo_cotizacion_id' => $logoCotizacionId,
             'prenda_cot_id' => $prendaCotId,
             'tipo_logo_id' => $tecnica['tipo_logo']['id'],
-            'observaciones' => $prenda['observaciones'] ?? null,
-            'ubicaciones' => $prenda['ubicaciones'] ?? null,
-            'talla_cantidad' => $prenda['talla_cantidad'] ?? null,
-            'variaciones_prenda' => $prenda['variaciones_prenda'] ?? null,
+            'observaciones' => $prenda['observaciones'] ?? '',
+            'ubicaciones' => $prenda['ubicaciones'] ?? [],
+            'talla_cantidad' => $prenda['talla_cantidad'] ?? [],
+            'variaciones_prenda' => $prenda['variaciones_prenda'] ?? [],
             'grupo_combinado' => $tecnica['grupo_combinado'] ?? null,
         ]);
 
@@ -321,6 +322,13 @@ class ProcesarTecnicasBordadoService
             if (!is_array($tecnicasCompartidas)) {
                 continue;
             }
+
+            // Validar grupo combinado (para evitar aplicar el logo a otras prendas con las mismas técnicas)
+            $grupoMetadata = $metadatos['grupoCombinado'] ?? null;
+            if ($grupoMetadata !== null && (int)$prendaTecnica->grupo_combinado !== (int)$grupoMetadata) {
+                continue;
+            }
+
             $participa = false;
             foreach ($tecnicasCompartidas as $t) {
                 if (strcasecmp((string) $t, $nombreTipo) === 0) {
@@ -342,11 +350,25 @@ class ProcesarTecnicasBordadoService
                 continue;
             }
 
+            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($rutaCompartida, 'ProcesarTecnicasBordadoService.vincularLogosCompartidos', [
+                'clave' => $clave,
+                'prenda_tecnica_id' => $prendaTecnica->id,
+            ])) {
+                continue;
+            }
+
             $rutaNormalizada = $rutaCompartida;
             if (str_starts_with($rutaNormalizada, '/storage/')) {
                 $rutaNormalizada = substr($rutaNormalizada, strlen('/storage/'));
             }
             $rutaNormalizada = ltrim($rutaNormalizada, '/');
+
+            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($rutaNormalizada, 'ProcesarTecnicasBordadoService.vincularLogosCompartidos.ruta_normalizada', [
+                'clave' => $clave,
+                'prenda_tecnica_id' => $prendaTecnica->id,
+            ])) {
+                continue;
+            }
 
             $rutasAComparar = array_values(array_unique(array_filter([
                 $rutaNormalizada,
@@ -404,6 +426,28 @@ class ProcesarTecnicasBordadoService
                         $cotizacionId,
                         'TÉCNICA'
                     );
+
+                    $candidatosRuta = array_unique(array_filter([
+                        $rutas['ruta_original'] ?? null,
+                        $rutas['ruta_webp'] ?? null,
+                        $rutas['ruta_miniatura'] ?? null,
+                    ], fn ($v) => is_string($v) && $v !== ''));
+
+                    $rutaRechazada = false;
+                    foreach ($candidatosRuta as $cand) {
+                        if (!ValidarRutaImagenCotizacion::puedePersistirRuta($cand, 'ProcesarTecnicasBordadoService.procesarFotosDelPrenda', [
+                            'prenda_tecnica_id' => $prendaTecnicaId,
+                            'cotizacion_id' => $cotizacionId,
+                            'tecnica_idx' => $tecnicaIdx,
+                            'prenda_idx' => $prendaIdx,
+                        ])) {
+                            $rutaRechazada = true;
+                            break;
+                        }
+                    }
+                    if ($rutaRechazada || $candidatosRuta === []) {
+                        continue;
+                    }
 
                     LogoCotizacionTecnicaPrendaFoto::create([
                         'logo_cotizacion_tecnica_prenda_id' => $prendaTecnicaId,

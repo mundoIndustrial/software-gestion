@@ -34,6 +34,9 @@ class ProcesarTelasBordadoService
             'tecnicas_count' => count($tecnicas),
         ]);
 
+        // Limpiar telas existentes para evitar duplicados en actualizaciones
+        LogoCotizacionTelasPrenda::where('logo_cotizacion_id', $logoCotizacionId)->delete();
+
         $telasProcesadas = 0;
 
         foreach ($tecnicas as $tecnicaIdx => $tecnicaData) {

@@ -521,7 +521,7 @@
                     <div class="form-col full" style="flex: 1;">
                         <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.3rem; display: block;"><i class="fas fa-list"></i> SELECCIONA O ESCRIBE EL TIPO *</label>
                         <div class="prenda-search-container">
-                            <input type="text" name="productos_prenda[][nombre_producto]" class="prenda-search-input input-large" placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)" required onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);" onchange="actualizarResumenPrenda(); mostrarSelectorVariantes(this);" style="font-size: 0.75rem; padding: 0.4rem;">
+class="prenda-search-input" style="font-size: 0.75rem; padding: 0.4rem;">
                             <div class="prenda-suggestions">
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' CAMISETA', this)"> CAMISETA</div>
@@ -910,6 +910,68 @@
 </template>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  function buscarPrendas(input) {
+    const valor = input.value.toLowerCase();
+    const container = input.closest('.prenda-search-container') || input.parentElement;
+    const suggestions = container ? container.querySelector('.prenda-suggestions') : null;
+    if (!suggestions) return;
+    const items = suggestions.querySelectorAll('.prenda-suggestion-item');
+    items.forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(valor) ? 'block' : 'none';
+    });
+    suggestions.style.display = valor ? 'block' : 'none';
+  }
+
+  function mostrarSelectorVariantes(input) {
+    // Lógica existente de jean/pantalón - mantener intacta
+    const valor = input.value.toUpperCase();
+    const container = input.closest('.tipo-prenda-row')?.querySelector('.tipo-jean-pantalon-inline');
+    if (!container) return;
+    const innerContainer = container.querySelector('.tipo-jean-pantalon-inline-container');
+    if (valor.includes('JEAN') || valor.includes('JEANS') || valor.includes('PANTALON') || valor.includes('PANTALÓN')) {
+      container.style.display = 'block';
+      if (innerContainer.innerHTML === '') {
+        innerContainer.innerHTML = `
+          <label style="font-weight: 600; color: #0066cc; font-size: 0.85rem;">TIPO DE PRENDA</label>
+          <input type="hidden" name="productos_prenda[][variantes][es_jean_pantalon]" class="es-jean-pantalon-hidden" value="0">
+          <select name="productos_prenda[][variantes][tipo_jean_pantalon]" onchange="marcarEsJeanPantalon(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600;">
+            <option value="">Selecciona</option>
+            <option value="METÁLICO">METÁLICO</option>
+            <option value="PLÁSTICO">PLÁSTICO</option>
+            <option value="SKINNY">SKINNY</option>
+            <option value="SLIM">SLIM</option>
+            <option value="RECTO">RECTO</option>
+            <option value="BOOTCUT">BOOTCUT</option>
+            <option value="FLARE">FLARE</option>
+            <option value="MOM">MOM</option>
+            <option value="OVERSIZE">OVERSIZE</option>
+            <option value="OTRO">OTRO</option>
+            <option value="NO APLICA">NO APLICA</option>
+          </select>
+        `;
+      }
+    } else {
+      container.style.display = 'none';
+    }
+  }
+
+  // Event delegation para inputs existentes y futuros (templates clonados)
+  document.addEventListener('keyup', function(e) {
+    if (e.target.matches('.prenda-search-input')) buscarPrendas(e.target);
+  });
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('.prenda-search-input')) mostrarSelectorVariantes(e.target);
+  });
+
+  // Cerrar suggestions al click fuera
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.prenda-search-container')) {
+      document.querySelectorAll('.prenda-suggestions.show').forEach(s => s.classList.remove('show'));
+    }
+  });
+});
+
 // Funciones de compatibilidad - Estos mapean a los módulos SOLID
 // Se mantienen para compatibilidad con código existente
 

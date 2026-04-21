@@ -170,10 +170,6 @@ class ActualizarBorradorCotizacionService
         ActualizarBorradorCotizacionRequest $request,
         LogoCotizacion $logoCotizacion
     ): void {
-        if (!$request->tecnicas) {
-            return;
-        }
-
         $this->procesarTecnicasService->sincronizar(
             $logoCotizacion->id,
             $logoCotizacion->cotizacion_id,

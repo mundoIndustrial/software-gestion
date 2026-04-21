@@ -64,62 +64,52 @@ function mostrarImagenes(files) {
     const galeria = document.getElementById('galeria_imagenes');
     if (!galeria) return;
     galeria.innerHTML = '';
-    let imagenesLoaded = [];
-    let imagenesCount = 0;
-    
-    Array.from(files).forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            imagenesLoaded[index] = { src: event.target.result, index: index };
-            imagenesCount++;
-            if (imagenesCount === Array.from(files).length) {
-                imagenesLoaded.forEach((imgData, posicion) => {
-                    if (imgData) {
-                        const div = document.createElement('div');
-                        div.style.cssText = 'position: relative; width: 100%; padding-bottom: 100%; overflow: hidden; border-radius: 8px; border: 1px solid #ddd;';
-                        const img = document.createElement('img');
-                        img.src = imgData.src;
-                        img.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;';
-                        const numero = document.createElement('div');
-                        numero.innerHTML = posicion + 1;
-                        numero.style.cssText = 'position: absolute; bottom: 5px; left: 5px; background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;';
-                        const btnEliminar = document.createElement('button');
-                        btnEliminar.type = 'button';
-                        btnEliminar.innerHTML = '✕';
-                        btnEliminar.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #f44336; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0;';
-                        btnEliminar.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const fileEliminado = archivosAcumulados[posicion];
+    Array.from(files).forEach((file, posicion) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position: relative; width: 100%; padding-bottom: 100%; overflow: hidden; border-radius: 8px; border: 1px solid #ddd;';
 
-                            
-                            //  IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo
-                            if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
-                                const beforeCount = window.imagenesEnMemoria.logo.length;
-                                window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter(img => {
-                                    // Comparar por nombre si es un archivo, o por propiedad si es un objeto
-                                    if (img && typeof img === 'object' && img.name === fileEliminado?.name) {
+        const img = document.createElement('img');
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        img.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;';
 
-                                        return false;
-                                    }
-                                    return true;
-                                });
+        const numero = document.createElement('div');
+        numero.innerHTML = posicion + 1;
+        numero.style.cssText = 'position: absolute; bottom: 5px; left: 5px; background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;';
 
-                            }
-                            
-                            archivosAcumulados.splice(posicion, 1);
-                            const dt = new DataTransfer();
-                            archivosAcumulados.forEach(f => dt.items.add(f));
-                            document.getElementById('imagenes_bordado').files = dt.files;
-                            mostrarImagenes(archivosAcumulados);
-                        });
-                        div.appendChild(img);
-                        div.appendChild(numero);
-                        div.appendChild(btnEliminar);
-                        galeria.appendChild(div);
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.innerHTML = '✕';
+        btnEliminar.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #f44336; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0;';
+        btnEliminar.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            try {
+                URL.revokeObjectURL(objectUrl);
+            } catch (_) {}
+
+            const fileEliminado = archivosAcumulados[posicion];
+
+            //  IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo
+            if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
+                window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter(img => {
+                    if (img && typeof img === 'object' && img.name === fileEliminado?.name) {
+                        return false;
                     }
+                    return true;
                 });
             }
-        };
-        reader.readAsDataURL(file);
+
+            archivosAcumulados.splice(posicion, 1);
+            const dt = new DataTransfer();
+            archivosAcumulados.forEach(f => dt.items.add(f));
+            document.getElementById('imagenes_bordado').files = dt.files;
+            mostrarImagenes(archivosAcumulados);
+        });
+
+        div.appendChild(img);
+        div.appendChild(numero);
+        div.appendChild(btnEliminar);
+        galeria.appendChild(div);
     });
 }

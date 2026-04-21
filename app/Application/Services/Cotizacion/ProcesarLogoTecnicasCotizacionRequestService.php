@@ -110,6 +110,13 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                         if ($foto instanceof \Illuminate\Http\UploadedFile) {
                             $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
 
+                            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($ruta, 'ProcesarLogoTecnicasCotizacionRequestService.logo_paso1_archivo', [
+                                'cotizacion_id' => $cotizacionId,
+                                'logo_cotizacion_id' => $logoCotizacion->id,
+                            ])) {
+                                continue;
+                            }
+
                             try {
                                 $logoCotizacion->fotos()->create([
                                     'ruta_original' => $ruta,
@@ -365,6 +372,12 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                                             ->exists();
 
                                         if ($yaExisteFoto) {
+                                            continue;
+                                        }
+
+                                        if (!is_string($rutaNormalizada) || !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaNormalizada, 'ProcesarLogoTecnicasCotizacionRequestService.paso2_ruta', [
+                                            'logo_cotizacion_tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
+                                        ])) {
                                             continue;
                                         }
 
@@ -749,6 +762,13 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                         }
                     }
 
+                    if (!is_string($path) || !ValidarRutaImagenCotizacion::puedePersistirRuta($path, 'ProcesarLogoTecnicasCotizacionRequestService.logo_paso3_indexado', [
+                        'cotizacion_id' => $cotizacionId,
+                        'field' => $fieldName,
+                    ])) {
+                        continue;
+                    }
+
                     $logoCotizacionTecnicaPrenda->fotos()->create([
                         'ruta_original' => $path,
                         'ruta_webp' => $path,
@@ -773,6 +793,13 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                         if ($cacheKey) {
                             $logoPaso3PathCache[$cacheKey] = $path;
                         }
+                    }
+
+                    if (!is_string($path) || !ValidarRutaImagenCotizacion::puedePersistirRuta($path, 'ProcesarLogoTecnicasCotizacionRequestService.logo_paso3_plano', [
+                        'cotizacion_id' => $cotizacionId,
+                        'field' => $fieldName,
+                    ])) {
+                        continue;
                     }
 
                     $logoCotizacionTecnicaPrendaTarget = null;

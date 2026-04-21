@@ -69,6 +69,12 @@ final class ProcesarImagenesCotizacionOrchestratorService
                     $orden = 1;
                     foreach ($fotosAnteriores as $fotoAnterior) {
                         $rutaAUsar = $fotoAnterior->ruta_original ?: $fotoAnterior->ruta_webp;
+                        if (!is_string($rutaAUsar) || !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaAUsar, 'ProcesarImagenesCotizacionOrchestratorService.fallback_tela_foto', [
+                            'cotizacion_id' => $cotizacionId,
+                            'prenda_cot_id' => $prendaModel->id,
+                        ])) {
+                            continue;
+                        }
 
                         DB::table('prenda_tela_fotos_cot')->insert([
                             'prenda_cot_id' => $prendaModel->id,

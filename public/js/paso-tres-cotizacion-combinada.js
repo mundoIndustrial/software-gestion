@@ -757,6 +757,12 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                         btnEliminar.textContent = '×';
                         btnEliminar.addEventListener('click', (e) => {
                             e.preventDefault();
+                            const bu = preview.getAttribute('data-blob-url');
+                            if (bu && String(bu).startsWith('blob:')) {
+                                try {
+                                    URL.revokeObjectURL(bu);
+                                } catch (_) {}
+                            }
                             imagenesAgregadasPorTecnica[idx].splice(imgIdx, 1);
                             actualizarPrevisualizaciones();
                         });
@@ -773,14 +779,12 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                             previewContainer.appendChild(preview);
                         } else if (archivo instanceof Blob) {
                             // Es un Blob (archivo nuevo)
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                img.src = e.target.result;
-                                preview.appendChild(img);
-                                preview.appendChild(btnEliminar);
-                                previewContainer.appendChild(preview);
-                            };
-                            reader.readAsDataURL(archivo);
+                            const objectUrl = URL.createObjectURL(archivo);
+                            img.src = objectUrl;
+                            preview.setAttribute('data-blob-url', objectUrl);
+                            preview.appendChild(img);
+                            preview.appendChild(btnEliminar);
+                            previewContainer.appendChild(preview);
                         }
                     });
                 }
@@ -1113,19 +1117,28 @@ function abrirModalSeleccionarTecnicasCompartidas(tecnicas, imagenesCompartidas)
     
     function mostrarPreviewCompartido() {
         if (!imagenSeleccionada) return;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewDiv.innerHTML = `
+        if (window.__p3PreviewCompartidoBlobUrl) {
+            try {
+                URL.revokeObjectURL(window.__p3PreviewCompartidoBlobUrl);
+            } catch (_) {}
+            window.__p3PreviewCompartidoBlobUrl = null;
+        }
+
+        window.__p3PreviewCompartidoBlobUrl = URL.createObjectURL(imagenSeleccionada);
+        previewDiv.innerHTML = `
                 <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #1e40af;">
-                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${window.__p3PreviewCompartidoBlobUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
             `;
-        };
-        reader.readAsDataURL(imagenSeleccionada);
     }
     
     function cerrarModal() {
+        if (window.__p3PreviewCompartidoBlobUrl) {
+            try {
+                URL.revokeObjectURL(window.__p3PreviewCompartidoBlobUrl);
+            } catch (_) {}
+            window.__p3PreviewCompartidoBlobUrl = null;
+        }
         modalElement.remove();
         backdropElement.remove();
     }
@@ -1225,15 +1238,13 @@ function actualizarSeccionImagenesConLogosCompartidos(tecnicasCompartidas, image
     
     // Mostrar preview de la imagen compartida
     const previewContainer = divImagenCompartida.querySelector(`.dImagenCompartidaPreview-${clave}`);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        previewContainer.innerHTML = `
+    const objectUrl = URL.createObjectURL(imagenCompartida);
+    divImagenCompartida.setAttribute('data-blob-url', objectUrl);
+    previewContainer.innerHTML = `
             <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #0284c7;">
-                <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
         `;
-    };
-    reader.readAsDataURL(imagenCompartida);
     
     // Botón para eliminar logo compartido
     const btnEliminar = divImagenCompartida.querySelector(`.dBtnEliminarCompartida-${clave}`);
@@ -1256,6 +1267,13 @@ function actualizarSeccionImagenesConLogosCompartidos(tecnicasCompartidas, image
         });
         
         // Eliminar la sección compartida
+        const bu = divImagenCompartida.getAttribute('data-blob-url');
+        if (bu && String(bu).startsWith('blob:')) {
+            try {
+                URL.revokeObjectURL(bu);
+            } catch (_) {}
+            divImagenCompartida.removeAttribute('data-blob-url');
+        }
         divImagenCompartida.remove();
         
         // Actualizar referencia global
@@ -1290,12 +1308,9 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
         
         const img = document.createElement('img');
         img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;';
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(imagen);
+        const objectUrl = URL.createObjectURL(imagen);
+        divLogo.setAttribute('data-blob-url', objectUrl);
+        img.src = objectUrl;
         
         const infoDiv = document.createElement('div');
         infoDiv.style.cssText = 'flex: 1;';
@@ -1313,6 +1328,12 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
         btnEliminar.textContent = '✕';
         btnEliminar.style.cssText = 'background: #f44336; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: 600;';
         btnEliminar.addEventListener('click', () => {
+            const bu = divLogo.getAttribute('data-blob-url');
+            if (bu && String(bu).startsWith('blob:')) {
+                try {
+                    URL.revokeObjectURL(bu);
+                } catch (_) {}
+            }
             delete imagenesCompartidas[clave];
             mostrarLogosCompartidosAgregados(imagenesCompartidas, []);
         });
@@ -1803,42 +1824,30 @@ function renderizarTecnicasAgregadasPaso3() {
         }
         // CASO 3: Objeto con {file, tipo, nombreCompartido} - File del PASO 3 con imagen compartida (nuevo formato)
         else if (typeof imagen === 'object' && imagen.file && imagen.tipo === 'paso3' && imagen.nombreCompartido && (imagen.file instanceof Blob || imagen.file instanceof File)) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagenesMaps.push({
-                    data: e.target.result,
-                    tecnica: imagen.nombreCompartido  // Usar el nombre compartido en lugar del nombre de técnica
-                });
-                
-                actualizarGridImagenes(tarjeta, imagenesMaps);
-            };
-            reader.readAsDataURL(imagen.file);
+            const objectUrl = URL.createObjectURL(imagen.file);
+            imagenesMaps.push({
+                data: objectUrl,
+                tecnica: imagen.nombreCompartido  // Usar el nombre compartido en lugar del nombre de técnica
+            });
+            actualizarGridImagenes(tarjeta, imagenesMaps);
         }
         // CASO 4: Objeto con {file, tipo} - File del PASO 3 (nuevo formato)
         else if (typeof imagen === 'object' && imagen.file && imagen.tipo === 'paso3' && (imagen.file instanceof Blob || imagen.file instanceof File)) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagenesMaps.push({
-                    data: e.target.result,
-                    tecnica: imgData.tecnica
-                });
-                
-                actualizarGridImagenes(tarjeta, imagenesMaps);
-            };
-            reader.readAsDataURL(imagen.file);
+            const objectUrl = URL.createObjectURL(imagen.file);
+            imagenesMaps.push({
+                data: objectUrl,
+                tecnica: imgData.tecnica
+            });
+            actualizarGridImagenes(tarjeta, imagenesMaps);
         }
         // CASO 5: Blob/File directo (Backward compatibility)
         else if (imagen instanceof Blob || imagen instanceof File) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagenesMaps.push({
-                    data: e.target.result,
-                    tecnica: imgData.tecnica
-                });
-                
-                actualizarGridImagenes(tarjeta, imagenesMaps);
-            };
-            reader.readAsDataURL(imagen);
+            const objectUrl = URL.createObjectURL(imagen);
+            imagenesMaps.push({
+                data: objectUrl,
+                tecnica: imgData.tecnica
+            });
+            actualizarGridImagenes(tarjeta, imagenesMaps);
         }
     });
     
@@ -2412,6 +2421,12 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
                     btn.style.cssText = 'position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:999px; border:none; cursor:pointer; background: rgba(0,0,0,0.6); color:#fff; font-weight:900;';
                     btn.addEventListener('click', (ev) => {
                         ev.preventDefault();
+                        const bu = wrap.getAttribute('data-blob-url');
+                        if (bu && String(bu).startsWith('blob:')) {
+                            try {
+                                URL.revokeObjectURL(bu);
+                            } catch (_) {}
+                        }
                         const arr = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
                         arr.splice(i, 1);
                         window.p3EdicionContexto.imagenesPorTecnica[key] = arr;
@@ -2420,9 +2435,9 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
 
                     const img = document.createElement('img');
                     img.style.cssText = 'width:100%; height:100%; object-fit: cover;';
-                    const r = new FileReader();
-                    r.onload = (ev2) => { img.src = ev2.target.result; };
-                    r.readAsDataURL(f);
+                    const objectUrl = URL.createObjectURL(f);
+                    img.src = objectUrl;
+                    wrap.setAttribute('data-blob-url', objectUrl);
 
                     wrap.appendChild(img);
                     wrap.appendChild(btn);
@@ -2514,13 +2529,10 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
         addLogoError.textContent = msg;
     };
 
-    const leerArchivoComoDataUrl = (file) => new Promise((resolve) => {
-        if (!(file instanceof File)) return resolve('');
-        const r = new FileReader();
-        r.onload = (e) => resolve(e.target.result);
-        r.onerror = () => resolve('');
-        r.readAsDataURL(file);
-    });
+    const leerArchivoComoPreviewUrl = (file) => {
+        if (!(file instanceof File)) return '';
+        return URL.createObjectURL(file);
+    };
 
     const renderizarLogosCompartidos = async () => {
         if (!contenedorLogosCompartidos) return;
@@ -2531,7 +2543,7 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
         for (const [clave, item] of entries) {
             const tecnicasTxt = Array.isArray(item.tecnicasCompartidas) ? item.tecnicasCompartidas.join(' + ') : String(clave);
             const file = window.p3EdicionContexto.logoCompartido.files ? window.p3EdicionContexto.logoCompartido.files[clave] : null;
-            const previewUrl = item.previewUrl || (file instanceof File ? await leerArchivoComoDataUrl(file) : '');
+            const previewUrl = item.previewUrl || (file instanceof File ? leerArchivoComoPreviewUrl(file) : '');
             if (!item.previewUrl && previewUrl) {
                 item.previewUrl = previewUrl;
             }

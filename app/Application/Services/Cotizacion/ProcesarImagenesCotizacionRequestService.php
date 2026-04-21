@@ -64,6 +64,13 @@ final class ProcesarImagenesCotizacionRequestService
                                 $prendaModel->id
                             );
 
+                            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($ruta, 'ProcesarImagenesCotizacionRequestService.archivo_prenda', [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prendaModel->id,
+                            ])) {
+                                continue;
+                            }
+
                             $prendaModel->fotos()->create([
                                 'ruta_original' => $ruta,
                                 'ruta_webp' => $ruta,
@@ -87,6 +94,13 @@ final class ProcesarImagenesCotizacionRequestService
                             $rutaLimpia = $rutaGuardada;
                             if (strpos($rutaLimpia, '/storage/') === 0) {
                                 $rutaLimpia = substr($rutaLimpia, 9);
+                            }
+
+                            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($rutaLimpia, 'ProcesarImagenesCotizacionRequestService.fotos_guardadas', [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prendaModel->id,
+                            ])) {
+                                continue;
                             }
 
                             $prendaModel->fotos()->create([
@@ -209,6 +223,31 @@ final class ProcesarImagenesCotizacionRequestService
                                 foreach ($fotosTelaExistentes as $fotoId) {
                                     $fotoExistente = PrendaTelaFotoCot::find($fotoId);
                                     if ($fotoExistente) {
+                                        $rutasCopia = array_unique(array_filter([
+                                            $fotoExistente->ruta_original,
+                                            $fotoExistente->ruta_webp,
+                                            $fotoExistente->ruta_miniatura,
+                                        ], fn ($v) => is_string($v) && $v !== ''));
+
+                                        if ($rutasCopia === []) {
+                                            continue;
+                                        }
+
+                                        $rutaInvalida = false;
+                                        foreach ($rutasCopia as $rc) {
+                                            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($rc, 'ProcesarImagenesCotizacionRequestService.tela_foto_existente', [
+                                                'cotizacion_id' => $cotizacionId,
+                                                'prenda_cot_id' => $prendaModel->id,
+                                                'foto_origen_id' => $fotoExistente->id,
+                                            ])) {
+                                                $rutaInvalida = true;
+                                                break;
+                                            }
+                                        }
+                                        if ($rutaInvalida) {
+                                            continue;
+                                        }
+
                                         $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                         DB::table('prenda_tela_fotos_cot')->insert([
                                             'prenda_cot_id' => $prendaModel->id,
@@ -253,6 +292,14 @@ final class ProcesarImagenesCotizacionRequestService
                                         $cotizacionId,
                                         $prendaModel->id
                                     );
+
+                                    if (!ValidarRutaImagenCotizacion::puedePersistirRuta($rutaGuardada, 'ProcesarImagenesCotizacionRequestService.archivo_tela', [
+                                        'cotizacion_id' => $cotizacionId,
+                                        'prenda_cot_id' => $prendaModel->id,
+                                        'tela_index' => $telaIndex,
+                                    ])) {
+                                        continue;
+                                    }
 
                                     DB::table('prenda_tela_fotos_cot')->insert([
                                         'prenda_cot_id' => $prendaModel->id,

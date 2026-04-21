@@ -162,6 +162,15 @@ function adjuntarPasteHintEnDropzoneLogo(dropzone) {
 // IDs de fotos (tabla logo_cotizacion_tecnica_prendas_fotos) a eliminar al guardar/enviar
 window.tecnicasFotosAEliminar = window.tecnicasFotosAEliminar || [];
 
+/**
+ * Fase 2: URL para previews sin data URL (preview_url nuevo, data_url legacy o string).
+ */
+function cotizacionLogoImgSrc(img) {
+    if (!img) return '';
+    if (typeof img === 'string') return img;
+    return img.preview_url || img.data_url || '';
+}
+
 // =========================================================
 // 2. CARGAR TIPOS DE TÉCNICAS AL INICIALIZAR
 // =========================================================
@@ -185,33 +194,48 @@ function configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo 
 
     const actualizarPrevisualizaciones = () => {
         if (!previewContainer) return;
+
+        imagenesAgregadas.forEach((f) => {
+            if (f && f.__cotPreviewBlobUrl) {
+                try {
+                    URL.revokeObjectURL(f.__cotPreviewBlobUrl);
+                } catch (_) {}
+                delete f.__cotPreviewBlobUrl;
+            }
+        });
+
         previewContainer.innerHTML = '';
 
         imagenesAgregadas.forEach((archivo, idx) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = document.createElement('div');
-                preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+            const objectUrl = URL.createObjectURL(archivo);
+            archivo.__cotPreviewBlobUrl = objectUrl;
 
-                const btnEliminar = document.createElement('button');
-                btnEliminar.type = 'button';
-                btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
-                btnEliminar.textContent = '×';
-                btnEliminar.addEventListener('click', (ev) => {
-                    ev.preventDefault();
-                    imagenesAgregadas.splice(idx, 1);
-                    actualizarPrevisualizaciones();
-                });
+            const preview = document.createElement('div');
+            preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
 
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+            const btnEliminar = document.createElement('button');
+            btnEliminar.type = 'button';
+            btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+            btnEliminar.textContent = '×';
+            btnEliminar.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                if (archivo.__cotPreviewBlobUrl) {
+                    try {
+                        URL.revokeObjectURL(archivo.__cotPreviewBlobUrl);
+                    } catch (_) {}
+                    delete archivo.__cotPreviewBlobUrl;
+                }
+                imagenesAgregadas.splice(idx, 1);
+                actualizarPrevisualizaciones();
+            });
 
-                preview.appendChild(img);
-                preview.appendChild(btnEliminar);
-                previewContainer.appendChild(preview);
-            };
-            reader.readAsDataURL(archivo);
+            const img = document.createElement('img');
+            img.src = objectUrl;
+            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+
+            preview.appendChild(img);
+            preview.appendChild(btnEliminar);
+            previewContainer.appendChild(preview);
         });
     };
 
@@ -502,6 +526,14 @@ function renderizarSelectTecnicas() {
 // =========================================================
 
 function abrirModalAgregarTecnica() {
+    // Resetear modo edición para asegurar que no se arrastre estado previo
+    window.modoEdicionPrenda = false;
+    window.datosPrendaEdicion = null;
+    window.tecnicasInfoEdicion = null;
+    window.tecnicaIndicesEdicion = null;
+    window.prendaNombreOriginalEdicion = null;
+    window.tecnicasSeleccionadasEdicionIds = null;
+
     // Obtener técnicas seleccionadas
     const checkboxes = document.querySelectorAll('.tecnica-checkbox:checked');
     const tecnicasSeleccionadas = Array.from(checkboxes).map(cb => {
@@ -853,32 +885,46 @@ function abrirModalDatosIguales(tecnicas) {
                     }
                     
                     function actualizarPrevisualizaciones() {
+                        imagenesAgregadas.forEach((f) => {
+                            if (f && f.__cotPreviewBlobUrl) {
+                                try {
+                                    URL.revokeObjectURL(f.__cotPreviewBlobUrl);
+                                } catch (_) {}
+                                delete f.__cotPreviewBlobUrl;
+                            }
+                        });
+
                         previewContainer.innerHTML = '';
-                        
+
                         imagenesAgregadas.forEach((archivo, imgIdx) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const preview = document.createElement('div');
-                                preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
-                                const btnEliminar = document.createElement('button');
-                                btnEliminar.type = 'button';
-                                btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
-                                btnEliminar.textContent = '×';
-                                btnEliminar.addEventListener('click', (e) => {
-                                    e.preventDefault();
-                                    imagenesAgregadas.splice(imgIdx, 1);
-                                    actualizarPrevisualizaciones();
-                                });
-                                
-                                const img = document.createElement('img');
-                                img.src = e.target.result;
-                                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                                
-                                preview.appendChild(img);
-                                preview.appendChild(btnEliminar);
-                                previewContainer.appendChild(preview);
-                            };
-                            reader.readAsDataURL(archivo);
+                            const objectUrl = URL.createObjectURL(archivo);
+                            archivo.__cotPreviewBlobUrl = objectUrl;
+
+                            const preview = document.createElement('div');
+                            preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+                            const btnEliminar = document.createElement('button');
+                            btnEliminar.type = 'button';
+                            btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+                            btnEliminar.textContent = '×';
+                            btnEliminar.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                if (archivo.__cotPreviewBlobUrl) {
+                                    try {
+                                        URL.revokeObjectURL(archivo.__cotPreviewBlobUrl);
+                                    } catch (_) {}
+                                    delete archivo.__cotPreviewBlobUrl;
+                                }
+                                imagenesAgregadas.splice(imgIdx, 1);
+                                actualizarPrevisualizaciones();
+                            });
+
+                            const img = document.createElement('img');
+                            img.src = objectUrl;
+                            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+
+                            preview.appendChild(img);
+                            preview.appendChild(btnEliminar);
+                            previewContainer.appendChild(preview);
                         });
                     }
                     
@@ -1139,7 +1185,8 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
     const tecnicasCheckboxes = modalElement.querySelectorAll('.dCheckTecnicaCompartidaLogo');
     
     let imagenSeleccionada = null;
-    
+    let previewBlobUrlLogoCompartido = null;
+
     // Setup dropzone
     dropzone.addEventListener('click', () => inputFile.click());
     
@@ -1175,19 +1222,28 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
     
     function mostrarPreviewLogoCompartido() {
         if (!imagenSeleccionada) return;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewDiv.innerHTML = `
+
+        if (previewBlobUrlLogoCompartido) {
+            try {
+                URL.revokeObjectURL(previewBlobUrlLogoCompartido);
+            } catch (_) {}
+            previewBlobUrlLogoCompartido = null;
+        }
+        previewBlobUrlLogoCompartido = URL.createObjectURL(imagenSeleccionada);
+        previewDiv.innerHTML = `
                 <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #0284c7;">
-                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${previewBlobUrlLogoCompartido}" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
             `;
-        };
-        reader.readAsDataURL(imagenSeleccionada);
     }
-    
+
     function cerrarModal() {
+        if (previewBlobUrlLogoCompartido) {
+            try {
+                URL.revokeObjectURL(previewBlobUrlLogoCompartido);
+            } catch (_) {}
+            previewBlobUrlLogoCompartido = null;
+        }
         modalElement.remove();
         backdropElement.remove();
     }
@@ -1346,13 +1402,11 @@ function mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasNuevas) {
         
         const img = document.createElement('img');
         img.style.cssText = 'width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #0284c7;';
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(imagen);
-        
+
+        const blobUrl = URL.createObjectURL(imagen);
+        divLogo.setAttribute('data-preview-blob-url', blobUrl);
+        img.src = blobUrl;
+
         previewDiv.appendChild(img);
         
         // Label con texto (a la derecha de la imagen)
@@ -1375,7 +1429,15 @@ function mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasNuevas) {
             
             // Eliminar del objeto de logos
             delete logosCompartidos[clave];
-            
+
+            const blobAttr = divLogo.getAttribute('data-preview-blob-url');
+            if (blobAttr) {
+                try {
+                    URL.revokeObjectURL(blobAttr);
+                } catch (_) {}
+                divLogo.removeAttribute('data-preview-blob-url');
+            }
+
             // Mostrar nuevamente los dropzones de las técnicas
             tecnicasArray.forEach(nombreTecnica => {
                 const idx = tecnicas.findIndex(t => t.nombre === nombreTecnica);
@@ -1745,135 +1807,100 @@ function guardarTecnicaCombinada(datosForm) {
     // Esto garantiza unicidad a nivel de usuario y sesión
     const grupoId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
     
-    // Procesar imágenes: convertir File a data URL (máximo 3 por técnica)
-    const processarImagenes = async () => {
-        const imagenesProcessadas = {};
-        
-        for (const idx in datosForm.imagenesPorTecnica) {
-            const archivos = datosForm.imagenesPorTecnica[idx];
-            if (archivos && archivos.length > 0) {
-                imagenesProcessadas[idx] = [];
-                
-                for (const archivo of archivos) {
-                    const imagenProcessada = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            resolve({
-                                data_url: e.target.result,
-                                nombre: archivo.name
-                            });
-                        };
-                        reader.readAsDataURL(archivo);
-                    });
-                    imagenesProcessadas[idx].push(imagenProcessada);
-                }
-            }
-        }
-        
-        return imagenesProcessadas;
-    };
-    
-    processarImagenes().then((imagenesProcessadas) => {
-        // PROCESAR LOGOS COMPARTIDOS PRIMERO
-        const logosCompartidosProcessados = {};
-        const logosCompartidos = datosForm.logosCompartidos || {};
-        
-        // Procesar cada logo compartido
-        for (let clave in logosCompartidos) {
-            const archivo = logosCompartidos[clave];
-            const tecnicasCompartidas = clave.split('-');
-            
-            logosCompartidosProcessados[clave] = new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    resolve({
-                        data_url: e.target.result,
-                        nombre: archivo.name,
-                        tecnicasCompartidas: tecnicasCompartidas,
-                        clave: clave
-                    });
+    // Fase 2: previews en memoria con blob: (sin base64 en imagenes_data_urls)
+    const imagenesProcessadas = {};
+    for (const idx in datosForm.imagenesPorTecnica) {
+        const archivos = datosForm.imagenesPorTecnica[idx];
+        if (archivos && archivos.length > 0) {
+            imagenesProcessadas[idx] = archivos.map((archivo) => {
+                const preview_url = URL.createObjectURL(archivo);
+                return {
+                    preview_url,
+                    nombre: archivo.name
                 };
-                reader.readAsDataURL(archivo);
             });
         }
-        
-        // Cuando todos los logos compartidos estén procesados
-        Promise.all(Object.values(logosCompartidosProcessados)).then((logosProcessados) => {
-            // Para cada técnica
-            tecnicas.forEach((tipo, idx) => {
-                const ubicacionesTecnica = datosForm.ubicacionesPorTecnica[idx] || [];
-                const imagenesTecnica = imagenesProcessadas[idx] || [];
-                
-                // Agregar logos compartidos de esta técnica
-                const logosParaEstaTecnica = logosProcessados.filter(logo => 
-                    logo.tecnicasCompartidas.includes(tipo.nombre)
-                );
-                
-                // Combinar imágenes: las propias + los logos compartidos
-                const todasLasImagenes = [
-                    ...imagenesTecnica.map(img => ({
-                        ...img,
-                        esCompartida: false
-                    })),
-                    ...logosParaEstaTecnica.map((logo, logoIdx) => ({
-                        data_url: logo.data_url,
-                        nombre: logo.nombre,
-                        nombreCompartido: logo.clave,
-                        tecnicasCompartidas: logo.tecnicasCompartidas,
-                        esCompartida: true,
-                        imagenIndex: imagenesTecnica.length + logoIdx
-                    }))
-                ];
-                
-                const nuevaTecnica = {
-                    tipo_logo: tipo,
-                    prendas: [{
-                        nombre_prenda: datosForm.nombre_prenda,
-                        observaciones: datosForm.observaciones,
-                        ubicaciones: ubicacionesTecnica,
-                        talla_cantidad: [],
-                        variaciones_prenda: datosForm.variaciones_prenda || null,
-                        imagenes_files: datosForm.imagenesPorTecnica[idx] || [],
-                        imagenes_data_urls: todasLasImagenes,
-                        telas: datosForm.telas || null
-                    }],
-                    es_combinada: true,
-                    grupo_combinado: grupoId,
-                    logosCompartidos: datosForm.logosCompartidos  // Pasar logos compartidos para envío al backend
-                };
-                
-                console.log(' DEBUG - nuevaTecnica armada:', {
-                    tecnica: tipo.nombre,
-                    logosCompartidos: datosForm.logosCompartidos,
-                    claves: Object.keys(datosForm.logosCompartidos || {})
-                });
+    }
 
-                tecnicasAgregadas.push(nuevaTecnica);
-            });
-            
-
-            
-            window.tecnicasAgregadas = tecnicasAgregadas;
-            
-            // Limpiar contexto
-            window.tecnicasCombinadas = null;
-            window.modoTecnicasCombinadas = null;
-            window.logosCompartidosCotizacionIndividual = {};
-            
-            // Limpiar checkboxes
-            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-tecnica-id]');
-            checkboxes.forEach(cb => cb.checked = false);
-            
-            // Actualizar renderizado
-            renderizarTecnicasAgregadas();
-            
-            // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
-            if (typeof renderizarLogoPrendasTecnicas === 'function') {
-
-                renderizarLogoPrendasTecnicas();
-            }
+    const logosCompartidosForm = datosForm.logosCompartidos || {};
+    const logosProcessados = [];
+    for (const clave in logosCompartidosForm) {
+        const archivo = logosCompartidosForm[clave];
+        if (!(archivo instanceof File)) {
+            continue;
+        }
+        const tecnicasCompartidas = clave.split('-');
+        logosProcessados.push({
+            preview_url: URL.createObjectURL(archivo),
+            nombre: archivo.name,
+            tecnicasCompartidas,
+            clave
         });
+    }
+
+    tecnicas.forEach((tipo, idx) => {
+        const ubicacionesTecnica = datosForm.ubicacionesPorTecnica[idx] || [];
+        const imagenesTecnica = imagenesProcessadas[idx] || [];
+
+        const logosParaEstaTecnica = logosProcessados.filter(logo =>
+            logo.tecnicasCompartidas.includes(tipo.nombre)
+        );
+
+        const todasLasImagenes = [
+            ...imagenesTecnica.map(img => ({
+                ...img,
+                esCompartida: false
+            })),
+            ...logosParaEstaTecnica.map((logo, logoIdx) => ({
+                preview_url: logo.preview_url,
+                nombre: logo.nombre,
+                nombreCompartido: logo.clave,
+                tecnicasCompartidas: logo.tecnicasCompartidas,
+                esCompartida: true,
+                imagenIndex: imagenesTecnica.length + logoIdx
+            }))
+        ];
+
+        const nuevaTecnica = {
+            tipo_logo: tipo,
+            prendas: [{
+                nombre_prenda: datosForm.nombre_prenda,
+                observaciones: datosForm.observaciones,
+                ubicaciones: ubicacionesTecnica,
+                talla_cantidad: [],
+                variaciones_prenda: datosForm.variaciones_prenda || null,
+                imagenes_files: datosForm.imagenesPorTecnica[idx] || [],
+                imagenes_data_urls: todasLasImagenes,
+                telas: datosForm.telas || null
+            }],
+            es_combinada: true,
+            grupo_combinado: grupoId,
+            logosCompartidos: datosForm.logosCompartidos
+        };
+
+        console.log(' DEBUG - nuevaTecnica armada:', {
+            tecnica: tipo.nombre,
+            logosCompartidos: datosForm.logosCompartidos,
+            claves: Object.keys(datosForm.logosCompartidos || {})
+        });
+
+        tecnicasAgregadas.push(nuevaTecnica);
     });
+
+    window.tecnicasAgregadas = tecnicasAgregadas;
+
+    window.tecnicasCombinadas = null;
+    window.modoTecnicasCombinadas = null;
+    window.logosCompartidosCotizacionIndividual = {};
+
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][data-tecnica-id]');
+    checkboxes.forEach(cb => cb.checked = false);
+
+    renderizarTecnicasAgregadas();
+
+    if (typeof renderizarLogoPrendasTecnicas === 'function') {
+        renderizarLogoPrendasTecnicas();
+    }
 }
 
 function extraerPrendasDelModal() {
@@ -2223,7 +2250,7 @@ function renderizarTecnicasAgregadas() {
                         if (!imagenesCompartidasYaProcesadas.has(claveCompartida)) {
                             imagenesCompartidasYaProcesadas.add(claveCompartida);
                             agregarImagenDedupe({
-                                data: img.data_url || img,
+                                data: cotizacionLogoImgSrc(img) || img,
                                 tecnica: '⭐ COMPARTIDA',
                                 tecnicaColor: '#e0a853', // Dorado para imágenes compartidas
                                 esCompartida: true,
@@ -2234,7 +2261,7 @@ function renderizarTecnicasAgregadas() {
                     } else {
                         // Imágenes normales (no compartidas)
                         agregarImagenDedupe({
-                            data: img.data_url || img,
+                            data: cotizacionLogoImgSrc(img) || img,
                             tecnica: tecnica.tipo_logo.nombre,
                             tecnicaColor: tecnica.tipo_logo.color,
                             esCompartida: false
@@ -2248,34 +2275,31 @@ function renderizarTecnicasAgregadas() {
     
     // Procesar las imágenes de File objects de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const prendaEntry = prendasMap[imgData.nombrePrenda];
-            if (prendaEntry) {
-                const data = e.target.result;
-                const dataOnlyKey = `N|${data || ''}`;
-                if (!prendaEntry._imagenesDataKeys.has(dataOnlyKey)) {
-                    prendaEntry._imagenesDataKeys.add(dataOnlyKey);
-                    const key = `N|${imgData.tecnica || ''}|${data || ''}`;
-                    prendaEntry._imagenesKeys.add(key);
-                    prendaEntry.imagenes.push({
-                        data,
-                        tecnica: imgData.tecnica,
-                        tecnicaColor: imgData.tecnicaColor,
-                        esCompartida: false
-                    });
-                }
+        const prendaEntry = prendasMap[imgData.nombrePrenda];
+        if (prendaEntry) {
+            const data = URL.createObjectURL(imgData.archivo);
+            const dataOnlyKey = `N|${data || ''}`;
+            if (!prendaEntry._imagenesDataKeys.has(dataOnlyKey)) {
+                prendaEntry._imagenesDataKeys.add(dataOnlyKey);
+                const key = `N|${imgData.tecnica || ''}|${data || ''}`;
+                prendaEntry._imagenesKeys.add(key);
+                prendaEntry.imagenes.push({
+                    data,
+                    tecnica: imgData.tecnica,
+                    tecnicaColor: imgData.tecnicaColor,
+                    esCompartida: false
+                });
             }
-            
-            // Actualizar la tarjeta si ya está renderizada
-            const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
-            if (tarjeta) {
-                const imgSection = tarjeta.querySelector('.imagenes-section');
-                if (imgSection && prendasMap[imgData.nombrePrenda].imagenes.length > 0) {
-                    imgSection.style.display = 'block';
-                    const divGrid = imgSection.querySelector('div:last-child');
-                    if (divGrid) {
-                        divGrid.innerHTML = prendasMap[imgData.nombrePrenda].imagenes.map((img, imgIdx) => `
+        }
+
+        const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
+        if (tarjeta) {
+            const imgSection = tarjeta.querySelector('.imagenes-section');
+            if (imgSection && prendasMap[imgData.nombrePrenda].imagenes.length > 0) {
+                imgSection.style.display = 'block';
+                const divGrid = imgSection.querySelector('div:last-child');
+                if (divGrid) {
+                    divGrid.innerHTML = prendasMap[imgData.nombrePrenda].imagenes.map((img, imgIdx) => `
                             <div style="display:flex; flex-direction: column; gap: 0.25rem; align-items: center; width: 100%; max-width: 120px;">
                                 <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: 100%;">
                                     <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
@@ -2283,11 +2307,9 @@ function renderizarTecnicasAgregadas() {
                                 <div style="font-size: 0.72rem; font-weight: 800; color: #334155; text-align: center; line-height: 1.05;">${img.esCompartida ? ('Logo compartido ' + ((img.tecnicasCompartidas && Array.isArray(img.tecnicasCompartidas) && img.tecnicasCompartidas.length > 0) ? img.tecnicasCompartidas.join('-') : '')) : (img.tecnica || '')}</div>
                             </div>
                         `).join('');
-                    }
                 }
             }
-        };
-        reader.readAsDataURL(imgData.archivo);
+        }
     });
     
     // NUEVO DISEÑO: Contenedor con tarjetas - ANCHO FIJO como en la imagen
@@ -2576,21 +2598,22 @@ function renderizarTecnicasAgregadas() {
                         if (p.nombre_prenda === nombrePrenda && p.telas && p.telas.length > 0) {
                             p.telas.forEach((tela, telaIdx) => {
                                 if (tela.archivo && tela.archivo instanceof File) {
-                                    const reader = new FileReader();
-                                    reader.onload = (e) => {
-                                        // Actualizar el data URL en la estructura
-                                        tela.imagen = e.target.result;
-                                        
-                                        // Actualizar la imagen en la tarjeta renderizada
-                                        const row = tarjeta.querySelector(`[data-tela-idx="${telaIdx}"]`);
-                                        if (row) {
-                                            const tdImagen = row.querySelector('td:last-child');
-                                            if (tdImagen) {
-                                                tdImagen.innerHTML = `<img src="${e.target.result}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
-                                            }
+                                    try {
+                                        if (tela.__previewBlobUrl) {
+                                            URL.revokeObjectURL(tela.__previewBlobUrl);
                                         }
-                                    };
-                                    reader.readAsDataURL(tela.archivo);
+                                    } catch (_) {}
+                                    const u = URL.createObjectURL(tela.archivo);
+                                    tela.__previewBlobUrl = u;
+                                    tela.imagen = u;
+
+                                    const row = tarjeta.querySelector(`[data-tela-idx="${telaIdx}"]`);
+                                    if (row) {
+                                        const tdImagen = row.querySelector('td:last-child');
+                                        if (tdImagen) {
+                                            tdImagen.innerHTML = `<img src="${u}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
+                                        }
+                                    }
                                 }
                             });
                         }
@@ -2650,6 +2673,15 @@ function eliminarPrendaDelGrupo(tecnicaIndices, nombrePrenda) {
         }
 
         renderizarTecnicasAgregadas();
+        
+        // Resetear modo edición por seguridad
+        window.modoEdicionPrenda = false;
+        window.datosPrendaEdicion = null;
+        window.tecnicasInfoEdicion = null;
+        window.tecnicaIndicesEdicion = null;
+        window.prendaNombreOriginalEdicion = null;
+        window.tecnicasSeleccionadasEdicionIds = null;
+        window.logosCompartidosCotizacionIndividual = {};
     });
 }
 
@@ -2694,18 +2726,19 @@ function abrirModalEditarPrenda(tecnicaIndices, nombrePrenda) {
                         if (!datosPrenda.logoCompartido.items[clave]) {
                             datosPrenda.logoCompartido.items[clave] = {
                                 tecnicasCompartidas: Array.isArray(img.tecnicasCompartidas) ? img.tecnicasCompartidas : (clave.split('-').map(t => t.trim()).filter(Boolean)),
-                                previewUrl: img.data_url || ''
+                                previewUrl: cotizacionLogoImgSrc(img) || ''
                             };
                         }
                         datosPrenda.logoCompartido.enabled = true;
                     } else {
-                        const url = (esObj && img.data_url) ? img.data_url : img;
+                        const url = cotizacionLogoImgSrc(img) || (typeof img === 'string' ? img : '');
                         if (url) {
                             // Mantener id si viene de BD
-                            if (esObj && (img.id || img.data_url)) {
+                            if (esObj && (img.id || cotizacionLogoImgSrc(img))) {
                                 imagenesPropias.push({
                                     id: img.id || null,
-                                    data_url: img.data_url || url
+                                    preview_url: cotizacionLogoImgSrc(img) || url,
+                                    data_url: img.data_url || undefined
                                 });
                             } else {
                                 imagenesPropias.push(url);
@@ -3041,7 +3074,7 @@ function renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda) {
         if (!nombreTecnica) return '';
         const datosTecnica = datosPrenda.tecnicas_imagenes[nombreTecnica] || {};
         const color = (datosTecnica.tipo_logo && datosTecnica.tipo_logo.color) ? datosTecnica.tipo_logo.color : (tipo.color || '#333');
-        const imagenesTecnica = (datosTecnica.imagenes_data_urls || []).map(img => (img && typeof img === 'object' && img.data_url) ? img.data_url : img);
+        const imagenesTecnica = (datosTecnica.imagenes_data_urls || []).map(img => cotizacionLogoImgSrc(img));
         const ubicacionesTecnica = Array.isArray(datosTecnica.ubicaciones) ? datosTecnica.ubicaciones : [];
 
         return `
@@ -3142,23 +3175,19 @@ function agregarEventListenersEdicionPrendaTecnicas(prendaDiv, datosPrenda) {
             const files = Array.from(e.target.files || []);
             files.forEach((file) => {
                 if (!file || !file.type || !file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    if (!datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[nombreTecnica]) return;
-                    const datosT = datosPrenda.tecnicas_imagenes[nombreTecnica];
+                if (!datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[nombreTecnica]) return;
+                const datosT = datosPrenda.tecnicas_imagenes[nombreTecnica];
 
-                    if (!Array.isArray(datosT.imagenes_data_urls)) datosT.imagenes_data_urls = [];
-                    if (!Array.isArray(datosT.imagenes_files_meta)) datosT.imagenes_files_meta = [];
+                if (!Array.isArray(datosT.imagenes_data_urls)) datosT.imagenes_data_urls = [];
+                if (!Array.isArray(datosT.imagenes_files_meta)) datosT.imagenes_files_meta = [];
 
-                    const dataUrl = event.target.result;
-                    datosT.imagenes_data_urls.push(dataUrl);
-                    datosT.imagenes_files_meta.push({ file, data_url: dataUrl });
-                    datosT.imagenes_files = (datosT.imagenes_files_meta || []).map(x => x.file).filter(f => f instanceof File);
-                    datosT.__touchedImagenes = true;
+                const previewUrl = URL.createObjectURL(file);
+                datosT.imagenes_data_urls.push({ preview_url: previewUrl });
+                datosT.imagenes_files_meta.push({ file, preview_url: previewUrl });
+                datosT.imagenes_files = (datosT.imagenes_files_meta || []).map(x => x.file).filter(f => f instanceof File);
+                datosT.__touchedImagenes = true;
 
-                    renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
-                };
-                reader.readAsDataURL(file);
+                renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
             });
             e.target.value = '';
         });
@@ -3190,8 +3219,13 @@ function agregarEventListenersEdicionPrendaTecnicas(prendaDiv, datosPrenda) {
             }
 
             if (removed && Array.isArray(datosT.imagenes_files_meta)) {
-                const removedDataUrl = (removed && typeof removed === 'object') ? (removed.data_url || '') : removed;
-                datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removedDataUrl);
+                const removedSrc = cotizacionLogoImgSrc(removed);
+                if (typeof removedSrc === 'string' && removedSrc.startsWith('blob:')) {
+                    try {
+                        URL.revokeObjectURL(removedSrc);
+                    } catch (_) {}
+                }
+                datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && cotizacionLogoImgSrc(m) !== removedSrc);
                 datosT.imagenes_files = (datosT.imagenes_files_meta || []).map(m => m.file).filter(f => f instanceof File);
             }
 
@@ -3230,42 +3264,36 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
         
         input.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
-            
+
             files.forEach(file => {
                 if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        // Agregar imagen a la técnica correspondiente
-                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls) {
-                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls = [];
-                        }
+                    if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls) {
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls = [];
+                    }
 
-                        // Mantener también los File reales para el envío
-                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta) {
-                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta = [];
-                        }
-                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files) {
-                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files = [];
-                        }
+                    if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta) {
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta = [];
+                    }
+                    if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files) {
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files = [];
+                    }
 
-                        const dataUrl = event.target.result;
-                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls.push(dataUrl);
+                    const previewUrl = URL.createObjectURL(file);
+                    datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls.push({ preview_url: previewUrl });
 
-                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta.push({
-                            file,
-                            data_url: dataUrl
-                        });
-                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files =
-                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta
-                                .map(x => x.file)
-                                .filter(f => f instanceof File);
+                    datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta.push({
+                        file,
+                        preview_url: previewUrl
+                    });
+                    datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files =
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta
+                            .map(x => x.file)
+                            .filter(f => f instanceof File);
 
-                        actualizarImagenesTecnica(nombreTecnica);
-                    };
-                    reader.readAsDataURL(file);
+                    actualizarImagenesTecnica(nombreTecnica);
                 }
             });
-            
+
             e.target.value = '';
         });
         
@@ -3277,7 +3305,7 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
             
             if (previewContainer) {
                 previewContainer.innerHTML = imagenesTecnica.map((img, idx) => {
-                    const src = (img && typeof img === 'object') ? (img.data_url || '') : img;
+                    const src = cotizacionLogoImgSrc(img);
                     return `
                     <div style="position: relative;" class="imagen-item" data-tecnica="${tecnicaNombre}" data-idx="${idx}">
                         <img src="${src}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
@@ -3311,8 +3339,13 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
 
                         // Si la imagen eliminada corresponde a un File nuevo, removerlo también
                         if (removed && Array.isArray(datosT.imagenes_files_meta)) {
-                            const removedDataUrl = (removed && typeof removed === 'object') ? (removed.data_url || '') : removed;
-                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removedDataUrl);
+                            const removedSrc = cotizacionLogoImgSrc(removed);
+                            if (typeof removedSrc === 'string' && removedSrc.startsWith('blob:')) {
+                                try {
+                                    URL.revokeObjectURL(removedSrc);
+                                } catch (_) {}
+                            }
+                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && cotizacionLogoImgSrc(m) !== removedSrc);
                             datosT.imagenes_files = (datosT.imagenes_files_meta || [])
                                 .map(m => m.file)
                                 .filter(f => f instanceof File);
@@ -3347,8 +3380,13 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                             }
                         }
                         if (removed && Array.isArray(datosT.imagenes_files_meta)) {
-                            const removedDataUrl = (removed && typeof removed === 'object') ? (removed.data_url || '') : removed;
-                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removedDataUrl);
+                            const removedSrc = cotizacionLogoImgSrc(removed);
+                            if (typeof removedSrc === 'string' && removedSrc.startsWith('blob:')) {
+                                try {
+                                    URL.revokeObjectURL(removedSrc);
+                                } catch (_) {}
+                            }
+                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && cotizacionLogoImgSrc(m) !== removedSrc);
                             datosT.imagenes_files = (datosT.imagenes_files_meta || [])
                                 .map(m => m.file)
                                 .filter(f => f instanceof File);
@@ -3407,24 +3445,28 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                     datosPrenda.logoCompartido.files[d.clave] = d.file;
                     const tecnicasCompartidas = Array.isArray(d.tecnicas) ? d.tecnicas : d.clave.split('-').map(t => t.trim()).filter(Boolean);
 
-                    const reader = new FileReader();
-                    reader.onload = (e2) => {
-                        const url = e2.target.result;
-                        datosPrenda.logoCompartido.items[d.clave] = {
-                            tecnicasCompartidas,
-                            previewUrl: url
-                        };
-
-                        // Asegurar UI visible
-                        const chk = prendaDiv.querySelector('#editUsarLogoCompartido');
-                        const sec = prendaDiv.querySelector('#editSeccionLogoCompartido');
-                        if (chk) chk.checked = true;
-                        if (sec) sec.style.display = 'grid';
-                        datosPrenda.logoCompartido.enabled = true;
-
-                        renderizarLogosCompartidosEdicion(prendaDiv, datosPrenda);
+                    const prevItem = datosPrenda.logoCompartido.items[d.clave];
+                    const prevUrl = prevItem && typeof prevItem.previewUrl === 'string' && prevItem.previewUrl.startsWith('blob:')
+                        ? prevItem.previewUrl
+                        : null;
+                    if (prevUrl) {
+                        try {
+                            URL.revokeObjectURL(prevUrl);
+                        } catch (_) {}
+                    }
+                    const url = URL.createObjectURL(d.file);
+                    datosPrenda.logoCompartido.items[d.clave] = {
+                        tecnicasCompartidas,
+                        previewUrl: url
                     };
-                    reader.readAsDataURL(d.file);
+
+                    const chk = prendaDiv.querySelector('#editUsarLogoCompartido');
+                    const sec = prendaDiv.querySelector('#editSeccionLogoCompartido');
+                    if (chk) chk.checked = true;
+                    if (sec) sec.style.display = 'grid';
+                    datosPrenda.logoCompartido.enabled = true;
+
+                    renderizarLogosCompartidosEdicion(prendaDiv, datosPrenda);
                 } catch (_) {}
             };
 
@@ -3457,20 +3499,25 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
             const clave = input.getAttribute('data-logo-clave');
             if (!clave || !datosPrenda.logoCompartido) return;
             datosPrenda.logoCompartido.files[clave] = file;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const url = ev.target.result;
-                if (!datosPrenda.logoCompartido.items[clave]) {
-                    datosPrenda.logoCompartido.items[clave] = { tecnicasCompartidas: clave.split('-').map(t => t.trim()).filter(Boolean), previewUrl: url };
-                } else {
-                    datosPrenda.logoCompartido.items[clave].previewUrl = url;
-                }
-                const preview = prendaDiv.querySelector(`.edit-logo-compartido-preview[data-logo-clave="${clave}"]`);
-                if (preview) {
-                    preview.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" />`;
-                }
-            };
-            reader.readAsDataURL(file);
+            const prevItem = datosPrenda.logoCompartido.items[clave];
+            const prevUrl = prevItem && typeof prevItem.previewUrl === 'string' && prevItem.previewUrl.startsWith('blob:')
+                ? prevItem.previewUrl
+                : null;
+            if (prevUrl) {
+                try {
+                    URL.revokeObjectURL(prevUrl);
+                } catch (_) {}
+            }
+            const url = URL.createObjectURL(file);
+            if (!datosPrenda.logoCompartido.items[clave]) {
+                datosPrenda.logoCompartido.items[clave] = { tecnicasCompartidas: clave.split('-').map(t => t.trim()).filter(Boolean), previewUrl: url };
+            } else {
+                datosPrenda.logoCompartido.items[clave].previewUrl = url;
+            }
+            const preview = prendaDiv.querySelector(`.edit-logo-compartido-preview[data-logo-clave="${clave}"]`);
+            if (preview) {
+                preview.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+            }
         });
     });
 
@@ -3517,39 +3564,45 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
 
             files.forEach((file) => {
                 if (!(file instanceof File)) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const dataUrl = e.target.result;
-                    if (!datosTecnica.imagenes_data_urls.includes(dataUrl)) {
-                        datosTecnica.imagenes_data_urls.push(dataUrl);
-                    }
-                    const preview = prendaDiv.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`);
-                    if (preview) {
-                        preview.innerHTML = datosTecnica.imagenes_data_urls.map((img, idx) => `
+                const previewUrl = URL.createObjectURL(file);
+                const entry = { preview_url: previewUrl };
+                datosTecnica.imagenes_data_urls.push(entry);
+                const preview = prendaDiv.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`);
+                if (preview) {
+                    preview.innerHTML = datosTecnica.imagenes_data_urls.map((img, idx) => {
+                        const src = cotizacionLogoImgSrc(img);
+                        return `
                             <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx}">
-                                <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <img src="${src}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                                 <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
                             </div>
-                        `).join('');
+                        `;
+                    }).join('');
 
-                        // Re-asignar listeners eliminar
-                        preview.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
-                            btn.addEventListener('click', (clickE) => {
-                                clickE.preventDefault();
-                                const idx = parseInt(btn.getAttribute('data-idx'));
-                                datosTecnica.imagenes_data_urls.splice(idx, 1);
-                                // Re-render simple
-                                preview.innerHTML = datosTecnica.imagenes_data_urls.map((img2, idx2) => `
+                    preview.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                        btn.addEventListener('click', (clickE) => {
+                            clickE.preventDefault();
+                            const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                            const removed = datosTecnica.imagenes_data_urls[idx];
+                            const rs = cotizacionLogoImgSrc(removed);
+                            if (typeof rs === 'string' && rs.startsWith('blob:')) {
+                                try {
+                                    URL.revokeObjectURL(rs);
+                                } catch (_) {}
+                            }
+                            datosTecnica.imagenes_data_urls.splice(idx, 1);
+                            preview.innerHTML = datosTecnica.imagenes_data_urls.map((img2, idx2) => {
+                                const src2 = cotizacionLogoImgSrc(img2);
+                                return `
                                     <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx2}">
-                                        <img src="${img2}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                        <img src="${src2}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                                         <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx2}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
                                     </div>
-                                `).join('');
-                            });
+                                `;
+                            }).join('');
                         });
-                    }
-                };
-                reader.readAsDataURL(file);
+                    });
+                }
             });
         });
     }
@@ -3715,14 +3768,16 @@ function agregarFilaTelaLogo(boton) {
     
     function manejarArchivoTelaLogo() {
         if (input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                preview.style.display = 'block';
-                previewBtn.style.display = 'block';
-                dropzone.style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
+            try {
+                if (previewImg.__telaLogoBlobUrl) {
+                    URL.revokeObjectURL(previewImg.__telaLogoBlobUrl);
+                }
+            } catch (_) {}
+            previewImg.__telaLogoBlobUrl = URL.createObjectURL(input.files[0]);
+            previewImg.src = previewImg.__telaLogoBlobUrl;
+            preview.style.display = 'block';
+            previewBtn.style.display = 'block';
+            dropzone.style.display = 'none';
         }
     }
 }
@@ -3810,14 +3865,16 @@ function agregarFilaTelaMultiTecnica(tbody) {
     
     function manejarArchivoTelaMulti() {
         if (input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                preview.style.display = 'block';
-                previewBtn.style.display = 'block';
-                dropzone.style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
+            try {
+                if (previewImg.__telaMultiBlobUrl) {
+                    URL.revokeObjectURL(previewImg.__telaMultiBlobUrl);
+                }
+            } catch (_) {}
+            previewImg.__telaMultiBlobUrl = URL.createObjectURL(input.files[0]);
+            previewImg.src = previewImg.__telaMultiBlobUrl;
+            preview.style.display = 'block';
+            previewBtn.style.display = 'block';
+            dropzone.style.display = 'none';
         }
     }
 }
@@ -3835,6 +3892,15 @@ function cerrarModalAgregarTecnica() {
     // Limpiar estado global para evitar que quede pegado el modo combinadas
     window.tecnicasCombinadas = null;
     window.modoTecnicasCombinadas = null;
+    
+    // Resetear modo edición al cerrar
+    window.modoEdicionPrenda = false;
+    window.datosPrendaEdicion = null;
+    window.tecnicasInfoEdicion = null;
+    window.tecnicaIndicesEdicion = null;
+    window.prendaNombreOriginalEdicion = null;
+    window.tecnicasSeleccionadasEdicionIds = null;
+    window.logosCompartidosCotizacionIndividual = {};
 
     // Liberar lock de guardado
     window.__guardandoTecnica = false;

@@ -26,16 +26,13 @@ async function comprimirImagen(file, calidad = 0.7) {
             return;
         }
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
-                // Limitar dimensiones máximas
+
                 let { width, height } = img;
                 const maxDim = 1920;
                 if (width > maxDim || height > maxDim) {
@@ -43,13 +40,16 @@ async function comprimirImagen(file, calidad = 0.7) {
                     width *= ratio;
                     height *= ratio;
                 }
-                
+
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-                
+
                 canvas.toBlob(
                     (blob) => {
+                        try {
+                            URL.revokeObjectURL(objectUrl);
+                        } catch (_) {}
                         const archivoComprimido = new File([blob], file.name, {
                             type: 'image/jpeg',
                             lastModified: Date.now()
@@ -59,8 +59,20 @@ async function comprimirImagen(file, calidad = 0.7) {
                     'image/jpeg',
                     calidad
                 );
-            };
+            } catch (err) {
+                try {
+                    URL.revokeObjectURL(objectUrl);
+                } catch (_) {}
+                resolve(file);
+            }
         };
+        img.onerror = () => {
+            try {
+                URL.revokeObjectURL(objectUrl);
+            } catch (_) {}
+            resolve(file);
+        };
+        img.src = objectUrl;
     });
 }
 

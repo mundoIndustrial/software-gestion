@@ -1333,24 +1333,26 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         
         // EXTRAER LOGOS COMPARTIDOS Y METADATOS
         let logosCompartidosMetadata = {}; // Para almacenar metadatos por clave
-        let metadataIdx = 0;
         
         (data.tecnicas || []).forEach((tecnica, tecnicaIdx) => {
             if (tecnica.logosCompartidos && typeof tecnica.logosCompartidos === 'object') {
                 for (let clave in tecnica.logosCompartidos) {
                     const archivo = tecnica.logosCompartidos[clave];
+                    const uniqueClave = `${clave}_${tecnica.grupo_combinado || 'single'}`;
+                    
                     if (archivo instanceof File) {
                         // Agregar archivo
-                        const fieldName = `tecnica_${tecnicaIdx}_logo_compartido_${clave}`;
+                        const fieldName = `tecnica_${tecnicaIdx}_logo_compartido_${uniqueClave}`;
                         formData.append(fieldName, archivo);
                         totalLogosCompartidos++;
                         console.log(`        ✓ Logo compartido agregado: ${fieldName} (${archivo.name})`);
                         
-                        // Agregar metadatos SOLO UNA VEZ por clave (evitar duplicados)
-                        if (!logosCompartidosMetadata[clave]) {
-                            logosCompartidosMetadata[clave] = {
-                                nombreCompartido: clave,
+                        // Agregar metadatos SOLO UNA VEZ por clave única
+                        if (!logosCompartidosMetadata[uniqueClave]) {
+                            logosCompartidosMetadata[uniqueClave] = {
+                                nombreCompartido: uniqueClave,
                                 tecnicasCompartidas: [],
+                                grupoCombinado: tecnica.grupo_combinado || null,
                                 archivoNombre: archivo.name
                             };
                         }
@@ -1363,12 +1365,14 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         (data.tecnicas || []).forEach((tecnica, tecnicaIdx) => {
             if (tecnica.logosCompartidos && typeof tecnica.logosCompartidos === 'object') {
                 for (let clave in tecnica.logosCompartidos) {
+                    const uniqueClave = `${clave}_${tecnica.grupo_combinado || 'single'}`;
                     const archivo = tecnica.logosCompartidos[clave];
-                    if (archivo instanceof File && logosCompartidosMetadata[clave]) {
+                    
+                    if (archivo instanceof File && logosCompartidosMetadata[uniqueClave]) {
                         // Agregar el nombre de la técnica si no está ya
                         const nombreTecnica = tecnica.tipo_logo?.nombre || 'DESCONOCIDA';
-                        if (!logosCompartidosMetadata[clave].tecnicasCompartidas.includes(nombreTecnica)) {
-                            logosCompartidosMetadata[clave].tecnicasCompartidas.push(nombreTecnica);
+                        if (!logosCompartidosMetadata[uniqueClave].tecnicasCompartidas.includes(nombreTecnica)) {
+                            logosCompartidosMetadata[uniqueClave].tecnicasCompartidas.push(nombreTecnica);
                         }
                     }
                 }

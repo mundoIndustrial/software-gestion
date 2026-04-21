@@ -8,6 +8,7 @@ use App\Models\TipoLogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoCotizacionTecnicaPrendaFoto;
 use App\Models\PrendaCot;
+use App\Application\Services\Cotizacion\ValidarRutaImagenCotizacion;
 use App\Services\TecnicaImagenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -350,6 +351,13 @@ class LogoCotizacionTecnicaController extends Controller
                             // Esto asegura que al menos ruta_webp siempre tenga valor
                             $rutaFinal = $rutasImagen['ruta_webp'];
 
+                            if (!is_string($rutaFinal) || !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaFinal, 'LogoCotizacionTecnicaController.imagen_prenda_tecnica', [
+                                'prenda_tecnica_id' => $prenda->id,
+                                'cotizacion_id' => $cotizacionId,
+                            ])) {
+                                throw new \Exception('Ruta de imagen no válida para persistir');
+                            }
+
                             // Guardar metadata en BD
                             $foto = LogoCotizacionTecnicaPrendaFoto::create([
                                 'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
@@ -394,12 +402,26 @@ class LogoCotizacionTecnicaController extends Controller
                         continue; // Si no se encontro la ruta, saltar
                     }
 
+                    if (!is_string($rutaCompartida) || !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaCompartida, 'LogoCotizacionTecnicaController.logo_compartido', [
+                        'clave' => $clave,
+                        'prenda_id' => $prenda->id,
+                    ])) {
+                        continue;
+                    }
+
                     $rutaNormalizada = $rutaCompartida;
                     if (is_string($rutaNormalizada) && str_starts_with($rutaNormalizada, '/storage/')) {
                         $rutaNormalizada = substr($rutaNormalizada, strlen('/storage/'));
                     }
                     if (is_string($rutaNormalizada)) {
                         $rutaNormalizada = ltrim($rutaNormalizada, '/');
+                    }
+
+                    if (!is_string($rutaNormalizada) || !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaNormalizada, 'LogoCotizacionTecnicaController.logo_compartido.ruta_normalizada', [
+                        'clave' => $clave,
+                        'prenda_id' => $prenda->id,
+                    ])) {
+                        continue;
                     }
                     
                     try {

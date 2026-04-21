@@ -406,18 +406,6 @@ class FormModule {
     }
 
     /**
-     * Convierte un archivo a Base64
-     */
-    fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
-
-    /**
      * Envia el formulario al servidor
      */
     async submitForm(formData) {

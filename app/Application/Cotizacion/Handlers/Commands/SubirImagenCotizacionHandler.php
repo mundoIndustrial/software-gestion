@@ -3,6 +3,7 @@
 namespace App\Application\Cotizacion\Handlers\Commands;
 
 use App\Application\Cotizacion\Commands\SubirImagenCotizacionCommand;
+use App\Application\Services\Cotizacion\ValidarRutaImagenCotizacion;
 use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
 use App\Domain\Cotizacion\ValueObjects\CotizacionId;
 use App\Domain\Cotizacion\ValueObjects\RutaImagen;
@@ -69,6 +70,14 @@ final class SubirImagenCotizacionHandler
                 $comando->prendaId,
                 $comando->tipo
             );
+
+            if (!ValidarRutaImagenCotizacion::puedePersistirRuta($ruta, 'SubirImagenCotizacionHandler.post_almacenamiento', [
+                'cotizacion_id' => $comando->cotizacionId,
+                'prenda_id' => $comando->prendaId,
+                'tipo' => $comando->tipo,
+            ])) {
+                throw new \DomainException('La imagen no pudo almacenarse con una ruta válida en disco.');
+            }
 
             $rutaImagen = RutaImagen::crear($ruta);
 

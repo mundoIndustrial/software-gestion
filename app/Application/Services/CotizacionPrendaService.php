@@ -2,6 +2,7 @@
 
 namespace App\Application\Services;
 
+use App\Application\Services\Cotizacion\ValidarRutaImagenCotizacion;
 use App\Models\Cotizacion;
 use Illuminate\Support\Facades\Log;
 
@@ -81,6 +82,12 @@ class CotizacionPrendaService
 
                         // Evitar persistir rutas temporales del servidor (phpXXXX.tmp / paths absolutos)
                         if (str_contains($ruta, 'AppData') || str_contains($ruta, 'Temp') || str_contains($ruta, '.tmp') || str_contains($ruta, ':\\')) {
+                            continue;
+                        }
+
+                        if (!ValidarRutaImagenCotizacion::puedePersistirRuta($ruta, 'CotizacionPrendaService.foto_prenda', [
+                            'prenda_cot_id' => $prenda->id,
+                        ])) {
                             continue;
                         }
 
@@ -614,13 +621,19 @@ class CotizacionPrendaService
             $telaFotos = $telaData['fotos'] ?? [];
             if (!empty($telaFotos)) {
                 foreach ($telaFotos as $telaFoto) {
+                    $rutaOrigTela = $telaFoto['ruta_original'] ?? '';
+                    $rutaWebpTela = $telaFoto['ruta_webp'] ?? $rutaOrigTela ?? '';
+                    if (($rutaOrigTela !== '' && !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaOrigTela, 'CotizacionPrendaService.guardarPrendaConTelas.ruta_original', ['prenda_cot_id' => $prenda->id]))
+                        || ($rutaWebpTela !== '' && !ValidarRutaImagenCotizacion::puedePersistirRuta($rutaWebpTela, 'CotizacionPrendaService.guardarPrendaConTelas.ruta_webp', ['prenda_cot_id' => $prenda->id]))) {
+                        continue;
+                    }
                     \App\Models\PrendaTelaFotoCot::create([
                         'prenda_cot_id' => $prenda->id,
                         'referencia' => $telaData['referencia'] ?? '',
                         'color_id' => $telaData['color_id'] ?? null,
                         'tela_id' => $telaData['tela_id'] ?? null,
-                        'ruta_original' => $telaFoto['ruta_original'] ?? '',
-                        'ruta_webp' => $telaFoto['ruta_webp'] ?? $telaFoto['ruta_original'] ?? '',
+                        'ruta_original' => $rutaOrigTela,
+                        'ruta_webp' => $rutaWebpTela,
                         'ruta_miniatura' => $telaFoto['ruta_miniatura'] ?? null,
                         'orden' => $telaFoto['orden'] ?? 1,
                     ]);
