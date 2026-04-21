@@ -324,9 +324,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const epp_id = eppData?.id || eppData?.epp_id || eppData?.tarjetaId;
             console.log('[Cotizacion] Buscando EPP en modo cotización, ID:', epp_id);
             
-            const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
+            // Usar window.itemsPedido (sincronizado con eppStore) como fuente principal, fallback a __EPP_COTIZACION_ITEMS__
+            const items = Array.isArray(window.itemsPedido) ? window.itemsPedido : (Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : []);
             const eppEncontrado = items.find(item => {
-                const itemId = item.epp_id || item.id;
+                const itemId = item.epp_id || item.id || item.pedidoEppId || item.tarjetaId;
                 return String(itemId) === String(epp_id);
             });
             
@@ -342,8 +343,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     tarjetaId: eppData?.tarjetaId || epp_id,
                     nombre: eppEncontrado.nombre || eppEncontrado.nombre_epp || '',
                     nombre_epp: eppEncontrado.nombre_epp || eppEncontrado.nombre || '',
-                    nombre_completo: eppEncontrado.nombre_completo || eppEncontrado.nombre_epp || eppEncontrado.nombre || ''
+                    nombre_completo: eppEncontrado.nombre_completo || eppEncontrado.nombre_epp || eppEncontrado.nombre || '',
+                    tipo: eppEncontrado.tipo || (eppData?.esPrenda ? 'prenda' : 'epp')
                 };
+                
+                const esPrenda = String(window.eppEnEdicionIndividual.tipo || '').toLowerCase().includes('prenda');
+                console.log('[Cotizacion] Tipo de item detectado:', window.eppEnEdicionIndividual.tipo, '¿Es prenda?:', esPrenda);
+
+                // Personalizar textos del modal según el tipo
+                const tituloModal = document.getElementById('modalEditarEPPTitulo');
+                const labelBuscador = document.querySelector('label[for="modalEditarEPPBuscador"]');
+                const labelNombreSel = document.getElementById('modalEditarEPPNombreSeleccionado');
+                const labelFotos = document.querySelector('label[for="modalEditarEPPInputFotos"]');
+
+                if (tituloModal) tituloModal.textContent = esPrenda ? 'Editar Prenda' : 'Editar EPP';
+                if (labelBuscador) labelBuscador.textContent = esPrenda ? 'Nombre de la Prenda' : 'Nombre del EPP';
+                if (labelNombreSel) {
+                    labelNombreSel.innerHTML = `${esPrenda ? 'Prenda' : 'EPP'}: <span id="modalEditarEPPNombre" class="font-semibold text-gray-900">${window.eppEnEdicionIndividual.nombre_completo || window.eppEnEdicionIndividual.nombre}</span>`;
+                }
+                if (labelFotos) labelFotos.textContent = esPrenda ? 'Fotos de la Prenda' : 'Fotos del EPP';
                 
                 // Cargar imágenes
                 window.fotosEnEdicionIndividual = (eppEncontrado.imagenes || []).filter(img => img);
@@ -359,8 +377,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     'modalEditarEPPBuscador': window.eppEnEdicionIndividual.nombre_completo || window.eppEnEdicionIndividual.nombre,
                     'modalEditarEPPNombre': window.eppEnEdicionIndividual.nombre_completo || window.eppEnEdicionIndividual.nombre,
                     'modalEditarEPPCantidad': eppEncontrado.cantidad || 1,
-                    'modalEditarEPPObservaciones': eppEncontrado.observaciones || '-'
+                    'modalEditarEPPObservaciones': eppEncontrado.observaciones || '-',
+                    'modalEditarEPPValorUnitario': eppEncontrado.valor_unitario || ''
                 };
+                
+                // Mostrar contenedor de valor unitario si estamos en modo cotización
+                const contenedorVU = document.getElementById('contenedorModalEditarEPPValorUnitario');
+                if (contenedorVU) {
+                    contenedorVU.style.display = 'grid';
+                    console.log('[Cotizacion] Campo Valor Unitario activado en modal');
+                }
                 
                 for (const [elementId, valor] of Object.entries(campos)) {
                     const el = document.getElementById(elementId);
@@ -373,35 +399,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
+                // Calcular total inicial si existe la función
+                if (typeof window.calcularTotalEstimadoModalEditar === 'function') {
+                    window.calcularTotalEstimadoModalEditar();
+                }
+                
                 // IMPORTANTE: Cargar imágenes en la variable del modal
                 // Las imágenes guardadas pueden ser Data URLs o blob URLs
+                let imagenesParaCargar = [];
                 if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes) && eppEncontrado.imagenes.length > 0) {
+                    // Normalizar: pueden venir como objetos o como strings
+                    imagenesParaCargar = eppEncontrado.imagenes.map(img => {
+                        if (typeof img === 'string') return { url: img, previewUrl: img, nombre: 'Imagen' };
+                        return img;
+                    }).filter(img => img && (img.url || img.previewUrl || img.base64));
+                } 
+                
+                // Si no se encontraron imágenes en el array, buscar en propiedades individuales
+                if (imagenesParaCargar.length === 0) {
+                    const posibleUrl = eppEncontrado.imagen_url || eppEncontrado.imagen || eppEncontrado.foto || eppEncontrado.foto_url || eppEncontrado.url_imagen;
+                    if (posibleUrl) {
+                        console.log('[Cotizacion] Imagen encontrada en propiedad individual:', posibleUrl);
+                        imagenesParaCargar = [{
+                            url: posibleUrl,
+                            previewUrl: posibleUrl,
+                            nombre: 'Imagen Principal'
+                        }];
+                    }
+                }
+
+                if (imagenesParaCargar.length > 0) {
                     // Usar la función del modal para cargar imágenes
                     if (typeof window.cargarImagenesEnModalEditar === 'function') {
-                        console.log('[Cotizacion] Cargando', eppEncontrado.imagenes.length, 'imágenes guardadas');
-                        window.cargarImagenesEnModalEditar(eppEncontrado.imagenes);
+                        console.log('[Cotizacion] Cargando', imagenesParaCargar.length, 'imágenes al modal');
+                        window.cargarImagenesEnModalEditar(imagenesParaCargar);
                     } else {
-                        console.warn('[Cotizacion] Función cargarImagenesEnModalEditar no disponible, intentando acceso directo');
-                        // Fallback: intentar asignar directamente a la variable del scope global
-                        // Esta es una aproximación un poco hacky pero debería funcionar
-                        window.fotosEnEdicionIndividual = eppEncontrado.imagenes.map(img => ({
-                            previewUrl: img.previewUrl || img.url || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
-                            url: img.url || img.previewUrl || img.base64 || img.ruta_web || img.ruta_webp || img.ruta_original || '',
-                            nombre: img.nombre || `imagen.jpg`,
-                            base64: img.base64,
-                            ruta_webp: img.ruta_webp,
-                            ruta_web: img.ruta_web,
-                            ruta_original: img.ruta_original
-                        }));
-                        
-                        // Mostrar las fotos
-                        if (typeof window.mostrarFotosEnModalEditar === 'function') {
-                            window.mostrarFotosEnModalEditar();
-                        }
+                        console.warn('[Cotizacion] Función cargarImagenesEnModalEditar no disponible');
                     }
                 } else {
                     console.log('[Cotizacion] No hay imágenes para cargar');
+                    // Limpiar galería si no hay fotos
                     if (typeof window.mostrarFotosEnModalEditar === 'function') {
+                        window.fotosEnEdicionIndividual = [];
                         window.mostrarFotosEnModalEditar();
                     }
                 }
@@ -448,9 +487,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const cantidad = parseInt(document.getElementById('modalEditarEPPCantidad').value) || 1;
             const observaciones = document.getElementById('modalEditarEPPObservaciones').value || '-';
+            const valorUnitario = parseFloat(document.getElementById('modalEditarEPPValorUnitario')?.value) || 0;
+            const totalItem = cantidad * valorUnitario;
             const epp_id = window.eppEnEdicionIndividual.epp_id || window.eppEnEdicionIndividual.id;
             
-            console.log('[Cotizacion] Guardando edicion para EPP ID:', epp_id, 'Cantidad:', cantidad, 'Observaciones:', observaciones);
+            console.log('[Cotizacion] Guardando edicion para EPP ID:', epp_id, { cantidad, observaciones, valorUnitario, totalItem });
             
             // Extraer imágenes desde el DOM del modal (galería)
             const imagenes = [];
@@ -540,42 +581,45 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('[Cotizacion] Total de imágenes capturadas:', imagenes.length);
             
-            // Obtener items del store o de __EPP_COTIZACION_ITEMS__
-            const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
+            // Actualizar en window.itemsPedido (fuente principal)
+            const items = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
             const indice = items.findIndex(item => {
-                const itemId = item.epp_id || item.id;
+                const itemId = item.epp_id || item.id || item.pedidoEppId || item.tarjetaId;
                 return String(itemId) === String(epp_id);
             });
             
-            if (indice === -1) {
-                console.error('[Cotizacion] No se encontró el EPP en __EPP_COTIZACION_ITEMS__');
-                return;
+            if (indice !== -1) {
+                // Actualizar en window.itemsPedido
+                window.itemsPedido[indice] = {
+                    ...window.itemsPedido[indice],
+                    cantidad: cantidad,
+                    observaciones: observaciones,
+                    imagenes: imagenes,
+                    valor_unitario: valorUnitario,
+                    total: totalItem
+                };
+                console.log('[Cotizacion] window.itemsPedido actualizado con nuevo precio');
+            } else {
+                console.warn('[Cotizacion] No se encontró el EPP en itemsPedido, buscando en __EPP_COTIZACION_ITEMS__');
             }
             
-            // Actualizar los datos en el array
-            window.__EPP_COTIZACION_ITEMS__[indice] = {
-                ...window.__EPP_COTIZACION_ITEMS__[indice],
-                cantidad: cantidad,
-                observaciones: observaciones,
-                imagenes: imagenes
-            };
-            
-            console.log('[Cotizacion] EPP actualizado con ', imagenes.length, ' imágenes:', window.__EPP_COTIZACION_ITEMS__[indice]);
-            
-            // Actualizar también en globalThis.itemsPedido si existe
-            if (Array.isArray(globalThis.itemsPedido)) {
-                const itemIndex = globalThis.itemsPedido.findIndex(item => {
+            // Sincronizar también __EPP_COTIZACION_ITEMS__ para mantener coherencia
+            if (Array.isArray(window.__EPP_COTIZACION_ITEMS__)) {
+                const idx = window.__EPP_COTIZACION_ITEMS__.findIndex(item => {
                     const itemId = item.epp_id || item.id;
                     return String(itemId) === String(epp_id);
                 });
-                if (itemIndex !== -1) {
-                    globalThis.itemsPedido[itemIndex] = {
-                        ...globalThis.itemsPedido[itemIndex],
+                
+                if (idx !== -1) {
+                    window.__EPP_COTIZACION_ITEMS__[idx] = {
+                        ...window.__EPP_COTIZACION_ITEMS__[idx],
                         cantidad: cantidad,
                         observaciones: observaciones,
-                        imagenes: imagenes
+                        imagenes: imagenes,
+                        valor_unitario: valorUnitario,
+                        total: totalItem
                     };
-                    console.log('[Cotizacion] itemsPedido actualizado');
+                    console.log('[Cotizacion] window.__EPP_COTIZACION_ITEMS__ sincronizado');
                 }
             }
             
@@ -595,18 +639,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (celdaObservaciones) {
                         celdaObservaciones.textContent = observaciones;
                     }
+
+                    // Actualizar Valor Unitario
+                    const celdaVU = fila.querySelectorAll('td')[5];
+                    if (celdaVU) {
+                        celdaVU.textContent = valorUnitario.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                    }
+
+                    // Actualizar Total
+                    const celdaTotal = fila.querySelectorAll('td')[6]?.querySelector('span');
+                    if (celdaTotal) {
+                        celdaTotal.textContent = totalItem.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                    }
                     
                     // Actualizar imagen
                     const celdaImagen = fila.querySelectorAll('td')[1];
-                    if (celdaImagen && imagenes.length > 0) {
-                        const miniatura = imagenes[0].previewUrl || imagenes[0].url || imagenes[0].base64 || imagenes[0].ruta_web || '';
-                        if (miniatura) {
+                    if (celdaImagen) {
+                        if (imagenes.length > 0) {
+                            const miniatura = imagenes[0].previewUrl || imagenes[0].url || imagenes[0].base64 || imagenes[0].ruta_web || '';
+                            if (miniatura) {
+                                const itemNombre = (items[indice] && (items[indice].nombre || items[indice].nombre_epp)) || 'Imagen';
+                                celdaImagen.innerHTML = `
+                                    <img src="${miniatura}" alt="${itemNombre}" 
+                                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
+                                         onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${miniatura}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${miniatura}', 'galeria-epp-${epp_id}', 0);">
+                                `;
+                                console.log('[Cotizacion] Imagen actualizada en tabla');
+                            }
+                        } else {
+                            // Si se eliminaron todas las imágenes, mostrar placeholder o vacío
                             celdaImagen.innerHTML = `
-                                <img src="${miniatura}" alt="${window.__EPP_COTIZACION_ITEMS__[indice].nombre || 'Imagen'}" 
-                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
-                                     onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${miniatura}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${miniatura}', 'galeria-epp-${epp_id}', 0);">
+                                <div style="width: 40px; height: 40px; background: #f9fafb; border-radius: 4px; display: flex; align-items: center; justify-content: center; border: 1px dashed #d1d5db;" title="Sin imagen">
+                                    <i class="material-symbols-rounded" style="font-size: 20px; color: #9ca3af;">image_not_supported</i>
+                                </div>
                             `;
-                            console.log('[Cotizacion] Imagen actualizada en tabla');
+                            console.log('[Cotizacion] Imagen eliminada de la tabla');
                         }
                     }
                     

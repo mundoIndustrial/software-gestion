@@ -101,6 +101,7 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
                 'id' => $id,
                 'nombre' => $it->nombre ?? '',
                 'cantidad' => $it->cantidad ?? '',
+                'observaciones' => $it->observaciones ?? '',
                 'valor_unitario' => $vUnitario ? ($vUnitario->valor_unitario ?? '') : '',
                 'imagenes' => $imgs->map(fn($img) => [
                     'url' => $img->ruta ?? '',
@@ -143,8 +144,9 @@ class CotizacionDetalleRepository implements CotizacionDetalleRepositoryInterfac
             
             return [
                 'id' => $id,
-                'nombre' => $prenda->nombre ?? '',
+                'nombre' => $prenda->descripcion ?? ($prenda->nombre ?? ''),
                 'cantidad' => $prenda->cantidad ?? '',
+                'observaciones' => $prenda->observaciones ?? '',
                 'valor_unitario' => $vUnitario ? ($vUnitario->valor_unitario ?? '') : '',
                 'imagenes' => $imgs->map(fn($img) => [
                     'url' => $img->ruta ?? '',

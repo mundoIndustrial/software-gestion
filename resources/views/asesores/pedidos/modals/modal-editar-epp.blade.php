@@ -1,4 +1,4 @@
-﻿<!-- Modal para Editar un EPP Individual -->
+<!-- Modal para Editar un EPP Individual -->
 <div id="modalEditarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[9999999]">
     <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
         
@@ -11,7 +11,7 @@
         </div>
 
         <!-- Body con scroll -->
-        <div class="p-6 space-y-6 overflow-y-auto flex-1">
+        <div class="p-6 space-y-6 overflow-y-auto flex-1 pb-12">
             
             <!-- Nombre del EPP - READONLY (No editable) -->
             <div>
@@ -30,7 +30,7 @@
                 <p id="modalEditarEPPNombreSeleccionado" class="text-xs text-gray-600 mt-2">EPP: <span id="modalEditarEPPNombre" class="font-semibold text-gray-900">-</span></p>
             </div>
 
-            <!-- Cantidad -->
+            <!-- Cantidad y Observaciones -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="modalEditarEPPCantidad" class="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
@@ -49,6 +49,31 @@
                         placeholder="Escribe observaciones..." 
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                     >
+                </div>
+            </div>
+
+            <!-- Valor Unitario (Solo para Cotizaciones) -->
+            <div id="contenedorModalEditarEPPValorUnitario" class="grid grid-cols-2 gap-4" style="display: none;">
+                <div>
+                    <label for="modalEditarEPPValorUnitario" class="block text-sm font-medium text-gray-700 mb-2">Valor Unitario</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">$</span>
+                        <input 
+                            type="number" 
+                            id="modalEditarEPPValorUnitario" 
+                            step="0.01"
+                            min="0"
+                            class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                            placeholder="0.00"
+                        >
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Total Estimado</label>
+                    <div class="w-full px-3 py-2 border border-gray-100 rounded-lg bg-gray-50 text-gray-600 font-bold flex items-center">
+                        <span class="mr-1">$</span>
+                        <span id="modalEditarEPPTotalEstimado">0.00</span>
+                    </div>
                 </div>
             </div>
 
@@ -129,6 +154,34 @@ let eppsDisponiblesParaEdicion = [];
 let indiceEPPEnEdicion = -1;  // Guardar el indice para busqueda rapida
 let tarjetaEppIdEnEdicion = null;  // Guardar el ID de la tarjeta visual para actualizar despues
 let imagenesEditadasEnModalEPP = false; // Marca de cambio real de imagenes en modal
+
+/**
+ * Calcular el total estimado en el modal (Solo cotizaciones)
+ */
+function calcularTotalEstimadoModalEditar() {
+    const cantidad = parseFloat(document.getElementById('modalEditarEPPCantidad')?.value) || 0;
+    const valorUnitario = parseFloat(document.getElementById('modalEditarEPPValorUnitario')?.value) || 0;
+    const total = cantidad * valorUnitario;
+    
+    const totalEl = document.getElementById('modalEditarEPPTotalEstimado');
+    if (totalEl) {
+        totalEl.textContent = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+}
+
+// Agregar listeners para el cálculo automático
+document.addEventListener('DOMContentLoaded', function() {
+    const inputCantidad = document.getElementById('modalEditarEPPCantidad');
+    const inputValorUnitario = document.getElementById('modalEditarEPPValorUnitario');
+    
+    if (inputCantidad) {
+        inputCantidad.addEventListener('input', calcularTotalEstimadoModalEditar);
+    }
+    
+    if (inputValorUnitario) {
+        inputValorUnitario.addEventListener('input', calcularTotalEstimadoModalEditar);
+    }
+});
 
 function obtenerGestionItemsUIEditarEPP() {
     if (window.gestionItemsUI && typeof window.gestionItemsUI.buscarEPPEnEstado === 'function') {
@@ -400,6 +453,12 @@ function cerrarModalEditarEPP() {
     console.log('[cerrarModalEditarEPP] Cerrando modal');
     document.getElementById('modalEditarEPP').classList.add('hidden');
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
+    
+    // Ocultar campo de valor unitario por defecto
+    const contenedorVU = document.getElementById('contenedorModalEditarEPPValorUnitario');
+    if (contenedorVU) {
+        contenedorVU.style.display = 'none';
+    }
     
     // Remover listeners de la fotoZona
     const fotoZona = document.getElementById('modalEditarEPPFotoZona');
