@@ -532,10 +532,36 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
   const [editingNovedadId, setEditingNovedadId] = useState(null);
   const [deletingNovedadId, setDeletingNovedadId] = useState(null);
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const toastTimer = useRef(null);
 
   const accent = '#2563eb';
   const dark = false;
+
+  // Cargar usuarios disponibles
+  React.useEffect(() => {
+    const loadUsuarios = async () => {
+      try {
+        const response = await fetch('/api/recepcion-despacho/usuarios', {
+          headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            Accept: 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUsuarios(data.data || []);
+          if (data.data && data.data.length > 0) {
+            setUsuarioSeleccionado(data.data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading usuarios:', error);
+      }
+    };
+    loadUsuarios();
+  }, []);
 
   const confirm = (id) => {
     setPendingConfirmId(id);
@@ -680,6 +706,7 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
           status: 'recibido',
           fechaHora: now,
           tallas: item.tallas,
+          usuario_id: usuarioSeleccionado,
         }),
       });
 
@@ -847,7 +874,31 @@ export default function RecepcionPrendas({ initialData = [], pagination = null, 
               Recepción
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {usuarios.length > 0 && (
+              <select
+                value={usuarioSeleccionado || ''}
+                onChange={(e) => setUsuarioSeleccionado(Number(e.target.value))}
+                style={{
+                  height: 38,
+                  borderRadius: 8,
+                  border: `1.5px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                  background: dark ? '#1f2937' : '#fff',
+                  color: textPrimary,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                {usuarios.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               onClick={() => setShowDateModal(true)}
               style={{

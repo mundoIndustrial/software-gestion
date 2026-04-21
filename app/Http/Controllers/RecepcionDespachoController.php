@@ -22,6 +22,43 @@ class RecepcionDespachoController extends Controller
     }
 
     /**
+     * Obtener usuarios disponibles con rol recepcion_despacho
+     * GET /api/recepcion-despacho/usuarios
+     */
+    public function getUsuarios(): JsonResponse
+    {
+        try {
+            $role = \App\Models\Role::where('name', 'recepcion_despacho')->first();
+
+            if (!$role) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            $usuarios = \App\Models\User::where('active', 1)
+                ->whereHas('roles', function ($query) use ($role) {
+                    $query->where('roles.id', $role->id);
+                })
+                ->select('id', 'name', 'email')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $usuarios,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RecepcionDespacho] Error en getUsuarios:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Obtener lista de prendas pendientes de recepción
      * Desde: consecutivos_recibos_pedidos donde area='Despacho' y estado='En Ejecución'
      */
@@ -488,7 +525,10 @@ class RecepcionDespachoController extends Controller
                 'status' => 'required|string|in:recibido,pendiente',
                 'fechaHora' => 'required|date',
                 'tallas' => 'required|array',
+                'usuario_id' => 'nullable|integer|exists:users,id',
             ]);
+
+            $usuarioRecibido = $validated['usuario_id'] ?? \Auth::id();
 
             // Obtener el consecutivo con sus detalles
             $consecutivo = \DB::table('consecutivos_recibos_pedidos as crp')
@@ -515,7 +555,7 @@ class RecepcionDespachoController extends Controller
                     ->where('id', $movimiento->id)
                     ->update([
                         'fecha_recibido' => \Carbon\Carbon::parse($validated['fechaHora']),
-                        'usuario_recibido_id' => \Auth::id(),
+                        'usuario_recibido_id' => $usuarioRecibido,
                         'estado' => 'recibido',
                         'updated_at' => now(),
                     ]);
@@ -538,7 +578,7 @@ class RecepcionDespachoController extends Controller
                     'fecha_entrega' => $fechaEntregaMovimiento,
                     'usuario_id' => null,
                     'fecha_recibido' => \Carbon\Carbon::parse($validated['fechaHora']),
-                    'usuario_recibido_id' => \Auth::id(),
+                    'usuario_recibido_id' => $usuarioRecibido,
                     'estado' => 'recibido',
                     'created_at' => now(),
                     'updated_at' => now(),

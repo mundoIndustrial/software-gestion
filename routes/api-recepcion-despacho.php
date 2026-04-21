@@ -14,6 +14,7 @@ Route::middleware(['web', 'auth:web'])
     ->prefix('recepcion-despacho')
     ->group(function () {
         Route::get('/items', [RecepcionDespachoController::class, 'getItems']);
+        Route::get('/usuarios', [RecepcionDespachoController::class, 'getUsuarios']);
         Route::post('/{id}/confirmar', [RecepcionDespachoController::class, 'confirmarRecepcion']);
         Route::get('/{id}/novedades', [RecepcionDespachoController::class, 'getNovedades']);
         Route::post('/{id}/novedades', [RecepcionDespachoController::class, 'crearNovedad']);
