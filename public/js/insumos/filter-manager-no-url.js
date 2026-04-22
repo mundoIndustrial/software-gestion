@@ -92,8 +92,11 @@ function openFilterModal(column) {
     `;
     modal.style.display = 'flex';
     
-    // Obtener valores del backend
-    fetch(`/insumos/api/filtros/${column}`)
+    // Obtener valores del backend (incluye tipo de recibo si está disponible)
+    const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
+    const filterUrl = `/insumos/api/filtros/${column}?tipo_recibo=${encodeURIComponent(tipoRecibo)}`;
+
+    fetch(filterUrl)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.valores) {

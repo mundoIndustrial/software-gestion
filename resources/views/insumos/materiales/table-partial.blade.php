@@ -71,6 +71,7 @@
                             </button>
                         </div>
                     </th>
+                    @unless($esGestionReflectivo)
                     <th class="text-center py-4 px-6 font-bold">
                         <div class="flex items-center justify-center gap-2">
                             <span>Area</span>
@@ -84,6 +85,7 @@
                             </button>
                         </div>
                     </th>
+                    @endunless
                     <th class="text-center py-4 px-6 font-bold">
                         Novedades
                     </th>
@@ -278,6 +280,7 @@
                                 </span>
                             @endif
                         </td>
+                        @unless($esGestionReflectivo)
                         <td class="py-4 px-6 text-center">
                             @php
                                 $areaClass = '';
@@ -294,6 +297,7 @@
                                 {{ $areaText }}
                             </span>
                         </td>
+                        @endunless
                         <td class="py-4 px-6 text-center">
                             @php
                                 $motivoDevolucion = trim((string) ($orden->motivo_devolucion ?? ''));

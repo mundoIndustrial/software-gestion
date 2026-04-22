@@ -129,8 +129,11 @@ function showFilterModal(column, values) {
     isGlobalFilter = false;
     
     // TODOS los filtros cargan desde backend (permite buscar en todas las páginas)
-    // Cargar desde backend para poder buscar en todas las páginas
-    fetch(`/insumos/api/filtros/${column}`)
+    // Cargar desde backend para poder buscar en todas las páginas (incluye tipo de recibo si está disponible)
+    const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
+    const filterUrl = `/insumos/api/filtros/${column}?tipo_recibo=${encodeURIComponent(tipoRecibo)}`;
+
+    fetch(filterUrl)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -166,12 +169,15 @@ function searchFilterInBackend(column, searchTerm) {
     if (searchTerm.length < 1) {
         return;
     }
-    
+
     const filterList = document.getElementById('filterListInsumos');
     filterList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Buscando en todas las páginas...</p>';
-    
-    // Hacer fetch para buscar en backend
-    fetch(`/insumos/api/filtros/${column}?search=${encodeURIComponent(searchTerm)}`)
+
+    // Hacer fetch para buscar en backend (incluye tipo de recibo si está disponible)
+    const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
+    const searchUrl = `/insumos/api/filtros/${column}?search=${encodeURIComponent(searchTerm)}&tipo_recibo=${encodeURIComponent(tipoRecibo)}`;
+
+    fetch(searchUrl)
         .then(response => response.json())
         .then(data => {
             if (data.success) {

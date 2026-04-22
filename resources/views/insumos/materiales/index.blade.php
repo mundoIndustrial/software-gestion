@@ -174,6 +174,7 @@
                                     </button>
                                 </div>
                             </th>
+                            @unless($esGestionReflectivo)
                             <th class="text-center py-4 px-6 font-bold">
                                 <div class="flex items-center justify-center gap-2">
                                     <span>Área</span>
@@ -187,6 +188,7 @@
                                     </button>
                                 </div>
                             </th>
+                            @endunless
                             <th class="text-center py-4 px-6 font-bold">
                                 Novedades
                             </th>
@@ -389,6 +391,7 @@
                                         </span>
                                     @endif
                                 </td>
+                                @unless($esGestionReflectivo)
                                 <td class="py-4 px-6 text-center">
                                     @php
                                         $areaClass = '';
@@ -404,6 +407,7 @@
                                         {{ $areaText }}
                                     </span>
                                 </td>
+                                @endunless
                                 <td class="py-4 px-6 text-center">
                                     @php
                                         $motivoDevolucion = trim((string) ($orden->motivo_devolucion ?? ''));
@@ -611,10 +615,11 @@ document.addEventListener('insumosTableUpdated', () => {
 {{-- Incluir modales de insumos --}}
 @include('insumos.materiales.partials.modales-insumos')
 
-<!-- Configuración de rol del usuario -->
+<!-- Configuración de rol del usuario y tipo de recibo -->
 <script>
     window.userRole = '{{ $currentRoleName }}';
     window.isInsumos = window.userRole === 'insumos';
+    window.tipoRecibo = '{{ $esGestionReflectivo ? 'REFLECTIVO' : 'COSTURA' }}';
 </script>
 
 @endsection

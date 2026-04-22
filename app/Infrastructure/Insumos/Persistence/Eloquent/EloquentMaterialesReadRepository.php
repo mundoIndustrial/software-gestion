@@ -100,7 +100,7 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
         ];
     }
 
-    public function obtenerOpcionesFiltro(string $column): array
+    public function obtenerOpcionesFiltro(string $column, string $tipoRecibo = 'COSTURA'): array
     {
         $columnasPermitidas = [
             'consecutivo_actual',
@@ -117,7 +117,7 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
 
         $query = ConsecutivoReciboPedido::query()
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
-            ->where('consecutivos_recibos_pedidos.tipo_recibo', 'COSTURA')
+            ->where('consecutivos_recibos_pedidos.tipo_recibo', $tipoRecibo)
             ->where('consecutivos_recibos_pedidos.activo', 1)
             ->where(function ($q) {
                 $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')

@@ -12,6 +12,6 @@ interface MaterialesReadRepository
 
     public function obtenerReciboPrenda(string $numeroPedido, int $prendaId): array;
 
-    public function obtenerOpcionesFiltro(string $column): array;
+    public function obtenerOpcionesFiltro(string $column, string $tipoRecibo = 'COSTURA'): array;
 }
 

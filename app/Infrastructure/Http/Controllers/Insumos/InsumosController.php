@@ -96,12 +96,14 @@ class InsumosController extends Controller
     /**
      * Obtener valores únicos de una columna para filtros
      * Soporta búsqueda opcional con parámetro ?search=
+     * Soporta tipo de recibo opcional con parámetro ?tipo_recibo=
      */
     public function obtenerValoresFiltro(Request $request, $column)
     {
         try {
             $searchTerm = $request->query('search', null);
-            $resultado = $this->obtenerOpcionesFiltroUseCase->execute($column, $searchTerm);
+            $tipoRecibo = $request->query('tipo_recibo', 'COSTURA'); // Por defecto COSTURA
+            $resultado = $this->obtenerOpcionesFiltroUseCase->execute($column, $searchTerm, $tipoRecibo);
             return response()->json([
                 'success' => true,
                 'column' => $column,

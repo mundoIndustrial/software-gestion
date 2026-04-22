@@ -11,10 +11,10 @@ class ObtenerOpcionesFiltroInsumosUseCase
     ) {
     }
 
-    public function execute(string $column, ?string $searchTerm = null): array
+    public function execute(string $column, ?string $searchTerm = null, string $tipoRecibo = 'COSTURA'): array
     {
-        $opciones = $this->repository->obtenerOpcionesFiltro($column);
-        
+        $opciones = $this->repository->obtenerOpcionesFiltro($column, $tipoRecibo);
+
         // Filtrar por término de búsqueda si se proporciona
         if ($searchTerm && !empty($searchTerm)) {
             $searchTermLower = strtolower($searchTerm);
@@ -24,7 +24,7 @@ class ObtenerOpcionesFiltroInsumosUseCase
             // Reindexar array después de filtrar
             $opciones = array_values($opciones);
         }
-        
+
         return $opciones;
     }
 }
