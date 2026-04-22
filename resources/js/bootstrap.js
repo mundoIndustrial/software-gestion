@@ -25,107 +25,58 @@ if (typeof globalThis.sessionStorage === 'undefined') {
     };
 }
 
-// Echo readiness coordination
-globalThis.echoReady = globalThis.echoReady || false;
-globalThis.echoReadyCallbacks = globalThis.echoReadyCallbacks || [];
-globalThis.EchoConstructor = globalThis.EchoConstructor || null;
-globalThis.EchoInstance = globalThis.EchoInstance || null;
-globalThis.Echo = globalThis.Echo || null;
+/**
+ * ============================================
+ * ECHO MANAGER - Consolidated WebSocket Handler
+ * ============================================
+ *
+ * Centraliza la inicialización de Laravel Echo
+ * Soporta tanto callbacks como promises
+ * Lazy-loads Pusher/Echo solo cuando se necesita
+ */
 
-globalThis.waitForEcho = function (callback) {
-    const isReady = globalThis.echoReady && globalThis.Echo;
+// Singleton EchoManager
+globalThis.EchoManager = globalThis.EchoManager || {
+    instance: null,
+    ready: false,
+    callbacks: [],
+    initPromise: null,
 
-    // Compatibilidad 1: callback
-    if (typeof callback === 'function') {
-        if (isReady) {
-            callback(globalThis.Echo);
-        } else {
-            globalThis.echoReadyCallbacks.push(callback);
+    async init() {
+        if (this.instance) {
+            return this.instance;
         }
-        return;
-    }
 
-    // Compatibilidad 2: Promise
-    if (isReady) {
-        return Promise.resolve(globalThis.Echo);
-    }
-
-    return new Promise((resolve) => {
-        globalThis.echoReadyCallbacks.push(resolve);
-    });
-};
-
-globalThis.notifyEchoReady = function () {
-    globalThis.echoReady = true;
-
-    while (globalThis.echoReadyCallbacks.length > 0) {
-        const callback = globalThis.echoReadyCallbacks.shift();
-        try {
-            if (typeof callback === 'function') {
-                callback(globalThis.Echo);
-            }
-        } catch (error) {
-            console.error('[Echo] Error ejecutando callback:', error);
+        if (this.initPromise) {
+            return this.initPromise;
         }
-    }
 
-    try {
-        globalThis.dispatchEvent(new CustomEvent('echo:ready', {
-            detail: { echo: globalThis.Echo },
-        }));
-    } catch (error) {
-        console.error('[Echo] Error despachando evento echo:ready:', error);
-    }
-};
+        this.initPromise = this._doInit();
+        return this.initPromise;
+    },
 
-let echoInitPromise = null;
-
-async function loadEchoDependencies() {
-    if (globalThis.EchoConstructor && globalThis.Pusher) {
-        return;
-    }
-
-    const [{ default: Pusher }, { default: Echo }] = await Promise.all([
-        import('pusher-js'),
-        import('laravel-echo'),
-    ]);
-
-    globalThis.Pusher = Pusher;
-    globalThis.EchoConstructor = Echo;
-}
-
-async function initializeEcho() {
-    if (globalThis.EchoInstance) {
-        globalThis.notifyEchoReady();
-        return globalThis.EchoInstance;
-    }
-
-    if (echoInitPromise) {
-        return echoInitPromise;
-    }
-
-    echoInitPromise = (async () => {
-        await loadEchoDependencies();
-
-        // Read runtime config from meta tags first
-        const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
-        const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
-
-        const currentHost = globalThis.location.hostname;
-
-        let wsHost = metaReverbHost || currentHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
-        let wsPort = Number(metaReverbPort || import.meta.env.VITE_REVERB_PORT, 10) || 8080;
-
-        const hostname = globalThis.location.hostname;
-        const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
-
-        const useProxy = isProduction;
-        const wsPortFinal = useProxy ? (globalThis.location.protocol === 'https:' ? 443 : 80) : wsPort;
-        const wsHostFinal = useProxy ? globalThis.location.hostname : wsHost;
-        const forceTLSFinal = useProxy ? globalThis.location.protocol === 'https:' : false;
-
+    async _doInit() {
         try {
-            const echoInstance = new globalThis.EchoConstructor({
+            const [, { default: Echo }] = await Promise.all([
+                import('pusher-js'),
+                import('laravel-echo'),
+            ]);
+
+            const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
+            const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
+
+            const hostname = globalThis.location.hostname;
+            const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
+
+            let wsHost = metaReverbHost || hostname || import.meta.env.VITE_REVERB_HOST || 'localhost';
+            let wsPort = Number(metaReverbPort || import.meta.env.VITE_REVERB_PORT) || 8080;
+
+            const useProxy = isProduction;
+            const wsPortFinal = useProxy ? (globalThis.location.protocol === 'https:' ? 443 : 80) : wsPort;
+            const wsHostFinal = useProxy ? hostname : wsHost;
+            const forceTLSFinal = useProxy && globalThis.location.protocol === 'https:';
+
+            const echoInstance = new Echo({
                 broadcaster: 'reverb',
                 key: import.meta.env.VITE_REVERB_APP_KEY || 'mundo-industrial-key',
                 wsHost: wsHostFinal,
@@ -140,23 +91,76 @@ async function initializeEcho() {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                     },
                 },
-                wsErrorMessage: 'WebSocket connection failed',
             });
 
+            this.instance = echoInstance;
             globalThis.Echo = echoInstance;
-            globalThis.EchoInstance = echoInstance;
-            globalThis.notifyEchoReady();
+            this.ready = true;
+
+            this.callbacks.forEach(cb => {
+                try {
+                    cb(echoInstance);
+                } catch (error) {
+                    console.error('[EchoManager] Error en callback:', error);
+                }
+            });
+            this.callbacks = [];
+
+            try {
+                globalThis.dispatchEvent(new CustomEvent('echo:ready', {
+                    detail: { echo: echoInstance },
+                }));
+            } catch (error) {
+                console.error('[EchoManager] Error despachando evento:', error);
+            }
 
             return echoInstance;
         } catch (error) {
-            console.error('[Echo] Error inicializando Echo:', error);
+            console.error('[EchoManager] Init failed:', error);
             throw error;
         }
-    })();
+    },
 
-    return echoInitPromise;
-}
+    onReady(callback) {
+        if (typeof callback !== 'function') return;
+        if (this.ready && this.instance) {
+            callback(this.instance);
+        } else {
+            this.callbacks.push(callback);
+        }
+    },
+};
 
+// Compatibilidad con código existente
+globalThis.echoReady = false;
+globalThis.echoReadyCallbacks = [];
+globalThis.EchoConstructor = null;
+globalThis.EchoInstance = null;
+globalThis.Echo = null;
+
+globalThis.waitForEcho = function (callback) {
+    // Delegar a EchoManager
+    if (typeof callback === 'function') {
+        globalThis.EchoManager.onReady(callback);
+    } else {
+        return globalThis.EchoManager.init();
+    }
+};
+
+// Mantener para compatibilidad, pero delegar a EchoManager
+globalThis.notifyEchoReady = function () {
+    // EchoManager ya maneja los callbacks, esto es solo compatibilidad
+    globalThis.echoReady = true;
+};
+
+// Alias para código legacy
+globalThis.initEcho = function () {
+    return globalThis.EchoManager.init();
+};
+
+/**
+ * Determinar si auto-inicializar Echo
+ */
 function shouldAutoInitializeEcho() {
     const moduleName = document.body?.dataset?.module || '';
     const notificationsUi = document.body?.dataset?.notificationsUi || '';
@@ -169,22 +173,16 @@ function shouldAutoInitializeEcho() {
     );
 }
 
-globalThis.initEcho = function initEcho() {
-    return initializeEcho();
-};
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!shouldAutoInitializeEcho()) {
-            return;
-        }
-
-        initializeEcho().catch((error) => {
-            console.error('[Echo] Fallo inicializacion diferida:', error);
+if (shouldAutoInitializeEcho()) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            globalThis.EchoManager.init().catch((error) => {
+                console.error('[Bootstrap] Echo init failed:', error);
+            });
         });
-    });
-} else if (shouldAutoInitializeEcho()) {
-    initializeEcho().catch((error) => {
-        console.error('[Echo] Fallo inicializacion diferida:', error);
-    });
+    } else {
+        globalThis.EchoManager.init().catch((error) => {
+            console.error('[Bootstrap] Echo init failed:', error);
+        });
+    }
 }

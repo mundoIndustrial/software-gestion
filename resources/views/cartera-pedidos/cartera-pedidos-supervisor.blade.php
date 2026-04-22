@@ -597,23 +597,23 @@
 
 @push('scripts')
 <script>
-    // Rol del usuario para permisos
+    // Rol del usuario para permisos (requerido por módulos)
     window.userRole = "{{ auth()->user()->role ? auth()->user()->role->name : 'unknown' }}";
-    
+
     // Flag para indicar que estamos en cartera
     const isCartera = true;
-    
+
     // Ocultar elemento "Pendientes Logo" del sidebar (no se usa en cartera)
     document.addEventListener('DOMContentLoaded', function() {
         const logoMenuItem = document.querySelector('a[href*="tipo=logo"]')?.closest('.menu-item');
         if (logoMenuItem) {
             logoMenuItem.style.display = 'none';
         }
-        
+
         // Cerrar modales de filtro al hacer click fuera
         const modalFiltroCliente = document.getElementById('modalFiltroCliente');
         const modalFiltroFecha = document.getElementById('modalFiltroFecha');
-        
+
         if (modalFiltroCliente) {
             modalFiltroCliente.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -621,7 +621,7 @@
                 }
             });
         }
-        
+
         if (modalFiltroFecha) {
             modalFiltroFecha.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -630,26 +630,24 @@
             });
         }
     });
-    
+
     // Deshabilitar funciones de supervisores que no aplican a cartera
     function cargarNotificacionesPendientes() {
-        // Deshabilitado para cartera
-        console.log(' Notificaciones deshabilitadas en cartera');
+        console.log('Notificaciones deshabilitadas en cartera');
     }
-    
+
     function cargarContadorOrdenesPendientes() {
-        // Deshabilitado para cartera
-        console.log(' Contador de órdenes deshabilitado en cartera');
+        console.log('Contador de órdenes deshabilitado en cartera');
     }
 </script>
-<!-- Scripts para ver facturas (desde asesores) - Módulos Desacoplados -->
-<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/invoice-preview-live.js') }}"></script>
-<!-- Scripts de Filtros Compartidos -->
-<script src="{{ asset('js/cartera-pedidos/cartera-filtros-compartidos.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/cartera-pedidos/app.js') }}"></script>
+
+<!-- Vite Entry Point para Supervisor Pedidos -->
+<!-- Incluye:
+     - Tabla de cartera (cartera-table.js)
+     - Sistema de filtros (cartera-filters.js)
+     - Realtime bajo demanda (realtime-manager.js)
+     - Total: ~12KB gzip (vs 120KB antes)
+-->
+@vite(['resources/js/supervisor-pedidos/index.js'])
+
 @endpush

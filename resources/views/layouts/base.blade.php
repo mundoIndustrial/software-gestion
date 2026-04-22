@@ -108,11 +108,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- jQuery y Bootstrap ya están cargados al inicio del head -->
-
     <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
-    
+
     <!-- CSS no-crítico (diferido) -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -124,65 +122,17 @@
         $headModule = trim($__env->yieldContent('module', 'default'));
     @endphp
 
-    @if($headModule !== 'insumos-materiales')
-    <!-- jQuery (debe cargarse PRIMERO y esperar a que esté disponible) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    @endif
-    
-    <!-- Bootstrap 4 CSS -->
+    <!-- jQuery y Bootstrap - solo para módulos que los necesitan -->
+    @if($headModule !== 'insumos-materiales' && $headModule !== 'supervisor-pedidos')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
-    
-    <!-- Esperar a que jQuery esté disponible antes de cargar Bootstrap -->
-    @if($headModule !== 'insumos-materiales')
-    <script>
-        // Esperar a que jQuery esté completamente cargado
-        function waitForJQuery() {
-            if (typeof jQuery !== 'undefined') {
-                // jQuery está disponible, cargar Bootstrap
-                var bootstrapScript = document.createElement('script');
-                bootstrapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js';
-                bootstrapScript.onload = function() {
-                    console.log(' Bootstrap 4 cargado correctamente');
-                };
-                document.head.appendChild(bootstrapScript);
-            } else {
-                // Esperar y volver a intentar
-                setTimeout(waitForJQuery, 10);
-            }
-        }
-        
-        // Iniciar la espera
-        waitForJQuery();
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js" defer></script>
+    @else
+    <!-- Supervisor Pedidos no necesita jQuery/Bootstrap (usa Alpine.js) -->
     @endif
     
-    <!-- CRÍTICO: Definir window.waitForEcho ANTES del resto de scripts -->
-    <script>
-        window.echoReady = false;
-        window.echoReadyCallbacks = [];
-        
-        window.waitForEcho = function(callback) {
-            if (window.echoReady && window.EchoInstance) {
-                callback();
-            } else {
-                window.echoReadyCallbacks.push(callback);
-            }
-        };
-        
-        window.notifyEchoReady = function() {
-            window.echoReady = true;
-            while (window.echoReadyCallbacks.length > 0) {
-                const callback = window.echoReadyCallbacks.shift();
-                try {
-                    callback();
-                } catch (error) {
-                    console.error('[Layout]  Error ejecutando callback de Echo:', error);
-                }
-            }
-        };
-        
-        console.log('[Layout]  Stubs de window.waitForEcho() pre-inicializados');
-    </script>
+    <!-- Echo initialization es manejado por bootstrap.js (Vite) -->
+    <!-- No duplicar stubs acá -->
     
     <!-- Vite assets (funciona en desarrollo y producción) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

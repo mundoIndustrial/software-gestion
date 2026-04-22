@@ -47,7 +47,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/insumos/materiales.entry.js',
-                'resources/js/supervisor-pedidos/entry.js',
+                'resources/js/supervisor-pedidos/index.js',  // Cambié entry.js → index.js (más estándar)
                 'resources/js/recepcion-despacho/entry.js',
             ],
             refresh: true,
