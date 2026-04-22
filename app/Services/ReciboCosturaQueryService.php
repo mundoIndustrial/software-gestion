@@ -50,6 +50,15 @@ class ReciboCosturaQueryService
      */
     public function applyFilters(Builder $query, array $filters): Builder
     {
+        // Helper para procesar valores (pueden venir como array o como string separado por comas)
+        $processValues = function($value) {
+            if (is_array($value)) return $value;
+            if (is_string($value) && str_contains($value, ',')) {
+                return explode(',', $value);
+            }
+            return (array) $value;
+        };
+
         // Filtros especiales para revisor_entregas
         $user = auth()->user();
         if ($user && $user->hasRole('revisor_entregas')) {
@@ -58,32 +67,46 @@ class ReciboCosturaQueryService
         } else {
             // Filtro por estado (solo para otros roles)
             if (!empty($filters['estado'])) {
-                $query->whereIn('estado', (array) $filters['estado']);
+                $query->whereIn('estado', $processValues($filters['estado']));
             }
 
             // Filtro por Area (solo para otros roles)
             if (!empty($filters['area'])) {
-                $query->whereIn('area', (array) $filters['area']);
+                $query->whereIn('area', $processValues($filters['area']));
             }
         }
 
         // Filtro por numero de recibo
         if (!empty($filters['numero_recibo'])) {
-            $query->whereIn('consecutivo_actual', (array) $filters['numero_recibo']);
+            $query->whereIn('consecutivo_actual', $processValues($filters['numero_recibo']));
         }
 
         // Filtro por cliente (en la relacion pedido)
         if (!empty($filters['cliente'])) {
-            $query->whereHas('pedido', function (Builder $q) use ($filters) {
-                $q->whereIn('cliente', (array) $filters['cliente']);
+            $query->whereHas('pedido', function (Builder $q) use ($filters, $processValues) {
+                $q->whereIn('cliente', $processValues($filters['cliente']));
             });
         }
 
         // Filtro por dia de entrega
         if (!empty($filters['dia_entrega'])) {
-            $query->whereHas('pedido', function (Builder $q) use ($filters) {
+            $query->whereHas('pedido', function (Builder $q) use ($filters, $processValues) {
                 // Convertir di­a de semana (nombre) a fecha
-                $q->whereIn('dia_de_entrega', (array) $filters['dia_entrega']);
+                $q->whereIn('dia_de_entrega', $processValues($filters['dia_entrega']));
+            });
+        }
+
+        // Filtro por encargado
+        if (!empty($filters['encargado'])) {
+            $query->whereExists(function ($q) use ($filters, $processValues) {
+                $q->select(DB::raw(1))
+                    ->from('procesos_prenda')
+                    ->join('pedidos_produccion', 'pedidos_produccion.numero_pedido', '=', 'procesos_prenda.numero_pedido')
+                    ->whereColumn('procesos_prenda.numero_recibo', 'consecutivos_recibos_pedidos.consecutivo_actual')
+                    ->whereColumn('pedidos_produccion.id', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+                    ->whereColumn('procesos_prenda.prenda_pedido_id', 'consecutivos_recibos_pedidos.prenda_id')
+                    ->whereIn('procesos_prenda.encargado', $processValues($filters['encargado']))
+                    ->whereNull('procesos_prenda.deleted_at');
             });
         }
 
@@ -310,6 +333,7 @@ class ReciboCosturaQueryService
             'numeros_recibo' => $this->repository->getNumerosRecibo(),
             'clientes' => $this->repository->getClientes(),
             'dias_entrega' => $this->repository->getDiasEntrega(),
+            'encargados' => $this->repository->getEncargados(),
         ];
     }
 }

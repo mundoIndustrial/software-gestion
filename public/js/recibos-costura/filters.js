@@ -55,30 +55,61 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = window.location.pathname;
     };
 
-    window.openColumnFilter = function(columnKey, title) {
+    window.openColumnFilter = async function(columnKey, title) {
         window.__filterModalState.columnKey = columnKey;
         window.__filterModalState.title = title;
 
         const activeValues = (window.__columnFilters && window.__columnFilters[columnKey]) ? window.__columnFilters[columnKey] : [];
         window.__filterModalState.selected = new Set(activeValues);
 
-        // Obtener opciones únicas de la tabla actual
-        const options = getUniqueOptionsForColumn(columnKey);
-        window.__filterModalState.options = options;
-
         const overlay = document.getElementById('column-filter-modal-overlay');
         const titleEl = document.getElementById('logo-filter-title');
         const searchEl = document.getElementById('logo-filter-search');
+        const optionsContainer = document.getElementById('logo-filter-options');
 
-        if (!overlay || !titleEl || !searchEl) {
+        if (!overlay || !titleEl || !searchEl || !optionsContainer) {
             console.error('No se encontró el modal de filtros en el DOM');
             return;
         }
 
         titleEl.textContent = `Filtrar: ${title}`;
         searchEl.value = '';
-        renderFilterOptions('');
+        
+        // Mostrar cargando
+        optionsContainer.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Cargando opciones...</div>';
         overlay.classList.add('active');
+
+        // Columnas que requieren datos de todas las páginas (desde el servidor)
+        const serverColumns = ['area', 'encargado', 'estado', 'cliente', 'numero_recibo'];
+        
+        let options = [];
+        if (serverColumns.includes(columnKey)) {
+            try {
+                const response = await fetch('/api/recibos-costura/filter-options');
+                const data = await response.json();
+                if (data.success && data.filter_options) {
+                    const mapping = {
+                        'area': 'areas',
+                        'encargado': 'encargados',
+                        'estado': 'estados',
+                        'cliente': 'clientes',
+                        'numero_recibo': 'numeros_recibo'
+                    };
+                    const apiKey = mapping[columnKey];
+                    options = data.filter_options[apiKey] || [];
+                } else {
+                    options = getUniqueOptionsForColumn(columnKey);
+                }
+            } catch (e) {
+                console.error('Error fetching filter options:', e);
+                options = getUniqueOptionsForColumn(columnKey);
+            }
+        } else {
+            options = getUniqueOptionsForColumn(columnKey);
+        }
+
+        window.__filterModalState.options = options.sort((a, b) => String(a).localeCompare(String(b), 'es'));
+        renderFilterOptions('');
         setTimeout(() => searchEl.focus(), 50);
     };
 

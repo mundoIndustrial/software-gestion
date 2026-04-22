@@ -200,6 +200,28 @@ class ConsecutivoReciboPedidoRepository
     }
 
     /**
+     * Obtener todos los encargados únicos de los procesos asociados a recibos de costura
+     * 
+     * @return array
+     */
+    public function getEncargados(): array
+    {
+        return DB::table('procesos_prenda')
+            ->join('consecutivos_recibos_pedidos', function($join) {
+                $join->on('procesos_prenda.numero_recibo', '=', 'consecutivos_recibos_pedidos.consecutivo_actual')
+                    ->on('procesos_prenda.prenda_pedido_id', '=', 'consecutivos_recibos_pedidos.prenda_id');
+            })
+            ->where('consecutivos_recibos_pedidos.tipo_recibo', 'COSTURA')
+            ->where('consecutivos_recibos_pedidos.activo', true)
+            ->whereNull('procesos_prenda.deleted_at')
+            ->distinct()
+            ->pluck('procesos_prenda.encargado')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Obtener recibos de costura con filtros aplicados
      * 
      * @param string $tipoRecibo Tipo de recibo (COSTURA, REFLECTIVO, etc.)

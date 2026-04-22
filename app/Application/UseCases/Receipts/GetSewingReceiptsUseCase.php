@@ -69,7 +69,7 @@ class GetSewingReceiptsUseCase
     private function procesarFiltros(Request $request): array
     {
         $filtros = [];
-        $camposFiltro = ['estado', 'area', 'total_dias', 'numero_recibo', 'cliente', 'descripcion', 'cantidad', 'novedades', 'fecha_creacion', 'fecha_estimada'];
+        $camposFiltro = ['estado', 'area', 'total_dias', 'numero_recibo', 'cliente', 'descripcion', 'cantidad', 'novedades', 'fecha_creacion', 'fecha_estimada', 'encargado'];
 
         foreach ($camposFiltro as $campo) {
             if ($request->has($campo) && !empty($request->input($campo))) {
