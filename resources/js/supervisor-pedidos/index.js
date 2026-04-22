@@ -32,6 +32,42 @@ const initState = {
     },
 };
 
+const startupOverlayState = {
+    coreReady: false,
+    ordenesReady: false,
+    hidden: false,
+};
+
+function hideStartupOverlay(reason = 'ready') {
+    if (startupOverlayState.hidden) return;
+
+    const overlay = document.getElementById('sp-loading-overlay');
+    if (!overlay) {
+        startupOverlayState.hidden = true;
+        return;
+    }
+
+    startupOverlayState.hidden = true;
+    overlay.classList.add('is-hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    console.log(`[SP] Overlay oculto (${reason})`);
+
+    setTimeout(() => {
+        overlay.remove();
+    }, 350);
+}
+
+function maybeHideStartupOverlay() {
+    if (startupOverlayState.coreReady && startupOverlayState.ordenesReady) {
+        hideStartupOverlay('core+ordenes');
+    }
+}
+
+document.addEventListener('supervisor-pedidos:ordenes-loader-ready', () => {
+    startupOverlayState.ordenesReady = true;
+    maybeHideStartupOverlay();
+});
+
 /**
  * Detectar si estamos en vista de supervisor
  */
@@ -170,6 +206,9 @@ async function initSupervisorPedidos() {
     } catch (error) {
         console.error('[SP] ❌ Initialization failed:', error);
         // No re-throw, dejar que el usuario vea la página aunque algo falló
+    } finally {
+        startupOverlayState.coreReady = true;
+        maybeHideStartupOverlay();
     }
 }
 
@@ -179,6 +218,14 @@ async function initSupervisorPedidos() {
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+        if (!document.querySelector('[data-ordenes-body]')) {
+            startupOverlayState.ordenesReady = true;
+        }
+
+        setTimeout(() => {
+            hideStartupOverlay('fallback-timeout');
+        }, 12000);
+
         // Pequeño delay para que Blade renderice completamente
         setTimeout(initSupervisorPedidos, 100);
         // Inicializar cargador de órdenes (tabla optimizada con API)
@@ -192,6 +239,14 @@ if (document.readyState === 'loading') {
         }, 300);
     });
 } else {
+    if (!document.querySelector('[data-ordenes-body]')) {
+        startupOverlayState.ordenesReady = true;
+    }
+
+    setTimeout(() => {
+        hideStartupOverlay('fallback-timeout');
+    }, 12000);
+
     setTimeout(initSupervisorPedidos, 100);
     setTimeout(() => {
         console.log('[SP] Intentando inicializar OrdenesLoader...');

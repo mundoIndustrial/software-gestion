@@ -66,6 +66,26 @@
             visibility: visible !important;
             opacity: 1 !important;
         }
+
+        #sp-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.96);
+            z-index: 200000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
+        #sp-loading-overlay.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
     </style>
 @endpush
 
@@ -73,18 +93,7 @@
 <div class="supervisor-pedidos-container" style="position: relative;">
 
     <!-- Overlay de carga -->
-    <div id="sp-loading-overlay" style="
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(255, 255, 255, 0.75);
-        z-index: 100;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 120px;
-        border-radius: 8px;
-        transition: opacity 0.3s ease;
-    ">
+    <div id="sp-loading-overlay" role="status" aria-live="polite" aria-label="Cargando pedidos">
         <div style="text-align: center;">
             <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
                 <span class="sr-only">Cargando...</span>

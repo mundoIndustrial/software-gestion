@@ -350,6 +350,44 @@
             flex-shrink: 0;
         }
 
+        .submenu {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+        }
+
+        .submenu.open {
+            max-height: 420px;
+            opacity: 1;
+        }
+
+        .submenu-item {
+            margin-top: 4px;
+        }
+
+        .submenu-item .menu-link {
+            font-size: 0.82rem;
+            min-height: 38px;
+            padding: 8px 12px 8px 30px;
+        }
+
+        .submenu-toggle {
+            justify-content: space-between;
+        }
+
+        .submenu-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+        }
+
+        .submenu-toggle.active .submenu-arrow {
+            transform: rotate(180deg);
+        }
+
         .floating-clear-filters {
             position: fixed;
             bottom: 24px;

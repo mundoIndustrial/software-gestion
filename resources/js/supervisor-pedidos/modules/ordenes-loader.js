@@ -29,15 +29,24 @@ export class OrdenesLoader {
     async init() {
         console.log('%c[OrdenesLoader] Inicializando...', 'color: #3b82f6; font-weight: bold;');
         const startTime = performance.now();
+        let success = false;
 
         try {
             // Cargar primera página
-            await this.cargarPagina(1);
+            success = await this.cargarPagina(1);
 
             const duration = performance.now() - startTime;
             console.log(`%c✅ Tabla lista en ${duration.toFixed(2)}ms`, 'color: #10b981; font-weight: bold;');
+
+            if (!success) {
+                console.warn('[OrdenesLoader] Primera carga completada con advertencias');
+            }
         } catch (error) {
             console.error('[OrdenesLoader] Error:', error);
+        } finally {
+            document.dispatchEvent(new CustomEvent('supervisor-pedidos:ordenes-loader-ready', {
+                detail: { success },
+            }));
         }
     }
 
@@ -74,11 +83,14 @@ export class OrdenesLoader {
                 console.log(`%c🎨 Renderizado: ${this.ordenes.length} filas en ${renderDuration.toFixed(2)}ms`,
                     renderDuration > 200 ? 'color: #f97316;' : 'color: #10b981;'
                 );
+                return true;
             } else {
                 console.warn('[OrdenesLoader] Respuesta inválida del API:', data);
+                return false;
             }
         } catch (error) {
             console.error('[OrdenesLoader] Error cargando página:', error);
+            return false;
         }
     }
 

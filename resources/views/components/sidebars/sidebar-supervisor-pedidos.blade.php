@@ -27,38 +27,65 @@
                         <span class="badge-alert" id="ordenesPendientesCount" style="display: none;">0</span>
                     </a>
                 </li>
+                @php
+                    $pendientesActivo = request()->routeIs(
+                        'supervisor-pedidos.pendientes-bordado-estampado',
+                        'supervisor-pedidos.pendientes-costura',
+                        'supervisor-pedidos.pendientes-reflectivo',
+                        'supervisor-pedidos.pendientes-control-calidad',
+                        'gestion-bodega.pendientes-costura'
+                    );
+                @endphp
                 <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.pendientes-bordado-estampado') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-bordado-estampado') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">brush</span>
-                        <span class="menu-label">Pendientes Logo</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.pendientes-costura') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-costura') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">content_cut</span>
-                        <span class="menu-label">Pendiente Costura</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.pendientes-reflectivo') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-reflectivo') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">flare</span>
-                        <span class="menu-label">Pendiente Reflectivo</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.pendientes-control-calidad') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-control-calidad') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">fact_check</span>
-                        <span class="menu-label">Pendiente C.C</span>
-                        <span class="badge-alert" id="controlCalidadPendientesCount">0</span>
-                    </a>
+                    <button class="menu-link submenu-toggle {{ $pendientesActivo ? 'active' : '' }}" type="button" style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">playlist_add_check</span>
+                        <span class="menu-label">Pendientes</span>
+                        <span class="badge-alert" id="controlCalidadPendientesCountMenu" data-control-calidad-badge style="display: inline-flex;">0</span>
+                        <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+                    </button>
+                    <ul class="submenu {{ $pendientesActivo ? 'open' : '' }}">
+                        <li class="submenu-item">
+                            <a href="{{ route('supervisor-pedidos.pendientes-bordado-estampado') }}"
+                               class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-bordado-estampado') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="material-symbols-rounded">brush</span>
+                                <span class="menu-label">Pendientes Logo</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('supervisor-pedidos.pendientes-costura') }}"
+                               class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-costura') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="material-symbols-rounded">content_cut</span>
+                                <span class="menu-label">Pendiente Costura</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('supervisor-pedidos.pendientes-reflectivo') }}"
+                               class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-reflectivo') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="material-symbols-rounded">flare</span>
+                                <span class="menu-label">Pendiente Reflectivo</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('supervisor-pedidos.pendientes-control-calidad') }}"
+                               class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-control-calidad') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="material-symbols-rounded">fact_check</span>
+                                <span class="menu-label">Pendiente C.C</span>
+                                <span class="badge-alert" id="controlCalidadPendientesCount" data-control-calidad-badge>0</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+                               class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <i class="fas fa-box"></i>
+                                <span class="menu-label">Pendiente Bodega</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.entregas-recibidas') }}"
@@ -66,14 +93,6 @@
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">inventory_2</span>
                         <span class="menu-label">Entregas/Recibidas</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('gestion-bodega.pendientes-costura') }}"
-                       class="menu-link"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <i class="fas fa-box"></i>
-                        <span class="menu-label">Pendiente Bodega</span>
                     </a>
                 </li>
                 <li class="menu-item">

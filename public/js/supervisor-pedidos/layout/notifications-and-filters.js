@@ -10,6 +10,18 @@
             sidebar?.classList.toggle('collapsed');
         });
 
+        // Submenús del sidebar (patrón similar a asesoras)
+        const submenuToggles = document.querySelectorAll('.submenu-toggle');
+        submenuToggles.forEach((toggle) => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const submenu = toggle.nextElementSibling;
+                if (!submenu || !submenu.classList.contains('submenu')) return;
+                submenu.classList.toggle('open');
+                toggle.classList.toggle('active');
+            });
+        });
+
         // Toggle user menu
         document.getElementById('userBtn')?.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -367,8 +379,8 @@
         }
 
         function cargarBadgeSidebarControlCalidad() {
-            const badgeControlCalidad = document.getElementById('controlCalidadPendientesCount');
-            if (!badgeControlCalidad) return;
+            const badgesControlCalidad = document.querySelectorAll('[data-control-calidad-badge]');
+            if (!badgesControlCalidad.length) return;
 
             fetch('/api/supervisor-pedidos/recibos/pendientes-control-calidad-count')
                 .then(response => response.json())
@@ -377,12 +389,16 @@
                         ? 0
                         : (data.count ?? data?.data?.count ?? 0);
                     const count = parseInt(rawCount || 0, 10) || 0;
-                    badgeControlCalidad.textContent = String(count);
-                    badgeControlCalidad.style.display = 'inline-flex';
+                    badgesControlCalidad.forEach((badge) => {
+                        badge.textContent = String(count);
+                        badge.style.display = 'inline-flex';
+                    });
                 })
                 .catch(() => {
-                    badgeControlCalidad.textContent = '0';
-                    badgeControlCalidad.style.display = 'inline-flex';
+                    badgesControlCalidad.forEach((badge) => {
+                        badge.textContent = '0';
+                        badge.style.display = 'inline-flex';
+                    });
                 });
         }
 
