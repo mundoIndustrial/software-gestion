@@ -18,7 +18,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     {
         // Vista global: listar todos los recibos COSTURA activos (incluye módulos 1/2/3)
         // Filtra por:
-        // - Área: Solo "Costura"
+        // - Área: "Costura" y "Corte" 
         // - Encargado: Debe estar asignado (no vacío/null)
         // - EXCLUYE: Recibos asignados a usuarios con rol costura-reflectivo
         $usuarioFake = new User();
@@ -47,7 +47,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         $recibos = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->where('area', 'Costura')
+            ->whereIn('area', ['Costura', 'Corte'])
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -89,27 +89,40 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     continue;
                 }
 
-                // Filtrar recibos que tengan encargado de costura asignado
+                // Filtrar recibos que tengan encargado asignado según el área
                 // Y EXCLUIR los asignados a usuarios con rol costura-reflectivo
                 $recibosConEncargado = $recibosDelTipo->filter(function ($recibo) use ($usuariosCosturaReflectivo) {
                     $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
                         ? $recibo->prenda->procesosPrenda
                         : collect();
 
+                    $areaRecibo = strtolower(trim((string) ($recibo->area ?? '')));
                     $numeroRecibo = $recibo->consecutivo_actual;
-                    $procesoCostura = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
+                    
+                    // Buscar el proceso según el área
+                    if ($areaRecibo === 'costura') {
+                        $proceso = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
+                    } elseif ($areaRecibo === 'corte') {
+                        $proceso = $procesos
+                            ->filter(fn($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'corte')
+                            ->sortByDesc(fn($p) => $p->created_at)
+                            ->first();
+                    } else {
+                        return false; // Área no válida
+                    }
 
                     // Solo incluir si tiene encargado asignado
-                    if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                    if (!$proceso || empty($proceso->encargado)) {
                         return false;
                     }
 
                     // EXCLUIR si el encargado tiene rol costura-reflectivo
-                    $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
+                    $encargadoNormalizado = strtolower(trim((string) $proceso->encargado));
                     if ($usuariosCosturaReflectivo->contains($encargadoNormalizado)) {
                         \Log::info(' [administrador-costura] Excluyendo recibo asignado a costura-reflectivo', [
                             'recibo_id' => $recibo->id,
-                            'encargado' => $procesoCostura->encargado,
+                            'area' => $areaRecibo,
+                            'encargado' => $proceso->encargado,
                             'prenda_id' => $recibo->prenda_id
                         ]);
                         return false;

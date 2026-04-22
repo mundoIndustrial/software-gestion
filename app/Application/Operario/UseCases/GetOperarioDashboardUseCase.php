@@ -40,12 +40,26 @@ class GetOperarioDashboardUseCase
                     ->map(function ($prenda) use ($usuariosSobremedida) {
                         $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
                             $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                            $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                            
+                            // Incluir recibos de COSTURA y CORTE asignados a usuarios confeccion-sobremedida
                             if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
                                 return false;
                             }
 
-                            $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
-                            return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                            // Para recibos de área Costura, verificar encargado_costura
+                            if ($area === 'costura') {
+                                $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
+                                return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                            }
+                            
+                            // Para recibos de área Corte, verificar encargado_corte
+                            if ($area === 'corte') {
+                                $encargado = strtolower(trim((string) ($recibo['encargado_corte'] ?? '')));
+                                return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                            }
+
+                            return false;
                         }));
 
                         return $prenda;
@@ -61,6 +75,13 @@ class GetOperarioDashboardUseCase
                     ->map(function ($prenda) use ($usuariosSobremedida) {
                         $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
                             $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                            $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                            
+                            // En pestaña costura: solo mostrar recibos del área Costura
+                            if ($area !== 'costura') {
+                                return false;
+                            }
+                            
                             if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
                                 return false;
                             }
