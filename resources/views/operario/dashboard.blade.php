@@ -1,4 +1,4 @@
-﻿@extends('operario.layout')
+@extends('operario.layout')
 
 @section('title', 'Mis Órdenes')
 @section('page-title')

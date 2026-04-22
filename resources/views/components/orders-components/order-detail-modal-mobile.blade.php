@@ -91,20 +91,8 @@
             </div>
         </div>
 
-        <!-- Separador -->
-        <div class="separator-line"></div>
-
-        <!-- Footer -->
-        <div class="signature-section">
-            <div class="signature-field">
-                <span>ENCARGADO DE ORDEN:</span>
-                <span id="mobile-encargado"></span>
-            </div>
-            <div class="signature-field">
-                <span>PRENDAS ENTREGADAS:</span>
-                <span id="mobile-prendas-entregadas"></span>
-            </div>
-        </div>
+        <!-- Separador removido -->
+        <!-- Footer removido -->
     </div>
 </div>
 

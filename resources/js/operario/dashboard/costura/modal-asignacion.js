@@ -1,4 +1,4 @@
-﻿import { httpJson } from '../api/http';
+import { httpJson } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
 // Función para abrir el modal (exportada para ser usada en costura.js)
@@ -137,18 +137,24 @@ function mostrarContenidoModuloCompleto() {
                 </div>
             </div>
             
-            <!-- Selector de encargado -->
+            <!-- Selector de encargado (Editable) -->
             <div style="background: white; border-radius: 8px; padding: 1rem; border: 1px solid #dbeafe;">
                 <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; font-size: 0.875rem; color: #1e40af;">
                     <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem; font-size: 1rem;">person</span>
                     Encargado de Costura:
                 </label>
-                <select id="costuraEncargado" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; transition: border-color 0.2s;">
-                    <option value="">Seleccione un encargado...</option>
-                </select>
+                <div style="position: relative;">
+                    <input type="text" id="costuraEncargado" list="listaEncargados" 
+                        placeholder="Seleccione o escriba un encargado o taller..." 
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; transition: all 0.2s; outline: none;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)';"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                    >
+                    <datalist id="listaEncargados"></datalist>
+                </div>
                 <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">
                     <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.25rem; font-size: 0.875rem;">info</span>
-                    El encargado seleccionado será responsable de todas las unidades de esta prenda.
+                    Puede seleccionar un encargado de la lista o escribir el nombre de un taller directamente.
                 </p>
             </div>
             
@@ -158,7 +164,7 @@ function mostrarContenidoModuloCompleto() {
                     <span class="material-symbols-rounded" style="color: #0c4a6e; font-size: 1rem;">assignment_turned_in</span>
                     <div style="flex: 1; min-width: 0;">
                         <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: #0c4a6e;">Estado de la asignación:</p>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #0c4a6e;">Pendiente de seleccionar encargado</p>
+                        <p id="textoEstadoAsignacion" style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #0c4a6e;">Pendiente de seleccionar encargado</p>
                     </div>
                 </div>
             </div>
@@ -169,6 +175,27 @@ function mostrarContenidoModuloCompleto() {
     if (window.datosModalCostura) {
         cargarUsuariosCostura(window.datosModalCostura.tipoRecibo);
     }
+
+    // Agregar listeners para actualizar el estado visual
+    setTimeout(() => {
+        const input = document.getElementById('costuraEncargado');
+        const textoEstado = document.getElementById('textoEstadoAsignacion');
+
+        const actualizarEstado = () => {
+            const val = input?.value.trim();
+
+            if (val) {
+                if (textoEstado) textoEstado.textContent = `Asignado a: ${val}`;
+            } else {
+                if (textoEstado) textoEstado.textContent = 'Pendiente de seleccionar encargado';
+            }
+        };
+
+        if (input) {
+            input.oninput = actualizarEstado;
+            input.onchange = actualizarEstado;
+        }
+    }, 100);
 }
 
 // Función para mostrar contenido de distribución por módulos
@@ -464,20 +491,11 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
                 // Verificar si esta talla específica (con color) está asignada a este módulo
                 let asignado = 0;
                 if (window.asignacionesPorModulo && window.asignacionesPorModulo[moduloId]) {
-                    console.log(`[GENERAR HTML] Buscando asignación para módulo ${moduloId}, talla ID: ${tallaIdUnico}`);
-                    console.log(`[GENERAR HTML] Asignaciones del módulo:`, window.asignacionesPorModulo[moduloId]);
-                    
                     if (typeof window.asignacionesPorModulo[moduloId][tallaIdUnico] === 'object' && window.asignacionesPorModulo[moduloId][tallaIdUnico] !== null) {
                         asignado = window.asignacionesPorModulo[moduloId][tallaIdUnico].cantidad || 0;
-                        console.log(`[GENERAR HTML] Asignado encontrado (objeto): ${asignado}`);
                     } else if (typeof window.asignacionesPorModulo[moduloId][tallaIdUnico] === 'number') {
                         asignado = window.asignacionesPorModulo[moduloId][tallaIdUnico];
-                        console.log(`[GENERAR HTML] Asignado encontrado (número): ${asignado}`);
-                    } else {
-                        console.log(`[GENERAR HTML] No se encontró asignación para ${tallaIdUnico}`);
                     }
-                } else {
-                    console.log(`[GENERAR HTML] No hay asignacionesPorModulo o módulo ${moduloId} no existe`);
                 }
                 
                 const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId);
@@ -485,7 +503,8 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
                 const asignadoMostrar = Math.min(asignado, maxDisponible);
                 const isSelected = asignadoMostrar > 0;
                 
-                console.log(`[GENERAR HTML] Talla: ${talla.tallaOriginal}, Color: ${color}, ID: ${tallaIdUnico}, Asignado: ${asignadoMostrar}, Selected: ${isSelected}`);
+                // SI NO HAY DISPONIBILIDAD Y NO ESTÁ SELECCIONADA, NO MOSTRARLA
+                if (disponible <= 0 && !isSelected) return;
                 
                 html += `
                     <div class="dist-talla-row ${isSelected ? 'is-selected' : ''}" style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px;">
@@ -614,14 +633,30 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
     let html = `
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Módulo:</label>
-            <select id="moduloSelector" onchange="agregarEncargadoSeleccionado()" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem;">
-                <option value="">Seleccione un módulo para asignar tallas...</option>
-                ${modulos
-                    .filter((modulo) => !window.modulosSeleccionadosDistribucion.includes(modulo.id))
-                    .map(modulo => `
-                        <option value="${modulo.id}">${modulo.encargado}</option>
-                    `).join('')}
-            </select>
+            <div style="display: flex; gap: 0.5rem;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" id="moduloSelector" list="listaModulosDisponibles" 
+                        placeholder="Seleccione o escriba un módulo para asignar tallas..." 
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
+                        onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                        onkeypress="if(event.key === 'Enter') agregarEncargadoSeleccionado()"
+                    >
+                    <datalist id="listaModulosDisponibles">
+                        ${modulos
+                            .filter((modulo) => !window.modulosSeleccionadosDistribucion.includes(modulo.id))
+                            .map(modulo => `<option value="${modulo.encargado}"></option>`).join('')}
+                    </datalist>
+                </div>
+                <button onclick="agregarEncargadoSeleccionado()" 
+                    style="padding: 0.75rem 1.25rem; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
+                    onmouseover="this.style.background='#059669'"
+                    onmouseout="this.style.background='#10b981'"
+                >
+                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">add</span>
+                    Agregar
+                </button>
+            </div>
         </div>
         <div id="cardsEncargadosPlaceholder" style="display: ${modulosConAsignaciones.length === 0 ? 'block' : 'none'}; min-height: 120px;">
             <div style="text-align: center; padding: 2rem; color: #6b7280;">
@@ -780,12 +815,28 @@ function mostrarInterfazDistribucionNormal(tallas, modulos) {
         <!-- Selector de módulos -->
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Módulo:</label>
-            <select id="moduloSelector" onchange="agregarEncargadoSeleccionado()" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem;">
-                <option value="">Seleccione un módulo para asignar tallas...</option>
-                ${modulos.map(modulo => `
-                    <option value="${modulo.id}">${modulo.encargado}</option>
-                `).join('')}
-            </select>
+            <div style="display: flex; gap: 0.5rem;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" id="moduloSelector" list="listaModulosDisponibles" 
+                        placeholder="Seleccione o escriba un módulo para asignar tallas..." 
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
+                        onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                        onkeypress="if(event.key === 'Enter') agregarEncargadoSeleccionado()"
+                    >
+                    <datalist id="listaModulosDisponibles">
+                        ${modulos.map(modulo => `<option value="${modulo.encargado}"></option>`).join('')}
+                    </datalist>
+                </div>
+                <button onclick="agregarEncargadoSeleccionado()" 
+                    style="padding: 0.75rem 1.25rem; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
+                    onmouseover="this.style.background='#059669'"
+                    onmouseout="this.style.background='#10b981'"
+                >
+                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">add</span>
+                    Agregar
+                </button>
+            </div>
         </div>
         
         <!-- Cards de encargados seleccionados -->
@@ -803,18 +854,28 @@ function mostrarInterfazDistribucionNormal(tallas, modulos) {
 
 window.agregarEncargadoSeleccionado = function() {
     const moduloSelector = document.getElementById('moduloSelector');
-    
-    if (!moduloSelector) {
-        return;
-    }
-    
-    if (!window.datosDistribucion) {
-        return;
-    }
+    if (!moduloSelector || !window.datosDistribucion) return;
 
-    const moduloId = parseInt(moduloSelector.value);
-    if (!Number.isFinite(moduloId)) {
-        return;
+    const valor = moduloSelector.value.trim();
+    if (!valor) return;
+
+    const modulos = window.datosDistribucion.modulos;
+    let moduloId;
+    
+    // Buscar si el valor corresponde a un módulo existente
+    const moduloExistente = modulos.find(m => m.encargado === valor);
+    
+    if (moduloExistente) {
+        moduloId = moduloExistente.id;
+    } else {
+        // Es un nuevo taller/módulo, crearlo virtualmente
+        moduloId = Date.now(); // ID único temporal
+        modulos.push({
+            id: moduloId,
+            nombre: valor,
+            encargado: valor,
+            usuarioId: null
+        });
     }
 
     if (!Array.isArray(window.modulosSeleccionadosDistribucion)) {
@@ -857,15 +918,13 @@ window.renderCardsEncargadosSeleccionados = function() {
 
     if (placeholder) placeholder.style.display = 'none';
 
-    if (selector) {
+    const datalist = document.getElementById('listaModulosDisponibles');
+    if (datalist) {
         const selectedSet = new Set(selected.map((id) => parseInt(id)));
-        selector.innerHTML = `
-            <option value="">Seleccione un módulo para asignar tallas...</option>
-            ${modulos
-                .filter((modulo) => !selectedSet.has(modulo.id))
-                .map(modulo => `<option value="${modulo.id}">${modulo.encargado}</option>`)
-                .join('')}
-        `;
+        datalist.innerHTML = modulos
+            .filter((modulo) => !selectedSet.has(modulo.id))
+            .map(modulo => `<option value="${modulo.encargado}"></option>`)
+            .join('');
     }
 
     container.innerHTML = selected
@@ -882,6 +941,14 @@ window.renderCardsEncargadosSeleccionados = function() {
                             <h6 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${modulo.encargado || ''}</h6>
                             <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #6b7280;">Encargado seleccionado</p>
                         </div>
+                        <button onclick="eliminarModuloSeleccionado(${moduloId})" 
+                            style="width: 32px; height: 32px; border: none; background: #fee2e2; color: #dc2626; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.background='#fecaca'"
+                            onmouseout="this.style.background='#fee2e2'"
+                            title="Eliminar encargado"
+                        >
+                            <span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>
+                        </button>
                     </div>
                     ${htmlTallas}
                 </div>
@@ -891,6 +958,19 @@ window.renderCardsEncargadosSeleccionados = function() {
 
     refrescarDistribucionUI();
     actualizarResumenAsignaciones();
+};
+
+window.eliminarModuloSeleccionado = function(moduloId) {
+    if (!Array.isArray(window.modulosSeleccionadosDistribucion)) return;
+    
+    window.modulosSeleccionadosDistribucion = window.modulosSeleccionadosDistribucion.filter(id => id !== moduloId);
+    
+    // También eliminar las asignaciones de este módulo
+    if (window.asignacionesPorModulo && window.asignacionesPorModulo[moduloId]) {
+        delete window.asignacionesPorModulo[moduloId];
+    }
+    
+    window.renderCardsEncargadosSeleccionados();
 };
 
 window.toggleTallaSeleccion = function(talla, moduloId, checked) {
@@ -1320,10 +1400,10 @@ export function confirmarAsignacion() {
 
 // Función para cargar usuarios de costura (copiada de costura.js)
 function cargarUsuariosCostura(tipoRecibo = '') {
-    const select = document.getElementById('costuraEncargado');
-    if (!select) return;
+    const datalist = document.getElementById('listaEncargados');
+    if (!datalist) return;
 
-    select.innerHTML = '<option value="">Cargando...</option>';
+    datalist.innerHTML = '';
 
     const qs = new URLSearchParams();
     const tr = String(tipoRecibo || '').trim().toUpperCase();
@@ -1340,29 +1420,25 @@ function cargarUsuariosCostura(tipoRecibo = '') {
     })
         .then((response) => response.json())
         .then((data) => {
-            select.innerHTML = '<option value="">Seleccione un encargado...</option>';
             if (data.success && data.usuarios) {
                 data.usuarios.forEach((usuario) => {
                     const option = document.createElement('option');
                     option.value = usuario.name;
-                    option.textContent = usuario.name;
-                    select.appendChild(option);
+                    datalist.appendChild(option);
                 });
-            } else {
-                select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
             }
         })
         .catch((error) => {
             console.error('Error cargando usuarios de costura:', error);
-            select.innerHTML = '<option value="">Error al cargar usuarios</option>';
         });
 }
 
 // Función original confirmarPasarACostura (adaptada)
 function confirmarPasarACostura() {
     const encargado = document.getElementById('costuraEncargado')?.value.trim();
+
     if (!encargado) {
-        mostrarError('Error', 'Debes seleccionar un encargado de costura');
+        mostrarError('Error', 'Debes seleccionar o escribir un encargado de costura');
         return;
     }
 

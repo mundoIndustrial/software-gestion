@@ -45,21 +45,8 @@
         <!-- Número de Pedido -->
         <div id="order-pedido" class="pedido-number"></div>
 
-        <!-- Separador -->
-        <div class="separator-line"></div>
-
-        <!-- Footer -->
-        <div class="signature-section">
-            <div class="signature-field">
-                <span>ENCARGADO DE ORDEN:</span>
-                <span id="encargado-value"></span>
-            </div>
-            <div class="vertical-separator"></div>
-            <div class="signature-field">
-                <span>PRENDAS ENTREGADAS:</span>
-                <span id="prendas-entregadas-value"></span>
-            </div>
-        </div>
+        <!-- Separador removido -->
+        <!-- Footer removido -->
     </div>
 </div>
 

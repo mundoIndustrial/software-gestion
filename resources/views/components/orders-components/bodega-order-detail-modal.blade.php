@@ -31,20 +31,8 @@
             </div>
             <div id="order-pedido" class="pedido-number"></div>
 
-            <div class="separator-line"></div>
-
-            <div class="signature-section">
-                <div class="signature-field">
-                    <span>ENCARGADO DE ORDEN:</span>
-                    <span id="encargado-value"></span>
-                </div>
-                <div class="vertical-separator"></div>
-                <div class="signature-field">
-                    <span>PRENDAS ENTREGADAS:</span>
-                    <span id="prendas-entregadas-value"></span>
-                    <a href="#" id="ver-entregas" style="color: red; font-weight: bold;">VER ENTREGAS</a>
-                </div>
-            </div>
+            <!-- Separador removido -->
+            <!-- Footer removido -->
         </div>
     </div>
 
