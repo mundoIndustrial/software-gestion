@@ -16,6 +16,7 @@
 import { initializeCarteraTable } from './modules/table-manager.js';
 import { initializeFilters } from './modules/filter-manager.js';
 import { initializeRealtime } from './modules/realtime-manager.js';
+import { initializeInvoiceManager } from './modules/invoice-manager.js';
 
 const initState = {
     isReady: false,
@@ -25,6 +26,7 @@ const initState = {
         table: false,
         filters: false,
         realtime: false,
+        invoice: false,
     },
 };
 
@@ -87,6 +89,26 @@ async function initRealtimeIfNeeded() {
 }
 
 /**
+ * Lazy-load invoice manager solo si hay facturas
+ * Se ejecuta DESPUÉS de que la tabla cargue datos
+ */
+async function initInvoiceIfNeeded() {
+    try {
+        // Esperar un tick para que la tabla se renderice
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const manager = await initializeInvoiceManager();
+        if (manager) {
+            initState.modules.invoice = true;
+            console.log('[SP] ✅ Invoice manager inicializado');
+        }
+    } catch (error) {
+        console.error('[SP] ⚠️ Invoice error (continuando):', error);
+        // No lanzar error, invoice es opcional
+    }
+}
+
+/**
  * Inicializador principal
  */
 async function initSupervisorPedidos() {
@@ -111,6 +133,9 @@ async function initSupervisorPedidos() {
 
         // Realtime: bajo demanda, no bloquea
         await initRealtimeIfNeeded();
+
+        // Invoice: bajo demanda, se carga después de tabla
+        await initInvoiceIfNeeded();
 
         // Mark as ready
         initState.isReady = true;
