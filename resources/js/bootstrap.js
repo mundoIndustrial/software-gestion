@@ -95,6 +95,7 @@ globalThis.EchoManager = globalThis.EchoManager || {
 
             this.instance = echoInstance;
             globalThis.Echo = echoInstance;
+            globalThis.EchoInstance = echoInstance;
             this.ready = true;
 
             this.callbacks.forEach(cb => {

@@ -132,6 +132,13 @@ class PedidosRealtimeRefresh {
 
         globalThis.waitForEcho(() => {
             try {
+                // Validar que globalThis.shared esté disponible dentro del callback
+                if (!globalThis.shared?.isReady || !globalThis.shared?.websocket) {
+                    if (this.debug) console.log(' [PedidosRealtime] globalThis.shared no listo en callback, reintentando...');
+                    setTimeout(() => this.setupWebSocket(), 100);
+                    return;
+                }
+
                 const ws = globalThis.shared.websocket;
                 if (!ws) {
                     throw new Error('WebSocket abstraction not available');
