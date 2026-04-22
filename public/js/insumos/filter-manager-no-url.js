@@ -145,7 +145,7 @@ function renderFilterModal(column, valores, modal) {
                 ${valores.slice(0, 50).map(val => `
                     <label style="display: flex; align-items: center; padding: 10px; cursor: pointer;">
                         <input type="checkbox" value="${val}" class="filter-checkbox-item" ${selectedValues.includes(val) ? 'checked' : ''} style="margin-right: 10px;">
-                        <span>${val}</span>
+                        <span>${val.replaceAll('_', ' ')}</span>
                     </label>
                 `).join('')}
                 ${valores.length > 50 ? '<p style="text-align: center; color: #999; font-size: 12px;">Mostrando 50 de ' + valores.length + ' valores</p>' : ''}
@@ -268,14 +268,24 @@ async function applyFiltersToBackend() {
             console.warn('[FilterManager] updateTableFromHtml no disponible');
         }
         
-        // Actualizar URL con historia (Sin mostrar parametros)
+        // Actualizar URL CON parámetros de filtro (para que la paginación los conserve)
+        const urlWithFilters = new URL(url);
+        for (const [column, values] of Object.entries(activeFilters)) {
+            if (values.length > 0) {
+                values.forEach(val => {
+                    urlWithFilters.searchParams.append('filter_columns[]', column);
+                    urlWithFilters.searchParams.append('filter_values[]', val);
+                });
+            }
+        }
+
         window.history.replaceState(
             { filters: activeFilters },
             '',
-            url.toString()
+            urlWithFilters.toString()
         );
-        
-        console.log('[FilterManager] Filtros aplicados exitosamente');
+
+        console.log('[FilterManager] Filtros aplicados exitosamente. URL actualizada con parámetros de filtro.');
         
     } catch (error) {
         console.error('[FilterManager] Error aplicando filtros:', error);
@@ -356,45 +366,37 @@ window.updateTableFromHtml = async function(html) {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         // Actualizar tabla
         const newTable = doc.querySelector('table');
         const currentTable = document.querySelector('table');
-        
+
         if (newTable && currentTable) {
             const newTbody = newTable.querySelector('tbody');
             const currentTbody = currentTable.querySelector('tbody');
-            
+
             if (newTbody && currentTbody) {
                 currentTbody.innerHTML = newTbody.innerHTML;
                 console.log('[FilterManager] Tabla actualizada');
             }
         }
-        
-        // Actualizar paginación
-        let currentPagination = document.querySelector('#tablePagination');
-        if (!currentPagination) {
-            currentPagination = document.querySelector('#paginationControls');
+
+        // Actualizar TODA la sección de paginación (#tablePagination contiene la info y los controles)
+        const currentPagination = document.querySelector('#tablePagination');
+        const newPagination = doc.querySelector('#tablePagination');
+
+        if (currentPagination && newPagination) {
+            // Reemplazar TODO el contenido del div de paginación
+            currentPagination.innerHTML = newPagination.innerHTML;
+            console.log('[FilterManager] Paginación actualizada (info + controles)');
         }
-        
-        if (currentPagination) {
-            let newPagination = doc.querySelector('#tablePagination');
-            if (!newPagination) {
-                newPagination = doc.querySelector('#paginationControls');
-            }
-            
-            if (newPagination) {
-                currentPagination.innerHTML = newPagination.innerHTML;
-                console.log('[FilterManager] Paginación actualizada');
-            }
-        }
-        
+
         // Disparar evento para reinicializar
         const event = new CustomEvent('insumosTableUpdated', {
             detail: { action: 'filter' }
         });
         document.dispatchEvent(event);
-        
+
     } catch (error) {
         console.error('[FilterManager] Error actualizando tabla:', error);
         throw error;

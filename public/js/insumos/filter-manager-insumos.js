@@ -275,14 +275,14 @@ function renderFilterValues(values, searchTerm, column) {
     filterList.innerHTML = totalText + displayValues.map(valObj => {
         const dbVal = String(valObj.db || '').trim();
         const displayVal = String(valObj.display || '').trim();
-        
+
         // Verificar si este valor está en los filtros activos locales
         const isChecked = activeFilters[column] && activeFilters[column].includes(dbVal);
-        
+
         return `
             <label style="display: flex; align-items: center; padding: 10px; cursor: pointer; border-radius: 4px; transition: background 0.2s; hover: background-color: #f3f4f6;">
                 <input type="checkbox" value="${dbVal}" class="filter-checkbox" ${isChecked ? 'checked' : ''} style="margin-right: 10px; cursor: pointer;">
-                <span style="flex: 1;">${displayVal}</span>
+                <span style="flex: 1;">${displayVal.replaceAll('_', ' ')}</span>
             </label>
         `;
     }).join('');
@@ -428,45 +428,37 @@ function updateTableFromHtml(html) {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         // Actualizar tabla
         const newTable = doc.querySelector('table');
         const currentTable = document.querySelector('table');
-        
+
         if (newTable && currentTable) {
             const newTbody = newTable.querySelector('tbody');
             const currentTbody = currentTable.querySelector('tbody');
-            
+
             if (newTbody && currentTbody) {
                 currentTbody.innerHTML = newTbody.innerHTML;
                 console.log('[Filter] Tabla actualizada');
             }
         }
-        
-        // Actualizar paginación (puede estar en #tablePagination o #paginationControls)
-        let currentPagination = document.querySelector('#tablePagination');
-        if (!currentPagination) {
-            currentPagination = document.querySelector('#paginationControls');
+
+        // Actualizar TODA la sección de paginación (#tablePagination contiene la info y los controles)
+        const currentPagination = document.querySelector('#tablePagination');
+        const newPagination = doc.querySelector('#tablePagination');
+
+        if (currentPagination && newPagination) {
+            // Reemplazar TODO el contenido del div de paginación
+            currentPagination.innerHTML = newPagination.innerHTML;
+            console.log('[Filter] Paginación actualizada (info + controles)');
         }
-        
-        if (currentPagination) {
-            let newPagination = doc.querySelector('#tablePagination');
-            if (!newPagination) {
-                newPagination = doc.querySelector('#paginationControls');
-            }
-            
-            if (newPagination) {
-                currentPagination.innerHTML = newPagination.innerHTML;
-                console.log('[Filter] Paginación actualizada');
-            }
-        }
-        
+
         // Disparar evento para reinicializar eventos
         const event = new CustomEvent('insumosTableUpdated', {
             detail: { action: 'filter' }
         });
         document.dispatchEvent(event);
-        
+
     } catch (error) {
         console.error('[Filter] Error actualizando tabla:', error);
         throw error;

@@ -136,7 +136,7 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
             'consecutivo_actual' => 'consecutivos_recibos_pedidos.consecutivo_actual',
             'numero_pedido' => 'pedidos_produccion.numero_pedido',
             'cliente' => 'pedidos_produccion.cliente',
-            'estado' => 'pedidos_produccion.estado',
+            'estado' => 'consecutivos_recibos_pedidos.estado',
             'area' => 'pedidos_produccion.area',
             'created_at' => 'pedidos_produccion.created_at',
             default => null,
