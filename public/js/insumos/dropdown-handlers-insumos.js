@@ -70,6 +70,7 @@ function crearDropdownVerRecibo(event, button) {
 
     const pedidoId = button.getAttribute('data-pedido-id') || button.getAttribute('data-pedido-produccion-id');
     const prendaId = button.getAttribute('data-prenda-id');
+    const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
     const esParcial = button.getAttribute('data-es-parcial') === '1';
     const pedidoParcialId = button.getAttribute('data-pedido-parcial-id') || '';
     const rect = button.getBoundingClientRect();
@@ -94,7 +95,7 @@ function crearDropdownVerRecibo(event, button) {
         <button data-insumos-action="dropdown-ver-detalle-recibo"
             data-pedido-id="${pedidoId}"
             data-prenda-id="${prendaId ?? 'null'}"
-            data-tipo-recibo="COSTURA"
+            data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
             data-pedido-parcial-id="${pedidoParcialId}"
             style="

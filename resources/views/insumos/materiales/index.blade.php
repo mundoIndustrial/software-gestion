@@ -1,10 +1,14 @@
 {{-- resources/views/insumos/materiales/index.blade.php --}}
 @extends('layouts.insumos')
 
+@section('module', 'insumos-materiales')
 @section('title', 'Gestión de Insumos - Control de Insumos del Pedido')
 @php
     $esGestionReflectivo = (bool) ($esGestionReflectivo ?? false);
     $mostrarSoloVerRecibo = (bool) ($mostrarSoloVerRecibo ?? false);
+    $assetVersion = static fn (string $path): int => is_file(public_path($path))
+        ? filemtime(public_path($path))
+        : time();
 @endphp
 
 @section('page-title', $esGestionReflectivo ? 'Gestion Reflectivo' : 'Control de Insumos del Pedido')
@@ -13,8 +17,8 @@
 @php
     $currentRoleName = auth()->user()->role->name ?? 'guest';
 @endphp
-<link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ $assetVersion('css/insumos/materiales.css') }}">
+<link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ $assetVersion('css/tracking-modal.css') }}">
 @if($mostrarSoloVerRecibo)
 <style>
     .btn-check-row,
@@ -250,12 +254,13 @@
                                         </button>
 
                                         {{-- Dropdown Ver Recibo / Seguimiento --}}
-                                        <button 
+                                        <button
                                             class="btn-ver-insumos-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
                                             data-insumos-action="ver-recibo-dropdown"
                                             data-pedido-id="{{ $pedidoProduccionId }}"
                                             data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                             data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                            data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}"
                                             data-es-parcial="{{ !empty($orden->es_parcial) ? '1' : '0' }}"
                                             data-pedido-parcial-id="{{ $orden->pedido_parcial_id ?? '' }}"
                                             data-tooltip="Ver recibo o seguimiento"
@@ -297,7 +302,7 @@
                                     </div>
                                 </td>
                                 <td class="py-4 px-6">
-                                    <span class="font-bold text-blue-600 text-lg">{{ $orden->numero_pedido ?? 'N/A' }}</span>
+                                    <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
@@ -529,76 +534,78 @@
 <!-- Contenedor para dropdowns dinámicos con position fixed -->
 <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
+@if(app()->isLocal())
 <script>
     console.timeEnd('RENDER_TOTAL');
     console.log('[Insumos] Total de órdenes: {{ $ordenes->total() }}');
 </script>
+@endif
 
 <!-- Scripts para el modal de órdenes (defer para no-críticos) -->
+@if(config('features.insumos_materiales_vite_entry'))
+    @vite('resources/js/insumos/materiales.entry.js')
+@else
 <script defer src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
 <script defer src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script defer src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
-<script defer src="{{ asset('js/insumos/materiales-page-loader.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/insumos/materiales-page-loader.js') }}?v={{ $assetVersion('js/insumos/materiales-page-loader.js') }}"></script>
 
 <!-- Scripts no-críticos (defer) -->
-<script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ $assetVersion('js/ordersjs/tracking-modal-utils.js') }}"></script>
 <!-- Sistema de Tracking Modular -->
 <!-- DAYS SELECTOR HANDLER - DEBE cargarse PRIMERO -->
-<script defer src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}?v={{ $assetVersion('js/ordersjs/tracking/days-selector-handler.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ $assetVersion('js/ordersjs/tracking/date-utils.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ $assetVersion('js/ordersjs/tracking/days-selector.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ $assetVersion('js/ordersjs/tracking/data-loader.js') }}"></script>
 <!-- TRACKING MODAL HANDLER - DEBE cargarse ANTES de ui-components.js -->
-<script defer type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
+<script defer type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ $assetVersion('js/ordersjs/tracking-modal-handler.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ $assetVersion('js/ordersjs/tracking/ui-components.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ $assetVersion('js/ordersjs/tracking/process-manager.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ $assetVersion('js/ordersjs/tracking/area-cards.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ $assetVersion('js/ordersjs/tracking/prendas-renderer.js') }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ $assetVersion('js/ordersjs/tracking/tracking-main.js') }}"></script>
+<script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ $assetVersion('js/modulos/invoice/InvoiceLazyLoader.js') }}"></script>
 <script defer src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 <script defer src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
-<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ $assetVersion('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
-<!-- Scripts para Cambio de Estado de Recibos -->
-<script defer src="{{ asset('js/insumos/status-actions-insumos.js') }}?v={{ time() }}"></script>
+@endif
 
 <script>
-// Aplicar estilos iniciales a todos los selects de estado
+// Aplicar estilos iniciales a todos los selects de estado.
 function aplicarEstilosIniciales() {
     const selectsEstado = document.querySelectorAll('.estado-select');
-    selectsEstado.forEach(select => {
+
+    selectsEstado.forEach((select) => {
         if (typeof window.aplicarEstiloEstadoSelect === 'function') {
             window.aplicarEstiloEstadoSelect(select);
         }
-        
-        // Agregar listener para cambios en tiempo real (antes de confirmar)
-        select.addEventListener('change', function() {
-            if (typeof window.aplicarEstiloEstadoSelect === 'function') {
-                window.aplicarEstiloEstadoSelect(this);
-            }
-        });
+
+        // Evitar listeners duplicados.
+        if (!select.dataset.estadoStyleBound) {
+            select.dataset.estadoStyleBound = '1';
+            select.addEventListener('change', function() {
+                if (typeof window.aplicarEstiloEstadoSelect === 'function') {
+                    window.aplicarEstiloEstadoSelect(this);
+                }
+            });
+        }
     });
 }
 
-// Ejecutar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', aplicarEstilosIniciales);
+// Aplicar en primer render.
+document.addEventListener('DOMContentLoaded', () => {
+    requestAnimationFrame(aplicarEstilosIniciales);
+});
 
-// También ejecutar después de que todas las imágenes hayan cargado (por si hay lazy loading)
-window.addEventListener('load', aplicarEstilosIniciales);
-
-// Y ejecutar cada 500ms durante los primeros 3 segundos en caso de que los selects se cargen dinámicamente
-let intentos = 0;
-const intervalo = setInterval(() => {
-    aplicarEstilosIniciales();
-    intentos++;
-    if (intentos >= 6) {
-        clearInterval(intervalo);
-    }
-}, 500);
+// Reaplicar cuando la tabla se refresca por AJAX (búsqueda/filtros/paginación).
+document.addEventListener('insumosTableUpdated', () => {
+    requestAnimationFrame(aplicarEstilosIniciales);
+});
 </script>
 
 {{-- Incluir modales de insumos --}}

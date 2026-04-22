@@ -793,6 +793,7 @@ export class PedidosRecibosModule {
         // (printReceiptModal lee prendaData desde el estado)
         this.modalManager.setState({
             prendaData,
+            prendaPedidoId: prendaData?.prenda_pedido_id || prendaData?.id || null,
             procesosActuales: recibos,
             procesoActualIndice: reciboIndice,
             tipoProceso
@@ -2023,11 +2024,13 @@ const _originalToggleFactura = window.toggleFactura;
 
 window.toggleFactura = function() {
     console.log('[toggleFactura-PRM] Toggle entre recibo y galería');
-    
+
     // Verificar si PedidosRecibosModule tiene estado activo
     const estado = window.pedidosRecibosModule ? window.pedidosRecibosModule.getEstado() : null;
-    const tieneEstadoActivo = estado && estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId);
-    
+    console.log('[toggleFactura-PRM] Estado actual:', estado);
+    const tieneEstadoActivo = estado && estado.pedidoId && estado.prendaId;
+    console.log('[toggleFactura-PRM] ¿Tiene estado activo?', tieneEstadoActivo, {pedidoId: estado?.pedidoId, prendaId: estado?.prendaId, prendaPedidoId: estado?.prendaPedidoId});
+
     if (!tieneEstadoActivo) {
         // Sin estado activo → usar la implementación original si existe
         console.log('[toggleFactura-PRM] Sin estado activo, delegando a implementación original');
