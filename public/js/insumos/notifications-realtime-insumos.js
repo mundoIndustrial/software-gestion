@@ -319,7 +319,18 @@ function initNotificationsRealtimeInsumos() {
             };
 
             const bindWithSharedWs = () => {
-                const ws = window.shared?.websocket;
+                if (!window.shared?.isReady) {
+                    return false;
+                }
+
+                let ws = null;
+                try {
+                    ws = window.shared.websocket;
+                } catch (_error) {
+                    // shared.websocket puede lanzar si EchoInstance aún no está listo.
+                    return false;
+                }
+
                 if (!ws || typeof ws.subscribe !== 'function') {
                     return false;
                 }
@@ -364,10 +375,22 @@ function initNotificationsRealtimeInsumos() {
                 tryBindRealtime();
             });
 
+            if (typeof window.waitForEcho === 'function') {
+                window.waitForEcho(() => {
+                    tryBindRealtime();
+                });
+            }
+
             if (!echoInitRequested && typeof window.initEcho === 'function') {
                 echoInitRequested = true;
                 window.initEcho()
-                    .then(() => {
+                    .then((echo) => {
+                        // Compatibilidad con shared.websocket (espera window.EchoInstance).
+                        if (!window.EchoInstance && echo) {
+                            window.EchoInstance = echo;
+                        } else if (!window.EchoInstance && window.Echo) {
+                            window.EchoInstance = window.Echo;
+                        }
                         tryBindRealtime();
                     })
                     .catch((error) => {

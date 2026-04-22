@@ -65,9 +65,16 @@ class RecibosViewTransformer
     public function transform($recibos, array $parcialCreatedAtMap, callable $calcularDiasCallback, array $materialesMap = [])
     {
         return $recibos->map(function ($recibo) use ($parcialCreatedAtMap, $calcularDiasCallback, $materialesMap) {
+            $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
+            $fechaRecibo = $recibo->recibo_created_at ?? null;
+            $fechaPedido = $recibo->pedido_created_at ?? null;
+            $fechaBaseInicio = $tipoRecibo === 'REFLECTIVO'
+                ? ($fechaRecibo ?? $fechaPedido ?? ($recibo->created_at ?? null))
+                : ($fechaPedido ?? ($recibo->created_at ?? null) ?? $fechaRecibo);
+
             $diasCalculados = 0;
-            if ($recibo->created_at) {
-                $fechaInicio = Carbon::parse($recibo->created_at);
+            if ($fechaBaseInicio) {
+                $fechaInicio = Carbon::parse($fechaBaseInicio);
                 $diasCalculados = $calcularDiasCallback($fechaInicio);
             }
 
@@ -78,7 +85,7 @@ class RecibosViewTransformer
             }
 
             $esParcial = $parcialId !== null;
-            $fechaInicioOrden = $recibo->created_at;
+            $fechaInicioOrden = $fechaBaseInicio;
             if ($esParcial && isset($parcialCreatedAtMap[$parcialId]) && $parcialCreatedAtMap[$parcialId]) {
                 $fechaInicioOrden = $parcialCreatedAtMap[$parcialId];
             }

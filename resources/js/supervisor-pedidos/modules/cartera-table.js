@@ -96,6 +96,9 @@ export class CarteraTable {
      * Cargar pedidos desde API
      */
     async loadPedidos() {
+        const startTime = performance.now();
+        console.log(`%c[TABLA] Cargando pedidos... página ${this.currentPage}`, 'color: #3b82f6; font-weight: bold;');
+
         try {
             this.showLoading('Cargando pedidos...');
 
@@ -110,14 +113,31 @@ export class CarteraTable {
                 filtro_fecha_hasta: this.filtroFechaHasta,
             });
 
+            const apiStartTime = performance.now();
             const response = await fetch(`${this.apiBase}?${params}`);
+            const apiDuration = performance.now() - apiStartTime;
+
+            console.log(`%c🔌 API Response: ${response.status} en ${apiDuration.toFixed(2)}ms`,
+                apiDuration > 500 ? 'color: #ef4444;' : 'color: #10b981;'
+            );
+
             const result = await response.json();
 
             if (result.success) {
                 this.data = result.data || [];
                 this.totalPages = result.total_pages || 1;
+
+                const renderStartTime = performance.now();
                 this.renderTable();
                 this.renderPagination();
+                const renderDuration = performance.now() - renderStartTime;
+
+                console.log(`%c📊 Tabla renderizada: ${this.data.length} filas en ${renderDuration.toFixed(2)}ms`,
+                    renderDuration > 200 ? 'color: #f97316;' : 'color: #10b981;'
+                );
+
+                const totalDuration = performance.now() - startTime;
+                console.log(`%c✅ Carga completa en ${totalDuration.toFixed(2)}ms`, 'color: #10b981; font-weight: bold;');
             }
         } catch (error) {
             console.error('[CarteraTable] Error loading pedidos:', error);

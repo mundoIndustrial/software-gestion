@@ -161,6 +161,7 @@
                                     </button>
                                 </div>
                             </th>
+                            @unless($esGestionReflectivo)
                             <th class="text-center py-4 px-6 font-bold" style="min-width: 220px;">
                                 <div class="flex items-center justify-center gap-2">
                                     <span>Estado</span>
@@ -174,6 +175,7 @@
                                     </button>
                                 </div>
                             </th>
+                            @endunless
                             @unless($esGestionReflectivo)
                             <th class="text-center py-4 px-6 font-bold">
                                 <div class="flex items-center justify-center gap-2">
@@ -312,6 +314,7 @@
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
+                                @unless($esGestionReflectivo)
                                 <td class="py-6 px-6 text-center min-h-20" style="min-width: 220px;">
                                     @php
                                         $estadoClass = '';
@@ -358,7 +361,7 @@
                                         {{-- SELECTOR EDITABLE --}}
                                         <div class="relative block w-full flex items-center justify-center">
                                             <select 
-                                                class="estado-select px-2 py-2 rounded-full text-xs font-semibold border cursor-pointer leading-tight whitespace-nowrap {{ $estadoClass }}"
+                                                class="estado-select px-2 py-2 rounded-full text-xs font-semibold border border-gray-300 cursor-pointer leading-tight whitespace-nowrap {{ $estadoClass }}"
                                                 style="min-height: 2rem; line-height: 1.2; white-space: nowrap; width: 100%; max-width: 350px; outline: none;"
                                                 data-recibo-id="{{ $orden->id }}"
                                                 data-estado-actual="{{ $orden->estado }}"
@@ -391,6 +394,7 @@
                                         </span>
                                     @endif
                                 </td>
+                                @endunless
                                 @unless($esGestionReflectivo)
                                 <td class="py-4 px-6 text-center">
                                     @php

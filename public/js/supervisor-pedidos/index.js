@@ -503,16 +503,59 @@ async function refreshVerButtonsBodegaBadges() {
     const buttons = Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'));
     if (buttons.length === 0) return;
 
-    await Promise.all(buttons.map(async (button) => {
-        const pedidoId = String(button.getAttribute('data-pedido-id') || '').trim();
-        if (!pedidoId) {
-            _spRenderBadgeOnVerButton(button, 0);
+    // Extraer todos los pedido_ids
+    const pedidoIds = buttons
+        .map(b => String(b.getAttribute('data-pedido-id') || '').trim())
+        .filter(id => id);
+
+    if (pedidoIds.length === 0) {
+        buttons.forEach(b => _spRenderBadgeOnVerButton(b, 0));
+        return;
+    }
+
+    try {
+        // UNA SOLA LLAMADA para obtener los resumenes de todos los pedidos
+        const response = await fetch('/api/supervisor-pedidos/ordenes/bodega-novedades-resumen-batch', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+            body: JSON.stringify({ pedido_ids: pedidoIds }),
+        });
+
+        if (!response.ok) {
+            // Fallback: hacer las llamadas individuales si el batch falla
+            await Promise.all(buttons.map(async (button) => {
+                const pedidoId = String(button.getAttribute('data-pedido-id') || '').trim();
+                const payload = await _spFetchBodegaResumen(pedidoId);
+                _spRenderBadgeOnVerButton(button, payload?.notes_count ?? 0);
+            }));
             return;
         }
 
-        const payload = await _spFetchBodegaResumen(pedidoId);
-        _spRenderBadgeOnVerButton(button, payload?.notes_count ?? 0);
-    }));
+        const data = await response.json();
+        if (!data?.success || !Array.isArray(data.data)) {
+            console.warn('[BodegaBadges] Respuesta inválida del batch endpoint');
+            return;
+        }
+
+        // Mapear resultados por pedido_id
+        const resumenMap = new Map(data.data.map(r => [String(r.pedido_id), r]));
+
+        // Renderizar badges para todos los botones
+        buttons.forEach(button => {
+            const pedidoId = String(button.getAttribute('data-pedido-id') || '').trim();
+            const resumen = resumenMap.get(pedidoId);
+            _spRenderBadgeOnVerButton(button, resumen?.notes_count ?? 0);
+        });
+    } catch (error) {
+        console.error('[BodegaBadges] Error:', error);
+        // Fallback silencioso
+        buttons.forEach(b => _spRenderBadgeOnVerButton(b, 0));
+    }
 }
 
 function _spEnsureBodegaNovedadesModal() {

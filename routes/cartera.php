@@ -32,7 +32,7 @@ Route::middleware(['auth', 'role:cartera,admin,supervisor_gerencia'])->prefix('c
 // ========================================
 // API CARTERA - PEDIDOS (CRUD Y OPERACIONES)
 // ========================================
-Route::middleware(['auth', 'role:cartera,admin,supervisor_gerencia'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
+Route::middleware(['auth', 'role:cartera,admin,supervisor_gerencia,supervisor_pedidos'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
     // GET pedidos por estado (cartera) - principal para pendientes
     Route::get('/pedidos', [CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
     

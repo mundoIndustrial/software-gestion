@@ -48,8 +48,7 @@ class PedidoProduccionReadService
                 'updated_at',
                 'ocultado_en',
             ])
-            ->with(['asesora:id,name'])
-            ->withCount(['prendas', 'epps']);
+            ->with(['asesora:id,name']);
 
         $this->applyStatusFilters($query);
         $this->applyHiddenFilter($query, $request);
@@ -589,13 +588,11 @@ class PedidoProduccionReadService
 
     private function applyEppOnlyFilter($query): void
     {
-        $query->where(function ($q) {
-            $q->whereHas('prendas')
-                ->orWhere(function ($subQuery) {
-                    $subQuery->whereDoesntHave('prendas')
-                        ->whereDoesntHave('epps');
-                });
-        });
+        // Optimizado: usar leftJoin con DISTINCT en lugar de whereHas (que es lento)
+        $query->leftJoin('prendas_pedido', 'pedidos_produccion.id', '=', 'prendas_pedido.pedido_produccion_id')
+            ->whereNull('prendas_pedido.deleted_at')
+            ->distinct()
+            ->select('pedidos_produccion.*');
     }
 
     private function applyApprovalFilter($query, ListOrdersRequest $request): void
@@ -691,19 +688,9 @@ class PedidoProduccionReadService
 
     private function orderAndPaginate($query, ListOrdersRequest $request)
     {
-        $latestAnexoSubquery = DB::table('pedido_anexos_historial')
-            ->select('pedido_produccion_id', DB::raw('MAX(created_at) as latest_anexo_at'))
-            ->groupBy('pedido_produccion_id');
-
-        return $query->leftJoinSub($latestAnexoSubquery, 'pah_latest', function ($join) {
-            $join->on('pah_latest.pedido_produccion_id', '=', 'pedidos_produccion.id');
-        })
-            // Orden por "última actividad":
-            // 1) última modificación registrada en la tabla de historial de anexos
-            // 2) si no hay modificaciones, fecha de creación del pedido
-            ->orderByRaw('COALESCE(pah_latest.latest_anexo_at, pedidos_produccion.created_at) DESC')
+        return $query
+            ->orderBy('pedidos_produccion.updated_at', 'desc')
             ->orderBy('pedidos_produccion.created_at', 'desc')
-            ->orderBy('pedidos_produccion.numero_pedido', 'desc')
             ->paginate($request->getPerPage(), ['pedidos_produccion.*'], 'page', $request->getPage())
             ->appends($request->getAppends());
     }

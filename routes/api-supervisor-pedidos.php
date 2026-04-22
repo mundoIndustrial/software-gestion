@@ -45,6 +45,8 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
         Route::get('/ordenes/{pedidoId}/bodega-novedades-resumen', [SupervisorReceiptsController::class, 'resumenNovedadesBodegaCostura'])
             ->whereNumber('pedidoId')
             ->name('ordenes.bodega-novedades.resumen');
+        Route::post('/ordenes/bodega-novedades-resumen-batch', [SupervisorReceiptsController::class, 'resumenNovedadesBodegaBatch'])
+            ->name('ordenes.bodega-novedades.resumen-batch');
         Route::get('/ordenes/{pedidoId}/bodega-novedades', [SupervisorReceiptsController::class, 'obtenerNovedadesBodegaCostura'])
             ->whereNumber('pedidoId')
             ->name('ordenes.bodega-novedades.index');

@@ -415,7 +415,7 @@
     <!-- resources/js/bootstrap.js lo llamará vía notifyEchoReady() cuando esté listo -->
     <script src="{{ asset('js/supervisor-pedidos/layout/echo-ready.js') }}"></script>
 
-    @vite(['resources/js/app.js', 'resources/js/supervisor-pedidos/entry.js'])
+    @vite(['resources/js/app.js', 'resources/js/supervisor-pedidos/index.js'])
 
     <!-- DDD Core Bundles (Fase 3: 10 scripts → 2 bundles minificados) -->
     @if(app()->environment('production'))

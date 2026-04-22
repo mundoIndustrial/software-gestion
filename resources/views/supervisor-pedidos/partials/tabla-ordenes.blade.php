@@ -91,13 +91,18 @@
             </div>
         </div>
 
-        <!-- Filas -->
-        @if($ordenes->isEmpty())
-            <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
-                <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
-                <p style="font-size: 1rem; margin: 0;">No hay órdenes disponibles</p>
+        <!-- Filas - Se cargan dinámicamente con JavaScript -->
+        <div data-ordenes-body style="display: flex; flex-direction: column;">
+            <!-- Las órdenes se cargarán aquí vía API -->
+            <div style="padding: 2rem; text-align: center; color: #9ca3af;">
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    Cargando órdenes...
+                </div>
             </div>
-        @else
+        </div>
+
+        @if(false)
             @foreach($ordenes as $orden)
                 @php $estaSeleccionado = in_array($orden->id, $pedidosSeleccionados); @endphp
                 <div class="sp-orders-grid" style="
@@ -267,8 +272,12 @@
     </div>
 </div>
 
-<!-- Paginación Personalizada -->
-@if($ordenes->lastPage() > 1 || $ordenes->count() > 0)
+<!-- Paginación - Se actualiza dinámicamente con JavaScript -->
+<div data-ordenes-pagination style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+    <!-- Los botones de paginación se cargarán aquí vía JavaScript -->
+</div>
+
+@if(false)
     <div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
         <!-- Botón Primera Página (<<) -->
         @if($ordenes->onFirstPage())
@@ -335,4 +344,52 @@
         </span>
     </div>
 @endif
+
+<!-- Estilos para animación de carga y paginación -->
+<style>
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .pagination-btn {
+        padding: 10px 12px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 44px;
+        height: 44px;
+        color: #374151;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        color: #3b82f6;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f3f4f6;
+        border-color: #e5e7eb;
+    }
+
+    .pagination-btn.active {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border-color: #2563eb;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+</style>
 

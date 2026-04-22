@@ -30,6 +30,7 @@ class RecibosCosturaReadRepository
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
+                'consecutivos_recibos_pedidos.created_at as recibo_created_at',
                 'pedidos_produccion.numero_pedido',
                 'pedidos_produccion.numero_pedido as numero_pedido_original',
                 'pedidos_produccion.cliente',
@@ -38,7 +39,7 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.novedades as pedido_novedades',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
-                'pedidos_produccion.created_at',
+                'pedidos_produccion.created_at as pedido_created_at',
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
@@ -68,6 +69,7 @@ class RecibosCosturaReadRepository
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
+                'consecutivos_recibos_pedidos.created_at as recibo_created_at',
                 'pedidos_produccion.numero_pedido',
                 'pedidos_produccion.numero_pedido as numero_pedido_original',
                 'pedidos_produccion.cliente',
@@ -76,14 +78,14 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.novedades as pedido_novedades',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
-                'pedidos_produccion.created_at',
+                'pedidos_produccion.created_at as pedido_created_at',
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
             ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
     }
 
-    public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '')
+    public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '', string $tipoRecibo = 'COSTURA')
     {
         // LOG: Recibiendo parametros
         \Log::info('[applyFilters] INICIANDO', [
@@ -98,6 +100,11 @@ class RecibosCosturaReadRepository
             \Log::warning('[applyFilters]  ADVERTENCIA: No hay filtros para aplicar!');
             return $query;
         }
+
+        $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
+        $fechaColumn = $tipoReciboNormalizado === 'REFLECTIVO'
+            ? 'consecutivos_recibos_pedidos.created_at'
+            : 'pedidos_produccion.created_at';
 
         // Agrupar filtros por columna para manejar multiples valores de la misma columna
         $filtersByColumn = [];
@@ -116,7 +123,7 @@ class RecibosCosturaReadRepository
                     'cliente' => 'pedidos_produccion.cliente',
                     'estado' => 'consecutivos_recibos_pedidos.estado',  // ← RECIBO_ESTADO, no pedido_estado
                     'area' => 'consecutivos_recibos_pedidos.area',   // ← RECIBO_AREA, no pedido_area
-                    'created_at' => 'pedidos_produccion.created_at',
+                    'created_at' => $fechaColumn,
                     'consecutivo_actual' => 'consecutivos_recibos_pedidos.consecutivo_actual',
                     default => $column,
                 };
@@ -173,7 +180,7 @@ class RecibosCosturaReadRepository
                         }
                     }
                 });
-            } elseif ($dbColumn === 'pedidos_produccion.created_at') {
+            } elseif (in_array($dbColumn, ['pedidos_produccion.created_at', 'consecutivos_recibos_pedidos.created_at'], true)) {
                 // Para fechas: convertir y usar whereDate
                 \Log::info('[applyFilters] Aplicando filtro de fecha');
                 $dates = [];

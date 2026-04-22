@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Http\Controllers\Cartera;
 
 use App\Http\Controllers\Controller;
+use App\Application\Shared\Services\PerformanceLogger;
 use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosPendientesUseCase;
 use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosAprobadosUseCase;
 use App\Application\Pedidos\UseCases\Cartera\ObtenerPedidosRechazadosUseCase;
@@ -20,51 +21,87 @@ class CarteraPedidosController extends Controller
      */
     public function obtenerPedidos(Request $request, ObtenerPedidosPendientesUseCase $useCase)
     {
-        $filtros = [
-            'page' => max(1, (int) $request->get('page', 1)),
-            'per_page' => max(1, min((int) $request->get('per_page', 15), 100)),
-            'search' => $request->get('search', ''),
-            'cliente' => $request->get('cliente', ''),
-            'fecha_desde' => $request->get('fecha_desde', ''),
-            'fecha_hasta' => $request->get('fecha_hasta', ''),
-            'sort_by' => $request->get('sort_by', 'fecha'),
-            'sort_order' => in_array(strtolower($request->get('sort_order', 'desc')), ['asc', 'desc']) ? strtolower($request->get('sort_order', 'desc')) : 'desc',
-        ];
-
-        $resultado = $useCase->execute($filtros);
-
-        if (!$resultado['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $resultado['message'] ?? 'Error al obtener pedidos'
-            ], 500);
-        }
-
-        $data = $resultado['data'];
-        $pedidos = $data['pedidos']->map(function($pedido) {
-            return [
-                'id' => $pedido->id,
-                'numero' => $pedido->numero_pedido,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cliente_nombre' => $pedido->cliente,
-                'cliente' => $pedido->cliente,
-                'estado' => $pedido->estado,
-                'created_at' => $pedido->created_at ?? $pedido->created_at
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $pedidos,
-            'pagination' => [
-                'page' => $data['page'],
-                'per_page' => $data['per_page'],
-                'total' => $data['total'],
-                'last_page' => $data['last_page'],
-                'from' => ($data['page'] - 1) * $data['per_page'] + 1,
-                'to' => min($data['page'] * $data['per_page'], $data['total'])
-            ]
+        // Iniciar logging de performance
+        PerformanceLogger::startRequest('GET /api/cartera/pedidos');
+        PerformanceLogger::marker('CONTROLLER_START', [
+            'page' => $request->get('page', 1),
+            'per_page' => $request->get('per_page', 15),
+            'has_search' => !empty($request->get('search')),
+            'has_filters' => !empty($request->get('cliente')) || !empty($request->get('fecha_desde')),
         ]);
+
+        try {
+            $filtros = [
+                'page' => max(1, (int) $request->get('page', 1)),
+                'per_page' => max(1, min((int) $request->get('per_page', 15), 100)),
+                'search' => $request->get('search', ''),
+                'cliente' => $request->get('cliente', ''),
+                'fecha_desde' => $request->get('fecha_desde', ''),
+                'fecha_hasta' => $request->get('fecha_hasta', ''),
+                'sort_by' => $request->get('sort_by', 'fecha'),
+                'sort_order' => in_array(strtolower($request->get('sort_order', 'desc')), ['asc', 'desc']) ? strtolower($request->get('sort_order', 'desc')) : 'desc',
+            ];
+
+            PerformanceLogger::marker('PARAMS_PREPARED');
+
+            $resultado = $useCase->execute($filtros);
+
+            PerformanceLogger::marker('USE_CASE_EXECUTED', [
+                'success' => $resultado['success'] ?? false,
+                'error' => $resultado['message'] ?? null,
+            ]);
+
+            if (!$resultado['success']) {
+                PerformanceLogger::endRequest(500);
+                return response()->json([
+                    'success' => false,
+                    'message' => $resultado['message'] ?? 'Error al obtener pedidos'
+                ], 500);
+            }
+
+            $data = $resultado['data'];
+            $pedidos = $data['pedidos']->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero' => $pedido->numero_pedido,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_nombre' => $pedido->cliente,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'created_at' => $pedido->created_at ?? $pedido->created_at
+                ];
+            });
+
+            PerformanceLogger::marker('DATA_MAPPED', [
+                'pedidos_count' => count($pedidos),
+            ]);
+
+            $response = [
+                'success' => true,
+                'data' => $pedidos,
+                'pagination' => [
+                    'page' => $data['page'],
+                    'per_page' => $data['per_page'],
+                    'total' => $data['total'],
+                    'last_page' => $data['last_page'],
+                    'from' => ($data['page'] - 1) * $data['per_page'] + 1,
+                    'to' => min($data['page'] * $data['per_page'], $data['total'])
+                ]
+            ];
+
+            // Agregar timing si está disponible
+            if (config('app.debug')) {
+                $perf = PerformanceLogger::getSummary();
+                $response['_timing'] = $perf;
+            }
+
+            PerformanceLogger::endRequest(200);
+
+            return response()->json($response);
+        } catch (\Exception $e) {
+            PerformanceLogger::endRequest(500);
+            throw $e;
+        }
     }
 
     /**

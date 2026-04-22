@@ -552,25 +552,15 @@ class SupervisorReceiptsController extends Controller
             ], 404);
         }
 
-        $numeroPedidoNormalizado = str_replace('#', '', trim((string) $pedido->numero_pedido));
-
         $pendientesCount = DB::table('bodega_detalles_talla as bdt')
             ->whereNull('bdt.deleted_at')
-            ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
-            ->whereRaw("LOWER(TRIM(COALESCE(bdt.estado_bodega, ''))) = 'pendiente'")
-            ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
-                $q->where('bdt.pedido_produccion_id', $pedidoId)
-                    ->orWhere('bdt.numero_pedido', (string) $pedido->numero_pedido)
-                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bdt.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
-            })
+            ->where('bdt.area', 'costura')
+            ->where('bdt.estado_bodega', 'pendiente')
+            ->where('bdt.pedido_produccion_id', $pedidoId)
             ->count();
 
         $notesCount = DB::table('bodega_notas as bn')
-            ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
-                $q->where('bn.pedido_produccion_id', $pedidoId)
-                    ->orWhere('bn.numero_pedido', (string) $pedido->numero_pedido)
-                    ->orWhereRaw("REPLACE(TRIM(COALESCE(bn.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
-            })
+            ->where('bn.pedido_produccion_id', $pedidoId)
             ->count();
 
         return response()->json([
@@ -581,6 +571,48 @@ class SupervisorReceiptsController extends Controller
             'has_pending' => $pendientesCount > 0,
             'notes_count' => (int) $notesCount,
             'has_notes' => $notesCount > 0,
+        ]);
+    }
+
+    public function resumenNovedadesBodegaBatch(Request $request): JsonResponse
+    {
+        $pedidoIds = $request->input('pedido_ids', []);
+        if (!is_array($pedidoIds) || empty($pedidoIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'pedido_ids requerido y debe ser un array',
+            ], 400);
+        }
+
+        $pedidos = DB::table('pedidos_produccion')
+            ->select('id', 'numero_pedido')
+            ->whereIn('id', array_slice($pedidoIds, 0, 50))
+            ->get()
+            ->keyBy('id');
+
+        $notas = DB::table('bodega_notas as bn')
+            ->whereIn('bn.pedido_produccion_id', $pedidoIds)
+            ->select('bn.pedido_produccion_id')
+            ->selectRaw('COUNT(*) as notes_count')
+            ->groupBy('bn.pedido_produccion_id')
+            ->get()
+            ->keyBy('pedido_produccion_id');
+
+        $resultado = [];
+        foreach ($pedidoIds as $pedidoId) {
+            if (!isset($pedidos[$pedidoId])) continue;
+
+            $notesCount = (int) ($notas[$pedidoId]->notes_count ?? 0);
+            $resultado[] = [
+                'pedido_id' => $pedidoId,
+                'notes_count' => $notesCount,
+                'has_notes' => $notesCount > 0,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $resultado,
         ]);
     }
 

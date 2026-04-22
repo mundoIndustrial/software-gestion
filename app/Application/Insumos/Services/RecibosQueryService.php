@@ -71,14 +71,19 @@ class RecibosQueryService
                 $filterColumns,
                 $filterValuesArray,
                 $filterValues,
-                $search
+                $search,
+                $tipoRecibo
             );
 
             $page = (int) $request->get('page', 1);
             $perPage = 10;
+            $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
+            $fechaOrdenColumn = $tipoReciboNormalizado === 'REFLECTIVO'
+                ? 'consecutivos_recibos_pedidos.created_at'
+                : 'pedidos_produccion.created_at';
 
             $paginador = $query
-                ->orderByRaw('COALESCE(consecutivos_recibos_pedidos.updated_at, consecutivos_recibos_pedidos.created_at) DESC')
+                ->orderByDesc($fechaOrdenColumn)
                 ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page);
 

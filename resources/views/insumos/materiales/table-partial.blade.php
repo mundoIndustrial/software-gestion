@@ -58,6 +58,7 @@
                             </button>
                         </div>
                     </th>
+                    @unless($esGestionReflectivo)
                     <th class="text-center py-4 px-6 font-bold">
                         <div class="flex items-center justify-center gap-2">
                             <span>Estado</span>
@@ -71,6 +72,7 @@
                             </button>
                         </div>
                     </th>
+                    @endunless
                     @unless($esGestionReflectivo)
                     <th class="text-center py-4 px-6 font-bold">
                         <div class="flex items-center justify-center gap-2">
@@ -208,6 +210,7 @@
                         <td class="py-4 px-6">
                             <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                         </td>
+                        @unless($esGestionReflectivo)
                         <td class="py-6 px-6 text-center min-h-20">
                             @php
                                 $estadoValor = $orden->estado ?? $orden->recibo_estado;
@@ -280,6 +283,7 @@
                                 </span>
                             @endif
                         </td>
+                        @endunless
                         @unless($esGestionReflectivo)
                         <td class="py-4 px-6 text-center">
                             @php

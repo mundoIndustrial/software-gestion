@@ -13,10 +13,12 @@
  * - realtime-manager.js → Echo setup (on-demand)
  */
 
+import { OrdenesLoader } from './modules/ordenes-loader.js';
 import { initializeCarteraTable } from './modules/table-manager.js';
 import { initializeFilters } from './modules/filter-manager.js';
 import { initializeRealtime } from './modules/realtime-manager.js';
 import { initializeInvoiceManager } from './modules/invoice-manager.js';
+import { initPerformanceMonitor, getPerformanceMonitor } from './modules/performance-monitor.js';
 
 const initState = {
     isReady: false,
@@ -112,6 +114,10 @@ async function initInvoiceIfNeeded() {
  * Inicializador principal
  */
 async function initSupervisorPedidos() {
+    // Inicializar monitor de performance al inicio
+    const perfMonitor = initPerformanceMonitor();
+    perfMonitor.mark('SUPERVISOR_PEDIDOS_INIT_START');
+
     if (initState.isReady) {
         console.warn('[SP] Ya inicializado, skip');
         return;
@@ -124,25 +130,35 @@ async function initSupervisorPedidos() {
 
     try {
         console.log('[SP] 🚀 Iniciando...');
+        perfMonitor.mark('SUPERVISOR_VIEW_DETECTED');
 
         // Cargar tabla y filtros en paralelo (son independientes)
+        perfMonitor.mark('STARTING_TABLE_AND_FILTERS');
         await Promise.all([
             initTable(),
             initFilters(),
         ]);
+        perfMonitor.mark('TABLE_AND_FILTERS_READY');
 
         // Realtime: bajo demanda, no bloquea
+        perfMonitor.mark('STARTING_REALTIME_CHECK');
         await initRealtimeIfNeeded();
+        perfMonitor.mark('REALTIME_READY');
 
         // Invoice: bajo demanda, se carga después de tabla
+        perfMonitor.mark('STARTING_INVOICE_CHECK');
         await initInvoiceIfNeeded();
+        perfMonitor.mark('INVOICE_READY');
 
         // Mark as ready
         initState.isReady = true;
         initState.initializedAt = new Date().toISOString();
 
+        perfMonitor.mark('MODULE_FULLY_READY');
+
         // Exponer para debugging
         globalThis.supervisorPedidosState = Object.freeze({ ...initState });
+        globalThis.supervisorPedidosMonitor = perfMonitor;
 
         // Event para testing
         document.dispatchEvent(new CustomEvent('supervisor-pedidos:ready', {
@@ -150,6 +166,7 @@ async function initSupervisorPedidos() {
         }));
 
         console.log('[SP] ✅ Module ready', initState);
+        console.log('[PERF] Typing: perfMonitor.report() in console for details');
     } catch (error) {
         console.error('[SP] ❌ Initialization failed:', error);
         // No re-throw, dejar que el usuario vea la página aunque algo falló
@@ -164,9 +181,33 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         // Pequeño delay para que Blade renderice completamente
         setTimeout(initSupervisorPedidos, 100);
+        // Inicializar cargador de órdenes (tabla optimizada con API)
+        // Mayor delay para asegurar que el DOM esté completamente listo
+        setTimeout(() => {
+            if (document.querySelector('[data-ordenes-body]')) {
+                window.ordenesLoader = new OrdenesLoader({ perPage: 15 });
+            } else {
+                console.warn('[SP] Contenedor de órdenes no encontrado');
+            }
+        }, 300);
     });
 } else {
     setTimeout(initSupervisorPedidos, 100);
+    setTimeout(() => {
+        console.log('[SP] Intentando inicializar OrdenesLoader...');
+        const container = document.querySelector('[data-ordenes-body]');
+        console.log('[SP] Contenedor encontrado:', !!container);
+        if (container) {
+            try {
+                window.ordenesLoader = new OrdenesLoader({ perPage: 15 });
+                console.log('[SP] OrdenesLoader inicializado exitosamente');
+            } catch (error) {
+                console.error('[SP] Error al inicializar OrdenesLoader:', error);
+            }
+        } else {
+            console.warn('[SP] Contenedor [data-ordenes-body] no encontrado');
+        }
+    }, 300);
 }
 
 // Exportar para testing/debugging
