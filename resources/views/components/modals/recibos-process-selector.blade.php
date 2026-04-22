@@ -35,6 +35,17 @@
             <p id="selector-error-message" style="margin: 8px 0 0 0; font-size: 14px;"></p>
         </div>
 
+        <div id="selector-entrega-masiva-actions" style="display: none; margin-bottom: 14px; padding: 12px; border: 1px solid #d1fae5; border-radius: 10px; background: #ecfdf5; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+            <button id="btn-entregar-todas-prendas"
+                    type="button"
+                    class="btn-entregar-todas-prendas"
+                    onclick="event.stopPropagation(); marcarTodasPrendasEntregadas(window.selectorRecibosState?.pedidoId, { fromSelector: true });">
+                <i class="fas fa-check-double"></i>
+                <span>Entregar todas</span>
+            </button>
+            <span id="selector-entrega-masiva-resumen" style="font-size: 12px; color: #065f46; font-weight: 600;"></span>
+        </div>
+
         <!-- Prendas List -->
         <div id="selector-prendas-list"></div>
 
@@ -208,6 +219,33 @@
         background: #d97706;
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-entregar-todas-prendas {
+        background: linear-gradient(135deg, #0f766e, #0d9488);
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-entregar-todas-prendas:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+    }
+
+    .btn-entregar-todas-prendas:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
     }
 
     .btn-ver-entregas-prenda {
@@ -770,6 +808,54 @@
         }
     });
 
+    function resolverEstadoEntregaPrenda(prenda, recibos = []) {
+        const todosRecibosEnDespacho = Array.isArray(recibos)
+            && recibos.length > 0
+            && recibos.every((recibo) => String(recibo?.area || '').trim().toUpperCase() === 'DESPACHO');
+        const estadoEntregaBackend = String(prenda?.entrega?.estado_entrega || '').toLowerCase();
+        const entregadoFlag = prenda?.entrega?.entregado === true
+            || prenda?.entrega?.entregado === 1
+            || prenda?.entrega?.entregado === '1';
+
+        if (entregadoFlag) {
+            return 'completo';
+        }
+
+        if (estadoEntregaBackend) {
+            return estadoEntregaBackend;
+        }
+
+        return todosRecibosEnDespacho ? 'completo' : 'pendiente';
+    }
+
+    function actualizarPanelEntregaMasiva(prendas = []) {
+        const panel = document.getElementById('selector-entrega-masiva-actions');
+        const resumen = document.getElementById('selector-entrega-masiva-resumen');
+        const boton = document.getElementById('btn-entregar-todas-prendas');
+
+        if (!panel || !resumen || !boton) {
+            return;
+        }
+
+        const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+        if (ocultarBotonEntregar) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        const total = Array.isArray(prendas) ? prendas.length : 0;
+        const pendientes = (Array.isArray(prendas) ? prendas : []).filter((prenda) => {
+            return resolverEstadoEntregaPrenda(prenda) !== 'completo';
+        }).length;
+
+        const mostrarPanel = total > 0 && pendientes > 0;
+        panel.style.display = mostrarPanel ? 'flex' : 'none';
+        boton.disabled = !mostrarPanel;
+        resumen.textContent = mostrarPanel
+            ? `${pendientes} prenda(s) pendiente(s) de ${total}`
+            : '';
+    }
+
     /**
      * Abre el modal selector de recibos
      * @param {number} pedidoId - ID del pedido
@@ -793,6 +879,7 @@
         loading.style.display = 'block';
         error.style.display = 'none';
         document.getElementById('selector-prendas-list').innerHTML = '';
+        actualizarPanelEntregaMasiva([]);
 
         // Resetear contadores al abrir modal
         prendaAccordionClickCount = 0;
@@ -819,6 +906,7 @@
             // Actualizar número de pedido (puede ser null)
             const numeroPedido = datos.numero || datos.numero_pedido || datos.id;
             document.getElementById('selector-pedido-numero').textContent = `#${numeroPedido}`;
+            window.selectorRecibosState.numeroPedido = numeroPedido;
 
             // Renderizar prendas
             renderizarPrendasEnSelector(datos.prendas);
@@ -985,21 +1073,7 @@
             const indicadorBodega = prenda.de_bodega == 1 ? ' <span style="color: #ef4444; font-size: 12px; font-weight: 600; margin-left: 8px;">(SE SACA DE BODEGA)</span>' : '';
 
             // Verificar si la prenda está entregada
-            const todosRecibosEnDespacho = Array.isArray(recibos)
-                && recibos.length > 0
-                && recibos.every((recibo) => String(recibo?.area || '').trim().toUpperCase() === 'DESPACHO');
-            const estadoEntregaBackend = String(prenda.entrega?.estado_entrega || '').toLowerCase();
-            const entregadoFlag = prenda.entrega?.entregado === true
-                || prenda.entrega?.entregado === 1
-                || prenda.entrega?.entregado === '1';
-
-            // Prioridad de estado:
-            // 1) Si la BD marcó entregado=true, siempre mostrar completo.
-            // 2) Si no está entregado, usar estado_entrega del backend (parcial/pendiente/completo).
-            // 3) Como fallback, inferir por área de recibos.
-            const estadoEntrega = entregadoFlag
-                ? 'completo'
-                : (estadoEntregaBackend || (todosRecibosEnDespacho ? 'completo' : 'pendiente'));
+            const estadoEntrega = resolverEstadoEntregaPrenda(prenda, recibos);
             const estaEntregada = estadoEntrega === 'completo';
             const entregaParcial = estadoEntrega === 'parcial';
             const claseEntregada = estaEntregada ? 'entregada' : '';
@@ -1287,6 +1361,7 @@
         });
 
         container.innerHTML = html;
+        actualizarPanelEntregaMasiva(prendas);
 
         // Restaurar estado UI (acordeones abiertos) si existe
         try {
@@ -2181,6 +2256,173 @@
      * @param {HTMLElement} button - Botón que se clickeó
      * @param {number} prendaId - ID de la prenda
      */
+    window.marcarTodasPrendasEntregadas = async function(pedidoId, options = {}) {
+        const pedidoIdNumerico = Number(pedidoId || window.selectorRecibosState?.pedidoId || 0);
+        if (!pedidoIdNumerico) {
+            throw new Error('No se pudo determinar el pedido para la entrega masiva.');
+        }
+
+        const numeroPedido = options?.numeroPedido || window.selectorRecibosState?.numeroPedido || pedidoIdNumerico;
+        const btnMasivo = document.getElementById('btn-entregar-todas-prendas');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        let prendasActivas = [];
+        let prendasPendientes = [];
+
+        try {
+            const datosResponse = await fetch(`/pedidos-public/${pedidoIdNumerico}/recibos-datos`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!datosResponse.ok) {
+                throw new Error(`No se pudo obtener el detalle del pedido (HTTP ${datosResponse.status}).`);
+            }
+
+            const datosResult = await datosResponse.json();
+            const datos = datosResult.data || datosResult || {};
+            const pedidoEstado = String(datos.estado || window.selectorRecibosState?.pedidoEstado || '').toUpperCase();
+
+            if (pedidoEstado === 'PENDIENTE_SUPERVISOR') {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Pedido sin aprobar',
+                        text: 'No puedes entregar prendas hasta que el pedido sea aprobado por supervisor.',
+                        confirmButtonColor: '#f59e0b',
+                    });
+                } else {
+                    alert('No puedes entregar prendas hasta que el pedido sea aprobado por supervisor.');
+                }
+                return;
+            }
+
+            prendasActivas = (Array.isArray(datos.prendas) ? datos.prendas : [])
+                .filter((prenda) => !prenda?.deleted_at && Number(prenda?.id || 0) > 0);
+            prendasPendientes = prendasActivas.filter((prenda) => resolverEstadoEntregaPrenda(prenda) !== 'completo');
+
+            if (prendasPendientes.length === 0) {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Todo al dia',
+                        text: 'Todas las prendas ya estaban marcadas como entregadas.',
+                        confirmButtonColor: '#10b981',
+                    });
+                } else {
+                    alert('Todas las prendas ya estaban marcadas como entregadas.');
+                }
+                actualizarPanelEntregaMasiva(prendasActivas);
+                return;
+            }
+        } catch (error) {
+            throw new Error(error?.message || 'No se pudo preparar la entrega masiva.');
+        }
+
+        const confirmarEntrega = typeof Swal !== 'undefined'
+            ? await Swal.fire({
+                icon: 'question',
+                title: `Entrega masiva #${numeroPedido}`,
+                text: `Se marcaran ${prendasPendientes.length} prenda(s) como entregadas. Deseas continuar?`,
+                showCancelButton: true,
+                confirmButtonText: 'Si, entregar todas',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d9488',
+                reverseButtons: true,
+            }).then((result) => result.isConfirmed)
+            : confirm(`Se marcaran ${prendasPendientes.length} prenda(s) como entregadas en el pedido #${numeroPedido}. Deseas continuar?`);
+
+        if (!confirmarEntrega) {
+            return;
+        }
+
+        if (btnMasivo) {
+            btnMasivo.disabled = true;
+        }
+
+        try {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Procesando entrega masiva',
+                    html: `<p>Actualizando ${prendasPendientes.length} prenda(s)...</p>`,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+            }
+
+            let procesadasOk = 0;
+            const errores = [];
+
+            for (const prenda of prendasPendientes) {
+                try {
+                    const response = await fetch(`/api/prendas-entregas/${prenda.id}/toggle`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || '',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            entregado: true,
+                            modo: 'completo',
+                        }),
+                    });
+
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || !result?.success) {
+                        throw new Error(result?.message || `HTTP ${response.status}`);
+                    }
+
+                    procesadasOk += 1;
+                } catch (error) {
+                    errores.push(`Prenda ${prenda?.nombre || prenda?.id || 'N/A'}: ${error?.message || 'Error desconocido'}`);
+                }
+            }
+
+            if (window.selectorRecibosState?.pedidoId && Number(window.selectorRecibosState.pedidoId) === pedidoIdNumerico) {
+                await cargarDatosRecibos(pedidoIdNumerico);
+            } else {
+                actualizarPanelEntregaMasiva(prendasActivas);
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+
+            const resumen = `Entregadas: ${procesadasOk}/${prendasPendientes.length}`;
+            if (typeof Swal !== 'undefined') {
+                if (errores.length > 0) {
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Entrega masiva parcial',
+                        html: `<div style="text-align:left;"><p style="margin-bottom:8px;">${resumen}</p><p style="margin:0; font-size:12px; color:#6b7280;">${errores.slice(0, 4).join('<br>')}</p></div>`,
+                        confirmButtonColor: '#f59e0b',
+                    });
+                } else {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Entrega masiva completada',
+                        text: resumen,
+                        confirmButtonColor: '#10b981',
+                    });
+                }
+            } else if (errores.length > 0) {
+                alert(`${resumen}\n\nErrores:\n${errores.slice(0, 4).join('\n')}`);
+            } else {
+                alert(`${resumen}`);
+            }
+        } finally {
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+            if (btnMasivo) {
+                btnMasivo.disabled = false;
+            }
+        }
+    };
+
     window.toggleEntregarPrenda = async function(button, prendaId) {
         const header = button.closest('.prenda-header');
         const buttonText = button.querySelector('span');
@@ -2305,9 +2547,12 @@
             const result = await response.json();
             const datos = result.data || result;
             window.selectorRecibosState.prendas = datos.prendas || [];
+            window.selectorRecibosState.pedidoEstado = datos.estado || window.selectorRecibosState.pedidoEstado || null;
 
             // Actualizar número de pedido
-            document.getElementById('selector-pedido-numero').textContent = `#${datos.numero_pedido}`;
+            const numeroPedido = datos.numero || datos.numero_pedido || datos.id || pedidoId;
+            window.selectorRecibosState.numeroPedido = numeroPedido;
+            document.getElementById('selector-pedido-numero').textContent = `#${numeroPedido}`;
 
             // Renderizar prendas con los datos actualizados
             renderizarPrendasEnSelector(datos.prendas);

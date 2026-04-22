@@ -89,6 +89,37 @@ function _spEscapeJsSingle(value) {
     return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+function _spHasAllPrendasEntregadas(orden) {
+    const pendientesCount = Number(orden?.prendas_pendientes_entrega_count);
+    if (Number.isFinite(pendientesCount)) {
+        return pendientesCount <= 0;
+    }
+
+    const estado = String(orden?.estado || '').trim().toUpperCase();
+    return estado === 'ENTREGADO' || estado === 'FINALIZADA' || estado === 'FINALIZADO';
+}
+
+async function marcarTodasPrendasEntregadasPedido(pedidoId, numeroPedido = '') {
+    if (!pedidoId) {
+        _spNotify.error('No se pudo determinar el pedido para entrega masiva.');
+        return;
+    }
+
+    if (typeof window.marcarTodasPrendasEntregadas !== 'function') {
+        _spNotify.error('La entrega masiva no esta disponible en este momento.');
+        return;
+    }
+
+    try {
+        await window.marcarTodasPrendasEntregadas(pedidoId, { numeroPedido });
+    } catch (error) {
+        console.error('[marcarTodasPrendasEntregadasPedido] Error:', error);
+        _spNotify.error(error?.message || 'No se pudo completar la entrega masiva.');
+    }
+}
+
+window.marcarTodasPrendasEntregadasPedido = marcarTodasPrendasEntregadasPedido;
+
 async function ensureEditorModulesReady() {
     if (typeof window.ensureSupervisorEditorModulesLoaded !== 'function') {
         return;
@@ -245,6 +276,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
             const cliente = _spEscapeHtml(orden?.cliente ?? '');
             const fecha = _spFormatDateTime(orden?.created_at);
             const canApprove = estado === 'PENDIENTE_SUPERVISOR' && !Boolean(orden?.es_solo_epp);
+            const canBulkDeliver = !_spHasAllPrendasEntregadas(orden);
             const jsNumero = _spEscapeJsSingle(numeroPedidoNoHash);
             const jsNumeroHash = _spEscapeJsSingle(String(numeroPedido));
 
@@ -262,6 +294,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                         <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones" style="position:relative;overflow:visible;"><i class="fas fa-eye"></i><span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span></button>
                         ${canApprove ? `<button class="btn-accion btn-accion--aprobar" onclick="abrirModalAprobacion(${orden.id}, '${jsNumero}')" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
                         ${canApprove ? `<button class="btn-accion btn-accion--anular" onclick="abrirModalAnulacion(${orden.id}, '${jsNumeroHash}')" title="Pasar a Revisión"><i class="fas fa-ban"></i></button>` : ''}
+                        ${canBulkDeliver ? `<button class="btn-accion" onclick="marcarTodasPrendasEntregadasPedido(${orden.id}, '${jsNumero}')" title="Marcar todas las prendas entregadas" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;"><i class="fas fa-check-double"></i></button>` : ''}
                         <button class="btn-accion btn-accion--ocultar" onclick="abrirModalOcultar(${orden.id}, '${jsNumero}')" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
                     </div>
                     <div><span style="font-size: 0.85rem; color: #6b7280;">${fecha}</span></div>

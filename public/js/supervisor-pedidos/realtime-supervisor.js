@@ -222,6 +222,16 @@ function _formatFechaPedido(fechaRaw) {
     }).replace(',', '');
 }
 
+function _rtHasAllPrendasEntregadas(orden) {
+    const pendientesCount = Number(orden?.prendas_pendientes_entrega_count);
+    if (Number.isFinite(pendientesCount)) {
+        return pendientesCount <= 0;
+    }
+
+    const estado = String(orden?.estado || '').trim().toUpperCase();
+    return estado === 'ENTREGADO' || estado === 'FINALIZADA' || estado === 'FINALIZADO';
+}
+
 function actualizarFilaEnTabla(fila, orden) {
     const celdas = fila.querySelectorAll('[data-field]');
     celdas.forEach(celda => {
@@ -317,6 +327,7 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
     };
     const estadoInfo = estadoColors[estado] || { bg: '#e2e3e5', text: '#383d41', label: estado };
     const safeNumero = String(numeroPedido).replace('#', '');
+    const canBulkDeliver = !_rtHasAllPrendasEntregadas(orden);
 
     const fila = document.createElement('div');
     fila.setAttribute('data-pedido-id', String(orden?.id || ''));
@@ -352,6 +363,15 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
                 title="Ver Opciones">
                 <i class="fas fa-eye"></i>
             </button>
+
+            ${canBulkDeliver ? `
+            <button class="btn-accion"
+                onclick="if (typeof marcarTodasPrendasEntregadasPedido === 'function') marcarTodasPrendasEntregadasPedido(${orden?.id || 'null'}, '${safeNumero}')"
+                title="Marcar todas las prendas entregadas"
+                style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
+                <i class="fas fa-check-double"></i>
+            </button>
+            ` : ''}
 
             <button class="btn-accion btn-accion--ocultar"
                 onclick="if (typeof abrirModalOcultar === 'function') abrirModalOcultar(${orden?.id || 'null'}, '${safeNumero}')"

@@ -592,7 +592,17 @@ class PedidoProduccionReadService
         $query->leftJoin('prendas_pedido', 'pedidos_produccion.id', '=', 'prendas_pedido.pedido_produccion_id')
             ->whereNull('prendas_pedido.deleted_at')
             ->distinct()
-            ->select('pedidos_produccion.*');
+            ->select([
+                'pedidos_produccion.*',
+                DB::raw("(
+                    SELECT COUNT(*)
+                    FROM prendas_pedido pp
+                    LEFT JOIN prenda_entregas pe ON pe.prenda_pedido_id = pp.id
+                    WHERE pp.pedido_produccion_id = pedidos_produccion.id
+                      AND pp.deleted_at IS NULL
+                      AND (pe.id IS NULL OR pe.entregado = 0)
+                ) as prendas_pendientes_entrega_count"),
+            ]);
     }
 
     private function applyApprovalFilter($query, ListOrdersRequest $request): void

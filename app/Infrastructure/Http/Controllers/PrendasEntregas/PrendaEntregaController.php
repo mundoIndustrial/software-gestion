@@ -464,7 +464,7 @@ final class PrendaEntregaController extends Controller
                 ->select(['id', 'nombre_prenda', 'pedido_produccion_id'])
                 ->findOrFail($prendaPedidoId);
 
-            $movimientos = PrendaEntregaMovimiento::query()
+            $movimientosParciales = PrendaEntregaMovimiento::query()
                 ->with([
                     'usuario:id,name',
                     'consecutivoRecibo:id,tipo_recibo,consecutivo_actual',
@@ -487,6 +487,55 @@ final class PrendaEntregaController extends Controller
                             ? array_values($movimiento->detalle_tallas)
                             : [],
                     ];
+                })
+                ->values()
+                ->all();
+
+            $movimientos = collect($movimientosParciales);
+
+            // Incluir entrega completa (tabla prenda_entregas) para que el historial
+            // no quede vacio cuando no hubo movimientos parciales por recibo.
+            $entregaCompleta = PrendaEntrega::query()
+                ->with('usuario:id,name')
+                ->where('prenda_pedido_id', $prendaPedidoId)
+                ->where('entregado', true)
+                ->first();
+
+            if ($entregaCompleta && $entregaCompleta->fecha_entrega) {
+                $cantidadTotalPrenda = (int) DB::table('prenda_pedido_tallas')
+                    ->where('prenda_pedido_id', $prendaPedidoId)
+                    ->sum('cantidad');
+
+                $detalleTallas = DB::table('prenda_pedido_tallas')
+                    ->where('prenda_pedido_id', $prendaPedidoId)
+                    ->orderBy('id')
+                    ->get(['talla', 'cantidad'])
+                    ->map(function ($item) {
+                        return [
+                            'talla' => (string) ($item->talla ?? 'Sin talla'),
+                            'cantidad' => (int) ($item->cantidad ?? 0),
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                $movimientos->push([
+                    'id' => 'completa-' . $entregaCompleta->id,
+                    'cantidad_entregada' => $cantidadTotalPrenda,
+                    'fecha_entrega' => optional($entregaCompleta->fecha_entrega)->format('Y-m-d H:i:s'),
+                    'usuario' => $entregaCompleta->usuario?->name,
+                    'usuario_id' => $entregaCompleta->usuario_id,
+                    'consecutivo_recibo_id' => null,
+                    'tipo_recibo' => 'ENTREGA COMPLETA',
+                    'numero_recibo' => null,
+                    'detalle_tallas' => $detalleTallas,
+                    'origen' => 'prenda_entregas',
+                ]);
+            }
+
+            $movimientos = $movimientos
+                ->sortByDesc(function (array $movimiento) {
+                    return strtotime((string) ($movimiento['fecha_entrega'] ?? '1970-01-01 00:00:00'));
                 })
                 ->values();
 
