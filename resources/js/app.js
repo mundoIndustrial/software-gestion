@@ -2,18 +2,27 @@ import './bootstrap';
 
 /*
 |--------------------------------------------------------------------------
-| Alpine y Chart
+| Alpine
 |--------------------------------------------------------------------------
 */
 import Alpine from 'alpinejs';
-import Chart from 'chart.js/auto';
 
 window.Alpine = Alpine;
-window.Chart = Chart;
-
 Alpine.start();
 
-console.log(' Alpine y Chart cargados desde Vite');
+const moduleName = document.body?.dataset?.module || '';
+
+// Chart no es necesario en insumos/materiales.
+// En el resto de módulos se mantiene disponible en window.Chart.
+if (moduleName !== 'insumos-materiales') {
+    import('chart.js/auto')
+        .then(({ default: Chart }) => {
+            window.Chart = Chart;
+        })
+        .catch((error) => {
+            console.error('[app.js] Error cargando Chart:', error);
+        });
+}
 
 /*
 |--------------------------------------------------------------------------

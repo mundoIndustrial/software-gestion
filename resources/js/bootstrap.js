@@ -1,11 +1,11 @@
 import axios from 'axios';
-window.axios = axios;
+globalThis.axios = axios;
 
-window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+globalThis.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 // Create storage stubs for edge environments
-if (typeof window.localStorage === 'undefined') {
-    window.localStorage = {
+if (typeof globalThis.localStorage === 'undefined') {
+    globalThis.localStorage = {
         getItem: () => null,
         setItem: () => {},
         removeItem: () => {},
@@ -14,8 +14,8 @@ if (typeof window.localStorage === 'undefined') {
         length: 0,
     };
 }
-if (typeof window.sessionStorage === 'undefined') {
-    window.sessionStorage = {
+if (typeof globalThis.sessionStorage === 'undefined') {
+    globalThis.sessionStorage = {
         getItem: () => null,
         setItem: () => {},
         removeItem: () => {},
@@ -26,54 +26,62 @@ if (typeof window.sessionStorage === 'undefined') {
 }
 
 // Echo readiness coordination
-window.echoReady = window.echoReady || false;
-window.echoReadyCallbacks = window.echoReadyCallbacks || [];
-window.EchoConstructor = window.EchoConstructor || null;
-window.EchoInstance = window.EchoInstance || null;
-window.Echo = window.Echo || null;
+globalThis.echoReady = globalThis.echoReady || false;
+globalThis.echoReadyCallbacks = globalThis.echoReadyCallbacks || [];
+globalThis.EchoConstructor = globalThis.EchoConstructor || null;
+globalThis.EchoInstance = globalThis.EchoInstance || null;
+globalThis.Echo = globalThis.Echo || null;
 
-window.waitForEcho = function (callback) {
-    const isReady = window.echoReady && window.Echo;
+globalThis.waitForEcho = function (callback) {
+    const isReady = globalThis.echoReady && globalThis.Echo;
 
     // Compatibilidad 1: callback
     if (typeof callback === 'function') {
         if (isReady) {
-            callback(window.Echo);
+            callback(globalThis.Echo);
         } else {
-            window.echoReadyCallbacks.push(callback);
+            globalThis.echoReadyCallbacks.push(callback);
         }
         return;
     }
 
     // Compatibilidad 2: Promise
     if (isReady) {
-        return Promise.resolve(window.Echo);
+        return Promise.resolve(globalThis.Echo);
     }
 
     return new Promise((resolve) => {
-        window.echoReadyCallbacks.push(resolve);
+        globalThis.echoReadyCallbacks.push(resolve);
     });
 };
 
-window.notifyEchoReady = function () {
-    window.echoReady = true;
+globalThis.notifyEchoReady = function () {
+    globalThis.echoReady = true;
 
-    while (window.echoReadyCallbacks.length > 0) {
-        const callback = window.echoReadyCallbacks.shift();
+    while (globalThis.echoReadyCallbacks.length > 0) {
+        const callback = globalThis.echoReadyCallbacks.shift();
         try {
             if (typeof callback === 'function') {
-                callback(window.Echo);
+                callback(globalThis.Echo);
             }
         } catch (error) {
             console.error('[Echo] Error ejecutando callback:', error);
         }
+    }
+
+    try {
+        globalThis.dispatchEvent(new CustomEvent('echo:ready', {
+            detail: { echo: globalThis.Echo },
+        }));
+    } catch (error) {
+        console.error('[Echo] Error despachando evento echo:ready:', error);
     }
 };
 
 let echoInitPromise = null;
 
 async function loadEchoDependencies() {
-    if (window.EchoConstructor && window.Pusher) {
+    if (globalThis.EchoConstructor && globalThis.Pusher) {
         return;
     }
 
@@ -82,14 +90,14 @@ async function loadEchoDependencies() {
         import('laravel-echo'),
     ]);
 
-    window.Pusher = Pusher;
-    window.EchoConstructor = Echo;
+    globalThis.Pusher = Pusher;
+    globalThis.EchoConstructor = Echo;
 }
 
 async function initializeEcho() {
-    if (window.EchoInstance) {
-        window.notifyEchoReady();
-        return window.EchoInstance;
+    if (globalThis.EchoInstance) {
+        globalThis.notifyEchoReady();
+        return globalThis.EchoInstance;
     }
 
     if (echoInitPromise) {
@@ -103,21 +111,21 @@ async function initializeEcho() {
         const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
         const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
 
-        const currentHost = window.location.hostname;
+        const currentHost = globalThis.location.hostname;
 
         let wsHost = metaReverbHost || currentHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
-        let wsPort = parseInt(metaReverbPort || import.meta.env.VITE_REVERB_PORT, 10) || 8080;
+        let wsPort = Number(metaReverbPort || import.meta.env.VITE_REVERB_PORT, 10) || 8080;
 
-        const hostname = window.location.hostname;
+        const hostname = globalThis.location.hostname;
         const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
 
         const useProxy = isProduction;
-        const wsPortFinal = useProxy ? (window.location.protocol === 'https:' ? 443 : 80) : wsPort;
-        const wsHostFinal = useProxy ? window.location.hostname : wsHost;
-        const forceTLSFinal = useProxy ? window.location.protocol === 'https:' : false;
+        const wsPortFinal = useProxy ? (globalThis.location.protocol === 'https:' ? 443 : 80) : wsPort;
+        const wsHostFinal = useProxy ? globalThis.location.hostname : wsHost;
+        const forceTLSFinal = useProxy ? globalThis.location.protocol === 'https:' : false;
 
         try {
-            const echoInstance = new window.EchoConstructor({
+            const echoInstance = new globalThis.EchoConstructor({
                 broadcaster: 'reverb',
                 key: import.meta.env.VITE_REVERB_APP_KEY || 'mundo-industrial-key',
                 wsHost: wsHostFinal,
@@ -135,9 +143,9 @@ async function initializeEcho() {
                 wsErrorMessage: 'WebSocket connection failed',
             });
 
-            window.Echo = echoInstance;
-            window.EchoInstance = echoInstance;
-            window.notifyEchoReady();
+            globalThis.Echo = echoInstance;
+            globalThis.EchoInstance = echoInstance;
+            globalThis.notifyEchoReady();
 
             return echoInstance;
         } catch (error) {
@@ -149,13 +157,33 @@ async function initializeEcho() {
     return echoInitPromise;
 }
 
+function shouldAutoInitializeEcho() {
+    const moduleName = document.body?.dataset?.module || '';
+    const notificationsUi = document.body?.dataset?.notificationsUi || '';
+
+    return (
+        moduleName === 'asesores' ||
+        moduleName === 'supervisor-pedidos' ||
+        moduleName === 'insumos-materiales' ||
+        notificationsUi === 'asesores'
+    );
+}
+
+globalThis.initEcho = function initEcho() {
+    return initializeEcho();
+};
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+        if (!shouldAutoInitializeEcho()) {
+            return;
+        }
+
         initializeEcho().catch((error) => {
             console.error('[Echo] Fallo inicializacion diferida:', error);
         });
     });
-} else {
+} else if (shouldAutoInitializeEcho()) {
     initializeEcho().catch((error) => {
         console.error('[Echo] Fallo inicializacion diferida:', error);
     });

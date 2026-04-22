@@ -120,13 +120,20 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     </noscript>
 
+    @php
+        $headModule = trim($__env->yieldContent('module', 'default'));
+    @endphp
+
+    @if($headModule !== 'insumos-materiales')
     <!-- jQuery (debe cargarse PRIMERO y esperar a que esté disponible) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    @endif
     
     <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
     
     <!-- Esperar a que jQuery esté disponible antes de cargar Bootstrap -->
+    @if($headModule !== 'insumos-materiales')
     <script>
         // Esperar a que jQuery esté completamente cargado
         function waitForJQuery() {
@@ -147,6 +154,7 @@
         // Iniciar la espera
         waitForJQuery();
     </script>
+    @endif
     
     <!-- CRÍTICO: Definir window.waitForEcho ANTES del resto de scripts -->
     <script>
@@ -189,6 +197,7 @@
 
     <!-- Page-specific styles -->
     @stack('styles')
+    @stack('module-styles')
     
     <style>
         /* Loading overlay global */
@@ -339,6 +348,11 @@
         })();
     </script>
     
+    @php
+        $currentModule = trim($__env->yieldContent('module', 'default'));
+        $currentNotificationsUi = trim($__env->yieldContent('notifications-ui', 'default'));
+    @endphp
+
     <!-- Non-critical JS (diferido) -->
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
@@ -355,11 +369,13 @@
     @endauth
 
     <!-- Modal de Cotización Global -->
+    @if($currentModule !== 'insumos-materiales')
     <script defer src="{{ asset('js/contador/cotizacion.js') }}"></script>
+    @endif
 
     <!-- Notifications realtime system (loaded once) -->
     <!-- REQUIERE shared-core.js que ya está cargado arriba -->
-    @if(trim($__env->yieldContent('notifications-ui', 'default')) !== 'asesores' && trim($__env->yieldContent('module', 'default')) !== 'asesores')
+    @if($currentNotificationsUi !== 'asesores' && $currentModule !== 'asesores' && $currentModule !== 'insumos-materiales')
         <script defer src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
     @endif
     
@@ -378,6 +394,7 @@
     <script src="{{ asset('js/componentes/storage-adapters.js') }}"></script>
     
     <!-- Page-specific scripts -->
+    @stack('module-scripts')
     @stack('scripts')
     
     <!-- Modals -->

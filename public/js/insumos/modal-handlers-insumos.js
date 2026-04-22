@@ -10,12 +10,30 @@ async function resolveOpenOrderDetailModalHandler() {
         return openOrderDetailModalHandler;
     }
 
-    const { PedidosRecibosModule } = await import('/js/modulos/pedidos-recibos/PedidosRecibosModule.js');
-    pedidosRecibosModuleInstance = new PedidosRecibosModule();
-    
+    // Esperar a que window.pedidosRecibosModule esté disponible (instancia global singleton)
+    let intentos = 0;
+    while (!window.pedidosRecibosModule && intentos < 100) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        intentos++;
+    }
+
+    if (!window.pedidosRecibosModule) {
+        console.log('[modal-handlers-insumos] window.pedidosRecibosModule no disponible aún, creando instancia fallback');
+        // Fallback: crear nueva instancia si la global no existe
+        const { PedidosRecibosModule } = await import('/js/modulos/pedidos-recibos/PedidosRecibosModule.js');
+        pedidosRecibosModuleInstance = new PedidosRecibosModule();
+        // Actualizar la instancia global para que toggleFactura() la encuentre
+        window.pedidosRecibosModule = pedidosRecibosModuleInstance;
+        console.log('[modal-handlers-insumos] Instancia fallback asignada a window.pedidosRecibosModule');
+    } else {
+        // Usar la instancia global singleton
+        pedidosRecibosModuleInstance = window.pedidosRecibosModule;
+        console.log('[modal-handlers-insumos] Usando instancia global de PedidosRecibosModule');
+    }
+
     // Guardar la instancia globalmente para que otros scripts (como insumos-galeria.js) puedan acceder a ella
     window.PedidosRecibosModuleInstance = pedidosRecibosModuleInstance;
-    
+
     openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) =>
         pedidosRecibosModuleInstance.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
 

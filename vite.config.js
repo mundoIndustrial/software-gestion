@@ -46,6 +46,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                'resources/js/insumos/materiales.entry.js',
                 'resources/js/supervisor-pedidos/entry.js',
                 'resources/js/recepcion-despacho/entry.js',
             ],
@@ -71,14 +72,16 @@ export default defineConfig({
                 manualChunks: (id) => {
                     // Vendor chunks
                     if (id.includes('node_modules')) {
+                        if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
+                        if (id.includes('chart.js')) return 'vendor-chart';
                         if (id.includes('alpinejs')) return 'vendor-alpine';
                         if (id.includes('sweetalert')) return 'vendor-alert';
                         if (id.includes('laravel-echo')) return 'vendor-realtime';
                         if (id.includes('pusher-js')) return 'vendor-realtime';
                         if (id.includes('socket.io-client')) return 'vendor-realtime';
                         if (id.includes('axios')) return 'vendor-axios';
-                        if (id.includes('bootstrap')) return 'vendor-bootstrap';
-                        if (id.includes('jquery')) return 'vendor-bootstrap';
+                        if (id.includes('bootstrap')) return 'vendor-legacy-ui';
+                        if (id.includes('jquery')) return 'vendor-legacy-ui';
                         return 'vendor-common';
                     }
                 },

@@ -198,7 +198,7 @@
                             </div>
                         </td>
                         <td class="py-4 px-6">
-                            <span class="font-bold text-blue-600 text-lg">{{ $orden->numero_pedido ?? 'N/A' }}</span>
+                            <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
                         </td>
                         <td class="py-4 px-6">
                             <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>

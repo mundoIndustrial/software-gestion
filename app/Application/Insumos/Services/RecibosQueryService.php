@@ -25,10 +25,12 @@ class RecibosQueryService
     ): LengthAwarePaginator
     {
         $timeStart = microtime(true);
+        $traceId = (string) $request->header('X-Insumos-Trace-Id', '');
         \Log::info('═══ INICIO RecibosQueryService ═══', [
             'timestamp' => now()->toIso8601String(),
             'url' => $request->fullUrl(),
             'page' => $request->get('page', 1),
+            'trace_id' => $traceId,
         ]);
 
         try {
@@ -48,6 +50,14 @@ class RecibosQueryService
                     $filterValues = [(string) $singleValue];
                 }
             }
+
+            \Log::info('[RecibosQueryService] Parametros normalizados', [
+                'trace_id' => $traceId,
+                'search' => $search,
+                'filter_columns' => $filterColumns,
+                'filter_values_array' => $filterValuesArray,
+                'has_filters' => !empty($filterColumns) || !empty($filterValuesArray) || !empty($search),
+            ]);
 
             $hasFilters = !empty($filterColumns) || !empty($filterValuesArray) || !empty($search);
             if ($hasFilters) {
@@ -78,9 +88,11 @@ class RecibosQueryService
             /** @var Collection<int, object> $recibosPagina */
             $recibosPagina = $paginador->getCollection();
             \Log::info('✓ Query BD completada', [
+                'trace_id' => $traceId,
                 'duration_ms' => $durationQuery,
                 'total_recibos' => $paginador->total(),
                 'items_pagina' => $recibosPagina->count(),
+                'sample_consecutivos' => $recibosPagina->pluck('consecutivo_actual')->filter()->take(10)->values()->all(),
             ]);
 
             $timeMapsStart = microtime(true);
@@ -103,6 +115,7 @@ class RecibosQueryService
             $durationMaps = round(($timeMapsEnd - $timeMapsStart) * 1000, 2);
 
             \Log::info('✓ Maps obtenidos', [
+                'trace_id' => $traceId,
                 'duration_ms' => $durationMaps,
                 'parciales_count' => count($parcialCreatedAtMap),
                 'materiales_count' => count($materialesMap),
@@ -121,6 +134,7 @@ class RecibosQueryService
             $durationTransform = round(($timeTransformEnd - $timeTransformStart) * 1000, 2);
 
             \Log::info('✓ Transformación completada', [
+                'trace_id' => $traceId,
                 'duration_ms' => $durationTransform,
             ]);
 
@@ -133,6 +147,7 @@ class RecibosQueryService
             $durationTotal = round(($timeEnd - $timeStart) * 1000, 2);
 
             \Log::info('═══ FIN RecibosQueryService ═══', [
+                'trace_id' => $traceId,
                 'duration_total_ms' => $durationTotal,
                 'breakdown' => [
                     'query_ms' => $durationQuery,
@@ -146,6 +161,7 @@ class RecibosQueryService
             return $paginador;
         } catch (\Exception $e) {
             \Log::error('ERROR CRITICO en RecibosQueryService', [
+                'trace_id' => $request->header('X-Insumos-Trace-Id'),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'line' => $e->getLine(),

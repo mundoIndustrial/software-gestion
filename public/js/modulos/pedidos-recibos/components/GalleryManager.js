@@ -999,12 +999,12 @@ export class GalleryManager {
             onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
             onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
                 <img src="${rutaImg}" alt="${titulo}" style="
-                    width: 100%; 
-                    height: 220px; 
+                    width: 100%;
+                    height: 220px;
                     object-fit: cover;
                     display: block;
                     transition: all 0.3s ease;
-                " onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\'> Error al cargar imagen</div>';">
+                " onerror='this.style.display="none"; this.parentElement.style.background="#fee2e2"; this.parentElement.innerHTML="<div style=&quot;display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;&quot;>Error al cargar imagen</div>";'>
                 <div style="padding: 0.75rem; background: #f9fafb;">
                     <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${titulo}</div>
                     <div style="font-size: 0.75rem; color: #6b7280;">${subtitulo}</div>
@@ -1034,8 +1034,8 @@ export class GalleryManager {
                     onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
                     data-indice="${idx}"
                     data-fotos='${fotosJSON}'>
-                    <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" 
-                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'> Error al cargar imagen</div>';">
+                    <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;"
+                         onerror='this.style.display="none"; this.parentElement.style.background="#fee2e2"; this.parentElement.innerHTML="<div style=&quot;display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;&quot;>Error al cargar imagen</div>";'>
                 </div>
             `;
         });

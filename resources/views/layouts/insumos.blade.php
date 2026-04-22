@@ -20,6 +20,8 @@
 @endpush
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    @if(trim($__env->yieldContent('module', 'default')) !== 'insumos-materiales')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    @endif
     <script src="{{ asset('js/insumos/layout.js') }}"></script>
 @endpush

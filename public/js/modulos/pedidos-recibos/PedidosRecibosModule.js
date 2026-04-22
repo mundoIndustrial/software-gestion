@@ -84,9 +84,16 @@ export class PedidosRecibosModule {
             GalleryManager.resetGaleria(this.modalManager);
             
             // Limpiar estado del modal para evitar caché entre recibos
-            this.modalManager.limpiarEstado();
+            // Solo limpiar si no hay un recibo abierto actualmente
+            const estadoActual = this.modalManager.getState();
+            if (!estadoActual.pedidoId) {
+                this.modalManager.limpiarEstado();
+            } else {
+                console.log('[abrirRecibo] Recibo ya abierto, reutilizando estado para evitar pérdida de datos');
+            }
 
             // Actualizar estado con los nuevos datos
+            console.log('[abrirRecibo] Estableciendo estado inicial:', {pedidoId, prendaId, tipoRecibo});
             this.modalManager.setState({
                 pedidoId,
                 prendaId,
@@ -95,6 +102,7 @@ export class PedidosRecibosModule {
                 objetivoConsecutivo: options?.targetConsecutivo ?? null,
                 objetivoReciboId: options?.targetReciboId ?? null
             });
+            console.log('[abrirRecibo] Estado después de setState:', this.modalManager.getState());
 
             // Mostrar modal
             this.modalManager.abrirModal();
@@ -791,6 +799,12 @@ export class PedidosRecibosModule {
     _renderizarRecibo(prendaData, reciboIndice, tipoProceso, datosPedido, recibos) {
         // Mantener prendaData y recibos actuales en el estado para impresión/navegación.
         // (printReceiptModal lee prendaData desde el estado)
+        console.log('[PedidosRecibosModule._renderizarRecibo] Estableciendo estado:', {
+            prendaId: prendaData?.id,
+            prendaPedidoId: prendaData?.prenda_pedido_id || prendaData?.id,
+            tipoProceso,
+            estadoActual: this.modalManager.getState()
+        });
         this.modalManager.setState({
             prendaData,
             prendaPedidoId: prendaData?.prenda_pedido_id || prendaData?.id || null,
@@ -798,6 +812,7 @@ export class PedidosRecibosModule {
             procesoActualIndice: reciboIndice,
             tipoProceso
         });
+        console.log('[PedidosRecibosModule._renderizarRecibo] Estado después de setState:', this.modalManager.getState());
 
         // Crear botón X
         CloseButtonManager.crearBotonCierre(this.modalManager);
@@ -2023,23 +2038,35 @@ if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
 const _originalToggleFactura = window.toggleFactura;
 
 window.toggleFactura = function() {
-    console.log('[toggleFactura-PRM] Toggle entre recibo y galería');
+    console.log('[toggleFactura-PRM] ====== INICIO TOGGLE FACTURA ======');
+    console.log('[toggleFactura-PRM] window.pedidosRecibosModule existe?', !!window.pedidosRecibosModule);
 
     // Verificar si PedidosRecibosModule tiene estado activo
     const estado = window.pedidosRecibosModule ? window.pedidosRecibosModule.getEstado() : null;
-    console.log('[toggleFactura-PRM] Estado actual:', estado);
+    console.log('[toggleFactura-PRM] Estado actual:', JSON.stringify(estado));
+    console.log('[toggleFactura-PRM] Estado.pedidoId:', estado?.pedidoId, 'tipo:', typeof estado?.pedidoId);
+    console.log('[toggleFactura-PRM] Estado.prendaId:', estado?.prendaId, 'tipo:', typeof estado?.prendaId);
+
     const tieneEstadoActivo = estado && estado.pedidoId && estado.prendaId;
-    console.log('[toggleFactura-PRM] ¿Tiene estado activo?', tieneEstadoActivo, {pedidoId: estado?.pedidoId, prendaId: estado?.prendaId, prendaPedidoId: estado?.prendaPedidoId});
+    console.log('[toggleFactura-PRM] ¿Tiene estado activo?', tieneEstadoActivo);
 
     if (!tieneEstadoActivo) {
         // Sin estado activo → usar la implementación original si existe
-        console.log('[toggleFactura-PRM] Sin estado activo, delegando a implementación original');
-        if (_originalToggleFactura) return _originalToggleFactura.call(this);
+        console.log('[toggleFactura-PRM] Sin estado activo, buscando _originalToggleFactura...');
+        console.log('[toggleFactura-PRM] _originalToggleFactura existe?', !!_originalToggleFactura);
+        if (_originalToggleFactura) {
+            console.log('[toggleFactura-PRM] Delegando a implementación original');
+            return _originalToggleFactura.call(this);
+        }
+        console.log('[toggleFactura-PRM] No hay implementación original disponible');
         return;
     }
-    
+
+    console.log('[toggleFactura-PRM] Usando nueva implementación de PedidosRecibosModule');
     const galeria = document.getElementById('galeria-modal-costura');
+    console.log('[toggleFactura-PRM] Galería encontrada?', !!galeria);
     const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
+    console.log('[toggleFactura-PRM] ¿Está en galería?', estaEnGaleria);
     
     const btnFactura = document.getElementById('btn-factura');
     const btnGaleria = document.getElementById('btn-galeria');
@@ -2065,9 +2092,18 @@ window.toggleFactura = function() {
     } else {
         // Estamos en recibo → abrir galería
         console.log('[toggleFactura-PRM] Abriendo galería');
-        if (window.toggleGaleria) {
+        console.log('[toggleFactura-PRM] Intentando abrir con GalleryManager...');
+
+        if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirGaleria === 'function') {
+            console.log('[toggleFactura-PRM] Llamando a abrirGaleria del módulo');
+            window.pedidosRecibosModule.abrirGaleria();
+        } else if (window.toggleGaleria && typeof window.toggleGaleria === 'function') {
+            console.log('[toggleFactura-PRM] Fallback a toggleGaleria global');
             window.toggleGaleria();
+        } else {
+            console.log('[toggleFactura-PRM] No hay función para abrir galería disponible');
         }
+
         // Ocultar btn-factura
         if (btnFactura) {
             btnFactura.style.display = 'none';

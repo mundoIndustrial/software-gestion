@@ -123,11 +123,20 @@ class InsumosController extends Controller
     public function materiales(Request $request)
     {
         try {
+            $traceId = (string) $request->header('X-Insumos-Trace-Id', '');
+            $search = (string) $request->get('search', '');
+            $filterColumns = (array) $request->get('filter_columns', []);
+            $filterValues = (array) $request->get('filter_values', []);
+
             Log::info(' InsumosController.materiales() INICIADO', [
                 'url' => $request->fullUrl(),
                 'user_id' => Auth::id(),
                 'user_name' => Auth::user()?->name ?? 'unknown',
                 'is_ajax' => $request->header('X-Requested-With') === 'XMLHttpRequest',
+                'trace_id' => $traceId,
+                'search' => $search,
+                'filter_columns' => $filterColumns,
+                'filter_values' => $filterValues,
             ]);
 
             $user = Auth::user();
@@ -148,17 +157,22 @@ class InsumosController extends Controller
             );
 
             Log::info(' Recibos obtenidos exitosamente', [
-                'total' => count($ordenes),
-                'first_page' => $ordenes->currentPage() ?? 'N/A'
+                'trace_id' => $traceId,
+                'items_current_page' => count($ordenes),
+                'current_page' => $ordenes->currentPage() ?? 'N/A',
+                'total' => method_exists($ordenes, 'total') ? $ordenes->total() : null,
+                'sample_consecutivos' => collect($ordenes->items())->map(fn($row) => $row->consecutivo_actual ?? null)->filter()->take(10)->values()->all(),
             ]);
             
             // Si es una petición AJAX, retornar solo la tabla HTML
             if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
-                Log::info(' Retornando respuesta AJAX (solo tabla)');
+                Log::info(' Retornando respuesta AJAX (solo tabla)', [
+                    'trace_id' => $traceId,
+                ]);
                 return view('insumos.materiales.table-partial', [
                     'ordenes' => $ordenes,
                     'user' => $user,
-                    'search' => $request->get('search', ''),
+                    'search' => $search,
                 ])->render();
             }
             
@@ -166,13 +180,14 @@ class InsumosController extends Controller
             return view('insumos.materiales.index', [
                 'ordenes' => $ordenes,
                 'user' => $user,
-                'search' => $request->get('search', ''),
+                'search' => $search,
             ]);
         } catch (\Exception $e) {
             Log::error(' ERROR en InsumosController.materiales()', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'url' => $request->fullUrl(),
+                'trace_id' => $request->header('X-Insumos-Trace-Id'),
             ]);
             
             // Si es AJAX, retornar error JSON

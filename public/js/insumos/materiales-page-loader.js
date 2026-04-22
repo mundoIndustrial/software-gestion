@@ -9,33 +9,65 @@
 (function () {
     'use strict';
 
+    const DEBUG = Boolean(window.APP_DEBUG);
+    const shouldProfile = () => DEBUG || Boolean(window.__INSUMOS_PROFILE);
+    const debugLog = (...args) => {
+        if (DEBUG) console.log(...args);
+    };
+
+    function measureStart() {
+        return shouldProfile() ? performance.now() : 0;
+    }
+
+    function measureEnd(label, startedAt, meta = null) {
+        if (!shouldProfile()) return;
+        const duration = (performance.now() - startedAt).toFixed(2);
+        if (meta) {
+            console.log(`[insumos][perf] ${label}: ${duration}ms`, meta);
+        } else {
+            console.log(`[insumos][perf] ${label}: ${duration}ms`);
+        }
+    }
+
     const CRITICAL_SCRIPTS = [
         { src: '/js/insumos/index.js', type: 'module' },
     ];
 
-    const MAIN_SCRIPTS = [
-        { src: '/js/insumos/modal-handlers-insumos.js' },
-        { src: '/js/insumos/filter-manager-no-url.js' },
-        { src: '/js/insumos/material-operations-insumos.js' },
-        { src: '/js/insumos/form-handlers-insumos.js' },
-        { src: '/js/insumos/status-actions-insumos.js' },
-        { src: '/js/insumos/modal-ancho-metraje-insumos.js' },
-        { src: '/js/insumos/insumos-modal-management.js' },
-        { src: '/js/insumos/notifications-realtime-insumos.js' },
-        { src: '/js/insumos/recibos-selector-insumos.js' },
-        { src: '/js/insumos/pasar-a-revisar-insumos.js' },
-        { src: '/js/insumos/dropdown-handlers-insumos.js' },
-        { src: '/js/insumos/search-debounce.js' },
-        { src: '/js/insumos/insumos-galeria.js' },
-    ];
+    const MAIN_SCRIPTS = [];
 
-    const LAZY_SCRIPTS = [
-        { src: '/js/insumos/pagination.js' },
-    ];
+    const LAZY_SCRIPTS = [];
+
+    const FEATURE_SCRIPTS = {
+        tracking: [
+            { src: '/js/ordersjs/tracking-modal-utils.js' },
+            { src: '/js/ordersjs/tracking-modal-handler.js', type: 'module' },
+        ],
+        invoice: [
+            { src: '/js/modulos/invoice/InvoiceLazyLoader.js' },
+            { src: '/js/asesores/invoice-from-list.js' },
+            { src: '/js/asesores/receipt-manager.js' },
+        ],
+        modalHandlers: [
+            { src: '/js/insumos/modal-handlers-insumos.js' },
+        ],
+        insumosModals: [
+            { src: '/js/insumos/insumos-modal-management.js' },
+            { src: '/js/insumos/material-operations-insumos.js' },
+            { src: '/js/insumos/form-handlers-insumos.js' },
+            { src: '/js/insumos/modal-ancho-metraje-insumos.js' },
+        ],
+        pasarRevisar: [
+            { src: '/js/insumos/pasar-a-revisar-insumos.js' },
+        ],
+        gallery: [
+            { src: '/js/insumos/insumos-galeria.js' },
+        ],
+    };
 
     const state = {
         initialized: false,
         loadingPromise: null,
+        featureLoadPromises: {},
     };
 
     function getLoadingOverlay() {
@@ -63,11 +95,22 @@
     function loadScript(scriptDef) {
         return new Promise((resolve, reject) => {
             const timeStart = performance.now();
+            const absoluteSrc = new URL(scriptDef.src, window.location.origin).pathname;
+            const alreadyLoaded = Array.from(document.scripts).some((existing) => {
+                try {
+                    return new URL(existing.src, window.location.origin).pathname === absoluteSrc;
+                } catch (_error) {
+                    return false;
+                }
+            });
+
+            if (alreadyLoaded) {
+                resolve(scriptDef.src);
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = scriptDef.src;
-            if (scriptDef.src.includes('filter-manager')) {
-                script.src += '?t=' + Date.now();
-            }
             script.defer = false;
             script.async = false;
             if (scriptDef.type === 'module') {
@@ -75,7 +118,7 @@
             }
             script.onload = () => {
                 const duration = (performance.now() - timeStart).toFixed(2);
-                console.log(`  ✓ ${scriptDef.src.split('/').pop()} (${duration}ms)`);
+                debugLog(`  ✓ ${scriptDef.src.split('/').pop()} (${duration}ms)`);
                 resolve(scriptDef.src);
             };
             script.onerror = () => reject(new Error(`No se pudo cargar: ${scriptDef.src}`));
@@ -83,31 +126,74 @@
         });
     }
 
+    async function ensureFeatureScripts(featureName) {
+        if (!FEATURE_SCRIPTS[featureName] || FEATURE_SCRIPTS[featureName].length === 0) {
+            return;
+        }
+
+        if (state.featureLoadPromises[featureName]) {
+            await state.featureLoadPromises[featureName];
+            return;
+        }
+
+        state.featureLoadPromises[featureName] = (async () => {
+            const perfStart = measureStart();
+            const scripts = FEATURE_SCRIPTS[featureName];
+            debugLog(`[insumos] Cargando feature scripts: ${featureName} (${scripts.length})`);
+            for (const scriptDef of scripts) {
+                await loadScript(scriptDef);
+            }
+            debugLog(`[insumos] Feature scripts cargados: ${featureName}`);
+            measureEnd(`feature:${featureName}`, perfStart, { scripts: scripts.length });
+        })();
+
+        await state.featureLoadPromises[featureName];
+    }
+
+    async function ensureFeatures(featureNames) {
+        for (const featureName of featureNames) {
+            await ensureFeatureScripts(featureName);
+        }
+    }
+
     async function loadModuleScripts() {
         const timeStart = performance.now();
-        console.log('\n═══ CARGA DE SCRIPTS FRONTEND (OPTIMIZADO) ═══');
-        console.log(`Cargando ${CRITICAL_SCRIPTS.length + MAIN_SCRIPTS.length + LAZY_SCRIPTS.length} scripts...\n`);
+        debugLog('\n═══ CARGA DE SCRIPTS FRONTEND (OPTIMIZADO) ═══');
+        debugLog(`Cargando ${CRITICAL_SCRIPTS.length + MAIN_SCRIPTS.length + LAZY_SCRIPTS.length} scripts...\n`);
 
-        console.log(`Fase 1: Scripts críticos (${CRITICAL_SCRIPTS.length})...`);
+        debugLog(`Fase 1: Scripts críticos (${CRITICAL_SCRIPTS.length})...`);
         for (const scriptDef of CRITICAL_SCRIPTS) {
             await loadScript(scriptDef);
         }
 
-        console.log(`\nFase 2: Scripts principales (${MAIN_SCRIPTS.length} en paralelo)...`);
+        debugLog(`\nFase 2: Scripts principales (${MAIN_SCRIPTS.length} en paralelo)...`);
         await Promise.all(MAIN_SCRIPTS.map(scriptDef => loadScript(scriptDef)));
 
         const mainDuration = (performance.now() - timeStart).toFixed(2);
-        console.log(`\n✓ Scripts principales cargados en ${mainDuration}ms`);
+        debugLog(`\n✓ Scripts principales cargados en ${mainDuration}ms`);
 
-        console.log(`\nFase 3: Scripts lazy-load (${LAZY_SCRIPTS.length} en background)...`);
+        debugLog(`\nFase 3: Scripts lazy-load (${LAZY_SCRIPTS.length} en background/idle)...`);
         const lazyLoad = async () => {
+            const lazyStart = measureStart();
             for (const scriptDef of LAZY_SCRIPTS) {
                 await loadScript(scriptDef);
             }
             const totalDuration = (performance.now() - timeStart).toFixed(2);
-            console.log(`✓ Lazy scripts cargados - Total: ${totalDuration}ms\n`);
+            debugLog(`✓ Lazy scripts cargados - Total: ${totalDuration}ms\n`);
+            measureEnd('lazy-scripts', lazyStart, { count: LAZY_SCRIPTS.length });
         };
-        lazyLoad();
+
+        const runLazyLoad = () => {
+            lazyLoad().catch((error) => {
+                console.error('[insumos] Error cargando lazy scripts:', error);
+            });
+        };
+
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(runLazyLoad, { timeout: 3000 });
+        } else {
+            setTimeout(runLazyLoad, 1200);
+        }
 
         return mainDuration;
     }
@@ -147,6 +233,99 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function setActionButtonLoading(button, isLoading, loadingText = 'Cargando...') {
+        if (!button) return;
+
+        if (isLoading) {
+            if (!button.dataset.originalHtml) {
+                button.dataset.originalHtml = button.innerHTML;
+            }
+
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            button.style.pointerEvents = 'none';
+            button.innerHTML = `
+                <i class="fas fa-spinner fa-spin" style="color:#0284c7;font-size:1rem;"></i>
+                <span>${escapeHtml(loadingText)}</span>
+            `;
+            return;
+        }
+
+        const originalHtml = button.dataset.originalHtml;
+        if (originalHtml) {
+            button.innerHTML = originalHtml;
+            delete button.dataset.originalHtml;
+        }
+
+        button.disabled = false;
+        button.style.opacity = '';
+        button.style.pointerEvents = '';
+    }
+
+    function showTrackingLoadingState(message = 'Cargando seguimiento...') {
+        const trackingModal = document.getElementById('orderTrackingModal');
+        const trackingOverlay = document.getElementById('trackingModalOverlay');
+        const trackingHeader = document.getElementById('trackingPrendaReciboHeader');
+        const timelineContainer = document.getElementById('trackingTimelineContainer');
+
+        if (trackingOverlay) {
+            trackingOverlay.style.display = 'block';
+        }
+
+        if (trackingModal) {
+            trackingModal.style.setProperty('display', 'flex', 'important');
+            trackingModal.classList.add('show');
+        }
+
+        if (trackingHeader) {
+            trackingHeader.textContent = message;
+        }
+
+        if (timelineContainer) {
+            timelineContainer.innerHTML = `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:.75rem;
+                    min-height:180px;
+                    color:#334155;
+                    font-weight:600;
+                ">
+                    <i class="fas fa-spinner fa-spin" style="color:#0284c7;font-size:1.25rem;"></i>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+        }
+    }
+
+    function closeTrackingLoadingStateIfError() {
+        const trackingModal = document.getElementById('orderTrackingModal');
+        const trackingOverlay = document.getElementById('trackingModalOverlay');
+
+        if (trackingOverlay) {
+            trackingOverlay.style.display = 'none';
+        }
+
+        if (trackingModal) {
+            trackingModal.style.setProperty('display', 'none', 'important');
+            trackingModal.classList.remove('show');
+        }
+    }
+
+    async function withTimeout(promise, timeoutMs, timeoutMessage) {
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+        });
+
+        try {
+            return await Promise.race([promise, timeoutPromise]);
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
     function decodeHtmlEntities(value) {
@@ -225,7 +404,7 @@
         }
         document.documentElement.dataset.insumosDelegated = '1';
 
-        document.addEventListener('click', function (event) {
+        document.addEventListener('click', async function (event) {
             const btn = event.target.closest('[data-insumos-action]');
             if (!btn) return;
 
@@ -244,12 +423,20 @@
                     if (typeof event.stopImmediatePropagation === 'function') {
                         event.stopImmediatePropagation();
                     }
+                    // Warm-up en background: adelantar carga de tracking antes del click en "Seguimiento".
+                    ensureFeatureScripts('tracking').catch((error) => {
+                        console.warn('[insumos] No se pudo precargar tracking en background:', error);
+                    });
                     safeCall('crearDropdownVerRecibo', [event, btn], 'crearDropdownVerRecibo no esta disponible');
                     break;
                 }
                 case 'acciones-dropdown': {
                     event.preventDefault();
                     event.stopPropagation();
+                    // Warm-up en background para que las acciones abran instantaneo al primer click.
+                    ensureFeatures(['modalHandlers', 'insumosModals', 'pasarRevisar']).catch((error) => {
+                        console.warn('[insumos] No se pudo precargar acciones en background:', error);
+                    });
                     safeCall('crearDropdownAcciones', [event, btn], 'crearDropdownAcciones no esta disponible');
                     break;
                 }
@@ -264,12 +451,14 @@
                 }
                 case 'close-modal-overlay': {
                     event.preventDefault();
+                    await ensureFeatureScripts('modalHandlers');
                     safeCall('closeModalOverlay', [], 'closeModalOverlay no esta disponible');
                     break;
                 }
                 case 'dropdown-ver-detalle-recibo': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('modalHandlers');
                     const pedidoId = btn.getAttribute('data-pedido-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
                     const tipoRecibo = btn.getAttribute('data-tipo-recibo') || 'COSTURA';
@@ -282,15 +471,33 @@
                 case 'dropdown-ver-seguimiento': {
                     event.preventDefault();
                     event.stopPropagation();
-                    const pedidoId = btn.getAttribute('data-pedido-id');
-                    const prendaId = btn.getAttribute('data-prenda-id');
-                    safeCall('abrirSeguimientoRecibo', [pedidoId, prendaId], 'abrirSeguimientoRecibo no esta disponible');
-                    safeCall('cerrarDropdownVerRecibo', [], 'cerrarDropdownVerRecibo no esta disponible');
+                    setActionButtonLoading(btn, true, 'Cargando seguimiento...');
+                    showTrackingLoadingState('Preparando seguimiento...');
+                    try {
+                        await withTimeout(
+                            ensureFeatureScripts('tracking'),
+                            10000,
+                            'Tiempo de espera agotado cargando el módulo de seguimiento'
+                        );
+                        const pedidoId = btn.getAttribute('data-pedido-id');
+                        const prendaId = btn.getAttribute('data-prenda-id');
+                        await Promise.resolve(
+                            safeCall('abrirSeguimientoRecibo', [pedidoId, prendaId], 'abrirSeguimientoRecibo no esta disponible')
+                        );
+                        safeCall('cerrarDropdownVerRecibo', [], 'cerrarDropdownVerRecibo no esta disponible');
+                    } catch (error) {
+                        console.error('[insumos] Error al abrir seguimiento:', error);
+                        closeTrackingLoadingStateIfError();
+                        alert('No se pudo abrir el seguimiento. Intenta nuevamente.');
+                    } finally {
+                        setActionButtonLoading(btn, false);
+                    }
                     break;
                 }
                 case 'dropdown-acciones-gestionar-insumos': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatures(['modalHandlers', 'insumosModals']);
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
                     const consecutivo = btn.getAttribute('data-consecutivo');
@@ -303,6 +510,7 @@
                 case 'dropdown-acciones-ancho-metraje': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatures(['modalHandlers', 'insumosModals']);
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
                     safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId], 'abrirModalAnchoMetraje no esta disponible');
@@ -321,6 +529,7 @@
                 case 'dropdown-acciones-pasar-revisar': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('pasarRevisar');
                     const reciboId = btn.getAttribute('data-recibo-id');
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     safeCall('abrirModalPasarRevisar', [reciboId, pedidoProduccionId], 'abrirModalPasarRevisar no esta disponible');
@@ -330,6 +539,7 @@
                 case 'material-open-observaciones': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     const materialId = btn.getAttribute('data-material-id');
                     const materialName = btn.getAttribute('data-material-name') || '';
                     safeCall('abrirModalObservaciones', [materialId, materialName], 'abrirModalObservaciones no esta disponible');
@@ -338,6 +548,7 @@
                 case 'material-delete-row': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     const materialId = btn.getAttribute('data-material-id');
                     safeCall('eliminarFilaMaterial', [materialId], 'eliminarFilaMaterial no esta disponible');
                     break;
@@ -345,60 +556,70 @@
                 case 'material-add-row': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('agregarMaterialModal', [], 'agregarMaterialModal no esta disponible');
                     break;
                 }
                 case 'material-save-changes': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('guardarInsumosModal', [], 'guardarInsumosModal no esta disponible');
                     break;
                 }
                 case 'modal-insumos-close': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('cerrarModalInsumos', [], 'cerrarModalInsumos no esta disponible');
                     break;
                 }
                 case 'observaciones-save': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('guardarObservaciones', [], 'guardarObservaciones no esta disponible');
                     break;
                 }
                 case 'observaciones-close': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('cerrarModalObservaciones', [], 'cerrarModalObservaciones no esta disponible');
                     break;
                 }
                 case 'ancho-metraje-close': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('cerrarModalAnchoMetraje', [], 'cerrarModalAnchoMetraje no esta disponible');
                     break;
                 }
                 case 'ancho-metraje-open-delete-confirm': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('abrirModalConfirmacionEliminar', [], 'abrirModalConfirmacionEliminar no esta disponible');
                     break;
                 }
                 case 'ancho-metraje-save': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('guardarAnchoMetraje', [], 'guardarAnchoMetraje no esta disponible');
                     break;
                 }
                 case 'confirm-eliminar-close': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('cerrarModalConfirmacionEliminar', [], 'cerrarModalConfirmacionEliminar no esta disponible');
                     break;
                 }
                 case 'confirm-eliminar-submit': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
                     safeCall('confirmarEliminarAnchoMetraje', [], 'confirmarEliminarAnchoMetraje no esta disponible');
                     break;
                 }
@@ -417,6 +638,7 @@
                 case 'pasar-revisar-close': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('pasarRevisar');
                     safeCall('cerrarModalPasarRevisar', [], 'cerrarModalPasarRevisar no esta disponible');
                     break;
                 }
@@ -463,6 +685,7 @@
                 case 'selector-seleccionar-prenda': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('invoice');
                     const pedidoId = btn.getAttribute('data-pedido-id');
                     const prendaIndex = Number(btn.getAttribute('data-prenda-index'));
                     safeCall('seleccionarPrendaRecibo', [pedidoId, prendaIndex], 'seleccionarPrendaRecibo no esta disponible');
@@ -477,6 +700,7 @@
                 case 'galeria-mostrar-imagen': {
                     event.preventDefault();
                     event.stopPropagation();
+                    await ensureFeatureScripts('gallery');
                     const imageIndex = Number(btn.getAttribute('data-image-index'));
                     safeCall('mostrarImagen', [imageIndex], 'galeria.mostrarImagen no esta disponible');
                     break;
@@ -486,13 +710,14 @@
             }
         });
 
-        document.addEventListener('submit', function (event) {
+        document.addEventListener('submit', async function (event) {
             const form = event.target.closest('[data-insumos-action]');
             if (!form) return;
 
             const action = form.getAttribute('data-insumos-action');
             if (action === 'pasar-revisar-submit') {
                 event.preventDefault();
+                await ensureFeatureScripts('pasarRevisar');
                 safeCall('confirmarPasarRevisar', [event], 'confirmarPasarRevisar no esta disponible');
             }
         });
@@ -568,11 +793,11 @@
         }
 
         const pageTimeStart = performance.now();
-        console.log('\n╔════════════════════════════════════════╗');
-        console.log('║  INICIO CARGA PÁGINA - INSUMOS         ║');
-        console.log('╚════════════════════════════════════════╝');
-        console.log(`Timestamp: ${new Date().toLocaleTimeString()}`);
-        console.log(`DOM Ready: ${document.readyState}`);
+        debugLog('\n╔════════════════════════════════════════╗');
+        debugLog('║  INICIO CARGA PÁGINA - INSUMOS         ║');
+        debugLog('╚════════════════════════════════════════╝');
+        debugLog(`Timestamp: ${new Date().toLocaleTimeString()}`);
+        debugLog(`DOM Ready: ${document.readyState}`);
 
         showPageLoading();
 
@@ -583,14 +808,14 @@
                 const timeScriptsEnd = performance.now();
                 const durationScripts = (timeScriptsEnd - timeScriptsStart).toFixed(2);
 
-                console.log(`\n✓ Scripts cargados: ${durationScripts}ms`);
+                debugLog(`\n✓ Scripts cargados: ${durationScripts}ms`);
 
                 const timeFestivosStart = performance.now();
                 await safeCall('inicializarFestivos', [], 'inicializarFestivos no esta disponible');
                 const timeFestivosEnd = performance.now();
                 const durationFestivos = (timeFestivosEnd - timeFestivosStart).toFixed(2);
 
-                console.log(`✓ Festivos inicializados: ${durationFestivos}ms`);
+                debugLog(`✓ Festivos inicializados: ${durationFestivos}ms`);
 
                 const timeBindStart = performance.now();
                 bindDelegatedActions();
@@ -598,21 +823,27 @@
                 const timeBindEnd = performance.now();
                 const durationBind = (timeBindEnd - timeBindStart).toFixed(2);
 
-                console.log(`✓ Event handlers vinculados: ${durationBind}ms`);
+                debugLog(`✓ Event handlers vinculados: ${durationBind}ms`);
 
                 const pageTimeEnd = performance.now();
                 const pageTotal = (pageTimeEnd - pageTimeStart).toFixed(2);
 
                 state.initialized = true;
 
-                console.log('\n╔════════════════════════════════════════╗');
-                console.log('║  CARGA COMPLETADA - RESUMEN            ║');
-                console.log('╚════════════════════════════════════════╝');
-                console.log(`Scripts:           ${durationScripts}ms`);
-                console.log(`Festivos:          ${durationFestivos}ms`);
-                console.log(`Event Handlers:    ${durationBind}ms`);
-                console.log(`───────────────────────────────────────`);
-                console.log(`TOTAL JS FRONTEND: ${pageTotal}ms\n`);
+                debugLog('\n╔════════════════════════════════════════╗');
+                debugLog('║  CARGA COMPLETADA - RESUMEN            ║');
+                debugLog('╚════════════════════════════════════════╝');
+                debugLog(`Scripts:           ${durationScripts}ms`);
+                debugLog(`Festivos:          ${durationFestivos}ms`);
+                debugLog(`Event Handlers:    ${durationBind}ms`);
+                debugLog(`───────────────────────────────────────`);
+                debugLog(`TOTAL JS FRONTEND: ${pageTotal}ms\n`);
+
+                measureEnd('boot-total', pageTimeStart, {
+                    criticalScripts: CRITICAL_SCRIPTS.length,
+                    mainScripts: MAIN_SCRIPTS.length,
+                    lazyScripts: LAZY_SCRIPTS.length,
+                });
 
             } catch (error) {
                 console.error('[insumos] Error inicializando materiales-page-loader:', error);

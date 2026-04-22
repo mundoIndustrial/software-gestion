@@ -7,15 +7,26 @@ use Illuminate\Support\Facades\DB;
 
 class RecibosCosturaReadRepository
 {
+    private function applyTipoReciboFilter($query, string $tipoRecibo)
+    {
+        $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
+
+        if ($tipoReciboNormalizado === 'REFLECTIVO') {
+            return $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['REFLECTIVO']);
+        }
+
+        return $query->where('consecutivos_recibos_pedidos.tipo_recibo', $tipoRecibo);
+    }
 
     public function buildBaseQuery(string $tipoRecibo = 'COSTURA')
     {
         $query = DB::table('consecutivos_recibos_pedidos')
-            ->where('tipo_recibo', $tipoRecibo)
             ->where('activo', 1)
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
 
-        return $query
+        $query = $this->applyTipoReciboFilter($query, $tipoRecibo);
+
+        $query = $query
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
@@ -31,19 +42,27 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
-            ->where(function ($q) {
+            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+
+        // Estas reglas aplican al flujo de materiales de COSTURA.
+        // Para REFLECTIVO se evita mezclar reglas de área/estado de costura.
+        if (strtoupper(trim($tipoRecibo)) !== 'REFLECTIVO') {
+            $query->where(function ($q) {
                 $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'Anulada'])
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
-            })
-            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+            });
+        }
+
+        return $query;
     }
 
     public function buildBaseQueryForFiltering(string $tipoRecibo = 'COSTURA')
     {
         $query = DB::table('consecutivos_recibos_pedidos')
-            ->where('tipo_recibo', $tipoRecibo)
             ->where('activo', 1)
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
+
+        $query = $this->applyTipoReciboFilter($query, $tipoRecibo);
 
         return $query
             ->select(
@@ -178,11 +197,23 @@ class RecibosCosturaReadRepository
         
         // Aplicar busqueda de texto
         if (!empty($search)) {
-            \Log::info('[applyFilters] Aplicando busqueda', ['search' => $search]);
-            $query->where(function ($q) use ($search) {
+            $search = trim((string) $search);
+            $searchIsNumeric = ctype_digit($search);
+
+            \Log::info('[applyFilters] Aplicando busqueda', [
+                'search' => $search,
+                'search_is_numeric' => $searchIsNumeric,
+                'search_scope' => 'consecutivo_actual_and_cliente',
+            ]);
+
+            $query->where(function ($q) use ($search, $searchIsNumeric) {
                 $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%")
-                    ->orWhere('pedidos_produccion.numero_pedido', 'LIKE', "%{$search}%")
                     ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
+
+                // Refuerzo para recibos numéricos exactos (ej: "48").
+                if ($searchIsNumeric) {
+                    $q->orWhere('consecutivos_recibos_pedidos.consecutivo_actual', '=', $search);
+                }
             });
         }
 

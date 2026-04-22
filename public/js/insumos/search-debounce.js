@@ -1,60 +1,62 @@
 /**
- * Search Debounce - Live Search sin URL y sin recargar la página
- * 
- * Implementa búsqueda en tiempo real mientras escribe (con debounce)
- * Actualiza la tabla por AJAX sin recargar la página
- * Sin usar parámetros URL - estado local puro
+ * Search Debounce - Live Search sin URL y sin recargar la pagina
+ *
+ * Implementa busqueda en tiempo real mientras escribe (con debounce)
+ * Actualiza la tabla por AJAX sin recargar la pagina
+ * Sin usar parametros URL - estado local puro
  */
 
 const SearchDebounce = {
     searchInput: null,
     clearBtn: null,
     debounceTimer: null,
-    debounceDelay: 150, // ms - búsqueda instantánea
+    debounceDelay: 150, // ms - busqueda instantanea
     isSearching: false,
     currentSearch: '',
-    
+    pendingSearchValue: null,
+    requestCounter: 0,
+
     /**
      * Inicializa los listeners del buscador
      */
     init() {
         this.searchInput = document.querySelector('input[name="search"]');
-        
+
         if (!this.searchInput) {
-            console.warn('[Search] Input de búsqueda no encontrado');
+            console.warn('[Search] Input de busqueda no encontrado');
             return false;
         }
-        
-        // Crear contenedor para el botón X si no existe
+
+        // Crear contenedor para el boton X si no existe
         this.setupClearButton();
-        
+
         // Buscar mientras escribe (con debounce)
         this.searchInput.addEventListener('input', (e) => {
             const searchValue = e.target.value.trim();
             console.log('[Search] Input detectado:', searchValue);
-            
-            // Mostrar/ocultar botón X
+
+            // Mostrar/ocultar boton X
             this.updateClearButton();
-            
+
             // Limpiar el debounce anterior
             if (this.debounceTimer) {
                 clearTimeout(this.debounceTimer);
             }
-            
-            // Si está vacío, buscar inmediatamente
+
+            // Si esta vacio, buscar inmediatamente
             if (searchValue === '') {
                 this.doSearchAjax();
                 return;
             }
-            
-            // Si hay texto, buscar con debounce rápido (150ms)
+
+            // Si hay texto, buscar con debounce rapido (150ms)
             this.debounceTimer = setTimeout(() => {
                 console.log('[Search] Debounce completado, buscando:', searchValue);
                 this.doSearchAjax();
             }, this.debounceDelay);
         });
-        
-        // Búsqueda inmediata al presionar Enter
+
+        // Busqueda inmediata al presionar Enter
         this.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -65,33 +67,33 @@ const SearchDebounce = {
                 this.doSearchAjax();
             }
         });
-        
-        // Inicializar estado del botón X
+
+        // Inicializar estado del boton X
         this.updateClearButton();
-        
-        console.log('[Search] Inicializado - Búsqueda sin URL, instantánea (debounce: ' + this.debounceDelay + 'ms)');
+
+        console.log('[Search] Inicializado - Busqueda sin URL, instantanea (debounce: ' + this.debounceDelay + 'ms)');
         return true;
     },
 
     /**
-     * Configura el botón de limpiar dentro del input
+     * Configura el boton de limpiar dentro del input
      */
     setupClearButton() {
-        // Crear contenedor del botón X si no existe
+        // Crear contenedor del boton X si no existe
         const wrapper = this.searchInput.parentElement;
-        
-        // Si el botón ya existe, no lo crear de nuevo
+
+        // Si el boton ya existe, no lo crear de nuevo
         if (wrapper.querySelector('.search-clear-btn')) {
             this.clearBtn = wrapper.querySelector('.search-clear-btn');
             return;
         }
-        
-        // Crear botón X
+
+        // Crear boton X
         this.clearBtn = document.createElement('button');
         this.clearBtn.type = 'button';
         this.clearBtn.className = 'search-clear-btn';
-        this.clearBtn.innerHTML = '×';
-        this.clearBtn.title = 'Limpiar búsqueda';
+        this.clearBtn.innerHTML = 'x';
+        this.clearBtn.title = 'Limpiar busqueda';
         this.clearBtn.style.cssText = `
             position: absolute;
             right: 12px;
@@ -111,145 +113,207 @@ const SearchDebounce = {
             z-index: 10;
             transition: color 0.2s;
         `;
-        
+
         // Hover effect
         this.clearBtn.addEventListener('mouseenter', () => {
             this.clearBtn.style.color = '#333';
         });
-        
+
         this.clearBtn.addEventListener('mouseleave', () => {
             this.clearBtn.style.color = '#999';
         });
-        
+
         // Click para limpiar
         this.clearBtn.addEventListener('click', (e) => {
             e.preventDefault();
             this.clearSearch();
         });
-        
+
         wrapper.style.position = 'relative';
         wrapper.appendChild(this.clearBtn);
     },
 
     /**
-     * Actualiza la visibilidad del botón X
+     * Actualiza la visibilidad del boton X
      */
     updateClearButton() {
         if (!this.clearBtn) return;
-        
+
         const hasValue = this.searchInput.value.trim().length > 0;
         this.clearBtn.style.display = hasValue ? 'flex' : 'none';
     },
 
     /**
-     * Limpia la búsqueda
+     * Limpia la busqueda
      */
     clearSearch() {
-        console.log('[Search] Limpiando búsqueda');
+        console.log('[Search] Limpiando busqueda');
         this.searchInput.value = '';
-        this.currentSearch = '';
+        // Forzar refresh aunque el valor quede vacio.
+        this.currentSearch = null;
         this.updateClearButton();
-        
-        // Buscar sin parámetro (mostrar todo)
+
+        // Buscar sin parametro (mostrar todo)
         this.doSearchAjax();
-        
+
         // Enfocar el input
         this.searchInput.focus();
     },
 
     /**
-     * Realiza la búsqueda por AJAX sin recargar la página
+     * Realiza la busqueda por AJAX sin recargar la pagina
      */
     async doSearchAjax() {
         if (this.isSearching) {
-            console.log('[Search] Ya hay una búsqueda en progreso, ignorando...');
+            this.pendingSearchValue = this.searchInput ? this.searchInput.value.trim() : '';
+            console.log('[Search] Ya hay una busqueda en progreso, encolando siguiente termino:', this.pendingSearchValue);
             return;
         }
-        
+
         const searchValue = this.searchInput.value.trim();
-        
+        const traceId = this.generateTraceId(searchValue);
+        const startedAt = performance.now();
+
         if (searchValue === this.currentSearch) {
-            console.log('[Search] El valor ya fue buscado, ignorando...');
+            console.log(`[Search][${traceId}] El valor ya fue buscado, ignorando...`, {
+                searchValue,
+                currentSearch: this.currentSearch,
+            });
             return;
         }
-        
+
         this.currentSearch = searchValue;
         this.isSearching = true;
-        
-        console.log('[Search] Iniciando búsqueda AJAX:', searchValue);
-        
+
+        this.logTableSnapshot('ANTES');
+        console.log(`[Search][${traceId}] Iniciando busqueda AJAX`, {
+            searchValue,
+            pathname: window.location.pathname,
+            activeFilters: typeof activeFilters !== 'undefined' ? activeFilters : {},
+        });
+
         try {
-            // Construir URL SIN parámetro de búsqueda en URL
-            // Pero pasar búsqueda como parámetro AJAX
-            const url = new URL(window.location.href);
-            // Remover parámetros de filtro y búsqueda
-            url.searchParams.delete('search');
-            url.searchParams.delete('page');
-            url.searchParams.set('page', '1');
-            
-            // Construir parámetros para AJAX
-            let ajaxParams = new URLSearchParams();
+            // Construir URL base limpia (sin querystring previa)
+            const baseUrl = new URL(window.location.pathname, window.location.origin);
+
+            // Construir parametros para AJAX
+            const ajaxParams = new URLSearchParams();
             ajaxParams.set('page', '1');
             if (searchValue) {
                 ajaxParams.set('search', searchValue);
             }
-            
+
             // Agregar filtros activos si existen
             if (typeof activeFilters !== 'undefined' && Object.keys(activeFilters).length > 0) {
                 for (const [column, values] of Object.entries(activeFilters)) {
                     if (values.length > 0) {
-                        values.forEach(val => {
+                        values.forEach((val) => {
                             ajaxParams.append('filter_columns[]', column);
                             ajaxParams.append('filter_values[]', val);
                         });
                     }
                 }
             }
-            
-            const ajaxUrl = url.toString() + (ajaxParams.toString() ? '?' + ajaxParams.toString() : '');
-            
-            console.log('[Search] URL AJAX:', ajaxUrl);
-            
-            // Enviar petición AJAX
-            const response = await fetch(ajaxUrl, {
+
+            const ajaxUrl = new URL(baseUrl.toString());
+            ajaxUrl.search = ajaxParams.toString();
+            console.log(`[Search][${traceId}] URL AJAX`, ajaxUrl);
+
+            // Enviar peticion AJAX
+            const response = await fetch(ajaxUrl.toString(), {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html'
-                }
+                    Accept: 'text/html',
+                    'X-Insumos-Trace-Id': traceId,
+                },
             });
-            
+
+            const fetchDurationMs = Math.round(performance.now() - startedAt);
+            console.log(`[Search][${traceId}] Respuesta AJAX`, {
+                ok: response.ok,
+                status: response.status,
+                statusText: response.statusText,
+                durationMs: fetchDurationMs,
+                contentType: response.headers.get('content-type'),
+            });
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
-            
+
             // Parsear HTML
             const html = await response.text();
-            
-            // Actualizar tabla usando la función del filter manager
+            console.log(`[Search][${traceId}] HTML recibido`, {
+                htmlLength: html.length,
+                hasTable: html.includes('<table'),
+                hasRows: html.includes('<tr'),
+            });
+
+            // Actualizar tabla usando la funcion del filter manager
             if (typeof updateTableFromHtml === 'function') {
                 updateTableFromHtml(html);
             } else {
-                console.warn('[Search] updateTableFromHtml no está disponible');
+                console.warn(`[Search][${traceId}] updateTableFromHtml no esta disponible`);
             }
-            
-            // Actualizar URL sin parámetro de búsqueda (solo estado local)
+
+            // Actualizar URL sin parametro de busqueda (solo estado local)
             window.history.replaceState(
                 { search: searchValue, filters: typeof activeFilters !== 'undefined' ? activeFilters : {} },
                 '',
-                url.toString()
+                baseUrl.toString()
             );
-            
-            console.log('[Search] Búsqueda completada:', searchValue);
-            
+
+            setTimeout(() => {
+                this.logTableSnapshot('DESPUES');
+                console.log(`[Search][${traceId}] Busqueda completada`, {
+                    searchValue,
+                    totalDurationMs: Math.round(performance.now() - startedAt),
+                });
+            }, 0);
         } catch (error) {
-            console.error('[Search] Error en búsqueda AJAX:', error);
+            console.error(`[Search][${traceId}] Error en busqueda AJAX`, error);
         } finally {
             this.isSearching = false;
+
+            const nextValue = this.pendingSearchValue;
+            this.pendingSearchValue = null;
+            if (nextValue !== null && nextValue !== this.currentSearch) {
+                console.log('[Search] Ejecutando termino encolado:', nextValue);
+                this.doSearchAjax();
+            }
         }
-    }
+    },
+
+    generateTraceId(searchValue) {
+        this.requestCounter += 1;
+        const normalized = (searchValue || 'empty').toString().slice(0, 12).replace(/\s+/g, '_');
+        return `insumos-search-${Date.now()}-${this.requestCounter}-${normalized}`;
+    },
+
+    logTableSnapshot(stage) {
+        try {
+            const rows = Array.from(document.querySelectorAll('tbody tr'));
+            const sampleRows = rows.slice(0, 5).map((row) => {
+                const cells = row.querySelectorAll('td');
+                const reciboCell = cells[1] ? cells[1].textContent.trim() : null;
+                return {
+                    dataPedido: row.dataset.pedido || null,
+                    dataRecibo: row.dataset.recibo || null,
+                    reciboCell,
+                };
+            });
+
+            console.log(`[Search] Snapshot tabla ${stage}`, {
+                totalRows: rows.length,
+                sampleRows,
+            });
+        } catch (e) {
+            console.warn('[Search] No se pudo generar snapshot de tabla', e);
+        }
+    },
 };
 
-// Inicializar cuando el DOM esté listo
+// Inicializar cuando el DOM este listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         SearchDebounce.init();
@@ -258,8 +322,8 @@ if (document.readyState === 'loading') {
     SearchDebounce.init();
 }
 
-// Reinicializar búsqueda cuando se actualiza la tabla via AJAX
-document.addEventListener('insumosTableUpdated', function(e) {
-    console.log('[Search] Actualizando búsqueda después de cambios en tabla');
+// Reinicializar busqueda cuando se actualiza la tabla via AJAX
+document.addEventListener('insumosTableUpdated', function () {
+    console.log('[Search] Actualizando busqueda despues de cambios en tabla');
     SearchDebounce.updateClearButton();
 });
