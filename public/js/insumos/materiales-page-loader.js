@@ -9,9 +9,11 @@
 (function () {
     'use strict';
 
-    const MODULE_SCRIPTS = [
-        { src: '/js/insumos/pagination.js' },
+    const CRITICAL_SCRIPTS = [
         { src: '/js/insumos/index.js', type: 'module' },
+    ];
+
+    const MAIN_SCRIPTS = [
         { src: '/js/insumos/modal-handlers-insumos.js' },
         { src: '/js/insumos/filter-manager-no-url.js' },
         { src: '/js/insumos/material-operations-insumos.js' },
@@ -25,6 +27,10 @@
         { src: '/js/insumos/dropdown-handlers-insumos.js' },
         { src: '/js/insumos/search-debounce.js' },
         { src: '/js/insumos/insumos-galeria.js' },
+    ];
+
+    const LAZY_SCRIPTS = [
+        { src: '/js/insumos/pagination.js' },
     ];
 
     const state = {
@@ -56,28 +62,54 @@
 
     function loadScript(scriptDef) {
         return new Promise((resolve, reject) => {
+            const timeStart = performance.now();
             const script = document.createElement('script');
             script.src = scriptDef.src;
-            // Agregar timestamp para evitar caché en desarrollo
             if (scriptDef.src.includes('filter-manager')) {
                 script.src += '?t=' + Date.now();
-                console.log('[PageLoader] Forzando recarga sin caché:', script.src);
             }
             script.defer = false;
             script.async = false;
             if (scriptDef.type === 'module') {
                 script.type = 'module';
             }
-            script.onload = () => resolve(scriptDef.src);
+            script.onload = () => {
+                const duration = (performance.now() - timeStart).toFixed(2);
+                console.log(`  ✓ ${scriptDef.src.split('/').pop()} (${duration}ms)`);
+                resolve(scriptDef.src);
+            };
             script.onerror = () => reject(new Error(`No se pudo cargar: ${scriptDef.src}`));
             document.body.appendChild(script);
         });
     }
 
     async function loadModuleScripts() {
-        for (const scriptDef of MODULE_SCRIPTS) {
+        const timeStart = performance.now();
+        console.log('\n═══ CARGA DE SCRIPTS FRONTEND (OPTIMIZADO) ═══');
+        console.log(`Cargando ${CRITICAL_SCRIPTS.length + MAIN_SCRIPTS.length + LAZY_SCRIPTS.length} scripts...\n`);
+
+        console.log(`Fase 1: Scripts críticos (${CRITICAL_SCRIPTS.length})...`);
+        for (const scriptDef of CRITICAL_SCRIPTS) {
             await loadScript(scriptDef);
         }
+
+        console.log(`\nFase 2: Scripts principales (${MAIN_SCRIPTS.length} en paralelo)...`);
+        await Promise.all(MAIN_SCRIPTS.map(scriptDef => loadScript(scriptDef)));
+
+        const mainDuration = (performance.now() - timeStart).toFixed(2);
+        console.log(`\n✓ Scripts principales cargados en ${mainDuration}ms`);
+
+        console.log(`\nFase 3: Scripts lazy-load (${LAZY_SCRIPTS.length} en background)...`);
+        const lazyLoad = async () => {
+            for (const scriptDef of LAZY_SCRIPTS) {
+                await loadScript(scriptDef);
+            }
+            const totalDuration = (performance.now() - timeStart).toFixed(2);
+            console.log(`✓ Lazy scripts cargados - Total: ${totalDuration}ms\n`);
+        };
+        lazyLoad();
+
+        return mainDuration;
     }
 
     function resolveInsumosHandler(functionName) {
@@ -516,7 +548,11 @@
                 },
             },
             diagnostics: {
-                loadedScripts: MODULE_SCRIPTS.map(s => s.src),
+                loadedScripts: [
+                    ...CRITICAL_SCRIPTS.map(s => s.src),
+                    ...MAIN_SCRIPTS.map(s => s.src),
+                    ...LAZY_SCRIPTS.map(s => s.src),
+                ],
             },
         };
 
@@ -531,18 +567,53 @@
             return;
         }
 
+        const pageTimeStart = performance.now();
+        console.log('\n╔════════════════════════════════════════╗');
+        console.log('║  INICIO CARGA PÁGINA - INSUMOS         ║');
+        console.log('╚════════════════════════════════════════╝');
+        console.log(`Timestamp: ${new Date().toLocaleTimeString()}`);
+        console.log(`DOM Ready: ${document.readyState}`);
+
         showPageLoading();
 
         state.loadingPromise = (async () => {
             try {
-                await loadModuleScripts();
+                const timeScriptsStart = performance.now();
+                const mainDuration = await loadModuleScripts();
+                const timeScriptsEnd = performance.now();
+                const durationScripts = (timeScriptsEnd - timeScriptsStart).toFixed(2);
 
+                console.log(`\n✓ Scripts cargados: ${durationScripts}ms`);
+
+                const timeFestivosStart = performance.now();
                 await safeCall('inicializarFestivos', [], 'inicializarFestivos no esta disponible');
+                const timeFestivosEnd = performance.now();
+                const durationFestivos = (timeFestivosEnd - timeFestivosStart).toFixed(2);
 
+                console.log(`✓ Festivos inicializados: ${durationFestivos}ms`);
+
+                const timeBindStart = performance.now();
                 bindDelegatedActions();
                 buildContract();
+                const timeBindEnd = performance.now();
+                const durationBind = (timeBindEnd - timeBindStart).toFixed(2);
+
+                console.log(`✓ Event handlers vinculados: ${durationBind}ms`);
+
+                const pageTimeEnd = performance.now();
+                const pageTotal = (pageTimeEnd - pageTimeStart).toFixed(2);
+
                 state.initialized = true;
-                console.log('[insumos] Materiales loader inicializado');
+
+                console.log('\n╔════════════════════════════════════════╗');
+                console.log('║  CARGA COMPLETADA - RESUMEN            ║');
+                console.log('╚════════════════════════════════════════╝');
+                console.log(`Scripts:           ${durationScripts}ms`);
+                console.log(`Festivos:          ${durationFestivos}ms`);
+                console.log(`Event Handlers:    ${durationBind}ms`);
+                console.log(`───────────────────────────────────────`);
+                console.log(`TOTAL JS FRONTEND: ${pageTotal}ms\n`);
+
             } catch (error) {
                 console.error('[insumos] Error inicializando materiales-page-loader:', error);
                 throw error;

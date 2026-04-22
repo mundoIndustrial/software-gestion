@@ -2,7 +2,12 @@
 @extends('layouts.insumos')
 
 @section('title', 'Gestión de Insumos - Control de Insumos del Pedido')
-@section('page-title', 'Control de Insumos del Pedido')
+@php
+    $esGestionReflectivo = (bool) ($esGestionReflectivo ?? false);
+    $mostrarSoloVerRecibo = (bool) ($mostrarSoloVerRecibo ?? false);
+@endphp
+
+@section('page-title', $esGestionReflectivo ? 'Gestion Reflectivo' : 'Control de Insumos del Pedido')
 
 @section('content')
 @php
@@ -10,6 +15,15 @@
 @endphp
 <link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
+@if($mostrarSoloVerRecibo)
+<style>
+    .btn-check-row,
+    .btn-enviar-produccion,
+    .btn-acciones {
+        display: none !important;
+    }
+</style>
+@endif
 {{-- Todos los estilos CSS extraídos a public/css/insumos/materiales.css --}}
 
 @if(app()->isLocal())
@@ -40,9 +54,11 @@
                 <div style="flex: 1;">
                     <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <span class="material-symbols-rounded text-4xl text-blue-600">inventory_2</span>
-                        Control de Insumos del Pedido
+                        {{ $esGestionReflectivo ? 'Gestion Reflectivo' : 'Control de Insumos del Pedido' }}
                     </h1>
-                    <p class="text-gray-600 text-sm mt-2">Gestiona y controla los insumos de tus pedidos en tiempo real</p>
+                    <p class="text-gray-600 text-sm mt-2">
+                        {{ $esGestionReflectivo ? 'Visualiza recibos del proceso reflectivo.' : 'Gestiona y controla los insumos de tus pedidos en tiempo real' }}
+                    </p>
                 </div>
                 {{-- Campana de Notificaciones INSUMOS (IDs únicos para evitar colisión con notifications-realtime.js global) --}}
                 <div style="position: relative;">

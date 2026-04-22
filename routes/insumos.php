@@ -12,6 +12,7 @@ use App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorReceiptsCont
 // ========================================
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
     Route::get('/materiales', [InsumosController::class, 'materiales'])->name('materiales.index');
+    Route::get('/materiales/reflectivo', [InsumosController::class, 'materialesReflectivo'])->name('materiales.reflectivo');
     
     // DEBUG: Endpoint que devuelve los parámetros exactos que recibe
     Route::get('/debug-filter-params', function(\Illuminate\Http\Request $request) {

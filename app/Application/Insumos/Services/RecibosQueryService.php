@@ -24,13 +24,16 @@ class RecibosQueryService
         string $routeName = 'insumos.materiales.index'
     ): LengthAwarePaginator
     {
-        \Log::info(' RecibosQueryService: Iniciando obtencion de recibos paginados', [
+        $timeStart = microtime(true);
+        \Log::info('═══ INICIO RecibosQueryService ═══', [
+            'timestamp' => now()->toIso8601String(),
             'url' => $request->fullUrl(),
             'page' => $request->get('page', 1),
         ]);
 
         try {
-            // Obtener parámetros de filtro
+            $timeQueryStart = microtime(true);
+
             $search = $request->get('search', '');
             $filterColumns = (array) $request->get('filter_columns', []);
             $filterValuesArray = (array) $request->get('filter_values', []);
@@ -46,17 +49,12 @@ class RecibosQueryService
                 }
             }
 
-            // Si hay filtros o búsqueda, usar query sin los filtros por defecto
             $hasFilters = !empty($filterColumns) || !empty($filterValuesArray) || !empty($search);
             if ($hasFilters) {
-                \Log::info(' Aplicando query con filtros personalizados (sin filtros por defecto)');
                 $query = $this->repository->buildBaseQueryForFiltering($tipoRecibo);
             } else {
-                \Log::info(' Usando query base con filtros por defecto');
                 $query = $this->repository->buildBaseQuery($tipoRecibo);
             }
-            
-            \Log::info(' Base query construida exitosamente');
 
             $query = $this->repository->applyFilters(
                 $query,
@@ -65,7 +63,6 @@ class RecibosQueryService
                 $filterValues,
                 $search
             );
-            \Log::info(' Filtros aplicados');
 
             $page = (int) $request->get('page', 1);
             $perPage = 10;
@@ -75,29 +72,43 @@ class RecibosQueryService
                 ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page);
 
+            $timeQueryEnd = microtime(true);
+            $durationQuery = round(($timeQueryEnd - $timeQueryStart) * 1000, 2);
+
             /** @var Collection<int, object> $recibosPagina */
             $recibosPagina = $paginador->getCollection();
-            \Log::info(' Recibos obtenidos de BD (paginado)', [
-                'pagina' => $paginador->currentPage(),
-                'pagina_total_items' => $recibosPagina->count(),
-                'total_general' => $paginador->total(),
+            \Log::info('✓ Query BD completada', [
+                'duration_ms' => $durationQuery,
+                'total_recibos' => $paginador->total(),
+                'items_pagina' => $recibosPagina->count(),
             ]);
+
+            $timeMapsStart = microtime(true);
 
             try {
                 $parcialCreatedAtMap = $this->repository->obtenerMapaParciales($recibosPagina);
-                \Log::info(' Mapa de parciales obtenido');
             } catch (\Exception $e) {
-                \Log::warning('Error obteniendo parciales: ' . $e->getMessage());
+                \Log::warning('⚠ Error obteniendo parciales: ' . $e->getMessage());
                 $parcialCreatedAtMap = [];
             }
 
             try {
                 $materialesMap = $this->materialesMapBuilder->build($recibosPagina);
-                \Log::info(' Mapa de materiales obtenido');
             } catch (\Exception $e) {
-                \Log::warning('Error obteniendo materiales: ' . $e->getMessage());
+                \Log::warning('⚠ Error obteniendo materiales: ' . $e->getMessage());
                 $materialesMap = [];
             }
+
+            $timeMapsEnd = microtime(true);
+            $durationMaps = round(($timeMapsEnd - $timeMapsStart) * 1000, 2);
+
+            \Log::info('✓ Maps obtenidos', [
+                'duration_ms' => $durationMaps,
+                'parciales_count' => count($parcialCreatedAtMap),
+                'materiales_count' => count($materialesMap),
+            ]);
+
+            $timeTransformStart = microtime(true);
 
             $recibosTransformados = $this->transformer->transform(
                 $recibosPagina,
@@ -105,19 +116,32 @@ class RecibosQueryService
                 $calcularDiasCallback,
                 $materialesMap
             );
-            \Log::info(' Recibos transformados');
 
-            $paginadorUrl = route($routeName);
-            \Log::info(' Configurando paginador', [
-                'total' => $paginador->total(),
-                'plan' => $page,
-                'pagina_url' => $paginadorUrl,
+            $timeTransformEnd = microtime(true);
+            $durationTransform = round(($timeTransformEnd - $timeTransformStart) * 1000, 2);
+
+            \Log::info('✓ Transformación completada', [
+                'duration_ms' => $durationTransform,
             ]);
 
+            $paginadorUrl = route($routeName);
             $paginador->setCollection($recibosTransformados->values());
             $paginador->setPath($paginadorUrl);
             $paginador->appends($request->query());
-            \Log::info(" RecibosQueryService completado: Total = {$paginador->total()} recibos");
+
+            $timeEnd = microtime(true);
+            $durationTotal = round(($timeEnd - $timeStart) * 1000, 2);
+
+            \Log::info('═══ FIN RecibosQueryService ═══', [
+                'duration_total_ms' => $durationTotal,
+                'breakdown' => [
+                    'query_ms' => $durationQuery,
+                    'maps_ms' => $durationMaps,
+                    'transform_ms' => $durationTransform,
+                    'other_ms' => round($durationTotal - $durationQuery - $durationMaps - $durationTransform, 2),
+                ],
+                'total_recibos' => $paginador->total(),
+            ]);
 
             return $paginador;
         } catch (\Exception $e) {

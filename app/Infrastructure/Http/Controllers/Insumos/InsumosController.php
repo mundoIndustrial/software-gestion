@@ -142,7 +142,9 @@ class InsumosController extends Controller
             // TODA la lógica de query/filtrado/paginación está en el servicio
             $ordenes = $this->recibosQueryService->obtenerRecibosConPaginacion(
                 $request,
-                fn($fecha) => $this->calcularDiasHabiles($fecha)
+                fn($fecha) => $this->calcularDiasHabiles($fecha),
+                'COSTURA',
+                'insumos.materiales.index'
             );
 
             Log::info(' Recibos obtenidos exitosamente', [
@@ -182,6 +184,68 @@ class InsumosController extends Controller
             }
             
             return $this->handleException($e, 'obtener recibos de costura');
+        }
+    }
+
+    /**
+     * Gestion de reflectivo usando la misma vista de materiales.
+     */
+    public function materialesReflectivo(Request $request)
+    {
+        try {
+            Log::info(' InsumosController.materialesReflectivo() INICIADO', [
+                'url' => $request->fullUrl(),
+                'user_id' => Auth::id(),
+                'user_name' => Auth::user()?->name ?? 'unknown',
+                'is_ajax' => $request->header('X-Requested-With') === 'XMLHttpRequest',
+            ]);
+
+            $user = Auth::user();
+
+            if (!$user) {
+                Log::error(' No hay usuario autenticado en materialesReflectivo()');
+                return redirect('/login');
+            }
+
+            $ordenes = $this->recibosQueryService->obtenerRecibosConPaginacion(
+                $request,
+                fn($fecha) => $this->calcularDiasHabiles($fecha),
+                'REFLECTIVO',
+                'insumos.materiales.reflectivo'
+            );
+
+            if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return view('insumos.materiales.table-partial', [
+                    'ordenes' => $ordenes,
+                    'user' => $user,
+                    'search' => $request->get('search', ''),
+                    'esGestionReflectivo' => true,
+                    'mostrarSoloVerRecibo' => true,
+                ])->render();
+            }
+
+            return view('insumos.materiales.index', [
+                'ordenes' => $ordenes,
+                'user' => $user,
+                'search' => $request->get('search', ''),
+                'esGestionReflectivo' => true,
+                'mostrarSoloVerRecibo' => true,
+            ]);
+        } catch (\Exception $e) {
+            Log::error(' ERROR en InsumosController.materialesReflectivo()', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'url' => $request->fullUrl(),
+            ]);
+
+            if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al obtener recibos reflectivo: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return $this->handleException($e, 'obtener recibos de reflectivo');
         }
     }
 

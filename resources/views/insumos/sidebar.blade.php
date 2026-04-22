@@ -38,10 +38,20 @@
         <!-- Control de Insumos -->
         <li class="menu-item">
           <a href="{{ route('insumos.materiales.index') }}"
-             class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
+             class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
              aria-label="Control de Insumos">
             <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
             <span class="menu-label">Control de Insumos</span>
+          </a>
+        </li>
+
+        <!-- Gestion Reflectivo -->
+        <li class="menu-item">
+          <a href="{{ route('insumos.materiales.reflectivo') }}"
+             class="menu-link {{ request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
+             aria-label="Gestion Reflectivo">
+            <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+            <span class="menu-label">Gestion Reflectivo</span>
           </a>
         </li>
 
