@@ -13,33 +13,53 @@ function abrirEditarDatos() {
     
     const html = `
         <div style="text-align: left;">
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cliente</label>
-                <input type="text" id="editCliente" value="${datos.cliente || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+            <!-- Sección de Datos Principales -->
+            <div style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #374151; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">Información General</h3>
+                
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.9rem;">Cliente</label>
+                    <input type="text" id="editCliente" value="${datos.cliente || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                </div>
+                
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.9rem;">Forma de Pago</label>
+                    <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                </div>
+                
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.9rem;">Orden de Compra</label>
+                    <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                </div>
             </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
-                <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Orden de Compra</label>
-                <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+
+            <!-- Sección de Observaciones -->
+            <div style="margin-bottom: 0;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #374151; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">Observaciones</h3>
+                
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.9rem;">Notas sobre el pedido</label>
+                    <textarea id="editObservaciones" placeholder="Agrega observaciones importantes sobre este pedido..." style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical; font-family: inherit; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">${datos.observaciones || ''}</textarea>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem;">Usa este espacio para registrar notas internas sobre el pedido.</p>
+                </div>
             </div>
         </div>
     `;
     
     UI.contenido({
-        titulo: ' Editar Datos Generales',
+        titulo: '✏️ Editar Datos Generales',
         html: html,
-        confirmButtonText: ' Guardar',
+        confirmButtonText: '💾 Guardar',
         confirmButtonColor: '#10b981',
-        showCancelButton: true
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
             const datosActualizados = {
                 cliente: document.getElementById('editCliente').value,
                 forma_de_pago: document.getElementById('editFormaPago').value,
-                orden_compra: document.getElementById('editOrdenCompra').value
+                orden_compra: document.getElementById('editOrdenCompra').value,
+                observaciones: document.getElementById('editObservaciones').value
             };
             
             // Abrir modal de justificación ANTES de guardar
@@ -114,6 +134,7 @@ async function guardarCambiosPedido(pedidoId, datosActualizados) {
                 cliente: datosActualizados.cliente || '',
                 forma_de_pago: datosActualizados.forma_de_pago || '',
                 orden_compra: datosActualizados.orden_compra || '',
+                observaciones: datosActualizados.observaciones || '',
                 justificacion: datosActualizados.justificacion || ''
             })
         });
@@ -137,6 +158,7 @@ async function guardarCambiosPedido(pedidoId, datosActualizados) {
             window.datosEdicionPedido.cliente = datosActualizados.cliente;
             window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
             window.datosEdicionPedido.orden_compra = datosActualizados.orden_compra;
+            window.datosEdicionPedido.observaciones = datosActualizados.observaciones;
             if (data.data && data.data.novedades) {
                 window.datosEdicionPedido.novedades = data.data.novedades;
             }

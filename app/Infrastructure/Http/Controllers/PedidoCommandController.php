@@ -202,6 +202,7 @@ class PedidoCommandController extends Controller
                 'forma_de_pago' => 'nullable|string|max:500',
                 'orden_compra' => 'nullable|string|max:255',
                 'novedades' => 'nullable|string|max:2000',
+                'observaciones' => 'nullable|string|max:2000',
                 'justificacion' => 'nullable|string|max:1000'
             ]);
 

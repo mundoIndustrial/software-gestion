@@ -106,6 +106,44 @@
         .modal-overlay .modal-content::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        /* Premium Modal Styles */
+        .premium-modal-popup {
+            border-radius: 20px !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .premium-save-button {
+            background: #059669 !important;
+            border-radius: 12px !important;
+            padding: 0.8rem 2rem !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -2px rgba(5, 150, 105, 0.1) !important;
+            transition: all 0.2s !important;
+        }
+
+        .premium-save-button:hover {
+            background: #047857 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3) !important;
+        }
+
+        .premium-cancel-button {
+            background: transparent !important;
+            color: #64748b !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            border-radius: 12px !important;
+            padding: 0.8rem 1.5rem !important;
+            transition: all 0.2s !important;
+        }
+
+        .premium-cancel-button:hover {
+            background: #f1f5f9 !important;
+            color: #1e293b !important;
+        }
     </style>
 @endsection
 
@@ -604,34 +642,105 @@
             const datos = window.datosEdicionPedido;
         
         const html = `
-            <div style="text-align: left;">
-                <div style="margin-bottom: 1rem;">
-                    <label for="editCliente" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cliente</label>
-                    <input type="text" id="editCliente" value="${datos.cliente || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+            <div style="text-align: left; font-family: 'Poppins', sans-serif; padding: 0.5rem;">
+                <!-- Encabezado Personalizado (Sustituye al título de Swal) -->
+                <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+                    <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #3b82f6; border: 1px solid #dbeafe; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <i class="fas fa-pencil-alt" style="font-size: 1.25rem;"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em;">Editar Datos Generales</h2>
+                        <p style="margin: 3px 0 0; font-size: 0.9rem; color: #64748b;">Completa la información del pedido</p>
+                    </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label for="editFormaPago" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
-                    <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+
+                <!-- Sección de INFORMACIÓN GENERAL -->
+                <div style="margin-bottom: 2.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap;">Información General</span>
+                        <div style="flex: 1; height: 1px; background: #f1f5f9;"></div>
+                    </div>
+                    
+                    <!-- Cliente -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label for="editCliente" style="display: flex; align-items: center; gap: 0.6rem; font-weight: 600; color: #475569; margin-bottom: 0.6rem; font-size: 0.875rem;">
+                            <i class="fas fa-user" style="color: #cbd5e1; font-size: 0.9rem;"></i> Cliente
+                        </label>
+                        <input type="text" id="editCliente" value="${datos.cliente || ''}" 
+                               style="width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; background: #f8fafc; color: #1e293b; transition: all 0.2s; font-weight: 500;"
+                               onfocus="this.style.borderColor='#3b82f6'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(59, 130, 246, 0.08)'"
+                               onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Forma de Pago -->
+                        <div>
+                            <label for="editFormaPago" style="display: flex; align-items: center; gap: 0.6rem; font-weight: 600; color: #475569; margin-bottom: 0.6rem; font-size: 0.875rem;">
+                                <i class="fas fa-credit-card" style="color: #cbd5e1; font-size: 0.85rem;"></i> Forma de Pago
+                            </label>
+                            <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" 
+                                   style="width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; background: #f8fafc; color: #1e293b; transition: all 0.2s; font-weight: 500;"
+                                   onfocus="this.style.borderColor='#3b82f6'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(59, 130, 246, 0.08)'"
+                                   onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                        </div>
+                        
+                        <!-- Orden de Compra -->
+                        <div>
+                            <label for="editOrdenCompra" style="display: flex; align-items: center; gap: 0.6rem; font-weight: 600; color: #475569; margin-bottom: 0.6rem; font-size: 0.875rem;">
+                                <i class="fas fa-shopping-cart" style="color: #cbd5e1; font-size: 0.85rem;"></i> Orden de Compra
+                            </label>
+                            <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" placeholder="Número de orden"
+                                   style="width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; background: #f8fafc; color: #1e293b; transition: all 0.2s; font-weight: 500;"
+                                   onfocus="this.style.borderColor='#3b82f6'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(59, 130, 246, 0.08)'"
+                                   onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label for="editOrdenCompra" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Orden de Compra</label>
-                    <input type="text" id="editOrdenCompra" value="${datos.orden_compra || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+
+                <!-- Sección de OBSERVACIONES -->
+                <div style="margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap;">Observaciones</span>
+                        <div style="flex: 1; height: 1px; background: #f1f5f9;"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label for="editObservaciones" style="display: flex; align-items: center; gap: 0.6rem; font-weight: 600; color: #475569; margin-bottom: 0.6rem; font-size: 0.875rem;">
+                            <i class="fas fa-sticky-note" style="color: #cbd5e1; font-size: 0.85rem;"></i> Notas sobre el pedido
+                        </label>
+                        <textarea id="editObservaciones" placeholder="Agrega observaciones importantes sobre este pedido..." 
+                                  style="width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; min-height: 120px; resize: vertical; font-family: inherit; background: #f8fafc; color: #1e293b; transition: all 0.2s; line-height: 1.5;"
+                                  onfocus="this.style.borderColor='#3b82f6'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(59, 130, 246, 0.08)'"
+                                  onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">${datos.observaciones || ''}</textarea>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.75rem; font-style: italic; display: flex; align-items: center; gap: 0.4rem;">
+                             Usa este espacio para registrar notas internas sobre el pedido.
+                        </p>
+                    </div>
                 </div>
             </div>
         `;
         
         UI.contenido({
-            titulo: ' Editar Datos Generales',
+            titulo: '', // Usamos el encabezado personalizado en el HTML
             html: html,
-            confirmButtonText: ' Guardar',
-            confirmButtonColor: '#10b981',
-            showCancelButton: true
+            confirmButtonText: '<i class="fas fa-save" style="margin-right: 8px;"></i> Guardar',
+            confirmButtonColor: '#059669',
+            showCancelButton: true,
+            cancelButtonText: '✕ Cancelar',
+            cancelButtonColor: '#f8fafc',
+            width: '650px',
+            customClass: {
+                popup: 'premium-modal-popup',
+                confirmButton: 'premium-save-button',
+                cancelButton: 'premium-cancel-button'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 const datosActualizados = {
                     cliente: document.getElementById('editCliente').value,
                     forma_de_pago: document.getElementById('editFormaPago').value,
-                    orden_compra: document.getElementById('editOrdenCompra').value
+                    orden_compra: document.getElementById('editOrdenCompra').value,
+                    observaciones: document.getElementById('editObservaciones').value
                 };
                 
                 // Abrir modal de justificación ANTES de guardar
@@ -646,29 +755,47 @@
      */
     function abrirModalJustificacionCambio(pedidoId, datosActualizados) {
         const html = `
-            <div style="text-align: left;">
+            <div style="text-align: left; font-family: 'Poppins', sans-serif; padding: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+                    <div style="width: 44px; height: 44px; background: #fff7ed; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f97316; border: 1px solid #ffedd5; flex-shrink: 0;">
+                        <i class="fas fa-history" style="font-size: 1.15rem;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e3a8a;">Registrar Novedad</h3>
+                        <p style="margin: 2px 0 0; font-size: 0.85rem; color: #64748b;">Explica el motivo de los cambios realizados</p>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 1rem;">
-                    <label for="justificacion-cambio" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
+                    <label for="justificacion-cambio" style="display: block; font-weight: 600; color: #475569; margin-bottom: 0.6rem; font-size: 0.9rem;">Motivo del cambio</label>
                     <textarea id="justificacion-cambio"
-                        placeholder="Explica brevemente el motivo de los cambios..."
-                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical;">
-                    </textarea>
+                        placeholder="Ej: Cambio solicitado por el cliente vía WhatsApp..."
+                        style="width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; min-height: 120px; resize: vertical; background: #f8fafc; color: #1e293b; transition: all 0.2s; line-height: 1.5;"
+                        onfocus="this.style.borderColor='#f97316'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(249, 115, 22, 0.08)'"
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';"></textarea>
                 </div>
             </div>
         `;
         
         UI.contenido({
-            titulo: 'Registrar Novedad del Cambio',
+            titulo: '',
             html: html,
-            confirmButtonText: ' Confirmar y Guardar',
-            confirmButtonColor: '#10b981',
-            showCancelButton: true
+            confirmButtonText: '<i class="fas fa-check" style="margin-right: 8px;"></i> Confirmar y Guardar',
+            confirmButtonColor: '#059669',
+            showCancelButton: true,
+            cancelButtonText: 'Regresar',
+            width: '500px',
+            customClass: {
+                popup: 'premium-modal-popup',
+                confirmButton: 'premium-save-button',
+                cancelButton: 'premium-cancel-button'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 const justificacion = document.getElementById('justificacion-cambio').value.trim();
                 
                 if (!justificacion) {
-                    showNotification('Debes ingresar una novedad del cambio', 'warning');
+                    UI.advertencia('Novedad requerida', 'Debes ingresar un motivo para el cambio para poder continuar.');
                     // Reabrir modal si no hay justificación
                     setTimeout(() => abrirModalJustificacionCambio(pedidoId, datosActualizados), 300);
                     return;
@@ -706,6 +833,7 @@
                     cliente: datosActualizados.cliente || '',
                     forma_de_pago: datosActualizados.forma_de_pago || '',
                     orden_compra: datosActualizados.orden_compra || '',
+                    observaciones: datosActualizados.observaciones || '',
                     justificacion: datosActualizados.justificacion || ''
                 })
             });
@@ -729,6 +857,7 @@
                 window.datosEdicionPedido.cliente = datosActualizados.cliente;
                 window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
                 window.datosEdicionPedido.orden_compra = datosActualizados.orden_compra;
+                window.datosEdicionPedido.observaciones = datosActualizados.observaciones;
                 if (data.data && data.data.novedades) {
                     window.datosEdicionPedido.novedades = data.data.novedades;
                 }

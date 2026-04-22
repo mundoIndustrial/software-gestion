@@ -35,6 +35,10 @@ final class ActualizarPedidoCamposUseCase
             $datosActualizar['orden_compra'] = $dto->ordenCompra;
         }
 
+        if ($dto->observaciones !== null) {
+            $datosActualizar['observaciones'] = $dto->observaciones;
+        }
+
         if ($dto->novedades !== null && !$esBorrador) {
             $datosActualizar['novedades'] = $dto->novedades;
         }
