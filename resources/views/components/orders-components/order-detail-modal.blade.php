@@ -124,7 +124,7 @@
         <div id="receipt-month" style="display: none;"></div>
         <div id="receipt-year" style="display: none;"></div>
 
-        <div class="separator-line"></div>
+        {{-- <div class="separator-line"></div> --}}
 
         <!-- Línea de ancho y metraje con dos columnas separadas -->
         <div id="order-ancho-metraje" class="order-ancho-metraje" style="display: none;">
@@ -149,7 +149,7 @@
             </div>
         </div>
 
-        <div class="signature-section">
+        {{-- <div class="signature-section">
             <div class="signature-field">
                 <span>ENCARGADO DE ORDEN:</span>
                 <span id="encargado-value"></span>
@@ -160,7 +160,7 @@
                 <span id="prendas-entregadas-value"></span>
                 <a href="#" id="ver-entregas" style="color: red; font-weight: bold;">VER ENTREGAS</a>
             </div>
-        </div>
+        </div> --}}
     </div>
 </div>
 

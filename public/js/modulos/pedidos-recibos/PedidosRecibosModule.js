@@ -1028,13 +1028,15 @@ window.openOrderDetailModalWithProcess = async function(
                         for (const [tallaKey, cant] of m.entries()) {
                             const n = Number(cant || 0);
                             if (!tallaKey || !n) continue;
-                            items.push(`${tallaKey}: ${n}`);
+                            // Tallas en rojo
+                            items.push(`<span style="color: #d32f2f;">${tallaKey}: ${n}</span>`);
                         }
                         if (items.length > 0) {
-                            partes.push(`${gen}: ${items.join(', ')}`);
+                            // Género en negro
+                            partes.push(`<span style="color: black;">${gen}:</span> ${items.join(', ')}`);
                         }
                     });
-                    return partes.join(' | ');
+                    return partes.join('<br>'); // Usar <br> para que cada género sea una línea
                 };
 
                 // === 1) Prioridad: tallas por color (array estilo backend: [{genero,talla,color_nombre,cantidad}, ...]) ===
@@ -1344,10 +1346,38 @@ window.openOrderDetailModalWithProcess = async function(
                 // Así evitamos contaminar el resumen cuando el detalle viene unitario.
                 const fuenteTallasResumen = reciboActual?.tallas || prendaData?.tallas || tallasProceso || null;
 
-                const str = buildTallasResumen(
+                let str = buildTallasResumen(
                     fuenteTallasResumen,
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
+
+                // Calcular total general para impresión
+                let totalG = 0;
+                const sumarTallas = (obj) => {
+                    if (!obj) return;
+                    if (Array.isArray(obj)) {
+                        obj.forEach(t => totalG += Number(t?.cantidad || 0));
+                    } else if (typeof obj === 'object') {
+                        Object.values(obj).forEach(val => {
+                            if (typeof val === 'number') totalG += val;
+                            else if (typeof val === 'object') sumarTallas(val);
+                        });
+                    }
+                };
+                sumarTallas(fuenteTallasResumen);
+
+                if (str && totalG > 0) {
+                    // Envolver en inline-block para que la línea coincida con el ancho
+                    str = `
+                        <div style="display: inline-block; min-width: 100px;">
+                            ${str}
+                            <div style="border-top: 1.5px solid #111; margin-top: 5px; padding-top: 2px;">
+                                <span style="color: black; font-weight: 900;">TOTAL: ${totalG}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 console.log('[printReceiptModal]Resultado buildTallasResumen:', str);
                 if (str) return str;
                 
@@ -1791,8 +1821,8 @@ window.openOrderDetailModalWithProcess = async function(
                     console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else {
                     console.log('[printReceiptModal] Tallas normales');
-                    // Tallas normales sin sobremedida
-                    contenidoTallasFinal = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
+                    // Tallas normales - ya vienen con colores desde buildTallasResumen
+                    contenidoTallasFinal = tallasResumen;
                 }
                 
                 console.log('[printReceiptModal] Variables finales:', {
@@ -1839,13 +1869,7 @@ window.openOrderDetailModalWithProcess = async function(
             };
 
             const renderFooter = () => {
-                return `
-                    <div class="separator-line"></div>
-                    <div class="footer">
-                      <div>ENCARGADO DE ORDEN:<br><span style="font-weight:700">-</span></div>
-                      <div>PRENDAS ENTREGADAS:<br><span style="font-weight:700">0/0</span></div>
-                    </div>
-                `;
+                return '';
             };
 
             const pagesHtml = (pages.length > 0 ? pages : [{ blocks: [], num: 1 }]).map((p) => {
@@ -1902,7 +1926,7 @@ window.openOrderDetailModalWithProcess = async function(
                 .prenda-color { font-weight: 700; font-size: 14px; text-transform: uppercase; }
                 .section { margin-bottom: 15px; font-size: 12px; }
                 .section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
-                .tallas-resumen { color:#d32f2f; font-weight: 900; }
+                .tallas-resumen { color: inherit; font-weight: 900; }
                 
                 /* Estilos específicos para COSTURA */
                 .costura-section { margin-bottom: 15px; font-size: 11px; }

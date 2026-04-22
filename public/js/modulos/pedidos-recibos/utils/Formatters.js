@@ -1260,6 +1260,21 @@ export class Formatters {
             return a.localeCompare(b);
         };
 
+        // Función helper para calcular total de cantidades
+        const calcularTotalCantidades = (tallasObj) => {
+            let total = 0;
+            Object.values(tallasObj).forEach(datos => {
+                if (Array.isArray(datos)) {
+                    datos.forEach(d => {
+                        total += d.cantidad || 0;
+                    });
+                } else if (typeof datos === 'number') {
+                    total += datos;
+                }
+            });
+            return total;
+        };
+
         // Función helper para renderizar tallas agrupadas por color
         const renderizarTallasGenero = (tallasObj, generoLabel) => {
             if (Object.keys(tallasObj).length === 0) return;
@@ -1346,7 +1361,7 @@ export class Formatters {
                         const refTexto = refs.length > 0 ? ` (Ref: ${refs.join(', ')})` : '';
                         return `<span style="color: red;"><strong>${t.talla}: ${t.cantidad}</strong>${refTexto}</span>`;
                     }).join(', ');
-                    lineas.push(`${generoLabel}: ${tallasStr}`);
+                    lineas.push(`<span style="color: black;">${generoLabel}:</span> ${tallasStr}`);
                 }
             } else {
                 // Sin colores - formato simple (ordenado de menor a mayor)
@@ -1354,12 +1369,21 @@ export class Formatters {
                     .sort(([tallaA], [tallaB]) => compararTallas(tallaA, tallaB))
                     .map(([talla, cantidad]) => `<span style="color: red;"><strong>${talla}: ${cantidad}</strong></span>`)
                     .join(', ');
-                lineas.push(`${generoLabel}: ${tallasStr}`);
+                lineas.push(`<span style="color: black;">${generoLabel}:</span> ${tallasStr}`);
             }
+            
+            // Agregar total del género
+            const totalGenero = calcularTotalCantidades(tallasObj);
+            /* if (totalGenero > 0) {
+                lineas.push(`<span style="color: #16a34a; font-weight: 600;">TOTAL ${generoLabel}: ${totalGenero}</span>`);
+            } */
             
             console.log(`[Formatters._agregarTallasFormato]  ${generoLabel} agregado`);
         };
         
+        // Renderizar secciones de tallas envueltas en un contenedor que ajuste su ancho al contenido
+        lineas.push('<div style="display: inline-block; min-width: 120px;">');
+
         // Renderizar DAMA
         renderizarTallasGenero(tallasDama, 'DAMA');
         
@@ -1368,6 +1392,21 @@ export class Formatters {
         
         // ✅ Renderizar UNISEX
         renderizarTallasGenero(tallasUnisex, 'UNISEX');
+        
+        // Calcular y mostrar total general
+        const totalDama = calcularTotalCantidades(tallasDama);
+        const totalCaballero = calcularTotalCantidades(tallasCalballero);
+        const totalUnisex = calcularTotalCantidades(tallasUnisex);
+        const totalGeneral = totalDama + totalCaballero + totalUnisex;
+        
+        if (totalGeneral > 0) {
+            // Línea separadora dinámica que se ajusta al ancho del contenedor
+            lineas.push('<div style="border-top: 1.5px solid #1f2937; margin-top: 8px; padding-top: 4px;">');
+            lineas.push(`<span style="color: #1f2937; font-weight: 700; font-size: 13.4px;">TOTAL: ${totalGeneral}</span>`);
+            lineas.push('</div>');
+        }
+
+        lineas.push('</div>');
         
         console.log('[Formatters._agregarTallasFormato]  Lineas después:', lineas);
     }
