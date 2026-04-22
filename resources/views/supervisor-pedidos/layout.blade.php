@@ -432,6 +432,7 @@
     @endauth
 
 </head>
+<body data-module="supervisor-pedidos">
     <!-- Sidebar Supervisor Pedidos (Componente propio) -->
     @include('components.sidebars.sidebar-supervisor-pedidos')
 

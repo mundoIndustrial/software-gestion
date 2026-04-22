@@ -806,7 +806,7 @@
     @stack('styles')
 
 </head>
-<body data-module="supervisor-pedidos">
+<body data-module="cartera">
     <!-- Sidebar Cartera (Componente específico) -->
     @include('components.sidebars.sidebar-cartera')
 
