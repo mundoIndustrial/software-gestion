@@ -9,8 +9,8 @@
 (function () {
     'use strict';
 
-    const DEBUG = Boolean(window.APP_DEBUG);
-    const shouldProfile = () => DEBUG || Boolean(window.__INSUMOS_PROFILE);
+    const DEBUG = false;
+    const shouldProfile = () => false;
     const debugLog = (...args) => {
         if (DEBUG) console.log(...args);
     };

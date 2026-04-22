@@ -31,8 +31,6 @@ globalThis.imagenesPrendaStorage = {
         imagenes.forEach((imagen, index) => {
             globalThis.universalImagenesStorage.agregarImagen('prendas', 'general', imagen);
         });
-        
-        console.log(`[PrendaStorageAdapter]  ${imagenes.length} imágenes de prendas establecidas en storage universal`);
     },
     
     /**
@@ -46,7 +44,6 @@ globalThis.imagenesPrendaStorage = {
         }
         
         const imagenes = globalThis.universalImagenesStorage.obtenerImagenes('prendas', 'general');
-        console.log(`[PrendaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de prendas desde storage universal`);
         return imagenes;
     },
     
@@ -76,11 +73,6 @@ globalThis.imagenesPrendaStorage = {
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[PrendaStorageAdapter]  File object convertido a objeto completo:', {
-                        nombre: imagenCompleta.nombre,
-                        tamano: imagenCompleta.tamano,
-                        tienePreviewUrl: !!imagenCompleta.previewUrl
-                    });
                 } else {
                     // Si ya es un objeto completo, usarlo directamente
                     imagenCompleta = imagen;
@@ -88,13 +80,11 @@ globalThis.imagenesPrendaStorage = {
                 
                 const resultado = globalThis.universalImagenesStorage.agregarImagen('prendas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[PrendaStorageAdapter]  Imagen agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen'));
                 }
             } catch (error) {
-                console.error('[PrendaStorageAdapter]  Error al agregar imagen:', error);
                 reject(error);
             }
         });
@@ -123,7 +113,6 @@ globalThis.imagenesPrendaStorage = {
         }
         
         globalThis.universalImagenesStorage.limpiarTipo('prendas');
-        console.log('[PrendaStorageAdapter]  Storage de prendas limpiado');
     },
     
     /**
@@ -164,8 +153,6 @@ globalThis.imagenesTelaStorage = {
         imagenes.forEach((imagen, index) => {
             globalThis.universalImagenesStorage.agregarImagen('telas', 'general', imagen);
         });
-        
-        console.log(`[TelaStorageAdapter]  ${imagenes.length} imágenes de telas establecidas en storage universal`);
     },
     
     /**
@@ -179,7 +166,6 @@ globalThis.imagenesTelaStorage = {
         }
         
         const imagenes = globalThis.universalImagenesStorage.obtenerImagenes('telas', 'general');
-        console.log(`[TelaStorageAdapter]  Obteniendo ${imagenes.length} imágenes de telas desde storage universal`);
         return imagenes;
     },
     
@@ -209,11 +195,6 @@ globalThis.imagenesTelaStorage = {
                         fileSize: imagen.size,
                         fechaCreacion: new Date().toISOString()
                     };
-                    console.log('[TelaStorageAdapter]  File object convertido a objeto completo:', {
-                        nombre: imagenCompleta.nombre,
-                        tamano: imagenCompleta.tamano,
-                        tienePreviewUrl: !!imagenCompleta.previewUrl
-                    });
                 } else {
                     // Si ya es un objeto completo, usarlo directamente
                     imagenCompleta = imagen;
@@ -221,13 +202,11 @@ globalThis.imagenesTelaStorage = {
                 
                 const resultado = globalThis.universalImagenesStorage.agregarImagen('telas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[TelaStorageAdapter]  Imagen de tela agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen de tela'));
                 }
             } catch (error) {
-                console.error('[TelaStorageAdapter]  Error al agregar imagen de tela:', error);
                 reject(error);
             }
         });

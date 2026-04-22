@@ -159,22 +159,18 @@ const FESTIVOS_COLOMBIA = {
         // 1. Verificar si está en cache local
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
-            console.log(`[Festivos] Usando cache local para ${anio}`);
             return JSON.parse(cached);
         }
 
         try {
             // 2. Intentar API externa (Nager.Date - Gratuita, sin API key)
-            console.log(`[Festivos] Obteniendo festivos ${anio} desde API externa...`);
             const festivos = await this.obtenerDelServicioExterno(anio);
-            
+
             // Cachear por 30 días
             localStorage.setItem(cacheKey, JSON.stringify(festivos));
-            console.log(`[Festivos]  Obtenidos ${festivos.length} festivos desde API`);
-            
+
             return festivos;
         } catch (error) {
-            console.warn(`[Festivos] API externa falló (${error.message}), usando festivos locales`);
             
             // 3. Fallback a festivos locales
             const festivosLocales = this.obtenerLocales(anio);
@@ -251,7 +247,6 @@ const FESTIVOS_COLOMBIA = {
     limpiarCache: function() {
         const keys = Object.keys(localStorage).filter(k => k.startsWith('festivos_'));
         keys.forEach(k => localStorage.removeItem(k));
-        console.log(`[Festivos] Cache limpiado (${keys.length} entradas)`);
     }
 };
 
@@ -264,18 +259,14 @@ async function inicializarFestivos() {
     const anoActual = ahora.getFullYear();
     const anoProximo = anoActual + 1;
 
-    console.log('[Festivos] Inicializando sistema de festivos...');
-    
     try {
         // Precargar ambos años en paralelo
         await Promise.all([
             FESTIVOS_COLOMBIA.obtenerConFallback(anoActual),
             FESTIVOS_COLOMBIA.obtenerConFallback(anoProximo)
         ]);
-        
-        console.log('[Festivos]  Sistema inicializado');
     } catch (error) {
-        console.warn('[Festivos] Error en inicialización (usando locales):', error.message);
+        // Error en inicialización (usando locales)
     }
 }
 
@@ -436,8 +427,6 @@ async function calcularDemoraAsync(fechaPedido, fechaLlegada) {
         const days = await calcularDiasHabilesAsync(fechaPedido, fechaLlegada);
         const estadoDemora = getEstadoDemora(days);
 
-        console.log(`[calcularDemoraAsync] ${fechaPedido} → ${fechaLlegada} = ${days} días (${estadoDemora.estado})`);
-
         return {
             dias: days,
             estado: estadoDemora.estado,
@@ -447,7 +436,6 @@ async function calcularDemoraAsync(fechaPedido, fechaLlegada) {
             color_hex: estadoDemora.color_hex
         };
     } catch (error) {
-        console.error('[calcularDemoraAsync] Error inesperado:', error);
         return fallback;
     }
 }

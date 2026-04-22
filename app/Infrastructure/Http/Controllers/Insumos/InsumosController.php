@@ -175,6 +175,7 @@ class InsumosController extends Controller
                     'ordenes' => $ordenes,
                     'user' => $user,
                     'search' => $search,
+                    'esGestionReflectivo' => false,
                 ])->render();
             }
             
