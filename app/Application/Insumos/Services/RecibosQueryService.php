@@ -17,7 +17,12 @@ class RecibosQueryService
     ) {
     }
 
-    public function obtenerRecibosConPaginacion($request, callable $calcularDiasCallback): LengthAwarePaginator
+    public function obtenerRecibosConPaginacion(
+        $request,
+        callable $calcularDiasCallback,
+        string $tipoRecibo = 'COSTURA',
+        string $routeName = 'insumos.materiales.index'
+    ): LengthAwarePaginator
     {
         \Log::info(' RecibosQueryService: Iniciando obtencion de recibos paginados', [
             'url' => $request->fullUrl(),
@@ -45,10 +50,10 @@ class RecibosQueryService
             $hasFilters = !empty($filterColumns) || !empty($filterValuesArray) || !empty($search);
             if ($hasFilters) {
                 \Log::info(' Aplicando query con filtros personalizados (sin filtros por defecto)');
-                $query = $this->repository->buildBaseQueryForFiltering();
+                $query = $this->repository->buildBaseQueryForFiltering($tipoRecibo);
             } else {
                 \Log::info(' Usando query base con filtros por defecto');
-                $query = $this->repository->buildBaseQuery();
+                $query = $this->repository->buildBaseQuery($tipoRecibo);
             }
             
             \Log::info(' Base query construida exitosamente');
@@ -65,10 +70,8 @@ class RecibosQueryService
             $page = (int) $request->get('page', 1);
             $perPage = 10;
 
-            // Orden tipo "correo" por actividad real de la prenda.
-            // Prioriza cambios en prenda/tallas/colores/variantes; si no hay, usa timestamps del recibo.
             $paginador = $query
-                ->orderByRaw('COALESCE(actividad_prenda_en, consecutivos_recibos_pedidos.updated_at, consecutivos_recibos_pedidos.created_at) DESC')
+                ->orderByRaw('COALESCE(consecutivos_recibos_pedidos.updated_at, consecutivos_recibos_pedidos.created_at) DESC')
                 ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page);
 
@@ -104,7 +107,7 @@ class RecibosQueryService
             );
             \Log::info(' Recibos transformados');
 
-            $paginadorUrl = route('insumos.materiales.index');
+            $paginadorUrl = route($routeName);
             \Log::info(' Configurando paginador', [
                 'total' => $paginador->total(),
                 'plan' => $page,
