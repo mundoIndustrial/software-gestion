@@ -222,6 +222,11 @@ class PrendaEditor {
         if (typeof PrendaEditorProcesos !== 'undefined') {
             PrendaEditorProcesos.cargar(prenda);
         }
+        
+        // Asegurar consistencia inicial tallas -> procesos luego de cargar ambos bloques.
+        if (typeof window.emitirCambioTallas === 'function') {
+            window.emitirCambioTallas('prenda-editor-carga-inicial');
+        }
 
         console.log(' [ Carga] Datos cargados en formulario');
         

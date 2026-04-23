@@ -88,6 +88,7 @@ class PrendaEditorTallas {
                         
                         // Actualizar total
                         this._actualizarTotal();
+                        this._sincronizarProcesosDesdeTallas();
                     });
                     
                     //  AGREGAR EVENTO input PARA ACTUALIZAR EN TIEMPO REAL
@@ -111,6 +112,7 @@ class PrendaEditorTallas {
                         
                         // Actualizar total
                         this._actualizarTotal();
+                        this._sincronizarProcesosDesdeTallas();
                     });
                     
                     console.log(` [Tallas] ${genero} - ${talla}: ${cantidad}`);
@@ -126,6 +128,7 @@ class PrendaEditorTallas {
         if (tallasAUsar) {
             globalThis.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
             console.log('[Carga]  Tallas replicadas en globalThis.tallasRelacionales');
+            this._sincronizarProcesosDesdeTallas();
         }
         
         console.log(' [Tallas] Completado');
@@ -217,6 +220,7 @@ class PrendaEditorTallas {
             
             // Actualizar total
             this._actualizarTotal();
+            this._sincronizarProcesosDesdeTallas();
         };
         btnGroup.appendChild(btnEliminar);
         
@@ -268,6 +272,26 @@ class PrendaEditorTallas {
         
         totalSpan.textContent = total;
         console.log(` [Tallas] Total actualizado: ${total}`);
+    }
+
+    /**
+     * Sincronizar tallas de prenda con tarjetas/procesos activos.
+     * En borradores editados, las tarjetas vienen de otro loader y necesitan este puente explícito.
+     * @private
+     */
+    static _sincronizarProcesosDesdeTallas() {
+        try {
+            if (typeof globalThis.emitirCambioTallas === 'function') {
+                globalThis.emitirCambioTallas('prenda-editor-tallas-loader');
+                return;
+            }
+
+            if (typeof globalThis.sincronizarTallasConTarjetasProcesos === 'function') {
+                globalThis.sincronizarTallasConTarjetasProcesos();
+            }
+        } catch (error) {
+            console.error('[PrendaEditorTallas] Error sincronizando tallas con procesos:', error);
+        }
     }
 
     /**

@@ -492,7 +492,11 @@ class ItemAPIService {
         }
 
         const { formData } = window.DraftPedidoBuilder.construirFormDataBorrador(pedidoData, this.csrfToken);
-        formData.append('pedido_id', String(borradorId));
+        // El backend exige que el ID viaje solo en la URL:
+        // POST /api/asesores/pedidos/{id}/borrador
+        // Nunca en el body.
+        formData.delete('pedido_id');
+        formData.delete('borrador_pedido_id');
 
         console.debug('[crearPedido]  Sincronizando borrador antes de convertir...', {
             borrador_pedido_id: borradorId

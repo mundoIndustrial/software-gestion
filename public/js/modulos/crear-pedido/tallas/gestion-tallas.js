@@ -278,6 +278,35 @@ window.sincronizarTallasConModalProceso = function() {
         console.error('[sincronizarTallasConModalProceso]  Error durante sincronización:', error);
     }
 };
+
+/**
+ * Punto único para notificar cambios de tallas.
+ * - Ejecuta sincronización de procesos/tarjetas.
+ * - Emite evento de dominio para desacoplar consumidores.
+ */
+window.notificarCambioTallas = function(origen = 'desconocido') {
+    try {
+        if (typeof window.sincronizarTallasConModalProceso === 'function') {
+            window.sincronizarTallasConModalProceso();
+        }
+
+        const snapshot = (typeof window.obtenerSnapshotTallasParaProcesos === 'function')
+            ? window.obtenerSnapshotTallasParaProcesos()
+            : null;
+
+        window.dispatchEvent(new CustomEvent('pedido:tallas-cambiadas', {
+            detail: {
+                origen,
+                tallas: snapshot
+            }
+        }));
+    } catch (error) {
+        console.error('[notificarCambioTallas] Error notificando cambio de tallas:', error);
+    }
+};
+
+// Alias legible para flujos existentes.
+window.emitirCambioTallas = window.notificarCambioTallas;
 window.tipoTallaSeleccionado = null;
 
 // Helper: asegurar que tallasRelacionales nunca sea null
@@ -373,6 +402,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
     
     // Log del estado actual de todas las tallas
     console.log('[gestion-tallas]  Estado actual de tallasRelacionales:', window.tallasRelacionales);
+    window.notificarCambioTallas('guardar-cantidad-talla');
 };
 
 /**
@@ -774,7 +804,7 @@ window.abrirModalSeleccionarTallas = async function(genero) {
         cerrarModalTallas(genero);
         crearTarjetaGenero(genero);
         actualizarTotalPrendas();
-        window.sincronizarTallasConModalProceso();
+        window.notificarCambioTallas('confirmar-modal-tallas');
     };
     footer.appendChild(btnConfirmar);
     
@@ -950,7 +980,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
         actualizarTotalPrendas();
         
         //  SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
-        window.sincronizarTallasConModalProceso();
+        window.notificarCambioTallas('eliminar-genero-tarjeta');
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
@@ -980,13 +1010,11 @@ window.crearTarjetaGenero = function(genero, tallas) {
             console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
-            //  SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
-            window.sincronizarTallasConModalProceso();
         };
         input.onkeyup = () => {
             actualizarTotalPrendas();
             //  SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
-            window.sincronizarTallasConModalProceso();
+            window.notificarCambioTallas('tecleo-cantidad-tarjeta-genero');
         };
         
         itemDiv.appendChild(label);
@@ -1116,7 +1144,7 @@ window.limpiarTallasSeleccionadas = function() {
     });
     
     actualizarTotalPrendas();
-    window.sincronizarTallasConModalProceso();
+    window.notificarCambioTallas('limpiar-tallas-seleccionadas');
 
 };
 
@@ -1235,7 +1263,7 @@ window.abrirModalSobremedida = async function() {
         cerrarModalSobremedida();
         crearTarjetaSobremedida(genero, cantidad);
         actualizarTotalPrendas();
-        window.sincronizarTallasConModalProceso();
+        window.notificarCambioTallas('confirmar-sobremedida');
     };
     footer.appendChild(btnConfirmar);
     
@@ -1369,7 +1397,7 @@ window.crearTarjetaSobremedida = function(genero, cantidad) {
         }
         
         actualizarTotalPrendas();
-        window.sincronizarTallasConModalProceso();
+        window.notificarCambioTallas('eliminar-sobremedida');
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
@@ -1542,7 +1570,7 @@ window.confirmarCantidadSinTalla = function() {
     
     // Actualizar total
     actualizarTotalPrendas();
-    window.sincronizarTallasConModalProceso();
+    window.notificarCambioTallas('confirmar-cantidad-sin-talla');
 };
 
 /**
@@ -1665,7 +1693,7 @@ window.crearTarjetaUnisexSinTalla = function(cantidad) {
         }
         
         actualizarTotalPrendas();
-        window.sincronizarTallasConModalProceso();
+        window.notificarCambioTallas('eliminar-unisex-sin-talla');
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
