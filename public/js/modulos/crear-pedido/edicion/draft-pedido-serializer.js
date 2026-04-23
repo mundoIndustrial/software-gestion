@@ -3,6 +3,7 @@
 
     function sincronizarPrendaModalAntesDeGuardarBorrador() {
         const modalPrenda = document.getElementById('modal-agregar-prenda-nueva');
+        const modalWizardColores = document.getElementById('modal-asignar-colores-por-talla');
         const gestionItems = window.gestionItemsUI;
 
         if (!modalPrenda || !gestionItems) {
@@ -16,6 +17,27 @@
 
         if (!modalVisible) {
             return true;
+        }
+
+        const estiloWizard = (modalWizardColores && window.getComputedStyle)
+            ? window.getComputedStyle(modalWizardColores)
+            : null;
+        const wizardVisible = !!(
+            modalWizardColores
+            && (
+                modalWizardColores.style.display === 'block'
+                || modalWizardColores.classList.contains('show')
+                || (estiloWizard && estiloWizard.display !== 'none')
+            )
+        );
+
+        // Si el wizard sigue abierto, forzar guardado de asignaciones para no perder imágenes
+        // que todavía están en inputs temporales (.imagen-tela-wizard).
+        if (wizardVisible && window.ColoresPorTalla && typeof window.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
+            const guardadoWizard = window.ColoresPorTalla.wizardGuardarAsignacion();
+            if (!guardadoWizard) {
+                throw new Error('No se pudieron guardar las asignaciones de colores/telas antes de guardar el borrador.');
+            }
         }
 
         const prendaEditIndex = gestionItems.prendaEditIndex;

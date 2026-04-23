@@ -80,6 +80,21 @@ final class PrepararActualizacionPrendaService
             }
         }
 
+        // FIX: cuando el frontend envía imágenes por `fotos_tela[]` (wizard color/talla),
+        // esas rutas procesadas deben reflejarse también en `asignaciones_colores.*.colores.*.imagen_ruta`
+        // para que PrendaAsignacionesColoresUpdaterService las persista en `prenda_pedido_talla_colores`.
+        if (
+            !empty($validated['asignaciones_colores'])
+            && !empty($imgs['fotos_telas_procesadas'])
+            && !empty($validated['fotos_telas'])
+        ) {
+            $this->inyectarRutasFotosTelaEnAsignaciones(
+                $validated['asignaciones_colores'],
+                $validated['fotos_telas'],
+                $imgs['fotos_telas_procesadas']
+            );
+        }
+
         return [
             'validated' => $validated,
             'imagenes_guardadas' => $imgs['imagenes_guardadas'],
@@ -90,6 +105,133 @@ final class PrepararActualizacionPrendaService
             'fotos_proceso_tallas_nuevo' => $imgs['fotos_proceso_tallas_nuevo'],
             'fotos_color_procesadas' => $imgs['fotos_color_procesadas'],
         ];
+    }
+
+    /**
+     * Sincroniza rutas de `fotos_telas_procesadas` hacia `asignaciones_colores`.
+     * Se apoya en metadatos de `fotos_telas` (color/tela) para ubicar el color correcto.
+     *
+     * @param array<string, mixed> $asignaciones
+     * @param mixed $fotosTelasRaw
+     * @param array<int, array<string, mixed>> $fotosTelasProcesadas
+     */
+    private function inyectarRutasFotosTelaEnAsignaciones(array &$asignaciones, mixed $fotosTelasRaw, array $fotosTelasProcesadas): void
+    {
+        $fotosTelas = is_string($fotosTelasRaw)
+            ? (json_decode($fotosTelasRaw, true) ?? [])
+            : (is_array($fotosTelasRaw) ? $fotosTelasRaw : []);
+
+        if (empty($fotosTelas)) {
+            return;
+        }
+
+        $placeholdersNuevos = [];
+        foreach ($fotosTelas as $fotoMeta) {
+            if (!is_array($fotoMeta)) {
+                continue;
+            }
+
+            $id = $fotoMeta['id'] ?? null;
+            $ruta = $fotoMeta['ruta_original'] ?? $fotoMeta['ruta_webp'] ?? null;
+
+            // Solo placeholders de archivos NUEVOS (sin id/ruta) consumen rutas procesadas por índice.
+            if (!empty($id) || !empty($ruta)) {
+                continue;
+            }
+
+            $placeholdersNuevos[] = $fotoMeta;
+        }
+
+        if (empty($placeholdersNuevos) || empty($fotosTelasProcesadas)) {
+            return;
+        }
+
+        $rutaAsignadas = 0;
+
+        foreach ($placeholdersNuevos as $idx => $fotoMeta) {
+            $rutaProcesada = $fotosTelasProcesadas[$idx]['ruta_webp'] ?? $fotosTelasProcesadas[$idx]['ruta_original'] ?? null;
+            if (!$rutaProcesada) {
+                continue;
+            }
+
+            $colorIdMeta = (int) ($fotoMeta['color_id'] ?? 0);
+            $telaIdMeta = (int) ($fotoMeta['tela_id'] ?? 0);
+            $colorNombreMeta = $this->normalizarTexto($fotoMeta['color_nombre'] ?? '');
+            $telaNombreMeta = $this->normalizarTexto($fotoMeta['tela_nombre'] ?? '');
+
+            foreach ($asignaciones as &$asignacion) {
+                if (!is_array($asignacion)) {
+                    continue;
+                }
+
+                $telaAsignacionNombre = $this->normalizarTexto($asignacion['tela'] ?? $asignacion['tela_nombre'] ?? '');
+                $telaAsignacionId = (int) ($asignacion['tela_id'] ?? 0);
+                $colores = $asignacion['colores'] ?? null;
+                if (!is_array($colores)) {
+                    continue;
+                }
+
+                foreach ($colores as &$colorData) {
+                    if (!is_array($colorData)) {
+                        continue;
+                    }
+
+                    if (!empty($colorData['imagen_ruta'])) {
+                        continue;
+                    }
+
+                    $colorAsignacionId = (int) ($colorData['color_id'] ?? 0);
+                    $colorAsignacionNombre = $this->normalizarTexto($colorData['nombre'] ?? $colorData['color_nombre'] ?? '');
+
+                    $matchPorId = $colorIdMeta > 0
+                        && $telaIdMeta > 0
+                        && $colorAsignacionId === $colorIdMeta
+                        && $telaAsignacionId === $telaIdMeta;
+
+                    $matchPorNombre = !empty($colorNombreMeta)
+                        && !empty($telaNombreMeta)
+                        && $colorAsignacionNombre === $colorNombreMeta
+                        && $telaAsignacionNombre === $telaNombreMeta;
+
+                    if (!$matchPorId && !$matchPorNombre) {
+                        continue;
+                    }
+
+                    $colorData['imagen_ruta'] = $rutaProcesada;
+                    $rutaAsignadas++;
+                    continue 3;
+                }
+                unset($colorData);
+            }
+            unset($asignacion);
+        }
+
+        if ($rutaAsignadas > 0) {
+            Log::info('[PrepararActualizacionPrendaService] Rutas de fotos_tela inyectadas en asignaciones_colores', [
+                'rutas_asignadas' => $rutaAsignadas,
+                'placeholders_nuevos' => count($placeholdersNuevos),
+                'archivos_procesados' => count($fotosTelasProcesadas),
+            ]);
+        }
+    }
+
+    private function normalizarTexto(mixed $valor): string
+    {
+        if (!is_string($valor)) {
+            return '';
+        }
+
+        $valor = trim($valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        $sinAcentos = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $valor);
+        if ($sinAcentos === false) {
+            $sinAcentos = $valor;
+        }
+
+        return strtoupper($sinAcentos);
     }
 
     private function normalizarArray(mixed $input): array
