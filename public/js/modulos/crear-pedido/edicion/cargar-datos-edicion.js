@@ -214,6 +214,11 @@ function cargarPrendas(prendas) {
     } else {
 
     }
+
+    // 🔧 NUEVO: Guardar estado en persistencia para evitar pérdida
+    if (window.gestorPrendasPersistencia && typeof window.gestorPrendasPersistencia.guardarEstado === 'function') {
+        window.gestorPrendasPersistencia.guardarEstado(window.gestorPrendaSinCotizacion);
+    }
 }
 
 function actualizarTituloPagina(datos) {
