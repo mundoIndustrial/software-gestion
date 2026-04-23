@@ -61,12 +61,18 @@
             throw new Error('No se pudo recopilar los datos del pedido. Recarga la pagina e intenta de nuevo.');
         }
 
+        // Validar que haya un cliente seleccionado
+        const cliente = (typeof datos.cliente === 'string' && datos.cliente.trim()) ? datos.cliente.trim() : null;
+        if (!cliente) {
+            throw new Error('Debes seleccionar un cliente antes de guardar el borrador.');
+        }
+
         datos.observaciones = document.getElementById('observaciones_editable')?.value?.trim() || '';
 
         return datos;
     }
 
-    function construirPayload(datos) {
+    async function construirPayload(datos) {
         const csrfToken = document.querySelector('input[name="_token"]')?.value ||
             document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -74,7 +80,7 @@
             throw new Error('No se pudo construir el payload del borrador.');
         }
 
-        return window.DraftPedidoBuilder.construirFormDataBorrador(datos, csrfToken);
+        return await window.DraftPedidoBuilder.construirFormDataBorrador(datos, csrfToken);
     }
 
     async function enviarBorrador(payload) {
@@ -240,7 +246,7 @@
             mostrarLoadingGuardado();
 
             const datos = recopilarDatosPedido();
-            const payload = construirPayload(datos);
+            const payload = await construirPayload(datos);
 
             console.debug('[DraftPedidoOrchestrator] Datos a enviar:', payload.pedidoLimpio);
 

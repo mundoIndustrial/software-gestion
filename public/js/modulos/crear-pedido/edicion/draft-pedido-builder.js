@@ -1,13 +1,13 @@
 (function() {
     'use strict';
 
-    function obtenerArchivoDesdeImagen(imagen) {
+    async function obtenerArchivoDesdeImagenAsync(imagen) {
         if (!imagen) return null;
         if (imagen instanceof File) return imagen;
         if (imagen.file instanceof File) return imagen.file;
         if (imagen.archivo instanceof File) return imagen.archivo;
         if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
-            return convertirBlobUrlAFileSincrono(imagen);
+            return await convertirBlobUrlAArchivoAsync(imagen);
         }
         if (typeof imagen === 'object') {
             const blobUrl =
@@ -19,23 +19,19 @@
                 (typeof imagen.imagen_ruta === 'string' && imagen.imagen_ruta.startsWith('blob:') && imagen.imagen_ruta) ||
                 null;
             if (blobUrl) {
-                return convertirBlobUrlAFileSincrono(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+                return await convertirBlobUrlAArchivoAsync(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
             }
         }
         return null;
     }
 
-    function convertirBlobUrlAFileSincrono(blobUrl, nombreSugerido = null) {
+    async function convertirBlobUrlAArchivoAsync(blobUrl, nombreSugerido = null) {
         if (typeof blobUrl !== 'string' || !blobUrl.startsWith('blob:')) return null;
 
         try {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', blobUrl, false);
-            xhr.responseType = 'blob';
-            xhr.send();
-
-            if (xhr.status !== 200 && xhr.status !== 0) return null;
-            const blob = xhr.response;
+            const response = await fetch(blobUrl);
+            if (!response.ok) return null;
+            const blob = await response.blob();
             if (!(blob instanceof Blob)) return null;
 
             const extension = blob.type === 'image/png'
@@ -52,17 +48,17 @@
         }
     }
 
-    function obtenerArchivoDesdeColorWizard(color) {
+    async function obtenerArchivoDesdeColorWizardAsync(color) {
         if (!color || typeof color !== 'object') {
             return null;
         }
 
-        const archivoDirecto = obtenerArchivoDesdeImagen(color.imagen);
+        const archivoDirecto = await obtenerArchivoDesdeImagenAsync(color.imagen);
         if (archivoDirecto) {
             return archivoDirecto;
         }
 
-        const archivoPorRutaBlob = obtenerArchivoDesdeImagen(
+        const archivoPorRutaBlob = await obtenerArchivoDesdeImagenAsync(
             color.imagen_ruta || color.ruta_original || color.ruta_webp || color.url || color.ruta || null
         );
         if (archivoPorRutaBlob) {
@@ -71,7 +67,7 @@
 
         if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function' && color.imagen_id) {
             const imagenStore = window.ColoresPorTalla.getImage(color.imagen_id);
-            return obtenerArchivoDesdeImagen(imagenStore);
+            return await obtenerArchivoDesdeImagenAsync(imagenStore);
         }
 
         return null;
@@ -90,7 +86,7 @@
         return mapa;
     }
 
-    function adjuntarImagenesWizardATelas(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela) {
+    async function adjuntarImagenesWizardATelasAsync(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela) {
         const asignaciones = p?.asignacionesColoresPorTalla;
         if (!asignaciones || typeof asignaciones !== 'object') {
             return;
@@ -99,30 +95,30 @@
         const mapaIndicesTelas = construirMapaIndicesTelas(telasArr);
         const imagenesYaAgregadas = new Set();
 
-        Object.values(asignaciones).forEach((asignacion) => {
+        for (const asignacion of Object.values(asignaciones)) {
             const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
-            if (colores.length === 0) return;
+            if (colores.length === 0) continue;
 
             const telaNombre = String(asignacion?.tela || '').trim().toUpperCase();
             let telaIdx = mapaIndicesTelas.has(telaNombre) ? mapaIndicesTelas.get(telaNombre) : null;
             if (telaIdx === null && telasArr.length > 0) {
                 telaIdx = 0;
             }
-            if (telaIdx === null || telaIdx === undefined) return;
+            if (telaIdx === null || telaIdx === undefined) continue;
 
-            colores.forEach((color) => {
-                const file = obtenerArchivoDesdeColorWizard(color);
-                if (!file) return;
+            for (const color of colores) {
+                const file = await obtenerArchivoDesdeColorWizardAsync(color);
+                if (!file) continue;
 
                 const idUnico = color?.imagen_id || `${telaIdx}::${file.name}::${file.size}::${file.lastModified}`;
-                if (imagenesYaAgregadas.has(idUnico)) return;
+                if (imagenesYaAgregadas.has(idUnico)) continue;
                 imagenesYaAgregadas.add(idUnico);
 
                 const imgIdx = contadoresPorTela[telaIdx] || 0;
                 formData.append(`nuevas_prendas[${nuevaPrendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`, file);
                 contadoresPorTela[telaIdx] = imgIdx + 1;
-            });
-        });
+            }
+        }
     }
 
     function construirEppsProcesados(datos, formData) {
@@ -176,7 +172,7 @@
         });
     }
 
-    function construirNuevasPrendasYExistentes(formData) {
+    async function construirNuevasPrendasYExistentes(formData) {
         const prendasExistentesJson = [];
         const nuevasPrendasJson = [];
 
@@ -256,14 +252,14 @@
             });
         };
 
-        window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
+        await Promise.all(window.gestionItemsUI.prendas.map(async (p, prendaIdx) => {
             // Solo es "existente" si tiene prenda_pedido_id que sea un número > 0 (ID real de BD)
             // NO cuenta los IDs locales como "prenda-local-xxx" que son strings
             const tieneIdRealBD = p?.prenda_pedido_id && Number.isInteger(p.prenda_pedido_id) && p.prenda_pedido_id > 0;
             const esPrendaExistente = !!tieneIdRealBD;
             if (esPrendaExistente) {
                 const payloadPrendaExistente = typeof window.serializarPrendaExistenteParaBorrador === 'function'
-                    ? window.serializarPrendaExistenteParaBorrador(p, prendaIdx, formData)
+                    ? await window.serializarPrendaExistenteParaBorrador(p, prendaIdx, formData)
                     : null;
 
                 if (payloadPrendaExistente) {
@@ -286,21 +282,22 @@
 
             const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
             const contadoresPorTela = {};
-            telasArr.forEach((tela, telaIdx) => {
+            for (let telaIdx = 0; telaIdx < telasArr.length; telaIdx++) {
+                const tela = telasArr[telaIdx];
                 let telaImgFileIdx = 0;
                 const imagenesTelaArr = Array.isArray(tela.imagenes) ? tela.imagenes : [];
-                imagenesTelaArr.forEach((imgTela) => {
-                    const file = obtenerArchivoDesdeImagen(imgTela);
+                for (const imgTela of imagenesTelaArr) {
+                    const file = await obtenerArchivoDesdeImagenAsync(imgTela);
                     if (file) {
                         formData.append(`nuevas_prendas[${nuevaPrendaIdx}][telas][${telaIdx}][imagenes][${telaImgFileIdx}]`, file);
                         telaImgFileIdx++;
                     }
-                });
+                }
                 contadoresPorTela[telaIdx] = telaImgFileIdx;
-            });
+            }
 
             // Fallback para wizard: imágenes por color/talla (imagen_id en asignaciones)
-            adjuntarImagenesWizardATelas(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela);
+            await adjuntarImagenesWizardATelasAsync(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela);
             // Adjuntar imagenes de procesos para nuevas prendas
             adjuntarImagenesProcesosNuevaPrenda(p, nuevaPrendaIdx);
 
@@ -322,15 +319,15 @@
                 asignacionesColoresPorTalla: p.asignacionesColoresPorTalla || {}
             });
             nuevaPrendaIdx++;
-        });
+        }));
 
         return { prendasExistentesJson, nuevasPrendasJson };
     }
 
-    function construirFormDataBorrador(datos, csrfToken) {
+    async function construirFormDataBorrador(datos, csrfToken) {
         const formData = new FormData();
         const eppsProcesados = construirEppsProcesados(datos, formData);
-        const { prendasExistentesJson, nuevasPrendasJson } = construirNuevasPrendasYExistentes(formData);
+        const { prendasExistentesJson, nuevasPrendasJson } = await construirNuevasPrendasYExistentes(formData);
         const prendasEliminadas = Array.isArray(window.gestionItemsUI?.prendasEliminadas)
             ? window.gestionItemsUI.prendasEliminadas
                 .map((p) => ({

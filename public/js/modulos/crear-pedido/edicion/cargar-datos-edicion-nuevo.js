@@ -1,11 +1,30 @@
 ﻿/**
  * CARGADOR DE DATOS EN MODO EDICIóN - CREAR PEDIDO NUEVO
- * 
+ *
  * Carga los datos del pedido existente en el formulario de creación
  * para permitir edición en la interfaz crear-pedido-nuevo.blade.php
  */
 
 let datosEditacionCargados = false;
+
+/**
+ * Notificar al usuario sobre errores de carga
+ * @param {string} mensaje - Mensaje a mostrar
+ */
+function _notificarErrorCarga(mensaje) {
+    if (window.notificationService && typeof window.notificationService.error === 'function') {
+        window.notificationService.error(mensaje);
+    } else if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: mensaje,
+            confirmButtonText: 'OK'
+        });
+    } else {
+        console.error('[cargar-datos-edicion]', mensaje);
+    }
+}
 
 // Esperar a que el DOM esté listo
 if (document.readyState === 'loading') {
@@ -29,18 +48,25 @@ function iniciarCargaEdicion() {
 
 function esperarElementosYCargar(intentos = 0) {
     const clienteInput = document.getElementById('cliente_editable');
-    const plendasContainer = document.getElementById('prendas-container-editable') || 
-                             document.querySelector('[data-prendas-container]');
 
-    if ((clienteInput || intentos > 20) && datosEditacionCargados === false) {
-
-        cargarDatosEdicion();
-        datosEditacionCargados = true;
-    } else if (intentos < 30) {
-        setTimeout(() => esperarElementosYCargar(intentos + 1), 200);
-    } else {
-
+    // Si encontramos el input, cargar datos
+    if (clienteInput) {
+        if (datosEditacionCargados === false) {
+            cargarDatosEdicion();
+            datosEditacionCargados = true;
+        }
+        return;
     }
+
+    // Si agotamos intentos, notificar al usuario
+    if (intentos >= 30) {
+        console.error('[cargar-datos-edicion] Formulario no encontrado tras 30 intentos (6 segundos)');
+        _notificarErrorCarga('No se pudo cargar el formulario de edición. Por favor recarga la página.');
+        return;
+    }
+
+    // Reintentar después de 200ms
+    setTimeout(() => esperarElementosYCargar(intentos + 1), 200);
 }
 
 function cargarDatosEdicion() {
@@ -327,8 +353,12 @@ function cargarPrendas(prendas) {
     // Evitamos renderizar tambien por el camino legacy para no duplicar tarjetas
     // despues de editar y guardar dentro de la vista.
     if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
-        console.log('[cargar-datos-edicion] Render legacy de prendas omitido: gestionItemsUI sera la fuente unica');
-        return;
+        const itemsRegistrados = window.gestionItemsUI.obtenerItemsOrdenados();
+        if (itemsRegistrados.length > 0) {
+            console.log('[cargar-datos-edicion] Render legacy de prendas omitido: gestionItemsUI sera la fuente unica');
+            return;
+        }
+        // Si gestionItemsUI existe pero está vacío, continuar con renderizado legacy
     }
 
     // Renderizar todas las prendas
@@ -471,7 +501,8 @@ function renderizarItemsRegistrados(intentos = 0) {
         console.log('[cargar-datos-edicion] Esperando gestionItemsUI.renderer... intento', intentos + 1);
         setTimeout(() => renderizarItemsRegistrados(intentos + 1), 200);
     } else {
-        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible despues de', MAX_INTENTOS, 'intentos');
+        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible después de', MAX_INTENTOS, 'intentos');
+        _notificarErrorCarga('Error al cargar los items del pedido. Por favor recarga la página.');
     }
 }
 

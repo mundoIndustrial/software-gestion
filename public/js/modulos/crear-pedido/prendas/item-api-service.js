@@ -491,7 +491,7 @@ class ItemAPIService {
             throw new Error('No se pudo sincronizar el borrador antes de crear (DraftPedidoBuilder no disponible).');
         }
 
-        const { formData } = window.DraftPedidoBuilder.construirFormDataBorrador(pedidoData, this.csrfToken);
+        const { formData } = await window.DraftPedidoBuilder.construirFormDataBorrador(pedidoData, this.csrfToken);
         // El backend exige que el ID viaje solo en la URL:
         // POST /api/asesores/pedidos/{id}/borrador
         // Nunca en el body.

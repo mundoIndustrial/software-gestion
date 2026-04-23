@@ -36,7 +36,7 @@
         window.modoEdicion = true;
         window.pedidoEditarId = {{ $pedidoEditarId }};
         // Pasar datos completos con pedido, prendas, EPPs, etc.
-        window.pedidoEditarData = {!! json_encode([
+        window.pedidoEditarData = {{ Js::from([
             'pedido' => [
                 'id' => $pedido->id ?? null,
                 'numero_pedido' => $pedido->numero_pedido ?? null,
@@ -52,7 +52,7 @@
             'epps' => $epps ?? [],
             'estados' => $estados ?? [],
             'areas' => $areas ?? []
-        ]) !!};
+        ]) }};
 
     </script>
 @endif

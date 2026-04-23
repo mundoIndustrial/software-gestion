@@ -896,26 +896,27 @@ class DragDropManager {
             return 3;
         }
         
-        // Si no está sobre un preview específico, usar el más cercano
+        // Si no está sobre un preview específico, usar el más cercano (requiere posición del mouse)
         if (previewProceso1 && previewProceso2 && previewProceso3 && this.mousePosition.x && this.mousePosition.y) {
             const rect1 = previewProceso1.getBoundingClientRect();
             const rect2 = previewProceso2.getBoundingClientRect();
             const rect3 = previewProceso3.getBoundingClientRect();
-            
+
             const cursorX = this.mousePosition.x;
             const cursorY = this.mousePosition.y;
-            
+
             const dist1 = Math.sqrt(Math.pow(cursorX - (rect1.left + rect1.width/2), 2) + Math.pow(cursorY - (rect1.top + rect1.height/2), 2));
             const dist2 = Math.sqrt(Math.pow(cursorX - (rect2.left + rect2.width/2), 2) + Math.pow(cursorY - (rect2.top + rect2.height/2), 2));
             const dist3 = Math.sqrt(Math.pow(cursorX - (rect3.left + rect3.width/2), 2) + Math.pow(cursorY - (rect3.top + rect3.height/2), 2));
-            
+
             if (dist1 <= dist2 && dist1 <= dist3) return 1;
             if (dist2 <= dist1 && dist2 <= dist3) return 2;
             return 3;
         }
-        
-        // Fallback: usar proceso 1
-        return 1;
+
+        // No se pudo determinar proceso (ni elemento activo ni posición del mouse disponibles)
+        UIHelperService.log('DragDropManager', ' No se pudo determinar número de proceso - falta información de posición o elementos', 'warn');
+        return null;
     }
 
     /**

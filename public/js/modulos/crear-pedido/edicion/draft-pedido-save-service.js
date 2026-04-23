@@ -61,7 +61,22 @@
             credentials: 'include'
         });
 
-        const resultado = await response.json();
+        let resultado;
+        try {
+            resultado = await response.json();
+        } catch (parseError) {
+            console.error('[DraftPedidoSaveService] Error al parsear JSON de respuesta:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: parseError.message
+            });
+            // Crear un resultado de error genérico si el JSON es inválido
+            resultado = {
+                success: false,
+                message: `Error del servidor (HTTP ${response.status}). La respuesta no es JSON válido.`,
+                error: parseError.message
+            };
+        }
 
         return {
             response,

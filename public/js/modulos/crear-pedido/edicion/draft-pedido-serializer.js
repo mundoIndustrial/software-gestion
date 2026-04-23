@@ -74,7 +74,7 @@
         return true;
     }
 
-    function serializarPrendaExistenteParaBorrador(prenda, prendaIndex, formData) {
+    async function serializarPrendaExistenteParaBorrador(prenda, prendaIndex, formData) {
         if (!prenda || !formData) {
             return null;
         }
@@ -99,12 +99,12 @@
             ? prenda.asignacionesColoresPorTalla
             : null;
 
-        const obtenerArchivoDesdeImagen = (imagen) => {
+        const obtenerArchivoDesdeImagenAsync = async (imagen) => {
             if (!imagen) return null;
             if (imagen instanceof File) return imagen;
             if (imagen?.file instanceof File) return imagen.file;
             if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
-                return convertirBlobUrlAFileSincrono(imagen);
+                return await convertirBlobUrlAArchivo(imagen);
             }
             if (typeof imagen === 'object') {
                 const blobUrl =
@@ -117,23 +117,19 @@
                     null;
 
                 if (blobUrl) {
-                    return convertirBlobUrlAFileSincrono(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+                    return await convertirBlobUrlAArchivo(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
                 }
             }
             return null;
         };
 
-        const convertirBlobUrlAFileSincrono = (blobUrl, nombreSugerido = null) => {
+        const convertirBlobUrlAArchivo = async (blobUrl, nombreSugerido = null) => {
             if (typeof blobUrl !== 'string' || !blobUrl.startsWith('blob:')) return null;
 
             try {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', blobUrl, false);
-                xhr.responseType = 'blob';
-                xhr.send();
-
-                if (xhr.status !== 200 && xhr.status !== 0) return null;
-                const blob = xhr.response;
+                const response = await fetch(blobUrl);
+                if (!response.ok) return null;
+                const blob = await response.blob();
                 if (!(blob instanceof Blob)) return null;
 
                 const extension = blob.type === 'image/png'
@@ -150,19 +146,19 @@
             }
         };
 
-        const obtenerArchivoDesdeColorWizard = (color) => {
+        const obtenerArchivoDesdeColorWizardAsync = async (color) => {
             if (!color || typeof color !== 'object') return null;
 
-            const archivoDirecto = obtenerArchivoDesdeImagen(color.imagen);
+            const archivoDirecto = await obtenerArchivoDesdeImagenAsync(color.imagen);
             if (archivoDirecto) return archivoDirecto;
 
-            const archivoPorRutaBlob = obtenerArchivoDesdeImagen(
+            const archivoPorRutaBlob = await obtenerArchivoDesdeImagenAsync(
                 color.imagen_ruta || color.ruta_original || color.ruta_webp || color.url || color.ruta || null
             );
             if (archivoPorRutaBlob) return archivoPorRutaBlob;
 
             if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function' && color.imagen_id) {
-                return obtenerArchivoDesdeImagen(window.ColoresPorTalla.getImage(color.imagen_id));
+                return await obtenerArchivoDesdeImagenAsync(window.ColoresPorTalla.getImage(color.imagen_id));
             }
 
             return null;
@@ -389,9 +385,10 @@
         );
 
         if (tieneAsignacionesWizard) {
-            Object.entries(asignacionesColores).forEach(([claveAsignacion, asignacion]) => {
+            for (const [claveAsignacion, asignacion] of Object.entries(asignacionesColores)) {
                 const coloresAsignados = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
-                coloresAsignados.forEach((color, idxColor) => {
+                for (let idxColor = 0; idxColor < coloresAsignados.length; idxColor++) {
+                    const color = coloresAsignados[idxColor];
                     const contextoBase = {
                         colorTelaId:
                             color?.prenda_pedido_colores_telas_id ||
@@ -418,13 +415,13 @@
                         `la asignación ${claveAsignacion} (color ${idxColor + 1})`
                     );
 
-                    const archivoColor = obtenerArchivoDesdeColorWizard(color);
+                    const archivoColor = await obtenerArchivoDesdeColorWizardAsync(color);
                     if (archivoColor) {
                         agregarNuevaFotoTelaDesdeArchivo(archivoColor, {
                             ...contextoRelacion,
                             imagenId: color?.imagen_id || color?.id
                         });
-                        return;
+                        continue;
                     }
 
                     const rutaColor = normalizarRutaPersistible(
@@ -445,8 +442,8 @@
                             ruta_webp: color?.ruta_webp || ''
                         });
                     }
-                });
-            });
+                }
+            }
         } else if (Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
             // Fuente unica fuera de wizard: relaciones oficiales color/tela desde el payload de la prenda.
             prenda.colores_telas.forEach((colorTela, idxRelacion) => {
@@ -535,12 +532,17 @@
                 return;
             }
 
-            // 3️⃣ Si no es ni File ni URL válida, ignorar (probablemente blob temporal)
+            // 3️⃣ Si no es ni File ni URL válida, registrar y omitir
+            console.warn('[DraftPedidoSerializer] Imagen descartada (no es File ni URL de BD):', {
+                tipo: typeof img,
+                tieneId: !!(img?.id),
+                urlParcial: (img?.url || img?.ruta || '').substring(0, 50)
+            });
         });
 
         const procesosAEliminar = Array.isArray(prenda.procesos_a_eliminar)
             ? prenda.procesos_a_eliminar
-            : (estaPrendaEnEdicion && window.procesosParaEliminarIds ? Array.from(window.procesosParaEliminarIds) : []);
+            : (estaPrendaEnEdicion && window.procesosParaEliminarIds instanceof Set ? Array.from(window.procesosParaEliminarIds) : []);
         const procesosAEliminarSet = new Set(
             procesosAEliminar
                 .map((entry) => {
