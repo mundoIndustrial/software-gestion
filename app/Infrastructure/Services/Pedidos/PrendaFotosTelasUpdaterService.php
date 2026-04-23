@@ -21,6 +21,9 @@ final class PrendaFotosTelasUpdaterService
         ?array $fotosTelas,
         ?array $fotosTelasProcesadas = null
     ): void {
+        $colorTelaIdsValidos = $prenda->coloresTelas()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $colorTelaIdsValidosSet = array_fill_keys($colorTelaIdsValidos, true);
+
         if (is_null($fotosTelas)) {
             if (!empty($fotosTelasProcesadas)) {
                 \Log::error('[PrendaFotosTelasUpdaterService] Fotos de tela recibidas sin metadatos fotos_telas', [
@@ -33,7 +36,15 @@ final class PrendaFotosTelasUpdaterService
         }
 
         if (empty($fotosTelas)) {
-            $prenda->fotosTelas()->delete();
+            // Guard rail defensivo:
+            // En escenarios de desincronizacion del frontend puede llegar fotos_telas=[]
+            // sin intencion real de borrar todas las fotos de tela de la prenda.
+            // Para evitar perdida de informacion, se conserva lo existente.
+            \Log::warning('[PrendaFotosTelasUpdaterService] fotos_telas vacio - se omite borrado defensivamente', [
+                'prenda_id' => $prenda->id,
+                'fotos_telas_actuales' => $prenda->fotosTelas()->count(),
+                'fotos_telas_procesadas_recibidas' => is_array($fotosTelasProcesadas) ? count($fotosTelasProcesadas) : 0,
+            ]);
             return;
         }
 
@@ -70,7 +81,7 @@ final class PrendaFotosTelasUpdaterService
                     continue;
                 }
 
-                $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
+                $colorTelaId = $this->resolverColorTelaIdParaPrenda($prenda, $foto, $colorTelaIdsValidosSet);
                 if (!$colorTelaId) {
                     continue;
                 }
@@ -90,7 +101,10 @@ final class PrendaFotosTelasUpdaterService
             }
 
             foreach ($incomingByColorTela as $colorTelaId => $incoming) {
-                $query = PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId);
+                $query = PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId)
+                    ->whereHas('colorTela', function ($q) use ($prenda) {
+                        $q->where('prenda_pedido_id', $prenda->id);
+                    });
                 if (!empty($incoming['ids'])) {
                     $query->whereNotIn('id', array_values(array_unique($incoming['ids'])));
                 } elseif (!empty($incoming['rutas'])) {
@@ -128,7 +142,7 @@ final class PrendaFotosTelasUpdaterService
             }
 
             $id = $foto['id'] ?? null;
-            $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
+            $colorTelaId = $this->resolverColorTelaIdParaPrenda($prenda, $foto, $colorTelaIdsValidosSet);
             $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
             $rutaWebp = null;
 
@@ -207,6 +221,42 @@ final class PrendaFotosTelasUpdaterService
         ]);
 
         return $colorTela->id;
+    }
+
+    /**
+     * @param array<string, mixed> $foto
+     * @param array<int, bool> $colorTelaIdsValidosSet
+     */
+    private function resolverColorTelaIdParaPrenda(PrendaPedido $prenda, array $foto, array &$colorTelaIdsValidosSet): ?int
+    {
+        $colorTelaId = (int) ($foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? 0);
+
+        if ($colorTelaId > 0 && isset($colorTelaIdsValidosSet[$colorTelaId])) {
+            return $colorTelaId;
+        }
+
+        if (
+            isset($foto['color_id'], $foto['tela_id']) &&
+            (int) $foto['color_id'] > 0 &&
+            (int) $foto['tela_id'] > 0
+        ) {
+            $colorTelaCreadoId = $this->obtenerOCrearColorTela($prenda, $foto['color_id'], $foto['tela_id']);
+            if ($colorTelaCreadoId) {
+                $colorTelaIdsValidosSet[(int) $colorTelaCreadoId] = true;
+                return (int) $colorTelaCreadoId;
+            }
+        }
+
+        if ($colorTelaId > 0) {
+            \Log::warning('[PrendaFotosTelasUpdaterService] color_tela_id omitido por no pertenecer a la prenda actual', [
+                'prenda_id' => $prenda->id,
+                'color_tela_id_recibido' => $colorTelaId,
+                'color_id' => $foto['color_id'] ?? null,
+                'tela_id' => $foto['tela_id'] ?? null,
+            ]);
+        }
+
+        return null;
     }
 
     private function generarRutaWebp(string $rutaOriginal): string

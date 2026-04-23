@@ -188,8 +188,24 @@ class GuardarPedidoDesdeJSONService
 
             try {
                 // Obtener o crear la combinación color-tela
-                $colorTelaId = $fotoData['color_tela_id'] ?? null;
+                $colorTelaId = isset($fotoData['color_tela_id']) ? (int) $fotoData['color_tela_id'] : null;
                 
+                if ($colorTelaId) {
+                    $esValidoParaPrenda = $prendaPedido->coloresTelas()
+                        ->where('id', $colorTelaId)
+                        ->exists();
+
+                    if (!$esValidoParaPrenda) {
+                        \Log::warning('[GuardarPedidoDesdeJSONService] color_tela_id ignorado por no pertenecer a la prenda', [
+                            'prenda_id' => $prendaPedido->id,
+                            'color_tela_id_recibido' => $colorTelaId,
+                            'color_id' => $fotoData['color_id'] ?? null,
+                            'tela_id' => $fotoData['tela_id'] ?? null,
+                        ]);
+                        $colorTelaId = null;
+                    }
+                }
+
                 if (!$colorTelaId) {
                     // Si no viene el ID, crear la combinación
                     $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([

@@ -30,17 +30,13 @@ final class PrendaAsignacionesColoresUpdaterService
             || (is_object($asignacionesColores) && count((array) $asignacionesColores) === 0);
 
         if ($estaVacio) {
-            \Log::info('[PrendaAsignacionesColoresUpdaterService] asignaciones_colores vacío - ELIMINANDO TODAS asignaciones', [
+            // Guard rail defensivo:
+            // Evita borrar todas las asignaciones por payload vacio accidental
+            // durante guardados parciales o desincronizacion en borrador.
+            \Log::warning('[PrendaAsignacionesColoresUpdaterService] asignaciones_colores vacio - se omite borrado defensivamente', [
                 'prenda_id' => $prenda->id,
                 'tipo_vacio' => is_array($asignacionesColores) ? 'array' : (is_object($asignacionesColores) ? 'object' : 'otro'),
-            ]);
-            foreach ($tallasMap as $talla) {
-                \DB::table('prenda_pedido_talla_colores')
-                    ->where('prenda_pedido_talla_id', $talla->id)
-                    ->delete();
-            }
-            \Log::info('[PrendaAsignacionesColoresUpdaterService] Asignaciones colores eliminadas (vacío)', [
-                'prenda_id' => $prenda->id,
+                'total_tallas_prenda' => $tallasMap->count(),
             ]);
             return;
         }
@@ -174,4 +170,5 @@ final class PrendaAsignacionesColoresUpdaterService
         ]);
     }
 }
+
 

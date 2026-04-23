@@ -18,7 +18,13 @@ final class PrendaColoresTelasUpdaterService
         }
 
         if (empty($coloresTelasPayload)) {
-            $prenda->coloresTelas()->delete();
+            // Guard rail defensivo:
+            // Evita borrar todos los colores/telas por un payload vacio accidental
+            // durante guardado de borrador con multiples prendas.
+            \Log::warning('[PrendaColoresTelasUpdaterService] colores_telas vacio - se omite borrado defensivamente', [
+                'prenda_id' => $prenda->id,
+                'colores_telas_actuales' => $prenda->coloresTelas()->count(),
+            ]);
             return;
         }
 
@@ -131,4 +137,3 @@ final class PrendaColoresTelasUpdaterService
         return $tela->id;
     }
 }
-

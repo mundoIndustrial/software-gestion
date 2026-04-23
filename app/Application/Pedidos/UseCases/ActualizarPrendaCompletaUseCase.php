@@ -216,6 +216,16 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         }
 
         if (empty($dto->fotos)) {
+            // Guard rail: evitar borrado accidental cuando el frontend envia fotos vacio
+            // por desincronizacion, pero no explicita imagenes a eliminar.
+            if (empty($dto->imagenesAEliminar)) {
+                \Log::warning('[ActualizarPrendaCompletaUseCase] fotos vacio sin imagenes_a_eliminar - se omite borrado defensivamente', [
+                    'prenda_id' => $prenda->id,
+                    'fotos_actuales' => $prenda->fotos()->count(),
+                ]);
+                return;
+            }
+
             \Log::info('[ActualizarPrendaCompletaUseCase] fotos es array VACIO - ELIMINAR todas las imagenes', [
                 'prenda_id' => $prenda->id,
                 'fotosActuales' => $prenda->fotos()->count()
@@ -495,4 +505,3 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }
-
