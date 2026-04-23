@@ -22,23 +22,23 @@
     <!-- CRÍTICO: Definir datos del pedido ANTES de que se cargue crear-pedido-desde-cotizacion -->
     <script>
         console.log(' [editar-pedido] Definiendo datos del pedido ANTES de todo...');
-        
+
         window.modoEdicion = true;
-        window.pedidoEdicionId = {{ $pedido->id }};
-        window.pedidoEdicionData = @json($pedidoData);
+        window.pedidoEditarId = {{ $pedido->id }};
+        window.pedidoEditarData = @json($pedidoData);
         
-        console.log(' [editar-pedido] pedidoData recibido:', window.pedidoEdicionData);
-        console.log(' [editar-pedido] ¿Tiene procesos?', 'procesos' in window.pedidoEdicionData);
+        console.log(' [editar-pedido] pedidoData recibido:', window.pedidoEditarData);
+        console.log(' [editar-pedido] ¿Tiene procesos?', 'procesos' in window.pedidoEditarData);
         
         // IMPORTANTE: Para que abrirEditarPrendaModal() funcione correctamente
         // Establecer datosEdicionPedido con la estructura que espera
         window.datosEdicionPedido = {
             numero_pedido: {{ $pedido->id }},
             id: {{ $pedido->id }},
-            cliente: window.pedidoEdicionData.cliente || '{{ $pedido->cliente }}',
-            forma_de_pago: window.pedidoEdicionData.forma_de_pago || '{{ $pedido->forma_de_pago }}',
-            novedades: window.pedidoEdicionData.descripcion || '{{ $pedido->novedades }}',
-            ...(window.pedidoEdicionData && window.pedidoEdicionData.pedido ? window.pedidoEdicionData.pedido : {})
+            cliente: window.pedidoEditarData.cliente || '{{ $pedido->cliente }}',
+            forma_de_pago: window.pedidoEditarData.forma_de_pago || '{{ $pedido->forma_de_pago }}',
+            novedades: window.pedidoEditarData.descripcion || '{{ $pedido->novedades }}',
+            ...(window.pedidoEditarData && window.pedidoEditarData.pedido ? window.pedidoEditarData.pedido : {})
         };
         
         // Establecer en body para que obtenerPedidoId() lo encuentre
@@ -83,21 +83,22 @@
                 
                 // Función para renderizar la factura
                 function renderizarFacturaEditableEnPagina() {
-                    if (typeof generarHTMLFactura === 'function' && window.pedidoEdicionData?.pedido?.prendas) {
+                    if (typeof generarHTMLFactura === 'function' && window.pedidoEditarData?.pedido?.prendas) {
                         console.log(' [FACTURA-EDITABLE] Condiciones cumplidas, renderizando...');
-                        
+
                         const datos = {
-                            numero_pedido: window.pedidoEdicionData.pedido.numero_pedido || window.pedidoEdicionId,
-                            numero_pedido_temporal: window.pedidoEdicionData.pedido.numero_pedido_temporal,
-                            cliente: window.pedidoEdicionData.pedido.cliente || '',
-                            asesora: window.pedidoEdicionData.pedido.asesora || '',
-                            forma_de_pago: window.pedidoEdicionData.pedido.forma_de_pago || '',
-                            prendas: window.pedidoEdicionData.pedido.prendas || [],
-                            procesos: window.pedidoEdicionData.pedido.procesos || [],
-                            epps: window.pedidoEdicionData['epps_transformados'] || window.pedidoEdicionData.pedido.epps || []
+                            numero_pedido: window.pedidoEditarData.pedido.numero_pedido || window.pedidoEditarId,
+                            numero_pedido_temporal: window.pedidoEditarData.pedido.numero_pedido_temporal,
+                            cliente: window.pedidoEditarData.pedido.cliente || '',
+                            asesora: window.pedidoEditarData.pedido.asesora || '',
+                            forma_de_pago: window.pedidoEditarData.pedido.forma_de_pago || '',
+                            prendas: window.pedidoEditarData.pedido.prendas || [],
+                            procesos: window.pedidoEditarData.pedido.procesos || [],
+                            epps: window.pedidoEditarData['epps_transformados'] || window.pedidoEditarData.pedido.epps || []
                         };
                         
                         console.log(' [FACTURA-EDITABLE] Datos preparados:', {
+                            numero_pedido: datos.numero_pedido,
                             prendas: datos.prendas.length,
                             epps: datos.epps.length
                         });
@@ -120,8 +121,8 @@
                     } else {
                         console.log(' [FACTURA-EDITABLE] Esperando datos...', {
                             tieneGenerarHTMLFactura: typeof window.generarHTMLFactura === 'function',
-                            tienePedidoEdicionData: !!window.pedidoEdicionData,
-                            tienePrendas: !!window.pedidoEdicionData?.pedido?.prendas
+                            tienePedidoEditarData: !!window.pedidoEditarData,
+                            tienePrendas: !!window.pedidoEditarData?.pedido?.prendas
                         });
                         return false;
                     }

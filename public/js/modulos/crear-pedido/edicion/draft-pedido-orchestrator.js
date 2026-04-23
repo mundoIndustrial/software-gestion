@@ -81,6 +81,15 @@
         const modoEdicion = window.modoEdicion || false;
         const pedidoId = window.pedidoEditarId || null;
 
+        // 🔧 DEBUG: Log para diagnosticar el flujo
+        console.warn('[DraftPedidoOrchestrator] GUARDANDO BORRADOR', {
+            modoEdicion,
+            pedidoId,
+            esValido: !!(modoEdicion && pedidoId && !isNaN(pedidoId) && pedidoId > 0),
+            endpoint: modoEdicion && pedidoId ? `/api/asesores/pedidos/${pedidoId}/borrador` : '/api/asesores/pedidos/borrador',
+            metodo: 'POST'
+        });
+
         if (!window.DraftPedidoSaveService || typeof window.DraftPedidoSaveService.enviarBorrador !== 'function') {
             throw new Error('No se pudo enviar el borrador.');
         }

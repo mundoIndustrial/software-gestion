@@ -13,7 +13,7 @@ let datosEdicionCargados = false;
 // Helper: Convertir array de tallas {genero, talla, cantidad} a JSON {GENERO: {talla: cantidad}}
 function convertirTallasArrayAJson(tallas) {
     if (!Array.isArray(tallas)) return {};
-    
+
     const resultado = {};
     tallas.forEach(tallaObj => {
         if (tallaObj.genero && tallaObj.talla && tallaObj.cantidad) {
@@ -36,12 +36,10 @@ if (document.readyState === 'loading') {
 }
 
 function iniciarCargaEdicion() {
+    // 🔧 FIX: Usar el nuevo nombre de variable que definimos en editar-pedido.blade.php
+    const datos = window.pedidoEditarData || window.pedidoEdicionData;
 
-
-
-    
-    if (!window.modoEdicion || !window.pedidoEdicionData) {
-
+    if (!window.modoEdicion || !datos) {
         ocultarLoadingOverlay();
         return;
     }
@@ -75,12 +73,10 @@ function esperarModulosYCargar(intentos = 0) {
 
 function cargarDatosEdicion() {
     try {
+        // 🔧 FIX: Usar el nuevo nombre + fallback al antiguo
+        const datos = window.pedidoEditarData || window.pedidoEdicionData;
 
-        
-        const datos = window.pedidoEdicionData;
-        
         if (!datos) {
-
             ocultarLoadingOverlay();
             return;
         }
@@ -157,11 +153,15 @@ function cargarInformacionGeneral(datos) {
 }
 
 function cargarPrendas(prendas) {
+    // 🔧 FIX: Limpiar el gestor antes de agregar prendas para evitar duplicados
+    if (window.gestorPrendaSinCotizacion && typeof window.gestorPrendaSinCotizacion.limpiar === 'function') {
+        window.gestorPrendaSinCotizacion.limpiar();
+    } else if (window.gestorPrendaSinCotizacion) {
+        window.gestorPrendaSinCotizacion.prendas = [];
+    }
 
-    
     // Asegurar que el gestor está inicializado
     if (!window.gestorPrendaSinCotizacion) {
-
         if (typeof window.inicializarGestorSinCotizacion === 'function') {
             window.inicializarGestorSinCotizacion();
         } else {
@@ -171,8 +171,6 @@ function cargarPrendas(prendas) {
 
     prendas.forEach((prenda, index) => {
         try {
-
-            
             // Agregar la prenda al gestor
             const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda({
                 nombre_producto: prenda.nombre_prenda || '',

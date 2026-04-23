@@ -41,6 +41,21 @@ class CrearPedidoBorradorController extends Controller
     public function guardarBorrador(Request $request): JsonResponse
     {
         try {
+            // 🔧 FIX: Si viene pedido_id, es un intento de actualización con el método incorrecto
+            if ($request->has('pedido_id') && !empty($request->input('pedido_id'))) {
+                $pedidoId = $request->input('pedido_id');
+                Log::warning('[CrearPedidoBorradorController::guardarBorrador] INTENTO DE CREAR CON ID - Rechazando', [
+                    'pedido_id' => $pedidoId,
+                    'usuario_id' => Auth::id(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: Intento de crear borrador con ID existente. Use PUT para actualizar.',
+                    'code' => 'INVALID_CREATE_WITH_ID',
+                ], 400);
+            }
+
             Log::info('[CrearPedidoBorradorController::guardarBorrador] Iniciado', [
                 'usuario_id' => Auth::id(),
             ]);

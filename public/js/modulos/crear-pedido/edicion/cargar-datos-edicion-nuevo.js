@@ -20,7 +20,6 @@ function iniciarCargaEdicion() {
 
     
     if (!window.modoEdicion || !window.pedidoEditarId) {
-
         return;
     }
 
@@ -49,7 +48,7 @@ function cargarDatosEdicion() {
 
         
         // Si window.pedidoEditarData está dentro de un objeto 'pedido', acceder correctamente
-        let pedido = window.pedidoEditarData;
+        let pedido = window.pedidoEditarData || window.pedidoEdicionData;
         
         // Si llega como { pedido: {...}, estados: [...], areas: [...] }
         if (pedido && typeof pedido === 'object' && pedido.pedido && !Array.isArray(pedido)) {
@@ -71,7 +70,7 @@ function cargarDatosEdicion() {
         }
 
         // 2.5. Cargar EPPs si existen
-        const datosCompletos = window.pedidoEditarData;
+        const datosCompletos = window.pedidoEditarData || window.pedidoEdicionData;
         if (datosCompletos && datosCompletos.epps && Array.isArray(datosCompletos.epps) && datosCompletos.epps.length > 0) {
 
             cargarEPPs(datosCompletos.epps);
