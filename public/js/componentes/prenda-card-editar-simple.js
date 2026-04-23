@@ -625,7 +625,9 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
 
     if (typeof globalThis.gestorPrendaSinCotizacion?.obtenerPorIndice === 'function') {
         prenda = globalThis.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
-    } else if (globalThis.gestionItemsUI?.prendas) {
+    }
+
+    if (!prenda && globalThis.gestionItemsUI?.prendas) {
         // FALLBACK: Obtener directamente desde gestionItemsUI.prendas
         prenda = globalThis.gestionItemsUI.prendas[prendaIndex];
     }
@@ -678,4 +680,3 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
 
     return true;
 }
-

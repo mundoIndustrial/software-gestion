@@ -43,7 +43,11 @@ globalThis.abrirModalPrendaNueva = function() {
     if (modal) {
         //  Asegurar que estamos en modo CREATE (prendaEditIndex = null)
         if (globalThis.gestionItemsUI) {
-            globalThis.gestionItemsUI.prendaEditIndex = null;
+            if (typeof globalThis.gestionItemsUI.setModoModalPrendaCreacion === 'function') {
+                globalThis.gestionItemsUI.setModoModalPrendaCreacion();
+            } else {
+                globalThis.gestionItemsUI.prendaEditIndex = null;
+            }
         }
         globalThis.prendaEditIndex = null;
         
@@ -80,7 +84,11 @@ globalThis.abrirModalPrendaNueva = function() {
 globalThis.cerrarModalPrendaNueva = function() {
     //  CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
     if (globalThis.gestionItemsUI) {
-        globalThis.gestionItemsUI.prendaEditIndex = null;
+        if (typeof globalThis.gestionItemsUI.setModoModalPrendaCreacion === 'function') {
+            globalThis.gestionItemsUI.setModoModalPrendaCreacion();
+        } else {
+            globalThis.gestionItemsUI.prendaEditIndex = null;
+        }
     }
     globalThis.prendaEditIndex = null;
     

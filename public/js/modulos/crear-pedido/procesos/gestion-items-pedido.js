@@ -11,6 +11,8 @@
 
 class GestionItemsUI {
     prendaEditIndex = null;
+    prendaModalMode = 'create';
+    prendaEditKey = null;
     items = [];
     itemsState = null;
     notificationService = null;
@@ -123,6 +125,27 @@ class GestionItemsUI {
         const id = prenda.prenda_pedido_id || prenda.id || prenda._local_id || null;
         if (id === null || id === undefined || id === '') return null;
         return `prenda:${id}`;
+    }
+
+    _setModoModalPrendaEdicion(prendaIndex, prenda = null) {
+        this.prendaModalMode = 'edit';
+        this.prendaEditIndex = Number.isInteger(prendaIndex) ? prendaIndex : this.prendaEditIndex;
+        const prendaBase = prenda || this.prendas?.[this.prendaEditIndex] || null;
+        this.prendaEditKey = this._obtenerClavePrenda(prendaBase);
+    }
+
+    _setModoModalPrendaCreacion() {
+        this.prendaModalMode = 'create';
+        this.prendaEditIndex = null;
+        this.prendaEditKey = null;
+    }
+
+    setModoModalPrendaEdicion(prendaIndex, prenda = null) {
+        this._setModoModalPrendaEdicion(prendaIndex, prenda);
+    }
+
+    setModoModalPrendaCreacion() {
+        this._setModoModalPrendaCreacion();
     }
 
     _stateCollection(tipo) {
@@ -472,6 +495,7 @@ class GestionItemsUI {
 
     _cargarModoEdicion() {
         const prendaAEditar = this.prendas[this.prendaEditIndex];
+        this._setModoModalPrendaEdicion(this.prendaEditIndex, prendaAEditar);
         
         //  DIAGNOSTIC: Verificar que procesos están en this.prendas[index]
         debugLog('[_cargarModoEdicion]  SEGUNDA EDICIÓN - Verificando estado:');
@@ -489,7 +513,7 @@ class GestionItemsUI {
 
     _cargarModoCreacion() {
         // Forzar modo CREACIÓN (evita heredar estado de edición)
-        this.prendaEditIndex = null;
+        this._setModoModalPrendaCreacion();
         this.prendaEnModoEdicion = false;
 
         // Resetear select de origen al placeholder vacío
@@ -536,7 +560,7 @@ class GestionItemsUI {
      */
     async abrirModalAgregarPrendaNueva() {
         const fsm = this._ctx('__MODAL_FSM__');
-        const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+        const esEdicion = this.prendaModalMode === 'edit';
 
         return this._getPrendaModalService().abrirModal({
             fsm,
@@ -568,12 +592,11 @@ class GestionItemsUI {
     }
 
     _limpiarModalUI() {
+        this._setModoModalPrendaCreacion();
         if (typeof ModalCleanup !== 'undefined') {
             ModalCleanup.limpiarDespuésDeGuardar();
             return;
         }
-
-        this.prendaEditIndex = null;
         if (this.prendaEditor) {
             this.prendaEditor.prendaEditIndex = null;
         }
@@ -614,7 +637,7 @@ class GestionItemsUI {
      * Cargar datos de prenda en el modal para editar
      */
     cargarItemEnModal(prenda, prendaIndex) {
-        this.prendaEditIndex = prendaIndex;
+        this._setModoModalPrendaEdicion(prendaIndex, prenda);
         this.prendaEditor.cargarPrendaEnModal(prenda, prendaIndex);
     }
 
@@ -686,4 +709,3 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
-

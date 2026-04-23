@@ -327,7 +327,11 @@ globalThis.PrendaCardHandlers = {
                     // Si es crear-nuevo, abrir el modal de creación con datos precargados
                     if (esCrearNuevo && globalThis.gestionItemsUI) {
 
-                        globalThis.gestionItemsUI.prendaEditIndex = prendaIndex;
+                        if (typeof globalThis.gestionItemsUI.setModoModalPrendaEdicion === 'function') {
+                            globalThis.gestionItemsUI.setModoModalPrendaEdicion(prendaIndex, prenda);
+                        } else {
+                            globalThis.gestionItemsUI.prendaEditIndex = prendaIndex;
+                        }
                         //  abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
                         // y llama a cargarPrendaEnModal() internamente (línea 373 de gestion-items-pedido.js).
                         // NO hacer segunda llamada con setTimeout — causaba doble carga de la prenda.

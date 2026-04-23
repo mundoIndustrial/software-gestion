@@ -5,6 +5,7 @@ class PrendaFlowService {
     constructor(options = {}) {
         this.ui = options.ui || null;
         this._guardandoPrenda = false;
+        this._edicionEnMemoriaProcesada = false;
     }
 
     _ctx(key) {
@@ -22,9 +23,7 @@ class PrendaFlowService {
         const candidatos = [
             this.ui?.prendaEditIndex,
             this.ui?.prendaEditor?.prendaEditIndex,
-            this._ctx('prendaEditIndex'),
-            this._ctx('prendaEnEdicion')?.prendasIndex,
-            this._ctx('_editandoPrendaDePedido')?.prendaIndex
+            this._ctx('prendaEditIndex')
         ];
 
         for (const candidato of candidatos) {
@@ -34,27 +33,14 @@ class PrendaFlowService {
             }
         }
 
-        const prendaActual = this._ctx('prendaActual');
-        const claveActual = this._obtenerClavePrenda(prendaActual);
+        const claveEditar = typeof this.ui?.prendaEditKey === 'string' ? this.ui.prendaEditKey : null;
         const prendas = Array.isArray(this.ui?.prendas) ? this.ui.prendas : [];
-        if (!claveActual || prendas.length === 0) {
+        if (!claveEditar || prendas.length === 0) {
             return null;
         }
 
-        const indiceEncontrado = prendas.findIndex((item) => this._obtenerClavePrenda(item) === claveActual);
+        const indiceEncontrado = prendas.findIndex((item) => this._obtenerClavePrenda(item) === claveEditar);
         return indiceEncontrado >= 0 ? indiceEncontrado : null;
-    }
-
-    _detectarModoEdicionPorUI() {
-        if (this.ui?.prendaEnModoEdicion === true) return true;
-        if (this._ctx('prendaEnModoEdicion') === true) return true;
-        if (this._ctx('prendaEnEdicion')?.esEdicion === true) return true;
-        if (this._ctx('_editandoPrendaDePedido')?.modoAgregar === false) return true;
-        if (this._ctx('_editandoPrendaDePedido')?.prendaId) return true;
-
-        const btnGuardar = document.getElementById('btn-guardar-prenda');
-        const textoBoton = String(btnGuardar?.textContent || '').toLowerCase();
-        return textoBoton.includes('guardar cambios');
     }
 
     _resolverIndicePorPrendaData(prendaData = null) {
@@ -73,6 +59,7 @@ class PrendaFlowService {
         }
 
         this._guardandoPrenda = true;
+        this._edicionEnMemoriaProcesada = false;
         try {
             this._logEstadoInicial();
             this._ensureNotificationService();
@@ -93,11 +80,14 @@ class PrendaFlowService {
                 await this._procesarModoCreacion(prendaData, enPedidoExistente, pedidoId);
             }
 
-            this._finalizarYRenderizar();
+            if (!this._edicionEnMemoriaProcesada) {
+                this._finalizarYRenderizar();
+            }
         } catch (error) {
             this.ui?.notificationService?.error('Error al agregar prenda: ' + error.message);
         } finally {
             this._guardandoPrenda = false;
+            this._edicionEnMemoriaProcesada = false;
         }
     }
 
@@ -299,10 +289,10 @@ class PrendaFlowService {
         const enPedidoExistente = this.ui?._tienePedidoEdicion?.();
         const pedidoId = enPedidoExistente ? this.ui?._obtenerPedidoEdicionId?.() : null;
         const esNuevaDesdeCotz = this.ui?.prendaEditor?.esNuevaPrendaDesdeCotizacion === true;
+        const prendaModalMode = this.ui?.prendaModalMode || 'create';
         const indiceEdicionResuelto = this._resolverIndiceEdicion();
         const hayIndiceEdicion = Number.isInteger(indiceEdicionResuelto) && indiceEdicionResuelto >= 0;
-        const modoEdicionUI = this._detectarModoEdicionPorUI();
-        const esEdicionReal = hayIndiceEdicion || modoEdicionUI;
+        const esEdicionReal = prendaModalMode === 'edit';
         const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
 
         if (esEdicionReal && hayIndiceEdicion) {
@@ -315,9 +305,9 @@ class PrendaFlowService {
         debugLog('[guardarPrenda]  DETECCIÓN CRÍTICA:', {
             esNuevaDesdeCotz,
             esEdicionReal,
+            prendaModalMode,
             prendaEditIndex: this.ui?.prendaEditIndex,
             indiceEdicionResuelto,
-            modoEdicionUI,
             vamosAEditar
         });
         debugLog('[guardarPrenda]  ACCIÓN A EJECUTAR:', vamosAEditar ? 'EDITAR' : 'AGREGAR NUEVA');
@@ -364,8 +354,7 @@ class PrendaFlowService {
             indiceEdicion = this._resolverIndicePorPrendaData(prendaData);
         }
         if (!Number.isInteger(indiceEdicion) || !this.ui?.prendas?.[indiceEdicion]) {
-            console.error('[guardarPrenda]  ERROR: No existe prenda en index', indiceEdicion);
-            return;
+            throw new Error(`No se pudo resolver la prenda en edición (index: ${indiceEdicion}).`);
         }
 
         this.ui.prendaEditIndex = indiceEdicion;
@@ -375,6 +364,10 @@ class PrendaFlowService {
 
         const esModoCreate = !this.ui?._tienePedidoEdicion?.();
         const prendaAnterior = structuredClone(this.ui.prendas[indiceEdicion]);
+
+        if (prendaData?.tipo === 'prenda_nueva') {
+            prendaData.tipo = 'prenda';
+        }
 
         const tieneImagenesNuevas = Array.isArray(prendaData.imagenes) && prendaData.imagenes.length > 0;
         const teniaImagenesAntes = Array.isArray(prendaAnterior.imagenes) && prendaAnterior.imagenes.length > 0;
@@ -387,6 +380,9 @@ class PrendaFlowService {
         const teniaProcesosAntes = prendaAnterior.procesos && typeof prendaAnterior.procesos === 'object' && Object.keys(prendaAnterior.procesos).length > 0;
 
         const prendaFusionada = { ...this.ui.prendas[indiceEdicion], ...prendaData };
+        prendaFusionada._local_id = prendaFusionada._local_id || prendaAnterior._local_id || null;
+        prendaFusionada.id = prendaFusionada.id ?? prendaAnterior.id ?? null;
+        prendaFusionada.prenda_pedido_id = prendaFusionada.prenda_pedido_id ?? prendaAnterior.prenda_pedido_id ?? prendaAnterior.id ?? null;
 
         // En modo creación, si el usuario editó solo tallas/campos de texto, preservar imágenes/telas/procesos.
         if (esModoCreate) {
@@ -404,6 +400,14 @@ class PrendaFlowService {
         }
 
         this.ui.prendas[indiceEdicion] = prendaFusionada;
+
+        if (typeof globalThis.gestorPrendaSinCotizacion?.actualizarPrenda === 'function') {
+            try {
+                globalThis.gestorPrendaSinCotizacion.actualizarPrenda(indiceEdicion, prendaFusionada);
+            } catch (error) {
+                console.warn('[guardarPrenda] No se pudo sincronizar gestorPrendaSinCotizacion:', error);
+            }
+        }
 
         const procesosGuardados = this.ui.prendas[indiceEdicion].procesos || {};
         debugLog('[_procesarEditacionEnMemoria] 📦 ESTRUCTURA GUARDADA:');
@@ -436,6 +440,7 @@ class PrendaFlowService {
         
         this.ui?.notificationService?.exito('Prenda actualizada correctamente');
         this.ui?.cerrarModalAgregarPrendaNueva?.();
+        this._edicionEnMemoriaProcesada = true;
     }
 
     async _procesarModoCreacion(prendaData, enPedidoExistente, pedidoId) {
