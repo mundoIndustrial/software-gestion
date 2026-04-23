@@ -349,9 +349,13 @@
     
     <!-- Modals -->
     @stack('modals')
-    
+
     <!--  PAYLOAD NORMALIZER v3 - CARGADO EN BLADE TEMPLATES INDIVIDUALES -->
     <!-- Payload normalizer: payload-normalizer.js -->
+
+    <!-- Sistema de Monitoreo de Errores -->
+    <script src="{{ asset('js/modulos/crear-pedido/diagnostico/error-logger-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/diagnostico/diagnostic-panel.js') }}"></script>
 
 </body>
 </html>

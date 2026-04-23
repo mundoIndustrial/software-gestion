@@ -42,8 +42,18 @@ Route::middleware(['auth', 'role:contador,admin,lider_produccion,supervisor_prod
     
     // Ruta para obtener contador de cotizaciones pendientes
     Route::get('/cotizaciones-pendientes-count', [CotizacionAccionesController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
-    
+
     // Ruta para perfil del contador
     Route::get('/perfil', [ContadorModuleController::class, 'profile'])->name('profile')->middleware('auth');
     Route::post('/perfil/update', [ContadorModuleController::class, 'updateProfile'])->name('profile.update');
+});
+
+// ========================================
+// RUTAS PARA SISTEMA DE ERRORES (Admin)
+// ========================================
+Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/configuracion/errores')->name('admin.errores.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Admin\SystemErrorController::class, 'index'])->name('index');
+    Route::get('/{id}', [App\Http\Controllers\Admin\SystemErrorController::class, 'ver'])->name('ver');
+    Route::post('/limpiar', [App\Http\Controllers\Admin\SystemErrorController::class, 'limpiar'])->name('limpiar');
+    Route::get('/exportar', [App\Http\Controllers\Admin\SystemErrorController::class, 'exportar'])->name('exportar');
 });

@@ -124,11 +124,23 @@
         // Validar que haya un cliente seleccionado
         const cliente = (typeof datos.cliente === 'string' && datos.cliente.trim()) ? datos.cliente.trim() : null;
         if (!cliente) {
+            // Registrar error de validación
+            if (globalThis.ErrorLoggerService?.registrarErrorValidacion) {
+                globalThis.ErrorLoggerService.registrarErrorValidacion('cliente', datos.cliente, 'Cliente vacío o no seleccionado');
+            }
             throw new Error('Debes seleccionar un cliente antes de guardar el borrador.');
         }
 
         // Validar tamaño total de imágenes
-        validarTamanoTotalImagenes(datos);
+        try {
+            validarTamanoTotalImagenes(datos);
+        } catch (error) {
+            // Registrar error de validación de imágenes
+            if (globalThis.ErrorLoggerService?.registrarErrorValidacion) {
+                globalThis.ErrorLoggerService.registrarErrorValidacion('imagenes_total', null, error.message);
+            }
+            throw error;
+        }
 
         datos.observaciones = document.getElementById('observaciones_editable')?.value?.trim() || '';
 
@@ -293,6 +305,36 @@
         });
     }
 
+    function _registrarResultadoOperacion(resultado, intentoActual, datos, modoEdicion, pedidoId, esExito) {
+        if (esExito) {
+            // Registrar éxito
+            if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
+                globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(true, intentoActual > 1);
+            }
+            if (globalThis.ErrorLoggerService?.registrarExito) {
+                globalThis.ErrorLoggerService.registrarExito('guardar_borrador', {
+                    modo: modoEdicion ? 'edicion' : 'creacion',
+                    intentos: intentoActual,
+                    cliente: datos?.cliente || 'unknown'
+                });
+            }
+        } else {
+            // Registrar fallo
+            if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
+                globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(false, false);
+            }
+            if (globalThis.ErrorLoggerService?.registrarErrorRed) {
+                const endpoint = modoEdicion ? `/api/asesores/pedidos/${pedidoId}/borrador` : '/api/asesores/pedidos/borrador';
+                globalThis.ErrorLoggerService.registrarErrorRed(
+                    endpoint,
+                    resultado.statusCode || 'UNKNOWN',
+                    resultado.message || 'Error desconocido',
+                    intentoActual
+                );
+            }
+        }
+    }
+
     async function guardarComoBorrador() {
         try {
             const { tienePrendas, tieneItems } = obtenerEstadoItems();
@@ -315,7 +357,6 @@
 
             const { resultado, intentoActual } = await enviarBorrador(payload);
 
-            // Loguear información de reintentos para monitoreo
             if (intentoActual > 1) {
                 console.warn('[DraftPedidoOrchestrator] Borrador guardado después de reintentos:', {
                     intentoActual,
@@ -324,17 +365,10 @@
                 });
             }
 
-            if (!resultado.success) {
-                // Registrar fallo en analytics
-                if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
-                    globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(false, false);
-                }
-                throw new Error(resultado.message || 'Error desconocido al guardar borrador');
-            }
+            _registrarResultadoOperacion(resultado, intentoActual, datos, modoEdicion, pedidoId, resultado.success);
 
-            // Registrar éxito en analytics (con información de reintento si aplica)
-            if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
-                globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(true, intentoActual > 1);
+            if (!resultado.success) {
+                throw new Error(resultado.message || 'Error desconocido al guardar borrador');
             }
 
             sincronizarIdsPrendasNuevasEnMemoria(resultado);

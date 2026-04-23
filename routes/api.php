@@ -110,6 +110,12 @@ require_once base_path('routes/api-asesores.php');
 require_once base_path('routes/api-recepcion-despacho.php');
 
 /**
+ * Error Logging API Routes
+ * Sistema de monitoreo de errores en creación/edición de pedidos
+ */
+require_once base_path('routes/api-errores.php');
+
+/**
  * Test Routes - Diagnóstico (solo en desarrollo)
  */
 if (config('app.debug')) {

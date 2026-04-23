@@ -695,7 +695,7 @@
       <span class="menu-section-title">Administración</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('epp.*', 'users.*', 'configuracion.*') ? 'active' : '' }}"
+        <button class="menu-link submenu-toggle {{ request()->routeIs('epp.*', 'users.*', 'configuracion.*', 'admin.errores.*') ? 'active' : '' }}"
                 aria-label="Administración del sistema">
           <span class="material-symbols-rounded" aria-hidden="true">admin_panel_settings</span>
           <span class="menu-label">Administración</span>
@@ -724,6 +724,14 @@
                aria-label="Configuración del sistema">
               <span class="material-symbols-rounded" aria-hidden="true">settings</span>
               <span class="menu-label">Configuración</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('admin.errores.index') }}"
+               class="menu-link {{ request()->routeIs('admin.errores.*') ? 'active' : '' }}"
+               aria-label="Errores del sistema">
+              <span class="material-symbols-rounded" aria-hidden="true">error_outline</span>
+              <span class="menu-label">Errores del Sistema</span>
             </a>
           </li>
         </ul>

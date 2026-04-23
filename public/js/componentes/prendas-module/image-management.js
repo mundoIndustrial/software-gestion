@@ -71,6 +71,13 @@ globalThis.manejarImagenesPrenda = function(input) {
             .catch(err => {
                 const mensaje = err.message || '';
 
+                // Registrar en logger si está disponible
+                if (globalThis.ErrorLoggerService?.registrarErrorImagen) {
+                    globalThis.ErrorLoggerService.registrarErrorImagen(archivo, err, {
+                        tipoError: mensaje.split(':')[0] || 'UNKNOWN'
+                    });
+                }
+
                 if (mensaje === 'MAX_LIMIT') {
                     mostrarModalLimiteImagenes();
                 } else if (mensaje === 'INVALID_FILE') {
