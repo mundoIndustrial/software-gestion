@@ -1,44 +1,143 @@
 /**
- * Image Storage Service (SIN BASE64)
+ * Image Storage Service (CON COMPRESIÓN AUTOMÁTICA)
  * Maneja almacenamiento temporal de imágenes como File objects
- * Usa URL.createObjectURL() para preview, sin base64
+ * - Comprime automáticamente imágenes grandes a WebP
+ * - Valida tamaños después de comprimir
+ * - Usa URL.createObjectURL() para preview
  */
 
 class ImageStorageService {
     constructor(maxImages = 3) {
         this.maxImages = maxImages;
-        this.images = []; // Array de { file, previewUrl, nombre, tamano }
+        this.images = []; // Array de { file, previewUrl, nombre, tamano, tamanioOriginal, comprimida }
         this.snapshotOriginal = null; // SNAPSHOT de imágenes originales (para detectar eliminaciones)
+        this.MAX_SIZE_SIN_COMPRIMIR_MB = 2;
+        this.MAX_SIZE_COMPRIMIDO_MB = 3;
+        this.CALIDAD_WEBP = 0.8;
     }
 
     /**
      * Agregar imagen desde input file
-     * Usa URL.createObjectURL() para preview en lugar de base64
+     * Comprime automáticamente si es > 2MB
      * RETORNA UNA PROMISE
      */
-    agregarImagen(file) {
-        return new Promise((resolve, reject) => {
-            if (!file || !file.type.startsWith('image/')) {
-                reject(new Error('INVALID_FILE'));
-                return;
+    async agregarImagen(file) {
+        if (!file?.type?.startsWith('image/')) {
+            throw new Error('INVALID_FILE');
+        }
+
+        if (this.images.length >= this.maxImages) {
+            throw new Error('MAX_LIMIT');
+        }
+
+        const originalSizeMB = file.size / (1024 * 1024);
+        const inicioTiempo = performance.now();
+
+        try {
+            // 1. Comprimir si es necesario
+            let fileAUsar = file;
+            let comprimida = false;
+
+            if (originalSizeMB > this.MAX_SIZE_SIN_COMPRIMIR_MB) {
+                console.log(`[ImageStorageService] Comprimiendo imagen (${originalSizeMB.toFixed(1)}MB)...`);
+                fileAUsar = await this._comprimirImagen(file);
+                comprimida = true;
+                const comprimidoMB = fileAUsar.size / (1024 * 1024);
+                console.log(`[ImageStorageService] ✅ Comprimida: ${originalSizeMB.toFixed(1)}MB → ${comprimidoMB.toFixed(1)}MB`);
             }
 
-            if (this.images.length >= this.maxImages) {
-                reject(new Error('MAX_LIMIT'));
-                return;
+            // 2. Validar tamaño final
+            const finalSizeMB = fileAUsar.size / (1024 * 1024);
+            if (finalSizeMB > this.MAX_SIZE_COMPRIMIDO_MB) {
+                throw new Error(
+                    `FILE_TOO_LARGE: La imagen es demasiado grande. Tamaño final: ${finalSizeMB.toFixed(1)}MB (máximo: ${this.MAX_SIZE_COMPRIMIDO_MB}MB)`
+                );
             }
 
-            // Crear URL para preview sin base64
-            const previewUrl = URL.createObjectURL(file);
-            
+            // 3. Crear URL para preview
+            const previewUrl = URL.createObjectURL(fileAUsar);
+
             this.images.push({
-                file: file,
-                previewUrl: previewUrl,
+                file: fileAUsar,
+                previewUrl,
                 nombre: file.name,
-                tamano: file.size,
+                tamano: fileAUsar.size,
+                tamanioOriginal: file.size,
+                comprimida
             });
 
-            resolve({ success: true, images: this.images });
+            // 4. Registrar en analytics si está disponible
+            const tiempoTranscurrido = performance.now() - inicioTiempo;
+            if (globalThis.DraftPedidoAnalytics?.registrarImagenProcesada) {
+                globalThis.DraftPedidoAnalytics.registrarImagenProcesada(file.size, fileAUsar.size, comprimida);
+                globalThis.DraftPedidoAnalytics.registrarTiempo(tiempoTranscurrido);
+            }
+
+            return { success: true, images: this.images };
+
+        } catch (error) {
+            console.error('[ImageStorageService] Error procesando imagen:', error);
+            throw new Error(`ERROR_PROCESSING: ${error.message}`);
+        }
+    }
+
+    /**
+     * Comprimir imagen a WebP
+     * @private
+     */
+    async _comprimirImagen(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const img = new Image();
+
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Redimensionar si es más ancho que 1920px
+                    if (width > 1920) {
+                        height = (height * 1920) / width;
+                        width = 1920;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convertir a WebP con calidad configurable
+                    canvas.toBlob(
+                        (blob) => {
+                            if (!blob) {
+                                reject(new Error('Error al crear blob'));
+                                return;
+                            }
+                            const fileComprimido = new File([blob], file.name, {
+                                type: 'image/webp'
+                            });
+                            resolve(fileComprimido);
+                        },
+                        'image/webp',
+                        this.CALIDAD_WEBP
+                    );
+                };
+
+                img.onerror = () => {
+                    reject(new Error('Error al cargar imagen'));
+                };
+
+                img.src = e.target.result;
+            };
+
+            reader.onerror = () => {
+                reject(new Error('Error al leer archivo'));
+            };
+
+            reader.readAsDataURL(file);
         });
     }
 

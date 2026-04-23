@@ -50,18 +50,18 @@ globalThis.manejarImagenesPrenda = function(input) {
                 //  CRÍTICO: Detectar si estamos en creación o edición
                 const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
                 const modalEdicion = document.querySelector('[id*="modal-editar"]') || document.querySelector('[class*="editar"]');
-                
+
                 console.log('[manejarImagenesPrenda]  Actualizando preview:', {
                     enCreacion: !!modalCreacion?.style?.display !== 'none',
                     enEdicion: !!modalEdicion
                 });
-                
+
                 // En creación: usar actualizarPreviewPrenda()
                 if (typeof actualizarPreviewPrenda === 'function') {
                     actualizarPreviewPrenda();
                     console.log('[manejarImagenesPrenda]  Preview actualizado (creación)');
                 }
-                
+
                 // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
                 if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
                     PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
@@ -69,12 +69,18 @@ globalThis.manejarImagenesPrenda = function(input) {
                 }
             })
             .catch(err => {
-                if (err.message === 'MAX_LIMIT') {
+                const mensaje = err.message || '';
+
+                if (mensaje === 'MAX_LIMIT') {
                     mostrarModalLimiteImagenes();
-                } else if (err.message === 'INVALID_FILE') {
-                    mostrarModalError('El archivo debe ser una imagen válida');
+                } else if (mensaje === 'INVALID_FILE') {
+                    mostrarModalError('El archivo debe ser una imagen válida (JPG, PNG, WebP)');
+                } else if (mensaje.startsWith('FILE_TOO_LARGE')) {
+                    mostrarModalError('La imagen es demasiado grande incluso después de optimizarla. Intenta con una imagen más pequeña o de menor resolución.');
+                } else if (mensaje.startsWith('ERROR_PROCESSING')) {
+                    mostrarModalError('Error al procesar la imagen. Intenta con otro archivo.');
                 } else {
-                    mostrarModalError('Error al procesar la imagen: ' + err.message);
+                    mostrarModalError('Error al procesar la imagen: ' + mensaje);
                 }
             });
     } catch (err) {

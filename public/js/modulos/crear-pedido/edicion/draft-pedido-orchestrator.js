@@ -48,6 +48,66 @@
         });
     }
 
+    function validarTamanoTotalImagenes(datos) {
+        let totalMB = 0;
+        const MAX_TOTAL_MB = 50;
+
+        // Sumar tamaño de todas las imágenes
+        if (Array.isArray(datos.prendas)) {
+            datos.prendas.forEach(prenda => {
+                // Imágenes de prenda
+                if (Array.isArray(prenda.imagenes)) {
+                    prenda.imagenes.forEach(img => {
+                        if (img instanceof File) totalMB += img.size / (1024 * 1024);
+                    });
+                }
+
+                // Imágenes de telas
+                if (Array.isArray(prenda.telas)) {
+                    prenda.telas.forEach(tela => {
+                        if (Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach(img => {
+                                if (img instanceof File) totalMB += img.size / (1024 * 1024);
+                            });
+                        }
+                    });
+                }
+
+                // Imágenes de procesos
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.values(prenda.procesos).forEach(proceso => {
+                        const imagenes = proceso?.datos?.imagenes || proceso?.imagenes || [];
+                        if (Array.isArray(imagenes)) {
+                            imagenes.forEach(img => {
+                                if (img instanceof File) totalMB += img.size / (1024 * 1024);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        // Imágenes de EPP
+        if (Array.isArray(datos.epps)) {
+            datos.epps.forEach(epp => {
+                if (Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach(img => {
+                        if (img instanceof File) totalMB += img.size / (1024 * 1024);
+                    });
+                }
+            });
+        }
+
+        if (totalMB > MAX_TOTAL_MB) {
+            throw new Error(
+                `El tamaño total de las imágenes es ${totalMB.toFixed(1)}MB. ` +
+                `Máximo permitido: ${MAX_TOTAL_MB}MB. Las imágenes deben haber sido comprimidas automáticamente.`
+            );
+        }
+
+        return true;
+    }
+
     function recopilarDatosPedido() {
         if (typeof window.sincronizarPrendaModalAntesDeGuardarBorrador === 'function') {
             window.sincronizarPrendaModalAntesDeGuardarBorrador();
@@ -66,6 +126,9 @@
         if (!cliente) {
             throw new Error('Debes seleccionar un cliente antes de guardar el borrador.');
         }
+
+        // Validar tamaño total de imágenes
+        validarTamanoTotalImagenes(datos);
 
         datos.observaciones = document.getElementById('observaciones_editable')?.value?.trim() || '';
 
@@ -250,10 +313,28 @@
 
             console.debug('[DraftPedidoOrchestrator] Datos a enviar:', payload.pedidoLimpio);
 
-            const { resultado } = await enviarBorrador(payload);
+            const { resultado, intentoActual } = await enviarBorrador(payload);
+
+            // Loguear información de reintentos para monitoreo
+            if (intentoActual > 1) {
+                console.warn('[DraftPedidoOrchestrator] Borrador guardado después de reintentos:', {
+                    intentoActual,
+                    success: resultado.success,
+                    timestamp: new Date().toISOString()
+                });
+            }
 
             if (!resultado.success) {
+                // Registrar fallo en analytics
+                if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
+                    globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(false, false);
+                }
                 throw new Error(resultado.message || 'Error desconocido al guardar borrador');
+            }
+
+            // Registrar éxito en analytics (con información de reintento si aplica)
+            if (globalThis.DraftPedidoAnalytics?.registrarIntentoEnvio) {
+                globalThis.DraftPedidoAnalytics.registrarIntentoEnvio(true, intentoActual > 1);
             }
 
             sincronizarIdsPrendasNuevasEnMemoria(resultado);
