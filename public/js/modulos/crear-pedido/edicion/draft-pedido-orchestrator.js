@@ -365,6 +365,9 @@
                 });
             }
 
+            const modoEdicion = globalThis.modoEdicion || false;
+            const pedidoId = globalThis.pedidoEditarId || null;
+
             _registrarResultadoOperacion(resultado, intentoActual, datos, modoEdicion, pedidoId, resultado.success);
 
             if (!resultado.success) {

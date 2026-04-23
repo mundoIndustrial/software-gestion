@@ -18,11 +18,14 @@
         _inicializarCapturasGlobales() {
             // Capturar errores no manejados
             globalThis.addEventListener('error', (event) => {
-                this.registrarError('ERROR_NO_MANEJADO', `${event.filename}:${event.lineno} - ${event.message}`, {
+                const tipo = event.error?.name === 'ReferenceError' ? 'ERROR_REFERENCIA' : 'ERROR_NO_MANEJADO';
+                this.registrarError(tipo, `${event.filename}:${event.lineno} - ${event.message}`, {
                     filename: event.filename,
                     lineno: event.lineno,
                     colno: event.colno,
-                    stack: event.error?.stack
+                    errorName: event.error?.name,
+                    stack: event.error?.stack,
+                    timestamp: new Date().toISOString()
                 });
             });
 
@@ -30,7 +33,8 @@
             globalThis.addEventListener('unhandledrejection', (event) => {
                 this.registrarError('PROMISE_RECHAZADA', event.reason?.message || String(event.reason), {
                     reason: event.reason,
-                    stack: event.reason?.stack
+                    stack: event.reason?.stack,
+                    timestamp: new Date().toISOString()
                 });
             });
         }
@@ -238,9 +242,9 @@
         }
 
         /**
-         * Envía un error al servidor (sin bloquear)
+         * Envía un error al servidor con reintentos
          */
-        _enviarAlServidor(logEntry) {
+        _enviarAlServidor(logEntry, intento = 1, maxIntentos = 3) {
             // No bloquear la ejecución - enviar en background
             fetch(this.endpointServidor, {
                 method: 'POST',
@@ -249,11 +253,30 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': this._obtenerCSRFToken()
                 },
-                body: JSON.stringify(logEntry),
-                credentials: 'include'
-            }).catch(error => {
-                // Fallar silenciosamente si el servidor no está disponible
-                console.warn('[ErrorLogger] No se pudo enviar al servidor:', error.message);
+                body: JSON.stringify({
+                    ...logEntry,
+                    tipo: logEntry.tipo.startsWith('ERROR') ? logEntry.tipo : `ERROR_${logEntry.tipo}`,
+                    origen: logEntry.origen || 'client-js',
+                    url_pagina: globalThis.location.href
+                }),
+                credentials: 'include',
+                timeout: 5000
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                console.log('[ErrorLogger] Error enviado al servidor:', logEntry.tipo);
+            })
+            .catch(error => {
+                if (intento < maxIntentos) {
+                    // Reintentar después de espera exponencial
+                    const espera = Math.min(1000 * Math.pow(2, intento - 1), 5000);
+                    console.warn(`[ErrorLogger] Reintentando en ${espera}ms (intento ${intento}/${maxIntentos}):`, error.message);
+                    setTimeout(() => this._enviarAlServidor(logEntry, intento + 1, maxIntentos), espera);
+                } else {
+                    console.warn('[ErrorLogger] No se pudo enviar error al servidor después de', maxIntentos, 'intentos:', error.message);
+                }
             });
         }
 
