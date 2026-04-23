@@ -14,12 +14,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pedidos_produccion', function (Blueprint $table) {
-            // 🔧 Índice único: Un usuario NO puede tener múltiples borradores
-            // del mismo cliente sin confirmar/rechazar
-            // Permite múltiples borradores del MISMO cliente si son de diferentes asesores
-            $table->unique(['asesor_id', 'cliente_id', 'estado'], name: 'uk_borrador_por_asesor_cliente')
-                ->where('estado', '=', 'BORRADOR')
-                ->where('deleted_at', null);
+            // 🔧 Índices para búsquedas rápidas (sin constraint unique,
+            // porque un asesor SÍ puede tener múltiples borradores del mismo cliente
+            // con contenido diferente)
 
             // Índice para búsquedas rápidas de borradores por asesor
             $table->index(['asesor_id', 'estado'], name: 'idx_pedidos_asesor_estado');

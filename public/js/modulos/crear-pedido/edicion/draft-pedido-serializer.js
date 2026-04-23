@@ -504,20 +504,37 @@
             throw new Error('Desfase entre archivos de tela y metadatos fotos_telas. Reabre la asignación y guarda de nuevo.');
         }
 
+        // 🔧 NUEVO: Distinción clara entre imágenes nuevas (Files) y existentes (URLs de BD)
+        const imagenesNuevas = [];
         const imagenesExistentes = [];
         const archivosYaAgregados = new Set();
+
         (Array.isArray(prenda.imagenes) ? prenda.imagenes : []).forEach((img) => {
+            // 1️⃣ ¿Es un File nuevo?
             const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
             if (file) {
                 agregarArchivo('imagenes[]', file);
+                imagenesNuevas.push(file);
                 archivosYaAgregados.add(file);
                 return;
             }
 
-            if (img?.urlDesdeDB || img?.id || img?.url?.startsWith('/') || img?.ruta || img?.ruta_original || img?.ruta_webp || img?.previewUrl?.startsWith('/storage/')) {
-                const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || img.previewUrl || '';
-                imagenesExistentes.push({ id: img.id, url });
+            // 2️⃣ ¿Es URL de BD? (tiene id + url válida)
+            const tieneId = img?.id || img?.urlDesdeDB;
+            const tieneUrl = img?.url?.startsWith('/') || img?.ruta || img?.ruta_original || img?.ruta_webp || img?.previewUrl?.startsWith('/storage/');
+
+            if (tieneId && tieneUrl) {
+                const url = img.ruta_original || img.ruta || img.url || img.ruta_webp || img.previewUrl || '';
+                imagenesExistentes.push({
+                    id: img.id,
+                    ruta_original: img.ruta_original || url,
+                    ruta_webp: img.ruta_webp || null,
+                    urlDesdeDB: true
+                });
+                return;
             }
+
+            // 3️⃣ Si no es ni File ni URL válida, ignorar (probablemente blob temporal)
         });
 
         const procesosAEliminar = Array.isArray(prenda.procesos_a_eliminar)
@@ -683,6 +700,9 @@
             ).length
         });
 
+        // 🔧 NUEVO: imagenes_existentes como JSON string (preserva URLs de BD)
+        const imagenes_existentes_json = imagenesExistentes.length > 0 ? JSON.stringify(imagenesExistentes) : undefined;
+
         return {
             prenda_id: prendaId,
             nombre_prenda: prenda.nombre_prenda || prenda.nombre_producto || '',
@@ -695,7 +715,8 @@
             colores_telas: telasJSON,
             fotos_telas: fotosTelaUnicas.length > 0 ? fotosTelaUnicas : undefined,
             procesos: procesosArray,
-            imagenes_existentes: imagenesExistentes,
+            // 🔧 Enviar como JSON string para preservar en backend
+            imagenes_existentes: imagenes_existentes_json,
             imagenes_a_eliminar: imagenesAEliminar,
             procesos_a_eliminar: procesosAEliminar
         };
