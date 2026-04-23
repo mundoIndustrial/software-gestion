@@ -107,15 +107,7 @@ class ProcesarImagenesPrendaService
 
     private function decodificarImagenesExistentes(Request $request): array
     {
-        if (!$request->input('imagenes_existentes')) {
-            return [];
-        }
-        try {
-            return json_decode($request->input('imagenes_existentes'), true) ?? [];
-        } catch (\Exception $e) {
-            Log::warning('[ProcesarImagenesPrendaService] Error decodificando imagenes_existentes', ['error' => $e->getMessage()]);
-            return [];
-        }
+        return $this->normalizarInputJsonArray($request->input('imagenes_existentes'), 'imagenes_existentes');
     }
 
     private function decodificarImagenesAEliminar(Request $request): array
@@ -134,6 +126,50 @@ class ProcesarImagenesPrendaService
             return $result;
         } catch (\Exception $e) {
             Log::warning('[ProcesarImagenesPrendaService] Error procesando imagenes_a_eliminar', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Normaliza inputs JSON que pueden venir como:
+     * - array
+     * - string JSON de array
+     * - string JSON doble-serializado
+     */
+    private function normalizarInputJsonArray(mixed $input, string $campo): array
+    {
+        if (empty($input)) {
+            return [];
+        }
+
+        if (is_array($input)) {
+            return $input;
+        }
+
+        if (!is_string($input)) {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode($input, true);
+
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+
+            if (is_string($decoded)) {
+                $decodedNested = json_decode($decoded, true);
+                if (is_array($decodedNested)) {
+                    return $decodedNested;
+                }
+            }
+
+            return [];
+        } catch (\Throwable $e) {
+            Log::warning('[ProcesarImagenesPrendaService] Error normalizando input JSON array', [
+                'campo' => $campo,
+                'error' => $e->getMessage(),
+            ]);
             return [];
         }
     }
