@@ -3,10 +3,11 @@
 namespace App\Infrastructure\Http\Controllers\Asesores\Pedidos;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Asesores\CrearBorradorRequest;
+use App\Http\Requests\Asesores\ActualizarBorradorRequest;
 use App\Application\Pedidos\UseCases\GuardarBorradorUseCase;
 use App\Application\Pedidos\UseCases\ActualizarBorradorUseCase;
 use App\Application\Pedidos\UseCases\GuardarBorradorInput;
@@ -36,28 +37,18 @@ class CrearPedidoBorradorController extends Controller
     /**
      * POST /asesores/pedidos/borrador
      * Guardar un nuevo borrador de pedido
+     *
+     * Header recomendado:
+     * X-Idempotency-Key: {uuid} ← previene duplicados por doble clic
+     *
      * @return JsonResponse
      */
-    public function guardarBorrador(Request $request): JsonResponse
+    public function guardarBorrador(CrearBorradorRequest $request): JsonResponse
     {
         try {
-            // 🔧 FIX: Si viene pedido_id, es un intento de actualización con el método incorrecto
-            if ($request->has('pedido_id') && !empty($request->input('pedido_id'))) {
-                $pedidoId = $request->input('pedido_id');
-                Log::warning('[CrearPedidoBorradorController::guardarBorrador] INTENTO DE CREAR CON ID - Rechazando', [
-                    'pedido_id' => $pedidoId,
-                    'usuario_id' => Auth::id(),
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error: Intento de crear borrador con ID existente. Use PUT para actualizar.',
-                    'code' => 'INVALID_CREATE_WITH_ID',
-                ], 400);
-            }
-
             Log::info('[CrearPedidoBorradorController::guardarBorrador] Iniciado', [
                 'usuario_id' => Auth::id(),
+                'idempotency_key' => $request->header('X-Idempotency-Key'),
             ]);
 
             // 1. Convertir Request → DTO
@@ -108,10 +99,14 @@ class CrearPedidoBorradorController extends Controller
     /**
      * PUT /asesores/pedidos/{pedidoId}/borrador
      * Actualizar un borrador existente
+     *
+     * El ID viene en la URL, no en el payload
+     * PUT es idempotente por naturaleza (no necesita X-Idempotency-Key)
+     *
      * @param int|string $pedidoId
      * @return JsonResponse
      */
-    public function actualizarBorrador($pedidoId, Request $request): JsonResponse
+    public function actualizarBorrador(int $pedidoId, ActualizarBorradorRequest $request): JsonResponse
     {
         try {
             Log::info('[CrearPedidoBorradorController::actualizarBorrador] Iniciado', [
