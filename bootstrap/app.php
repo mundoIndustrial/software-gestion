@@ -5,7 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 /**
- * Helper js_asset() - Carga .min.js en producción, original en desarrollo
+ * Helpers js_asset() y css_asset() - Carga .min en producción, original en desarrollo
  */
 if (!function_exists('js_asset')) {
     function js_asset(string $path): string {
@@ -26,6 +26,34 @@ if (!function_exists('js_asset')) {
             return asset($minPath);
         }
         return asset($path);
+    }
+}
+
+if (!function_exists('css_asset')) {
+    function css_asset(string $path): string {
+        if (config('app.debug')) {
+            return asset($path);
+        }
+        $minPath = preg_replace('/\.css$/', '.min.css', $path);
+        $fullPath = public_path($path);
+        $fullMinPath = public_path($minPath);
+        if (file_exists($fullMinPath)) {
+            if (file_exists($fullPath)) {
+                $mtimeOriginal = @filemtime($fullPath) ?: 0;
+                $mtimeMin = @filemtime($fullMinPath) ?: 0;
+                if ($mtimeOriginal > $mtimeMin) {
+                    return asset($path);
+                }
+            }
+            return asset($minPath);
+        }
+        return asset($path);
+    }
+}
+
+if (!function_exists('asset_with_version')) {
+    function asset_with_version(string $path): string {
+        return \App\Helpers\AssetVersionHelper::asset_with_version($path);
     }
 }
 

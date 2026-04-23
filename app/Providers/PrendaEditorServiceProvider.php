@@ -76,7 +76,10 @@ class PrendaEditorServiceProvider extends ServiceProvider
         // $this->loadRoutesFrom(__DIR__.'/../routes/prendas-editor.php');
         
         // Cargar vistas si es necesario
-        $this->loadViewsFrom(__DIR__.'/../resources/views/prenda-editor', 'prenda-editor');
+        $viewsPath = __DIR__.'/../resources/views/prenda-editor';
+        if (file_exists($viewsPath)) {
+            $this->loadViewsFrom($viewsPath, 'prenda-editor');
+        }
     }
     
     /**

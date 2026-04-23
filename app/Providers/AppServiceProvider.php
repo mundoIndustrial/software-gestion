@@ -276,7 +276,7 @@ class AppServiceProvider extends ServiceProvider
         \Cmixin\BusinessDay::enable('Carbon\Carbon', 'co-national');
 
         // Registrar helper global para versioning de assets
-        if (!function_exists(__NAMESPACE__ . '\\asset_with_version')) {
+        if (!function_exists('asset_with_version')) {
             function asset_with_version(string $path): string {
                 return \App\Helpers\AssetVersionHelper::asset_with_version($path);
             }
