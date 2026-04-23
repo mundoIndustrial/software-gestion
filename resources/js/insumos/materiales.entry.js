@@ -3,23 +3,27 @@
  * Carga scripts legacy fuera de Vite mediante un único punto de entrada.
  */
 
+// Generar un hash corto basado en la fecha de build (versión compilada)
+// En producción, esto debería venir de un archivo de versión real
+const BUILD_VERSION = '1776951476'; // Versión desde última compilación
+
 const PRELOAD_SCRIPT_CONFIG = [
     // Fase actual: estos scripts se administran desde el entrypoint (no desde el page-loader)
-    { src: '/js/insumos/filter-manager-no-url.js', defer: true },
-    { src: '/js/insumos/search-debounce.js', defer: true },
-    { src: '/js/insumos/status-actions-insumos.js', defer: true },
-    { src: '/js/insumos/dropdown-handlers-insumos.js', defer: true },
-    { src: '/js/insumos/modal-handlers-insumos.js', defer: true },
-    { src: '/js/insumos/notifications-realtime-insumos.js', defer: true },
-    { src: '/js/insumos/recibos-selector-insumos.js', defer: true },
-    { src: '/js/insumos/pagination.js', defer: true },
+    { src: `/js/insumos/filter-manager-no-url.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/search-debounce.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/status-actions-insumos.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/dropdown-handlers-insumos.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/modal-handlers-insumos.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/notifications-realtime-insumos.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/recibos-selector-insumos.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/insumos/pagination.js?v=${BUILD_VERSION}`, defer: true },
 
-    { src: '/js/ordersjs/order-detail-modal-manager.js', defer: true },
-    { src: '/js/asesores/pedidos-detail-modal.js', defer: true },
-    { src: '/js/orders-scripts/image-gallery-zoom.js', defer: true },
+    { src: `/js/ordersjs/order-detail-modal-manager.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/asesores/pedidos-detail-modal.js?v=${BUILD_VERSION}`, defer: true },
+    { src: `/js/orders-scripts/image-gallery-zoom.js?v=${BUILD_VERSION}`, defer: true },
 ];
 
-const BOOTSTRAP_SCRIPT = { src: '/js/insumos/materiales-page-loader.js', defer: true };
+const BOOTSTRAP_SCRIPT = { src: `/js/insumos/materiales-page-loader.js?v=${BUILD_VERSION}`, defer: true };
 
 function scriptAlreadyLoaded(src) {
     const normalizedSrc = new URL(src, globalThis.location.origin).pathname;

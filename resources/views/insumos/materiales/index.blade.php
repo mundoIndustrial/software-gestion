@@ -557,8 +557,6 @@
 <script defer src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script defer src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
-<!-- Dropdown handlers para insumos/materiales - DEBE cargar ANTES de materiales-page-loader -->
-<script defer src="{{ asset('js/insumos/dropdown-handlers-insumos.js') }}?v={{ $assetVersion('js/insumos/dropdown-handlers-insumos.js') }}"></script>
 <script defer src="{{ asset('js/insumos/materiales-page-loader.js') }}?v={{ $assetVersion('js/insumos/materiales-page-loader.js') }}"></script>
 
 <!-- Scripts no-críticos (defer) -->
