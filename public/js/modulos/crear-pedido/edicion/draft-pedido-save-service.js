@@ -32,6 +32,13 @@
             'Accept': 'application/json'
         };
 
+        // 🔧 Obtener token CSRF del DOM para evitar error 419
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+                        || document.querySelector('input[name="_token"]')?.value;
+        if (csrfToken) {
+            headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         // 🔧 Agregar idempotency key SOLO para POST (creación)
         if (metodo === 'POST' && window.idempotencyService) {
             const idempotencyKey = window.idempotencyService.obtenerIdempotencyKey();
