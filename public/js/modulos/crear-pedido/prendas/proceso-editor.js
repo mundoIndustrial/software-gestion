@@ -51,14 +51,21 @@ class ProcesosEditor {
             return false;
         }
 
+        const clonar = (valor) => {
+            if (typeof structuredClone === 'function') {
+                return structuredClone(valor);
+            }
+            return this._deepCopyPreservandoFiles(valor);
+        };
+
         // Guardar referencia del proceso en edición
         this.procesoEnEdicion = {
             tipo: tipo,
-            datos: JSON.parse(JSON.stringify(datosProceso)) // Deep copy
+            datos: clonar(datosProceso)
         };
 
         // Guardar estado original para detectar cambios
-        this.procesoOriginal = JSON.parse(JSON.stringify(datosProceso));
+        this.procesoOriginal = clonar(datosProceso);
 
         // Limpiar cambios pendientes
         this.limpiarCambios();
@@ -299,18 +306,40 @@ class ProcesosEditor {
                     return trimmed && trimmed !== 'null' && trimmed.length > 0 ? trimmed : null;
                 }
                 
-                // Si es objeto con URL o ruta, extraer la URL
+                // Si es objeto con File embebido, preservarlo (CRITICO para evitar blobs muertos)
                 if (typeof img === 'object') {
+                    if (img.file instanceof File) {
+                        return img;
+                    }
+
+                    // Si es objeto de BD/ruta/preview, preservarlo completo
                     const url = img.url || img.ruta || img.ruta_original || img.previewUrl;
                     if (url && typeof url === 'string') {
                         const trimmed = url.trim();
-                        return trimmed && trimmed !== 'null' && trimmed.length > 0 ? trimmed : null;
+                        return trimmed && trimmed !== 'null' && trimmed.length > 0 ? img : null;
                     }
                 }
                 
                 return null;
             })
             .filter(img => img !== null); // Filtrar null/vacíos
+    }
+
+    _deepCopyPreservandoFiles(value) {
+        if (value instanceof File || value instanceof Blob) {
+            return value;
+        }
+        if (Array.isArray(value)) {
+            return value.map((item) => this._deepCopyPreservandoFiles(item));
+        }
+        if (value && typeof value === 'object') {
+            const copia = {};
+            Object.keys(value).forEach((key) => {
+                copia[key] = this._deepCopyPreservandoFiles(value[key]);
+            });
+            return copia;
+        }
+        return value;
     }
 
     /**

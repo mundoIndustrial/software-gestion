@@ -1,5 +1,10 @@
 <!-- Modal para Editar un EPP Individual -->
-<div id="modalEditarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[9999999]">
+<div
+    id="modalEditarEPP"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[9999999]"
+    style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 9999999;"
+    aria-hidden="true"
+>
     <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
         
         <!-- Header -->
@@ -190,6 +195,24 @@ function obtenerGestionItemsUIEditarEPP() {
     return null;
 }
 
+function establecerVisibilidadModalEditarEPP(mostrar) {
+    const modal = document.getElementById('modalEditarEPP');
+    if (!modal) return;
+
+    if (mostrar) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        return;
+    }
+
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
 function normalizarReferenciaEPPEditar(valor) {
     if (valor === null || valor === undefined || valor === '') return null;
     if (typeof valor === 'number' && !Number.isNaN(valor)) return valor;
@@ -312,8 +335,31 @@ function cargarEPPUnificadoEnModalEditar(eppData, opciones = {}) {
         return null;
     }
 
-    const referencia = construirReferenciaEPPEditar(eppData);
-    const resultado = gestion.buscarEPPEnEstado(referencia);
+    const referenciaBase = construirReferenciaEPPEditar(eppData);
+    const referencias = [
+        referenciaBase,
+        {
+            tarjetaId: eppData?.tarjetaId || null,
+            pedido_epp_id: eppData?.pedido_epp_id || eppData?.pedidoEppId || null,
+            epp_id: eppData?.epp_id || eppData?.eppId || null,
+            id: eppData?.id || null
+        },
+        {
+            tarjetaId: eppData?.id || null,
+            pedido_epp_id: eppData?.pedido_epp_id || eppData?.pedidoEppId || null,
+            epp_id: eppData?.epp_id || eppData?.eppId || null
+        }
+    ];
+
+    let resultado = null;
+    for (const referencia of referencias) {
+        const intento = gestion.buscarEPPEnEstado(referencia);
+        if (intento && intento.epp) {
+            resultado = intento;
+            break;
+        }
+    }
+
     if (!resultado || !resultado.epp) {
         return null;
     }
@@ -348,7 +394,7 @@ function cargarEPPUnificadoEnModalEditar(eppData, opciones = {}) {
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
 
     mostrarFotosEnModalEditar();
-    document.getElementById('modalEditarEPP').classList.remove('hidden');
+    establecerVisibilidadModalEditarEPP(true);
     configurarZonaFotosModalEditarEPP();
 
     return eppEnEdicionIndividual;
@@ -367,6 +413,14 @@ function abrirModalEditarEPP(eppData) {
         return;
     }
     console.warn('[abrirModalEditarEPP] No se encontro el EPP en gestionItemsUI');
+    if (window.Swal) {
+        window.Swal.fire({
+            icon: 'warning',
+            title: 'No se pudo abrir el editor',
+            text: 'No se encontro el EPP en el estado actual. Intenta recargar la lista de items.',
+            confirmButtonText: 'Entendido'
+        });
+    }
 }
 
 /**
@@ -451,7 +505,7 @@ function seleccionarEPPEnEdicion(epp) {
  */
 function cerrarModalEditarEPP() {
     console.log('[cerrarModalEditarEPP] Cerrando modal');
-    document.getElementById('modalEditarEPP').classList.add('hidden');
+    establecerVisibilidadModalEditarEPP(false);
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
     
     // Ocultar campo de valor unitario por defecto
@@ -480,6 +534,11 @@ function cerrarModalEditarEPP() {
     indiceEPPEnEdicion = -1;
     tarjetaEppIdEnEdicion = null;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Garantizar estado inicial oculto aunque otra lógica modifique clases.
+    establecerVisibilidadModalEditarEPP(false);
+});
 
 /**
  * Mostrar fotos en la galería del modal
@@ -885,7 +944,4 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
     }
 }
 </script>
-
-
-
 

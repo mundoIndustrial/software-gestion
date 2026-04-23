@@ -376,16 +376,15 @@ class PrendaEditorProcesos {
      * @private
      */
     static _configurarDragDropYVerificar() {
-        console.log('[PROCESOS-LOADER]  Verificando configurarDragDropProcesos');
+        console.log('[PROCESOS-LOADER]  Verificando DragDropManager.reconfigurarProcesos');
         console.log('[PROCESOS-LOADER]Timestamp:', new Date().toISOString());
-        console.log('[PROCESOS-LOADER]  Llamando a configurarDragDropProcesos');
+        console.log('[PROCESOS-LOADER]  Reconfigurando procesos');
         
-        if (typeof configurarDragDropProcesos === 'function') {
-            console.log('[PROCESOS-LOADER]  Llamando a configurarDragDropProcesos desde loader');
-            configurarDragDropProcesos();
-            console.log('[PROCESOS-LOADER]  configurarDragDropProcesos ejecutado');
+        if (globalThis.DragDropManager && typeof globalThis.DragDropManager.reconfigurarProcesos === 'function') {
+            globalThis.DragDropManager.reconfigurarProcesos();
+            console.log('[PROCESOS-LOADER]  DragDropManager.reconfigurarProcesos ejecutado');
         } else {
-            console.warn('[PROCESOS-LOADER]  configurarDragDropProcesos no disponible');
+            console.warn('[PROCESOS-LOADER]  DragDropManager.reconfigurarProcesos no disponible');
         }
         
         // Verificación final: asegurar que el contenedor es visible

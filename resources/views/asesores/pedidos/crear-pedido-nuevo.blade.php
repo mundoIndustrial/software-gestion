@@ -417,7 +417,6 @@
 <!-- ─── Final UI Scripts ─── -->
 <script defer src="{{ js_asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-modal.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ $v }}"></script>
 
 <!--  TEST SUITE: Solo en desarrollo -->
 @if(config('app.debug'))

@@ -220,13 +220,14 @@ class GestionItemsUI {
         const eppId = this._normalizarIdentificador(referencia.eppId || referencia.epp_id || referencia.id);
 
         const index = this.epps.findIndex((epp) => {
-            const tarjetaActual = this._normalizarIdentificador(epp?.tarjetaId);
-            const pedidoActual = this._normalizarIdentificador(epp?.pedido_epp_id);
-            const eppActual = this._normalizarIdentificador(epp?.epp_id || epp?.id);
+            const tarjetaActual = this._normalizarIdentificador(epp?.tarjetaId || epp?.tarjeta_id || epp?.id);
+            const pedidoActual = this._normalizarIdentificador(epp?.pedido_epp_id || epp?.pedidoEppId);
+            const eppActual = this._normalizarIdentificador(epp?.epp_id || epp?.eppId || epp?.id);
 
             if (tarjetaId && tarjetaActual === tarjetaId) return true;
             if (pedidoEppId && pedidoActual === pedidoEppId) return true;
             if (eppId && (eppActual === eppId || pedidoActual === eppId)) return true;
+            if (tarjetaId && (eppActual === tarjetaId || pedidoActual === tarjetaId)) return true;
 
             return false;
         });
@@ -685,5 +686,4 @@ if (document.readyState === 'loading') {
     initializeGestionItemsUI();
 }
  
-
 

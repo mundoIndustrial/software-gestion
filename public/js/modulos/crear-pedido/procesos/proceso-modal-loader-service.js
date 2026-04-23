@@ -20,8 +20,8 @@
         if (img instanceof File) {
             return URL.createObjectURL(img);
         }
-        if (img?.previewUrl) {
-            return img.previewUrl;
+        if (img?.file instanceof File) {
+            return URL.createObjectURL(img.file);
         }
         if (img?.dataURL) {
             return img.dataURL;
@@ -31,7 +31,13 @@
         }
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-            return (typeof url === 'string') ? agregarStorageUrl(url) : '';
+            if (typeof url === 'string' && url.trim() !== '') {
+                return agregarStorageUrl(url);
+            }
+            if (typeof img.previewUrl === 'string') {
+                return img.previewUrl;
+            }
+            return '';
         }
         return '';
     }
@@ -82,24 +88,19 @@
         }
 
         if (hasEmbeddedFile) {
-            if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                try { URL.revokeObjectURL(img.previewUrl); } catch (e) {}
-            }
-            const url = URL.createObjectURL(img.file);
-            img.previewUrl = url;
-            return url;
+            return URL.createObjectURL(img.file);
         }
 
         if (typeof img === 'string') {
             return resolverUrlImagenProceso(img);
         }
 
-        if (img && img.previewUrl) {
-            return img.previewUrl;
-        }
-
         if (img && (img.url || img.ruta_original || img.ruta || img.ruta_webp)) {
             return resolverUrlImagenProceso(img);
+        }
+
+        if (img && img.previewUrl) {
+            return img.previewUrl;
         }
 
         console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);
@@ -135,6 +136,11 @@
         const preview = document.getElementById(`proceso-foto-preview-${indice}`);
         if (!preview) return;
 
+        if (preview._objectUrl && preview._objectUrl.startsWith('blob:')) {
+            try { URL.revokeObjectURL(preview._objectUrl); } catch (e) {}
+            preview._objectUrl = null;
+        }
+
         const imgUrl = resolverUrlPreviewModalProceso(img, indice);
 
         preview.style.border = '2px solid #0066cc';
@@ -142,6 +148,9 @@
         preview.innerHTML = `
             <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
         `;
+        if (typeof imgUrl === 'string' && imgUrl.startsWith('blob:')) {
+            preview._objectUrl = imgUrl;
+        }
 
         crearBotonEliminarPreview(preview, indice);
     }

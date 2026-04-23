@@ -339,24 +339,14 @@ class PrendaEditor {
                 console.log('[PrendaEditor]  Drag & drop de procesos reconfigurado (DragDropManager)');
             }
         } else {
-            // Opción 2: Fallback a funciones globales
-            console.log('[PrendaEditor] DragDropManager no disponible, usando funciones globales...');
+            // Sin fallback: mantener una sola fuente de eventos (DragDropManager).
+            console.warn('[PrendaEditor] DragDropManager no disponible; no se configura drag & drop de procesos');
             
             if (typeof configurarDragDropPrenda === 'function') {
                 configurarDragDropPrenda();
                 console.log('[PrendaEditor]  Drag & drop de prenda configurado');
             } else {
                 console.warn('[PrendaEditor]  configurarDragDropPrenda no disponible');
-            }
-            
-            if (typeof configurarDragDropProcesos === 'function') {
-                console.log('[PrendaEditor]  Llamando a configurarDragDropProcesos desde PrendaEditor');
-                console.log('[PrendaEditor]Timestamp:', new Date().toISOString());
-                console.log('[PrendaEditor]  Stack trace:', new Error().stack);
-                configurarDragDropProcesos();
-                console.log('[PrendaEditor]  Drag & drop de procesos configurado');
-            } else {
-                console.warn('[PrendaEditor]  configurarDragDropProcesos no disponible');
             }
         }
     }

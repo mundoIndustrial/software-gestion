@@ -663,10 +663,45 @@ function eliminarEPPDeLista(eppId) {
 /**
  * Abrir modal y cargar EPP disponibles
  */
+function aplicarEstilosBaseModalAgregarEPP() {
+    const modal = document.getElementById('modalAgregarEPP');
+    const modalContent = document.getElementById('modalAgregarEPPContent');
+
+    if (!modal) return;
+
+    // Estilos criticos para que el modal funcione aunque no cargue Tailwind/Vite
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.left = '0';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.background = 'rgba(0, 0, 0, 0.5)';
+    modal.style.zIndex = '9999999';
+    modal.style.padding = '12px';
+
+    if (!modalContent) return;
+
+    modalContent.style.position = 'relative';
+    modalContent.style.zIndex = '10000000';
+    modalContent.style.width = '100%';
+    modalContent.style.maxWidth = '1100px';
+    modalContent.style.height = '95vh';
+    modalContent.style.maxHeight = '95vh';
+    modalContent.style.margin = '0 auto';
+    modalContent.style.display = 'flex';
+    modalContent.style.flexDirection = 'column';
+    modalContent.style.background = '#ffffff';
+    modalContent.style.borderRadius = '12px';
+    modalContent.style.overflow = 'hidden';
+}
+
 function abrirModalAgregarEPP() {
     console.log('[abrirModalAgregarEPP] Abriendo modal con tabla de seleccion multiples');
     const modal = document.getElementById('modalAgregarEPP');
-    modal.style.display = 'flex';
+    aplicarEstilosBaseModalAgregarEPP();
     document.body.style.overflow = 'hidden';
     
     // IMPORTANTE: Obtener los EPPs ya agregados en el formulario
@@ -785,12 +820,6 @@ function abrirModalAgregarEPP() {
             }
         });
         console.log('[abrirModalAgregarEPP]  Modal EPP registrado en DragDropManager');
-    } else if (globalThis.handlePasteEPP && typeof globalThis.handlePasteEPP === 'function') {
-        // Fallback SOLO si DragDropManager no esta y handlePasteEPP esta disponible
-        // Asegurarse que no este registrado ya
-        document.removeEventListener('paste', globalThis.handlePasteEPP, true);
-        document.addEventListener('paste', globalThis.handlePasteEPP, true);
-        console.log('[abrirModalAgregarEPP]  Fallback: usando listener manual (DragDropManager no disponible)');
     }
     
     console.log('[abrirModalAgregarEPP] Modal abierto - EPPs agregados:', eppAgregadosList.length);
@@ -908,10 +937,6 @@ function cerrarModalAgregarEPPConfirmado() {
     if (globalThis.DragDropManager && typeof globalThis.DragDropManager.desregistrarSubModal === 'function') {
         globalThis.DragDropManager.desregistrarSubModal('modalAgregarEPP');
         console.log('[cerrarModalAgregarEPP] Modal EPP desregistrado de DragDropManager');
-    } else if (globalThis.handlePasteEPP && globalThis.DragDropManager === undefined) {
-        // Fallback SOLO si DragDropManager no esta disponible
-        document.removeEventListener('paste', globalThis.handlePasteEPP, true);
-        console.log('[cerrarModalAgregarEPP] Listener manual removido (fallback)');
     }
     
     document.body.style.overflow = 'auto';

@@ -38,6 +38,9 @@ const procesosNombres = {
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
 function marcarProceso(tipoProceso) {
+    procesosSeleccionados = globalThis.procesosSeleccionados || procesosSeleccionados || {};
+    globalThis.procesosSeleccionados = procesosSeleccionados;
+
     if (!procesosSeleccionados[tipoProceso]) {
         procesosSeleccionados[tipoProceso] = {
             tipo: tipoProceso,
@@ -64,6 +67,9 @@ function marcarProceso(tipoProceso) {
 }
 
 function desmarcarProceso(tipoProceso) {
+    procesosSeleccionados = globalThis.procesosSeleccionados || procesosSeleccionados || {};
+    globalThis.procesosSeleccionados = procesosSeleccionados;
+
     if (procesosSeleccionados[tipoProceso]) {
         delete procesosSeleccionados[tipoProceso];
         delete globalThis.procesosSeleccionados[tipoProceso];
@@ -120,9 +126,9 @@ globalThis.obtenerProcesosConfigurables = function() {
  * Limpia todos los procesos seleccionados
  */
 globalThis.limpiarProcesosSeleccionados = function() {
-
-    procesosSeleccionados = {};
-    globalThis.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con globalThis
+    procesosSeleccionados = globalThis.procesosSeleccionados || procesosSeleccionados || {};
+    Object.keys(procesosSeleccionados).forEach((key) => delete procesosSeleccionados[key]);
+    globalThis.procesosSeleccionados = procesosSeleccionados; // Mantener la misma referencia en memoria
     
     // Desmarcar todos los checkboxes
     const checkboxes = [

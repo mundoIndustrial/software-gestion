@@ -1,5 +1,5 @@
 <!-- Modal Selección de Tipo (Prenda o EPP) -->
-<div id="modalSeleccionTipo" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
+<div id="modalSeleccionTipo" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999; position: fixed; top: 0; right: 0; bottom: 0; left: 0; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5);">
     <div class="bg-white rounded-lg w-full max-w-md shadow-2xl">
         <!-- Header -->
         <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
@@ -41,7 +41,7 @@
 </div>
 
 <!-- Modal Agregar Prenda al Pedido -->
-<div id="modalAgregarPrenda" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
+<div id="modalAgregarPrenda" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999; position: fixed; top: 0; right: 0; bottom: 0; left: 0; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5);">
     <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 1000000; max-height: 90vh; display: flex; flex-direction: column;">
         
         <!-- Header Azul -->
@@ -136,7 +136,7 @@
 </div>
 
 <!-- Modal Agregar EPP al Pedido - REDISEÑO CON TABLA Multiple -->
-<div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 9999999;">
+<div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 9999999; position: fixed; top: 0; right: 0; bottom: 0; left: 0; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5);">
     <div id="modalAgregarEPPContent" class="bg-white rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 95vh; height: 95vh; display: flex; flex-direction: column; margin: 0 20px;">
         
         <!-- Header Azul -->
@@ -352,5 +352,4 @@
         </div>
     </div>
 </div>
-
 

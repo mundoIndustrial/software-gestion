@@ -39,8 +39,8 @@ function resolverUrlImagenProceso(img) {
     if (img instanceof File) {
         return URL.createObjectURL(img);
     }
-    if (img?.previewUrl) {
-        return img.previewUrl;
+    if (img?.file instanceof File) {
+        return URL.createObjectURL(img.file);
     }
     if (img?.dataURL) {
         return img.dataURL;
@@ -50,7 +50,13 @@ function resolverUrlImagenProceso(img) {
     }
     if (typeof img === 'object' && img) {
         const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-        return (typeof url === 'string') ? agregarStorageUrl(url) : '';
+        if (typeof url === 'string' && url.trim() !== '') {
+            return agregarStorageUrl(url);
+        }
+        if (typeof img.previewUrl === 'string') {
+            return img.previewUrl;
+        }
+        return '';
     }
     return '';
 }
@@ -133,17 +139,69 @@ function mostrarContenedorProcesos(container) {
 }
 
 function configurarDragDropSiDisponible() {
-    console.log('[RENDER-PROCESOS] Verificando configuracion de drag & drop');
-    console.log('[RENDER-PROCESOS] configurarDragDropProcesos disponible:', typeof configurarDragDropProcesos);
-
-    if (typeof configurarDragDropProcesos !== 'function') {
-        console.warn('[RENDER-PROCESOS] configurarDragDropProcesos no disponible');
+    console.log('[RENDER-PROCESOS] Verificando configuracion de drag & drop con DragDropManager');
+    if (!globalThis.DragDropManager || typeof globalThis.DragDropManager.reconfigurarProcesos !== 'function') {
+        console.warn('[RENDER-PROCESOS] DragDropManager.reconfigurarProcesos no disponible');
         return;
     }
 
-    console.log('[RENDER-PROCESOS] Llamando a configurarDragDropProcesos()');
-    configurarDragDropProcesos();
-    console.log('[RENDER-PROCESOS] Drag & drop configurado para procesos');
+    globalThis.DragDropManager.reconfigurarProcesos();
+    console.log('[RENDER-PROCESOS] Drag & drop de procesos reconfigurado con DragDropManager');
+}
+
+function normalizarClaveProceso(tipo) {
+    return String(tipo || '').trim().toLowerCase();
+}
+
+function construirProcesoCanonico(tipo, proceso) {
+    if (!proceso || typeof proceso !== 'object') {
+        return null;
+    }
+
+    if (proceso.datos && typeof proceso.datos === 'object') {
+        return proceso;
+    }
+
+    return {
+        ...proceso,
+        tipo: proceso.tipo || tipo,
+        datos: {
+            ...proceso,
+            tipo: proceso.tipo || tipo
+        }
+    };
+}
+
+function buscarProcesoEnColeccion(coleccion, tipo) {
+    if (!coleccion || typeof coleccion !== 'object') {
+        return null;
+    }
+
+    if (coleccion[tipo]) {
+        return construirProcesoCanonico(tipo, coleccion[tipo]);
+    }
+
+    const tipoNormalizado = normalizarClaveProceso(tipo);
+
+    if (tipoNormalizado && coleccion[tipoNormalizado]) {
+        return construirProcesoCanonico(tipo, coleccion[tipoNormalizado]);
+    }
+
+    for (const [key, value] of Object.entries(coleccion)) {
+        if (normalizarClaveProceso(key) === tipoNormalizado) {
+            return construirProcesoCanonico(key, value);
+        }
+    }
+
+    return null;
+}
+
+function actualizarCacheProcesosRender(procesos) {
+    const cache = {};
+    Object.entries(procesos || {}).forEach(([tipo, proceso]) => {
+        cache[tipo] = construirProcesoCanonico(tipo, proceso);
+    });
+    globalThis.__procesosRenderCache = cache;
 }
 /**
  * Renderizar todas las tarjetas de procesos en el modal de prenda - OPTIMIZADO
@@ -185,6 +243,7 @@ globalThis.renderizarTarjetasProcesos = function() {
     });
 
     container.innerHTML = html;
+    actualizarCacheProcesosRender(procesos);
     etiquetarTarjetasProceso(container);
     mostrarContenedorProcesos(container);
     configurarDragDropSiDisponible();
@@ -210,7 +269,23 @@ function generarTarjetaProceso(tipo, datos) {
 }
 const ProcesoEditService = {
     obtenerProceso(tipo) {
-        return globalThis.procesosSeleccionados?.[tipo] || null;
+        const fuentes = [
+            { nombre: 'procesosSeleccionados', data: globalThis.procesosSeleccionados },
+            { nombre: 'procesosGuardados', data: globalThis.procesosGuardados },
+            { nombre: '__procesosRenderCache', data: globalThis.__procesosRenderCache }
+        ];
+
+        for (const fuente of fuentes) {
+            const encontrado = buscarProcesoEnColeccion(fuente.data, tipo);
+            if (encontrado) {
+                if (fuente.nombre !== 'procesosSeleccionados') {
+                    console.warn(`[EDITAR-PROCESO-MODAL] Proceso '${tipo}' recuperado desde fallback: ${fuente.nombre}`);
+                }
+                return encontrado;
+            }
+        }
+
+        return null;
     },
 
     esModoPorTallas(proceso) {

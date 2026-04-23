@@ -236,12 +236,8 @@ function generarTarjetaProceso(tipo, datos) {
                             if (img instanceof File) {
                                 imgSrc = URL.createObjectURL(img);
                             } else if (img.file instanceof File) {
-                                // Objeto con File embebido: regenerar blob URL fresco
-                                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
-                                }
+                                // Objeto con File embebido: generar URL temporal sin mutar estado compartido
                                 imgSrc = URL.createObjectURL(img.file);
-                                img.previewUrl = imgSrc; // actualizar referencia
                             } else if (img.previewUrl) {
                                 // Imagen con preview (desde storage)
                                 imgSrc = img.previewUrl;

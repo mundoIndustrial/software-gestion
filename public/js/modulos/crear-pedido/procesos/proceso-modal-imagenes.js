@@ -102,7 +102,7 @@ globalThis.manejarImagenProceso = function(input, indice) {
 globalThis._imagenAEliminarIndice = null;
 
 //  EVENT DELEGATION GLOBAL: Detectar clicks en botones .btn-eliminar-imagen-proceso
-// Esto funciona incluso despues de que setupDragAndDropProceso clone el preview con cloneNode(true)
+// Mantener compatibilidad cuando el preview se re-renderiza dinámicamente.
 // porque cloneNode NO copia event listeners, pero event delegation en document si los detecta
 (function() {
     function handleDeleteBtnClick(e) {
@@ -254,6 +254,59 @@ function _confirmarEliminarImagenProceso_resetMocks(indice) {
 }
 procesoModalModules.imagenes.resetMocks = _confirmarEliminarImagenProceso_resetMocks;
 
+function _confirmarEliminarImagenProceso_removerDeStorageUniversal(indice, preview) {
+    if (!globalThis.universalImagenesStorage || typeof globalThis.universalImagenesStorage.obtenerImagenes !== 'function') {
+        return false;
+    }
+
+    const procesoIdx = globalThis.procesoActualIndex;
+    if (procesoIdx === undefined || procesoIdx === null) {
+        return false;
+    }
+
+    const imagenesStorage = globalThis.universalImagenesStorage.obtenerImagenes('procesos', procesoIdx) || [];
+    if (!Array.isArray(imagenesStorage) || imagenesStorage.length === 0) {
+        return false;
+    }
+
+    const fileEnSlot = globalThis.imagenesProcesoActual?.[indice - 1];
+    const previewSrc = preview?.querySelector('img')?.src || null;
+    let storageIndex = -1;
+
+    if (fileEnSlot instanceof File) {
+        storageIndex = imagenesStorage.findIndex((img) => {
+            const f = img?.file instanceof File ? img.file : null;
+            return !!f &&
+                f.name === fileEnSlot.name &&
+                f.size === fileEnSlot.size &&
+                f.type === fileEnSlot.type &&
+                f.lastModified === fileEnSlot.lastModified;
+        });
+    }
+
+    if (storageIndex < 0 && previewSrc && previewSrc.startsWith('blob:')) {
+        storageIndex = imagenesStorage.findIndex((img) => img?.previewUrl === previewSrc);
+    }
+
+    // Fallback por posición visual (1..3) si no encontramos match exacto.
+    if (storageIndex < 0 && (indice - 1) >= 0 && (indice - 1) < imagenesStorage.length) {
+        storageIndex = indice - 1;
+    }
+
+    if (storageIndex >= 0) {
+        globalThis.universalImagenesStorage.eliminarImagen('procesos', procesoIdx, storageIndex);
+        procesoModalDebug('[confirmarEliminarImagenProceso]  Imagen eliminada de universalImagenesStorage:', {
+            procesoIdx,
+            indicePreview: indice,
+            storageIndex
+        });
+        return true;
+    }
+
+    return false;
+}
+procesoModalModules.imagenes.removerDeStorageUniversal = _confirmarEliminarImagenProceso_removerDeStorageUniversal;
+
 function _confirmarEliminarImagenProceso_guardarExistente(indice) {
     if (!(globalThis.imagenesProcesoExistentes && globalThis.imagenesProcesoExistentes.length > (indice - 1))) {
         return false;
@@ -350,6 +403,11 @@ globalThis.confirmarEliminarImagenProceso = function() {
     cerrarModalConfirmarEliminarImagen();
 
     const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+
+    // CRITICO: En modo creacion, el guardado toma imagenes desde universalImagenesStorage.
+    // Si no se elimina aqui, la foto reaparece al guardar.
+    procesoModalModules.imagenes.removerDeStorageUniversal(indice, preview);
+
     procesoModalModules.imagenes.revocarURLs(preview);
 
     procesoModalModules.imagenes.resetMocks(indice);
@@ -429,4 +487,3 @@ globalThis.limpiarImagenesProceso = limpiarImagenesProceso;
 procesoModalModules.imagenes.limpiar = limpiarImagenesProceso;
 
 })(globalThis);
-
