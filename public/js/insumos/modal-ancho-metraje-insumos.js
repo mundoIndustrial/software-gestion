@@ -801,7 +801,23 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         }
         
         // Guardar datos globales para compatibilidad
-        window.actualizarAnchoMetrajeUniversal(ancho || 0, metraje || 0, pedido);
+        if (typeof window.actualizarAnchoMetrajeUniversal === 'function') {
+            window.actualizarAnchoMetrajeUniversal(ancho || 0, metraje || 0, pedido);
+        } else {
+            console.warn('[guardarAnchoMetraje] window.actualizarAnchoMetrajeUniversal no esta disponible, actualizando datos globalmente...');
+            window.datosAnchoMetraje = {
+                ancho: parseFloat(ancho || 0),
+                metraje: parseFloat(metraje || 0),
+                pedido: pedido || 'SIN PEDIDO',
+                fecha: new Date().toISOString(),
+                modulo: window.location.pathname
+            };
+            
+            // Disparar evento para otros componentes
+            window.dispatchEvent(new CustomEvent('anchoMetrajeActualizado', {
+                detail: window.datosAnchoMetraje
+            }));
+        }
         
         // Enviar al servidor (sin color)
         fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
