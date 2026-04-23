@@ -63,6 +63,9 @@ class PrendaModalManager {
     static limpiar(modalId = 'modal-agregar-prenda-nueva') {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+
+        // Limpiar estado temporal de eliminacion de imagenes al cerrar/limpiar modal.
+        window.imagenesAEliminar = [];
         
         // Limpiar formulario
         const form = modal.querySelector('form');

@@ -101,6 +101,64 @@
         });
     }
 
+    function sincronizarIdsPrendasNuevasEnMemoria(resultado) {
+        const mapeadas = Array.isArray(resultado?.nuevas_prendas_mapeadas)
+            ? resultado.nuevas_prendas_mapeadas
+            : [];
+
+        if (!mapeadas.length || !window.gestionItemsUI || !Array.isArray(window.gestionItemsUI.prendas)) {
+            return;
+        }
+
+        const mapaPorLocalId = new Map();
+        mapeadas.forEach((item) => {
+            const localId = typeof item?.local_id === 'string' ? item.local_id.trim() : '';
+            const prendaPedidoId = Number(item?.prenda_pedido_id || 0);
+            if (!localId || !Number.isInteger(prendaPedidoId) || prendaPedidoId <= 0) {
+                return;
+            }
+            mapaPorLocalId.set(localId, prendaPedidoId);
+        });
+
+        if (!mapaPorLocalId.size) {
+            return;
+        }
+
+        let actualizadas = 0;
+        window.gestionItemsUI.prendas.forEach((prenda) => {
+            const localId = typeof prenda?._local_id === 'string' ? prenda._local_id.trim() : '';
+            if (!localId || !mapaPorLocalId.has(localId)) {
+                return;
+            }
+
+            const nuevoId = mapaPorLocalId.get(localId);
+            prenda.prenda_pedido_id = nuevoId;
+            prenda.id = nuevoId;
+            actualizadas++;
+        });
+
+        if (actualizadas > 0) {
+            console.debug('[DraftPedidoOrchestrator] IDs de nuevas prendas sincronizados en memoria', {
+                total: actualizadas
+            });
+        }
+    }
+
+    function limpiarMarcasImagenesEliminadas() {
+        window.imagenesAEliminar = [];
+
+        if (!window.gestionItemsUI || !Array.isArray(window.gestionItemsUI.prendas)) {
+            return;
+        }
+
+        window.gestionItemsUI.prendas.forEach((prenda) => {
+            if (!prenda || typeof prenda !== 'object') {
+                return;
+            }
+            prenda.imagenes_a_eliminar = [];
+        });
+    }
+
     function mostrarExito(resultado, datos) {
         const modoEdicion = window.modoEdicion || false;
         const pedidoId = window.pedidoEditarId || null;
@@ -190,6 +248,14 @@
 
             if (!resultado.success) {
                 throw new Error(resultado.message || 'Error desconocido al guardar borrador');
+            }
+
+            sincronizarIdsPrendasNuevasEnMemoria(resultado);
+            limpiarMarcasImagenesEliminadas();
+
+            // Marcar como guardado para la detección de cambios sin guardar
+            if (window.DraftPedidoUnsavedChanges && typeof window.DraftPedidoUnsavedChanges.marcarGuardado === 'function') {
+                window.DraftPedidoUnsavedChanges.marcarGuardado();
             }
 
             await mostrarExito(resultado, datos);

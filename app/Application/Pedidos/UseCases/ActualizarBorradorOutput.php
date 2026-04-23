@@ -17,6 +17,7 @@ class ActualizarBorradorOutput
         public ?string $estado = null,
         public ?string $redirect_url = null,
         public float $tiempo_ms = 0,
+        public array $nuevas_prendas_mapeadas = [],
     ) {}
 
     /**
@@ -51,7 +52,10 @@ class ActualizarBorradorOutput
             $result['tiempo_ms'] = $this->tiempo_ms;
         }
 
+        if (!empty($this->nuevas_prendas_mapeadas)) {
+            $result['nuevas_prendas_mapeadas'] = $this->nuevas_prendas_mapeadas;
+        }
+
         return $result;
     }
 }
-

@@ -112,7 +112,8 @@ class HttpService {
                 headers: {
                     ...headers,
                     ...config.headers
-                }
+                },
+                credentials: 'include'
             });
 
             // Intentar parsear JSON primero (para errores 422, etc)

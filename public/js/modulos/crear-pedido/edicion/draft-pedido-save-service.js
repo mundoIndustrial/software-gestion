@@ -4,23 +4,28 @@
     async function enviarBorrador(formData, opciones = {}) {
         const modoEdicion = opciones.modoEdicion || false;
         const pedidoId = opciones.pedidoId || null;
+        const esActualizacion = !!(modoEdicion && pedidoId && !isNaN(pedidoId) && pedidoId > 0);
         let endpoint = opciones.endpointCrear || '/api/asesores/pedidos/borrador';
         let metodo = 'POST';
 
-        // 🔧 Determinar si es creación o actualización
-        if (modoEdicion && pedidoId && !isNaN(pedidoId) && pedidoId > 0) {
-            // ACTUALIZACIÓN: usar PUT
+        // Compatibilidad Laravel/PHP: multipart con PUT puede perder campos.
+        // Para actualizar se envia POST con _method=PUT.
+        if (esActualizacion) {
             endpoint = `/api/asesores/pedidos/${pedidoId}/borrador`;
-            metodo = 'PUT';
-            console.warn('[DraftPedidoSaveService] MODO ACTUALIZACIÓN ✅', {
+            metodo = 'POST';
+            if (formData && typeof formData.set === 'function') {
+                formData.set('_method', 'PUT');
+            }
+
+            console.warn('[DraftPedidoSaveService] MODO ACTUALIZACION OK', {
                 endpoint,
-                metodo,
+                metodoReal: 'PUT',
+                metodoTransporte: metodo,
                 pedidoId,
                 timestamp: new Date().toISOString()
             });
         } else {
-            // CREACIÓN: usar POST con idempotencia
-            console.warn('[DraftPedidoSaveService] MODO CREACIÓN ✅', {
+            console.warn('[DraftPedidoSaveService] MODO CREACION OK', {
                 endpoint,
                 metodo,
                 timestamp: new Date().toISOString()
@@ -32,20 +37,19 @@
             'Accept': 'application/json'
         };
 
-        // 🔧 Obtener token CSRF del DOM para evitar error 419
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
                         || document.querySelector('input[name="_token"]')?.value;
         if (csrfToken) {
             headers['X-CSRF-TOKEN'] = csrfToken;
         }
 
-        // 🔧 Agregar idempotency key SOLO para POST (creación)
-        if (metodo === 'POST' && window.idempotencyService) {
+        // Idempotencia solo en creacion.
+        if (!esActualizacion && window.idempotencyService) {
             const idempotencyKey = window.idempotencyService.obtenerIdempotencyKey();
             if (idempotencyKey) {
                 headers['X-Idempotency-Key'] = idempotencyKey;
                 console.warn('[DraftPedidoSaveService] Idempotency-Key agregado', {
-                    key: idempotencyKey,
+                    key: idempotencyKey
                 });
             }
         }
@@ -53,7 +57,8 @@
         const response = await fetch(endpoint, {
             method: metodo,
             body: formData,
-            headers
+            headers,
+            credentials: 'include'
         });
 
         const resultado = await response.json();

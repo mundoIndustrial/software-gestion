@@ -358,6 +358,7 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-builder.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-save-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-orchestrator.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-unsaved-changes.js') }}?v={{ $v }}"></script>
     @if($modoEdicion ?? false)
     <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ $v }}"></script>
     @endif

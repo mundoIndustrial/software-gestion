@@ -59,7 +59,8 @@
             asignacionesColoresPorTalla: prendaData?.asignacionesColoresPorTalla || {},
             cantidad_talla: prendaData?.cantidad_talla || {},
             procesos_a_eliminar: Array.isArray(prendaData?.procesos_a_eliminar) ? prendaData.procesos_a_eliminar : (prendaActual?.procesos_a_eliminar || []),
-            imagenes_a_eliminar: Array.isArray(prendaData?.imagenes_a_eliminar) ? prendaData.imagenes_a_eliminar : (prendaActual?.imagenes_a_eliminar || [])
+            // No heredar imagenes_a_eliminar antiguas para evitar borrados involuntarios.
+            imagenes_a_eliminar: Array.isArray(prendaData?.imagenes_a_eliminar) ? prendaData.imagenes_a_eliminar : []
         };
 
         console.debug('[DraftPedidoSerializer] Prenda en edición sincronizada antes de guardar borrador:', {

@@ -86,6 +86,9 @@ class PrendaEditor {
         console.log(' [PrendaEditor] Cargando prenda:', prenda.nombre_prenda || prenda.nombre);
 
         try {
+            // Evitar arrastre de eliminaciones de imagen entre sesiones de edicion.
+            window.imagenesAEliminar = [];
+
             // 1️⃣ Guardar en global
             window.prendaActual = prenda;
             this.prendaEditIndex = prendaIndex;

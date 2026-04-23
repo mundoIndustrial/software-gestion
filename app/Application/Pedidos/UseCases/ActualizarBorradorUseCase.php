@@ -33,12 +33,12 @@ class ActualizarBorradorUseCase
             $this->registrarPedidoVerificado($input);
             $this->validarJsonSinFiles($input->datosFrontend);
             Log::info('[ActualizarBorradorUseCase] JSON validado');
-            $this->ejecutarActualizacionEnTransaccion($pedido, $input);
+            $nuevasPrendasMapeadas = $this->ejecutarActualizacionEnTransaccion($pedido, $input);
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
             $this->registrarExito($input, $pedido, $tiempoTotal);
 
-            return $this->crearOutputExitoso($input, $pedido, $tiempoTotal);
+            return $this->crearOutputExitoso($input, $pedido, $tiempoTotal, $nuevasPrendasMapeadas);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::error('[ActualizarBorradorUseCase] PEDIDO NO ENCONTRADO O NO AUTORIZADO', [
                 'pedido_id' => $input->pedidoId,
@@ -95,9 +95,11 @@ class ActualizarBorradorUseCase
         ]);
     }
 
-    private function ejecutarActualizacionEnTransaccion(mixed $pedido, ActualizarBorradorInput $input): void
+    private function ejecutarActualizacionEnTransaccion(mixed $pedido, ActualizarBorradorInput $input): array
     {
-        $this->transactionManager->run(function () use ($pedido, $input) {
+        $nuevasPrendasMapeadas = [];
+
+        $this->transactionManager->run(function () use ($pedido, $input, &$nuevasPrendasMapeadas) {
             $this->actualizarDatosBasicos($pedido->pedidoId, $input);
 
             $this->pedidoDraftMutationService->actualizarEpps(
@@ -108,7 +110,7 @@ class ActualizarBorradorUseCase
 
             $this->eliminarPrendasMarcadas($pedido->pedidoId, $input);
             $this->actualizarPrendasExistentes($pedido->pedidoId, $input);
-            $this->procesarNuevasPrendas($pedido, $input);
+            $nuevasPrendasMapeadas = $this->procesarNuevasPrendas($pedido, $input);
 
             $this->pedidoDraftMutationService->procesarImagenesDeProcesos(
                 $input->request,
@@ -116,6 +118,8 @@ class ActualizarBorradorUseCase
                 $input->datosFrontend['prendas'] ?? []
             );
         });
+
+        return $nuevasPrendasMapeadas;
     }
 
     private function actualizarDatosBasicos(int $pedidoId, ActualizarBorradorInput $input): void
@@ -135,9 +139,13 @@ class ActualizarBorradorUseCase
         ]);
     }
 
-    private function procesarNuevasPrendas(mixed $pedido, ActualizarBorradorInput $input): void
+    private function procesarNuevasPrendas(mixed $pedido, ActualizarBorradorInput $input): array
     {
         $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
+        if (empty($nuevasPrendas) || !is_array($nuevasPrendas)) {
+            return [];
+        }
+
         $nuevasPrendasIds = $this->pedidoDraftMutationService->crearNuevasPrendas($pedido, $nuevasPrendas);
 
         $this->pedidoDraftMutationService->procesarImagenesNuevasPrendas(
@@ -145,6 +153,33 @@ class ActualizarBorradorUseCase
             $nuevasPrendasIds,
             $nuevasPrendas
         );
+
+        $mapeadas = [];
+        foreach ($nuevasPrendasIds as $idx => $nuevoId) {
+            $localId = trim((string) (
+                $nuevasPrendas[$idx]['local_id']
+                ?? $nuevasPrendas[$idx]['_local_id']
+                ?? ''
+            ));
+
+            if ($localId === '') {
+                continue;
+            }
+
+            $mapeadas[] = [
+                'local_id' => $localId,
+                'prenda_pedido_id' => (int) $nuevoId,
+            ];
+        }
+
+        if (!empty($mapeadas)) {
+            Log::info('[ActualizarBorradorUseCase] Mapeo de nuevas prendas generado', [
+                'pedido_id' => $input->pedidoId,
+                'total' => count($mapeadas),
+            ]);
+        }
+
+        return $mapeadas;
     }
 
     private function registrarExito(ActualizarBorradorInput $input, mixed $pedido, float $tiempoTotal): void
@@ -157,7 +192,12 @@ class ActualizarBorradorUseCase
         ]);
     }
 
-    private function crearOutputExitoso(ActualizarBorradorInput $input, mixed $pedido, float $tiempoTotal): ActualizarBorradorOutput
+    private function crearOutputExitoso(
+        ActualizarBorradorInput $input,
+        mixed $pedido,
+        float $tiempoTotal,
+        array $nuevasPrendasMapeadas
+    ): ActualizarBorradorOutput
     {
         return new ActualizarBorradorOutput(
             success: true,
@@ -167,6 +207,7 @@ class ActualizarBorradorUseCase
             estado: $pedido->estado,
             redirect_url: route('asesores.pedidos.show', ['id' => $input->pedidoId]),
             tiempo_ms: $tiempoTotal,
+            nuevas_prendas_mapeadas: $nuevasPrendasMapeadas,
         );
     }
 

@@ -306,6 +306,7 @@
 
             nuevasPrendasJson.push({
                 tipo: 'prenda',
+                local_id: p._local_id || null,
                 nombre_prenda: p.nombre_prenda || p.nombre_producto || '',
                 nombre_producto: p.nombre_producto || p.nombre_prenda || '',
                 descripcion: p.descripcion || '',

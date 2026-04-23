@@ -298,15 +298,36 @@ class PrendaFlowService {
         }
 
         const esModoCreate = !this.ui?._tienePedidoEdicion?.();
-        const imagenesStorage = this.ui?._obtenerImagenesPrendaStorage?.() || [];
+        const prendaAnterior = structuredClone(this.ui.prendas[this.ui.prendaEditIndex]);
 
-        if (esModoCreate && imagenesStorage.length === 0) {
-            prendaData.imagenes = [];
-            this.ui.prendas[this.ui.prendaEditIndex].imagenes = [];
+        const tieneImagenesNuevas = Array.isArray(prendaData.imagenes) && prendaData.imagenes.length > 0;
+        const teniaImagenesAntes = Array.isArray(prendaAnterior.imagenes) && prendaAnterior.imagenes.length > 0;
+        const tieneMarcasEliminacion = Array.isArray(prendaData.imagenes_a_eliminar) && prendaData.imagenes_a_eliminar.length > 0;
+
+        const tieneTelasNuevas = Array.isArray(prendaData.telasAgregadas) && prendaData.telasAgregadas.length > 0;
+        const teniaTelasAntes = Array.isArray(prendaAnterior.telasAgregadas) && prendaAnterior.telasAgregadas.length > 0;
+
+        const tieneProcesosNuevos = prendaData.procesos && typeof prendaData.procesos === 'object' && Object.keys(prendaData.procesos).length > 0;
+        const teniaProcesosAntes = prendaAnterior.procesos && typeof prendaAnterior.procesos === 'object' && Object.keys(prendaAnterior.procesos).length > 0;
+
+        const prendaFusionada = { ...this.ui.prendas[this.ui.prendaEditIndex], ...prendaData };
+
+        // En modo creación, si el usuario editó solo tallas/campos de texto, preservar imágenes/telas/procesos.
+        if (esModoCreate) {
+            if (!tieneImagenesNuevas && teniaImagenesAntes && !tieneMarcasEliminacion) {
+                prendaFusionada.imagenes = prendaAnterior.imagenes;
+            }
+
+            if (!tieneTelasNuevas && teniaTelasAntes) {
+                prendaFusionada.telasAgregadas = prendaAnterior.telasAgregadas;
+            }
+
+            if (!tieneProcesosNuevos && teniaProcesosAntes) {
+                prendaFusionada.procesos = prendaAnterior.procesos;
+            }
         }
 
-        const prendaAnterior = structuredClone(this.ui.prendas[this.ui.prendaEditIndex]);
-        this.ui.prendas[this.ui.prendaEditIndex] = { ...this.ui.prendas[this.ui.prendaEditIndex], ...prendaData };
+        this.ui.prendas[this.ui.prendaEditIndex] = prendaFusionada;
 
         const procesosGuardados = this.ui.prendas[this.ui.prendaEditIndex].procesos || {};
         debugLog('[_procesarEditacionEnMemoria] 📦 ESTRUCTURA GUARDADA:');

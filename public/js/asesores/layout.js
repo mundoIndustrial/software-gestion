@@ -154,9 +154,10 @@ window.fetchAPI = async function(url, options = {}) {
         headers: {
             ...defaultOptions.headers,
             ...options.headers
-        }
+        },
+        credentials: 'include'
     };
-    
+
     try {
         const response = await fetch(url, mergedOptions);
         return await _handleAsesorFetchResponse(response);
