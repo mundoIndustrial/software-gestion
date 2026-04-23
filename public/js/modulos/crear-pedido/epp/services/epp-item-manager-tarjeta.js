@@ -152,6 +152,8 @@ class EppItemManagerTarjeta {
         
         console.log('[EppItemManagerTarjeta] Tarjeta EPP creada:', id);
         // Interactividad centralizada en EppMenuHandlerBase/EppMenuHandlerTarjeta.
+
+        return tarjetaId;
     }
 
     /**
@@ -408,5 +410,4 @@ class EppItemManagerTarjeta {
 
 // Exportar instancia global exclusiva para nuevo pedido
 window.eppItemManagerTarjeta = new EppItemManagerTarjeta();
-
 

@@ -75,6 +75,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // NOTIFICATION DROPDOWN
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.__asesoresLayoutNotificationBound) {
+        return;
+    }
+    window.__asesoresLayoutNotificationBound = true;
+
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationMenu = document.getElementById('notificationMenu');
     
@@ -85,25 +90,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         notificationBtn.addEventListener('click', function(e) {
-            console.log('[Asesores Layout] Click en campana', {
-                target: e.target?.tagName,
-                className: e.target?.className
-            });
             e.preventDefault();
-            e.stopImmediatePropagation();
             e.stopPropagation();
             notificationMenu.classList.toggle('show');
-            console.log('[Asesores Layout] Menu show:', notificationMenu.classList.contains('show'));
             
             // Cerrar menú de usuario si está abierto
             const userMenu = document.getElementById('userMenu');
             if (userMenu) {
                 userMenu.classList.remove('show');
             }
-        }, true);
+        });
         
         // Cerrar al hacer click fuera
         document.addEventListener('click', function(event) {
+            if (!notificationMenu.classList.contains('show')) {
+                return;
+            }
+
             const inBtn = notificationBtn.contains(event.target);
             const inMenu = notificationMenu.contains(event.target);
             if (!inBtn && !inMenu) {

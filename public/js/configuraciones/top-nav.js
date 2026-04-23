@@ -1,12 +1,19 @@
 // Top Navigation - User Dropdown & Notifications
 (function() {
     function initializeTopNav() {
+        if (window.__topNavInitialized) {
+            return;
+        }
+        window.__topNavInitialized = true;
+
         const userBtn = document.getElementById('userBtn');
         const userMenu = document.getElementById('userMenu');
         const notificationBtn = document.getElementById('notificationBtn');
         const notificationMenu = document.getElementById('notificationMenu');
         const mobileToggle = document.getElementById('mobileToggle');
         const sidebarEl = document.getElementById('sidebar');
+        const esUIAsesores = document.body?.dataset?.notificationsUi === 'asesores' ||
+            document.body?.dataset?.module === 'asesores';
 
         // Nota: El toggle del menú de notificaciones se maneja en notifications.js
         // para asegurar que cargue las notificaciones correctamente
@@ -97,13 +104,13 @@
                 }
             }
             
-            // Cerrar menú de notificaciones si se hace click fuera
-            if (notificationMenu && notificationBtn) {
+            // En asesores las notificaciones las maneja js/asesores/layout.js + js/asesores/notifications.js
+            if (!esUIAsesores && notificationMenu && notificationBtn) {
                 if (!notificationMenu.contains(e.target) && !notificationBtn.contains(e.target)) {
                     notificationMenu.classList.remove('show');
                 }
             }
-        }, true); // Usar captura para asegurar que se ejecute primero
+        });
 
         // Mobile toggle
         if (mobileToggle && sidebarEl) {

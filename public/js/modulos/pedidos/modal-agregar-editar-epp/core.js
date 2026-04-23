@@ -39,7 +39,8 @@ function obtenerEPPsYaAgregadosEnFormulario() {
         console.log('[obtenerEPPsYaAgregadosEnFormulario] Tarjetas encontradas:', tarjetas.length);
 
         tarjetas.forEach((tarjeta, idx) => {
-            const idRaw = tarjeta.getAttribute('data-epp-id') || tarjeta.getAttribute('data-epp-original-id');
+            // Priorizar el ID original numérico para evitar NaN cuando data-epp-id es tipo "epp-2042-xxxx".
+            const idRaw = tarjeta.getAttribute('data-epp-original-id') || tarjeta.getAttribute('data-epp-id');
             const eppId = parseInt(idRaw, 10);
             console.log(`[obtenerEPPsYaAgregadosEnFormulario] Tarjeta ${idx}: epp-id=${eppId}`);
 
@@ -2053,10 +2054,12 @@ async function finalizarAgregarEPP() {
         const esVistaNuevo = globalThis.location.pathname.includes('/crear-nuevo');
         const modoCotizacion = !!globalThis.__EPP_COTIZACION_MODE__;
         
+        let tarjetaIdCreada = null;
+
         if (esVistaNuevo) {
             // Vista de nuevo pedido - usar clases -nuevo
             if (globalThis.eppItemManagerTarjeta && typeof globalThis.eppItemManagerTarjeta.crearItem === 'function') {
-                globalThis.eppItemManagerTarjeta.crearItem(
+                tarjetaIdCreada = globalThis.eppItemManagerTarjeta.crearItem(
                     epp.id,                    // id
                     epp.nombre_completo,        // nombre
                     'EPP',                     // categoria
@@ -2116,6 +2119,7 @@ async function finalizarAgregarEPP() {
         const eppData = {
             tipo: 'epp',
             epp_id: epp.id,
+            tarjetaId: tarjetaIdCreada || `epp-${epp.id}`,
             nombre_epp: epp.nombre_completo,
             cantidad: epp.cantidad,
             observaciones: epp.observaciones,
