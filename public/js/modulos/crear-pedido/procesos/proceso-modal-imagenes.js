@@ -486,4 +486,33 @@ function limpiarImagenesProceso() {
 globalThis.limpiarImagenesProceso = limpiarImagenesProceso;
 procesoModalModules.imagenes.limpiar = limpiarImagenesProceso;
 
+// Registrar listener delegado para uploads manuales desde <input type="file">
+// (click en preview -> input.click -> change).
+function configurarListenerInputsProceso() {
+    if (globalThis.__procesoFotoInputChangeBound) return;
+    globalThis.__procesoFotoInputChangeBound = true;
+
+    document.addEventListener('change', function(e) {
+        const target = e.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (target.type !== 'file') return;
+
+        const match = /^proceso-foto-input-(\d+)$/.exec(target.id || '');
+        if (!match) return;
+
+        const indice = Number.parseInt(match[1], 10);
+        if (indice < 1 || indice > 3) return;
+
+        const manejar = globalThis.ProcesoModalController?.imagenes?.manejar || globalThis.manejarImagenProceso;
+        if (typeof manejar === 'function' && target.files && target.files.length > 0) {
+            manejar(target, indice);
+        }
+
+        // Permite volver a seleccionar el mismo archivo en el siguiente intento.
+        target.value = '';
+    }, true);
+}
+
+configurarListenerInputsProceso();
+
 })(globalThis);
