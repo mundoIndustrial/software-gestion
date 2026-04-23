@@ -29,7 +29,7 @@
         
         // Inicializar servicios directamente
         try {
-            window.imagenesPrendaStorage = new ImageStorageService(3);
+            window.imagenesPrendaStorage = new ImageStorageService(6);
             window.imagenesTelaStorage = new ImageStorageService(3);
             window.imagenesReflectivoStorage = new ImageStorageService(3);
             inicializado = true;

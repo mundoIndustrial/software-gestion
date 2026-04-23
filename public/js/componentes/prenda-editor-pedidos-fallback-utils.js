@@ -7,6 +7,7 @@
 
     function _registerManejarImagenesPrendaFallback() {
         if (typeof window.manejarImagenesPrenda === 'function') return;
+        const obtenerLimite = () => Number(window.imagenesPrendaStorage?.maxImages || 6);
 
         window.manejarImagenesPrenda = function(input) {
             if (!input.files || input.files.length === 0) return;
@@ -28,7 +29,7 @@
                                 icon: 'error',
                                 title: 'Error',
                                 text: err.message === 'MAX_LIMIT'
-                                    ? 'Maximo 3 imagenes por prenda'
+                                    ? `Maximo ${obtenerLimite()} imagenes por prenda`
                                     : 'Error al procesar imagen: ' + err.message
                             });
                         }
@@ -43,6 +44,7 @@
 
     function _registerActualizarPreviewPrendaFallback() {
         if (typeof window.actualizarPreviewPrenda === 'function') return;
+        const obtenerLimite = () => Number(window.imagenesPrendaStorage?.maxImages || 6);
 
         window.actualizarPreviewPrenda = function() {
             const preview = document.getElementById('nueva-prenda-foto-preview');
@@ -79,7 +81,7 @@
             }
 
             const btn = document.getElementById('nueva-prenda-foto-btn');
-            if (btn) btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+            if (btn) btn.style.display = imagenes.length < obtenerLimite() ? 'block' : 'none';
         };
         console.log('[PedidosAdapter]  actualizarPreviewPrenda definida (fallback)');
     }

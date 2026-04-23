@@ -84,6 +84,11 @@ globalThis.manejarImagenesPrenda = function(input) {
     input.value = '';
 };
 
+function obtenerLimiteImagenesPrenda() {
+    const limiteStorage = Number(globalThis.imagenesPrendaStorage?.maxImages || 0);
+    return Number.isInteger(limiteStorage) && limiteStorage > 0 ? limiteStorage : 6;
+}
+
 /**
  * WRAPPER: Actualiza el preview de las imágenes de prenda
  * Usa globalThis.imagenesPrendaStorage para obtener las imágenes
@@ -173,7 +178,8 @@ globalThis.actualizarPreviewPrenda = function() {
         }
         
         if (btn) {
-            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+            const limite = obtenerLimiteImagenesPrenda();
+            btn.style.display = imagenes.length < limite ? 'block' : 'none';
         }
         
         //  IMPORTANTE: Notificar al DragDropManager que las imágenes han cambiado

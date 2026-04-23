@@ -4,6 +4,11 @@
  */
 
 class PrendaEditorImagenes {
+    static _obtenerLimiteImagenesPrenda() {
+        const limite = Number(globalThis.imagenesPrendaStorage?.maxImages || 0);
+        return Number.isInteger(limite) && limite > 0 ? limite : 6;
+    }
+
     /**
      * Cargar imágenes en modal
      */
@@ -242,7 +247,8 @@ class PrendaEditorImagenes {
         }
         
         if (btn) {
-            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+            const limite = this._obtenerLimiteImagenesPrenda();
+            btn.style.display = imagenes.length < limite ? 'block' : 'none';
         }
         
         console.log('[_renderizarPreviewConImagenes] FIN - Preview renderizado');
@@ -316,7 +322,8 @@ class PrendaEditorImagenes {
         // Actualizar botón
         const btn = document.getElementById('nueva-prenda-foto-btn');
         if (btn) {
-            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+            const limite = this._obtenerLimiteImagenesPrenda();
+            btn.style.display = imagenes.length < limite ? 'block' : 'none';
         }
         
         //  CRÍTICO: Re-agregar listener de paste después de actualizar preview

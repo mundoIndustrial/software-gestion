@@ -75,6 +75,7 @@ function limpiarFormulario() {
  * MODALES: Mostrar límite de imágenes
  */
 window.mostrarModalLimiteImagenes = function() {
+    const limite = Number(window.imagenesPrendaStorage?.maxImages || 6);
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100000;';
     
@@ -84,7 +85,7 @@ window.mostrarModalLimiteImagenes = function() {
     contenido.innerHTML = `
         <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></div>
         <h2 style="margin: 0 0 1rem 0; color: #1f2937;">Límite de imágenes alcanzado</h2>
-        <p style="margin: 0 0 1.5rem 0; color: #6b7280;">Solo puedes agregar un máximo de 3 imágenes por prenda.</p>
+        <p style="margin: 0 0 1.5rem 0; color: #6b7280;">Solo puedes agregar un máximo de ${limite} imágenes por prenda.</p>
         <button onclick="this.parentElement.parentElement.remove()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Entendido</button>
     `;
     

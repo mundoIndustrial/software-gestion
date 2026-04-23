@@ -5,7 +5,7 @@
  * 
  * Functionality:
  * - Creates ImageStorageService instances for prenda, tela, reflectivo
- * - Manages in-memory image buffers (max 3 images each)
+ * - Manages in-memory image buffers (prenda: 6, others configurable)
  * - Provides global access via window.imagenesPrendaStorage, etc.
  * - Validates ImageStorageService class availability
  * - Prevents duplicate instance creation
@@ -33,9 +33,9 @@
             return false;
         }
         
-        // Crear instancia para prenda si no existe
+        // Crear instancia para prenda si no existe (límite: 6)
         if (!window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage = new ImageStorageService(3);
+            window.imagenesPrendaStorage = new ImageStorageService(6);
             console.log('[image-storage-init] imagenesPrendaStorage inicializado ✓');
         } else {
             console.log('[image-storage-init] imagenesPrendaStorage ya existe, reutilizando instancia');

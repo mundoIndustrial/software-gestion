@@ -12,7 +12,8 @@
 class PrendaDragDropHandler extends BaseDragDropHandler {
     constructor() {
         super();
-        this.maxImagenes = 3;
+        const limiteStorage = Number(window.imagenesPrendaStorage?.maxImages || 0);
+        this.maxImagenes = (Number.isInteger(limiteStorage) && limiteStorage > 0) ? limiteStorage : 6;
         this.imagenesActuales = [];
         this.tipo = 'prenda';
         this.opcionesMenu = {
