@@ -160,6 +160,11 @@ class ItemOrchestrator {
             const resultado = await this.apiService.crearPedido(pedidoData);
 
             if (resultado.success) {
+                // El pedido ya fue creado: evitar alerta de cambios sin guardar al navegar.
+                if (globalThis.DraftPedidoUnsavedChanges?.marcarGuardado) {
+                    globalThis.DraftPedidoUnsavedChanges.marcarGuardado();
+                }
+
                 this.datosPedidoCreado = {
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido
@@ -203,6 +208,9 @@ class ItemOrchestrator {
         const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
         if (btnVolverAPedidos) {
             btnVolverAPedidos.onclick = () => {
+                if (globalThis.DraftPedidoUnsavedChanges?.marcarGuardado) {
+                    globalThis.DraftPedidoUnsavedChanges.marcarGuardado();
+                }
                 window.location.href = '/asesores/pedidos';
             };
         }

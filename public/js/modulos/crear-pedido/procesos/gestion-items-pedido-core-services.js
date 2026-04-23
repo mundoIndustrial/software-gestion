@@ -101,6 +101,11 @@ class PedidoSubmitController {
             this._logResultadoCreacion(resultado);
 
             if (resultado.success) {
+                // El pedido ya fue creado: no debe advertir cambios sin guardar al salir.
+                if (globalThis.DraftPedidoUnsavedChanges?.marcarGuardado) {
+                    globalThis.DraftPedidoUnsavedChanges.marcarGuardado();
+                }
+
                 this.ui.setDatosPedidoCreado?.({
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido
@@ -374,6 +379,9 @@ class PedidoSuccessModalService {
             debugLog('[mostrarModalExito]  Asignando onclick');
             btnVolverAPedidos.onclick = () => {
                 debugLog('[mostrarModalExito] Boton presionado, redirigiendo...');
+                if (globalThis.DraftPedidoUnsavedChanges?.marcarGuardado) {
+                    globalThis.DraftPedidoUnsavedChanges.marcarGuardado();
+                }
                 ctx('location').href = '/asesores/pedidos';
             };
         }
