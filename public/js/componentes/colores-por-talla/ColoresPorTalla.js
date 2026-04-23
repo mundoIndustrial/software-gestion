@@ -503,20 +503,55 @@ window.ColoresPorTalla = (function() {
                 if (!window.telasCreacion) {
                     window.telasCreacion = [];
                 }
-                const telaYaExiste = window.telasCreacion.some(t => 
-                    (t.tela || t.nombreTela || t.nombre || '').toUpperCase() === tela.toUpperCase()
+
+                const telaNormalizada = (tela || '').toUpperCase();
+                let telaObj = window.telasCreacion.find(t =>
+                    (t.tela || t.nombreTela || t.nombre || '').toUpperCase() === telaNormalizada
                 );
-                if (!telaYaExiste) {
-                    window.telasCreacion.push({
-                        tela: tela.toUpperCase(),
+
+                if (!telaObj) {
+                    telaObj = {
+                        tela: telaNormalizada,
                         color: '',
                         referencia: '',
                         imagenes: [],
                         fechaCreacion: new Date().toISOString()
-                    });
+                    };
+                    window.telasCreacion.push(telaObj);
                     console.log('[wizardGuardarAsignacion] Tela agregada a telasCreacion:', tela);
                 }
-                
+
+                // Sincronizar imágenes del wizard también en telasCreacion para robustez de guardado.
+                // Evita perder imágenes si otro flujo no procesa imagen_id desde asignaciones.
+                if (!Array.isArray(telaObj.imagenes)) {
+                    telaObj.imagenes = [];
+                }
+                const dedupe = new Set(
+                    telaObj.imagenes.map(img => {
+                        const f = img?.file instanceof File ? img.file : (img instanceof File ? img : null);
+                        return f ? `${f.name}::${f.size}::${f.lastModified}` : null;
+                    }).filter(Boolean)
+                );
+
+                Object.values(asignacionesPorTalla).forEach(colores => {
+                    (Array.isArray(colores) ? colores : []).forEach(colorData => {
+                        if (!colorData?.imagen_id) return;
+                        const imgData = _getImage(colorData.imagen_id);
+                        if (!(imgData?.file instanceof File)) return;
+
+                        const key = `${imgData.file.name}::${imgData.file.size}::${imgData.file.lastModified}`;
+                        if (dedupe.has(key)) return;
+                        dedupe.add(key);
+
+                        telaObj.imagenes.push({
+                            file: imgData.file,
+                            nombre: imgData.nombre || imgData.file.name || '',
+                            previewUrl: imgData.blobUrl || null,
+                            blobUrl: imgData.blobUrl || null
+                        });
+                    });
+                });
+                 
                 // Actualizar chips de telas agregadas en el modal prenda
                 if (typeof window.renderizarTelasChips === 'function') {
                     window.renderizarTelasChips();
