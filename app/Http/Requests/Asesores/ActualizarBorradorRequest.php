@@ -53,12 +53,14 @@ class ActualizarBorradorRequest extends FormRequest
     /**
      * Preparar datos para el usecase
      */
-    public function validated(): array
+    public function validated($key = null, $default = null)
     {
-        $data = parent::validated();
+        $data = parent::validated($key, $default);
 
         // 🔧 Asegurar que NO hay pedido_id en body
-        unset($data['pedido_id']);
+        if (is_array($data)) {
+            unset($data['pedido_id']);
+        }
 
         return $data;
     }
