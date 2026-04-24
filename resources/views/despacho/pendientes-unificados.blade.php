@@ -617,7 +617,7 @@ let paginationData = null;
 // Cargar pedidos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
     cargarPedidos();
-    
+
     // Configurar búsqueda en tiempo real
     const searchInput = document.getElementById('searchInput');
     let timeout;
@@ -625,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
             searchActual = this.value;
-            currentPage = 1; // Resetear a primera página al buscar
+            currentPage = 1;
             cargarPedidos();
         }, 500);
     });
@@ -633,6 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function buscarPedidos() {
     searchActual = document.getElementById('searchInput').value;
+    currentPage = 1;
     cargarPedidos();
 }
 

@@ -134,6 +134,10 @@ Route::prefix('despacho')
             ->name('despacho.pendientes-show')
             ->where('id', '[0-9]+');
 
+        Route::get('/historial-pendientes/{id}', [DespachoPendientesController::class, 'showHistorialPendiente'])
+            ->name('despacho.historial-pendientes-show')
+            ->where('id', '[0-9]+');
+
         Route::get('/notificaciones', [DespachoNotificacionesController::class, 'getNotifications'])
             ->name('despacho.notificaciones');
 

@@ -276,6 +276,9 @@ class BodegaPedidoDetalleService
                 'pedido_produccion_id' => $bodegaData['id'] ?? null,
                 'observaciones' => $bodegaData['observaciones'] ?? '',
                 'fecha_entrega' => $bodegaData['fecha_entrega'] ?? '',
+                'fecha_entrega_bodega' => $bodegaData['fecha_entrega_bodega'] ?? null,
+                'created_at' => $bodegaData['created_at'] ?? null,
+                'updated_at' => $bodegaData['updated_at'] ?? null,
             ];
 
             $cantidadTotal += $cantidad;
@@ -342,6 +345,9 @@ class BodegaPedidoDetalleService
             'pendientes' => $bodegaData['pendientes'] ?? null,
             'fecha_entrega' => $bodegaData['fecha_entrega'],
             'fecha_pedido' => $bodegaData['fecha_pedido'],
+            'fecha_entrega_bodega' => $bodegaData['fecha_entrega_bodega'] ?? null,
+            'created_at' => $bodegaData['created_at'] ?? null,
+            'updated_at' => $bodegaData['updated_at'] ?? null,
             'estado_bodega' => $bodegaData['estado_bodega'],
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
@@ -437,6 +443,10 @@ class BodegaPedidoDetalleService
         $pendientes = $bodegaData['pendientes'] ?? null;
         $fechaEntrega = $bodegaData['fecha_entrega'] ?? null;
         $fechaPedido = $bodegaData['fecha_pedido'] ?? null;
+        $fechaPendiente = $bodegaData['fecha_pendiente'] ?? null;
+        $fechaEntregaBodega = $bodegaData['fecha_entrega_bodega'] ?? null;
+        $createdAt = $bodegaData['created_at'] ?? null;
+        $updatedAt = $bodegaData['updated_at'] ?? null;
 
         $descripcionEpp = $eppEnriquecido;
         $descripcionEpp['nombre'] = $eppNombre;
@@ -464,6 +474,10 @@ class BodegaPedidoDetalleService
             'pendientes' => $pendientes,
             'fecha_entrega' => $fechaEntrega,
             'fecha_pedido' => $fechaPedido,
+            'fecha_pendiente' => $fechaPendiente,
+            'fecha_entrega_bodega' => $fechaEntregaBodega,
+            'created_at' => $createdAt,
+            'updated_at' => $updatedAt,
             'estado_bodega' => $estadoBodega,
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
@@ -513,6 +527,7 @@ class BodegaPedidoDetalleService
                 WarehouseConstants::FIELD_PENDIENTES => null,
                 WarehouseConstants::FIELD_FECHA_ENTREGA => null,
                 WarehouseConstants::FIELD_FECHA_PEDIDO => null,
+                'fecha_pendiente' => null,
                 'usuario_nombre' => null,
             ];
         }
@@ -578,6 +593,10 @@ class BodegaPedidoDetalleService
             WarehouseConstants::FIELD_PENDIENTES => $datosFinales?->pendientes ?? $bodegaDataBase?->pendientes,
             WarehouseConstants::FIELD_FECHA_ENTREGA => $bodegaDataBase?->fecha_entrega ? Carbon::parse($bodegaDataBase->fecha_entrega)->format('Y-m-d') : null,
             WarehouseConstants::FIELD_FECHA_PEDIDO => $bodegaDataBase?->fecha_pedido ? Carbon::parse($bodegaDataBase->fecha_pedido)->format('Y-m-d') : null,
+            'fecha_pendiente' => $bodegaDataBase?->fecha_pendiente ? Carbon::parse($bodegaDataBase->fecha_pendiente)->format('Y-m-d H:i:s') : null,
+            'fecha_entrega_bodega' => $bodegaDataBase?->fecha_entrega_bodega ? Carbon::parse($bodegaDataBase->fecha_entrega_bodega)->format('Y-m-d H:i:s') : null,
+            'created_at' => $bodegaDataBase?->created_at ? Carbon::parse($bodegaDataBase->created_at)->format('Y-m-d H:i:s') : null,
+            'updated_at' => $bodegaDataBase?->updated_at ? Carbon::parse($bodegaDataBase->updated_at)->format('Y-m-d H:i:s') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
 

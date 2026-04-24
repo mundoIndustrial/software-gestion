@@ -1469,13 +1469,13 @@ class PedidosController extends Controller
                 'detalles.*.pendientes' => 'nullable|string',
                 'detalles.*.observaciones_bodega' => 'nullable|string',
                 'detalles.*.fecha_pedido' => 'nullable|date',
-                'detalles.*.fecha_entrega' => 'nullable|date',
+                'detalles.*.fecha_entrega_bodega' => 'nullable|date',
                 'detalles.*.area' => 'nullable|string|in:Costura,EPP,Otro',
                 'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
             ]);
 
             $pedido = PedidoProduccion::where('numero_pedido', $validated['numero_pedido'])->first();
-            
+
             if (!$pedido) {
                 return response()->json([
                     'success' => false,
@@ -1483,7 +1483,7 @@ class PedidosController extends Controller
                 ], 404);
             }
 
-            $camposAuditar = ['asesor', 'empresa', 'cantidad', 'prenda_nombre', 'pendientes', 'observaciones_bodega', 'fecha_entrega', 'area', 'estado_bodega'];
+            $camposAuditar = ['asesor', 'empresa', 'cantidad', 'prenda_nombre', 'pendientes', 'observaciones_bodega', 'fecha_entrega_bodega', 'area', 'estado_bodega'];
             
             $resultado = $this->guardadoService->guardarMultiplesDetalles(
                 $pedido,
@@ -1531,6 +1531,7 @@ class PedidosController extends Controller
                 'pendientes' => 'nullable|string',
                 'fecha_pedido' => 'nullable|date',
                 'fecha_entrega' => 'nullable|date',
+                'fecha_entrega_bodega' => 'nullable|date',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
                 'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
                 'observaciones' => 'nullable|string',

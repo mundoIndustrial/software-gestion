@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\TablaOriginalBodega;
+use App\Models\BodegaDetalleTalla;
 use App\Models\ProcesoPrenda;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\Cotizacion;
 use App\Observers\TablaOriginalBodegaObserver;
+use App\Observers\BodegaDetalleTallaObserver;
 use App\Observers\PrendaPedidoUpdateReciboObserver;
 use App\Observers\ProcesoPrendaObserver;
 use App\Observers\PedidoProduccionObserver;
@@ -302,6 +304,10 @@ class AppServiceProvider extends ServiceProvider
         // Actualiza automáticamente el campo 'area' en pedidos_produccion
         // cada vez que se crea o modifica un proceso
         ProcesoPrenda::observe(ProcesoPrendaObserver::class);
+
+        // Registrar Observer para BodegaDetalleTalla
+        // Captura automáticamente la fecha cuando se cambia el estado a "Pendiente"
+        BodegaDetalleTalla::observe(BodegaDetalleTallaObserver::class);
 
         // Registrar Observer para PedidoProduccion
         // Crea notificaciones cuando se asigna la fecha estimada de entrega

@@ -114,7 +114,7 @@
 
 .table-header {
     display: grid;
-    grid-template-columns: 95px 85px 120px 1fr 110px 140px 140px;
+    grid-template-columns: 95px 85px 1fr 100px 140px;
     gap: 16px;
     padding: 16px 20px;
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -135,7 +135,7 @@
 
 .table-row {
     display: grid;
-    grid-template-columns: 95px 85px 120px 1fr 110px 140px 140px;
+    grid-template-columns: 95px 85px 1fr 100px 140px;
     gap: 16px;
     padding: 16px 20px;
     border-bottom: 1px solid #f0f1f3;
@@ -176,9 +176,7 @@
     justify-content: center;
 }
 
-.table-row > div:nth-child(5),
-.table-row > div:nth-child(6),
-.table-row > div:nth-child(7) {
+.table-row > div:nth-child(5) {
     color: #4b5563;
     font-size: 0.875rem;
     font-weight: 500;
@@ -268,7 +266,7 @@
 /* PAGINACIÓN */
 .pagination-container {
     display: grid;
-    grid-template-columns: 95px 220px 1fr 110px 140px 140px 80px;
+    grid-template-columns: 95px 85px 1fr 100px 140px;
     gap: 16px;
     padding: 16px 20px;
     border-top: 1px solid #e5e7eb;
@@ -433,8 +431,6 @@
             <div>Cliente</div>
             <div>Estado</div>
             <div>F. Pedido</div>
-            <div>F. Pendiente</div>
-            <div>F. Entrega</div>
         </div>
 
         <div id="historialContainer">
@@ -552,7 +548,7 @@ function renderizarHistorial(registros) {
             return `
                 <div class="table-row">
                     <div>
-                        <a href="/despacho/pendientes/${registro.id}" class="btn-action btn-primary">
+                        <a href="/despacho/historial-pendientes/${registro.id}" class="btn-action btn-primary">
                             <span class="material-symbols-rounded">visibility</span>
                             Ver
                         </a>
@@ -568,12 +564,6 @@ function renderizarHistorial(registros) {
                     </div>
                     <div>
                         ${registro.fecha_creacion_pedido || '-'}
-                    </div>
-                    <div>
-                        ${registro.fecha_creacion_pendiente || '-'}
-                    </div>
-                    <div>
-                        ${registro.fecha_entrega || 'No entregado'}
                     </div>
                 </div>
             `;

@@ -51,17 +51,19 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             $estadoAnterior = $detalleAnterior?->estado_bodega ?? null;
             $fechaEntregaBodega = null;
 
-            // Si el nuevo estado es "Entregado"
+            // Si se ingresó una fecha_entrega_bodega manualmente, usarla
             if ($estadoBodega === 'Entregado') {
-                // Si el estado anterior NO era "Entregado", capturar la fecha actual
-                if ($estadoAnterior !== 'Entregado') {
+                if (!empty($datosValidados['fecha_entrega_bodega'])) {
+                    $fechaEntregaBodega = $datosValidados['fecha_entrega_bodega'];
+                } elseif ($estadoAnterior !== 'Entregado') {
                     $fechaEntregaBodega = now();
                 } else {
-                    // Si ya era "Entregado", mantener la fecha anterior
                     $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? now();
                 }
+            } else {
+                $fechaEntregaBodega = null;
             }
-            
+
             // Preparar datos para crear/actualizar
             $datosGuardar = [
                 'pedido_produccion_id' => $pedido->id,

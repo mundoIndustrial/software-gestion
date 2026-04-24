@@ -307,7 +307,7 @@
                                                         <input
                                                             type="date"
                                                             class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                                            value="{{ $baseItem['fecha_entrega'] ? \Carbon\Carbon::parse($baseItem['fecha_entrega'])->format('Y-m-d') : '' }}"
+                                                            value="{{ !empty($baseItem['fecha_entrega_bodega']) ? \Carbon\Carbon::parse($baseItem['fecha_entrega_bodega'])->format('Y-m-d') : (!empty($baseItem['fecha_entrega']) ? \Carbon\Carbon::parse($baseItem['fecha_entrega'])->format('Y-m-d') : '') }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
                                                             data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
@@ -468,7 +468,7 @@
                                                     <input
                                                         type="date"
                                                         class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                                        value="{{ $item['fecha_entrega'] ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '' }}"
+                                                        value="{{ !empty($item['fecha_entrega_bodega']) ? \Carbon\Carbon::parse($item['fecha_entrega_bodega'])->format('Y-m-d') : (!empty($item['fecha_entrega']) ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '') }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
                                                         data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"

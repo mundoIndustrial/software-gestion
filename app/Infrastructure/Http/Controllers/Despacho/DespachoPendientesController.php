@@ -209,6 +209,7 @@ class DespachoPendientesController extends Controller
             return view('despacho.show-pendiente-bodega', [
                 'pedido' => $data['pedido'],
                 'items' => $data['items'],
+                'origen' => 'pendientes',
             ]);
         } catch (\Exception $e) {
             \Log::error('[DESPACHO] Error al mostrar detalles del pedido pendiente', [
@@ -217,6 +218,45 @@ class DespachoPendientesController extends Controller
             ]);
 
             return redirect()->route('despacho.pendientes')
+                ->with('error', 'Error al cargar el pedido: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar detalles de pedido desde historial (mostrando todos los items: pendientes + entregados)
+     */
+    public function showHistorialPendiente($id)
+    {
+        try {
+            $data = $this->service->construirDetallePendienteUnificado((int) $id, true);
+            $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+
+            $itemsConFechaPendiente = collect($items)->filter(function ($item) {
+                $fechaPendiente = $item['fecha_pendiente'] ?? null;
+                return is_string($fechaPendiente)
+                    ? trim($fechaPendiente) !== ''
+                    : !empty($fechaPendiente);
+            })->values()->all();
+
+            $tieneFechaPendiente = !empty($itemsConFechaPendiente);
+
+            if (!$tieneFechaPendiente) {
+                return redirect()->route('despacho.historial-pendientes')
+                    ->with('error', 'Este pedido no tiene items con fecha pendiente en historial.');
+            }
+
+            return view('despacho.show-historial-pendiente-nuevo', [
+                'pedido' => $data['pedido'],
+                'items' => $itemsConFechaPendiente,
+                'origen' => 'historial',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error al mostrar detalles del pedido en historial', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('despacho.historial-pendientes')
                 ->with('error', 'Error al cargar el pedido: ' . $e->getMessage());
         }
     }

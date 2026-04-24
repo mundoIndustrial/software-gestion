@@ -17,18 +17,34 @@
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
                         @endif
                     </p>
-                    <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
-                        <p class="text-xs font-medium text-orange-800">
-                            <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
-                            Mostrando solo artículos con estado Pendiente para Despacho
-                        </p>
-                    </div>
+                    @if($origen === 'historial')
+                        <div class="mt-2 p-2 bg-blue-100 border border-blue-200 rounded">
+                            <p class="text-xs font-medium text-blue-800">
+                                <span class="material-symbols-rounded text-sm align-middle">history</span>
+                                Mostrando todos los artículos del historial (Pendientes y Entregados)
+                            </p>
+                        </div>
+                    @else
+                        <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
+                            <p class="text-xs font-medium text-orange-800">
+                                <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
+                                Mostrando solo artículos con estado Pendiente para Despacho
+                            </p>
+                        </div>
+                    @endif
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('despacho.pendientes') }}" 
-                       class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
-                        ← Volver a Pendientes
-                    </a>
+                    @if($origen === 'historial')
+                        <a href="{{ route('despacho.historial-pendientes') }}"
+                           class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
+                            ← Volver al Historial
+                        </a>
+                    @else
+                        <a href="{{ route('despacho.pendientes') }}"
+                           class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
+                            ← Volver a Pendientes
+                        </a>
+                    @endif
                     @if($pedido['id'])
                         <button type="button"
                                 onclick="abrirModalFactura({{ $pedido['id'] }})"
@@ -222,7 +238,7 @@
                                         <input
                                             type="date"
                                             class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $pedido['created_at'] ? \Carbon\Carbon::parse($pedido['created_at'])->format('Y-m-d') : '' }}"
+                                            value="{{ !empty($item['fecha_pedido'] ?? null) ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >
@@ -233,7 +249,7 @@
                                         <input
                                             type="date"
                                             class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $item['fecha_entrega'] ?? '' }}"
+                                            value="{{ !empty($item['fecha_entrega_bodega'] ?? null) ? \Carbon\Carbon::parse($item['fecha_entrega_bodega'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >

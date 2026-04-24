@@ -45,8 +45,8 @@ class DespachoPendientesApplicationService
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('numero_pedido', 'like', "%{$search}%")
-                    ->orWhere('cliente', 'like', "%{$search}%");
+                $q->where('pedidos_produccion.numero_pedido', 'like', "%{$search}%")
+                    ->orWhere('pedidos_produccion.cliente', 'like', "%{$search}%");
             });
         }
 
@@ -126,8 +126,8 @@ class DespachoPendientesApplicationService
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('numero_pedido', 'like', "%{$search}%")
-                    ->orWhere('cliente', 'like', "%{$search}%");
+                $q->where('pedidos_produccion.numero_pedido', 'like', "%{$search}%")
+                    ->orWhere('pedidos_produccion.cliente', 'like', "%{$search}%");
             });
         }
 
@@ -153,7 +153,7 @@ class DespachoPendientesApplicationService
             ->where('pedidos_produccion.numero_pedido', '!=', '')
             ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
-            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+            ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
             ->select('pedidos_produccion.*')
             ->distinct();
 
@@ -190,8 +190,8 @@ class DespachoPendientesApplicationService
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('numero_pedido', 'like', "%{$search}%")
-                    ->orWhere('cliente', 'like', "%{$search}%");
+                $q->where('pedidos_produccion.numero_pedido', 'like', "%{$search}%")
+                    ->orWhere('pedidos_produccion.cliente', 'like', "%{$search}%");
             });
         }
 
@@ -435,7 +435,7 @@ class DespachoPendientesApplicationService
                     })
                     ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                     ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
-                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
                     ->whereNull('pppd.id');
             })
             ->pluck('pedidos_produccion.id');
@@ -446,13 +446,40 @@ class DespachoPendientesApplicationService
             ->where('pedidos_produccion.numero_pedido', '!=', '')
             ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
-            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado'])
             ->pluck('pedidos_produccion.id');
 
         $pedidoIds = $coturaPedidoIds->merge($eppPedidoIds)->unique();
 
         $query = PedidoProduccion::query()
-            ->whereIn('id', $pedidoIds);
+            ->whereIn('id', $pedidoIds)
+            // En historial solo deben listarse pedidos con al menos un item mostrable
+            // (prenda de bodega sin procesos o item EPP) que tenga fecha_pendiente.
+            ->where(function ($q) {
+                $q->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('bodega_detalles_talla as bdt')
+                        ->join('prendas_pedido as pp', function ($join) {
+                            $join->on('pp.id', '=', 'bdt.prenda_id')
+                                ->where('pp.de_bodega', '=', 1)
+                                ->whereNull('pp.deleted_at');
+                        })
+                        ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
+                        ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
+                        ->whereNull('bdt.deleted_at')
+                        ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
+                        ->whereNotNull('bdt.fecha_pendiente')
+                        ->whereNull('pppd.id');
+                })->orWhereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('bodega_detalles_talla as bdt')
+                        ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
+                        ->whereNull('bdt.deleted_at')
+                        ->where('bdt.area', 'EPP')
+                        ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
+                        ->whereNotNull('bdt.fecha_pendiente');
+                });
+            });
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -468,26 +495,37 @@ class DespachoPendientesApplicationService
             ->get();
 
         $pedidos->transform(function ($pedido) {
-            $bodegaInfo = DB::table('bodega_detalles_talla')
+            // Obtener información de bodega para TODO el pedido (no solo un item)
+            $bodegaStats = DB::table('bodega_detalles_talla')
                 ->where('pedido_produccion_id', $pedido->id)
                 ->whereNull('deleted_at')
-                ->orderBy('created_at', 'desc')
-                ->first(['created_at', 'estado_bodega', 'fecha_entrega_bodega', 'updated_at']);
+                ->select(
+                    DB::raw('MIN(created_at) as fecha_primer_item'),
+                    DB::raw('MAX(CASE WHEN estado_bodega = "Entregado" THEN COALESCE(fecha_entrega_bodega, updated_at) END) as fecha_entrega_ultimo_item')
+                )
+                ->first();
+
+            // Verificar si todos los items están entregados
+            $hayItemsPendientes = DB::table('bodega_detalles_talla')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->whereNull('deleted_at')
+                ->where('estado_bodega', '!=', 'Entregado')
+                ->exists();
 
             $fechaCreacionPedido = $pedido->created_at ? $pedido->created_at->format('d/m/Y h:i A') : '';
             $fechaCreacionPendiente = '';
             $fechaEntrega = 'No entregado';
             $estadoEntrega = 'Pendiente';
 
-            if ($bodegaInfo) {
-                $fechaCreacionPendiente = \Carbon\Carbon::parse($bodegaInfo->created_at)->format('d/m/Y h:i A');
+            if ($bodegaStats) {
+                // Fecha pendiente: cuando llegó el primer item a bodega
+                if ($bodegaStats->fecha_primer_item) {
+                    $fechaCreacionPendiente = \Carbon\Carbon::parse($bodegaStats->fecha_primer_item)->format('d/m/Y h:i A');
+                }
 
-                if ($bodegaInfo->estado_bodega === 'Entregado') {
-                    if ($bodegaInfo->fecha_entrega_bodega) {
-                        $fechaEntrega = \Carbon\Carbon::parse($bodegaInfo->fecha_entrega_bodega)->format('d/m/Y h:i A');
-                    } else {
-                        $fechaEntrega = \Carbon\Carbon::parse($bodegaInfo->updated_at)->format('d/m/Y h:i A');
-                    }
+                // Si NO hay items pendientes, mostrar fecha de entrega del último
+                if (!$hayItemsPendientes && $bodegaStats->fecha_entrega_ultimo_item) {
+                    $fechaEntrega = \Carbon\Carbon::parse($bodegaStats->fecha_entrega_ultimo_item)->format('d/m/Y h:i A');
                     $estadoEntrega = 'Entregado';
                 }
             }
@@ -519,7 +557,7 @@ class DespachoPendientesApplicationService
         ];
     }
 
-    public function construirDetallePendienteUnificado(int $id): array
+    public function construirDetallePendienteUnificado(int $id, bool $mostrarEntregados = false): array
     {
         $reciboPrenda = ReciboPrenda::findOrFail($id);
         $numeroPedido = $reciboPrenda->numero_pedido;
@@ -555,14 +593,20 @@ class DespachoPendientesApplicationService
                     ? (($item['epp_estado'] ?? null) === 'Pendiente' || (!($item['epp_estado']) && $estadoBodega === 'Pendiente'))
                     : ($estadoBodega === 'Pendiente');
 
-                // EPPs pendientes O EPPs con historial de homologaciones (eliminados/reemplazados)
-                $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoPendiente || $tieneHistorial);
-                $esPrendaDeBodegaSinProcesos = ($tipo === 'prenda')
-                    && $deBodega
-                    && ($estadoBodega === 'Pendiente')
-                    && (empty($procesos) || (is_array($procesos) && count($procesos) === 0));
+                if ($mostrarEntregados) {
+                    // Mostrar todos los items (pendiente + entregado)
+                    $incluir = ($tipo === 'epp' && $area === 'EPP') || ($tipo === 'prenda' && $deBodega && (empty($procesos) || (is_array($procesos) && count($procesos) === 0)));
+                } else {
+                    // Mostrar solo pendientes
+                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoPendiente || $tieneHistorial);
+                    $esPrendaDeBodegaSinProcesos = ($tipo === 'prenda')
+                        && $deBodega
+                        && ($estadoBodega === 'Pendiente')
+                        && (empty($procesos) || (is_array($procesos) && count($procesos) === 0));
+                    $incluir = $esEppPendiente || $esPrendaDeBodegaSinProcesos;
+                }
 
-                if ($esEppPendiente || $esPrendaDeBodegaSinProcesos) {
+                if ($incluir) {
                     $itemsPendientes[] = $item;
                 }
             }
@@ -598,6 +642,25 @@ class DespachoPendientesApplicationService
 
             $esEpp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
 
+            // Calcular fecha de entrega: usa fecha_entrega_bodega si existe, sino usa updated_at si estado es Entregado
+            $fechaEntrega = '';
+            if ($item['estado_bodega'] === 'Entregado') {
+                if (!empty($item['fecha_entrega_bodega'])) {
+                    $fechaEntrega = $item['fecha_entrega_bodega'];
+                } elseif (!empty($item['updated_at'])) {
+                    $fechaEntrega = $item['updated_at'];
+                }
+            }
+
+            \Log::info('[DEBUG] Calculando fecha de entrega', [
+                'numero_pedido' => $numeroPedido,
+                'prenda_nombre' => $prendaNombre,
+                'estado_bodega' => $item['estado_bodega'] ?? null,
+                'fecha_entrega_bodega' => $item['fecha_entrega_bodega'] ?? null,
+                'updated_at' => $item['updated_at'] ?? null,
+                'fecha_entrega_final' => $fechaEntrega,
+            ]);
+
             $itemNormalizado = [
                 'numero_pedido' => $numeroPedido,
                 'asesor' => $item['asesor'] ?? $pedidoData['asesor'],
@@ -623,7 +686,12 @@ class DespachoPendientesApplicationService
                 'cantidad_total' => $item['cantidad'] ?? 0,
                 'pendientes' => $item['pendientes'] ?? '',
                 'estado_bodega' => $item['estado_bodega'] ?? 'Pendiente',
-                'fecha_entrega' => $item['fecha_entrega'] ?? '',
+                'fecha_pedido' => $item['fecha_pedido'] ?? null,
+                'fecha_pendiente' => $item['fecha_pendiente'] ?? null,
+                'fecha_entrega' => $fechaEntrega,
+                'fecha_entrega_bodega' => $item['fecha_entrega_bodega'] ?? null,
+                'created_at' => $item['created_at'] ?? null,
+                'updated_at' => $item['updated_at'] ?? null,
                 'observaciones' => $item['observaciones'] ?? '',
                 'observaciones_bodega' => $item['observaciones_bodega'] ?? '',
                 'pedido_produccion_id' => $item['pedido_produccion_id'] ?? $pedidoProduccion->id,
@@ -634,6 +702,45 @@ class DespachoPendientesApplicationService
         }
 
         $estadosPermitidos = ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'];
+        if (!empty($items)) {
+            $tallas = collect($items)
+                ->map(fn ($it) => trim((string) ($it['talla'] ?? '')))
+                ->filter(fn ($t) => $t !== '')
+                ->values()
+                ->all();
+
+            if (!empty($tallas)) {
+                $notas = DB::table('bodega_notas')
+                    ->where('numero_pedido', (string) $numeroPedido)
+                    ->whereIn('talla', $tallas)
+                    ->orderByDesc('created_at')
+                    ->get();
+
+                $notasPorClave = [];
+                foreach ($notas as $nota) {
+                    $clave = trim((string) ($nota->talla ?? '')) . '|' . (string) ($nota->talla_color_id ?? '');
+                    if (!isset($notasPorClave[$clave])) {
+                        $notasPorClave[$clave] = $nota;
+                    }
+                }
+
+                foreach ($items as &$itemRef) {
+                    $claveExacta = trim((string) ($itemRef['talla'] ?? '')) . '|' . (string) ($itemRef['talla_color_id'] ?? '');
+                    $claveSinColor = trim((string) ($itemRef['talla'] ?? '')) . '|';
+                    $notaItem = $notasPorClave[$claveExacta] ?? $notasPorClave[$claveSinColor] ?? null;
+
+                    if ($notaItem && !empty($notaItem->contenido)) {
+                        $itemRef['nota_bodega'] = (string) $notaItem->contenido;
+                        if (empty($itemRef['observaciones_bodega'] ?? null)) {
+                            $itemRef['observaciones_bodega'] = (string) $notaItem->contenido;
+                        }
+                    } else {
+                        $itemRef['nota_bodega'] = null;
+                    }
+                }
+                unset($itemRef);
+            }
+        }
         if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos, true)) {
             throw new \RuntimeException('Este pedido no tiene un estado válido para despacho');
         }
@@ -718,3 +825,4 @@ class DespachoPendientesApplicationService
         }
     }
 }
+

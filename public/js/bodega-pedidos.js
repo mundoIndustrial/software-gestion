@@ -828,7 +828,7 @@ async function guardarPedidoCompleto(numeroPedido) {
                     cantidad: parseInt(cantidad) || 0,  // Guardar cantidad como número
                     prenda_nombre: nombrePrenda,  // Guardar nombre de la prenda/artículo
                     pendientes: pendientes || null,
-                    fecha_entrega: fecha || null,
+                    fecha_entrega_bodega: fecha || null,
                     area: area || null,
                     estado_bodega: estado || null,
                 });
@@ -1611,6 +1611,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectoresEstado.forEach(selector => {
         selector.addEventListener('change', function() {
             colorearFilaPorEstado(this);
+            sincronizarFechaEntregaConEstado(this);
         });
     });
 });
@@ -1711,7 +1712,44 @@ function inicializarColoresDelaPagina() {
     const selectoresEstado = document.querySelectorAll('.estado-select');
     selectoresEstado.forEach(selector => {
         colorearFilaPorEstado(selector);
+        sincronizarFechaEntregaConEstado(selector, true);
     });
+}
+
+/**
+ * Sincronizar campo de fecha con estado:
+ * - Entregado: fija fecha actual si esta vacia y bloquea edicion.
+ * - Cualquier otro estado (incluye Pendiente): limpia y habilita.
+ */
+function sincronizarFechaEntregaConEstado(selectorEstado, soloInicializacion = false) {
+    const fila = selectorEstado.closest('tr');
+    if (!fila) return;
+
+    const estado = (selectorEstado.value || '').trim();
+    const fechaInput = fila.querySelector('.fecha-input');
+    if (!fechaInput) return;
+
+    if (estado === 'Entregado') {
+        if (!fechaInput.value) {
+            const hoy = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+            fechaInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        fechaInput.disabled = true;
+        return;
+    }
+
+    // Si no esta entregado, siempre limpiar fecha de entrega bodega.
+    fechaInput.value = '';
+
+    // Mantener respeto por vistas de solo lectura.
+    if (soloInicializacion && selectorEstado.disabled) {
+        return;
+    }
+
+    fechaInput.disabled = false;
 }
 
 /**
@@ -1896,12 +1934,15 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     });
     
     // Obtener valores
+    const estado = estadoSelect ? (estadoSelect.value || '') : '';
     const pendientes = pendientesInput.value || '';
     const fechaPedido = fechaPedidoInput.value || '';
-    const fechaEntrega = fechaEntregaInput.value || '';
+    if (estado !== 'Entregado') {
+        fechaEntregaInput.value = '';
+    }
+    const fechaEntrega = estado === 'Entregado' ? (fechaEntregaInput.value || '') : '';
     const area = areaSelect.value || '';
     const observaciones = observacionesInput ? observacionesInput.value : '';
-    const estado = estadoSelect ? (estadoSelect.value || '') : '';
 
     // Preparar datos para enviar
     const datos = {
@@ -1921,6 +1962,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         pendientes: pendientes || null,
         fecha_pedido: fechaPedido || null,
         fecha_entrega: fechaEntrega || null,
+        fecha_entrega_bodega: estado === 'Entregado' ? (fechaEntrega || null) : null,
         area: area || null,
         estado_bodega: estado || null,
         observaciones: observaciones || null

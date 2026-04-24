@@ -252,7 +252,7 @@
                                                 @else
                                                     bg-slate-50
                                                 @endif"
-                                            value="{{ $item['fecha_entrega'] ? $item['fecha_entrega'] : '' }}"
+                                            value="{{ !empty($item['fecha_entrega_bodega']) ? \Carbon\Carbon::parse($item['fecha_entrega_bodega'])->format('Y-m-d') : (!empty($item['fecha_entrega']) ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '') }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
