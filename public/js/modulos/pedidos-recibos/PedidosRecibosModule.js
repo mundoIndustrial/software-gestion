@@ -924,7 +924,7 @@ window.openOrderDetailModalWithProcess = async function (
 };
 
 if (typeof window.printReceiptModal !== 'function') {
-    window.printReceiptModal = function () {
+    window.printReceiptModal = async function () {
         const wrapper = document.getElementById('order-detail-modal-wrapper');
         if (!wrapper) {
             window.print();
@@ -1017,19 +1017,21 @@ if (typeof window.printReceiptModal !== 'function') {
                     const s = String(c || '').trim().toUpperCase();
                     return s || 'SIN COLOR';
                 };
+                const normalizarReferencia = (r) => String(r || '').trim().toUpperCase();
+                const ordenGeneros = ['DAMA', 'CABALLERO', 'UNISEX'];
 
                 const formatGeneroGroup = (mapGeneroATallas) => {
                     // mapGeneroATallas: { CABALLERO: Map(talla->cantidad), DAMA: ... }
                     const partes = [];
-                    Object.keys(mapGeneroATallas).forEach((gen) => {
+                    ordenGeneros.forEach((gen) => {
                         const m = mapGeneroATallas[gen];
                         if (!m) return;
                         const items = [];
                         for (const [tallaKey, cant] of m.entries()) {
                             const n = Number(cant || 0);
                             if (!tallaKey || !n) continue;
-                            // Tallas en rojo
-                            items.push(`<span style="color: #d32f2f;">${tallaKey}: ${n}</span>`);
+                            // Formato sin color igual al modal: S:3, M:1, ...
+                            items.push(`<span style="color: #d32f2f; font-weight: bold;">${tallaKey}:${n}</span>`);
                         }
                         if (items.length > 0) {
                             // Género en negro
@@ -1042,34 +1044,51 @@ if (typeof window.printReceiptModal !== 'function') {
                 // === 1) Prioridad: tallas por color (array estilo backend: [{genero,talla,color_nombre,cantidad}, ...]) ===
                 const coloresArr = Array.isArray(tallaColores) ? tallaColores : null;
                 if (coloresArr && coloresArr.length > 0) {
-                    // Agrupar por color -> género -> talla
-                    const byColor = new Map();
+                    // Agrupar por género -> color -> talla para renderizar igual que el modal
+                    const byGenero = new Map();
                     coloresArr.forEach((row) => {
                         const genero = normalizarGenero(row?.genero);
                         const talla = normalizarTalla(row?.talla);
                         const color = normalizarColor(row?.color_nombre || row?.color);
+                        const referencia = normalizarReferencia(row?.referencia || row?.tela_referencia || row?.ref);
                         const cantidad = Number(row?.cantidad || 0);
                         if (!genero || !talla || !cantidad) return;
 
-                        if (!byColor.has(color)) byColor.set(color, new Map());
-                        const byGenero = byColor.get(color);
                         if (!byGenero.has(genero)) byGenero.set(genero, new Map());
-                        const byTalla = byGenero.get(genero);
-                        byTalla.set(talla, (Number(byTalla.get(talla) || 0) + cantidad));
+                        const byColor = byGenero.get(genero);
+                        if (!byColor.has(color)) byColor.set(color, new Map());
+                        const byTalla = byColor.get(color);
+                        const current = byTalla.get(talla) || { cantidad: 0, referencias: new Set() };
+                        current.cantidad += cantidad;
+                        if (referencia) current.referencias.add(referencia);
+                        byTalla.set(talla, current);
                     });
 
-                    const partesColor = [];
-                    for (const [color, byGenero] of byColor.entries()) {
-                        const mapGeneroATallas = {};
-                        for (const [gen, byTalla] of byGenero.entries()) {
-                            mapGeneroATallas[gen] = byTalla;
+                    const partesGenero = [];
+                    ordenGeneros.forEach((gen) => {
+                        const byColor = byGenero.get(gen);
+                        if (!byColor) return;
+
+                        const lineasColor = [];
+                        for (const [color, byTalla] of byColor.entries()) {
+                            const items = [];
+                            for (const [tallaKey, data] of byTalla.entries()) {
+                                const n = Number(data?.cantidad || 0);
+                                if (!tallaKey || !n) continue;
+                                const refs = Array.from(data?.referencias || []).filter(Boolean);
+                                const refText = refs.length > 0 ? ` (Ref: ${refs.join(' / ')})` : '';
+                                items.push(`<span style="color: #d32f2f;">${tallaKey}-${n}${refText}</span>`);
+                            }
+                            if (items.length > 0) {
+                                lineasColor.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${items.join(', ')}</span>`);
+                            }
                         }
-                        const strGenero = formatGeneroGroup(mapGeneroATallas);
-                        if (strGenero) {
-                            partesColor.push(`${color}: ${strGenero}`);
+
+                        if (lineasColor.length > 0) {
+                            partesGenero.push(`<strong>${gen}:</strong><br>${lineasColor.join('<br>')}`);
                         }
-                    }
-                    return partesColor.join(' | ');
+                    });
+                    return partesGenero.join(' | ');
                 }
 
                 // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por género sin repetir) ===
@@ -1235,10 +1254,26 @@ if (typeof window.printReceiptModal !== 'function') {
             const cliente = String(datosPedido.cliente || getDomText('#cliente-value') || '').trim();
 
             const descripcionDOM = getDomHtmlText('#descripcion-text');
+            const anchoMetrajeDOM = (() => {
+                try {
+                    const el = wrapper.querySelector('#order-ancho-metraje');
+                    return el ? String(el.innerHTML || '').trim() : '';
+                } catch (_) {
+                    return '';
+                }
+            })();
+            const tallasResumenDOM = (() => {
+                try {
+                    const el = wrapper.querySelector('.tallas-resumen');
+                    return el ? String(el.innerHTML || '').trim() : '';
+                } catch (_) {
+                    return '';
+                }
+            })();
 
             // Intentar extraer nombre/color/tallas desde el texto del modal si prendaData no está.
             const extraerDesdeDescripcion = (raw) => {
-                const out = { prendaNombre: '', prendaColor: '', tallas: '' };
+                const out = { prendaNombre: '', prendaColor: '', tallas: '', observacionesProceso: '' };
                 const s = String(raw || '').replace(/\r/g, '').trim();
                 if (!s) return out;
                 const mPrenda = s.match(/PR\s*ENDA\s*\d+\s*:\s*([^\n]+)/i) || s.match(/PRENDA\s*\d+\s*:\s*([^\n]+)/i);
@@ -1248,6 +1283,8 @@ if (typeof window.printReceiptModal !== 'function') {
                 // Color: algunas vistas lo imprimen como "COLOR:" o como segunda línea fuerte.
                 const mColor = s.match(/COLOR\s*:\s*([^\n]+)/i);
                 if (mColor && mColor[1]) out.prendaColor = String(mColor[1]).trim();
+                const mObsProceso = s.match(/OBSERVACIONES?(?:\s+DEL\s+PROCESO|\s+PROCESO)?\s*:\s*([\s\S]+)/i);
+                if (mObsProceso && mObsProceso[1]) out.observacionesProceso = String(mObsProceso[1]).trim();
                 return out;
             };
 
@@ -1256,6 +1293,44 @@ if (typeof window.printReceiptModal !== 'function') {
             const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || extra.prendaNombre || '').trim();
             const prendaColor = String(prendaData?.color || extra.prendaColor || '').trim();
             const prendaDescripcion = String(prendaData?.descripcion || '').trim();
+            // Prioridad: endpoint dedicado de observación del proceso (como supervisor-pedidos).
+            // Fallback: datos del estado/DOM para no romper impresión si el endpoint falla.
+            let observacionProcesoApi = '';
+            try {
+                const pedidoIdObs = Number(
+                    datosPedido?.id ||
+                    datosPedido?.pedido_id ||
+                    datosPedido?.pedido_produccion_id ||
+                    estado?.pedidoId ||
+                    0
+                );
+                const prendaIdObs = Number(
+                    prendaData?.id ||
+                    prendaData?.prenda_pedido_id ||
+                    prendaData?.prenda_id ||
+                    0
+                );
+                const tipoProcesoObs = String(tipoProceso || '').trim().toUpperCase();
+
+                if (pedidoIdObs > 0 && prendaIdObs > 0 && tipoProcesoObs) {
+                    const urlObs = `/api/supervisor-pedidos/recibos-procesos/observacion?pedido_id=${encodeURIComponent(pedidoIdObs)}&prenda_id=${encodeURIComponent(prendaIdObs)}&tipo_proceso=${encodeURIComponent(tipoProcesoObs)}`;
+                    const resObs = await fetch(urlObs, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (resObs.ok) {
+                        const payloadObs = await resObs.json();
+                        observacionProcesoApi = String(payloadObs?.data?.observacion || '').trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('[printReceiptModal] No se pudo cargar observacion desde endpoint:', e);
+            }
+
+            const observacionesProceso = String(
+                observacionProcesoApi ||
+                extra.observacionesProceso ||
+                reciboActual?.observaciones ||
+                prendaData?.observaciones ||
+                ''
+            ).trim();
 
             // COSTURA y algunos recibos base no traen `ubicaciones` en el objeto recibo.
             // Para COSTURA: usar solo la descripción limpia de la prenda, sin repetir campos ya mostrados
@@ -1369,9 +1444,9 @@ if (typeof window.printReceiptModal !== 'function') {
                 if (str && totalG > 0) {
                     // Envolver en inline-block para que la línea coincida con el ancho
                     str = `
-                        <div style="display: inline-block; min-width: 100px;">
+                        <div style="display: inline-block; min-width: 100px; margin-bottom: 18px;">
                             ${str}
-                            <div style="border-top: 1.5px solid #111; margin-top: 5px; padding-top: 2px;">
+                            <div style="border-top: 1px solid #9ca3af; margin-top: 1px; padding-top: 1px;">
                                 <span style="color: black; font-weight: 900;">TOTAL: ${totalG}</span>
                             </div>
                         </div>
@@ -1683,7 +1758,7 @@ if (typeof window.printReceiptModal !== 'function') {
                           </div>
                           ` : ''}
                         </div>
-                        
+
                         ${(ubicaciones && ubicaciones.length > 0) ? `
                         <div style="margin: 4px 0; font-size: 11px;">
                           ${ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')}
@@ -1696,6 +1771,13 @@ if (typeof window.printReceiptModal !== 'function') {
                           <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">${contenidoTallasFinal}</div>
                         </div>
                         ` : '<!-- SIN TALLAS - tallasResumen está vacío -->'}
+
+                        ${observacionesProceso ? `
+                        <div class="section" style="margin-top: 2px; margin-bottom: 8px;">
+                          <h4>OBSERVACIONES DEL PROCESO:</h4>
+                          <div style="font-weight: 700; white-space: pre-line;">${esc(observacionesProceso.toUpperCase())}</div>
+                        </div>
+                        ` : ''}
                         
                         ${observacionesPorTalla.length > 0 ? `
                         <div class="section observations-section">
@@ -1728,6 +1810,12 @@ if (typeof window.printReceiptModal !== 'function') {
                                 return html;
                             })()}
                           </div>
+                        </div>
+                        ` : ''}
+
+                        ${anchoMetrajeDOM ? `
+                        <div class="order-ancho-metraje-print">
+                          ${anchoMetrajeDOM}
                         </div>
                         ` : ''}
                     `;
@@ -1796,10 +1884,15 @@ if (typeof window.printReceiptModal !== 'function') {
 
             let mostrarTituloTallas = true;
             let contenidoTallasFinal = tallasResumen;
+            const usarTallasDesdeDOM = false;
 
             console.log('[printReceiptModal] DEBUG tallasResumen original:', tallasResumen);
 
-            if (tallasResumen) {
+            if (usarTallasDesdeDOM) {
+                contenidoTallasFinal = tallasResumenDOM;
+                mostrarTituloTallas = true;
+                console.log('[printReceiptModal] Usando tallas desde DOM visible del modal');
+            } else if (tallasResumen) {
                 if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
                     console.log('[printReceiptModal] Procesando SOBREMEDIDA_SIN_TALLAS');
                     const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
@@ -1924,6 +2017,74 @@ if (typeof window.printReceiptModal !== 'function') {
                 .prenda-info { margin-bottom: 15px; }
                 .prenda-name { font-weight: 900; font-size: 16px; text-transform: uppercase; }
                 .prenda-color { font-weight: 700; font-size: 14px; text-transform: uppercase; }
+                .order-ancho-metraje-print {
+                  position: static;
+                  margin-top: 8px;
+                  padding: 4px 8px 2px;
+                  font-family: 'Courier New', monospace;
+                  font-weight: bold;
+                  font-size: 0.7rem;
+                  letter-spacing: 2px;
+                  color: #333;
+                  background: transparent;
+                  border-top: 1px solid #e5e5e5;
+                  padding-top: 8px;
+                  box-sizing: border-box;
+                }
+                .order-ancho-metraje-print .ancho-metraje-container {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-end;
+                  gap: 40px;
+                  width: 100%;
+                }
+                .order-ancho-metraje-print .ancho-column {
+                  flex: 0 0 auto;
+                  text-align: left;
+                  white-space: nowrap;
+                  display: flex;
+                  align-items: flex-end;
+                  height: 100%;
+                }
+                .order-ancho-metraje-print .metraje-column {
+                  flex: 1;
+                  text-align: right;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: flex-end;
+                }
+                .order-ancho-metraje-print .metraje-label {
+                  display: block;
+                  margin-bottom: 4px;
+                }
+                .order-ancho-metraje-print #metrajes-por-color-container {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: flex-end;
+                  gap: 1px;
+                  max-height: 42px;
+                  overflow-y: auto;
+                  overflow-x: hidden;
+                }
+                .order-ancho-metraje-print #metrajes-por-color-container span {
+                  display: block;
+                  color: red;
+                  font-weight: bold;
+                  white-space: nowrap;
+                }
+                .order-ancho-metraje-print .ancho-valor,
+                .order-ancho-metraje-print .metraje-valor {
+                  margin-left: 5px;
+                  font-weight: bold;
+                }
+                .order-ancho-metraje-print #ancho-valor {
+                  color: red;
+                }
+                .order-ancho-metraje-print #ancho-metraje-mano,
+                .order-ancho-metraje-print #ancho-metraje-mano #contenido-mano,
+                .order-ancho-metraje-print #ancho-metraje-mano #observaciones-mano {
+                  color: red;
+                }
                 .section { margin-bottom: 15px; font-size: 12px; }
                 .section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
                 .tallas-resumen { color: inherit; font-weight: 900; }
@@ -2173,4 +2334,3 @@ window.toggleGaleria = async function () {
         window.toggleGaleria._calling = false;
     }
 };
-

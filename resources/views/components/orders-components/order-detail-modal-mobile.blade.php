@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
+﻿<link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
 
 <style>
     @media (max-width: 768px) {
@@ -1117,123 +1117,107 @@ window.llenarReciboCosturaMobile = function(data) {
     const observacionesManoMobile = document.getElementById('observaciones-mano-mobile');
     const contenidoObservacionesMobile = document.getElementById('contenido-observaciones-mobile');
     
-    // Obtener datos de ancho y metraje de las prendas
-    let mostrarAnchoMetraje = false;
-    let mostrarContenidoMano = false;
-    console.log('📱 [ANCHO-METRAJE] Data prendas:', data.prendas);
-    
-    if (data.prendas && data.prendas.length > 0) {
-        const primeraPrenda = data.prendas[0];
-        console.log('📱 [ANCHO-METRAJE] Primera prenda:', primeraPrenda);
-        
-        if (primeraPrenda.ancho_metraje) {
-            const anchoMetraje = primeraPrenda.ancho_metraje;
-            console.log('📱 [ANCHO-METRAJE] Datos de ancho_metraje:', anchoMetraje);
-            console.log('📱 [ANCHO-METRAJE] tipo_modo:', anchoMetraje.tipo_modo);
-            
-            // Verificar si es modo "mano" (manual)
-            if (anchoMetraje.tipo_modo === 'mano') {
-                console.log('📱 [ANCHO-METRAJE] Modo MANUAL detectado');
-                
-                // Mostrar contenido manualmente ingresado
-                if (anchoMetraje.contenido_mano) {
-                    if (contenidoManoMobile) {
-                        contenidoManoMobile.textContent = anchoMetraje.contenido_mano;
-                        console.log('📱 [ANCHO-METRAJE] contenido_mano mostrado');
-                    }
-                    mostrarContenidoMano = true;
-                }
-                
-                // Mostrar observaciones si existen
-                if (anchoMetraje.observaciones && observacionesManoMobile && contenidoObservacionesMobile) {
-                    observacionesManoMobile.style.display = 'block';
-                    contenidoObservacionesMobile.textContent = anchoMetraje.observaciones;
-                    console.log('📱 [ANCHO-METRAJE] observaciones mostradas');
-                } else if (observacionesManoMobile) {
-                    observacionesManoMobile.style.display = 'none';
-                }
-            } else {
-                // Modo normal: mostrar ancho si existe
-                if (anchoMetraje.ancho !== null && anchoMetraje.ancho !== undefined) {
-                    const anchoVal = parseFloat(anchoMetraje.ancho);
-                    if (!isNaN(anchoVal)) {
-                        if (anchoValorMobile) {
-                            anchoValorMobile.textContent = anchoVal.toFixed(2) + ' m';
-                            console.log('📱 [ANCHO-METRAJE] Ancho mostrado:', anchoVal.toFixed(2));
-                        }
-                        mostrarAnchoMetraje = true;
-                    }
-                }
-                
-                // Mostrar metraje si existe
-                // Primero intentar obtener metrajes por color
-                let metrajeTotal = 0;
-                let tieneMetrajes = false;
-                
-                if (anchoMetraje.metrajes_por_color && Array.isArray(anchoMetraje.metrajes_por_color) && anchoMetraje.metrajes_por_color.length > 0) {
-                    console.log('📱 [ANCHO-METRAJE] Metrajes por color encontrados:', anchoMetraje.metrajes_por_color);
-                    
-                    let colorInfo = [];
-                    anchoMetraje.metrajes_por_color.forEach(item => {
-                        const metraje = parseFloat(item.metraje || 0);
-                        if (!isNaN(metraje) && metraje > 0) {
-                            metrajeTotal += metraje;
-                            tieneMetrajes = true;
-                            if (item.color) {
-                                colorInfo.push(`${item.color}: ${metraje.toFixed(2)}m`);
-                            }
-                        }
-                    });
-                    
-                    if (tieneMetrajes && metrajeValorMobile) {
-                        metrajeValorMobile.textContent = metrajeTotal.toFixed(2) + ' m';
-                        console.log('📱 [ANCHO-METRAJE] Metraje total mostrado:', metrajeTotal.toFixed(2));
-                        
-                        // Mostrar detalles por color si existen
-                        if (colorInfo.length > 0 && metragesColorContainer) {
-                            metragesColorContainer.innerHTML = '<div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd;">' + 
-                                colorInfo.map(c => `<div style="font-size: 0.75rem; color: #666;">• ${c}</div>`).join('') + 
-                                '</div>';
-                        }
-                        
-                        mostrarAnchoMetraje = true;
-                    }
-                }
-                
-                // Si no hay metrajes por color pero sí metraje general
-                if (!tieneMetrajes && anchoMetraje.metraje !== null && anchoMetraje.metraje !== undefined) {
-                    const metrajeVal = parseFloat(anchoMetraje.metraje);
-                    if (!isNaN(metrajeVal) && metrajeVal > 0) {
-                        if (metrajeValorMobile) {
-                            metrajeValorMobile.textContent = metrajeVal.toFixed(2) + ' m';
-                            console.log('📱 [ANCHO-METRAJE] Metraje general mostrado:', metrajeVal.toFixed(2));
-                        }
-                        mostrarAnchoMetraje = true;
-                    }
-                }
+    // Obtener datos de ancho y metraje EXACTAMENTE como order-detail-modal (recibos-costura)
+    const metrajeLabelMobile = metrajeValorMobile
+        ? (metrajeValorMobile.closest('.metraje-label') || metrajeValorMobile.parentElement)
+        : null;
+
+    const resetAnchoMetrajeMobile = () => {
+        if (anchoMetrajeContainer) anchoMetrajeContainer.style.display = 'none';
+        if (anchoMetrajeManoContainer) anchoMetrajeManoContainer.style.display = 'none';
+        if (anchoValorMobile) anchoValorMobile.textContent = '--';
+        if (metrajeValorMobile) metrajeValorMobile.textContent = '--';
+        if (metragesColorContainer) metragesColorContainer.innerHTML = '';
+        if (contenidoManoMobile) contenidoManoMobile.textContent = '';
+        if (observacionesManoMobile) observacionesManoMobile.style.display = 'none';
+        if (contenidoObservacionesMobile) contenidoObservacionesMobile.textContent = '';
+        if (metrajeLabelMobile) metrajeLabelMobile.style.display = 'block';
+    };
+
+    const renderAnchoMetrajeMobile = (payload) => {
+        const tipoModo = String(payload?.tipo_modo || '').trim().toLowerCase();
+        const metrajesValidos = Array.isArray(payload?.data)
+            ? payload.data.filter(item => item?.color && item?.metraje)
+            : [];
+
+        if (!tipoModo || (!payload?.ancho && !payload?.metraje && !payload?.contenido_mano && metrajesValidos.length === 0)) {
+            resetAnchoMetrajeMobile();
+            return;
+        }
+
+        if (anchoValorMobile && payload?.ancho) {
+            anchoValorMobile.textContent = `${payload.ancho} m`;
+        }
+
+        if (tipoModo === 'mano') {
+            if (anchoMetrajeContainer) anchoMetrajeContainer.style.display = 'none';
+            if (anchoMetrajeManoContainer) anchoMetrajeManoContainer.style.display = 'block';
+            if (contenidoManoMobile) contenidoManoMobile.textContent = payload?.contenido_mano || '';
+            if (observacionesManoMobile) observacionesManoMobile.style.display = 'none';
+            return;
+        }
+
+        if (anchoMetrajeManoContainer) anchoMetrajeManoContainer.style.display = 'none';
+        if (anchoMetrajeContainer) anchoMetrajeContainer.style.display = 'block';
+
+        if (tipoModo === 'normal') {
+            if (metrajeLabelMobile) metrajeLabelMobile.style.display = 'block';
+            if (metrajeValorMobile) {
+                const metrajeGeneral = payload?.metraje || null;
+                metrajeValorMobile.textContent = metrajeGeneral ? `${metrajeGeneral} m` : '--';
+            }
+        } else {
+            if (metrajeLabelMobile) metrajeLabelMobile.style.display = 'none';
+        }
+
+        if (metragesColorContainer) {
+            metragesColorContainer.innerHTML = '';
+            if (metrajesValidos.length > 0) {
+                metrajesValidos.forEach(item => {
+                    const row = document.createElement('div');
+                    row.style.fontSize = '0.75rem';
+                    row.style.color = '#666';
+                    row.textContent = `${String(item.color).toUpperCase()}: ${item.metraje} m`;
+                    metragesColorContainer.appendChild(row);
+                });
             }
         }
-    }
-    
-    // Mostrar u ocultar los contenedores
-    if (anchoMetrajeContainer) {
-        if (mostrarAnchoMetraje && !mostrarContenidoMano) {
-            anchoMetrajeContainer.style.display = 'block';
-            console.log('📱 [ANCHO-METRAJE] Contenedor NORMAL mostrado');
-        } else {
-            anchoMetrajeContainer.style.display = 'none';
-            console.log('📱 [ANCHO-METRAJE] Contenedor NORMAL oculto');
-        }
-    }
-    
-    if (anchoMetrajeManoContainer) {
-        if (mostrarContenidoMano) {
-            anchoMetrajeManoContainer.style.display = 'block';
-            console.log('📱 [ANCHO-METRAJE] Contenedor MANO mostrado');
-        } else {
-            anchoMetrajeManoContainer.style.display = 'none';
-            console.log('📱 [ANCHO-METRAJE] Contenedor MANO oculto');
-        }
+    };
+
+    resetAnchoMetrajeMobile();
+
+    const prendaIdFromUrl = Number(urlParams.get('prenda_id') || 0);
+    const prendaObjetivo = Array.isArray(data.prendas)
+        ? (prendaIdFromUrl > 0
+            ? data.prendas.find(p => Number(p?.id || p?.prenda_pedido_id || p?.prenda_id || 0) === prendaIdFromUrl)
+            : data.prendas[0])
+        : null;
+    const pedidoIdAncho = Number(data?.id || data?.pedido_id || data?.pedido_produccion_id || prendaObjetivo?.pedido_produccion_id || 0);
+    const prendaIdAncho = Number(prendaObjetivo?.id || prendaObjetivo?.prenda_pedido_id || prendaObjetivo?.prenda_id || 0);
+
+    if (pedidoIdAncho > 0 && prendaIdAncho > 0) {
+        const requestId = (window.__anchoMetrajeMobileRequestId || 0) + 1;
+        window.__anchoMetrajeMobileRequestId = requestId;
+
+        const publicEndpoint = `/pedidos-public/${pedidoIdAncho}/ancho-metraje-prenda/${prendaIdAncho}`;
+        const insumosEndpoint = `/insumos/materiales/${pedidoIdAncho}/obtener-ancho-metraje-prenda/${prendaIdAncho}`;
+
+        fetch(publicEndpoint)
+            .then(response => {
+                if (!response.ok && response.status === 404) {
+                    return fetch(insumosEndpoint);
+                }
+                return response;
+            })
+            .then(response => response.json())
+            .then(payload => {
+                if (window.__anchoMetrajeMobileRequestId !== requestId) return;
+                if (!payload?.success) return;
+                renderAnchoMetrajeMobile(payload);
+            })
+            .catch(error => {
+                console.warn('[ANCHO-METRAJE] Error cargando ancho/metraje (mobile):', error);
+            });
     }
     
     // Función helper para convertir markdown bold *** a <strong>
