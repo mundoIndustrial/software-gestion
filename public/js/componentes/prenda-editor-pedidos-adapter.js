@@ -225,9 +225,12 @@
                 }
             }
         });
+        const prendasArray = window.datosEdicionPedido?.prendas || [];
+        const prendaLocalId = prendasArray?.[prendaIndex]?._local_id || null;
         return collector.construirPrendaDesdeFormulario(
             prendaIndex,
-            window.datosEdicionPedido?.prendas || []
+            prendasArray,
+            prendaLocalId
         );
     }
 

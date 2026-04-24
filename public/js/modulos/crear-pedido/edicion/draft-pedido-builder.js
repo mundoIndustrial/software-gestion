@@ -362,7 +362,8 @@
             });
         };
 
-        await Promise.all(window.gestionItemsUI.prendas.map(async (p, prendaIdx) => {
+        for (let prendaIdx = 0; prendaIdx < window.gestionItemsUI.prendas.length; prendaIdx++) {
+            const p = window.gestionItemsUI.prendas[prendaIdx];
             // Solo es "existente" si tiene prenda_pedido_id que sea un número > 0 (ID real de BD)
             // NO cuenta los IDs locales como "prenda-local-xxx" que son strings
             const tieneIdRealBD = p?.prenda_pedido_id && Number.isInteger(p.prenda_pedido_id) && p.prenda_pedido_id > 0;
@@ -375,7 +376,7 @@
                 if (payloadPrendaExistente) {
                     prendasExistentesJson.push(payloadPrendaExistente);
                 }
-                return;
+                continue;
             }
 
             // Para nuevas prendas, obtener imágenes del IndexedImageStorageService
@@ -455,7 +456,7 @@
                 asignacionesColoresPorTalla: p.asignacionesColoresPorTalla || {}
             });
             nuevaPrendaIdx++;
-        }));
+        }
 
         return { prendasExistentesJson, nuevasPrendasJson };
     }

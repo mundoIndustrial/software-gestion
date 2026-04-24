@@ -352,9 +352,12 @@
         }
 
         const prendaActual = gestionItems.prendas?.[prendaEditIndex] || {};
+        const prendasActuales = Array.isArray(gestionItems.prendas) ? gestionItems.prendas : [];
+        const prendaLocalId = prendaActual?._local_id || null;
         const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
             prendaEditIndex,
-            Array.isArray(gestionItems.prendas) ? gestionItems.prendas : []
+            prendasActuales,
+            prendaLocalId
         );
 
         if (!prendaData) {
@@ -1229,21 +1232,25 @@
         // ✅ CRÍTICO: Establecer contexto en IndexedImageStorageService ANTES de recolectar imágenes
         // Esto asegura que se obtengan las imágenes del almacenamiento correcto
         if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
-            if (estaEditandoPrenda) {
+            let prendaLocalId = null;
+        if (estaEditandoPrenda) {
                 // Para prenda existente: usar el índice
                 globalThis.imagenesPrendaStorage.setPrendaActual(prendaEditIndex);
+                prendaLocalId = prendasActuales?.[prendaEditIndex]?._local_id || null;
                 console.log('[DraftPedidoSerializer] Contexto de prenda existente establecido:', prendaEditIndex);
             } else {
                 // Para prenda nueva: usar el _local_id si existe, o generar uno
                 const localIdTemporal = obtenerLocalIdTemporalModal(modalPrenda);
                 globalThis.imagenesPrendaStorage.setPrendaActual(localIdTemporal);
+                prendaLocalId = localIdTemporal;
                 console.log('[DraftPedidoSerializer] Contexto de prenda nueva establecido:', localIdTemporal);
             }
         }
 
         const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
             estaEditandoPrenda ? prendaEditIndex : null,
-            prendasActuales
+            prendasActuales,
+            prendaLocalId
         );
 
         if (!prendaData) {

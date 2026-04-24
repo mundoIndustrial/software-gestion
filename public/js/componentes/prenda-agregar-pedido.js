@@ -152,7 +152,10 @@
                         }
                     }
                 });
-                const datos = collector.construirPrendaDesdeFormulario(null, []);
+                // Obtener el draftPrendaLocalId del modal para usar como contexto de almacenamiento
+                const modalElement = document.getElementById('modal-agregar-prenda-nueva');
+                const prendaLocalId = modalElement?.dataset?.draftPrendaLocalId || null;
+                const datos = collector.construirPrendaDesdeFormulario(null, [], prendaLocalId);
                 return datos;
             } catch (e) {
                 console.error('[PrendaAgregarPedido] Error en PrendaFormCollector:', e);

@@ -156,9 +156,21 @@ class PrendaFlowService {
     async _recolectarYHidratarDatos() {
         const prendaFormCollector = this._ctx('prendaFormCollector');
         prendaFormCollector?.setNotificationService(this.ui?.notificationService);
+
+        // Obtener el _local_id de la prenda actual (editando o recién agregada)
+        let prendaLocalId = null;
+        if (this.ui?.prendaEditIndex !== null && this.ui?.prendaEditIndex !== undefined) {
+            // En modo edición, usar el _local_id de la prenda siendo editada
+            prendaLocalId = this.ui?.prendas?.[this.ui.prendaEditIndex]?._local_id || null;
+        } else if (Array.isArray(this.ui?.prendas) && this.ui.prendas.length > 0) {
+            // Si no estamos editando, usar el _local_id de la última prenda agregada
+            prendaLocalId = this.ui.prendas[this.ui.prendas.length - 1]?._local_id || null;
+        }
+
         const prendaData = prendaFormCollector?.construirPrendaDesdeFormulario(
             this.ui?.prendaEditIndex,
-            this.ui?.prendas
+            this.ui?.prendas,
+            prendaLocalId
         );
 
         if (!prendaData) {

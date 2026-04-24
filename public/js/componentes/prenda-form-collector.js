@@ -64,12 +64,13 @@ class PrendaFormCollector {
     /**
      * Construir objeto de prenda desde el formulario modal
      * Recolecta: nombre, descripción, origen, imágenes, telas, tallas, variaciones, procesos
-     * 
+     *
      * @param {number|null} prendaEditIndex - Índice si estamos en modo edición (para recuperar telas anteriores)
      * @param {Array} prendasArray - Array de prendas existentes (para modo edición)
+     * @param {string|null} prendaLocalId - ID local de la prenda para usar como clave de almacenamiento de imágenes
      * @returns {Object|null} Objeto con datos de prenda o null si hay error
      */
-    construirPrendaDesdeFormulario(prendaEditIndex = null, prendasArray = []) {
+    construirPrendaDesdeFormulario(prendaEditIndex = null, prendasArray = [], prendaLocalId = null) {
         try {
             // ============================================
             // 1. OBTENER DATOS BÁSICOS
@@ -94,20 +95,31 @@ class PrendaFormCollector {
             // ✅ CRÍTICO: Establecer contexto ANTES de obtener imágenes (por si no se estableció correctamente)
             // Esto asegura que obtenemos las imágenes del almacenamiento correcto
             if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
-                // Determine prenda ID: si estamos editando una prenda existente, usar el índice; si no, usar ID único del modal
+                // Determine prenda ID: usar el _local_id de la prenda si está disponible, luego caer a otros IDs
                 const isEditMode = prendaEditIndex !== null && prendaEditIndex !== undefined;
                 let prendaId;
 
-                if (isEditMode) {
-                    prendaId = prendaEditIndex;
+                if (prendaLocalId) {
+                    // Si se proporcionó explícitamente el _local_id de la prenda, usar ese
+                    prendaId = prendaLocalId;
+                } else if (isEditMode) {
+                    // Si estamos editando, usar el _local_id de la prenda existente
+                    const prendaEnEdicion = prendasArray?.[prendaEditIndex];
+                    prendaId = prendaEnEdicion?._local_id || prendaEditIndex;
                 } else {
-                    // Para nuevas prendas, obtener el ID único del modal
-                    const modalElement = document.getElementById('modal-agregar-prenda-nueva');
-                    prendaId = (modalElement?.dataset?.draftPrendaLocalId?.trim()) || 'default';
+                    // Para nuevas prendas sin _local_id proporcionado, intentar obtener de la última prenda agregada
+                    if (Array.isArray(prendasArray) && prendasArray.length > 0) {
+                        const ultimaPrenda = prendasArray[prendasArray.length - 1];
+                        prendaId = ultimaPrenda?._local_id || 'default';
+                    } else {
+                        // Fallback final: usar el ID del modal (transient, pero es el fallback)
+                        const modalElement = document.getElementById('modal-agregar-prenda-nueva');
+                        prendaId = (modalElement?.dataset?.draftPrendaLocalId?.trim()) || 'default';
+                    }
                 }
 
                 globalThis.imagenesPrendaStorage.setPrendaActual(prendaId);
-                console.log('[prenda-form-collector] Contexto de prenda establecido antes de obtener imágenes:', prendaId, '(modo edit:', isEditMode, ')');
+                console.log('[prenda-form-collector] Contexto de prenda establecido antes de obtener imágenes:', prendaId, '(modo edit:', isEditMode, ', prendaLocalId provided:', !!prendaLocalId, ')');
             }
 
             const imagenesTemporales = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
