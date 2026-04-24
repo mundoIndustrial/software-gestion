@@ -87,7 +87,7 @@
 
 <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
     <div class="order-detail-card">
-        <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+        <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         <div id="order-date" class="order-date">
             <div class="fec-label">FECHA</div>
             <div class="date-boxes">

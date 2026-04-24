@@ -62,7 +62,7 @@ export class PedidosRecibosModule {
             console.warn(' [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
             return;
         }
-        
+
         // Validaciones
         if (typeof tipoRecibo !== 'string') {
 
@@ -82,7 +82,7 @@ export class PedidosRecibosModule {
             const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
             // Resetear cualquier galería previa para evitar que quede pegada entre recibos
             GalleryManager.resetGaleria(this.modalManager);
-            
+
             // Limpiar estado del modal para evitar caché entre recibos
             // Solo limpiar si no hay un recibo abierto actualmente
             const estadoActual = this.modalManager.getState();
@@ -93,7 +93,7 @@ export class PedidosRecibosModule {
             }
 
             // Actualizar estado con los nuevos datos
-            console.log('[abrirRecibo] Estableciendo estado inicial:', {pedidoId, prendaId, tipoRecibo});
+            console.log('[abrirRecibo] Estableciendo estado inicial:', { pedidoId, prendaId, tipoRecibo });
             this.modalManager.setState({
                 pedidoId,
                 prendaId,
@@ -167,7 +167,7 @@ export class PedidosRecibosModule {
                 );
             }
 
-            let datos = await response.json();            
+            let datos = await response.json();
             // Manejar respuesta envuelta en { success: true, data: {...} }
             if (datos.data && typeof datos.data === 'object') {
                 datos = datos.data;
@@ -253,7 +253,7 @@ export class PedidosRecibosModule {
                     });
                 });
             }
-            
+
             console.group('[PedidosRecibosModule.abrirRecibo] 📥 DATOS RECIBIDOS DEL ENDPOINT');
             console.log('Endpoint:', endpoint);
             console.log('Cliente:', datos.cliente);
@@ -264,7 +264,7 @@ export class PedidosRecibosModule {
             console.log('IDs de prendas disponibles:', datos.prendas ? datos.prendas.map(p => p.id) : 'NONE');
             console.log('Buscando prenda_id:', prendaId);
             console.groupEnd();
-                        
+
             this.modalManager.setState({ datosCompletos: datos });
 
             // Validar que existan prendas
@@ -275,9 +275,9 @@ export class PedidosRecibosModule {
             // Encontrar la prenda
             console.log(`[PedidosRecibosModule]  Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
             console.log(`[PedidosRecibosModule]  IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
-            
+
             const prendaData = datos.prendas.find(p => p.id == prendaId);
-            
+
             if (!prendaData) {
                 console.error(`[PedidosRecibosModule]  Prenda ${prendaId} no encontrada`);
                 console.error(`[PedidosRecibosModule]  Búsqueda realizada con:`, {
@@ -292,7 +292,7 @@ export class PedidosRecibosModule {
                 });
                 throw new Error(`Prenda ${prendaId} no encontrada`);
             }
-            
+
             console.log(`[PedidosRecibosModule]  Prenda encontrada:`, {
                 id: prendaData.id,
                 nombre: prendaData.nombre || prendaData.nombre_prenda,
@@ -903,7 +903,7 @@ window.pedidosRecibosModule = new PedidosRecibosModule();
  * FUNCIÓN GLOBAL compatibilidad con código antiguo
  * Mantiene la API antigua mientras usa el nuevo módulo
  */
-window.openOrderDetailModalWithProcess = async function(
+window.openOrderDetailModalWithProcess = async function (
     pedidoId,
     prendaId,
     tipoRecibo,
@@ -923,13 +923,13 @@ window.openOrderDetailModalWithProcess = async function(
     );
 };
 
- if (typeof window.printReceiptModal !== 'function') {
-     window.printReceiptModal = function() {
-         const wrapper = document.getElementById('order-detail-modal-wrapper');
-         if (!wrapper) {
-             window.print();
-             return;
-         }
+if (typeof window.printReceiptModal !== 'function') {
+    window.printReceiptModal = function () {
+        const wrapper = document.getElementById('order-detail-modal-wrapper');
+        if (!wrapper) {
+            window.print();
+            return;
+        }
 
         // Nuevo flujo: imprimir usando el diseño/paginación del ejemplo "sistema-de-recibos-mundo-industrial".
         // Se genera un HTML limpio para impresión (A4), sin depender del layout actual del modal.
@@ -1003,7 +1003,7 @@ window.openOrderDetailModalWithProcess = async function(
                         try {
                             const parsed = JSON.parse(s);
                             if (Array.isArray(parsed)) return parsed.map(x => String(x)).filter(Boolean);
-                        } catch (_) {}
+                        } catch (_) { }
                     }
                     return s.split(/\r?\n|\s*\|\s*|\s*,\s*/g).map(x => x.trim()).filter(Boolean);
                 }
@@ -1076,12 +1076,12 @@ window.openOrderDetailModalWithProcess = async function(
                 if (Array.isArray(tallas)) {
                     const mapGeneroATallas = {};
                     const mapSobremedida = {}; // Separar sobremedida por género
-                    
+
                     tallas.forEach((t) => {
                         const genero = normalizarGenero(t?.genero);
                         const cantidad = Number(t?.cantidad || 0);
                         if (!genero || !cantidad) return;
-                        
+
                         // Si es sobremedida, manejarlo por separado
                         if (t?.es_sobremedida) {
                             if (!mapSobremedida[genero]) mapSobremedida[genero] = 0;
@@ -1094,31 +1094,31 @@ window.openOrderDetailModalWithProcess = async function(
                             m.set(talla, (Number(m.get(talla) || 0) + cantidad));
                         }
                     });
-                    
+
                     const generosSobremedida = Object.keys(mapSobremedida);
                     const tieneSobremedida = generosSobremedida.length > 0;
                     const tieneTallasNormales = Object.keys(mapGeneroATallas).length > 0;
-                    
+
                     // Si solo hay sobremedida, devolver formato especial sin "TALLAS:"
                     if (tieneSobremedida && !tieneTallasNormales) {
                         const partesSobremedida = generosSobremedida.map(g => `${g}: ${mapSobremedida[g]}`);
                         return 'SOBREMEDIDA_SIN_TALLAS:' + partesSobremedida.join('|');
                     }
-                    
+
                     const partes = [];
-                    
+
                     // Primero agregar sobremedida si existe
                     if (tieneSobremedida) {
                         const partesSobremedida = generosSobremedida.map(g => `${g}: ${mapSobremedida[g]}`);
                         partes.push('SOBREMEDIDA_CON_TALLAS:' + partesSobremedida.join('|'));
                     }
-                    
+
                     // Luego agregar tallas normales
                     const tallasNormalesStr = formatGeneroGroup(mapGeneroATallas);
                     if (tallasNormalesStr) {
                         partes.push(tallasNormalesStr);
                     }
-                    
+
                     return partes.join('\n');
                 }
 
@@ -1265,7 +1265,7 @@ window.openOrderDetailModalWithProcess = async function(
                     const desc = prendaData?.descripcion || '';
                     return desc ? [desc] : [];
                 }
-                
+
                 // Para otros tipos: mantener lógica original
                 const raw = (
                     reciboActual?.ubicaciones ||
@@ -1295,7 +1295,7 @@ window.openOrderDetailModalWithProcess = async function(
                     'ES COSTURA': tipoProceso?.toUpperCase() === 'COSTURA',
                     'variantes': reciboActual?.variantes || prendaData?.variantes
                 });
-                
+
                 if (reciboActual) {
                     // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si está disponible
                     if (Array.isArray(reciboActual.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
@@ -1305,7 +1305,7 @@ window.openOrderDetailModalWithProcess = async function(
                         // Para COSTURA: usar variantes si no hay tallas_detalle
                         const variantes = reciboActual?.variantes || prendaData?.variantes || [];
                         console.log('[printReceiptModal]  COSTURA - Variantes encontradas:', variantes);
-                        
+
                         if (variantes.length > 0) {
                             // Convertir variantes al formato tallas_detalle
                             tallasProceso = variantes.map(v => ({
@@ -1319,19 +1319,19 @@ window.openOrderDetailModalWithProcess = async function(
                         }
                     } else if (prendaData?.procesos && Array.isArray(prendaData.procesos)) {
                         // Buscar el proceso actual en prendaData.procesos por tipo
-                        const procesoActual = prendaData.procesos.find(p => 
+                        const procesoActual = prendaData.procesos.find(p =>
                             (p.tipo_proceso || '').toUpperCase() === tipoProceso.toUpperCase() ||
                             (p.nombre_proceso || '').toUpperCase() === tipoProceso.toUpperCase() ||
                             (p.tipo || '').toUpperCase() === tipoProceso.toUpperCase()
                         );
-                        
+
                         if (procesoActual && Array.isArray(procesoActual.tallas_detalle) && procesoActual.tallas_detalle.length > 0) {
                             tallasProceso = procesoActual.tallas_detalle;
                             console.log('[printReceiptModal]  Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
                         } else if (procesoActual && procesoActual.tallas_detalle) {
                             console.log('[printReceiptModal]  procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
                         }
-                        
+
                         // Si no hay tallas_detalle, intentar con tallas del proceso
                         if (!tallasProceso && procesoActual?.tallas) {
                             tallasProceso = procesoActual.tallas;
@@ -1339,7 +1339,7 @@ window.openOrderDetailModalWithProcess = async function(
                         }
                     }
                 }
-                
+
                 // Solución de raíz:
                 // - Resumen de TALLAS debe salir de `tallas` (totales por talla).
                 // - `tallas_detalle` se reserva para la sección de OBSERVACIONES POR TALLA.
@@ -1380,7 +1380,7 @@ window.openOrderDetailModalWithProcess = async function(
 
                 console.log('[printReceiptModal]Resultado buildTallasResumen:', str);
                 if (str) return str;
-                
+
                 // Fallback para COSTURA: intentar desde variantes
                 if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
                     const variantes = reciboActual?.variantes || prendaData?.variantes || [];
@@ -1395,7 +1395,7 @@ window.openOrderDetailModalWithProcess = async function(
                                 tallasMap.set(key, (tallasMap.get(key) || 0) + cantidad);
                             }
                         });
-                        
+
                         if (tallasMap.size > 0) {
                             const generosMap = new Map();
                             tallasMap.forEach((cantidad, key) => {
@@ -1403,7 +1403,7 @@ window.openOrderDetailModalWithProcess = async function(
                                 if (!generosMap.has(genero)) generosMap.set(genero, new Map());
                                 generosMap.get(genero).set(talla, cantidad);
                             });
-                            
+
                             const partes = [];
                             generosMap.forEach((tallasGen, genero) => {
                                 const tallasStr = Array.from(tallasGen.entries())
@@ -1415,7 +1415,7 @@ window.openOrderDetailModalWithProcess = async function(
                         }
                     }
                 }
-                
+
                 return String(extra.tallas || '').trim();
             })();
             const observacionesPorTalla = buildObservacionesPorTalla();
@@ -1597,7 +1597,7 @@ window.openOrderDetailModalWithProcess = async function(
                 if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
                     const variantes = reciboActual?.variantes || prendaData?.variantes || [];
                     const primeraVariante = variantes.length > 0 ? variantes[0] : {};
-                    
+
                     // Extraer datos específicos de COSTURA
                     const manga = primeraVariante?.manga || prendaData?.manga || '';
                     const obsManga = primeraVariante?.manga_obs || primeraVariante?.obs_manga || prendaData?.obs_manga || '';
@@ -1607,26 +1607,26 @@ window.openOrderDetailModalWithProcess = async function(
                     const obsBolsillos = primeraVariante?.bolsillos_obs || primeraVariante?.obs_bolsillos || prendaData?.obs_bolsillos || '';
                     const tieneReflectivo = primeraVariante?.tiene_reflectivo || prendaData?.tiene_reflectivo || false;
                     const obsReflectivo = primeraVariante?.obs_reflectivo || prendaData?.obs_reflectivo || '';
-                    
+
                     // Construir línea compacta de TELAS: Nombre / Color | REF: ref | Manga con obs
                     const telaPartesPrincipal = [];
                     if (prendaData?.tela) telaPartesPrincipal.push(esc(prendaData.tela));
                     if (prendaColor) telaPartesPrincipal.push(esc(prendaColor));
                     const telaMain = telaPartesPrincipal.join(' / ');
-                    
+
                     const refText = prendaData?.ref_tela || prendaData?.referencia || prendaData?.ref || '';
-                    
+
                     const mangaInfo = [];
                     if (manga) mangaInfo.push(`MANGA: ${esc(manga)}${obsManga ? ` (${esc(obsManga)})` : ''}`);
-                    
+
                     const telaLinea = [];
                     if (telaMain) telaLinea.push(telaMain);
                     if (refText) telaLinea.push(`REF: ${refText}`);
                     const telaLineaTexto = telaLinea.join(' | ');
                     const mangaLineaTexto = mangaInfo.join('');
-                    
+
                     return `
-                        <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+                        <img src="/images/logo2.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
                         <div id="order-date" class="order-date">
                           <div class="fec-label">FECHA</div>
                           <div class="date-boxes">
@@ -1701,14 +1701,14 @@ window.openOrderDetailModalWithProcess = async function(
                         <div class="section observations-section">
                           <h4>OBSERVACIONES POR TALLA:</h4>
                           <div class="tallas-columns">
-                            ${(function() {
+                            ${(function () {
                                 const grupos = new Map();
                                 observacionesPorTalla.forEach((t) => {
                                     const key = t.genero || '';
                                     if (!grupos.has(key)) grupos.set(key, []);
                                     grupos.get(key).push(t);
                                 });
-                                
+
                                 let html = '';
                                 for (const [generoKey, tallasGrupo] of grupos.entries()) {
                                     const generoUpper = generoKey ? generoKey.toUpperCase() : '';
@@ -1732,14 +1732,14 @@ window.openOrderDetailModalWithProcess = async function(
                         ` : ''}
                     `;
                 }
-                
+
                 // Para otros tipos de recibo: mantener estructura original
                 const ubicHtml = (ubicaciones && ubicaciones.length > 0)
                     ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')
                     : '<div>-</div>';
 
                 return `
-                    <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+                    <img src="/images/logo2.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
                     <div id="order-date" class="order-date">
                       <div class="fec-label">FECHA</div>
                       <div class="date-boxes">
@@ -1781,7 +1781,7 @@ window.openOrderDetailModalWithProcess = async function(
 
             // Detectar si es solo sobremedida (basado en el contenido procesado)
             const esSoloSobremedida = tallasResumen && tallasResumen.includes('SOBREMEDIDA:</span>') && !tallasResumen.includes('<span style="color: #d32f2f');
-            
+
             // Para impresión, necesitamos saber si el contenido original era solo sobremedida
             const contenidoOriginalEsSoloSobremedida = (() => {
                 if (Array.isArray(reciboActual?.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
@@ -1796,15 +1796,15 @@ window.openOrderDetailModalWithProcess = async function(
 
             let mostrarTituloTallas = true;
             let contenidoTallasFinal = tallasResumen;
-            
+
             console.log('[printReceiptModal] DEBUG tallasResumen original:', tallasResumen);
-            
+
             if (tallasResumen) {
                 if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
                     console.log('[printReceiptModal] Procesando SOBREMEDIDA_SIN_TALLAS');
                     const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
                     mostrarTituloTallas = false;
-                    contenidoTallasFinal = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                    contenidoTallasFinal = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' +
                         partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
                     console.log('[printReceiptModal] Resultado procesado:', contenidoTallasFinal);
                 } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
@@ -1813,7 +1813,7 @@ window.openOrderDetailModalWithProcess = async function(
                     contenidoTallasFinal = lineas.map(linea => {
                         if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
                             const partes = linea.substring('SOBREMEDIDA_CON_TALLAS:'.length).split('|');
-                            return '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                            return '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' +
                                 partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
                         }
                         return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
@@ -1824,7 +1824,7 @@ window.openOrderDetailModalWithProcess = async function(
                     // Tallas normales - ya vienen con colores desde buildTallasResumen
                     contenidoTallasFinal = tallasResumen;
                 }
-                
+
                 console.log('[printReceiptModal] Variables finales:', {
                     mostrarTituloTallas,
                     contenidoTallasFinal
@@ -1909,17 +1909,17 @@ window.openOrderDetailModalWithProcess = async function(
                 }
                 .page { width: var(--page-width); min-height: var(--page-height); padding: var(--page-padding); box-sizing: border-box; position: relative; overflow: hidden; margin: 0 auto; }
                 .receipt-card { width: 100%; border: 4px solid #111; border-radius: 20px; padding: 30px 30px 70px 30px; position: relative; }
-                .order-logo { display: block; margin: -70px auto 20px auto; width: 200px; height: auto; }
-                .order-date { position: absolute; top: 110px; left: 20px; background: #000; border-radius: 10px; padding: 8px; color: #fff; text-align: center; width: 180px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+                .order-logo { display: block; margin: -15px auto 20px auto; width: 170px; height: auto; }
+                .order-date { position: absolute; top: 105px; left: 20px; background: #000; border-radius: 10px; padding: 8px; color: #fff; text-align: center; width: 180px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
                 .fec-label { font-weight: 900; font-size: 12px; margin-bottom: 4px; text-transform: uppercase; }
                 .date-boxes { display: flex; justify-content: space-between; gap: 6px; }
                 .date-box { background: #fff; color: #000; border-radius: 6px; padding: 8px 0; width: 52px; font-weight: 900; font-size: 14px; }
-                .header-right { position: absolute; top: 110px; right: 30px; text-align: right; width: 55%; }
+                .header-right { position: absolute; top: 105px; right: 30px; text-align: right; width: 55%; }
                 .page-label { font-weight: 900; font-size: 11px; opacity: 0.85; line-height: 1; margin: 0 0 2px 0; text-align: right; }
                 .receipt-title-print { font-weight: 900; text-transform: uppercase; text-align: right; font-size: 16px; line-height: 1.1; margin: 0; }
                 .recibo-number-print { color: #d32f2f; font-weight: 900; font-size: 24px; line-height: 1; margin-top: 2px; text-align: right; }
                 .cliente-print { font-weight: 900; font-size: 12px; margin-top: 6px; text-align: right; }
-                .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; font-size: 12px; font-weight: 700; margin: 0 0 15px 0; padding-top: 35px; }
+                .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; font-size: 12px; font-weight: 700; margin: 0 0 20px 0; padding-top: 115px; }
                 .meta .label { opacity: 0.7; }
                 .prenda-info { margin-bottom: 15px; }
                 .prenda-name { font-weight: 900; font-size: 16px; text-transform: uppercase; }
@@ -2017,14 +2017,14 @@ window.openOrderDetailModalWithProcess = async function(
             console.warn('[printReceiptModal] Error en impresión nueva, usando fallback window.print():', e);
             window.print();
         }
-     };
- }
+    };
+}
 
 /**
  * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)
  * Usa la pipeline de renderizado completa, inyectando tallas del parcial
  */
-window.openOrderDetailModalWithParcial = async function(parcialId, prendaId, tipoString, pedidoIdOverride = null, nombreAnexoOverride = null) {
+window.openOrderDetailModalWithParcial = async function (parcialId, prendaId, tipoString, pedidoIdOverride = null, nombreAnexoOverride = null) {
     const pedidoId = pedidoIdOverride || window.selectorRecibosState?.pedidoId;
     const nombreAnexo = nombreAnexoOverride || window.selectorRecibosState?.nombreProcesoAnexo || tipoString;
 
@@ -2042,7 +2042,7 @@ window.openOrderDetailModalWithParcial = async function(parcialId, prendaId, tip
 /**
  * FUNCIÓN GLOBAL para cerrar recibos
  */
-window.cerrarModalRecibos = function() {
+window.cerrarModalRecibos = function () {
     window.pedidosRecibosModule.cerrarRecibo();
 };
 
@@ -2051,7 +2051,7 @@ window.cerrarModalRecibos = function() {
  * Disponible en todas las vistas que usen PedidosRecibosModule
  */
 if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
-    window.abrirModalImagenProcesoGrande = function(indice, fotos) {
+    window.abrirModalImagenProcesoGrande = function (indice, fotos) {
         GalleryManager.abrirModalImagenProcesoGrande(indice, fotos);
     };
 }
@@ -2061,7 +2061,7 @@ if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
 // Guarda la versión anterior como fallback para cuando NO hay estado activo de recibo
 const _originalToggleFactura = window.toggleFactura;
 
-window.toggleFactura = function() {
+window.toggleFactura = function () {
     console.log('[toggleFactura-PRM] ====== INICIO TOGGLE FACTURA ======');
     console.log('[toggleFactura-PRM] window.pedidosRecibosModule existe?', !!window.pedidosRecibosModule);
 
@@ -2091,10 +2091,10 @@ window.toggleFactura = function() {
     console.log('[toggleFactura-PRM] Galería encontrada?', !!galeria);
     const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
     console.log('[toggleFactura-PRM] ¿Está en galería?', estaEnGaleria);
-    
+
     const btnFactura = document.getElementById('btn-factura');
     const btnGaleria = document.getElementById('btn-galeria');
-    
+
     if (estaEnGaleria) {
         // Estamos en galería → cerrar galería y mostrar recibo
         console.log('[toggleFactura-PRM] Cerrando galería, mostrando recibo');
@@ -2149,22 +2149,22 @@ window.toggleFactura = function() {
 const originalToggleGaleria = window.toggleGaleria;
 window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para evitar recursión
 
-window.toggleGaleria = async function() {
+window.toggleGaleria = async function () {
     // Evitar recursión infinita
     if (window.toggleGaleria._calling) {
         console.warn('[toggleGaleria]  Evitando recursión infinita');
         return;
     }
-    
+
     window.toggleGaleria._calling = true;
-    
+
     try {
         // Si hay estado de recibos dinámicos, usar la nueva galería
         const estado = window.pedidosRecibosModule.getEstado();
         if (estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId)) {
             return window.pedidosRecibosModule.abrirGaleria();
         }
-        
+
         // Si no, usar la galería original
         if (originalToggleGaleria) {
             return originalToggleGaleria.call(this);
