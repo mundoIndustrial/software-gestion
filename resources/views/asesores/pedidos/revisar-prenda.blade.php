@@ -453,6 +453,8 @@
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 
 <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+<!-- ✅ NUEVO: IndexedImageStorageService para prevenir desincronización de imágenes entre prendas -->
+<script src="{{ asset('js/modulos/crear-pedido/fotos/indexed-image-storage-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/proceso-modal-state.js') }}"></script>

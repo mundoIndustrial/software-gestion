@@ -9,6 +9,9 @@
         if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
             return await convertirBlobUrlAArchivoAsync(imagen);
         }
+        if (typeof imagen === 'string' && imagen.startsWith('data:image/')) {
+            return convertirDataUrlAArchivoAsync(imagen);
+        }
         if (typeof imagen === 'object') {
             const blobUrl =
                 (typeof imagen.blobUrl === 'string' && imagen.blobUrl.startsWith('blob:') && imagen.blobUrl) ||
@@ -20,6 +23,17 @@
                 null;
             if (blobUrl) {
                 return await convertirBlobUrlAArchivoAsync(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+            }
+
+            const dataUrl =
+                (typeof imagen.previewUrl === 'string' && imagen.previewUrl.startsWith('data:image/') && imagen.previewUrl) ||
+                (typeof imagen.url === 'string' && imagen.url.startsWith('data:image/') && imagen.url) ||
+                (typeof imagen.ruta === 'string' && imagen.ruta.startsWith('data:image/') && imagen.ruta) ||
+                (typeof imagen.ruta_original === 'string' && imagen.ruta_original.startsWith('data:image/') && imagen.ruta_original) ||
+                (typeof imagen.imagen_ruta === 'string' && imagen.imagen_ruta.startsWith('data:image/') && imagen.imagen_ruta) ||
+                null;
+            if (dataUrl) {
+                return convertirDataUrlAArchivoAsync(dataUrl, imagen.nombre || imagen.imagen_nombre || null);
             }
         }
         return null;
@@ -44,6 +58,41 @@
             return new File([blob], nombreArchivo, { type: blob.type || 'image/jpeg' });
         } catch (error) {
             console.warn('[DraftPedidoBuilder] No se pudo convertir blob URL a File:', error);
+            return null;
+        }
+    }
+
+    function convertirDataUrlAArchivoAsync(dataUrl, nombreSugerido = null) {
+        if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return null;
+
+        try {
+            const partes = dataUrl.split(',');
+            if (partes.length < 2) return null;
+
+            const metadata = partes[0];
+            const contenido = partes.slice(1).join(',');
+            const mimeMatch = metadata.match(/^data:(image\/[^;]+);base64$/i);
+            if (!mimeMatch?.[1]) return null;
+
+            const mimeType = mimeMatch[1].toLowerCase();
+            const extension = mimeType === 'image/png'
+                ? 'png'
+                : mimeType === 'image/webp'
+                    ? 'webp'
+                    : mimeType === 'image/gif'
+                        ? 'gif'
+                        : 'jpg';
+            const nombreArchivo = nombreSugerido || `color_wizard_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${extension}`;
+
+            const binario = atob(contenido);
+            const bytes = new Uint8Array(binario.length);
+            for (let i = 0; i < binario.length; i++) {
+                bytes[i] = binario.charCodeAt(i);
+            }
+
+            return new File([bytes], nombreArchivo, { type: mimeType });
+        } catch (error) {
+            console.warn('[DraftPedidoBuilder] No se pudo convertir data URL a File:', error);
             return null;
         }
     }
@@ -84,6 +133,63 @@
             }
         });
         return mapa;
+    }
+
+    function normalizarUrlImagenEpp(imagen) {
+        if (!imagen) return '';
+        if (typeof imagen === 'string') return imagen.trim();
+        return String(
+            imagen.url ||
+            imagen.previewUrl ||
+            imagen.preview ||
+            imagen.ruta_web ||
+            imagen.ruta_webp ||
+            imagen.ruta_original ||
+            imagen.ruta ||
+            ''
+        ).trim();
+    }
+
+    function obtenerClaveImagenEpp(imagen) {
+        if (!imagen) return null;
+
+        const id = Number(imagen.id || imagen.imagen_id || 0);
+        if (Number.isInteger(id) && id > 0) {
+            return `id:${id}`;
+        }
+
+        const url = normalizarUrlImagenEpp(imagen);
+        return url ? `url:${url}` : null;
+    }
+
+    function eppTieneImagenesEditadas(epp, imagenesExistentesActuales, tieneArchivosNuevos) {
+        if (tieneArchivosNuevos) {
+            return true;
+        }
+
+        const originales = Array.isArray(epp?._imagenes_originales) ? epp._imagenes_originales : [];
+        const clavesOriginales = new Set(
+            originales
+                .map((img) => obtenerClaveImagenEpp(img))
+                .filter(Boolean)
+        );
+        const clavesActuales = new Set(
+            (imagenesExistentesActuales || [])
+                .map((url) => (typeof url === 'string' && url.trim() ? `url:${url.trim()}` : null))
+                .filter(Boolean)
+        );
+
+        if (clavesOriginales.size !== clavesActuales.size) {
+            return true;
+        }
+
+        for (const clave of clavesOriginales) {
+            if (!clavesActuales.has(clave)) {
+                return true;
+            }
+        }
+
+        return epp?.imagenes_editadas === true;
     }
 
     async function adjuntarImagenesWizardATelasAsync(formData, p, nuevaPrendaIdx, telasArr, contadoresPorTela) {
@@ -167,7 +273,7 @@
             // Si hay archivos nuevos, indicar modo "upload"
             if (tieneArchivosNuevos) {
                 eppPayload.modo_imagenes = 'upload';
-            } else if (e.imagenes_editadas === true) {
+            } else if (eppTieneImagenesEditadas(e, imagenesExistentes, tieneArchivosNuevos)) {
                 // Señal explícita: el usuario editó imágenes (incluye caso de dejar en 0).
                 eppPayload.modo_imagenes = 'reuse';
             }
@@ -272,7 +378,33 @@
                 return;
             }
 
-            const imagenesArr = Array.isArray(p.imagenes) ? p.imagenes : [];
+            // Para nuevas prendas, obtener imágenes del IndexedImageStorageService
+            let imagenesArr = [];
+            if (typeof window.imagenesPrendaStorage !== 'undefined' && window.imagenesPrendaStorage.obtenerImagenesDe) {
+                // Intentar obtener imágenes usando varios identificadores posibles
+                // 1. _local_id (usado para nuevas prendas)
+                // 2. prenda_pedido_id (usado para prendas existentes)
+                // 3. prendaIdx (índice en el array)
+                let prendaId = null;
+                if (p._local_id) {
+                    prendaId = p._local_id;
+                } else if (p.prenda_pedido_id && Number.isInteger(p.prenda_pedido_id)) {
+                    prendaId = p.prenda_pedido_id;
+                } else {
+                    prendaId = prendaIdx;
+                }
+
+                const imagenesFromStorage = window.imagenesPrendaStorage.obtenerImagenesDe(prendaId);
+                imagenesArr = imagenesFromStorage && Array.isArray(imagenesFromStorage) ? imagenesFromStorage : [];
+
+                if (imagenesArr.length > 0) {
+                    console.log('[draft-pedido-builder] Imágenes obtenidas del storage para prenda:', prendaId, 'Total:', imagenesArr.length);
+                }
+            }
+            // Fallback a p.imagenes si no hay almacenamiento disponible
+            if (imagenesArr.length === 0 && Array.isArray(p.imagenes)) {
+                imagenesArr = p.imagenes;
+            }
             let imgFileIdx = 0;
             imagenesArr.forEach((img) => {
                 const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : null);

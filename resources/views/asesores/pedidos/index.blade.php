@@ -1812,6 +1812,8 @@
 
 <!-- Servicio de imágenes - Para edición de prendas -->
 <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+<!-- ✅ NUEVO: IndexedImageStorageService para prevenir desincronización de imágenes entre prendas -->
+<script src="{{ asset('js/modulos/crear-pedido/fotos/indexed-image-storage-service.js') }}"></script>
 
 <!-- Inicializador de servicios de imágenes - Para edición de prendas -->
 <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>

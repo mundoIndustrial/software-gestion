@@ -180,7 +180,10 @@ class PrendaEditorProcesos {
             this._registrarImagenesDebug(tipo, datos.imagenes);
             datos.imagenes = this._normalizarImagenes(datos.imagenes);
         }
-        
+        datos._imagenes_originales = Array.isArray(datos.imagenes)
+            ? datos.imagenes.map((img) => (img && typeof img === 'object' ? { ...img } : img))
+            : [];
+
         console.log(`[_normalizarDatosProceso]  RESULTADO para "${tipo}":`, {
             'ubicaciones': datos.ubicaciones?.length || 0,
             'tallas': Object.keys(datos.tallas || {}),

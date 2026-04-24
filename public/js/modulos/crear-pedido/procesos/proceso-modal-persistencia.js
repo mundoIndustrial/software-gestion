@@ -287,6 +287,9 @@ function _procesoGenerico_persistirDatosProceso(datos, ubicacionesClonadas) {
         const procesoExistente = globalThis.procesosSeleccionados[procesoModalState.procesoActual];
         const idExistente = procesoExistente?.datos?.id;
         const tipoProcesoId = procesoExistente?.datos?.tipo_proceso_id;
+        const imagenesOriginales = Array.isArray(procesoExistente?.datos?._imagenes_originales)
+            ? procesoExistente.datos._imagenes_originales.map((img) => (img && typeof img === 'object' ? { ...img } : img))
+            : [];
 
         if (idExistente) {
             datos.id = idExistente;
@@ -294,6 +297,7 @@ function _procesoGenerico_persistirDatosProceso(datos, ubicacionesClonadas) {
         if (tipoProcesoId) {
             datos.tipo_proceso_id = tipoProcesoId;
         }
+        datos._imagenes_originales = imagenesOriginales;
 
         globalThis.procesosSeleccionados[procesoModalState.procesoActual] = {
             tipo: procesoModalState.procesoActual,

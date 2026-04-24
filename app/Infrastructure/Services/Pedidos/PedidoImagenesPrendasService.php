@@ -7,6 +7,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PedidosProcessImagenes;
 use App\Models\PrendaFotoPedido;
 use App\Models\PrendaFotoTelaPedido;
+use App\Models\PrendaPedidoTallaColor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -112,6 +113,7 @@ class PedidoImagenesPrendasService
 
             $telaRelaciones = $prenda->coloresTelas()->get();
             $telas = $items[$i]['telas'] ?? [];
+            $asignacionesColoresPorTalla = $items[$i]['asignacionesColoresPorTalla'] ?? [];
             foreach ($telas as $telaIdx => $tela) {
                 if (!isset($telaRelaciones[$telaIdx])) {
                     continue;
@@ -132,6 +134,15 @@ class PedidoImagenesPrendasService
                         'ruta_original' => null,
                         'ruta_webp' => $resultado['webp'],
                     ]);
+
+                    $this->sincronizarRutaTelaEnAsignacionesNuevaPrenda(
+                        $prenda,
+                        $asignacionesColoresPorTalla,
+                        $tela,
+                        $imgIdx,
+                        $resultado['webp'] ?? null
+                    );
+
                     Log::debug('[PedidoImagenesService] Nueva prenda tela imagen guardada', ['tela_id' => $telaRelacion->id]);
                     $imgIdx++;
                 }
@@ -410,5 +421,139 @@ class PedidoImagenesPrendasService
         });
 
         return $proceso?->id;
+    }
+
+    private function sincronizarRutaTelaEnAsignacionesNuevaPrenda($prenda, array $asignacionesColores, array $telaPayload, int $imgIdx, mixed $rutaWebp): void
+    {
+        $rutaNormalizada = $this->normalizarRutaStorage($rutaWebp);
+        if (!$rutaNormalizada || empty($asignacionesColores)) {
+            return;
+        }
+
+        $telaObjetivo = $this->normalizarTexto(
+            $telaPayload['tela'] ?? $telaPayload['nombre_tela'] ?? $telaPayload['nombre'] ?? ''
+        );
+
+        if ($telaObjetivo === '') {
+            return;
+        }
+
+        $coloresOrdenados = $this->obtenerColoresOrdenadosPorTela($asignacionesColores, $telaObjetivo);
+        $objetivo = $coloresOrdenados[$imgIdx] ?? null;
+
+        if (!$objetivo) {
+            Log::warning('[PedidoImagenesService] No se encontro color asignado para sincronizar imagen de nueva prenda', [
+                'prenda_id' => $prenda->id,
+                'tela' => $telaObjetivo,
+                'img_idx' => $imgIdx,
+                'colores_disponibles' => count($coloresOrdenados),
+            ]);
+            return;
+        }
+
+        $actualizados = PrendaPedidoTallaColor::query()
+            ->where('tela_nombre', $objetivo['tela_nombre'])
+            ->where('color_nombre', $objetivo['color_nombre'])
+            ->whereHas('prendaPedidoTalla', function ($query) use ($prenda, $objetivo) {
+                $query->where('prenda_pedido_id', $prenda->id)
+                    ->where('genero', $objetivo['genero'])
+                    ->where('talla', $objetivo['talla']);
+            })
+            ->update([
+                'imagen_ruta' => $rutaNormalizada,
+                'updated_at' => now(),
+            ]);
+
+        Log::debug('[PedidoImagenesService] Ruta de tela sincronizada en asignacion color+talla de nueva prenda', [
+            'prenda_id' => $prenda->id,
+            'tela' => $objetivo['tela_nombre'],
+            'color' => $objetivo['color_nombre'],
+            'talla' => $objetivo['talla'],
+            'genero' => $objetivo['genero'],
+            'img_idx' => $imgIdx,
+            'ruta' => $rutaNormalizada,
+            'actualizados' => $actualizados,
+        ]);
+    }
+
+    private function obtenerColoresOrdenadosPorTela(array $asignacionesColores, string $telaObjetivo): array
+    {
+        $resultado = [];
+
+        foreach ($asignacionesColores as $asignacion) {
+            if (!is_array($asignacion)) {
+                continue;
+            }
+
+            $telaAsignacion = $this->normalizarTexto($asignacion['tela'] ?? $asignacion['tela_nombre'] ?? '');
+            if ($telaAsignacion !== $telaObjetivo) {
+                continue;
+            }
+
+            $colores = $asignacion['colores'] ?? [];
+            if (!is_array($colores)) {
+                continue;
+            }
+
+            foreach ($colores as $colorItem) {
+                if (!is_array($colorItem) || empty($colorItem['nombre'])) {
+                    continue;
+                }
+
+                $resultado[] = [
+                    'genero' => strtoupper((string) ($asignacion['genero'] ?? '')),
+                    'talla' => (string) ($asignacion['talla'] ?? ''),
+                    'tela_nombre' => (string) ($asignacion['tela'] ?? $asignacion['tela_nombre'] ?? ''),
+                    'color_nombre' => (string) ($colorItem['nombre'] ?? $colorItem['color_nombre'] ?? ''),
+                ];
+            }
+        }
+
+        return $resultado;
+    }
+
+    private function normalizarRutaStorage(mixed $ruta): ?string
+    {
+        if (!is_string($ruta)) {
+            return null;
+        }
+
+        $ruta = trim(str_replace('\\', '/', $ruta));
+        if ($ruta === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://[^/]+/storage/(.+)$#i', $ruta, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($ruta, '/storage/')) {
+            return substr($ruta, 9);
+        }
+
+        if (str_starts_with($ruta, 'storage/')) {
+            return substr($ruta, 8);
+        }
+
+        return ltrim($ruta, '/');
+    }
+
+    private function normalizarTexto(mixed $valor): string
+    {
+        if (!is_string($valor)) {
+            return '';
+        }
+
+        $valor = trim($valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        $sinAcentos = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $valor);
+        if ($sinAcentos === false) {
+            $sinAcentos = $valor;
+        }
+
+        return strtoupper($sinAcentos);
     }
 }

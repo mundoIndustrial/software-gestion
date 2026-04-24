@@ -374,6 +374,8 @@
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/config-pedido-editable.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
+    <!-- ✅ NUEVO: IndexedImageStorageService para prevenir desincronización de imágenes entre prendas -->
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/indexed-image-storage-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Wrappers para preview y funciones de prenda (carga PRIMERO para el placeholder) -->

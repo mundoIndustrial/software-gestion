@@ -29,33 +29,35 @@
         }
         
         
-        // Esperar a que ImageStorageService esté disponible (puede venir del lazy loader)
+        // Esperar a que ImageStorageService e IndexedImageStorageService estén disponibles (puede venir del lazy loader)
         function verificarServicio() {
-            if (typeof ImageStorageService !== 'undefined') {
+            if (typeof ImageStorageService !== 'undefined' && typeof IndexedImageStorageService !== 'undefined') {
                 // Limpiar timeout si existe
                 if (timeoutServicio) {
                     clearTimeout(timeoutServicio);
                     timeoutServicio = null;
                 }
-                
-                window.imagenesPrendaStorage = new ImageStorageService(6);
+
+                // ✅ CRÍTICO: Usar IndexedImageStorageService para prendas (previene desincronización)
+                window.imagenesPrendaStorage = new IndexedImageStorageService(6);
                 window.imagenesTelaStorage = new ImageStorageService(3);
                 window.imagenesReflectivoStorage = new ImageStorageService(3);
                 inicializado = true;
                 esperandoServicio = false;
+                console.log(' [INIT-STORAGE] ✓ imagenesPrendaStorage inicializado como IndexedImageStorageService');
             } else {
                 esperandoServicio = true;
-                console.log(' [INIT-STORAGE] Esperando a ImageStorageService...');
-                
+                console.log(' [INIT-STORAGE] Esperando a ImageStorageService e IndexedImageStorageService...');
+
                 // Timeout para evitar bucles infinitos (máximo 5 segundos)
                 timeoutServicio = setTimeout(() => {
                     if (esperandoServicio) {
-                        console.warn(' [INIT-STORAGE] Timeout esperando ImageStorageService, deteniendo espera');
+                        console.warn(' [INIT-STORAGE] Timeout esperando servicios, deteniendo espera');
                         esperandoServicio = false;
                         timeoutServicio = null;
                     }
                 }, 5000);
-                
+
                 // Reintentar en 100ms
                 setTimeout(verificarServicio, 100);
             }

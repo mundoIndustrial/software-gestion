@@ -238,6 +238,8 @@
 <!-- Scripts para gestión de ítems en modal (necesarios para edición modal de prendas) -->
 <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+<!-- ✅ NUEVO: IndexedImageStorageService para prevenir desincronización de imágenes entre prendas -->
+<script src="{{ asset('js/modulos/crear-pedido/fotos/indexed-image-storage-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>
 <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>

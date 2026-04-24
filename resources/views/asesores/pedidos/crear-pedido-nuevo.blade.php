@@ -225,6 +225,8 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/services/epp/EppHttpService.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ $v }}"></script>
+    <!-- ✅ NUEVO: IndexedImageStorageService para prevenir desincronización de imágenes entre prendas -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/indexed-image-storage-service.js') }}?v={{ $v }}"></script>
 
     <!-- ─── Inicialización de Image Storage (Fase 3) ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/image-storage-init.js') }}?v={{ $v }}"></script>

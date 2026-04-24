@@ -248,8 +248,21 @@ function cargarPrendas(prendas) {
             }
 
             const coloresTelas = Array.isArray(prenda.colores_telas) ? prenda.colores_telas : [];
+            const fotosTelasOriginales = [];
             const telasAgregadasDesdeFuenteOficial = coloresTelas.map((ct) => {
                 const fotosTela = Array.isArray(ct.fotos) ? ct.fotos : (Array.isArray(ct.fotos_tela) ? ct.fotos_tela : []);
+                fotosTela.forEach((f) => {
+                    fotosTelasOriginales.push({
+                        id: f?.id || null,
+                        prenda_pedido_colores_telas_id: ct?.id || null,
+                        color_id: ct?.color_id || null,
+                        tela_id: ct?.tela_id || null,
+                        color_nombre: ct?.color_nombre || ct?.color || '',
+                        tela_nombre: ct?.tela_nombre || ct?.tela || '',
+                        ruta_original: f?.ruta_original || f?.url || '',
+                        ruta_webp: f?.ruta_webp || f?.url || ''
+                    });
+                });
                 const imagenes = fotosTela.map((f) => ({
                     ruta: f?.url || f?.ruta_original || f?.ruta_webp || '',
                     ruta_original: f?.ruta_original || f?.url || '',
@@ -291,6 +304,10 @@ function cargarPrendas(prendas) {
             }
 
             
+            const imagenesOriginales = Array.isArray(prenda.imagenes)
+                ? prenda.imagenes
+                : (Array.isArray(prenda.fotos) ? prenda.fotos : []);
+
             // Agregar la prenda al gestor con datos correctos
             const datosPrenda = {
                 id: prenda.id || null,
@@ -314,6 +331,12 @@ function cargarPrendas(prendas) {
                 fotos: prenda.fotos || [],
                 telaFotos: prenda.telaFotos || [],
                 imagenes: prenda.imagenes || prenda.fotos || [],
+                _imagenes_originales: imagenesOriginales.map((img) => (
+                    img && typeof img === 'object'
+                        ? { ...img }
+                        : img
+                )),
+                _fotos_telas_originales: fotosTelasOriginales.map((foto) => ({ ...foto })),
                 origen: prenda.origen || (prenda.de_bodega == 1 ? 'bodega' : 'confeccion'),
                 de_bodega: prenda.de_bodega != null ? (prenda.de_bodega == 1 ? 1 : 0) : 1,
                 procesos: procesos,
@@ -537,7 +560,15 @@ function cargarEPPs(epps) {
         if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
             epps.forEach((epp) => {
                 try {
-                    window.gestionItemsUI.agregarEPPAlOrden(epp);
+                    const imagenesOriginales = Array.isArray(epp?.imagenes) ? epp.imagenes : [];
+                    window.gestionItemsUI.agregarEPPAlOrden({
+                        ...epp,
+                        _imagenes_originales: imagenesOriginales.map((img) => (
+                            img && typeof img === 'object'
+                                ? { ...img }
+                                : img
+                        ))
+                    });
 
                 } catch (error) {
 
@@ -660,7 +691,4 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
-
-
-
 

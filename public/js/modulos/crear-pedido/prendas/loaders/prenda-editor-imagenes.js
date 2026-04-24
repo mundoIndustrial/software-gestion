@@ -11,28 +11,37 @@ class PrendaEditorImagenes {
 
     /**
      * Cargar imágenes en modal
+     * ✅ CRÍTICO: Establecer contexto de prenda activa para IndexedImageStorageService
      */
-    static cargar(prenda) {
+    static cargar(prenda, prendaIndex = null) {
         console.log(' [Imagenes] Cargando:', {
             cantidad: prenda.imagenes?.length || 0,
             tipo: typeof prenda.imagenes,
-            estructura_primera: prenda.imagenes?.[0] ? Object.keys(prenda.imagenes[0]) : 'N/A'
+            estructura_primera: prenda.imagenes?.[0] ? Object.keys(prenda.imagenes[0]) : 'N/A',
+            prendaIndex
         });
-        
+
+        // ✅ NUEVO: Si imagenesPrendaStorage es IndexedImageStorageService, establecer prenda activa
+        if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
+            const prendaId = prendaIndex ?? prenda.prenda_pedido_id ?? prenda.id ?? prenda._local_id ?? 'default';
+            globalThis.imagenesPrendaStorage.setPrendaActual(prendaId);
+            console.log(' [PrendaEditorImagenes] Contexto de prenda establecido:', prendaId);
+        }
+
         const { preview, contador, btn } = this._obtenerElementosDom();
         if (!preview) return;
-        
+
         preview.innerHTML = '';
-        
+
         // Validar si hay imágenes válidas
         const imagenesValidas = this._obtenerImagenesValidas(prenda);
-        
+
         if (imagenesValidas.length > 0) {
             this._cargarConImagenes({ imagenes: imagenesValidas }, preview, contador, btn);
         } else {
             this._cargarSinImagenes(preview, contador, btn);
         }
-        
+
         console.log(' [Imagenes] Completado');
     }
     

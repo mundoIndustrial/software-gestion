@@ -53,6 +53,245 @@
         );
     }
 
+    function clonarMetadatosImagenes(imagenes = []) {
+        if (!Array.isArray(imagenes)) {
+            return [];
+        }
+
+        return imagenes.map((img) => {
+            if (!img || typeof img !== 'object') {
+                return img;
+            }
+
+            return { ...img };
+        });
+    }
+
+    function obtenerClaveImagen(img) {
+        if (!img) {
+            return null;
+        }
+
+        const id = Number(img.id || img.imagen_id || 0);
+        if (Number.isInteger(id) && id > 0) {
+            return `id:${id}`;
+        }
+
+        const ruta = [
+            img.ruta_original,
+            img.ruta_webp,
+            img.url,
+            img.ruta,
+            img.previewUrl
+        ].find((valor) => typeof valor === 'string' && valor.trim() !== '');
+
+        if (ruta) {
+            return `ruta:${ruta.trim()}`;
+        }
+
+        return null;
+    }
+
+    function normalizarImagenParaEliminar(img) {
+        if (!img) {
+            return null;
+        }
+
+        if (typeof img === 'number' || (typeof img === 'string' && /^\d+$/.test(img.trim()))) {
+            const id = Number(img);
+            return Number.isInteger(id) && id > 0 ? { id } : null;
+        }
+
+        if (typeof img === 'string') {
+            const ruta = img.trim();
+            return ruta ? { ruta_original: ruta, url: ruta } : null;
+        }
+
+        if (typeof img !== 'object') {
+            return null;
+        }
+
+        const normalizada = {};
+        const id = Number(img.id || img.imagen_id || 0);
+        if (Number.isInteger(id) && id > 0) {
+            normalizada.id = id;
+        }
+
+        const rutaOriginal = typeof img.ruta_original === 'string' ? img.ruta_original.trim() : '';
+        const rutaWebp = typeof img.ruta_webp === 'string' ? img.ruta_webp.trim() : '';
+        const url = typeof img.url === 'string' ? img.url.trim() : '';
+        const previewUrl = typeof img.previewUrl === 'string' ? img.previewUrl.trim() : '';
+
+        if (rutaOriginal) normalizada.ruta_original = rutaOriginal;
+        if (rutaWebp) normalizada.ruta_webp = rutaWebp;
+        if (url) normalizada.url = url;
+        if (!normalizada.ruta_original && previewUrl && !previewUrl.startsWith('blob:')) {
+            normalizada.ruta_original = previewUrl;
+        }
+
+        return Object.keys(normalizada).length > 0 ? normalizada : null;
+    }
+
+    function resolverImagenesAEliminarPrenda(prenda) {
+        const imagenesOriginales = Array.isArray(prenda?._imagenes_originales)
+            ? prenda._imagenes_originales
+            : [];
+        const imagenesActuales = Array.isArray(prenda?.imagenes)
+            ? prenda.imagenes
+            : [];
+        const imagenesMarcadas = Array.isArray(prenda?.imagenes_a_eliminar)
+            ? prenda.imagenes_a_eliminar
+            : [];
+
+        const clavesActuales = new Set(
+            imagenesActuales
+                .map((img) => obtenerClaveImagen(img))
+                .filter(Boolean)
+        );
+
+        const detectadasPorDiferencia = imagenesOriginales
+            .filter((img) => {
+                const clave = obtenerClaveImagen(img);
+                return clave && !clavesActuales.has(clave);
+            })
+            .map((img) => normalizarImagenParaEliminar(img))
+            .filter(Boolean);
+
+        const combinadas = [...imagenesMarcadas, ...detectadasPorDiferencia]
+            .map((img) => normalizarImagenParaEliminar(img))
+            .filter(Boolean);
+
+        const imagenesAEliminar = [];
+        const clavesEliminacion = new Set();
+        combinadas.forEach((img) => {
+            const clave = obtenerClaveImagen(img);
+            if (!clave || clavesEliminacion.has(clave)) {
+                return;
+            }
+
+            clavesEliminacion.add(clave);
+            imagenesAEliminar.push(img);
+        });
+
+        return {
+            imagenesOriginales,
+            imagenesActuales,
+            imagenesAEliminar
+        };
+    }
+
+    function obtenerClaveRelacionFotoTela(foto) {
+        if (!foto || typeof foto !== 'object') {
+            return null;
+        }
+
+        const colorTelaId = Number(foto.prenda_pedido_colores_telas_id || foto.color_tela_id || 0);
+        if (Number.isInteger(colorTelaId) && colorTelaId > 0) {
+            return `color-tela:${colorTelaId}`;
+        }
+
+        const colorId = Number(foto.color_id || 0);
+        const telaId = Number(foto.tela_id || 0);
+        if (Number.isInteger(colorId) && colorId > 0 && Number.isInteger(telaId) && telaId > 0) {
+            return `color:${colorId}|tela:${telaId}`;
+        }
+
+        return null;
+    }
+
+    function construirPlaceholderEliminacionFotoTela(fotoOriginal) {
+        const claveRelacion = obtenerClaveRelacionFotoTela(fotoOriginal);
+        if (!claveRelacion) {
+            return null;
+        }
+
+        return {
+            prenda_pedido_colores_telas_id: fotoOriginal?.prenda_pedido_colores_telas_id || fotoOriginal?.color_tela_id || null,
+            color_id: fotoOriginal?.color_id || null,
+            tela_id: fotoOriginal?.tela_id || null,
+            color_nombre: fotoOriginal?.color_nombre || fotoOriginal?.color || '',
+            tela_nombre: fotoOriginal?.tela_nombre || fotoOriginal?.tela || ''
+        };
+    }
+
+    function resolverFotosTelasParaGuardar(prenda, fotosTelaActuales) {
+        const fotosTelasOriginales = Array.isArray(prenda?._fotos_telas_originales)
+            ? prenda._fotos_telas_originales
+            : [];
+        const fotosTelaConRuta = Array.isArray(fotosTelaActuales)
+            ? fotosTelaActuales.filter((foto) => !!(foto?.id || foto?.ruta_original || foto?.ruta_webp))
+            : [];
+
+        const relacionesActuales = new Set(
+            fotosTelaConRuta
+                .map((foto) => obtenerClaveRelacionFotoTela(foto))
+                .filter(Boolean)
+        );
+
+        const placeholdersEliminacion = [];
+        const relacionesMarcadas = new Set();
+        fotosTelasOriginales.forEach((fotoOriginal) => {
+            const claveRelacion = obtenerClaveRelacionFotoTela(fotoOriginal);
+            if (!claveRelacion || relacionesActuales.has(claveRelacion) || relacionesMarcadas.has(claveRelacion)) {
+                return;
+            }
+
+            const placeholder = construirPlaceholderEliminacionFotoTela(fotoOriginal);
+            if (!placeholder) {
+                return;
+            }
+
+            relacionesMarcadas.add(claveRelacion);
+            placeholdersEliminacion.push(placeholder);
+        });
+
+        return {
+            fotosTelasFinales: [...(Array.isArray(fotosTelaActuales) ? fotosTelaActuales : []), ...placeholdersEliminacion],
+            placeholdersEliminacion,
+            fotosTelasOriginales
+        };
+    }
+
+    function resolverImagenesAEliminarProceso(datosProceso, imagenesExistentesProceso, imagenesMarcadasProceso) {
+        const imagenesOriginales = Array.isArray(datosProceso?._imagenes_originales)
+            ? datosProceso._imagenes_originales
+            : [];
+        const clavesActuales = new Set(
+            (Array.isArray(imagenesExistentesProceso) ? imagenesExistentesProceso : [])
+                .map((img) => obtenerClaveImagen(img))
+                .filter(Boolean)
+        );
+
+        const detectadasPorDiferencia = imagenesOriginales
+            .filter((img) => {
+                const clave = obtenerClaveImagen(img);
+                return clave && !clavesActuales.has(clave);
+            })
+            .map((img) => normalizarImagenParaEliminar(img))
+            .filter(Boolean);
+
+        const combinadas = [...(Array.isArray(imagenesMarcadasProceso) ? imagenesMarcadasProceso : []), ...detectadasPorDiferencia]
+            .map((img) => normalizarImagenParaEliminar(img))
+            .filter(Boolean);
+
+        const imagenesAEliminar = [];
+        const clavesEliminacion = new Set();
+        combinadas.forEach((img) => {
+            const clave = obtenerClaveImagen(img);
+            if (!clave || clavesEliminacion.has(clave)) {
+                return;
+            }
+
+            clavesEliminacion.add(clave);
+            imagenesAEliminar.push(img);
+        });
+
+        return {
+            imagenesOriginales,
+            imagenesAEliminar
+        };
+    }
+
     function sincronizarPrendaModalAntesDeGuardarBorrador() {
         const modalPrenda = document.getElementById('modal-agregar-prenda-nueva');
         const modalWizardColores = document.getElementById('modal-asignar-colores-por-talla');
@@ -200,6 +439,9 @@
             if (typeof imagen === 'string' && imagen.startsWith('blob:')) {
                 return await convertirBlobUrlAArchivo(imagen);
             }
+            if (typeof imagen === 'string' && imagen.startsWith('data:image/')) {
+                return convertirDataUrlAArchivo(imagen);
+            }
             if (typeof imagen === 'object') {
                 const blobUrl =
                     (typeof imagen.blobUrl === 'string' && imagen.blobUrl.startsWith('blob:') && imagen.blobUrl) ||
@@ -212,6 +454,18 @@
 
                 if (blobUrl) {
                     return await convertirBlobUrlAArchivo(blobUrl, imagen.nombre || imagen.imagen_nombre || null);
+                }
+
+                const dataUrl =
+                    (typeof imagen.previewUrl === 'string' && imagen.previewUrl.startsWith('data:image/') && imagen.previewUrl) ||
+                    (typeof imagen.url === 'string' && imagen.url.startsWith('data:image/') && imagen.url) ||
+                    (typeof imagen.ruta === 'string' && imagen.ruta.startsWith('data:image/') && imagen.ruta) ||
+                    (typeof imagen.ruta_original === 'string' && imagen.ruta_original.startsWith('data:image/') && imagen.ruta_original) ||
+                    (typeof imagen.imagen_ruta === 'string' && imagen.imagen_ruta.startsWith('data:image/') && imagen.imagen_ruta) ||
+                    null;
+
+                if (dataUrl) {
+                    return convertirDataUrlAArchivo(dataUrl, imagen.nombre || imagen.imagen_nombre || null);
                 }
             }
             return null;
@@ -240,6 +494,41 @@
             }
         };
 
+        const convertirDataUrlAArchivo = (dataUrl, nombreSugerido = null) => {
+            if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return null;
+
+            try {
+                const partes = dataUrl.split(',');
+                if (partes.length < 2) return null;
+
+                const metadata = partes[0];
+                const contenido = partes.slice(1).join(',');
+                const mimeMatch = metadata.match(/^data:(image\/[^;]+);base64$/i);
+                if (!mimeMatch?.[1]) return null;
+
+                const mimeType = mimeMatch[1].toLowerCase();
+                const extension = mimeType === 'image/png'
+                    ? 'png'
+                    : mimeType === 'image/webp'
+                        ? 'webp'
+                        : mimeType === 'image/gif'
+                            ? 'gif'
+                            : 'jpg';
+                const nombreArchivo = nombreSugerido || `color_wizard_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${extension}`;
+
+                const binario = atob(contenido);
+                const bytes = new Uint8Array(binario.length);
+                for (let i = 0; i < binario.length; i++) {
+                    bytes[i] = binario.charCodeAt(i);
+                }
+
+                return new File([bytes], nombreArchivo, { type: mimeType });
+            } catch (error) {
+                console.warn('[DraftPedidoSerializer] No se pudo convertir data URL a File:', error);
+                return null;
+            }
+        };
+
         const obtenerArchivoDesdeColorWizardAsync = async (color) => {
             if (!color || typeof color !== 'object') return null;
 
@@ -263,7 +552,22 @@
             const limpia = ruta.trim();
             if (!limpia) return null;
             if (limpia.startsWith('blob:') || limpia.startsWith('data:')) return null;
-            return limpia;
+
+            const sinBackslashes = limpia.replace(/\\/g, '/');
+            const matchUrlStorage = sinBackslashes.match(/^https?:\/\/[^/]+\/storage\/(.+)$/i);
+            if (matchUrlStorage?.[1]) {
+                return matchUrlStorage[1];
+            }
+
+            if (sinBackslashes.startsWith('/storage/')) {
+                return sinBackslashes.slice('/storage/'.length);
+            }
+
+            if (sinBackslashes.startsWith('storage/')) {
+                return sinBackslashes.slice('storage/'.length);
+            }
+
+            return sinBackslashes.replace(/^\/+/, '');
         };
 
         const telas = prenda.telasAgregadas || prenda.colores_telas || prenda.telas || [];
@@ -379,6 +683,24 @@
             return Number.isFinite(num) && num > 0 ? num : null;
         };
 
+        const resolverIdCatalogoPorNombre = (tipo, nombre) => {
+            const nombreNormalizado = normalizarNombreRelacion(nombre);
+            if (!nombreNormalizado) return null;
+
+            const datalistId = tipo === 'color' ? 'opciones-colores' : 'opciones-telas';
+            const datalist = document.getElementById(datalistId);
+            if (!datalist) return null;
+
+            const opcion = Array.from(datalist.querySelectorAll('option')).find((item) => {
+                const valor = normalizarNombreRelacion(item.value || '');
+                return valor === nombreNormalizado;
+            });
+
+            if (!opcion) return null;
+
+            return aNumeroPositivo(opcion.getAttribute('data-id'));
+        };
+
         const resolverRelacionExplicita = (contexto, color, asignacion) => {
             const relacionYaExplicita = aNumeroPositivo(contexto?.colorTelaId)
                 || (aNumeroPositivo(contexto?.colorId) && aNumeroPositivo(contexto?.telaId));
@@ -468,7 +790,16 @@
                 };
             }
 
-            return contexto;
+            const colorIdCatalogo = aNumeroPositivo(contexto?.colorId)
+                || resolverIdCatalogoPorNombre('color', contexto?.colorNombre || color?.nombre || color?.color || '');
+            const telaIdCatalogo = aNumeroPositivo(contexto?.telaId)
+                || resolverIdCatalogoPorNombre('tela', contexto?.telaNombre || asignacion?.tela || '');
+
+            return {
+                ...contexto,
+                colorId: colorIdCatalogo || contexto?.colorId || null,
+                telaId: telaIdCatalogo || contexto?.telaId || null
+            };
         };
 
         const tieneAsignacionesWizard = !!(
@@ -595,6 +926,12 @@
         if (placeholdersNuevos !== indiceFotoTelaArchivo) {
             throw new Error('Desfase entre archivos de tela y metadatos fotos_telas. Reabre la asignación y guarda de nuevo.');
         }
+
+        const {
+            fotosTelasFinales,
+            placeholdersEliminacion: fotosTelasEliminadasPorCompleto,
+            fotosTelasOriginales
+        } = resolverFotosTelasParaGuardar(prenda, fotosTelaUnicas);
 
         // 🔧 NUEVO: Distinción clara entre imágenes nuevas (Files) y existentes (URLs de BD)
         const imagenesNuevas = [];
@@ -723,20 +1060,6 @@
                 });
 
                 const eliminadas = d.imagenes_a_eliminar || d.imagenes_eliminadas || d.imagenesEliminadas || [];
-                if (Array.isArray(eliminadas)) {
-                    eliminadas.forEach(img => {
-                        if (!img) return;
-                        imagenesAEliminarProceso.push(
-                            typeof img === 'string'
-                                ? { ruta_original: img, url: img }
-                                : {
-                                    id: img.id || undefined,
-                                    ruta_original: img.ruta_original || img.url || '',
-                                    ruta_webp: img.ruta_webp || ''
-                                }
-                        );
-                    });
-                }
 
                 if (d.datosExtendidos && typeof d.datosExtendidos === 'object') {
                     Object.entries(d.datosExtendidos).forEach(([genero, tallasDatos]) => {
@@ -767,15 +1090,36 @@
                     imagenes_existentes: existentesUnicos
                 };
 
+                const {
+                    imagenesOriginales: imagenesOriginalesProceso,
+                    imagenesAEliminar: imagenesAEliminarProcesoResueltas
+                } = resolverImagenesAEliminarProceso(d, existentesUnicos, eliminadas);
+
+                imagenesAEliminarProceso.push(...imagenesAEliminarProcesoResueltas);
+
                 if (imagenesAEliminarProceso.length > 0) {
                     procesoEnvio.imagenes_a_eliminar = imagenesAEliminarProceso;
+                }
+
+                if (imagenesOriginalesProceso.length > 0) {
+                    console.debug('[DraftPedidoSerializer] Proceso serializado con diff de imagenes', {
+                        prendaId,
+                        proceso: tipo,
+                        imagenesOriginales: imagenesOriginalesProceso.map((img) => obtenerClaveImagen(img)).filter(Boolean),
+                        imagenesActuales: existentesUnicos.map((img) => obtenerClaveImagen(img)).filter(Boolean),
+                        imagenesAEliminar: imagenesAEliminarProceso.map((img) => obtenerClaveImagen(img)).filter(Boolean)
+                    });
                 }
 
                 procesosArray.push(procesoEnvio);
             });
         }
 
-        const imagenesAEliminar = Array.isArray(prenda.imagenes_a_eliminar) ? prenda.imagenes_a_eliminar : [];
+        const {
+            imagenesOriginales,
+            imagenesActuales,
+            imagenesAEliminar
+        } = resolverImagenesAEliminarPrenda(prenda);
 
         console.debug('[DraftPedidoSerializer] Prenda existente serializada', {
             prendaIndex,
@@ -794,7 +1138,12 @@
             fotosTelasCount: fotosTelaUnicas.length,
             fotosTelasConRelacion: fotosTelaUnicas.filter((f) =>
                 !!(f?.prenda_pedido_colores_telas_id || (f?.color_id && f?.tela_id))
-            ).length
+            ).length,
+            fotosTelasOriginales: fotosTelasOriginales.length,
+            fotosTelasEliminadasPorCompleto: fotosTelasEliminadasPorCompleto.map((foto) => obtenerClaveRelacionFotoTela(foto)).filter(Boolean),
+            imagenesOriginales: imagenesOriginales.map((img) => obtenerClaveImagen(img)).filter(Boolean),
+            imagenesActuales: imagenesActuales.map((img) => obtenerClaveImagen(img)).filter(Boolean),
+            imagenesAEliminar: imagenesAEliminar.map((img) => obtenerClaveImagen(img)).filter(Boolean)
         });
 
         // 🔧 NUEVO: imagenes_existentes como JSON string (preserva URLs de BD)
@@ -810,7 +1159,7 @@
             variantes,
             asignaciones_colores: asignacionesColores,
             colores_telas: telasJSON,
-            fotos_telas: fotosTelaUnicas.length > 0 ? fotosTelaUnicas : undefined,
+            fotos_telas: fotosTelasFinales.length > 0 ? fotosTelasFinales : undefined,
             procesos: procesosArray,
             // 🔧 Enviar como JSON string para preservar en backend
             imagenes_existentes: imagenes_existentes_json,
@@ -877,6 +1226,21 @@
             return true;
         }
 
+        // ✅ CRÍTICO: Establecer contexto en IndexedImageStorageService ANTES de recolectar imágenes
+        // Esto asegura que se obtengan las imágenes del almacenamiento correcto
+        if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
+            if (estaEditandoPrenda) {
+                // Para prenda existente: usar el índice
+                globalThis.imagenesPrendaStorage.setPrendaActual(prendaEditIndex);
+                console.log('[DraftPedidoSerializer] Contexto de prenda existente establecido:', prendaEditIndex);
+            } else {
+                // Para prenda nueva: usar el _local_id si existe, o generar uno
+                const localIdTemporal = obtenerLocalIdTemporalModal(modalPrenda);
+                globalThis.imagenesPrendaStorage.setPrendaActual(localIdTemporal);
+                console.log('[DraftPedidoSerializer] Contexto de prenda nueva establecido:', localIdTemporal);
+            }
+        }
+
         const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
             estaEditandoPrenda ? prendaEditIndex : null,
             prendasActuales
@@ -906,7 +1270,10 @@
                     ...prendaData,
                     _local_id: prendaAnterior?._local_id || prendaData._local_id,
                     id: prendaAnterior?.id ?? prendaData?.id ?? null,
-                    prenda_pedido_id: prendaAnterior?.prenda_pedido_id ?? prendaData?.prenda_pedido_id ?? null
+                    prenda_pedido_id: prendaAnterior?.prenda_pedido_id ?? prendaData?.prenda_pedido_id ?? null,
+                    _imagenes_originales: Array.isArray(prendaAnterior?._imagenes_originales)
+                        ? clonarMetadatosImagenes(prendaAnterior._imagenes_originales)
+                        : clonarMetadatosImagenes(prendaAnterior?.imagenes)
                 };
 
                 console.debug('[DraftPedidoSerializer] Nueva prenda del modal sincronizada sobre registro temporal existente antes de guardar borrador:', {
@@ -938,6 +1305,9 @@
             id: prendaActual?.id ?? prendaData?.id ?? null,
             prenda_pedido_id: prendaActual?.prenda_pedido_id ?? prendaData?.prenda_pedido_id ?? prendaActual?.id ?? null,
             imagenes: Array.isArray(prendaData?.imagenes) ? prendaData.imagenes : [],
+            _imagenes_originales: Array.isArray(prendaActual?._imagenes_originales)
+                ? clonarMetadatosImagenes(prendaActual._imagenes_originales)
+                : clonarMetadatosImagenes(prendaActual?.imagenes),
             telasAgregadas: Array.isArray(prendaData?.telasAgregadas) ? prendaData.telasAgregadas : [],
             procesos: (prendaData?.procesos && typeof prendaData.procesos === 'object') ? prendaData.procesos : {},
             asignacionesColoresPorTalla: prendaData?.asignacionesColoresPorTalla || {},

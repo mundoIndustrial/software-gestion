@@ -403,6 +403,16 @@ class PrendaFlowService {
         prendaFusionada.id = prendaFusionada.id ?? prendaAnterior.id ?? null;
         prendaFusionada.prenda_pedido_id = prendaFusionada.prenda_pedido_id ?? prendaAnterior.prenda_pedido_id ?? prendaAnterior.id ?? null;
         prendaFusionada.imagenes = this._clonarImagenesPrenda(prendaFusionada.imagenes);
+        prendaFusionada._imagenes_originales = this._clonarImagenesPrenda(
+            Array.isArray(prendaAnterior._imagenes_originales)
+                ? prendaAnterior._imagenes_originales
+                : (Array.isArray(prendaAnterior.imagenes) ? prendaAnterior.imagenes : [])
+        );
+        prendaFusionada._fotos_telas_originales = this._clonarImagenesPrenda(
+            Array.isArray(prendaAnterior._fotos_telas_originales)
+                ? prendaAnterior._fotos_telas_originales
+                : []
+        );
 
         // En modo creación, si el usuario editó solo tallas/campos de texto, preservar imágenes/telas/procesos.
         if (esModoCreate) {

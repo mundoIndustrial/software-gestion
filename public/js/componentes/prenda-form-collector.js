@@ -91,6 +91,25 @@ class PrendaFormCollector {
             // ============================================
             // 2. PROCESAR IMÁGENES DE PRENDA
             // ============================================
+            // ✅ CRÍTICO: Establecer contexto ANTES de obtener imágenes (por si no se estableció correctamente)
+            // Esto asegura que obtenemos las imágenes del almacenamiento correcto
+            if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
+                // Determine prenda ID: si estamos editando una prenda existente, usar el índice; si no, usar ID único del modal
+                const isEditMode = prendaEditIndex !== null && prendaEditIndex !== undefined;
+                let prendaId;
+
+                if (isEditMode) {
+                    prendaId = prendaEditIndex;
+                } else {
+                    // Para nuevas prendas, obtener el ID único del modal
+                    const modalElement = document.getElementById('modal-agregar-prenda-nueva');
+                    prendaId = (modalElement?.dataset?.draftPrendaLocalId?.trim()) || 'default';
+                }
+
+                globalThis.imagenesPrendaStorage.setPrendaActual(prendaId);
+                console.log('[prenda-form-collector] Contexto de prenda establecido antes de obtener imágenes:', prendaId, '(modo edit:', isEditMode, ')');
+            }
+
             const imagenesTemporales = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
             console.log('[prenda-form-collector]  PROCESANDO IMÁGENES DE PRENDA:', {
@@ -834,6 +853,27 @@ class PrendaFormCollector {
                 telasAgregadas_content: prendaData.telasAgregadas
             });
             console.log('[prenda-form-collector]', prendaData);
+
+            // Preservar el _local_id del modal para evitar que _asegurarIdentidadPrenda() genere uno nuevo
+            const modalElement = document.getElementById('modal-agregar-prenda-nueva');
+            const modalLocalId = modalElement?.dataset?.draftPrendaLocalId;
+
+            console.log('[prenda-form-collector]  DIAGNÓSTICO FINAL _local_id:', {
+                modalElement_existe: !!modalElement,
+                dataset_existe: !!modalElement?.dataset,
+                draftPrendaLocalId_valor: modalLocalId,
+                modalLocalId_truthy: !!modalLocalId,
+                prendaData_local_id_antes: prendaData._local_id
+            });
+
+            if (modalLocalId) {
+                prendaData._local_id = modalLocalId;
+                console.log('[prenda-form-collector]  ✓ _local_id preservado del modal:', modalLocalId);
+            } else {
+                console.warn('[prenda-form-collector]  ⚠️ NO HAY _local_id en el modal, prendaData no tendrá _local_id inicial');
+            }
+
+            console.log('[prenda-form-collector]  prendaData._local_id final:', prendaData._local_id);
 
             return prendaData;
 

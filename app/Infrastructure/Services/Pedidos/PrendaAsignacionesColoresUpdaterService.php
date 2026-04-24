@@ -77,7 +77,7 @@ final class PrendaAsignacionesColoresUpdaterService
                         'cantidad' => (int) ($colorData['cantidad'] ?? 0),
                         'referencia' => $colorData['referencia'] ?? null,
                         'observaciones' => $colorData['observaciones'] ?? null,
-                        'imagen_ruta' => $fotosColorIndex[$fKey] ?? ($colorData['imagen_ruta'] ?? null),
+                        'imagen_ruta' => $this->normalizarRutaStorage($fotosColorIndex[$fKey] ?? ($colorData['imagen_ruta'] ?? null)),
                     ];
                 }
                 continue;
@@ -100,7 +100,7 @@ final class PrendaAsignacionesColoresUpdaterService
                 'cantidad' => (int) ($asignacion['cantidad'] ?? 0),
                 'referencia' => $asignacion['referencia'] ?? null,
                 'observaciones' => $asignacion['observaciones'] ?? null,
-                'imagen_ruta' => $asignacion['imagen_ruta'] ?? $imagenExistente,
+                'imagen_ruta' => $this->normalizarRutaStorage($asignacion['imagen_ruta'] ?? $imagenExistente),
             ];
         }
 
@@ -169,6 +169,31 @@ final class PrendaAsignacionesColoresUpdaterService
             'total_recibidos' => count($asignacionesPlanas),
         ]);
     }
-}
 
+    private function normalizarRutaStorage(mixed $ruta): ?string
+    {
+        if (!is_string($ruta)) {
+            return null;
+        }
+
+        $ruta = trim(str_replace('\\', '/', $ruta));
+        if ($ruta === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://[^/]+/storage/(.+)$#i', $ruta, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($ruta, '/storage/')) {
+            return substr($ruta, 9);
+        }
+
+        if (str_starts_with($ruta, 'storage/')) {
+            return substr($ruta, 8);
+        }
+
+        return ltrim($ruta, '/');
+    }
+}
 

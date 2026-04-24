@@ -27,36 +27,42 @@
      */
     window.InitializeImageStorages = function() {
         console.log('[image-storage-init] Inicializando servicios de almacenamiento de imágenes...');
-        
+
+        // Verificar disponibilidad de servicios
         if (typeof ImageStorageService === 'undefined') {
             console.error('[image-storage-init] ImageStorageService no está disponible. Verifique que image-storage-service.js se haya cargado.');
             return false;
         }
-        
-        // Crear instancia para prenda si no existe (límite: 6)
+
+        if (typeof IndexedImageStorageService === 'undefined') {
+            console.error('[image-storage-init] IndexedImageStorageService no está disponible. Verifique que indexed-image-storage-service.js se haya cargado.');
+            return false;
+        }
+
+        // ✅ CAMBIO: Usar IndexedImageStorageService para prendas (previene desincronización)
         if (!window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage = new ImageStorageService(6);
-            console.log('[image-storage-init] imagenesPrendaStorage inicializado ✓');
+            window.imagenesPrendaStorage = new IndexedImageStorageService(6);
+            console.log('[image-storage-init] imagenesPrendaStorage inicializado como IndexedImageStorageService ✓');
         } else {
             console.log('[image-storage-init] imagenesPrendaStorage ya existe, reutilizando instancia');
         }
-        
-        // Crear instancia para tela si no existe
+
+        // Crear instancia para tela si no existe (mantiene ImageStorageService simple)
         if (!window.imagenesTelaStorage) {
             window.imagenesTelaStorage = new ImageStorageService(3);
             console.log('[image-storage-init] imagenesTelaStorage inicializado ✓');
         } else {
             console.log('[image-storage-init] imagenesTelaStorage ya existe, reutilizando instancia');
         }
-        
-        // Crear instancia para reflectivo si no existe
+
+        // Crear instancia para reflectivo si no existe (mantiene ImageStorageService simple)
         if (!window.imagenesReflectivoStorage) {
             window.imagenesReflectivoStorage = new ImageStorageService(3);
             console.log('[image-storage-init] imagenesReflectivoStorage inicializado ✓');
         } else {
             console.log('[image-storage-init] imagenesReflectivoStorage ya existe, reutilizando instancia');
         }
-        
+
         console.log('[image-storage-init] Servicios de almacenamiento de imágenes inicializados ✓');
         return true;
     };

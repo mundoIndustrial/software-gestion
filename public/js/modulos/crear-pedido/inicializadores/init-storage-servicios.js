@@ -26,13 +26,20 @@
             console.error(' [INIT-STORAGE] ImageStorageService no está disponible. Asegúrate de que image-storage-service.js esté cargado.');
             return;
         }
-        
+
+        // ✅ CRÍTICO: Usar IndexedImageStorageService para prendas (previene desincronización)
+        if (typeof IndexedImageStorageService === 'undefined') {
+            console.error(' [INIT-STORAGE] IndexedImageStorageService no está disponible. Asegúrate de que indexed-image-storage-service.js esté cargado.');
+            return;
+        }
+
         // Inicializar servicios directamente
         try {
-            window.imagenesPrendaStorage = new ImageStorageService(6);
+            window.imagenesPrendaStorage = new IndexedImageStorageService(6);
             window.imagenesTelaStorage = new ImageStorageService(3);
             window.imagenesReflectivoStorage = new ImageStorageService(3);
             inicializado = true;
+            console.log(' [INIT-STORAGE] ✓ imagenesPrendaStorage inicializado como IndexedImageStorageService');
         } catch (error) {
             console.error(' [INIT-STORAGE] Error al inicializar servicios:', error);
         }

@@ -43,6 +43,15 @@ class EppFlowService {
     }
 
     agregarEPPAlOrden(epp) {
+        if (epp && !Array.isArray(epp._imagenes_originales)) {
+            const imagenesOriginales = Array.isArray(epp.imagenes) ? epp.imagenes : [];
+            epp._imagenes_originales = imagenesOriginales.map((img) => (
+                img && typeof img === 'object'
+                    ? { ...img }
+                    : img
+            ));
+        }
+
         const index = this.ui?._stateAddItem?.('epp', epp);
 
         debugLog('[gestionItemsUI]  agregarEPPAlOrden() - EPP agregado:', epp?.nombre_completo || epp?.nombre);

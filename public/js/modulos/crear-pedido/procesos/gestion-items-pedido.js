@@ -272,6 +272,14 @@ class GestionItemsUI {
         }
 
         Object.assign(epp, cambios);
+        if (!Array.isArray(epp._imagenes_originales)) {
+            const imagenesOriginales = Array.isArray(epp.imagenes) ? epp.imagenes : [];
+            epp._imagenes_originales = imagenesOriginales.map((img) => (
+                img && typeof img === 'object'
+                    ? { ...img }
+                    : img
+            ));
+        }
         this._asegurarTarjetaIdEpp(epp);
 
         return {
@@ -547,6 +555,15 @@ class GestionItemsUI {
         if (typeof renderizarTelasChips === 'function') {
             renderizarTelasChips();
         }
+
+        // ✅ NUEVO: Establecer contexto de prenda nueva en IndexedImageStorageService
+        // Genera un ID temporal consistente para toda la sesión de creación
+        const nuevaPrendaId = `new-prenda-${Date.now()}`;
+        if (globalThis.imagenesPrendaStorage && typeof globalThis.imagenesPrendaStorage.setPrendaActual === 'function') {
+            globalThis.imagenesPrendaStorage.setPrendaActual(nuevaPrendaId);
+            console.log('[gestion-items-pedido] Contexto de nueva prenda establecido:', nuevaPrendaId);
+        }
+        this._setCtx('nuevaPrendaId', nuevaPrendaId);
 
         if (this.prendaEditor) {
             this.prendaEditor.abrirModal(false, null);

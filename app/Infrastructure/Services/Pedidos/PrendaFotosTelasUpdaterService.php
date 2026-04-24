@@ -94,7 +94,7 @@ final class PrendaFotosTelasUpdaterService
                     $incomingByColorTela[$colorTelaId]['ids'][] = (int) $foto['id'];
                 }
 
-                $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+                $ruta = $this->normalizarRutaStorage($foto['ruta_original'] ?? $foto['path'] ?? null);
                 if (is_string($ruta) && $ruta !== '') {
                     $incomingByColorTela[$colorTelaId]['rutas'][] = $ruta;
                 }
@@ -109,8 +109,6 @@ final class PrendaFotosTelasUpdaterService
                     $query->whereNotIn('id', array_values(array_unique($incoming['ids'])));
                 } elseif (!empty($incoming['rutas'])) {
                     $query->whereNotIn('ruta_original', array_values(array_unique($incoming['rutas'])));
-                } else {
-                    continue;
                 }
 
                 foreach ($query->get() as $foto) {
@@ -143,14 +141,14 @@ final class PrendaFotosTelasUpdaterService
 
             $id = $foto['id'] ?? null;
             $colorTelaId = $this->resolverColorTelaIdParaPrenda($prenda, $foto, $colorTelaIdsValidosSet);
-            $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+            $ruta = $this->normalizarRutaStorage($foto['ruta_original'] ?? $foto['path'] ?? null);
             $rutaWebp = null;
 
             if (!$id && !$ruta) {
                 if (is_array($fotosTelasProcesadas) && isset($fotosTelasProcesadas[$indiceFotoNueva])) {
                     $procesado = $fotosTelasProcesadas[$indiceFotoNueva];
-                    $ruta = $procesado['ruta_original'] ?? null;
-                    $rutaWebp = $procesado['ruta_webp'] ?? null;
+                    $ruta = $this->normalizarRutaStorage($procesado['ruta_original'] ?? null);
+                    $rutaWebp = $this->normalizarRutaStorage($procesado['ruta_webp'] ?? null);
                     if ($ruta) {
                         $indiceFotoNueva++;
                     }
@@ -176,7 +174,7 @@ final class PrendaFotosTelasUpdaterService
             }
 
             if (!$rutaWebp) {
-                $rutaWebp = $foto['ruta_webp'] ?? $this->generarRutaWebp($ruta);
+                $rutaWebp = $this->normalizarRutaStorage($foto['ruta_webp'] ?? null) ?? $this->generarRutaWebp($ruta);
             }
 
             $datosFoto = [
@@ -257,6 +255,32 @@ final class PrendaFotosTelasUpdaterService
         }
 
         return null;
+    }
+
+    private function normalizarRutaStorage(mixed $ruta): ?string
+    {
+        if (!is_string($ruta)) {
+            return null;
+        }
+
+        $ruta = trim(str_replace('\\', '/', $ruta));
+        if ($ruta === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://[^/]+/storage/(.+)$#i', $ruta, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($ruta, '/storage/')) {
+            return substr($ruta, 9);
+        }
+
+        if (str_starts_with($ruta, 'storage/')) {
+            return substr($ruta, 8);
+        }
+
+        return ltrim($ruta, '/');
     }
 
     private function generarRutaWebp(string $rutaOriginal): string

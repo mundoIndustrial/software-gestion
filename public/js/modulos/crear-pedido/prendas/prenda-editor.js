@@ -169,8 +169,9 @@ class PrendaEditor {
         }
 
         // Imágenes
+        // ✅ CRÍTICO: Pasar prendaIndex para contexto en IndexedImageStorageService
         if (typeof PrendaEditorImagenes !== 'undefined') {
-            PrendaEditorImagenes.cargar(prenda);
+            PrendaEditorImagenes.cargar(prenda, this.prendaEditIndex);
         }
 
         // Telas
