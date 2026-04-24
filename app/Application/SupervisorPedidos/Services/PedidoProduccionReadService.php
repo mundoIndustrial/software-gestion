@@ -716,7 +716,49 @@ class PedidoProduccionReadService
     private function orderAndPaginate($query, ListOrdersRequest $request)
     {
         return $query
-            ->orderBy('pedidos_produccion.updated_at', 'desc')
+            ->orderByRaw('(
+                SELECT MAX(ultima) FROM (
+                    SELECT MAX(prendas_pedido.updated_at) as ultima FROM prendas_pedido
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(prenda_pedido_tallas.updated_at) FROM prenda_pedido_tallas
+                    JOIN prendas_pedido ON prenda_pedido_tallas.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(prenda_pedido_talla_colores.updated_at) FROM prenda_pedido_talla_colores
+                    JOIN prenda_pedido_tallas ON prenda_pedido_talla_colores.prenda_pedido_talla_id = prenda_pedido_tallas.id
+                    JOIN prendas_pedido ON prenda_pedido_tallas.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(prenda_pedido_colores_telas.updated_at) FROM prenda_pedido_colores_telas
+                    JOIN prendas_pedido ON prenda_pedido_colores_telas.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(prenda_fotos_pedido.updated_at) FROM prenda_fotos_pedido
+                    JOIN prendas_pedido ON prenda_fotos_pedido.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(prenda_fotos_tela_pedido.updated_at) FROM prenda_fotos_tela_pedido
+                    JOIN prenda_pedido_colores_telas ON prenda_fotos_tela_pedido.prenda_pedido_colores_telas_id = prenda_pedido_colores_telas.id
+                    JOIN prendas_pedido ON prenda_pedido_colores_telas.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(pedidos_procesos_prenda_detalles.updated_at) FROM pedidos_procesos_prenda_detalles
+                    JOIN prendas_pedido ON pedidos_procesos_prenda_detalles.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(pedidos_procesos_prenda_tallas.updated_at) FROM pedidos_procesos_prenda_tallas
+                    JOIN pedidos_procesos_prenda_detalles ON pedidos_procesos_prenda_tallas.proceso_prenda_detalle_id = pedidos_procesos_prenda_detalles.id
+                    JOIN prendas_pedido ON pedidos_procesos_prenda_detalles.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                    UNION ALL
+                    SELECT MAX(pedidos_procesos_prenda_talla_colores.updated_at) FROM pedidos_procesos_prenda_talla_colores
+                    JOIN pedidos_procesos_prenda_tallas ON pedidos_procesos_prenda_talla_colores.pedidos_procesos_prenda_talla_id = pedidos_procesos_prenda_tallas.id
+                    JOIN pedidos_procesos_prenda_detalles ON pedidos_procesos_prenda_tallas.proceso_prenda_detalle_id = pedidos_procesos_prenda_detalles.id
+                    JOIN prendas_pedido ON pedidos_procesos_prenda_detalles.prenda_pedido_id = prendas_pedido.id
+                    WHERE prendas_pedido.pedido_produccion_id = pedidos_produccion.id
+                ) as todas_actualizaciones
+            ) DESC')
             ->orderBy('pedidos_produccion.created_at', 'desc')
             ->paginate($request->getPerPage(), ['pedidos_produccion.*'], 'page', $request->getPage())
             ->appends($request->getAppends());
