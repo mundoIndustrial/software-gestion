@@ -17,27 +17,19 @@
 .filtros-bar {
     display: flex;
     gap: 12px;
-    padding: 20px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e2e8f0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
     align-items: center;
     position: relative;
-    overflow: hidden;
-    justify-content: center;
-    max-width: 600px;
-    margin: 0 auto;
+    overflow: visible;
+    width: 100%;
 }
 
 .filtros-bar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    display: none;
 }
 
 .search-box {
@@ -63,27 +55,24 @@
 }
 
 .filtros-bar input {
-    flex: 1;
-    padding: 12px 16px 12px 44px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 0.95rem;
+    width: 100%;
+    padding: 11px 14px 11px 40px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9375rem;
     background: white;
-    color: #1e293b;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    color: #1f2937;
+    transition: all 0.2s ease;
 }
 
 .filtros-bar input:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(59, 130, 246, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .filtros-bar input::placeholder {
-    color: #94a3b8;
-    font-style: italic;
+    color: #9ca3af;
 }
 
 .btn-action {

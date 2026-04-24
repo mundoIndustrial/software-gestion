@@ -44,6 +44,14 @@
         </a>
       </li>
       <li class="menu-item">
+        <a href="{{ route('despacho.historial-pendientes') }}"
+           class="menu-link {{ request()->routeIs('despacho.historial-pendientes') ? 'active' : '' }}"
+           aria-label="Historial Pendientes">
+          <span class="material-symbols-rounded" aria-hidden="true">history</span>
+          <span class="menu-label">Historial Pendientes</span>
+        </a>
+      </li>
+      <li class="menu-item">
         <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
            class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
            aria-label="Pedidos anulados - Bodega">

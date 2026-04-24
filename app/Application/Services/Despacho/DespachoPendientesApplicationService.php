@@ -37,7 +37,7 @@ class DespachoPendientesApplicationService
                     })
                     ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                     ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
-                    ->where('bdt.estado_bodega', 'Pendiente')
+                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
                     ->whereNull('pppd.id');
             })
             ->select('pedidos_produccion.*')
@@ -153,7 +153,7 @@ class DespachoPendientesApplicationService
             ->where('pedidos_produccion.numero_pedido', '!=', '')
             ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
-            ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
             ->select('pedidos_produccion.*')
             ->distinct();
 
@@ -407,6 +407,115 @@ class DespachoPendientesApplicationService
             'data' => [],
             'total' => 0,
             'search' => $search,
+        ];
+    }
+
+    public function obtenerHistorialPendientesData(
+        string $search = '',
+        string $tipo = 'todos',
+        int $page = 1,
+        int $perPage = 10
+    ): array {
+        $coturaPedidoIds = PedidoProduccion::query()
+            ->join('prendas_pedido', 'prendas_pedido.pedido_produccion_id', '=', 'pedidos_produccion.id')
+            ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
+            ->whereNotNull('pedidos_produccion.numero_pedido')
+            ->where('pedidos_produccion.numero_pedido', '!=', '')
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
+            ->where('prendas_pedido.de_bodega', 1)
+            ->whereNull('prendas_pedido.deleted_at')
+            ->whereNull('pedidos_procesos_prenda_detalles.id')
+            ->whereExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('bodega_detalles_talla as bdt')
+                    ->join('prendas_pedido as pp', function ($join) {
+                        $join->on('pp.id', '=', 'bdt.prenda_id')
+                            ->where('pp.de_bodega', '=', 1)
+                            ->whereNull('pp.deleted_at');
+                    })
+                    ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
+                    ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
+                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+                    ->whereNull('pppd.id');
+            })
+            ->pluck('pedidos_produccion.id');
+
+        $eppPedidoIds = PedidoProduccion::query()
+            ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+            ->whereNotNull('pedidos_produccion.numero_pedido')
+            ->where('pedidos_produccion.numero_pedido', '!=', '')
+            ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
+            ->where('bodega_detalles_talla.area', 'EPP')
+            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+            ->pluck('pedidos_produccion.id');
+
+        $pedidoIds = $coturaPedidoIds->merge($eppPedidoIds)->unique();
+
+        $query = PedidoProduccion::query()
+            ->whereIn('id', $pedidoIds);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('numero_pedido', 'like', "%{$search}%")
+                    ->orWhere('cliente', 'like', "%{$search}%");
+            });
+        }
+
+        $total = $query->count();
+        $pedidos = $query->orderBy('created_at', 'desc')
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        $pedidos->transform(function ($pedido) {
+            $bodegaInfo = DB::table('bodega_detalles_talla')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->whereNull('deleted_at')
+                ->orderBy('created_at', 'desc')
+                ->first(['created_at', 'estado_bodega', 'fecha_entrega_bodega', 'updated_at']);
+
+            $fechaCreacionPedido = $pedido->created_at ? $pedido->created_at->format('d/m/Y h:i A') : '';
+            $fechaCreacionPendiente = '';
+            $fechaEntrega = 'No entregado';
+            $estadoEntrega = 'Pendiente';
+
+            if ($bodegaInfo) {
+                $fechaCreacionPendiente = \Carbon\Carbon::parse($bodegaInfo->created_at)->format('d/m/Y h:i A');
+
+                if ($bodegaInfo->estado_bodega === 'Entregado') {
+                    if ($bodegaInfo->fecha_entrega_bodega) {
+                        $fechaEntrega = \Carbon\Carbon::parse($bodegaInfo->fecha_entrega_bodega)->format('d/m/Y h:i A');
+                    } else {
+                        $fechaEntrega = \Carbon\Carbon::parse($bodegaInfo->updated_at)->format('d/m/Y h:i A');
+                    }
+                    $estadoEntrega = 'Entregado';
+                }
+            }
+
+            return [
+                'id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cliente' => $pedido->cliente,
+                'estado' => $pedido->estado,
+                'fecha_creacion_pedido' => $fechaCreacionPedido,
+                'fecha_creacion_pendiente' => $fechaCreacionPendiente,
+                'fecha_entrega' => $fechaEntrega,
+                'estado_entrega' => $estadoEntrega,
+            ];
+        });
+
+        return [
+            'success' => true,
+            'data' => $pedidos,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $perPage > 0 ? (int) ceil($total / $perPage) : 1,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => min($page * $perPage, $total),
+                'has_more' => $page < ceil($total / $perPage),
+            ],
         ];
     }
 

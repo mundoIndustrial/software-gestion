@@ -14,7 +14,7 @@ class DespachoPendientesController extends Controller
     }
 
     /**
-     * API para obtener pedidos con prendas que se sacan de bodega y NO tienen ningún proceso
+     * API para obtener pedidos con prendas que se sacan de bodega y NO tienen ningï¿½n proceso
      */
     public function obtenerPendientesBodegaSinProcesos(Request $request)
     {
@@ -57,6 +57,48 @@ class DespachoPendientesController extends Controller
         return view('despacho.entregados', [
             'search' => $search,
         ]);
+    }
+
+    /**
+     * Vista del historial de todos los pendientes (actuales e histÃ³ricos)
+     */
+    public function historialPendientes(Request $request)
+    {
+        $search = $request->query('search', '');
+        $tipo = $request->query('tipo', 'todos');
+
+        return view('despacho.historial-pendientes', [
+            'search' => $search,
+            'tipo' => $tipo,
+        ]);
+    }
+
+    /**
+     * API para obtener historial de todos los pendientes
+     */
+    public function obtenerHistorialPendientes(Request $request)
+    {
+        try {
+            $payload = $this->service->obtenerHistorialPendientesData(
+                search: (string) $request->query('search', ''),
+                tipo: (string) $request->query('tipo', 'todos'),
+                page: (int) $request->query('page', 1),
+                perPage: (int) $request->query('per_page', 10),
+            );
+
+            return response()->json($payload);
+        } catch (\Exception $e) {
+            \Log::error('[ERROR] Error en obtenerHistorialPendientes:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener historial de pendientes: ' . $e->getMessage(),
+            ]);
+        }
     }
 
     /**

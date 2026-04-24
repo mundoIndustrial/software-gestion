@@ -48,9 +48,18 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             // Buscar registro anterior para auditoría
             $detalleAnterior = BodegaDetalleTalla::where($criteriosBusqueda)->first();
             $estadoBodega = $datosValidados['estado_bodega'] ?? null;
+            $estadoAnterior = $detalleAnterior?->estado_bodega ?? null;
             $fechaEntregaBodega = null;
+
+            // Si el nuevo estado es "Entregado"
             if ($estadoBodega === 'Entregado') {
-                $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? now();
+                // Si el estado anterior NO era "Entregado", capturar la fecha actual
+                if ($estadoAnterior !== 'Entregado') {
+                    $fechaEntregaBodega = now();
+                } else {
+                    // Si ya era "Entregado", mantener la fecha anterior
+                    $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? now();
+                }
             }
             
             // Preparar datos para crear/actualizar

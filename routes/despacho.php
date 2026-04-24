@@ -8,7 +8,7 @@ use App\Infrastructure\Http\Controllers\Despacho\DespachoPendientesController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Rutas del módulo DESPACHO
+ * Rutas del mï¿½dulo DESPACHO
  *
  * Prefijo: /despacho
  */
@@ -86,6 +86,9 @@ Route::prefix('despacho')
         Route::get('/entregados', [DespachoPendientesController::class, 'entregados'])
             ->name('despacho.entregados');
 
+        Route::get('/historial-pendientes', [DespachoPendientesController::class, 'historialPendientes'])
+            ->name('despacho.historial-pendientes');
+
         Route::get('/api/pendientes-costura', [DespachoPendientesController::class, 'obtenerPendientesCostura'])
             ->name('despacho.api.pendientes-costura');
 
@@ -100,6 +103,9 @@ Route::prefix('despacho')
 
         Route::get('/api/entregados', [DespachoPendientesController::class, 'obtenerEntregados'])
             ->name('despacho.api.entregados');
+
+        Route::get('/api/historial-pendientes', [DespachoPendientesController::class, 'obtenerHistorialPendientes'])
+            ->name('despacho.api.historial-pendientes');
 
         Route::get('/api/test', function () {
             return response()->json([
