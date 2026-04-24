@@ -641,13 +641,7 @@
     }
 </script>
 
-<!-- Vite Entry Point para Supervisor Pedidos -->
-<!-- Incluye:
-     - Tabla de cartera (cartera-table.js)
-     - Sistema de filtros (cartera-filters.js)
-     - Realtime bajo demanda (realtime-manager.js)
-     - Total: ~12KB gzip (vs 120KB antes)
--->
-@vite(['resources/js/supervisor-pedidos/index.js'])
+<!-- Script principal de la vista de Cartera/Pedidos -->
+<script src="{{ asset('js/cartera-pedidos/app.js') }}"></script>
 
 @endpush

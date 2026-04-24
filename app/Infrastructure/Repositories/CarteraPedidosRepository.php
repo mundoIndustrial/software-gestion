@@ -5,6 +5,7 @@ namespace App\Infrastructure\Repositories;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\PedidosProcesosPrendaDetalle;
+use App\Models\ProcesoPrenda;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -440,36 +441,60 @@ class CarteraPedidosRepository
         $pedidosAExcluir = collect();
 
         foreach ($pedidos as $pedido) {
-            // 1. Contar prendas normales (confección, de_bodega = false)
-            $prendasNormales = PrendaPedido::where('pedido_produccion_id', $pedido->id)
-                ->where('de_bodega', false)
+            $prendas = PrendaPedido::where('pedido_produccion_id', $pedido->id)
                 ->whereNull('deleted_at')
-                ->count();
+                ->get(['id', 'nombre_prenda', 'de_bodega']);
 
-            // Si tiene prendas normales, MANTENER el pedido
+            // Sin prendas productivas, se interpreta como pedido solo EPP o inconsistente
+            if ($prendas->isEmpty()) {
+                $pedidosAExcluir->push($pedido->id);
+
+                Log::info('[CARTERA-FILTRO] Pedido EXCLUIDO (solo EPPs o sin prendas)', [
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'pedido_id' => $pedido->id,
+                ]);
+                continue;
+            }
+
+            // Solo es bodega si viene explicitamente como 1/true/'1'
+            $prendasNormales = $prendas->filter(function ($prenda) {
+                return !in_array($prenda->de_bodega, [1, true, '1'], true);
+            })->count();
+
+            // Si tiene prendas de confeccion, mantener
             if ($prendasNormales > 0) {
                 continue;
             }
 
-            // 2. Si no tiene prendas normales, verificar prendas de bodega
-            $prendasBodega = PrendaPedido::where('pedido_produccion_id', $pedido->id)
-                ->where('de_bodega', true)
-                ->whereNull('deleted_at')
-                ->get();
+            $prendasBodega = $prendas->filter(function ($prenda) {
+                return in_array($prenda->de_bodega, [1, true, '1'], true);
+            })->values();
 
-            // Si tiene prendas de bodega, verificar si al menos una tiene procesos
             if ($prendasBodega->isNotEmpty()) {
+                $prendaIdsBodega = $prendasBodega->pluck('id');
+
+                $procesosNuevos = PedidosProcesosPrendaDetalle::whereIn('prenda_pedido_id', $prendaIdsBodega)
+                    ->whereNull('deleted_at')
+                    ->selectRaw('prenda_pedido_id, COUNT(*) as total')
+                    ->groupBy('prenda_pedido_id')
+                    ->pluck('total', 'prenda_pedido_id');
+
+                $procesosLegacy = ProcesoPrenda::whereIn('prenda_pedido_id', $prendaIdsBodega)
+                    ->whereNull('deleted_at')
+                    ->selectRaw('prenda_pedido_id, COUNT(*) as total')
+                    ->groupBy('prenda_pedido_id')
+                    ->pluck('total', 'prenda_pedido_id');
+
                 $tieneAlgunaPrendaConProcesos = false;
                 $detallesPrendas = [];
 
                 foreach ($prendasBodega as $prenda) {
-                    $cantidadProcesos = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
-                        ->whereNull('deleted_at')
-                        ->count();
+                    $cantidadProcesos = (int) ($procesosNuevos[$prenda->id] ?? 0)
+                        + (int) ($procesosLegacy[$prenda->id] ?? 0);
 
                     $detallesPrendas[] = [
                         'nombre' => $prenda->nombre_prenda,
-                        'procesos' => $cantidadProcesos
+                        'procesos' => $cantidadProcesos,
                     ];
 
                     if ($cantidadProcesos > 0) {
@@ -477,11 +502,10 @@ class CarteraPedidosRepository
                     }
                 }
 
-                // Si NINGUNA prenda de bodega tiene procesos, EXCLUIR
                 if (!$tieneAlgunaPrendaConProcesos) {
                     $pedidosAExcluir->push($pedido->id);
-                    
-                    Log::info('[CARTERA-FILTRO] ❌ Pedido EXCLUIDO (solo bodega sin procesos)', [
+
+                    Log::info('[CARTERA-FILTRO] Pedido EXCLUIDO (solo bodega sin procesos)', [
                         'numero_pedido' => $pedido->numero_pedido,
                         'pedido_id' => $pedido->id,
                         'prendas_normales' => $prendasNormales,
@@ -489,25 +513,25 @@ class CarteraPedidosRepository
                         'detalles' => $detallesPrendas,
                     ]);
                 } else {
-                    Log::info('[CARTERA-FILTRO] ✅ Pedido MANTIENE (bodega con procesos)', [
+                    Log::info('[CARTERA-FILTRO] Pedido MANTIENE (bodega con procesos)', [
                         'numero_pedido' => $pedido->numero_pedido,
                         'detalles' => $detallesPrendas,
                     ]);
                 }
             } else {
-                // No tiene prendas normales ni de bodega = SOLO EPPs, EXCLUIR
+                // No hay prendas de confeccion ni de bodega validas
                 $pedidosAExcluir->push($pedido->id);
-                
-                Log::info('[CARTERA-FILTRO] ❌ Pedido EXCLUIDO (solo EPPs)', [
+
+                Log::info('[CARTERA-FILTRO] Pedido EXCLUIDO (sin prendas productivas)', [
                     'numero_pedido' => $pedido->numero_pedido,
                     'pedido_id' => $pedido->id,
                 ]);
             }
         }
 
-        // Retornar pedidos que NO estén en la lista de exclusión
-        return $pedidos->reject(function($pedido) use ($pedidosAExcluir) {
+        return $pedidos->reject(function ($pedido) use ($pedidosAExcluir) {
             return $pedidosAExcluir->contains($pedido->id);
         });
     }
 }
+

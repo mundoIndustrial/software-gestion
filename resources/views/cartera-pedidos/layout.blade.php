@@ -1047,7 +1047,7 @@
     @endauth
 
     <!-- Scripts de Facturas para vistas de cartera -->
-    @if(request()->is(['cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
+    @if(request()->is(['cartera/pedidos', 'cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
     <script src="{{ asset('js/modulos/invoice/InvoiceDataFetcher.js') }}"></script>
     <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
     <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
