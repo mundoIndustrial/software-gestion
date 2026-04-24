@@ -38,7 +38,7 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     ">
         <!-- Logo -->
-        <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+        <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         
         <!-- Botón de navegación de procesos (esquina superior derecha) -->
         <div id="process-navigation-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>
