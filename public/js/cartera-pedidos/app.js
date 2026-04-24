@@ -22,6 +22,8 @@ let filtroFechaHasta = '';
 let carteraKnownPendingIds = new Set();
 let carteraWsNotificationsBootstrapped = false;
 let carteraWsDedupe = new Map();
+let carteraKnownPendingBootstrapped = false;
+let carteraPollingTimer = null;
 
 // ===== PERMISOS DE USUARIO =====
 // Detectar si el usuario tiene permisos de acción (no es supervisor_gerencia)
@@ -320,6 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar notificaciones en tiempo real por WebSocket
     inicializarNotificacionesWebSocketCartera();
+    iniciarFallbackPollingCartera();
     inicializarPushMovilCartera();
 });
 
@@ -404,7 +407,9 @@ async function cargarPedidos() {
         const idsActuales = carteraMainPedidosData
             .map(item => Number(item?.id))
             .filter(id => Number.isFinite(id));
+        const idsPrevios = new Set(carteraKnownPendingIds);
         idsActuales.forEach(id => carteraKnownPendingIds.add(id));
+        notificarNuevosPendientesPorDelta(idsActuales, idsPrevios);
         
         // Actualizar información de paginación
         if (data.pagination) {
@@ -439,6 +444,48 @@ async function cargarPedidos() {
     } finally {
         if (btnRefresh) btnRefresh.disabled = false;
     }
+}
+
+function notificarNuevosPendientesPorDelta(idsActuales, idsPrevios) {
+    const esVistaPendientes = window.location.pathname.includes('/cartera/pedidos');
+    const enMonitoreoBase = !currentSearch && !filtroCliente && !filtroFechaDesde && !filtroFechaHasta && Number(currentPage) === 1;
+
+    if (!carteraKnownPendingBootstrapped) {
+        carteraKnownPendingBootstrapped = true;
+        return;
+    }
+
+    if (!esVistaPendientes || !enMonitoreoBase) {
+        return;
+    }
+
+    const idsNuevos = idsActuales.filter(id => !idsPrevios.has(id));
+    if (idsNuevos.length === 0) {
+        return;
+    }
+
+    idsNuevos.forEach((pedidoId) => {
+        const dedupeKey = `polling|${pedidoId}|pendiente_cartera`;
+        if (!debeNotificarRealtime(dedupeKey)) return;
+
+        const pedido = carteraMainPedidosData.find(item => Number(item?.id) === Number(pedidoId));
+        const numero = pedido?.numero_pedido || pedido?.numero || `#${pedidoId}`;
+        const cliente = pedido?.cliente || pedido?.cliente_nombre || 'Cliente no disponible';
+        const mensaje = `Nuevo pedido ${numero} de ${cliente}, pendiente por autorizar.`;
+
+        mostrarNotificacion(mensaje, 'info');
+        mostrarNotificacionNavegador('Nuevo pedido pendiente de cartera', mensaje);
+    });
+}
+
+function iniciarFallbackPollingCartera() {
+    if (carteraPollingTimer) return;
+    if (!window.location.pathname.includes('/cartera/pedidos')) return;
+
+    console.log('[CARTERA] Fallback polling activo cada 15s');
+    carteraPollingTimer = setInterval(() => {
+        cargarPedidos();
+    }, 15000);
 }
 
 function updatePaginationControls(pagination) {
@@ -593,7 +640,10 @@ function mostrarNotificacionNavegador(titulo, mensaje) {
 // ===== WEB PUSH (SERVICE WORKER) =====
 async function inicializarPushMovilCartera() {
     const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content') || '';
-    if (!vapidPublicKey) return;
+    if (!vapidPublicKey) {
+        console.warn('[CARTERA] VAPID_PUBLIC_KEY vacío: push móvil deshabilitado en este entorno.');
+        return;
+    }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
     try {
