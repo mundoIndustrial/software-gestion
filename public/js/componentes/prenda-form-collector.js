@@ -866,23 +866,47 @@ class PrendaFormCollector {
             });
             console.log('[prenda-form-collector]', prendaData);
 
-            // Preservar el _local_id del modal para evitar que _asegurarIdentidadPrenda() genere uno nuevo
+            // Preservar identidad local de forma estable.
+            // En edicion NO debemos sobrescribir con el ID temporal del modal.
             const modalElement = document.getElementById('modal-agregar-prenda-nueva');
-            const modalLocalId = modalElement?.dataset?.draftPrendaLocalId;
+            const modalLocalId = typeof modalElement?.dataset?.draftPrendaLocalId === 'string'
+                ? modalElement.dataset.draftPrendaLocalId.trim()
+                : '';
+            const localIdEntrante = typeof prendaLocalId === 'string' ? prendaLocalId.trim() : '';
+            const localIdActual = typeof prendaData._local_id === 'string' ? prendaData._local_id.trim() : '';
+            const enModoEdicion = prendaEditIndex !== null && prendaEditIndex !== undefined;
 
             console.log('[prenda-form-collector]  DIAGNÓSTICO FINAL _local_id:', {
                 modalElement_existe: !!modalElement,
                 dataset_existe: !!modalElement?.dataset,
                 draftPrendaLocalId_valor: modalLocalId,
                 modalLocalId_truthy: !!modalLocalId,
-                prendaData_local_id_antes: prendaData._local_id
+                prendaData_local_id_antes: prendaData._local_id,
+                prendaLocalId_parametro: localIdEntrante,
+                enModoEdicion
             });
 
-            if (modalLocalId) {
-                prendaData._local_id = modalLocalId;
-                console.log('[prenda-form-collector]  ✓ _local_id preservado del modal:', modalLocalId);
+            if (enModoEdicion) {
+                if (localIdEntrante) {
+                    prendaData._local_id = localIdEntrante;
+                    console.log('[prenda-form-collector]  ✓ _local_id preservado desde prenda en edición:', localIdEntrante);
+                } else if (localIdActual) {
+                    prendaData._local_id = localIdActual;
+                    console.log('[prenda-form-collector]  ✓ _local_id conservado desde prendaData:', localIdActual);
+                } else if (modalLocalId) {
+                    // Fallback defensivo: solo usar modal si no hay otra identidad disponible.
+                    prendaData._local_id = modalLocalId;
+                    console.warn('[prenda-form-collector]  ⚠️ Fallback _local_id tomado del modal en edición:', modalLocalId);
+                } else {
+                    console.warn('[prenda-form-collector]  ⚠️ Edición sin _local_id disponible');
+                }
             } else {
-                console.warn('[prenda-form-collector]  ⚠️ NO HAY _local_id en el modal, prendaData no tendrá _local_id inicial');
+                if (modalLocalId) {
+                    prendaData._local_id = modalLocalId;
+                    console.log('[prenda-form-collector]  ✓ _local_id preservado del modal (creación):', modalLocalId);
+                } else {
+                    console.warn('[prenda-form-collector]  ⚠️ NO HAY _local_id en el modal, prendaData no tendrá _local_id inicial');
+                }
             }
 
             console.log('[prenda-form-collector]  prendaData._local_id final:', prendaData._local_id);

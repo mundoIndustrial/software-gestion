@@ -191,6 +191,23 @@
             return;
         }
 
+        const prendas = window.gestionItemsUI.prendas;
+        const esIdReal = (value) => {
+            const n = Number(value || 0);
+            return Number.isInteger(n) && n > 0;
+        };
+        const obtenerLocalId = (value) => (typeof value === 'string' ? value.trim() : '');
+
+        const localesNuevas = prendas
+            .filter((prenda) => !esIdReal(prenda?.prenda_pedido_id))
+            .map((prenda) => obtenerLocalId(prenda?._local_id))
+            .filter(Boolean);
+        const conteoLocales = localesNuevas.reduce((acc, localId) => {
+            acc[localId] = (acc[localId] || 0) + 1;
+            return acc;
+        }, {});
+        const hayLocalIdsDuplicados = Object.values(conteoLocales).some((total) => total > 1);
+
         const mapaPorLocalId = new Map();
         mapeadas.forEach((item) => {
             const localId = typeof item?.local_id === 'string' ? item.local_id.trim() : '';
@@ -206,17 +223,64 @@
         }
 
         let actualizadas = 0;
-        window.gestionItemsUI.prendas.forEach((prenda) => {
-            const localId = typeof prenda?._local_id === 'string' ? prenda._local_id.trim() : '';
-            if (!localId || !mapaPorLocalId.has(localId)) {
-                return;
-            }
+        if (!hayLocalIdsDuplicados) {
+            prendas.forEach((prenda) => {
+                if (esIdReal(prenda?.prenda_pedido_id)) {
+                    return;
+                }
+                const localId = obtenerLocalId(prenda?._local_id);
+                if (!localId || !mapaPorLocalId.has(localId)) {
+                    return;
+                }
 
-            const nuevoId = mapaPorLocalId.get(localId);
-            prenda.prenda_pedido_id = nuevoId;
-            prenda.id = nuevoId;
-            actualizadas++;
-        });
+                const nuevoId = mapaPorLocalId.get(localId);
+                prenda.prenda_pedido_id = nuevoId;
+                prenda.id = nuevoId;
+                actualizadas++;
+            });
+        } else {
+            // Fallback defensivo: si hay _local_id duplicados, mapear por orden de inserción
+            // de nuevas prendas para evitar colapsar varias prendas al mismo ID.
+            console.warn('[DraftPedidoOrchestrator] _local_id duplicados detectados; aplicando mapeo secuencial de respaldo');
+
+            const indicesNuevas = [];
+            prendas.forEach((prenda, index) => {
+                if (!esIdReal(prenda?.prenda_pedido_id)) {
+                    indicesNuevas.push(index);
+                }
+            });
+            const indicesAsignados = new Set();
+
+            mapeadas.forEach((item) => {
+                const localId = obtenerLocalId(item?.local_id);
+                const nuevoId = Number(item?.prenda_pedido_id || 0);
+                if (!localId || !Number.isInteger(nuevoId) || nuevoId <= 0) {
+                    return;
+                }
+
+                let idxObjetivo = indicesNuevas.find((idx) => {
+                    if (indicesAsignados.has(idx)) {
+                        return false;
+                    }
+                    return obtenerLocalId(prendas[idx]?._local_id) === localId;
+                });
+
+                if (idxObjetivo === undefined) {
+                    idxObjetivo = indicesNuevas.find((idx) => !indicesAsignados.has(idx));
+                }
+
+                if (idxObjetivo === undefined) {
+                    return;
+                }
+
+                const prenda = prendas[idxObjetivo];
+                prenda.prenda_pedido_id = nuevoId;
+                prenda.id = nuevoId;
+                indicesAsignados.add(idxObjetivo);
+                actualizadas++;
+            });
+        }
+
 
         if (actualizadas > 0) {
             console.debug('[DraftPedidoOrchestrator] IDs de nuevas prendas sincronizados en memoria', {
