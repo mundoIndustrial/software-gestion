@@ -643,14 +643,17 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
         return false;
     }
 
-    // Buscar TODAS las tarjetas DOM con este índice
-    const tarjetas = document.querySelectorAll(`[data-prenda-index="${prendaIndex}"]`);
-    if (tarjetas.length === 0) {
+    // Buscar SOLO el contenedor de tarjeta readonly.
+    // No usar selector genérico [data-prenda-index] porque también coincide
+    // con botones/submenús internos y puede eliminar nodos válidos.
+    const selectorTarjeta = `.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`;
+    const tarjetaObjetivo = document.querySelector(selectorTarjeta);
+    if (!tarjetaObjetivo) {
         console.warn('[reRenderizarTarjetaPrendaEditada] No hay tarjetas en DOM para índice:', prendaIndex);
         return false;
     }
 
-    console.log('[reRenderizarTarjetaPrendaEditada] Encontradas', tarjetas.length, 'tarjeta(s)');
+    console.log('[reRenderizarTarjetaPrendaEditada] Tarjeta objetivo encontrada para índice:', prendaIndex);
 
     // Re-generar HTML de la tarjeta
     const nuevoHTML = globalThis.generarTarjetaPrendaReadOnly(prenda, prendaIndex);
@@ -663,20 +666,9 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
         return false;
     }
 
-    // Reemplazar la PRIMERA tarjeta y eliminar duplicados
-    let primeraReemplazada = false;
-    tarjetas.forEach((tarjeta, idx) => {
-        if (!primeraReemplazada) {
-            // Reemplazar la primera tarjeta
-            tarjeta.replaceWith(nuevaTarjeta);
-            console.log('[reRenderizarTarjetaPrendaEditada] Tarjeta actualizada');
-            primeraReemplazada = true;
-        } else {
-            // Eliminar los duplicados
-            console.warn('[reRenderizarTarjetaPrendaEditada] DUPLICADO eliminado - índice:', idx);
-            tarjeta.remove();
-        }
-    });
+    // Reemplazar únicamente la tarjeta editada
+    tarjetaObjetivo.replaceWith(nuevaTarjeta);
+    console.log('[reRenderizarTarjetaPrendaEditada] Tarjeta actualizada');
 
     return true;
 }
