@@ -409,6 +409,7 @@ class MapearPedidoEdicionService
 
             return [
                 'id' => $prenda->id,
+                'local_id' => $prenda->local_id,
                 'nombre' => $prenda->nombre_prenda,
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'descripcion' => $prenda->descripcion ?? '',

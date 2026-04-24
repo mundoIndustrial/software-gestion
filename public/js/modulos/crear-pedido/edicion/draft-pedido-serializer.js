@@ -1,6 +1,58 @@
 (function() {
     'use strict';
 
+    function generarLocalIdTemporalPrenda() {
+        return `prenda-local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function obtenerLocalIdTemporalModal(modalPrenda) {
+        const actual = typeof modalPrenda?.dataset?.draftPrendaLocalId === 'string'
+            ? modalPrenda.dataset.draftPrendaLocalId.trim()
+            : '';
+
+        if (actual) {
+            return actual;
+        }
+
+        const nuevo = generarLocalIdTemporalPrenda();
+        if (modalPrenda?.dataset) {
+            modalPrenda.dataset.draftPrendaLocalId = nuevo;
+        }
+
+        return nuevo;
+    }
+
+    function formularioNuevaPrendaTieneContenido() {
+        const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim() || '';
+        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim() || '';
+        const imagenes = globalThis.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+        const telasCreacion = Array.isArray(globalThis.telasCreacion) ? globalThis.telasCreacion : [];
+        const telasAgregadas = Array.isArray(globalThis.telasAgregadas) ? globalThis.telasAgregadas : [];
+        const tallasRelacionales = globalThis.tallasRelacionales && typeof globalThis.tallasRelacionales === 'object'
+            ? globalThis.tallasRelacionales
+            : {};
+        const procesosSeleccionados = globalThis.procesosSeleccionados && typeof globalThis.procesosSeleccionados === 'object'
+            ? globalThis.procesosSeleccionados
+            : {};
+        const cantidadSoloSeleccionada = Number(globalThis.cantidadSoloSeleccionada || 0);
+
+        const tieneTallas = Object.values(tallasRelacionales).some((genero) =>
+            genero && typeof genero === 'object' && Object.keys(genero).length > 0
+        );
+        const tieneProcesos = Object.keys(procesosSeleccionados).length > 0;
+
+        return !!(
+            nombre ||
+            descripcion ||
+            imagenes.length > 0 ||
+            telasCreacion.length > 0 ||
+            telasAgregadas.length > 0 ||
+            tieneTallas ||
+            tieneProcesos ||
+            cantidadSoloSeleccionada > 0
+        );
+    }
+
     function sincronizarPrendaModalAntesDeGuardarBorrador() {
         const modalPrenda = document.getElementById('modal-agregar-prenda-nueva');
         const modalWizardColores = document.getElementById('modal-asignar-colores-por-talla');
@@ -107,7 +159,27 @@
         }
 
         const prefijo = `prenda_existente_${prendaIndex}_`;
-        const estaPrendaEnEdicion = window.gestionItemsUI?.prendaEditIndex === prendaIndex;
+        const prendaArrayIndex = Array.isArray(window.gestionItemsUI?.prendas)
+            ? window.gestionItemsUI.prendas.findIndex((item) => {
+                if (!item || typeof item !== 'object') {
+                    return false;
+                }
+
+                if (item === prenda) {
+                    return true;
+                }
+
+                const itemId = item.prenda_pedido_id || item.id || null;
+                if (itemId !== null && itemId !== undefined && String(itemId) === String(prendaId)) {
+                    return true;
+                }
+
+                const itemLocalId = typeof item._local_id === 'string' ? item._local_id.trim() : '';
+                const prendaLocalId = typeof prenda._local_id === 'string' ? prenda._local_id.trim() : '';
+                return !!(itemLocalId && prendaLocalId && itemLocalId === prendaLocalId);
+            })
+            : -1;
+        const estaPrendaEnEdicion = prendaArrayIndex >= 0 && window.gestionItemsUI?.prendaEditIndex === prendaArrayIndex;
 
         const agregarArchivo = (clave, archivo) => {
             if (!archivo) return;
@@ -479,7 +551,7 @@
 
                 validarRelacionExplicita(placeholderBase, `la relacion color/tela ${idxRelacion + 1}`);
 
-                const fotosOficiales = Array.isArray(colorTela?.fotos_tela) ? colorTela.fotos_tela : [];
+                const fotosOficiales = Array.isArray(colorTela?.fotos) ? colorTela.fotos : (Array.isArray(colorTela?.fotos_tela) ? colorTela.fotos_tela : []);
                 fotosOficiales.forEach((foto) => {
                     const rutaOriginal = normalizarRutaPersistible(foto?.ruta_original || foto?.url || '');
                     const rutaWebp = normalizarRutaPersistible(foto?.ruta_webp || '');
@@ -745,6 +817,144 @@
             imagenes_a_eliminar: imagenesAEliminar,
             procesos_a_eliminar: procesosAEliminar
         };
+    }
+
+    function sincronizarPrendaModalAntesDeGuardarBorrador() {
+        const modalPrenda = document.getElementById('modal-agregar-prenda-nueva');
+        const modalWizardColores = document.getElementById('modal-asignar-colores-por-talla');
+        const gestionItems = window.gestionItemsUI;
+
+        if (!modalPrenda || !gestionItems) {
+            return true;
+        }
+
+        const estiloModal = window.getComputedStyle ? window.getComputedStyle(modalPrenda) : null;
+        const modalVisible = modalPrenda.style.display === 'flex'
+            || modalPrenda.classList.contains('show')
+            || (estiloModal && estiloModal.display !== 'none');
+
+        if (!modalVisible) {
+            return true;
+        }
+
+        const estiloWizard = (modalWizardColores && window.getComputedStyle)
+            ? window.getComputedStyle(modalWizardColores)
+            : null;
+        const wizardVisible = !!(
+            modalWizardColores
+            && (
+                modalWizardColores.style.display === 'block'
+                || modalWizardColores.classList.contains('show')
+                || (estiloWizard && estiloWizard.display !== 'none')
+            )
+        );
+
+        if (wizardVisible && window.ColoresPorTalla && typeof window.ColoresPorTalla.wizardGuardarAsignacion === 'function') {
+            const guardadoWizard = window.ColoresPorTalla.wizardGuardarAsignacion();
+            if (!guardadoWizard) {
+                throw new Error('No se pudieron guardar las asignaciones de colores/telas antes de guardar el borrador.');
+            }
+        }
+
+        if (!window.prendaFormCollector && typeof PrendaFormCollector !== 'undefined') {
+            window.prendaFormCollector = new PrendaFormCollector();
+        }
+
+        if (!window.prendaFormCollector || typeof window.prendaFormCollector.construirPrendaDesdeFormulario !== 'function') {
+            throw new Error('No se pudo sincronizar la prenda del modal antes de guardar el borrador.');
+        }
+
+        if (typeof window.prendaFormCollector.setNotificationService === 'function') {
+            window.prendaFormCollector.setNotificationService(gestionItems.notificationService || null);
+        }
+
+        const prendaEditIndex = gestionItems.prendaEditIndex;
+        const estaEditandoPrenda = prendaEditIndex !== null && prendaEditIndex !== undefined;
+        const prendasActuales = Array.isArray(gestionItems.prendas) ? gestionItems.prendas : [];
+
+        if (!estaEditandoPrenda && !formularioNuevaPrendaTieneContenido()) {
+            console.debug('[DraftPedidoSerializer] Modal de nueva prenda abierto sin contenido relevante; se omite sincronizacion previa.');
+            return true;
+        }
+
+        const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
+            estaEditandoPrenda ? prendaEditIndex : null,
+            prendasActuales
+        );
+
+        if (!prendaData) {
+            if (!estaEditandoPrenda) {
+                throw new Error('Hay una prenda nueva abierta en el formulario. Completala, agregala a la lista o cierra el modal antes de guardar el borrador.');
+            }
+
+            throw new Error('No se pudo recopilar la prenda abierta en edicion. Guarda o cierra el modal e intenta nuevamente.');
+        }
+
+        if (!estaEditandoPrenda) {
+            const localIdTemporal = obtenerLocalIdTemporalModal(modalPrenda);
+            prendaData._local_id = prendaData._local_id || localIdTemporal;
+
+            const indiceExistente = prendasActuales.findIndex((item) => {
+                const itemLocalId = typeof item?._local_id === 'string' ? item._local_id.trim() : '';
+                return itemLocalId && itemLocalId === prendaData._local_id;
+            });
+
+            if (indiceExistente >= 0) {
+                const prendaAnterior = prendasActuales[indiceExistente] || {};
+                gestionItems.prendas[indiceExistente] = {
+                    ...prendaAnterior,
+                    ...prendaData,
+                    _local_id: prendaAnterior?._local_id || prendaData._local_id,
+                    id: prendaAnterior?.id ?? prendaData?.id ?? null,
+                    prenda_pedido_id: prendaAnterior?.prenda_pedido_id ?? prendaData?.prenda_pedido_id ?? null
+                };
+
+                console.debug('[DraftPedidoSerializer] Nueva prenda del modal sincronizada sobre registro temporal existente antes de guardar borrador:', {
+                    indiceExistente,
+                    nombre: gestionItems.prendas[indiceExistente]?.nombre_prenda || gestionItems.prendas[indiceExistente]?.nombre_producto,
+                    local_id: gestionItems.prendas[indiceExistente]?._local_id || null
+                });
+                return true;
+            }
+
+            if (typeof gestionItems.agregarPrendaAlOrden === 'function') {
+                gestionItems.agregarPrendaAlOrden(prendaData);
+            } else {
+                gestionItems.prendas.push(prendaData);
+            }
+
+            console.debug('[DraftPedidoSerializer] Nueva prenda abierta en modal sincronizada antes de guardar borrador:', {
+                nombre: prendaData?.nombre_prenda || prendaData?.nombre_producto,
+                local_id: prendaData?._local_id || null,
+                imagenes: Array.isArray(prendaData?.imagenes) ? prendaData.imagenes.length : 0
+            });
+            return true;
+        }
+
+        const prendaActual = gestionItems.prendas?.[prendaEditIndex] || {};
+        gestionItems.prendas[prendaEditIndex] = {
+            ...prendaActual,
+            ...prendaData,
+            id: prendaActual?.id ?? prendaData?.id ?? null,
+            prenda_pedido_id: prendaActual?.prenda_pedido_id ?? prendaData?.prenda_pedido_id ?? prendaActual?.id ?? null,
+            imagenes: Array.isArray(prendaData?.imagenes) ? prendaData.imagenes : [],
+            telasAgregadas: Array.isArray(prendaData?.telasAgregadas) ? prendaData.telasAgregadas : [],
+            procesos: (prendaData?.procesos && typeof prendaData.procesos === 'object') ? prendaData.procesos : {},
+            asignacionesColoresPorTalla: prendaData?.asignacionesColoresPorTalla || {},
+            cantidad_talla: prendaData?.cantidad_talla || {},
+            procesos_a_eliminar: Array.isArray(prendaData?.procesos_a_eliminar) ? prendaData.procesos_a_eliminar : (prendaActual?.procesos_a_eliminar || []),
+            imagenes_a_eliminar: Array.isArray(prendaData?.imagenes_a_eliminar) ? prendaData.imagenes_a_eliminar : []
+        };
+
+        console.debug('[DraftPedidoSerializer] Prenda en edicion sincronizada antes de guardar borrador:', {
+            prendaEditIndex,
+            nombre: gestionItems.prendas[prendaEditIndex]?.nombre_prenda || gestionItems.prendas[prendaEditIndex]?.nombre_producto,
+            imagenes: gestionItems.prendas[prendaEditIndex]?.imagenes?.length || 0,
+            telas: gestionItems.prendas[prendaEditIndex]?.telasAgregadas?.length || gestionItems.prendas[prendaEditIndex]?.telas?.length || 0,
+            procesos: Object.keys(gestionItems.prendas[prendaEditIndex]?.procesos || {}).length
+        });
+
+        return true;
     }
 
     window.DraftPedidoSerializer = {

@@ -150,7 +150,7 @@ function cargarPrendas(prendas) {
 
     const prendasRegistradas = new Set();
     const obtenerClavePrendaEdicion = (prenda, index) => {
-        const baseId = prenda?.prenda_pedido_id || prenda?.id || null;
+        const baseId = prenda?.local_id || prenda?._local_id || prenda?.prenda_pedido_id || prenda?.id || null;
         if (baseId !== null && baseId !== undefined && baseId !== '') {
             return `prenda:${baseId}`;
         }
@@ -249,7 +249,7 @@ function cargarPrendas(prendas) {
 
             const coloresTelas = Array.isArray(prenda.colores_telas) ? prenda.colores_telas : [];
             const telasAgregadasDesdeFuenteOficial = coloresTelas.map((ct) => {
-                const fotosTela = Array.isArray(ct.fotos_tela) ? ct.fotos_tela : [];
+                const fotosTela = Array.isArray(ct.fotos) ? ct.fotos : (Array.isArray(ct.fotos_tela) ? ct.fotos_tela : []);
                 const imagenes = fotosTela.map((f) => ({
                     ruta: f?.url || f?.ruta_original || f?.ruta_webp || '',
                     ruta_original: f?.ruta_original || f?.url || '',
@@ -295,7 +295,7 @@ function cargarPrendas(prendas) {
             const datosPrenda = {
                 id: prenda.id || null,
                 prenda_pedido_id: prenda.prenda_pedido_id || prenda.id || null,
-                _local_id: prenda._local_id || `prenda-${prenda.prenda_pedido_id || prenda.id || index}`,
+                _local_id: prenda.local_id || prenda._local_id || `prenda-${prenda.prenda_pedido_id || prenda.id || index}`,
                 nombre_producto: prenda.nombre_prenda || '',
                 nombre_prenda: prenda.nombre_prenda || '',
                 descripcion: prenda.descripcion || '',
@@ -660,7 +660,6 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
-
 
 
 

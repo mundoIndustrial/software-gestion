@@ -1208,6 +1208,9 @@ function cerrarModalPrendaNueva() {
     console.log(' [cerrarModalPrendaNueva] INICIANDO cierre del modal...');
     
     try {
+        const esModoEdicion = globalThis.gestionItemsUI?.prendaEditIndex !== null && 
+                             globalThis.gestionItemsUI?.prendaEditIndex !== undefined;
+
         // PASO 1: Resetear prendaEditIndex
         console.log('→ PASO 1: Reseteando prendaEditIndex...');
         if (globalThis.gestionItemsUI) {
@@ -1220,6 +1223,9 @@ function cerrarModalPrendaNueva() {
         console.log('→ PASO 2: Ocultando modal...');
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         if (modal) {
+            if (!esModoEdicion && modal.dataset?.draftPrendaLocalId) {
+                delete modal.dataset.draftPrendaLocalId;
+            }
             modal.style.setProperty('display', 'none', 'important');
             modal.classList.remove('active');
             document.body.style.overflow = '';
@@ -1264,9 +1270,6 @@ function cerrarModalPrendaNueva() {
         // PASO 5.6: Limpiar imágenes de prenda del storage
         // ⚠️ FIX CRÍTICO: NO limpiar storage si estamos en modo EDICIÓN
         // Esto previene que se eliminen las imágenes cuando se cierra el modal de edición
-        const esModoEdicion = globalThis.gestionItemsUI?.prendaEditIndex !== null && 
-                             globalThis.gestionItemsUI?.prendaEditIndex !== undefined;
-        
         console.log('→ PASO 5.6: Limpiando imagenesPrendaStorage... (modoEdicion:', esModoEdicion, ')');
         if (!esModoEdicion && globalThis.imagenesPrendaStorage) {
             // Solo limpiar en modo CREACIÓN
