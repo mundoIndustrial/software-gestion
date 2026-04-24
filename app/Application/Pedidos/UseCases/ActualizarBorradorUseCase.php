@@ -267,7 +267,6 @@ class ActualizarBorradorUseCase
             Log::info('[ActualizarBorradorUseCase] Prenda existente actualizada dentro del borrador', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
-                'prenda_index' => $prendaIndex,
             ]);
         }
     }
