@@ -483,7 +483,7 @@
         function supervisorPedidosHayFiltrosActivos() {
             try {
                 const url = new URL(window.location.href);
-                const keys = ['busqueda', 'numero', 'cliente', 'asesora', 'forma_pago', 'estado', 'fecha_desde', 'fecha_hasta', 'numero_recibo', 'asesor', 'prendas', 'fecha_creacion'];
+                const keys = ['busqueda', 'numero', 'cliente', 'asesora', 'forma_pago', 'estado', 'fecha', 'fecha_desde', 'fecha_hasta', 'numero_recibo', 'asesor', 'prendas', 'fecha_creacion'];
                 return keys.some(k => {
                     const v = url.searchParams.get(k);
                     return v !== null && String(v).trim() !== '';

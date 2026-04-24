@@ -75,6 +75,18 @@ const _spNotify = window.shared.notify;
 
 // ===== VARIABLES GLOBALES =====
 let filtroActual = null;
+let _spCurrentListUrl = window.location.href;
+
+function _spSetCurrentListUrl(urlString) {
+    try {
+        const parsed = new URL(urlString, window.location.origin);
+        if (parsed.pathname.startsWith('/supervisor-pedidos')) {
+            _spCurrentListUrl = parsed.toString();
+        }
+    } catch (_) {
+        // noop
+    }
+}
 
 function _spEscapeHtml(value) {
     return String(value ?? '')
@@ -219,7 +231,7 @@ window.abrirNovedades = abrirNovedades;
 window.cerrarModalNovedades = cerrarModalNovedades;
 
 function _spBuildPageUrl(page) {
-    const url = new URL(window.location.href);
+    const url = new URL(_spCurrentListUrl || window.location.href, window.location.origin);
     url.searchParams.set('page', String(page));
     return url.toString();
 }
@@ -323,30 +335,60 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
     if (lastPage > 1 || rows.length > 0) {
         const prevDisabled = currentPage <= 1;
         const nextDisabled = currentPage >= lastPage;
-        const makeBtn = (label, page, disabled = false) => {
+
+        const makeBtn = (label, page, disabled = false, variant = 'default') => {
+            const baseStyle = 'min-width: 40px; height: 38px; padding: 0 12px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px;';
+            const styleByVariant = {
+                default: 'background: #ffffff; border: 1px solid #cbd5e1; color: #334155;',
+                nav: 'background: #f8fafc; border: 1px solid #cbd5e1; color: #1e293b;',
+            };
+            const activeStyle = styleByVariant[variant] || styleByVariant.default;
+
             if (disabled) {
-                return `<button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">${label}</button>`;
+                return `<button disabled style="${baseStyle} background: #f1f5f9; border: 1px solid #e2e8f0; color: #94a3b8; cursor: not-allowed;">${label}</button>`;
             }
-            return `<a href="${_spEscapeHtml(_spBuildPageUrl(page))}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none;">${label}</a>`;
+
+            return `<a href="${_spEscapeHtml(_spBuildPageUrl(page))}" style="${baseStyle} ${activeStyle} cursor: pointer;">${label}</a>`;
         };
 
-        let pageButtons = '';
+        const makePageBtn = (page, isActive = false) => {
+            if (isActive) {
+                return `<button disabled style="min-width: 40px; height: 38px; padding: 0 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: 1px solid #1d4ed8; border-radius: 10px; color: #ffffff; font-weight: 700; cursor: default; font-size: 13px;">${page}</button>`;
+            }
+
+            return `<a href="${_spEscapeHtml(_spBuildPageUrl(page))}" style="min-width: 40px; height: 38px; padding: 0 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; color: #334155; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px;">${page}</a>`;
+        };
+
+        const makeEllipsis = () => `<span style="min-width: 24px; text-align: center; color: #94a3b8; font-weight: 700;">...</span>`;
+
+        const pages = [];
+        const radius = 2;
         for (let page = 1; page <= lastPage; page += 1) {
-            if (page === currentPage) {
-                pageButtons += `<button disabled style="min-width: 36px; height: 36px; padding: 0 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 1px solid #1d4ed8; border-radius: 6px; color: white; font-weight: 600; cursor: default;">${page}</button>`;
-            } else {
-                pageButtons += `<a href="${_spEscapeHtml(_spBuildPageUrl(page))}" style="min-width: 36px; height: 36px; padding: 0 8px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none;">${page}</a>`;
+            if (page === 1 || page === lastPage || Math.abs(page - currentPage) <= radius) {
+                pages.push(page);
             }
         }
 
+        let pageButtons = '';
+        let previousPage = 0;
+        pages.forEach((page) => {
+            if (previousPage && page - previousPage > 1) {
+                pageButtons += makeEllipsis();
+            }
+            pageButtons += makePageBtn(page, page === currentPage);
+            previousPage = page;
+        });
+
         pagination = `
-            <div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
-                ${makeBtn('&laquo;&laquo;', 1, prevDisabled)}
-                ${makeBtn('&larr; Anterior', Math.max(1, currentPage - 1), prevDisabled)}
+            <div style="margin-top: 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 0.55rem;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px;">
+                ${makeBtn('&laquo; Primera', 1, prevDisabled, 'nav')}
+                ${makeBtn('&larr; Anterior', Math.max(1, currentPage - 1), prevDisabled, 'nav')}
                 ${pageButtons}
-                ${makeBtn('Siguiente &rarr;', Math.min(lastPage, currentPage + 1), nextDisabled)}
-                ${makeBtn('&raquo;&raquo;', lastPage, nextDisabled)}
-                <span style="margin-left: 1rem; color: #666; font-size: 14px; font-weight: 500;">Página ${currentPage} de ${lastPage} | Total: ${total} registros</span>
+                ${makeBtn('Siguiente &rarr;', Math.min(lastPage, currentPage + 1), nextDisabled, 'nav')}
+                ${makeBtn('Última &raquo;', lastPage, nextDisabled, 'nav')}
+                </div>
+                <span style="color: #64748b; font-size: 13px; font-weight: 600;">Página ${currentPage} de ${lastPage} | Total: ${total} registros</span>
             </div>
         `;
     }
@@ -1120,9 +1162,11 @@ function aplicarFiltroColumna(event) {
 }
 
 async function navegarSupervisorPedidos(urlString, options = {}) {
+    _spSetCurrentListUrl(urlString);
     const success = await _spFilter.navigateAjax(urlString, options);
 
     if (success) {
+        _spSetCurrentListUrl(urlString);
         actualizarIndicadoresFiltros();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
 
@@ -1135,6 +1179,7 @@ async function navegarSupervisorPedidos(urlString, options = {}) {
 }
 
 window.addEventListener('popstate', function() {
+    _spSetCurrentListUrl(window.location.href);
     navegarSupervisorPedidos(window.location.href, { pushState: false });
     window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
 });

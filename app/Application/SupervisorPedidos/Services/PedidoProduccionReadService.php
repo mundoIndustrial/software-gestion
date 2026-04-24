@@ -588,21 +588,24 @@ class PedidoProduccionReadService
 
     private function applyEppOnlyFilter($query): void
     {
-        // Optimizado: usar leftJoin con DISTINCT en lugar de whereHas (que es lento)
-        $query->leftJoin('prendas_pedido', 'pedidos_produccion.id', '=', 'prendas_pedido.pedido_produccion_id')
-            ->whereNull('prendas_pedido.deleted_at')
-            ->distinct()
-            ->select([
-                'pedidos_produccion.*',
-                DB::raw("(
-                    SELECT COUNT(*)
-                    FROM prendas_pedido pp
-                    LEFT JOIN prenda_entregas pe ON pe.prenda_pedido_id = pp.id
-                    WHERE pp.pedido_produccion_id = pedidos_produccion.id
-                      AND pp.deleted_at IS NULL
-                      AND (pe.id IS NULL OR pe.entregado = 0)
-                ) as prendas_pendientes_entrega_count"),
-            ]);
+        // Mantener 1 fila por pedido (sin JOIN directo) para que paginate/count
+        // no duplique registros cuando un pedido tiene varias prendas.
+        $query->whereExists(function ($subquery) {
+            $subquery->selectRaw('1')
+                ->from('prendas_pedido')
+                ->whereColumn('prendas_pedido.pedido_produccion_id', 'pedidos_produccion.id')
+                ->whereNull('prendas_pedido.deleted_at');
+        })->select([
+            'pedidos_produccion.*',
+            DB::raw("(
+                SELECT COUNT(*)
+                FROM prendas_pedido pp
+                LEFT JOIN prenda_entregas pe ON pe.prenda_pedido_id = pp.id
+                WHERE pp.pedido_produccion_id = pedidos_produccion.id
+                  AND pp.deleted_at IS NULL
+                  AND (pe.id IS NULL OR pe.entregado = 0)
+            ) as prendas_pendientes_entrega_count"),
+        ]);
     }
 
     private function applyApprovalFilter($query, ListOrdersRequest $request): void
@@ -643,11 +646,25 @@ class PedidoProduccionReadService
     private function applyColumnFilters($query, ListOrdersRequest $request): void
     {
         if ($request->getNumero()) {
-            $query->whereIn('numero_pedido', explode(',', $request->getNumero()));
+            $numeros = array_values(array_filter(array_map('trim', explode(',', (string) $request->getNumero()))));
+            if (!empty($numeros)) {
+                $query->where(function ($q) use ($numeros) {
+                    foreach ($numeros as $numero) {
+                        $q->orWhere('numero_pedido', 'like', '%' . $numero . '%');
+                    }
+                });
+            }
         }
 
         if ($request->getCliente()) {
-            $query->whereIn('cliente', explode(',', $request->getCliente()));
+            $clientes = array_values(array_filter(array_map('trim', explode(',', (string) $request->getCliente()))));
+            if (!empty($clientes)) {
+                $query->where(function ($q) use ($clientes) {
+                    foreach ($clientes as $cliente) {
+                        $q->orWhere('cliente', 'like', '%' . $cliente . '%');
+                    }
+                });
+            }
         }
 
         if ($request->getFormaPago()) {
@@ -680,7 +697,7 @@ class PedidoProduccionReadService
             if (!empty($fechas)) {
                 $query->where(function ($q) use ($fechas) {
                     foreach ($fechas as $fecha) {
-                        $q->orWhereDate('created_at', $fecha);
+                        $q->orWhereDate('pedidos_produccion.created_at', $fecha);
                     }
                 });
             }
@@ -688,11 +705,11 @@ class PedidoProduccionReadService
         }
 
         if ($request->getFechaDesde()) {
-            $query->whereDate('created_at', '>=', $request->getFechaDesde());
+            $query->whereDate('pedidos_produccion.created_at', '>=', $request->getFechaDesde());
         }
 
         if ($request->getFechaHasta()) {
-            $query->whereDate('created_at', '<=', $request->getFechaHasta());
+            $query->whereDate('pedidos_produccion.created_at', '<=', $request->getFechaHasta());
         }
     }
 

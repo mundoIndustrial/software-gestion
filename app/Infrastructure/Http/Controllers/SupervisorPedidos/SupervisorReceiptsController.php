@@ -557,10 +557,30 @@ class SupervisorReceiptsController extends Controller
             ->where('bdt.area', 'costura')
             ->where('bdt.estado_bodega', 'pendiente')
             ->where('bdt.pedido_produccion_id', $pedidoId)
+            ->whereNull('bdt.pedido_epp_id')
+            ->whereNotNull('bdt.prenda_id')
             ->count();
 
         $notesCount = DB::table('bodega_notas as bn')
             ->where('bn.pedido_produccion_id', $pedidoId)
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('bodega_detalles_talla as bdt')
+                    ->whereNull('bdt.deleted_at')
+                    ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
+                    ->whereNull('bdt.pedido_epp_id')
+                    ->whereNotNull('bdt.prenda_id')
+                    ->whereColumn('bdt.pedido_produccion_id', 'bn.pedido_produccion_id')
+                    ->where(function ($match) {
+                        $match->where(function ($byColor) {
+                            $byColor->whereNotNull('bn.talla_color_id')
+                                ->whereColumn('bdt.talla_color_id', 'bn.talla_color_id');
+                        })->orWhere(function ($bySize) {
+                            $bySize->whereRaw('(bn.talla_color_id IS NULL OR bdt.talla_color_id IS NULL)')
+                                ->whereRaw("LOWER(TRIM(COALESCE(bdt.talla, ''))) = LOWER(TRIM(COALESCE(bn.talla, '')))");
+                        });
+                    });
+            })
             ->count();
 
         return response()->json([
@@ -592,8 +612,26 @@ class SupervisorReceiptsController extends Controller
 
         $notas = DB::table('bodega_notas as bn')
             ->whereIn('bn.pedido_produccion_id', $pedidoIds)
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('bodega_detalles_talla as bdt')
+                    ->whereNull('bdt.deleted_at')
+                    ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
+                    ->whereNull('bdt.pedido_epp_id')
+                    ->whereNotNull('bdt.prenda_id')
+                    ->whereColumn('bdt.pedido_produccion_id', 'bn.pedido_produccion_id')
+                    ->where(function ($match) {
+                        $match->where(function ($byColor) {
+                            $byColor->whereNotNull('bn.talla_color_id')
+                                ->whereColumn('bdt.talla_color_id', 'bn.talla_color_id');
+                        })->orWhere(function ($bySize) {
+                            $bySize->whereRaw('(bn.talla_color_id IS NULL OR bdt.talla_color_id IS NULL)')
+                                ->whereRaw("LOWER(TRIM(COALESCE(bdt.talla, ''))) = LOWER(TRIM(COALESCE(bn.talla, '')))");
+                        });
+                    });
+            })
             ->select('bn.pedido_produccion_id')
-            ->selectRaw('COUNT(*) as notes_count')
+            ->selectRaw('COUNT(DISTINCT bn.id) as notes_count')
             ->groupBy('bn.pedido_produccion_id')
             ->get()
             ->keyBy('pedido_produccion_id');
@@ -641,6 +679,8 @@ class SupervisorReceiptsController extends Controller
         $baseDetallesQuery = DB::table('bodega_detalles_talla as bdt')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'bdt.prenda_id')
             ->whereNull('bdt.deleted_at')
+            ->whereNull('bdt.pedido_epp_id')
+            ->whereNotNull('bdt.prenda_id')
             ->where(function ($q) use ($pedidoId, $numeroPedidoNormalizado) {
                 $q->where('bdt.pedido_produccion_id', $pedidoId)
                     ->orWhereRaw("REPLACE(TRIM(COALESCE(bdt.numero_pedido, '')), '#', '') = ?", [$numeroPedidoNormalizado]);
@@ -660,13 +700,7 @@ class SupervisorReceiptsController extends Controller
             ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
             ->get();
 
-        $detallesSource = 'costura';
-        if ($detallesCosturaParaNotas->isEmpty()) {
-            // Fallback defensivo: si no hay detalle marcado como Costura,
-            // intentamos con cualquier área para no perder el nombre de prenda.
-            $detallesCosturaParaNotas = (clone $baseDetallesQuery)->get();
-            $detallesSource = 'fallback_any_area';
-        }
+        $detallesSource = 'costura_only';
 
         // Fallback adicional desde tallas de prenda del pedido.
         // Esto cubre casos donde bodega_detalles_talla no tiene filas para el pedido.
@@ -723,6 +757,30 @@ class SupervisorReceiptsController extends Controller
             ->orderByDesc('bn.created_at')
             ->limit(200)
             ->get()
+            ->filter(function ($nota) use ($detallesCosturaParaNotas) {
+                $tallaNormalizada = mb_strtolower(trim((string) ($nota->talla ?? '')));
+                $tallaColorId = $nota->talla_color_id;
+
+                $coincidePorTallaColor = $detallesCosturaParaNotas->contains(function ($d) use ($tallaColorId) {
+                    if ($tallaColorId === null) {
+                        return false;
+                    }
+
+                    return (int) ($d->talla_color_id ?? 0) === (int) $tallaColorId;
+                });
+
+                if ($coincidePorTallaColor) {
+                    return true;
+                }
+
+                if ($tallaNormalizada === '') {
+                    return false;
+                }
+
+                return $detallesCosturaParaNotas->contains(function ($d) use ($tallaNormalizada) {
+                    return (string) ($d->talla_normalizada ?? '') === $tallaNormalizada;
+                });
+            })
             ->map(function ($nota) use ($detallesCosturaParaNotas, $detallesTallasFallback) {
                 $tallaNormalizada = mb_strtolower(trim((string) ($nota->talla ?? '')));
                 $tallaColorId = $nota->talla_color_id;
@@ -752,10 +810,6 @@ class SupervisorReceiptsController extends Controller
                 }
                 if ($detallesRelacionados->isEmpty()) {
                     $detallesRelacionados = $detallesPorTallaColor;
-                }
-                if ($detallesRelacionados->isEmpty()) {
-                    // Ultimo fallback: usar el primer detalle de costura del pedido.
-                    $detallesRelacionados = $detallesCosturaParaNotas->take(1);
                 }
 
                 $prendaNombre = $detallesRelacionados->pluck('prenda_nombre')->filter()->unique()->values()->implode(', ');

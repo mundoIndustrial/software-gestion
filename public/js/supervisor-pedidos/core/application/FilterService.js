@@ -122,11 +122,11 @@ class FilterService {
                 return false;
             }
 
-            window.renderSupervisorOrdersTable(data);
-
             if (pushState) {
                 window.history.pushState({ url: urlString }, '', urlString);
             }
+
+            window.renderSupervisorOrdersTable(data);
 
             return true;
         } catch (e) {
