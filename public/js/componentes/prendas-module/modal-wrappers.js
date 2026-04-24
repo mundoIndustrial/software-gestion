@@ -32,14 +32,22 @@ globalThis.abrirModalPrendaNueva = function() {
     setTimeout(() => {
         globalThis.__modalPrendaAbriendo = false;
     }, 500);
-    
+
+    // 🆕 CRÍTICO: Generar draftPrendaLocalId ANTES de cualquier return
+    // Esto asegura que se genera para TODAS las prendas nuevas, sin importar la ruta
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (modal) {
+        const draftPrendaLocalId = `prenda-local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        modal.dataset.draftPrendaLocalId = draftPrendaLocalId;
+        console.log('[abrirModalPrendaNueva] ✓ draftPrendaLocalId generado:', draftPrendaLocalId);
+    }
+
     // Intentar usar GestionItemsUI si existe
     if (globalThis.gestionItemsUI && typeof globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
         return globalThis.gestionItemsUI.abrirModalAgregarPrendaNueva();
     }
     
     // Fallback: abrir el modal directamente si existe
-    const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
         //  Asegurar que estamos en modo CREATE (prendaEditIndex = null)
         if (globalThis.gestionItemsUI) {
@@ -50,7 +58,7 @@ globalThis.abrirModalPrendaNueva = function() {
             }
         }
         globalThis.prendaEditIndex = null;
-        
+
         //  Limpiar telas residuales ANTES de abrir el modal
         if (globalThis.telasAgregadas) {
             globalThis.telasAgregadas = [];

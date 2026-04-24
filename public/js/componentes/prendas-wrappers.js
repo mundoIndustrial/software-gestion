@@ -26,6 +26,12 @@ globalThis.abrirModalPrendaNueva = function() {
     console.log('[prendas-wrappers] Abriendo modal de prenda nueva');
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
+        // 🆕 CRÍTICO: Generar draftPrendaLocalId para nuevas prendas
+        // Esto asegura que las imágenes se almacenan/recuperan con un ID consistente
+        const draftPrendaLocalId = `prenda-local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        modal.dataset.draftPrendaLocalId = draftPrendaLocalId;
+        console.log('[prendas-wrappers] ✓ draftPrendaLocalId generado:', draftPrendaLocalId);
+
         // Usar UIModalService para manejar el scroll del body
         if (globalThis.UI && typeof globalThis.UI.abrirModal === 'function') {
             globalThis.UI.abrirModal('modal-agregar-prenda-nueva', {
@@ -39,7 +45,7 @@ globalThis.abrirModalPrendaNueva = function() {
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
-        
+
         // Limpiar formulario al abrir
         const form = modal.querySelector('#form-prenda-nueva');
         if (form) {
