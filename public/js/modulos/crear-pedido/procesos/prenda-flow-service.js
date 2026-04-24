@@ -52,6 +52,25 @@ class PrendaFlowService {
         return idx >= 0 ? idx : null;
     }
 
+    _clonarImagenesPrenda(imagenes = []) {
+        if (!Array.isArray(imagenes)) return [];
+
+        return imagenes.map((img) => {
+            if (img instanceof File) {
+                return img;
+            }
+
+            if (!img || typeof img !== 'object') {
+                return img;
+            }
+
+            return {
+                ...img,
+                file: img.file instanceof File ? img.file : img.file || null
+            };
+        });
+    }
+
     async agregarPrendaNueva() {
         if (this._guardandoPrenda) {
             debugLog('[agregarPrendaNueva] Bloqueado en servicio: guardado ya en curso');
@@ -383,11 +402,12 @@ class PrendaFlowService {
         prendaFusionada._local_id = prendaFusionada._local_id || prendaAnterior._local_id || null;
         prendaFusionada.id = prendaFusionada.id ?? prendaAnterior.id ?? null;
         prendaFusionada.prenda_pedido_id = prendaFusionada.prenda_pedido_id ?? prendaAnterior.prenda_pedido_id ?? prendaAnterior.id ?? null;
+        prendaFusionada.imagenes = this._clonarImagenesPrenda(prendaFusionada.imagenes);
 
         // En modo creación, si el usuario editó solo tallas/campos de texto, preservar imágenes/telas/procesos.
         if (esModoCreate) {
             if (!tieneImagenesNuevas && teniaImagenesAntes && !tieneMarcasEliminacion) {
-                prendaFusionada.imagenes = prendaAnterior.imagenes;
+                prendaFusionada.imagenes = this._clonarImagenesPrenda(prendaAnterior.imagenes);
             }
 
             if (!tieneTelasNuevas && teniaTelasAntes) {

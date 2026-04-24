@@ -68,15 +68,6 @@ class PrendaEditorImagenes {
             }];
         }
         
-        // Formato 3: Intentar obtener desde storage si no hay imagenes
-        if (globalThis.imagenesPrendaStorage) {
-            const imagenes = globalThis.imagenesPrendaStorage.obtenerImagenes();
-            if (imagenes.length > 0) {
-                console.log('[_obtenerImagenesValidas] Usando imágenes del storage:', imagenes.length);
-                return imagenes;
-            }
-        }
-        
         return [];
     }
 
@@ -100,9 +91,13 @@ class PrendaEditorImagenes {
         // Soportar tanto prenda completa como { imagenes: [...] }
         const imagenes = prendaODatos.imagenes || prendaODatos;
         const imagenesConBlobUrl = this._procesarImagenesConBlobUrl(imagenes);
+        const imagenesParaStorage = imagenesConBlobUrl.map((img) => ({
+            ...img,
+            file: img?.file instanceof File ? img.file : img?.file || null
+        }));
         
         if (globalThis.imagenesPrendaStorage) {
-            globalThis.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
+            globalThis.imagenesPrendaStorage.establecerImagenes(imagenesParaStorage);
         }
         
         this._renderizarPreviewConImagenes(preview, imagenesConBlobUrl, contador, btn);
@@ -117,19 +112,8 @@ class PrendaEditorImagenes {
      * @private
      */
     static _cargarSinImagenes(preview, contador, btn) {
-        // ⚠️ CRÍTICO FIX: NO limpiar el storage si ya tiene imágenes válidas
-        // Esto previene que se eliminen las imágenes cuando se edita una prenda
         if (globalThis.imagenesPrendaStorage) {
-            const imagenesEnStorage = globalThis.imagenesPrendaStorage.obtenerImagenes();
-            if (imagenesEnStorage && imagenesEnStorage.length > 0) {
-                // Storage tiene imágenes → NO las limpies, renderiza desde el storage
-                console.log(' [Imagenes]  Prenda sin .imagenes pero storage tiene', imagenesEnStorage.length, 'imágenes - PRESERVANDO');
-                this._renderizarPreviewConImagenes(preview, imagenesEnStorage, contador, btn);
-                return;
-            }
-            
-            // Storage vacío → es seguro limpiar
-            console.log(' [Imagenes]  Prenda sin imágenes, limpiando storage');
+            console.log(' [Imagenes]  Prenda sin imágenes, reiniciando storage de prenda activa');
             globalThis.imagenesPrendaStorage.establecerImagenes([]);
         }
         
