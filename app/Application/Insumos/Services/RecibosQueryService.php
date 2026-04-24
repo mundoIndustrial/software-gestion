@@ -77,13 +77,9 @@ class RecibosQueryService
 
             $page = (int) $request->get('page', 1);
             $perPage = 10;
-            $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
-            $fechaOrdenColumn = $tipoReciboNormalizado === 'REFLECTIVO'
-                ? 'consecutivos_recibos_pedidos.created_at'
-                : 'pedidos_produccion.created_at';
 
             $paginador = $query
-                ->orderByDesc($fechaOrdenColumn)
+                ->orderByDesc('consecutivos_recibos_pedidos.ultima_actividad')
                 ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page);
 
@@ -99,6 +95,55 @@ class RecibosQueryService
                 'items_pagina' => $recibosPagina->count(),
                 'sample_consecutivos' => $recibosPagina->pluck('consecutivo_actual')->filter()->take(10)->values()->all(),
             ]);
+
+            // Logs detallados de ordenamiento
+            $detallesOrdenamiento = $recibosPagina->map(function ($recibo) {
+                $pedidoId = $recibo->pedido_produccion_id ?? 'N/A';
+                $consecutivo = $recibo->consecutivo_actual ?? 'N/A';
+                $fechaCreacion = $recibo->created_at ?? 'N/A';
+
+                // Obtener la fecha más reciente de prendas
+                $ultimaModificacionPrenda = \DB::table('prendas_pedido')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->max('updated_at') ?? 'sin prendas';
+
+                return [
+                    'consecutivo' => $consecutivo,
+                    'pedido_id' => $pedidoId,
+                    'fecha_creacion_recibo' => $fechaCreacion,
+                    'ultima_mod_prenda' => $ultimaModificacionPrenda,
+                ];
+            })->values()->all();
+
+            \Log::info('📊 DETALLES DE ORDENAMIENTO (primeros 10 recibos)', [
+                'trace_id' => $traceId,
+                'page' => $page,
+                'detalles' => array_slice($detallesOrdenamiento, 0, 10),
+            ]);
+
+            // Buscar específicamente el 204
+            $recibo204 = $recibosPagina->firstWhere('consecutivo_actual', '204');
+            if ($recibo204) {
+                $pedido204 = \DB::table('pedidos_produccion')->find($recibo204->pedido_produccion_id);
+                $prendas204 = \DB::table('prendas_pedido')
+                    ->where('pedido_produccion_id', $recibo204->pedido_produccion_id)
+                    ->get(['id', 'nombre_prenda', 'created_at', 'updated_at']);
+
+                \Log::info('🔍 DETALLES DEL RECIBO #204', [
+                    'trace_id' => $traceId,
+                    'pedido_id' => $recibo204->pedido_produccion_id,
+                    'fecha_recibo' => $recibo204->created_at,
+                    'pedido_created_at' => $pedido204->created_at ?? null,
+                    'pedido_updated_at' => $pedido204->updated_at ?? null,
+                    'prendas_count' => count($prendas204),
+                    'prendas_details' => $prendas204->toArray(),
+                ]);
+            } else {
+                \Log::info('⚠️ RECIBO #204 NO ENCONTRADO EN PÁGINA ACTUAL', [
+                    'trace_id' => $traceId,
+                    'page' => $page,
+                ]);
+            }
 
             $timeMapsStart = microtime(true);
 

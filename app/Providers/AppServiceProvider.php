@@ -13,6 +13,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\Cotizacion;
 use App\Observers\TablaOriginalBodegaObserver;
+use App\Observers\PrendaPedidoUpdateReciboObserver;
 use App\Observers\ProcesoPrendaObserver;
 use App\Observers\PedidoProduccionObserver;
 use App\Observers\PrendaPedidoObserver;
@@ -308,6 +309,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Registrar Observer para PrendaPedido
         PrendaPedido::observe(PrendaPedidoObserver::class);
+
+        // Registrar Observer para PrendaPedido que actualiza recibos
+        // Actualiza ultima_actividad en todos los recibos del pedido cuando cambia una prenda
+        PrendaPedido::observe(PrendaPedidoUpdateReciboObserver::class);
 
         // View Composer para el sidebar del contador
         View::composer('contador.sidebar', function ($view) {

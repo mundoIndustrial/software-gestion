@@ -14,8 +14,8 @@ return [
     */
     'insumos_materiales_vite_entry' => match ($env) {
         'production' => true,
+        'local', 'development' => true,
         'staging' => false,
-        'local', 'development' => false,
         default => false,
     },
 ];
