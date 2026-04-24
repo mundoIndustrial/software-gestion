@@ -126,13 +126,16 @@
             const imagenesExistentes = [];
             let tieneArchivosNuevos = false;
 
+            // Identificador único para cada EPP: existentes usan pedido_epp_id, nuevos generan temporal
+            const eppId = e.pedido_epp_id || (e._local_epp_id = e._local_epp_id || `epp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+
             if (Array.isArray(e.imagenes)) {
                 e.imagenes.forEach((img, imgIndex) => {
                     if (!img) return;
 
                     if (img instanceof File || (img.file && img.file instanceof File) || (img.archivo && img.archivo instanceof File)) {
                         const file = img instanceof File ? img : (img.file instanceof File ? img.file : img.archivo);
-                        const fieldName = `epps_${eppIndex}_imagenes_${imgIndex}`;
+                        const fieldName = `epps_${eppId}_imagenes_${imgIndex}`;
                         formData.append(fieldName, file);
                         tieneArchivosNuevos = true;
                         return;
@@ -157,7 +160,8 @@
                 pedido_epp_id: e.pedido_epp_id || null,
                 cantidad: e.cantidad,
                 observaciones: e.observaciones,
-                imagenes: imagenesExistentes
+                imagenes: imagenesExistentes,
+                _epp_form_identifier: eppId // Identificador único para matching de archivos (pedido_epp_id o temporal)
             };
 
             // Si hay archivos nuevos, indicar modo "upload"
@@ -259,7 +263,7 @@
             const esPrendaExistente = !!tieneIdRealBD;
             if (esPrendaExistente) {
                 const payloadPrendaExistente = typeof window.serializarPrendaExistenteParaBorrador === 'function'
-                    ? await window.serializarPrendaExistenteParaBorrador(p, prendaIdx, formData)
+                    ? await window.serializarPrendaExistenteParaBorrador(p, p.prenda_pedido_id, formData)
                     : null;
 
                 if (payloadPrendaExistente) {

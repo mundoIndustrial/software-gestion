@@ -60,11 +60,14 @@ class PedidoItemBuilder
         $nombrePrenda = $itemData['nombre_prenda'] ?? 'SIN NOMBRE';
         $this->pedidoTipoPrendaService->asegurarTipo($nombrePrenda);
 
+        $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? ''));
+
         $payload = [
             'pedido_produccion_id' => $pedido->id,
             'nombre_prenda' => $nombrePrenda,
             'descripcion' => $itemData['descripcion'] ?? null,
             'de_bodega' => $itemData['de_bodega'] ?? 0,
+            'local_id' => $localId !== '' ? $localId : null,
         ];
 
         if (Schema::hasColumn('prendas_pedido', 'tipo_flujo_tallas')) {

@@ -100,6 +100,9 @@ class ActualizarBorradorUseCase
         $nuevasPrendasMapeadas = [];
 
         $this->transactionManager->run(function () use ($pedido, $input, &$nuevasPrendasMapeadas) {
+            $this->validarNoDuplicadasPrendas($input->datosFrontend);
+            $this->validarNoDuplicadasEpps($input->datosFrontend);
+
             $this->actualizarDatosBasicos($pedido->pedidoId, $input);
 
             $this->pedidoDraftMutationService->actualizarEpps(
@@ -218,21 +221,19 @@ class ActualizarBorradorUseCase
             return;
         }
 
-        foreach ($prendasExistentes as $prendaIndex => $prendaPayload) {
-            $prendaId = (int) ($prendaPayload['prenda_id'] ?? $prendaPayload['id'] ?? $prendaPayload['prenda_pedido_id'] ?? 0);
-            
+        foreach ($prendasExistentes as $prendaPayload) {
+            $prendaId = (int)($prendaPayload['prenda_id'] ?? $prendaPayload['id'] ?? $prendaPayload['prenda_pedido_id'] ?? 0);
+
             Log::debug('[ActualizarBorradorUseCase] Validando prenda existente', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
-                'prenda_index' => $prendaIndex,
                 'es_valido' => $prendaId > 0,
             ]);
-            
+
             if ($prendaId <= 0) {
                 Log::warning('[ActualizarBorradorUseCase] ID inválido, ignorando prenda en prendas_existentes', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prendaId,
-                    'prenda_index' => $prendaIndex,
                 ]);
                 continue;
             }
@@ -243,13 +244,12 @@ class ActualizarBorradorUseCase
                 Log::error('[ActualizarBorradorUseCase] Prenda no encontrada en pedido', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prendaId,
-                    'prenda_index' => $prendaIndex,
                     'prenda_ref_es_null' => true,
                 ]);
                 throw ActualizarBorradorException::prendaNoPerteneceAlPedido($prendaId, $pedidoId);
             }
 
-            $subRequest = $this->crearSubRequestPrendaExistente($input->request, $prendaPayload, (int) $prendaIndex);
+            $subRequest = $this->crearSubRequestPrendaExistente($input->request, $prendaPayload, $prendaId);
 
             $procesosAEliminar = $this->decodificarJsonArray($prendaPayload['procesos_a_eliminar'] ?? []);
             if (!empty($procesosAEliminar)) {
@@ -351,6 +351,109 @@ class ActualizarBorradorUseCase
         $decodificado = json_decode($valor, true);
 
         return is_array($decodificado) ? $decodificado : [];
+    }
+
+    private function validarNoDuplicadasPrendas(array $datosFrontend): void
+    {
+        $prendasExistentes = $datosFrontend['prendas_existentes'] ?? [];
+        $nuevasPrendas = $datosFrontend['nuevas_prendas'] ?? [];
+
+        if (empty($prendasExistentes) && empty($nuevasPrendas)) {
+            return;
+        }
+
+        $prendaIdsMapa = [];
+
+        // Validar prendas existentes por prenda_pedido_id
+        foreach ($prendasExistentes as $idx => $prendaPayload) {
+            $prendaId = (int) ($prendaPayload['prenda_id'] ?? $prendaPayload['prenda_pedido_id'] ?? 0);
+
+            if ($prendaId <= 0) {
+                continue;
+            }
+
+            if (isset($prendaIdsMapa[$prendaId])) {
+                Log::error('[ActualizarBorradorUseCase] Prenda existente duplicada detectada', [
+                    'prenda_id' => $prendaId,
+                    'primer_indice' => $prendaIdsMapa[$prendaId],
+                    'indice_duplicado' => $idx,
+                ]);
+
+                throw ActualizarBorradorException::prendaDuplicadaEnBorrador($prendaId);
+            }
+
+            $prendaIdsMapa[$prendaId] = $idx;
+        }
+
+        $localIdsMapa = [];
+
+        // Validar prendas nuevas por _local_id
+        foreach ($nuevasPrendas as $idx => $prendaPayload) {
+            $localId = trim((string) ($prendaPayload['_local_id'] ?? $prendaPayload['local_id'] ?? ''));
+
+            if ($localId === '') {
+                continue;
+            }
+
+            if (isset($localIdsMapa[$localId])) {
+                Log::error('[ActualizarBorradorUseCase] Prenda nueva duplicada detectada', [
+                    'local_id' => $localId,
+                    'primer_indice' => $localIdsMapa[$localId],
+                    'indice_duplicado' => $idx,
+                ]);
+
+                throw ActualizarBorradorException::prendaNuevaDuplicadaEnBorrador($localId);
+            }
+
+            $localIdsMapa[$localId] = $idx;
+        }
+    }
+
+    private function validarNoDuplicadasEpps(array $datosFrontend): void
+    {
+        $epps = $datosFrontend['epps'] ?? [];
+
+        if (empty($epps)) {
+            return;
+        }
+
+        $eppIdsMapa = [];
+        $eppIdentifiersMapa = [];
+
+        foreach ($epps as $idx => $eppData) {
+            $eppId = (int) ($eppData['epp_id'] ?? 0);
+            $pedidoEppId = (int) ($eppData['pedido_epp_id'] ?? 0);
+            $eppIdentifier = $eppData['_epp_form_identifier'] ?? null;
+
+            // Validar por pedido_epp_id para EPP existentes
+            if ($pedidoEppId > 0) {
+                if (isset($eppIdsMapa[$pedidoEppId])) {
+                    Log::error('[ActualizarBorradorUseCase] EPP existente duplicado detectado', [
+                        'pedido_epp_id' => $pedidoEppId,
+                        'primer_indice' => $eppIdsMapa[$pedidoEppId],
+                        'indice_duplicado' => $idx,
+                    ]);
+
+                    throw ActualizarBorradorException::eppDuplicadoEnBorrador($pedidoEppId);
+                }
+
+                $eppIdsMapa[$pedidoEppId] = $idx;
+            } elseif ($eppIdentifier !== null) {
+                // Validar por _epp_form_identifier para EPP nuevos
+                if (isset($eppIdentifiersMapa[$eppIdentifier])) {
+                    Log::error('[ActualizarBorradorUseCase] EPP nuevo duplicado detectado', [
+                        'epp_identifier' => $eppIdentifier,
+                        'epp_id' => $eppId,
+                        'primer_indice' => $eppIdentifiersMapa[$eppIdentifier],
+                        'indice_duplicado' => $idx,
+                    ]);
+
+                    throw ActualizarBorradorException::eppNuevoDuplicadoEnBorrador($eppId);
+                }
+
+                $eppIdentifiersMapa[$eppIdentifier] = $idx;
+            }
+        }
     }
 
     private function validarJsonSinFiles(array $datos, $ruta = ''): void

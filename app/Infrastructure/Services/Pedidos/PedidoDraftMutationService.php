@@ -180,6 +180,25 @@ class PedidoDraftMutationService
         $nuevasPrendasIds = [];
 
         foreach ($nuevasPrendas as $index => $itemData) {
+            $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? ''));
+
+            // Idempotencia: si ya existe una prenda con este local_id en el pedido, reusar
+            if ($localId !== '') {
+                $prendaExistente = $pedidoModelo->prendas()
+                    ->where('local_id', $localId)
+                    ->first();
+
+                if ($prendaExistente) {
+                    Log::info('[PedidoDraftMutationService] Prenda nueva ya existia (idempotencia), reusando', [
+                        'pedido_id' => $pedidoModelo->id,
+                        'local_id' => $localId,
+                        'prenda_id' => $prendaExistente->id,
+                    ]);
+                    $nuevasPrendasIds[] = $prendaExistente->id;
+                    continue;
+                }
+            }
+
             $prendaCreada = $this->pedidoCreationCoordinator->agregarItemAPedido($pedidoModelo, $itemData, (int) $index);
             $nuevasPrendasIds[] = $prendaCreada->id;
         }

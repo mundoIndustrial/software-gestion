@@ -54,6 +54,7 @@ class PrendaPedido extends Model
         'prenda_id',
         'observaciones',
         'tipo_flujo_tallas',
+        'local_id',
     ];
 
     protected $casts = [

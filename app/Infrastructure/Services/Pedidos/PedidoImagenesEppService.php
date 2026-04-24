@@ -23,9 +23,9 @@ class PedidoImagenesEppService
             'epps_count' => count($epps),
         ]);
 
-        foreach ($epps as $eppIdx => $eppData) {
+        foreach ($epps as $eppData) {
             if (empty($eppData['epp_id'])) {
-                Log::warning('[PedidoImagenesService] EPP sin epp_id', ['epp_idx' => $eppIdx]);
+                Log::warning('[PedidoImagenesService] EPP sin epp_id');
                 continue;
             }
 
@@ -37,14 +37,36 @@ class PedidoImagenesEppService
                 continue;
             }
 
-            $pedidoEpp = PedidoEpp::create([
-                'pedido_produccion_id' => $pedidoId,
-                'epp_id' => $eppData['epp_id'],
-                'cantidad' => $eppData['cantidad'] ?? 1,
-                'observaciones' => $eppData['observaciones'] ?? null,
-            ]);
+            $localId = trim((string) ($eppData['_epp_form_identifier'] ?? ''));
 
-            $this->procesarImagenesEpp($request, $pedidoId, $eppIdx, $eppData, $pedidoEpp);
+            // Idempotencia: si ya existe un EPP con este local_id en el pedido, reusar
+            $pedidoEpp = null;
+            if ($localId !== '') {
+                $pedidoEpp = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+                    ->where('local_id', $localId)
+                    ->first();
+
+                if ($pedidoEpp) {
+                    Log::info('[PedidoImagenesService] EPP nuevo ya existia (idempotencia), reusando', [
+                        'pedido_id' => $pedidoId,
+                        'local_id' => $localId,
+                        'pedido_epp_id' => $pedidoEpp->id,
+                    ]);
+                }
+            }
+
+            if (!$pedidoEpp) {
+                $pedidoEpp = PedidoEpp::create([
+                    'pedido_produccion_id' => $pedidoId,
+                    'epp_id' => $eppData['epp_id'],
+                    'cantidad' => $eppData['cantidad'] ?? 1,
+                    'observaciones' => $eppData['observaciones'] ?? null,
+                    'local_id' => $localId !== '' ? $localId : null,
+                ]);
+            }
+
+            $eppIdentifier = $localId !== '' ? $localId : $pedidoEpp->id;
+            $this->procesarImagenesEpp($request, $pedidoId, $eppIdentifier, $eppData, $pedidoEpp);
         }
     }
 
@@ -55,18 +77,19 @@ class PedidoImagenesEppService
             'epps_count' => count($epps),
         ]);
 
-        foreach ($epps as $eppIdx => $eppData) {
+        foreach ($epps as $eppData) {
+            $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['pedido_epp_id'] ?? null;
             $pedidoEpp = $this->obtenerPedidoEppParaImagenes($eppData, $pedidoId);
             if ($pedidoEpp === null) {
                 continue;
             }
 
-            $modoImagenes = $this->resolverModoImagenesEpp($request, $eppIdx, $eppData);
+            $modoImagenes = $this->resolverModoImagenesEpp($request, $eppData);
             if ($modoImagenes === null) {
                 continue;
             }
             if ($modoImagenes === 'upload') {
-                $this->procesarImagenesEppModoUpload($request, $pedidoId, $eppIdx, $eppData, $pedidoEpp);
+                $this->procesarImagenesEppModoUpload($request, $pedidoId, $eppIdentifier, $eppData, $pedidoEpp);
                 continue;
             }
 
@@ -74,9 +97,9 @@ class PedidoImagenesEppService
         }
     }
 
-    private function procesarImagenesEpp($request, int $pedidoId, int $eppIdx, array $eppData, PedidoEpp $pedidoEpp): void
+    private function procesarImagenesEpp($request, int $pedidoId, $eppIdentifier, array $eppData, PedidoEpp $pedidoEpp): void
     {
-        $imagenesGuardadas = $this->procesarArchivosEppDesdeRequest($request, $pedidoId, $eppIdx, $eppData, $pedidoEpp);
+        $imagenesGuardadas = $this->procesarArchivosEppDesdeRequest($request, $pedidoId, $eppIdentifier, $eppData, $pedidoEpp);
         if ($imagenesGuardadas === 0) {
             Log::warning('[PedidoImagenesService] EPP sin imagenes procesadas', [
                 'pedido_epp_id' => $pedidoEpp->id,
@@ -122,13 +145,13 @@ class PedidoImagenesEppService
         return $pedidoEpp;
     }
 
-    private function procesarArchivosEppDesdeRequest($request, int $pedidoId, int $eppIdx, array $eppData, PedidoEpp $pedidoEpp): int
+    private function procesarArchivosEppDesdeRequest($request, int $pedidoId, $eppIdentifier, array $eppData, PedidoEpp $pedidoEpp): int
     {
         $imagenesGuardadas = 0;
         $imgIdx = 0;
 
         while (true) {
-            $formKey = "epps_{$eppIdx}_imagenes_{$imgIdx}";
+            $formKey = "epps_{$eppIdentifier}_imagenes_{$imgIdx}";
             if (!$request->hasFile($formKey)) {
                 break;
             }
@@ -141,50 +164,58 @@ class PedidoImagenesEppService
         return $imagenesGuardadas;
     }
 
-    private function resolverModoImagenesEpp($request, int $eppIdx, array $eppData): ?string
+    private function resolverModoImagenesEpp($request, array $eppData): ?string
     {
         $eppId = (int) ($eppData['epp_id'] ?? 0);
         $modo = strtolower(trim((string) ($eppData['modo_imagenes'] ?? '')));
-        $imagenes = $eppData['imagenes'] ?? [];
+        $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['pedido_epp_id'] ?? null;
+        $tieneArchivos = $eppIdentifier !== null && $request->hasFile("epps_{$eppIdentifier}_imagenes_0");
 
         if ($modo === '') {
-            if (!is_array($imagenes) || empty($imagenes)) {
-                return null;
-            }
-            $tieneArchivosEnFormData = $request->hasFile("epps_{$eppIdx}_imagenes_0");
-            if ($tieneArchivosEnFormData) {
-                $modo = 'upload';
-            } else {
-                $modo = 'reuse';
-            }
-            Log::info('[PedidoImagenesEppService] modo_imagenes vacío, asignando automáticamente', [
-                'epp_id' => $eppId,
-                'modo_asignado' => $modo,
-                'tiene_archivos' => $tieneArchivosEnFormData,
-            ]);
+            return $this->inferirModoDesdeContexto($eppId, $eppData, $tieneArchivos);
         }
 
         if (!in_array($modo, ['upload', 'reuse'], true)) {
             throw ModoImagenesEppInvalidoException::modoNoSoportado($eppId, $modo);
         }
 
-        if ($modo === 'upload') {
-            $tieneArchivosEnFormData = $request->hasFile("epps_{$eppIdx}_imagenes_0");
-            if (!$tieneArchivosEnFormData) {
-                $imagenes = $eppData['imagenes'] ?? [];
-                if (is_array($imagenes) && !empty($imagenes)) {
-                    Log::info('[PedidoImagenesEppService] EPP en modo upload sin archivos, cambiando a reuse', [
-                        'epp_id' => $eppId,
-                        'eppIdx' => $eppIdx,
-                        'imagenes_existentes' => count($imagenes),
-                    ]);
-                    return 'reuse';
-                }
-                return null;
-            }
+        if ($modo === 'upload' && !$tieneArchivos) {
+            return $this->fallbackUploadSinArchivos($eppId, $eppIdentifier, $eppData);
         }
 
         return $modo;
+    }
+
+    private function inferirModoDesdeContexto(int $eppId, array $eppData, bool $tieneArchivos): ?string
+    {
+        $imagenes = $eppData['imagenes'] ?? [];
+        if (!is_array($imagenes) || empty($imagenes)) {
+            return null;
+        }
+
+        $modo = $tieneArchivos ? 'upload' : 'reuse';
+        Log::info('[PedidoImagenesEppService] modo_imagenes vacío, asignando automáticamente', [
+            'epp_id' => $eppId,
+            'modo_asignado' => $modo,
+            'tiene_archivos' => $tieneArchivos,
+        ]);
+
+        return $modo;
+    }
+
+    private function fallbackUploadSinArchivos(int $eppId, $eppIdentifier, array $eppData): ?string
+    {
+        $imagenes = $eppData['imagenes'] ?? [];
+        if (is_array($imagenes) && !empty($imagenes)) {
+            Log::info('[PedidoImagenesEppService] EPP en modo upload sin archivos, cambiando a reuse', [
+                'epp_id' => $eppId,
+                'epp_identifier' => $eppIdentifier,
+                'imagenes_existentes' => count($imagenes),
+            ]);
+            return 'reuse';
+        }
+
+        return null;
     }
 
     private function guardarImagenEppDesdeRequest($request, int $pedidoId, string $formKey, array $eppData, PedidoEpp $pedidoEpp, int $imgIdx): void
@@ -208,9 +239,9 @@ class PedidoImagenesEppService
         ]);
     }
 
-    private function procesarImagenesEppModoUpload($request, int $pedidoId, int $eppIdx, array $eppData, PedidoEpp $pedidoEpp): void
+    private function procesarImagenesEppModoUpload($request, int $pedidoId, $eppIdentifier, array $eppData, PedidoEpp $pedidoEpp): void
     {
-        $imagenesGuardadas = $this->procesarArchivosEppDesdeRequest($request, $pedidoId, $eppIdx, $eppData, $pedidoEpp);
+        $imagenesGuardadas = $this->procesarArchivosEppDesdeRequest($request, $pedidoId, $eppIdentifier, $eppData, $pedidoEpp);
         if ($imagenesGuardadas === 0) {
             $imagenesJson = $eppData['imagenes'] ?? [];
             if (is_array($imagenesJson) && !empty($imagenesJson)) {

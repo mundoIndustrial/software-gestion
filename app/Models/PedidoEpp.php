@@ -25,6 +25,7 @@ class PedidoEpp extends Model
         'cantidad',
         'observaciones',
         'homologado_de',
+        'local_id',
     ];
 
     protected $casts = [

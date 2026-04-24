@@ -294,11 +294,45 @@
         });
     }
 
+    function _esErrorDeConexion(error) {
+        const msg = (error?.message || '').toLowerCase();
+        return (
+            !navigator.onLine ||
+            msg.includes('failed to fetch') ||
+            msg.includes('network') ||
+            msg.includes('error de conexión') ||
+            msg.includes('connection') ||
+            msg.includes('econnrefused') ||
+            msg.includes('econnreset') ||
+            msg.includes('etimedout') ||
+            msg.includes('ehostunreach')
+        );
+    }
+
     function mostrarError(error) {
         console.error('[DraftPedidoOrchestrator] Error:', error);
+
+        if (_esErrorDeConexion(error)) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Sin conexión a internet',
+                html: `
+                    <p>No se pudo guardar el borrador porque no hay conexión a internet.</p>
+                    <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; text-align: left;">
+                        <strong>⚠️ No cierres esta pestaña.</strong><br>
+                        Tus datos están guardados en la página. Cuando recuperes el internet, presiona "Guardar Borrador" nuevamente.
+                    </div>
+                `,
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Entendido, no cierro la pestaña',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+            });
+        }
+
         return Swal.fire({
             icon: 'error',
-            title: ' Error al Guardar Borrador',
+            title: 'Error al Guardar Borrador',
             text: error.message || 'No se pudo guardar el borrador. Intenta nuevamente.',
             confirmButtonColor: '#ef4444',
             confirmButtonText: 'Aceptar'
@@ -335,7 +369,14 @@
         }
     }
 
+    let _guardandoBorrador = false;
+
     async function guardarComoBorrador() {
+        if (_guardandoBorrador) {
+            console.warn('[DraftPedidoOrchestrator] Guardado ya en progreso, ignorando solicitud duplicada.');
+            return;
+        }
+
         try {
             const { tienePrendas, tieneItems } = obtenerEstadoItems();
             if (!tienePrendas && !tieneItems) {
@@ -348,6 +389,7 @@
                 return;
             }
 
+            _guardandoBorrador = true;
             mostrarLoadingGuardado();
 
             const datos = recopilarDatosPedido();
@@ -385,6 +427,8 @@
             await mostrarExito(resultado, datos);
         } catch (error) {
             await mostrarError(error);
+        } finally {
+            _guardandoBorrador = false;
         }
     }
 
