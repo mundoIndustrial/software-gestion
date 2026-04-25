@@ -26,9 +26,16 @@ return new class extends Migration
                 $table->index(['numero_pedido', 'estado_bodega'], 'idx_numero_estado');
             }
 
-            // Índice para empresa (filtros comunes)
-            if (!$this->hasIndex('bodega_detalles_talla', 'idx_empresa')) {
-                $table->index('empresa', 'idx_empresa');
+            // Índice para empresa (filtros comunes) - usar longitud para TEXT
+            // Nota: Si empresa es TEXT, necesita longitud; si es VARCHAR está bien
+            // Aquí asumimos que es VARCHAR o que tiene una longitud razonable
+            try {
+                if (!$this->hasIndex('bodega_detalles_talla', 'idx_empresa')) {
+                    DB::statement('ALTER TABLE bodega_detalles_talla ADD INDEX idx_empresa (empresa(191))');
+                }
+            } catch (\Exception $e) {
+                // Si falla por tipo de columna, ignorar
+                \Log::warning('No se pudo crear índice en empresa: ' . $e->getMessage());
             }
 
             // Índice para estado_bodega (filtros)

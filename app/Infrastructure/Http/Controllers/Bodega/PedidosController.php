@@ -282,95 +282,90 @@ class PedidosController extends Controller
                     // Si es un EPP, obtener el historial de homologaciones
                     if (($item['area'] ?? '') === 'EPP' && !empty($item['pedido_epp_id'] ?? null)) {
                         $pedidoEppId = $item['pedido_epp_id'];
-                        
-                        // PASO 1: Obtener el EPP actual
-                        $eppActual = DB::table('pedido_epp')
-                            ->select(['id', 'homologado_de'])
-                            ->where('id', $pedidoEppId)
-                            ->first();
-                        
-                        // PASO 2: Encontrar el EPP original en la cadena recursivamente
-                        $eppIdOriginal = $pedidoEppId;
-                        $intentos = 0;
-                        $maxIntentos = 10;
-                        
-                        while ($intentos < $maxIntentos) {
-                            $intentos++;
-                            $eppPadre = DB::table('pedido_epp')
-                                ->select(['id', 'homologado_de'])
-                                ->where('id', $eppIdOriginal)
-                                ->first();
-                            
-                            if (!$eppPadre || !$eppPadre->homologado_de) {
-                                break; // Encontramos el original
+
+                        // OPTIMIZACIÓN: Una sola query para toda la cadena en lugar de N queries en loops
+                        // Cargar todos los EPPs del pedido una sola vez
+                        static $eppsCacheGlobal = [];
+                        $pedidoProductionId = $pedidoProduccion->id ?? null;
+                        $cacheKey = "epps_{$pedidoProductionId}";
+
+                        if (!isset($eppsCacheGlobal[$cacheKey])) {
+                            if ($pedidoProductionId) {
+                                $eppsCacheGlobal[$cacheKey] = DB::table('pedido_epp')
+                                    ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
+                                    ->where('pedido_epp.pedido_produccion_id', $pedidoProductionId)
+                                    ->select([
+                                        'pedido_epp.id',
+                                        'pedido_epp.homologado_de',
+                                        'pedido_epp.epp_id',
+                                        'epps.nombre_completo',
+                                        'pedido_epp.cantidad',
+                                        'pedido_epp.created_at',
+                                        'pedido_epp.deleted_at',
+                                        'pedido_epp.observaciones',
+                                    ])
+                                    ->get()
+                                    ->keyBy('id');
+                            } else {
+                                $eppsCacheGlobal[$cacheKey] = collect();
                             }
-                            
-                            $eppIdOriginal = $eppPadre->homologado_de;
                         }
-                        
-                        // PASO 3: Obtener toda la cadena desde el original (recursivamente)
+
+                        $todosLosEpps = $eppsCacheGlobal[$cacheKey];
+
+                        // Procesar en memoria sin queries adicionales
                         $historial = [];
-                        $eppActualId = $eppIdOriginal;
-                        $intentos = 0;
-                        
-                        while ($intentos < $maxIntentos) {
-                            $intentos++;
-                            
-                            $epp = DB::table('pedido_epp')
-                                ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
-                                ->where('pedido_epp.id', $eppActualId)
-                                ->select([
-                                    'pedido_epp.id as pedido_epp_id',
-                                    'pedido_epp.epp_id',
-                                    'epps.nombre_completo as epp_nombre',
-                                    'pedido_epp.cantidad',
-                                    DB::raw("DATE_FORMAT(pedido_epp.created_at, '%Y-%m-%d %H:%i') as fecha_creacion"),
-                                    'pedido_epp.deleted_at',
-                                    'pedido_epp.observaciones',
-                                    'pedido_epp.homologado_de'
-                                ])
-                                ->first();
-                            
-                            if (!$epp) {
-                                break;
+                        if ($todosLosEpps->has($pedidoEppId)) {
+                            // Encontrar el EPP original (sin query)
+                            $eppIdOriginal = $pedidoEppId;
+                            $intentos = 0;
+                            while ($intentos < 30) {
+                                $intentos++;
+                                $epp = $todosLosEpps->get($eppIdOriginal);
+                                if (!$epp || !$epp->homologado_de) {
+                                    break;
+                                }
+                                $eppIdOriginal = $epp->homologado_de;
                             }
-                            
-                            $historial[] = (array) $epp;
-                            
-                            // Buscar el siguiente en la cadena
-                            $siguiente = DB::table('pedido_epp')
-                                ->select(['id'])
-                                ->where('homologado_de', $epp->pedido_epp_id)
-                                ->first();
-                            
-                            if (!$siguiente) {
-                                break;
-                            }
-                            
-                            $eppActualId = $siguiente->id;
-                        }
-                        
-                        // Procesar historial para que sea compatible con el JS
-                        if (!empty($historial)) {
-                            $historialeFormatted = array_map(function($h) {
-                                return [
-                                    'pedido_epp_id' => $h['pedido_epp_id'],
-                                    'epp_id' => $h['epp_id'],
-                                    'epp_nombre' => $h['epp_nombre'],
-                                    'cantidad' => $h['cantidad'],
-                                    'fecha_creacion' => $h['fecha_creacion'],
-                                    'deleted_at' => $h['deleted_at'],
-                                    'observaciones' => $h['observaciones'] ?? '-',
-                                    'es_original' => $h['homologado_de'] === null,
+
+                            // Construir la cadena desde el original (sin query)
+                            $eppActualId = $eppIdOriginal;
+                            $visitados = collect();
+                            $intentos = 0;
+                            while ($intentos < 30) {
+                                $intentos++;
+                                if ($visitados->contains($eppActualId)) {
+                                    break; // Ciclo detectado
+                                }
+                                $visitados->push($eppActualId);
+
+                                $epp = $todosLosEpps->get($eppActualId);
+                                if (!$epp) {
+                                    break;
+                                }
+
+                                $historial[] = [
+                                    'pedido_epp_id' => $epp->id,
+                                    'epp_id' => $epp->epp_id,
+                                    'epp_nombre' => $epp->nombre_completo ?? 'EPP sin nombre',
+                                    'cantidad' => $epp->cantidad,
+                                    'fecha_creacion' => $epp->created_at ? Carbon::parse($epp->created_at)->format('Y-m-d H:i') : null,
+                                    'deleted_at' => $epp->deleted_at,
+                                    'observaciones' => $epp->observaciones ?? '-',
+                                    'es_original' => $epp->homologado_de === null,
                                 ];
-                            }, $historial);
-                            
-                            $item['tiene_historial'] = count($historialeFormatted) > 1;
-                            $item['historial_homologaciones'] = $historialeFormatted;
-                        } else {
-                            $item['tiene_historial'] = false;
-                            $item['historial_homologaciones'] = [];
+
+                                // Buscar siguiente (sin query, en memoria)
+                                $siguiente = $todosLosEpps->first(fn ($e) => $e->homologado_de === $epp->id);
+                                if (!$siguiente) {
+                                    break;
+                                }
+                                $eppActualId = $siguiente->id;
+                            }
                         }
+
+                        $item['tiene_historial'] = count($historial) > 1;
+                        $item['historial_homologaciones'] = $historial;
                     } else {
                         $item['tiene_historial'] = false;
                         $item['historial_homologaciones'] = [];

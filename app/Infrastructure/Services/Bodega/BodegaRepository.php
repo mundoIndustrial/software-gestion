@@ -9,7 +9,6 @@ use App\Models\PedidoProduccion;
 use App\Models\BodegaDetallesTalla;
 use App\Models\EppBodegaDetalle;
 use App\Models\CosturaBodegaDetalle;
-use App\Models\BodegaNota;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -65,81 +64,6 @@ class BodegaRepository implements BodegaRepositoryContract
                 }
             })
             ->get();
-    }
-
-    /**
-     * Obtener datos básicos de bodega para múltiples pedidos
-     */
-    public function obtenerDatosBodegaBasicos(): Collection
-    {
-        return BodegaDetallesTalla::all()
-            ->map(function ($item) {
-                return $item->toArray();
-            })
-            ->keyBy(function ($item) {
-                return $item['numero_pedido'] . '|' . $item['talla'] . '|' . ($item['prenda_nombre'] ?? '') . '|' . ($item['cantidad'] ?? 0);
-            });
-    }
-
-    /**
-     * Obtener datos de estado específicos por rol
-     */
-    public function obtenerDatosEstadoRol(array $rolesDelUsuario): Collection
-    {
-        $datosEstadoRol = collect();
-        
-        if (in_array('EPP-Bodega', $rolesDelUsuario)) {
-            $datosEstadoRol = EppBodegaDetalle::all()
-                ->map(function ($item) {
-                    return $item->toArray();
-                })
-                ->keyBy(function ($item) {
-                    return $item['numero_pedido'] . '|' . $item['talla'] . '|' . ($item['prenda_nombre'] ?? '') . '|' . ($item['cantidad'] ?? 0);
-                });
-            
-            \Log::info('[BODEGA-DEBUG] EPP-Bodega: cargados ' . $datosEstadoRol->count() . ' registros de estado desde epp_bodega_detalles');
-            
-        } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
-            $datosEstadoRol = CosturaBodegaDetalle::all()
-                ->map(function ($item) {
-                    return $item->toArray();
-                })
-                ->keyBy(function ($item) {
-                    return $item['numero_pedido'] . '|' . $item['talla'] . '|' . ($item['prenda_nombre'] ?? '') . '|' . ($item['cantidad'] ?? 0);
-                });
-            
-            \Log::info('[BODEGA-DEBUG] Costura-Bodega: cargados ' . $datosEstadoRol->count() . ' registros de estado desde costura_bodega_detalles');
-        }
-        
-        return $datosEstadoRol;
-    }
-
-    /**
-     * Obtener todas las notas de bodega precargadas
-     */
-    public function obtenerNotasBodega(): Collection
-    {
-        return BodegaNota::all()
-            ->groupBy(function ($item) {
-                return $item->numero_pedido . '|' . $item->talla . '|' . ($item->talla_color_id ?? '');
-            })
-            ->map(function ($notas) {
-                return $notas->map(function ($nota) {
-                    return [
-                        'id' => $nota->id,
-                        'contenido' => $nota->contenido,
-                        'usuario_nombre' => $nota->usuario_nombre,
-                        'usuario_rol' => $nota->usuario_rol,
-                        'usuario_id' => $nota->usuario_id,
-                        'ip_address' => $nota->ip_address,
-                        'talla_color_id' => $nota->talla_color_id,
-                        'fecha' => $nota->created_at->format('d/m/Y'),
-                        'hora' => $nota->created_at->format('H:i:s'),
-                        'fecha_completa' => $nota->created_at->format('d/m/Y H:i:s'),
-                        'created_at' => $nota->created_at,
-                    ];
-                })->sortByDesc('created_at')->values()->toArray();
-            });
     }
 
     /**

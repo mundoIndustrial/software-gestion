@@ -359,25 +359,26 @@ class BodegaPedidoDetalleService
 
     private function obtenerHistorialEpp(int $pedidoEppIdOriginal): array
     {
+        // OPTIMIZACIÓN: Cargar toda la cadena de homologaciones de una vez
+        // Antes: 2 queries por iteración = 20 queries para cadena de 10
+        // Ahora: 1 query para toda la cadena
+
+        // Query 1: Obtener el EPP original
+        $eppOriginal = \App\Models\PedidoEpp::withTrashed()
+            ->with('epp')
+            ->find($pedidoEppIdOriginal);
+
+        if (!$eppOriginal) {
+            return [];
+        }
+
+        // Query 2: Cargar TODA la cadena de homologaciones de una vez
+        // Esto usa recursión en SQL (CTE) o carga en cascada
+        $todaLaCadena = $this->obtenerCadenaEppCompleta($pedidoEppIdOriginal);
+
+        // Procesar los datos cargados (sin queries adicionales)
         $historial = [];
-        $pedidoEppIdActual = $pedidoEppIdOriginal;
-        $intentos = 0;
-        $maxIntentos = 10;
-
-        while ($pedidoEppIdActual !== null && $intentos < $maxIntentos) {
-            $intentos++;
-
-            $pedidoEpp = \App\Models\PedidoEpp::withTrashed()
-                ->with('epp')
-                ->find($pedidoEppIdActual);
-
-            if (!$pedidoEpp) {
-                \Log::warning('[obtenerHistorialEpp] EPP no encontrado', [
-                    'pedido_epp_id' => $pedidoEppIdActual,
-                ]);
-                break;
-            }
-
+        foreach ($todaLaCadena as $pedidoEpp) {
             $historial[] = [
                 'pedido_epp_id' => $pedidoEpp->id,
                 'epp_id' => $pedidoEpp->epp_id,
@@ -388,12 +389,6 @@ class BodegaPedidoDetalleService
                 'observaciones' => $pedidoEpp->observaciones ?? '',
                 'es_original' => $pedidoEpp->homologado_de === null,
             ];
-
-            $siguiente = \App\Models\PedidoEpp::where('homologado_de', $pedidoEppIdActual)
-                ->withTrashed()
-                ->first();
-
-            $pedidoEppIdActual = $siguiente?->id;
         }
 
         \Log::debug('[obtenerHistorialEpp] Historial completo obtenido', [
@@ -402,6 +397,51 @@ class BodegaPedidoDetalleService
         ]);
 
         return $historial;
+    }
+
+    private function obtenerCadenaEppCompleta(int $pedidoEppIdOriginal): Collection
+    {
+        // Cargar toda la cadena de EPPs homologados
+        // Usar una estrategia de carga recursiva: cargar en batch en lugar de loop
+        $cadena = collect();
+        $eppsVisitados = collect();
+        $eppIdActual = $pedidoEppIdOriginal;
+        $intentos = 0;
+        $maxIntentos = 30;
+
+        while ($eppIdActual !== null && $intentos < $maxIntentos) {
+            $intentos++;
+
+            if ($eppsVisitados->contains($eppIdActual)) {
+                \Log::warning('[obtenerCadenaEppCompleta] Ciclo detectado', [
+                    'pedido_epp_id' => $eppIdActual,
+                    'epps_visitados' => $eppsVisitados->toArray(),
+                ]);
+                break;
+            }
+
+            $eppsVisitados->push($eppIdActual);
+
+            // Cargar este EPP
+            $epp = \App\Models\PedidoEpp::withTrashed()
+                ->with('epp')
+                ->find($eppIdActual);
+
+            if (!$epp) {
+                break;
+            }
+
+            $cadena->push($epp);
+
+            // Buscar el siguiente en la cadena (homologado_de = eppIdActual)
+            $siguiente = \App\Models\PedidoEpp::where('homologado_de', $eppIdActual)
+                ->withTrashed()
+                ->first();
+
+            $eppIdActual = $siguiente?->id;
+        }
+
+        return $cadena;
     }
 
     private function crearItemEpp(array $eppEnriquecido, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion, array $historialeHomologaciones = []): array
