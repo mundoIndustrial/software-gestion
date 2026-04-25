@@ -22,6 +22,8 @@ use App\Application\Bodega\Services\PedidoListadoService;
 use App\Application\Bodega\Services\PedidoFiltroService;
 use App\Application\Bodega\Services\PedidoEstadoService;
 use App\Application\Bodega\Services\PedidoActualizacionService;
+use App\Application\Bodega\Services\PedidoNotasService;
+use App\Application\Bodega\Services\PedidoConsultasService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use Illuminate\Support\Facades\Auth;
@@ -53,7 +55,6 @@ class PedidosController extends Controller
         private PedidoProduccionReadRepository $pedidoRepository,
         private BodegaPedidoService $bodegaPedidoService,
         private BodegaRoleService $roleService,
-        private BodegaNotaService $notaService,
         private BodegaAuditoriaService $auditoriaService,
         private CQRSManager $cqrsManager,
         private BodegaDatosService $datosService,
@@ -65,6 +66,8 @@ class PedidosController extends Controller
         private PedidoFiltroService $pedidoFiltroService,
         private PedidoEstadoService $pedidoEstadoService,
         private PedidoActualizacionService $pedidoActualizacionService,
+        private PedidoNotasService $pedidoNotasService,
+        private PedidoConsultasService $pedidoConsultasService,
     ) {}
 
     /**
@@ -909,19 +912,7 @@ class PedidosController extends Controller
      */
     public function obtenerDatosFacturaJSON($id)
     {
-        try {
-            $resultado = $this->bodegaPedidoService->obtenerDatosFactura($id);
-            
-            return response()->json($resultado);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerDatosFacturaJSON: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos'
-            ], 500);
-        }
+        return $this->pedidoConsultasService->obtenerDatosFactura($id);
     }
 
     /**
@@ -929,19 +920,7 @@ class PedidosController extends Controller
      */
     public function obtenerDatosFactura($id)
     {
-        try {
-            $resultado = $this->bodegaPedidoService->obtenerDatosFactura($id);
-            
-            return response()->json($resultado);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerDatosFactura: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos: ' . $e->getMessage()
-            ], 400);
-        }
+        return $this->pedidoConsultasService->obtenerDatosFactura($id);
     }
 
     /**
@@ -1133,30 +1112,12 @@ class PedidosController extends Controller
      */
     public function guardarNota(Request $request): JsonResponse
     {
-        // Validar que el usuario no sea de solo lectura
         $readOnlyError = $this->validateNotReadOnly();
         if ($readOnlyError) {
             return $readOnlyError;
         }
 
-        try {
-            $validated = $request->validate([
-                'numero_pedido' => 'required|string',
-                'talla' => 'required|string',
-                'talla_color_id' => 'nullable|integer',
-                'contenido' => 'required|string|max:5000',
-            ]);
-
-            return $this->notaService->guardarNota($validated, $request);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en guardarNota: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al guardar la nota: ' . $e->getMessage()
-            ], 500);
-        }
+        return $this->pedidoNotasService->guardarNota($request);
     }
 
     /**
@@ -1164,32 +1125,7 @@ class PedidosController extends Controller
      */
     public function obtenerNotas(Request $request, $numero_pedido = null, $talla = null): JsonResponse
     {
-        try {
-            // Si vienen como parámetros de ruta (GET), usarlos directamente
-            if ($numero_pedido && $talla) {
-                $validated = [
-                    'numero_pedido' => $numero_pedido,
-                    'talla' => $talla,
-                ];
-            } else {
-                // Si vienen en el body (POST), validarlos
-                $validated = $request->validate([
-                    'numero_pedido' => 'required|string',
-                    'talla' => 'required|string',
-                    'talla_color_id' => 'nullable|integer',
-                ]);
-            }
-
-            return $this->notaService->obtenerNotas($validated);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerNotas: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener las notas'
-            ], 500);
-        }
+        return $this->pedidoNotasService->obtenerNotas($request, $numero_pedido, $talla);
     }
 
     /**
@@ -1197,27 +1133,12 @@ class PedidosController extends Controller
      */
     public function actualizarNota(Request $request, $notaId): JsonResponse
     {
-        // Validar que el usuario no sea de solo lectura
         $readOnlyError = $this->validateNotReadOnly();
         if ($readOnlyError) {
             return $readOnlyError;
         }
 
-        try {
-            $validated = $request->validate([
-                'contenido' => 'required|string|max:5000',
-            ]);
-
-            return $this->notaService->actualizarNota($notaId, $validated);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en actualizarNota: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar la nota'
-            ], 500);
-        }
+        return $this->pedidoNotasService->actualizarNota($request, $notaId);
     }
 
     /**
@@ -1225,23 +1146,12 @@ class PedidosController extends Controller
      */
     public function eliminarNota(Request $request, $notaId): JsonResponse
     {
-        // Validar que el usuario no sea de solo lectura
         $readOnlyError = $this->validateNotReadOnly();
         if ($readOnlyError) {
             return $readOnlyError;
         }
 
-        try {
-            return $this->notaService->eliminarNota($notaId);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en eliminarNota: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar la nota'
-            ], 500);
-        }
+        return $this->pedidoNotasService->eliminarNota($request, $notaId);
     }
 
     /**
@@ -1344,66 +1254,7 @@ class PedidosController extends Controller
      */
     public function obtenerDatosHomologacion($eppId): JsonResponse
     {
-        try {
-            $eppNuevo = \App\Models\PedidoEpp::with('epp')->find($eppId);
-            
-            if (!$eppNuevo) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EPP no encontrado'
-                ], 404);
-            }
-
-            // Obtener el EPP anterior (homologado_de)
-            $eppAnterior = null;
-            if ($eppNuevo->homologado_de) {
-                $eppAnterior = \App\Models\PedidoEpp::withTrashed()
-                    ->with('epp')
-                    ->find($eppNuevo->homologado_de);
-            }
-
-            if (!$eppAnterior) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EPP anterior no encontrado. Este EPP no fue homologado.'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'epp_anterior' => [
-                        'id' => $eppAnterior->id,
-                        'nombre' => $eppAnterior->epp->nombre_completo ?? $eppAnterior->epp->nombre ?? 'EPP Sin nombre',
-                        'cantidad' => $eppAnterior->cantidad,
-                        'observaciones' => $eppAnterior->observaciones,
-                        'deleted_at' => $eppAnterior->deleted_at,
-                    ],
-                    'epp_nuevo' => [
-                        'id' => $eppNuevo->id,
-                        'nombre' => $eppNuevo->epp->nombre_completo ?? $eppNuevo->epp->nombre ?? 'EPP Sin nombre',
-                        'cantidad' => $eppNuevo->cantidad,
-                        'observaciones' => $eppNuevo->observaciones,
-                        'created_at' => $eppNuevo->created_at,
-                    ],
-                    'cambios' => [
-                        'epp_cambio' => $eppAnterior->epp->nombre_completo !== $eppNuevo->epp->nombre_completo,
-                        'cantidad_cambio' => $eppAnterior->cantidad !== $eppNuevo->cantidad,
-                        'observaciones_cambio' => $eppAnterior->observaciones !== $eppNuevo->observaciones,
-                        'cantidad_anterior' => $eppAnterior->cantidad,
-                        'cantidad_nueva' => $eppNuevo->cantidad,
-                    ]
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerDatosHomologacion: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos de homologación'
-            ], 500);
-        }
+        return $this->pedidoConsultasService->obtenerDatosHomologacion($eppId);
     }
 
     /**
