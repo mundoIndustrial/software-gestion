@@ -68,8 +68,7 @@ class BodegaPedidoConsultaService
 
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosAnulados)
-            ->orderBy('updated_at', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('numero_pedido')
             ->get();
 
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
@@ -100,8 +99,7 @@ class BodegaPedidoConsultaService
 
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosEntregados)
-            ->orderBy('updated_at', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('numero_pedido')
             ->get();
 
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);

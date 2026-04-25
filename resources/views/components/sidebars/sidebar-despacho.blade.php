@@ -36,19 +36,19 @@
         </a>
       </li>
       <li class="menu-item">
-        <a href="{{ route('despacho.entregados') }}"
-           class="menu-link {{ request()->routeIs('despacho.entregados') ? 'active' : '' }}"
-           aria-label="Entregados - Despacho">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-          <span class="menu-label">Entregados</span>
-        </a>
-      </li>
-      <li class="menu-item">
         <a href="{{ route('despacho.historial-pendientes') }}"
            class="menu-link {{ request()->routeIs('despacho.historial-pendientes') ? 'active' : '' }}"
            aria-label="Historial Pendientes">
           <span class="material-symbols-rounded" aria-hidden="true">history</span>
           <span class="menu-label">Historial Pendientes</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('despacho.entregados') }}"
+           class="menu-link {{ request()->routeIs('despacho.entregados') ? 'active' : '' }}"
+           aria-label="Entregados - Despacho">
+          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+          <span class="menu-label">Entregados</span>
         </a>
       </li>
       <li class="menu-item">

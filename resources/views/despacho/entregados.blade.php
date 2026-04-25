@@ -294,12 +294,12 @@
 
         <!-- Buscador -->
         <div class="px-6 py-4 border-b border-slate-200">
-            <form method="GET" class="flex gap-2">
-                <input type="text" name="search" placeholder="Buscar por pedido o cliente..." value="{{ $search }}" class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500">
-                <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors">
+            <div class="flex gap-2">
+                <input type="text" id="searchInput" placeholder="Buscar por pedido o cliente..." value="{{ $search }}" class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500">
+                <button type="button" onclick="buscarEntregados()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors">
                     Buscar
                 </button>
-            </form>
+            </div>
         </div>
 
         <!-- Stats compactas -->
@@ -315,7 +315,7 @@
                 </div>
                 <div>
                     <span class="text-sm text-slate-500">Página</span>
-                    <span class="block text-2xl font-semibold text-slate-900">1 / 1</span>
+                    <span class="block text-2xl font-semibold text-slate-900"><span id="paginaActual">1</span> / <span id="totalPaginas">1</span></span>
                 </div>
             </div>
         </div>
@@ -363,8 +363,18 @@
             </div>
 
             <!-- Paginación -->
-            <div class="px-6 py-4 border-t border-slate-200">
-                <!-- La paginación se puede agregar más tarde si es necesario -->
+            <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between" id="paginationContainer" style="display: none;">
+                <div class="text-sm text-slate-600">
+                    Mostrando <span id="desde">0</span> a <span id="hasta">0</span> de <span id="totalResultados">0</span> resultados
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="paginaAnterior()" id="btnAnterior" class="px-3 py-2 border border-slate-300 rounded text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        ← Anterior
+                    </button>
+                    <button onclick="paginaSiguiente()" id="btnSiguiente" class="px-3 py-2 border border-slate-300 rounded text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Siguiente →
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -373,25 +383,58 @@
 
 @push('scripts')
 <script>
+let paginaActualEntregados = 1;
+const itemsPorPagina = 10;
+
 document.addEventListener('DOMContentLoaded', function() {
     cargarPedidosEntregados();
+
+    // Búsqueda con Enter
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            buscarEntregados();
+        }
+    });
 });
 
-async function cargarPedidosEntregados() {
-    const search = new URLSearchParams(window.location.search).get('search') || '';
+function buscarEntregados() {
+    paginaActualEntregados = 1;
+    cargarPedidosEntregados();
+}
+
+async function cargarPedidosEntregados(pagina = 1) {
+    const search = document.getElementById('searchInput').value || '';
     const tablaBody = document.getElementById('tablaPedidos');
     const totalPedidos = document.getElementById('totalPedidos');
     const paginaPedidos = document.getElementById('paginaPedidos');
-    
+    const paginationContainer = document.getElementById('paginationContainer');
+
     try {
-        const response = await fetch(`/despacho/api/entregados?search=${encodeURIComponent(search)}`);
+        const response = await fetch(`/despacho/api/entregados?search=${encodeURIComponent(search)}&page=${pagina}&per_page=${itemsPorPagina}`);
         const data = await response.json();
-        
+
         if (data.success) {
+            paginaActualEntregados = pagina;
+
             // Actualizar estadísticas
             totalPedidos.textContent = data.total;
             paginaPedidos.textContent = data.data.length;
-            
+
+            // Actualizar información de paginación
+            const pagination = data.pagination;
+            document.getElementById('paginaActual').textContent = pagination.current_page;
+            document.getElementById('totalPaginas').textContent = pagination.last_page;
+            document.getElementById('desde').textContent = pagination.from || 0;
+            document.getElementById('hasta').textContent = pagination.to || 0;
+            document.getElementById('totalResultados').textContent = pagination.total;
+
+            // Actualizar estado de botones de paginación
+            document.getElementById('btnAnterior').disabled = pagination.current_page <= 1;
+            document.getElementById('btnSiguiente').disabled = !pagination.has_more;
+
+            // Mostrar/ocultar controles de paginación
+            paginationContainer.style.display = pagination.total > itemsPorPagina ? 'flex' : 'none';
+
             if (data.data.length === 0) {
                 tablaBody.innerHTML = `
                     <tr>
@@ -467,6 +510,18 @@ async function cargarPedidosEntregados() {
             </tr>
         `;
     }
+}
+
+function paginaAnterior() {
+    if (paginaActualEntregados > 1) {
+        cargarPedidosEntregados(paginaActualEntregados - 1);
+        window.scrollTo(0, 0);
+    }
+}
+
+function paginaSiguiente() {
+    cargarPedidosEntregados(paginaActualEntregados + 1);
+    window.scrollTo(0, 0);
 }
 
 // Función placeholder para observaciones (si existe en el sistema)

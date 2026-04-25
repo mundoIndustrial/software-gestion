@@ -188,7 +188,11 @@ class DespachoPendientesController extends Controller
     {
         try {
             return response()->json(
-                $this->service->obtenerEntregadosData((string) $request->query('search', ''))
+                $this->service->obtenerEntregadosData(
+                    search: (string) $request->query('search', ''),
+                    page: (int) $request->query('page', 1),
+                    perPage: (int) $request->query('per_page', 10)
+                )
             );
         } catch (\Exception $e) {
             return response()->json([

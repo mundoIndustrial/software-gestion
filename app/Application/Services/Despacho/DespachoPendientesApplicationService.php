@@ -354,13 +354,16 @@ class DespachoPendientesApplicationService
         ];
     }
 
-    public function obtenerEntregadosData(string $search = ''): array
-    {
+    public function obtenerEntregadosData(
+        string $search = '',
+        int $page = 1,
+        int $perPage = 10
+    ): array {
         $query = PedidoProduccion::query()
             ->where('estado', 'Entregado')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
-            ->orderByDesc('updated_at');
+            ->orderByDesc('numero_pedido');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -369,7 +372,10 @@ class DespachoPendientesApplicationService
             });
         }
 
-        $pedidos = $query->get();
+        $total = $query->count();
+        $pedidos = $query->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
 
         $pedidos->transform(function ($pedido) {
             $fechaEntrega = DesparChoParcialesModel::where('pedido_id', $pedido->id)
@@ -395,7 +401,16 @@ class DespachoPendientesApplicationService
                     'fecha_creacion' => $pedido->fecha_creacion,
                 ];
             }),
-            'total' => $pedidos->count(),
+            'total' => $total,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $perPage > 0 ? (int) ceil($total / $perPage) : 1,
+                'from' => $total > 0 ? ($page - 1) * $perPage + 1 : null,
+                'to' => min($page * $perPage, $total),
+                'has_more' => $page < ceil($total / $perPage),
+            ],
         ];
     }
 
