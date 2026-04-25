@@ -521,30 +521,62 @@ class BodegaPedidoConsultaService
 
     private function procesarVistaLista(array $paginacion, Collection $pedidosFiltrados): array
     {
+        $numerosPedidos = $paginacion['pedidos_paginados'];
+        $userId = auth()->id();
+
+        // OPTIMIZACIÓN: Batch load all data needed instead of N+1 queries in loop
+        // Antes: 5 queries × N pedidos = 75 queries. Ahora: 5 queries totales
+
+        // Query 1: Todos los PedidoProduccion para esta página
+        $producciones = PedidoProduccion::whereIn('numero_pedido', $numerosPedidos)
+            ->select('id', 'numero_pedido', 'estado')
+            ->keyBy('numero_pedido')
+            ->get();
+
+        // Query 2: Todos los estados calculados para esta página
+        $estadosPorPedido = collect();
+        foreach ($numerosPedidos as $num) {
+            $estadosPorPedido[$num] = $this->estadoCalculator->calcular($num);
+        }
+
+        // Query 3: Todos los PedidoVistoSupervisor para los recibos en esta página
+        $recibosIds = $pedidosFiltrados->whereIn('numero_pedido', $numerosPedidos)
+            ->pluck('id')
+            ->unique();
+
+        $vistosMap = PedidoVistoSupervisor::whereIn('pedido_id', $recibosIds)
+            ->where('user_id', $userId)
+            ->select('pedido_id', 'created_at')
+            ->keyBy('pedido_id')
+            ->get();
+
+        // Query 4: Todos los PedidoRevisado para los recibos en esta página
+        $revisadosMap = PedidoRevisado::whereIn('pedido_id', $recibosIds)
+            ->where('user_id', $userId)
+            ->select('pedido_id', 'created_at')
+            ->keyBy('pedido_id')
+            ->get();
+
+        // Query 5: Todas las últimas actualizaciones para esta página
+        $actualizacionesMap = DB::table('bodega_detalles_talla')
+            ->whereIn('numero_pedido', $numerosPedidos)
+            ->select('numero_pedido', DB::raw('MAX(updated_at) as ultima_actualizacion'))
+            ->groupBy('numero_pedido')
+            ->pluck('ultima_actualizacion', 'numero_pedido');
+
+        // Procesar datos con batch-loaded información (sin queries adicionales)
         $pedidosPorPagina = [];
-        foreach ($paginacion['pedidos_paginados'] as $numeroPedido) {
+        foreach ($numerosPedidos as $numeroPedido) {
             $pedidosDelNumero = $pedidosFiltrados->filter(fn ($p) => $p->numero_pedido === $numeroPedido)->values();
             if ($pedidosDelNumero->isNotEmpty()) {
                 $primerPedido = $pedidosDelNumero->first();
-                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+                $pedidoProduccion = $producciones->get($numeroPedido);
+                $estadosPedido = $estadosPorPedido[$numeroPedido] ?? [];
 
-                $estadosPedido = $this->estadoCalculator->calcular($numeroPedido);
+                $vistoPorUsuario = $vistosMap->get($primerPedido->id);
+                $pedidoRevisado = $revisadosMap->get($primerPedido->id);
+                $fechaActualizacion = $actualizacionesMap->get($numeroPedido) ?? $primerPedido->created_at;
 
-                $tieneItemsPendientes = $estadosPedido['tiene_pendientes'];
-                $todosEntregados = $estadosPedido['todos_entregados'];
-                $todosPendientes = $estadosPedido['todos_pendientes'];
-
-                $userId = auth()->id();
-                $vistoPorUsuario = PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
-                    ->where('user_id', $userId)
-                    ->first();
-
-                // Buscar por el ID real del recibo, no por numero_pedido
-                $pedidoRevisado = PedidoRevisado::where('pedido_id', $primerPedido->id)
-                    ->where('user_id', $userId)
-                    ->first();
-
-                $fechaActualizacion = $this->historialService->obtenerUltimaActualizacionPrendas($numeroPedido) ?? $primerPedido->created_at;
                 $revisadoVigente = false;
                 $tieneCambiosNuevos = false;
 
@@ -557,7 +589,6 @@ class BodegaPedidoConsultaService
                             : true;
                         $tieneCambiosNuevos = !$revisadoVigente;
                     } catch (\Throwable $e) {
-                        // Fallback seguro: si no se puede comparar fechas, mantener comportamiento previo.
                         $revisadoVigente = true;
                         $tieneCambiosNuevos = false;
                     }
@@ -575,9 +606,9 @@ class BodegaPedidoConsultaService
                     'viewed_at' => $vistoPorUsuario?->created_at,
                     'pedido_revisado' => !empty($pedidoRevisado),
                     'tiene_cambios_nuevos' => $tieneCambiosNuevos,
-                    'tiene_pendientes' => $tieneItemsPendientes,
-                    'todos_pendientes' => $todosPendientes,
-                    'todos_entregados' => $todosEntregados,
+                    'tiene_pendientes' => $estadosPedido['tiene_pendientes'] ?? false,
+                    'todos_pendientes' => $estadosPedido['todos_pendientes'] ?? false,
+                    'todos_entregados' => $estadosPedido['todos_entregados'] ?? false,
                 ];
             }
         }

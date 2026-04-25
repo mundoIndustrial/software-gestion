@@ -823,27 +823,10 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(select, { attributes: true, attributeFilter: ['value'] });
     });
 
-    // Cargar notas automáticamente para items visibles en la página
-    // Se ejecuta inmediatamente después de que el script se cargue
-    (function() {
-        const observacionesInputs = document.querySelectorAll('.observaciones-input');
-        
-        // Agrupar por numero_pedido/talla para evitar duplicados
-        const pedidosACargar = new Set();
-        observacionesInputs.forEach(textarea => {
-            const numeroPedido = textarea.dataset.numeroPedido;
-            const talla = textarea.dataset.talla;
-            if (numeroPedido && talla) {
-                pedidosACargar.add(`${numeroPedido}|${talla}`);
-            }
-        });
-
-        // Cargar notas para cada combinación única
-        pedidosACargar.forEach(key => {
-            const [numeroPedido, talla] = key.split('|');
-            cargarNotas(numeroPedido, talla);
-        });
-    })();
+    // LAZY LOADING: Las notas se cargarán SOLO cuando el usuario abra el modal
+    // Mejora de rendimiento: elimina ~100+ requests simultáneos al cargar la página
+    // Las notas se cargan en abrirModalNotas() cuando el usuario hace clic en "💬"
+    // WebSocket mantiene sincronización en tiempo real (ver línea 1334+)
 
    
 });

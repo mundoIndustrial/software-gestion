@@ -11,6 +11,35 @@ function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
+// Cache simple para notas (sin queue de polling)
+// Solo se usa cuando el usuario abre el modal
+window.__notasCache = {
+    cache: new Map(),
+    cacheTimeout: 30000, // 30 segundos
+
+    get(key) {
+        const cached = this.cache.get(key);
+        if (cached && Date.now() - cached.time < this.cacheTimeout) {
+            return cached.data;
+        }
+        this.cache.delete(key);
+        return null;
+    },
+
+    set(key, data) {
+        this.cache.set(key, { data, time: Date.now() });
+    },
+
+    clear() {
+        this.cache.clear();
+    }
+};
+
+// Limpiar cache al cambiar página
+window.addEventListener('beforeunload', () => {
+    window.__notasCache.clear();
+});
+
 /**
  * Toggle menú de usuario
  */
@@ -144,12 +173,12 @@ window.confirmarEliminarNota = function(callback) {
     modal.classList.remove('hidden');
 };
 
-if (typeof window.cargarNotas !== 'function') {
-    window.cargarNotas = async function(numeroPedido, talla, tallaColorId) {
-        try {
-            const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
-                ? '/despacho/notas'
-                : '/gestion-bodega/notas';
+// Función real que hace la request (no para en la queue)
+window.cargarNotasActual = async function(numeroPedido, talla, tallaColorId, queueKey) {
+    try {
+        const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
+            ? '/despacho/notas'
+            : '/gestion-bodega/notas';
 
             const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
                 ? String(Number(tallaColorId))
@@ -180,6 +209,7 @@ if (typeof window.cargarNotas !== 'function') {
             }
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
             const response = await fetch(`${baseNotas}/obtener`, {
                 method: 'POST',
                 cache: 'no-store',
@@ -200,6 +230,11 @@ if (typeof window.cargarNotas !== 'function') {
             // Si llegó una respuesta vieja (hubo otra request más reciente para este pedido/talla), ignorar.
             if (window.__notasActiveRequests && window.__notasActiveRequests[key] !== requestId) {
                 return;
+            }
+
+            // Guardar en cache
+            if (queueKey && response.ok && data.success) {
+                window.__notasCache.set(queueKey, data);
             }
 
             if (!response.ok || !data || data.success === false) {
@@ -284,45 +319,19 @@ if (typeof window.cargarNotas !== 'function') {
             if (historial && modalVisible) historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
         }
     };
+
+// Wrapper que carga notas con caching simple
+if (typeof window.cargarNotas !== 'function') {
+    window.cargarNotas = async function(numeroPedido, talla, tallaColorId) {
+        const key = `${numeroPedido}|${talla}|${tallaColorId || ''}`;
+        return window.cargarNotasActual(numeroPedido, talla, tallaColorId, key);
+    };
 }
 
-// Cargar notas automáticamente en la columna de observaciones al entrar a la vista
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        if (typeof window.cargarNotas !== 'function') return;
-
-        const textareas = Array.from(document.querySelectorAll('.observaciones-input'));
-        if (textareas.length === 0) return;
-
-        const claves = [];
-        const seen = new Set();
-        textareas.forEach(t => {
-            const numeroPedido = t?.dataset?.numeroPedido;
-            const talla = t?.dataset?.talla;
-            const tallaColorId = t?.dataset?.tallaColorId;
-            if (!numeroPedido || !talla) return;
-            const tcNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
-                ? String(Number(tallaColorId))
-                : '';
-            const key = `${numeroPedido}|${talla}|${tcNorm}`;
-            if (seen.has(key)) return;
-            seen.add(key);
-            claves.push({ numeroPedido, talla, tallaColorId: tcNorm !== '' ? Number(tcNorm) : null });
-        });
-
-        // Ejecutar en serie con pequeños delays para evitar demasiadas requests simultáneas
-        const ejecutar = async () => {
-            for (const item of claves) {
-                await window.cargarNotas(item.numeroPedido, item.talla, item.tallaColorId);
-                await new Promise(r => setTimeout(r, 30));
-            }
-        };
-
-        ejecutar();
-    } catch (e) {
-        console.error('Error auto-cargando notas para observaciones:', e);
-    }
-});
+// LAZY LOADING: No cargar notas automáticamente
+// Las notas se cargan SOLO cuando el usuario abre el modal (abrirModalNotas -> cargarNotas)
+// Esto mejora el rendimiento inicial eliminando ~100+ requests simultáneos
+// Nota: Este código se mantiene como referencia pero está deshabilitado por pedidos-readonly.blade.php
 
 if (typeof window.editarNota !== 'function') {
     window.editarNota = async function(notaId, numeroPedido, talla) {
