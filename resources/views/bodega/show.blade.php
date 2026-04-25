@@ -2,7 +2,41 @@
 
 @section('title', "Gestión de Bodega - Pedido {$pedido['numero_pedido']}")
 
+@push('styles')
+<style>
+    #bodega-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.96);
+        z-index: 200000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+    }
+
+    #bodega-loading-overlay:not(.is-visible) {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+</style>
+@endpush
+
 @section('content')
+
+<!-- Overlay de carga -->
+<div id="bodega-loading-overlay" class="is-visible" role="status" aria-live="polite" aria-label="Cargando detalles del pedido">
+    <div style="text-align: center;">
+        <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+            <span class="sr-only">Cargando...</span>
+        </div>
+        <p style="margin-top: 0.75rem; color: #555; font-size: 0.95rem; font-weight: 500;">Cargando detalles del pedido...</p>
+    </div>
+</div>
 <div class="min-h-screen bg-slate-50 w-full flex flex-col">
     <div class="w-full flex-shrink-0">
         <!-- Header -->
@@ -1453,4 +1487,71 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 </div>
 
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
+
+<!-- Script para ocultar el overlay de carga -->
+<script>
+    console.log('[BODEGA SHOW] 5️⃣ Página show.blade.php cargada en HTML');
+
+    // Observer para rastrear cambios en el overlay
+    const setupOverlayObserver = () => {
+        const overlay = document.getElementById('bodega-loading-overlay');
+        if (!overlay) {
+            console.error('[BODEGA SHOW] ❌ Overlay no encontrado para observer');
+            return;
+        }
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    console.log('[BODEGA SHOW] 🔍 CAMBIO en atributo class del overlay:', overlay.className);
+                    console.trace('[BODEGA SHOW] Stack trace del cambio:');
+                }
+            });
+        });
+
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+        console.log('[BODEGA SHOW] ✅ Observer iniciado para rastrear cambios de clase');
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[BODEGA SHOW] 6️⃣ DOMContentLoaded disparado');
+        const overlay = document.getElementById('bodega-loading-overlay');
+        if (overlay) {
+            console.log('[BODEGA SHOW] Overlay encontrado en DOMContentLoaded');
+            console.log('[BODEGA SHOW] Clases actuales:', overlay.className);
+            setupOverlayObserver();
+        }
+    });
+
+    window.addEventListener('load', function() {
+        console.log('[BODEGA SHOW] 7️⃣ LOAD evento disparado - TODO cargado (CSS, JS, imágenes)');
+
+        // Esperar a que se complete el rendering del navegador
+        // usando requestAnimationFrame múltiples veces
+        let frameCount = 0;
+        const hideOverlay = () => {
+            frameCount++;
+            console.log('[BODEGA SHOW] Frame', frameCount);
+
+            if (frameCount >= 3) {
+                // Después de 3 frames de animación, el navegador debería haber terminado de pintar
+                const overlay = document.getElementById('bodega-loading-overlay');
+                if (overlay) {
+                    console.log('[BODEGA SHOW] 8️⃣ Removiendo clase is-visible del overlay (después de', frameCount, 'frames)');
+                    console.log('[BODEGA SHOW] Clases antes:', overlay.className);
+                    overlay.classList.remove('is-visible');
+                    console.log('[BODEGA SHOW] Clases después:', overlay.className);
+                    console.log('[BODEGA SHOW] ✅ Overlay removido - página lista!');
+                } else {
+                    console.error('[BODEGA SHOW] ❌ Overlay NO encontrado!');
+                }
+            } else {
+                requestAnimationFrame(hideOverlay);
+            }
+        };
+
+        requestAnimationFrame(hideOverlay);
+    });
+</script>
+
 @endsection

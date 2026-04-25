@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class BodegaPedidoConsultaService
 {
@@ -321,20 +322,28 @@ class BodegaPedidoConsultaService
 
     private function filtrarPedidosPorArea(Collection $pedidos, array $areasPermitidas): Collection
     {
-        return $pedidos->filter(function ($item) use ($areasPermitidas) {
-            $bdDetalles = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)->get();
+        if ($pedidos->isEmpty()) {
+            return $pedidos;
+        }
 
-            if ($bdDetalles->isEmpty()) {
+        // 🎯 OPTIMIZACIÓN: UNA sola query en lugar de N queries
+        $numerosPedidos = $pedidos->pluck('numero_pedido')->unique();
+
+        $detallesPorNumero = BodegaDetallesTalla::whereIn('numero_pedido', $numerosPedidos)
+            ->select('numero_pedido', 'area')
+            ->get()
+            ->groupBy('numero_pedido');
+
+        // Filtrar en memoria (sin queries adicionales)
+        return $pedidos->filter(function ($item) use ($areasPermitidas, $detallesPorNumero) {
+            $detalles = $detallesPorNumero->get($item->numero_pedido, collect());
+
+            if ($detalles->isEmpty()) {
                 return in_array(null, $areasPermitidas);
             }
 
-            foreach ($bdDetalles as $detalle) {
-                if (in_array($detalle->area, $areasPermitidas)) {
-                    return true;
-                }
-            }
-
-            return false;
+            // Verificar si algún detalle está en áreas permitidas
+            return $detalles->some(fn($d) => in_array($d->area, $areasPermitidas));
         })->values();
     }
 
@@ -530,8 +539,8 @@ class BodegaPedidoConsultaService
         // Query 1: Todos los PedidoProduccion para esta página
         $producciones = PedidoProduccion::whereIn('numero_pedido', $numerosPedidos)
             ->select('id', 'numero_pedido', 'estado')
-            ->keyBy('numero_pedido')
-            ->get();
+            ->get()
+            ->keyBy('numero_pedido');
 
         // Query 2: Todos los estados calculados para esta página
         $estadosPorPedido = collect();
@@ -547,15 +556,15 @@ class BodegaPedidoConsultaService
         $vistosMap = PedidoVistoSupervisor::whereIn('pedido_id', $recibosIds)
             ->where('user_id', $userId)
             ->select('pedido_id', 'created_at')
-            ->keyBy('pedido_id')
-            ->get();
+            ->get()
+            ->keyBy('pedido_id');
 
         // Query 4: Todos los PedidoRevisado para los recibos en esta página
         $revisadosMap = PedidoRevisado::whereIn('pedido_id', $recibosIds)
             ->where('user_id', $userId)
             ->select('pedido_id', 'created_at')
-            ->keyBy('pedido_id')
-            ->get();
+            ->get()
+            ->keyBy('pedido_id');
 
         // Query 5: Todas las últimas actualizaciones para esta página
         $actualizacionesMap = DB::table('bodega_detalles_talla')

@@ -3,6 +3,40 @@
 @section('title', 'Gestión de Pedidos - Bodega')
 @section('page-title', Route::currentRouteName() === 'gestion-bodega.pedidos-anulados' ? 'Pedidos Anulados' : 'Gestión de Bodega')
 
+@push('styles')
+<style>
+    #bodega-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        z-index: 9999999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    #bodega-loading-overlay.is-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+    }
+</style>
+@endpush
+
+<!-- Overlay de carga -->
+<div id="bodega-loading-overlay" role="status" aria-live="polite" aria-label="Cargando detalles del pedido">
+    <div style="text-align: center;">
+        <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+            <span class="sr-only">Cargando...</span>
+        </div>
+        <p style="margin-top: 0.75rem; color: #555; font-size: 0.95rem; font-weight: 500;">Cargando detalles del pedido...</p>
+    </div>
+</div>
+
 @section('content')
 <div class="min-h-screen bg-white">
     <div class="max-w-7xl mx-auto">
@@ -76,7 +110,8 @@
                                     </td>
                                     <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
                                         <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
-                                           class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors">
+                                           class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors"
+                                           onclick="mostrarOverlayPedido(event)">
                                             <span class="material-symbols-rounded text-base">visibility</span>
                                         </a>
                                         <button type="button"
@@ -907,5 +942,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 30000);
     }
 });
+</script>
+
+<script>
+function mostrarOverlayPedido(event) {
+    event.preventDefault();
+    console.log('[BODEGA] 1️⃣ Click en botón "Ver"');
+
+    const overlay = document.getElementById('bodega-loading-overlay');
+    if (overlay) {
+        console.log('[BODEGA] 2️⃣ Overlay encontrado, agregando clase is-visible');
+        overlay.classList.add('is-visible');
+        console.log('[BODEGA] 3️⃣ Overlay visible - esperando 50ms antes de navegar');
+    } else {
+        console.error('[BODEGA] ❌ Overlay NO encontrado!');
+    }
+
+    // Navegar a la página después de mostrar el overlay
+    const href = event.currentTarget.getAttribute('href');
+    setTimeout(function() {
+        console.log('[BODEGA] 4️⃣ Navegando a:', href);
+        window.location.href = href;
+    }, 50);
+}
 </script>
 @endsection

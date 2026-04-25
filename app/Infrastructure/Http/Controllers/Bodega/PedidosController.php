@@ -77,13 +77,13 @@ class PedidosController extends Controller
     {
         try {
             $datos = $this->bodegaPedidoService->obtenerPedidosPaginados($request);
-            
+
             if ($datos['view_type'] === 'details') {
                 $esReadOnly = $this->isReadOnly();
-                
+
                 $viewName = $esReadOnly ? 'bodega.pedidos-readonly' : 'bodega.pedidos';
-                
-                return view($viewName, [
+
+                $response = view($viewName, [
                     'pedidosAgrupados' => $datos['pedidos_agrupados'] ?? [],
                     'asesores' => $datos['asesores'] ?? [],
                     'paginacion' => $datos['pagination']['paginacion_obj'] ?? null,
@@ -92,17 +92,23 @@ class PedidosController extends Controller
                     'notasBodega' => $datos['notas_bodega'] ?? collect(),
                     'esReadOnly' => $esReadOnly,
                 ]);
+            } else {
+                // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
+                $response = view('bodega.index-list', [
+                    'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                    'totalPedidos' => $datos['total_pedidos'] ?? 0,
+                    'paginaActual' => $datos['pagina_actual'] ?? 1,
+                    'porPagina' => $datos['por_pagina'] ?? 20,
+                    'search' => $request->query('search', ''),
+                    'routeName' => 'gestion-bodega.pedidos',
+                ]);
             }
-            
-            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
-            return view('bodega.index-list', [
-                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
-                'totalPedidos' => $datos['total_pedidos'] ?? 0,
-                'paginaActual' => $datos['pagina_actual'] ?? 1,
-                'porPagina' => $datos['por_pagina'] ?? 20,
-                'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos',
-            ]);
+
+            // 🚀 CACHE: Cachear por 60 segundos en el navegador
+            // Cuando el usuario hace "volver", usa el caché en lugar de recargar
+            return response($response)
+                ->header('Cache-Control', 'public, max-age=60')
+                ->header('ETag', md5($request->fullUrl() . auth()->id()));
             
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@index: ' . $e->getMessage());
@@ -124,7 +130,7 @@ class PedidosController extends Controller
 
                 $viewName = $esReadOnly ? 'bodega.pedidos-readonly' : 'bodega.pedidos';
 
-                return view($viewName, [
+                $response = view($viewName, [
                     'pedidosAgrupados' => $datos['pedidos_agrupados'] ?? [],
                     'asesores' => $datos['asesores'] ?? [],
                     'paginacion' => $datos['pagination']['paginacion_obj'] ?? null,
@@ -133,17 +139,21 @@ class PedidosController extends Controller
                     'notasBodega' => $datos['notas_bodega'] ?? collect(),
                     'esReadOnly' => $esReadOnly,
                 ]);
+            } else {
+                // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
+                $response = view('bodega.index-list', [
+                    'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                    'totalPedidos' => $datos['total_pedidos'] ?? 0,
+                    'paginaActual' => $datos['pagina_actual'] ?? 1,
+                    'porPagina' => $datos['por_pagina'] ?? 20,
+                    'search' => $request->query('search', ''),
+                    'routeName' => 'gestion-bodega.pedidos-anulados',
+                ]);
             }
 
-            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
-            return view('bodega.index-list', [
-                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
-                'totalPedidos' => $datos['total_pedidos'] ?? 0,
-                'paginaActual' => $datos['pagina_actual'] ?? 1,
-                'porPagina' => $datos['por_pagina'] ?? 20,
-                'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos-anulados',
-            ]);
+            return response($response)
+                ->header('Cache-Control', 'public, max-age=60')
+                ->header('ETag', md5($request->fullUrl() . auth()->id()));
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@anulados: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los pedidos anulados: ' . $e->getMessage());
@@ -164,7 +174,7 @@ class PedidosController extends Controller
 
                 $viewName = $esReadOnly ? 'bodega.pedidos-readonly' : 'bodega.pedidos';
 
-                return view($viewName, [
+                $response = view($viewName, [
                     'pedidosAgrupados' => $datos['pedidos_agrupados'] ?? [],
                     'asesores' => $datos['asesores'] ?? [],
                     'paginacion' => $datos['pagination']['paginacion_obj'] ?? null,
@@ -173,17 +183,21 @@ class PedidosController extends Controller
                     'notasBodega' => $datos['notas_bodega'] ?? collect(),
                     'esReadOnly' => $esReadOnly,
                 ]);
+            } else {
+                // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
+                $response = view('bodega.index-list', [
+                    'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                    'totalPedidos' => $datos['total_pedidos'] ?? 0,
+                    'paginaActual' => $datos['pagina_actual'] ?? 1,
+                    'porPagina' => $datos['por_pagina'] ?? 20,
+                    'search' => $request->query('search', ''),
+                    'routeName' => 'gestion-bodega.pedidos-entregados',
+                ]);
             }
 
-            // Vista de lista - El filtro de pedidos ocultos ya se aplica en el servicio
-            return view('bodega.index-list', [
-                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
-                'totalPedidos' => $datos['total_pedidos'] ?? 0,
-                'paginaActual' => $datos['pagina_actual'] ?? 1,
-                'porPagina' => $datos['por_pagina'] ?? 20,
-                'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos-entregados',
-            ]);
+            return response($response)
+                ->header('Cache-Control', 'public, max-age=60')
+                ->header('ETag', md5($request->fullUrl() . auth()->id()));
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@entregados: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los pedidos entregados: ' . $e->getMessage());
