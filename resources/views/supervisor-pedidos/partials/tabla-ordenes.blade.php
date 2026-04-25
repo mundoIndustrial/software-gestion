@@ -94,15 +94,15 @@
         <!-- Filas - Se cargan dinámicamente con JavaScript -->
         <div data-ordenes-body style="display: flex; flex-direction: column;">
             <!-- Las órdenes se cargarán aquí vía API -->
+            @if($ordenes->isEmpty())
             <div style="padding: 2rem; text-align: center; color: #9ca3af;">
                 <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
                     <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     Cargando órdenes...
                 </div>
             </div>
-        </div>
+            @endif
 
-        @if(false)
             @foreach($ordenes as $orden)
                 @php $estaSeleccionado = in_array($orden->id, $pedidosSeleccionados); @endphp
                 <div class="sp-orders-grid" style="
@@ -141,26 +141,6 @@
                             <i class="fas fa-eye"></i>
                             <span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none; position:absolute; top:-7px; right:-7px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#dc2626; color:#fff; font-size:10px; font-weight:700; line-height:18px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span>
                         </button>
-
-                        {{-- <!-- Botón Editar -->
-                        <button onclick="editarPedido({{ $orden->id }})" title="Editar Pedido" style="
-                            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 36px;
-                            height: 36px;
-                            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
-                            <i class="fas fa-edit"></i>
-                        </button> --}}
 
                         <!-- Botón Aprobar (solo si está pendiente de aprobación Y no es solo EPP) -->
                         @if($estado === 'PENDIENTE_SUPERVISOR')
@@ -268,7 +248,7 @@
                     </div>
                 </div>
             @endforeach
-        @endif
+        </div>
     </div>
 </div>
 

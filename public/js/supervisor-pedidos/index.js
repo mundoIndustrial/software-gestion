@@ -248,7 +248,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
         <style>
             .sp-orders-grid {
                 display: grid;
-                grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
+                grid-template-columns: 60px 220px 130px 120px 220px 150px 150px 150px 150px 150px 150px;
                 gap: 1.2rem;
                 min-width: max-content;
                 box-sizing: border-box;
@@ -263,10 +263,12 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Número</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Número" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span><button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Novedades</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Forma Pago</span><button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Cartera</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Supervisor</span></div>
                 </div>
     `;
 
@@ -312,6 +314,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div><span style="font-size: 0.85rem; color: #6b7280;">${fecha}</span></div>
                     <div><span style="font-weight: 600; color: #1e5ba8;">${numeroPedidoText}</span></div>
                     <div><span>${cliente}</span></div>
+                    <div><span>${asesora}</span></div>
                     <div><span style="background: ${estadoInfo.bg}; color: ${estadoInfo.text}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">${_spEscapeHtml(estadoInfo.label)}</span></div>
                     <div>
                         ${novedadesCount > 0
@@ -319,8 +322,9 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                             : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">Sin novedades</span>`
                         }
                     </div>
-                    <div><span>${asesora}</span></div>
                     <div><span>${formaPago}</span></div>
+                    <div><span class="sp-date-cell">${_spFormatDateTime(orden?.aprobado_por_cartera_en)}</span></div>
+                    <div><span class="sp-date-cell">${_spFormatDateTime(orden?.aprobado_por_supervisor_en)}</span></div>
                 </div>
             `;
         }).join('');

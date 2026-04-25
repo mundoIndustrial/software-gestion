@@ -577,17 +577,25 @@ function _refreshTablaConDelay(payload, eventName) {
     window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
         _rtRefreshInFlight = true;
         try {
+            console.log('[RT-SUPERVISOR] Iniciando refresco de tabla por evento:', eventName);
             const html = await _rtRepo.fetchPageContent(window.location.href);
             const doc = new DOMParser().parseFromString(html, 'text/html');
             const nuevaTabla = doc.querySelector('.table-scroll-container');
             const tablaActual = document.querySelector('.table-scroll-container');
 
             if (!nuevaTabla || !tablaActual) {
+                console.warn('[RT-SUPERVISOR] No se pudo encontrar el contenedor de tabla en la respuesta.');
                 return;
             }
 
             tablaActual.innerHTML = nuevaTabla.innerHTML;
+
+            // Actualizar badges de bodega si la función existe
+            if (typeof window.refreshVerButtonsBodegaBadges === 'function') {
+                window.refreshVerButtonsBodegaBadges();
+            }
         } catch (error) {
+            console.error('[RT-SUPERVISOR] Error en refresco real-time:', error);
         } finally {
             _rtRefreshInFlight = false;
             _rtTryFlushQueuedRefresh();
