@@ -37,7 +37,7 @@ class DespachoPendientesApplicationService
                     })
                     ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                     ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
-                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
+                    ->where('bdt.estado_bodega', 'Pendiente')
                     ->whereNull('pppd.id');
             })
             ->select('pedidos_produccion.*')
