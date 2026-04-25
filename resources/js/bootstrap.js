@@ -170,6 +170,7 @@ function shouldAutoInitializeEcho() {
         moduleName === 'asesores' ||
         moduleName === 'supervisor-pedidos' ||
         moduleName === 'insumos-materiales' ||
+        moduleName === 'cartera' ||
         notificationsUi === 'asesores'
     );
 }

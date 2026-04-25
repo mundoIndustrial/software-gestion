@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar notificaciones en tiempo real por WebSocket
     inicializarNotificacionesWebSocketCartera();
-    iniciarFallbackPollingCartera();
+    // iniciarFallbackPollingCartera(); // Desactivado: WebSockets ya funcionan en tiempo real
     inicializarPushMovilCartera();
 });
 
@@ -479,13 +479,8 @@ function notificarNuevosPendientesPorDelta(idsActuales, idsPrevios) {
 }
 
 function iniciarFallbackPollingCartera() {
-    if (carteraPollingTimer) return;
-    if (!window.location.pathname.includes('/cartera/pedidos')) return;
-
-    console.log('[CARTERA] Fallback polling activo cada 15s');
-    carteraPollingTimer = setInterval(() => {
-        cargarPedidos();
-    }, 15000);
+    // Polling desactivado - Se prefiere el uso de WebSockets (Echo)
+    console.log('[CARTERA] Polling desactivado (Real-time activo)');
 }
 
 function updatePaginationControls(pagination) {
@@ -518,6 +513,11 @@ function inicializarNotificacionesWebSocketCartera() {
     if (carteraWsNotificationsBootstrapped) return;
     carteraWsNotificationsBootstrapped = true;
 
+    // Asegurar inicialización de Echo
+    if (typeof window.initEcho === 'function') {
+        window.initEcho();
+    }
+
     solicitarPermisoNotificacionSiAplica();
 
     if (typeof window.waitForEcho !== 'function') {
@@ -526,6 +526,7 @@ function inicializarNotificacionesWebSocketCartera() {
     }
 
     window.waitForEcho(() => {
+        console.log('[CARTERA-DEBUG] Echo está listo, configurando suscripciones...');
         const ws = window.shared?.websocket;
         const onCreated = (event) => manejarEventoRealtimeCartera(event, 'pedido.creado');
         const onUpdated = (event) => manejarEventoRealtimeCartera(event, 'pedido.actualizado');
@@ -533,6 +534,7 @@ function inicializarNotificacionesWebSocketCartera() {
 
         try {
             if (ws && typeof ws.subscribe === 'function') {
+                console.log('[CARTERA-DEBUG] Usando abstracción window.shared.websocket');
                 ws.subscribe('pedidos.creados', '.pedido.creado', onCreated);
                 ws.subscribe('pedidos.general', '.pedido.actualizado', onUpdated);
                 ws.subscribe('ordenes', '.orden.updated', onOrdenUpdated);
@@ -540,25 +542,34 @@ function inicializarNotificacionesWebSocketCartera() {
             }
 
             if (window.EchoInstance) {
+                console.log('[CARTERA-DEBUG] Usando window.EchoInstance directamente');
                 window.EchoInstance.channel('pedidos.creados').listen('.pedido.creado', onCreated);
                 window.EchoInstance.channel('pedidos.general').listen('.pedido.actualizado', onUpdated);
                 window.EchoInstance.channel('ordenes').listen('.orden.updated', onOrdenUpdated);
                 return;
             }
 
-            console.warn('[CARTERA] No hay cliente websocket disponible');
+            console.warn('[CARTERA-DEBUG] No hay cliente websocket disponible (ws o EchoInstance)');
         } catch (error) {
-            console.warn('[CARTERA] Error suscribiendo websocket cartera:', error);
+            console.warn('[CARTERA-DEBUG] Error suscribiendo websocket cartera:', error);
         }
     });
 }
 
 function manejarEventoRealtimeCartera(event, tipoEvento) {
+    console.log(`[CARTERA-DEBUG] Evento recibido: ${tipoEvento}`, event);
     const pedido = extraerPedidoDesdeEventoRealtime(event);
-    if (!pedido || !pedido.id) return;
+    if (!pedido || !pedido.id) {
+        console.warn('[CARTERA-DEBUG] No se pudo extraer el pedido del evento');
+        return;
+    }
 
     const estado = String(pedido.estado || '').toLowerCase();
-    if (estado !== 'pendiente_cartera') return;
+    console.log(`[CARTERA-DEBUG] Estado del pedido: ${estado}`);
+    if (estado !== 'pendiente_cartera') {
+        console.log('[CARTERA-DEBUG] El pedido no está en estado pendiente_cartera, ignorando');
+        return;
+    }
 
     const pedidoId = Number(pedido.id);
     if (!Number.isFinite(pedidoId)) return;
@@ -566,20 +577,28 @@ function manejarEventoRealtimeCartera(event, tipoEvento) {
     const numero = pedido.numero_pedido || pedido.numero || `#${pedidoId}`;
     const cliente = pedido.cliente || pedido.cliente_nombre || 'Cliente no disponible';
     const dedupeKey = `${tipoEvento}|${pedidoId}|${estado}`;
-    if (!debeNotificarRealtime(dedupeKey)) return;
+    
+    if (!debeNotificarRealtime(dedupeKey)) {
+        console.log('[CARTERA-DEBUG] Evento duplicado, ignorando notificación');
+        return;
+    }
 
     const esNuevoPendiente = !carteraKnownPendingIds.has(pedidoId);
     carteraKnownPendingIds.add(pedidoId);
+
+    console.log(`[CARTERA-DEBUG] Es nuevo pendiente: ${esNuevoPendiente}`);
 
     if (!esNuevoPendiente && tipoEvento !== 'pedido.creado') {
         return;
     }
 
     const mensaje = `Nuevo pedido ${numero} de ${cliente}, pendiente por autorizar.`;
+    console.log(`[CARTERA-DEBUG] Mostrando notificación: ${mensaje}`);
     mostrarNotificacion(mensaje, 'info');
     mostrarNotificacionNavegador('Nuevo pedido pendiente de cartera', mensaje);
 
     if (typeof cargarPedidos === 'function') {
+        console.log('[CARTERA-DEBUG] Recargando tabla de pedidos...');
         cargarPedidos();
     }
 }
