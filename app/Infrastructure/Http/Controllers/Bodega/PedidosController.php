@@ -17,6 +17,11 @@ use App\Application\Bodega\Services\BodegaDatosService;
 use App\Application\Bodega\Services\BodegaNotificacionService;
 use App\Application\Bodega\Services\BodegaUpdateService;
 use App\Application\Bodega\Services\BodegaGuardadoService;
+use App\Application\Bodega\Services\EppHomologacionService;
+use App\Application\Bodega\Services\PedidoListadoService;
+use App\Application\Bodega\Services\PedidoFiltroService;
+use App\Application\Bodega\Services\PedidoEstadoService;
+use App\Application\Bodega\Services\PedidoActualizacionService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use Illuminate\Support\Facades\Auth;
@@ -51,11 +56,15 @@ class PedidosController extends Controller
         private BodegaNotaService $notaService,
         private BodegaAuditoriaService $auditoriaService,
         private CQRSManager $cqrsManager,
-        private BodegaFiltroService $filtroService,
         private BodegaDatosService $datosService,
         private BodegaNotificacionService $notificacionService,
         private BodegaUpdateService $updateService,
         private BodegaGuardadoService $guardadoService,
+        private EppHomologacionService $eppHomologacionService,
+        private PedidoListadoService $pedidoListadoService,
+        private PedidoFiltroService $pedidoFiltroService,
+        private PedidoEstadoService $pedidoEstadoService,
+        private PedidoActualizacionService $pedidoActualizacionService,
     ) {}
 
     /**
@@ -281,88 +290,10 @@ class PedidosController extends Controller
 
                     // Si es un EPP, obtener el historial de homologaciones
                     if (($item['area'] ?? '') === 'EPP' && !empty($item['pedido_epp_id'] ?? null)) {
-                        $pedidoEppId = $item['pedido_epp_id'];
-
-                        // OPTIMIZACIÓN: Una sola query para toda la cadena en lugar de N queries en loops
-                        // Cargar todos los EPPs del pedido una sola vez
-                        static $eppsCacheGlobal = [];
-                        $pedidoProductionId = $pedidoProduccion->id ?? null;
-                        $cacheKey = "epps_{$pedidoProductionId}";
-
-                        if (!isset($eppsCacheGlobal[$cacheKey])) {
-                            if ($pedidoProductionId) {
-                                $eppsCacheGlobal[$cacheKey] = DB::table('pedido_epp')
-                                    ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
-                                    ->where('pedido_epp.pedido_produccion_id', $pedidoProductionId)
-                                    ->select([
-                                        'pedido_epp.id',
-                                        'pedido_epp.homologado_de',
-                                        'pedido_epp.epp_id',
-                                        'epps.nombre_completo',
-                                        'pedido_epp.cantidad',
-                                        'pedido_epp.created_at',
-                                        'pedido_epp.deleted_at',
-                                        'pedido_epp.observaciones',
-                                    ])
-                                    ->get()
-                                    ->keyBy('id');
-                            } else {
-                                $eppsCacheGlobal[$cacheKey] = collect();
-                            }
-                        }
-
-                        $todosLosEpps = $eppsCacheGlobal[$cacheKey];
-
-                        // Procesar en memoria sin queries adicionales
-                        $historial = [];
-                        if ($todosLosEpps->has($pedidoEppId)) {
-                            // Encontrar el EPP original (sin query)
-                            $eppIdOriginal = $pedidoEppId;
-                            $intentos = 0;
-                            while ($intentos < 30) {
-                                $intentos++;
-                                $epp = $todosLosEpps->get($eppIdOriginal);
-                                if (!$epp || !$epp->homologado_de) {
-                                    break;
-                                }
-                                $eppIdOriginal = $epp->homologado_de;
-                            }
-
-                            // Construir la cadena desde el original (sin query)
-                            $eppActualId = $eppIdOriginal;
-                            $visitados = collect();
-                            $intentos = 0;
-                            while ($intentos < 30) {
-                                $intentos++;
-                                if ($visitados->contains($eppActualId)) {
-                                    break; // Ciclo detectado
-                                }
-                                $visitados->push($eppActualId);
-
-                                $epp = $todosLosEpps->get($eppActualId);
-                                if (!$epp) {
-                                    break;
-                                }
-
-                                $historial[] = [
-                                    'pedido_epp_id' => $epp->id,
-                                    'epp_id' => $epp->epp_id,
-                                    'epp_nombre' => $epp->nombre_completo ?? 'EPP sin nombre',
-                                    'cantidad' => $epp->cantidad,
-                                    'fecha_creacion' => $epp->created_at ? Carbon::parse($epp->created_at)->format('Y-m-d H:i') : null,
-                                    'deleted_at' => $epp->deleted_at,
-                                    'observaciones' => $epp->observaciones ?? '-',
-                                    'es_original' => $epp->homologado_de === null,
-                                ];
-
-                                // Buscar siguiente (sin query, en memoria)
-                                $siguiente = $todosLosEpps->first(fn ($e) => $e->homologado_de === $epp->id);
-                                if (!$siguiente) {
-                                    break;
-                                }
-                                $eppActualId = $siguiente->id;
-                            }
-                        }
+                        $historial = $this->eppHomologacionService->obtenerHistorialHomologaciones(
+                            $item['pedido_epp_id'],
+                            $pedidoProduccion->id ?? null
+                        );
 
                         $item['tiene_historial'] = count($historial) > 1;
                         $item['historial_homologaciones'] = $historial;
@@ -552,25 +483,11 @@ class PedidosController extends Controller
      */
     public function revisar(Request $request, $pedidoId): JsonResponse
     {
-        try {
-            $revisado = $request->input('revisado', false);
-            $userId = auth()->id();
-            
-            if ($revisado) {
-                PedidoRevisado::firstOrCreate([
-                    'pedido_id' => $pedidoId,
-                    'user_id' => $userId
-                ]);
-            } else {
-                PedidoRevisado::where('pedido_id', $pedidoId)
-                    ->where('user_id', $userId)
-                    ->delete();
-            }
-            
-            return response()->json(['success' => true], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        $revisado = $request->input('revisado', false);
+        $result = $this->pedidoEstadoService->marcarComoRevisado($pedidoId, $revisado);
+        $statusCode = $this->pedidoEstadoService->obtenerStatusCode($result);
+
+        return response()->json($result, $statusCode);
     }
 
     /**
@@ -578,18 +495,10 @@ class PedidosController extends Controller
      */
     public function ocultarPedido(Request $request, $pedidoId): JsonResponse
     {
-        try {
-            $userId = auth()->id();
-            
-            PedidoOculto::firstOrCreate([
-                'pedido_id' => $pedidoId,
-                'user_id' => $userId
-            ]);
-            
-            return response()->json(['success' => true], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        $result = $this->pedidoEstadoService->ocultarPedido($pedidoId);
+        $statusCode = $this->pedidoEstadoService->obtenerStatusCode($result);
+
+        return response()->json($result, $statusCode);
     }
 
     /**
@@ -597,17 +506,10 @@ class PedidosController extends Controller
      */
     public function deshacerOcultarPedido(Request $request, $pedidoId): JsonResponse
     {
-        try {
-            $userId = auth()->id();
-            
-            PedidoOculto::where('pedido_id', $pedidoId)
-                ->where('user_id', $userId)
-                ->delete();
-            
-            return response()->json(['success' => true], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        $result = $this->pedidoEstadoService->deshacerOcultarPedido($pedidoId);
+        $statusCode = $this->pedidoEstadoService->obtenerStatusCode($result);
+
+        return response()->json($result, $statusCode);
     }
 
     /**
@@ -615,63 +517,16 @@ class PedidosController extends Controller
      */
     public function ocultosIndex(Request $request)
     {
-        try {
-            $userId = auth()->id();
-            $search = $request->query('search', '');
-            $page = $request->query('page', 1);
-            $perPage = 20;
-            
-            // Obtener IDs de pedidos ocultos por el usuario
-            $pediodosOcultosIds = PedidoOculto::where('user_id', $userId)
-                ->pluck('pedido_id')
-                ->toArray();
-            
-            // Construir la consulta base
-            $query = PedidoProduccion::whereIn('id', $pediodosOcultosIds);
-            
-            // Aplicar búsqueda si existe
-            if ($search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('numero_pedido', 'LIKE', '%' . $search . '%')
-                      ->orWhere('cliente', 'LIKE', '%' . $search . '%');
-                });
-            }
-            
-            // Paginar
-            $pedidosPaginados = $query->paginate($perPage, ['*'], 'page', $page);
-            
-            // Preparar datos
-            $datos = [];
-            foreach ($pedidosPaginados->items() as $pedido) {
-                $datos[] = [
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'cliente' => $pedido->cliente,
-                    'asesor' => $pedido->asesor ? $pedido->asesor->name : '—',
-                    'fecha_pedido' => $pedido->created_at,
-                    'fecha_actualizacion' => $pedido->updated_at,
-                    'pedido_revisado' => PedidoRevisado::where('pedido_id', $pedido->id)
-                        ->where('user_id', $userId)
-                        ->exists(),
-                    'tiene_cambios_nuevos' => false,
-                    'todos_pendientes' => false,
-                    'todos_entregados' => false
-                ];
-            }
-            
-            return view('bodega.pedidos-ocultos', [
-                'pedidosPorPagina' => $datos,
-                'totalPedidos' => $pedidosPaginados->total(),
-                'paginaActual' => $pedidosPaginados->currentPage(),
-                'porPagina' => $perPage,
-                'search' => $search,
-                'routeName' => 'gestion-bodega.pedidos-ocultos'
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error en ocultosIndex: ' . $e->getMessage());
-            return back()->with('error', 'Error al cargar los pedidos ocultos: ' . $e->getMessage());
+        $resultado = $this->pedidoEstadoService->obtenerPedidosOcultos($request);
+
+        if (!$resultado['success']) {
+            return back()->with('error', 'Error al cargar los pedidos ocultos: ' . $resultado['message']);
         }
+
+        $viewData = $resultado;
+        unset($viewData['success']);
+
+        return view('bodega.pedidos-ocultos', $viewData);
     }
 
     /**
@@ -696,254 +551,16 @@ class PedidosController extends Controller
     private function obtenerPendientesPorArea(Request $request, string $area): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         try {
-            // Verificar si la tabla existe
             if (!\Schema::hasTable('bodega_detalles_talla')) {
                 \Log::error('La tabla bodega_detalles_talla no existe en la base de datos');
                 return back()->with('error', 'La tabla de detalles de talla no está disponible. Contacte al administrador.');
             }
-            
-            $query = BodegaDetalleTalla::porArea($area)
-                ->porEstado('Pendiente')
-                ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'bodega_detalles_talla.numero_pedido');
 
-            // LEFT JOIN a bodega_detalles_visto para ambas áreas (EPP y Costura)
-            // Filtrar solo los registros del usuario actual para que cada usuario tenga su propio estado de "visto"
-            $query->leftJoin('bodega_detalles_visto as bdv', function($join) {
-                $join->on('bdv.bodega_detalle_id', '=', 'bodega_detalles_talla.id')
-                     ->where('bdv.user_id', '=', auth()->id());
-            });
+            $datos = $this->pedidoListadoService->obtenerPendientesPorArea($request, $area);
+            $viewName = $datos['viewName'];
+            unset($datos['viewName']);
 
-            // Excluir borradores (donde numero_pedido es NULL o vacío)
-            $query->whereNotNull('bodega_detalles_talla.numero_pedido')
-                  ->where('bodega_detalles_talla.numero_pedido', '!=', '');
-
-            // Excluir pedidos anulados para ambas áreas
-            // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
-            $query->whereNotIn('bodega_detalles_talla.numero_pedido', function($subquery) {
-                $subquery->select('numero_pedido')
-                    ->from('pedidos_produccion')
-                    ->where('estado', 'Anulada')
-                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
-            });
-
-            // Excluir pedidos entregados del principal para ambas áreas (Costura y EPP)
-            $query->whereNotIn('bodega_detalles_talla.numero_pedido', function($subquery) {
-                $subquery->select('numero_pedido')
-                    ->from('pedidos_produccion')
-                    ->where('estado', 'Entregado')
-                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
-            });
-
-            // Agregar filtro adicional en bodega_detalles_talla para excluir estado_bodega = 'Entregado' y 'Anulado'
-            $query->whereNotIn('bodega_detalles_talla.estado_bodega', ['Entregado', 'Anulado']);
-
-            // Agrupar por numero_pedido para evitar duplicación
-            $query->select([
-                'bodega_detalles_talla.numero_pedido',
-                DB::raw('MIN(bodega_detalles_talla.id) as id'),
-                DB::raw('MIN(pp.id) as pedido_produccion_id'),
-                DB::raw('MIN(bodega_detalles_talla.empresa) as empresa'),
-                DB::raw('MIN(bodega_detalles_talla.asesor) as asesor'),
-                DB::raw('MIN(bodega_detalles_talla.prenda_nombre) as prenda_nombre'),
-                DB::raw('MIN(bodega_detalles_talla.area) as area'),
-                DB::raw('MIN(bodega_detalles_talla.estado_bodega) as estado_bodega'),
-                DB::raw('MIN(bodega_detalles_talla.fecha_pedido) as fecha_pedido'),
-                DB::raw('MIN(bodega_detalles_talla.fecha_entrega) as fecha_entrega'),
-                DB::raw('MIN(bodega_detalles_talla.observaciones_bodega) as observaciones_bodega'),
-                DB::raw('MIN(bodega_detalles_talla.usuario_bodega_nombre) as usuario_bodega_nombre'),
-                DB::raw('MIN(bodega_detalles_talla.created_at) as created_at'),
-                DB::raw('MIN(bodega_detalles_talla.updated_at) as updated_at'),
-                DB::raw('MAX(bodega_detalles_talla.updated_at) as ultima_actualizacion_at'),
-                DB::raw('SUM(bodega_detalles_talla.cantidad) as cantidad_total'),
-                DB::raw('SUM(bodega_detalles_talla.pendientes) as pendientes_total'),
-                DB::raw('MIN(bodega_detalles_talla.talla) as talla_ejemplo'),
-                DB::raw('MAX(CASE WHEN bdv.id IS NOT NULL THEN 1 ELSE 0 END) as visto_exists'),
-                DB::raw('MAX(bdv.created_at) as ultimo_visto_at')
-            ])
-            ->groupBy('bodega_detalles_talla.numero_pedido')
-            ->orderBy($area === 'EPP' ? DB::raw('CAST(bodega_detalles_talla.numero_pedido AS UNSIGNED)') : 'bodega_detalles_talla.numero_pedido', 'desc');
-
-            // Aplicar búsqueda general
-            if ($request->filled('search')) {
-                $search = $request->get('search');
-                $query->where(function($q) use ($search, $area) {
-                    $q->where('bodega_detalles_talla.numero_pedido', 'LIKE', "%{$search}%")
-                      ->orWhere('bodega_detalles_talla.empresa', 'LIKE', "%{$search}%")
-                      ->orWhere('bodega_detalles_talla.asesor', 'LIKE', "%{$search}%")
-                      ->orWhere('bodega_detalles_talla.prenda_nombre', 'LIKE', "%{$search}%");
-                    
-                    // Para EPP, añadir búsqueda en talla
-                    if ($area === 'EPP') {
-                        $q->orWhere('bodega_detalles_talla.talla', 'LIKE', "%{$search}%");
-                    }
-                });
-            }
-
-            // Aplicar filtros específicos
-            $filtrosAplicados = [];
-            
-            if ($request->filled('numero_pedido')) {
-                $numerosPedido = explode(',', $request->get('numero_pedido'));
-                $query->whereIn('bodega_detalles_talla.numero_pedido', $numerosPedido);
-                $filtrosAplicados['numero_pedido'] = $numerosPedido;
-            }
-            
-            if ($request->filled('cliente')) {
-                $clientes = explode(',', $request->get('cliente'));
-                $query->whereIn('bodega_detalles_talla.empresa', $clientes);
-                $filtrosAplicados['cliente'] = $clientes;
-            }
-            
-            if ($request->filled('asesor')) {
-                $asesores = explode(',', $request->get('asesor'));
-                $query->whereIn('bodega_detalles_talla.asesor', $asesores);
-                $filtrosAplicados['asesor'] = $asesores;
-            }
-            
-            if ($request->filled('estado')) {
-                $estados = explode(',', $request->get('estado'));
-                $query->whereIn('bodega_detalles_talla.estado_bodega', $estados);
-                $filtrosAplicados['estado'] = $estados;
-            }
-            
-            if ($request->filled('fecha_creacion')) {
-                $fechas = explode(',', $request->get('fecha_creacion'));
-                $query->where(function($q) use ($fechas) {
-                    foreach ($fechas as $index => $fecha) {
-                        $fechaDecodificada = urldecode(trim($fecha));
-                        
-                        try {
-                            $fechaFormateada = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaDecodificada)->format('Y-m-d');
-                            
-                            if ($index === 0) {
-                                $q->whereDate('bodega_detalles_talla.created_at', $fechaFormateada);
-                            } else {
-                                $q->orWhereDate('bodega_detalles_talla.created_at', $fechaFormateada);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error("Error al procesar fecha '{$fechaDecodificada}': " . $e->getMessage());
-                            continue;
-                        }
-                    }
-                });
-                
-                $filtrosAplicados['fecha_creacion'] = $fechas;
-            }
-            
-            if ($request->filled('fecha_entrega')) {
-                $fechas = explode(',', $request->get('fecha_entrega'));
-                $query->where(function($q) use ($fechas) {
-                    foreach ($fechas as $index => $fecha) {
-                        $fechaDecodificada = urldecode(trim($fecha));
-                        
-                        try {
-                            $fechaFormateada = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaDecodificada)->format('Y-m-d');
-                            
-                            if ($index === 0) {
-                                $q->whereDate('bodega_detalles_talla.fecha_entrega', $fechaFormateada);
-                            } else {
-                                $q->orWhereDate('bodega_detalles_talla.fecha_entrega', $fechaFormateada);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error("Error al procesar fecha '{$fechaDecodificada}': " . $e->getMessage());
-                            continue;
-                        }
-                    }
-                });
-                
-                $filtrosAplicados['fecha_entrega'] = $fechas;
-            }
-
-            // Filtrar por retrasados si se solicita
-            if ($request->boolean('retrasados', false)) {
-                $query->retrasados();
-                $filtrosAplicados['retrasados'] = true;
-            }
-
-            // Paginación
-            $porPagina = 15;
-            $paginaActual = $request->get('page', 1);
-            
-            // Clonar query para contar ANTES de paginar para evitar duplicación
-            $queryParaContar = clone $query;
-            $totalPedidos = $queryParaContar->count();
-
-            $pedidosPorPagina = $query->skip(($paginaActual - 1) * $porPagina)
-                                        ->take($porPagina)
-                                        ->get();
-
-            // Obtener estadísticas solo si es EPP, y solo si la vista las necesita
-            // Por ahora diferidas: calcular solo si se solicitan explícitamente
-            $estadisticas = [];
-            
-            // Preparar datos para la vista
-            $pedidosFormateados = $pedidosPorPagina->map(function($detalle) use ($area) {
-                $datos = [
-                    'id' => $detalle->id,
-                    'pedido_produccion_id' => $detalle->pedido_produccion_id,
-                    'numero_pedido' => $detalle->numero_pedido,
-                    'cliente' => $detalle->empresa,
-                    'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
-                               (is_array($detalle->asesor) && isset($detalle->asesor['name']) ? $detalle->asesor['name'] : 
-                               (is_object($detalle->asesor) && isset($detalle->asesor->name) ? $detalle->asesor->name : 'No especificado')),
-                    'estado' => $detalle->estado_bodega,
-                    'area' => $detalle->area,
-                    'prenda' => $detalle->prenda_nombre,
-                    'talla' => $detalle->talla_ejemplo,
-                    'cantidad' => $detalle->cantidad_total,
-                    'pendientes' => $detalle->pendientes_total,
-                    'observaciones' => $detalle->observaciones_bodega,
-                    'fecha_pedido' => $detalle->fecha_pedido,
-                    'fecha_entrega' => $detalle->fecha_entrega,
-                    'usuario_bodega' => $detalle->usuario_bodega_nombre,
-                    'created_at' => $detalle->created_at,
-                    'updated_at' => $detalle->updated_at,
-                    'tiene_pendientes' => $detalle->pendientes_total > 0,
-                    'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
-                ];
-                
-                // Desmarcar automáticamente "visto" si hubo cambios después del último visto (comportamiento tipo correo no leído)
-                $tieneVistoHistorico = (bool) $detalle->visto_exists;
-                $ultimoVistoAt = $detalle->ultimo_visto_at ? strtotime((string) $detalle->ultimo_visto_at) : null;
-                $ultimaActualizacionAt = $detalle->ultima_actualizacion_at ? strtotime((string) $detalle->ultima_actualizacion_at) : null;
-                $sigueVisto = $tieneVistoHistorico && $ultimoVistoAt !== null && $ultimaActualizacionAt !== null
-                    ? $ultimoVistoAt >= $ultimaActualizacionAt
-                    : $tieneVistoHistorico;
-
-                // Agregar 'visto_exists' para ambas áreas (EPP y Costura) - traído desde la query principal, sin N+1
-                $datos['visto_exists'] = $sigueVisto;
-                
-                // Agregar 'visto' solo si es EPP para compatibilidad
-                if ($area === 'EPP') {
-                    $datos['visto'] = $sigueVisto;
-                }
-                
-                return $datos;
-            })->toArray();
-
-            $viewName = $area === 'Costura' ? 'bodega.pendiente-costura' : 'bodega.pendiente-epp';
-            
-            return view($viewName, [
-                'pedidosPorPagina' => $pedidosFormateados,
-                'totalPedidos' => $totalPedidos,
-                'paginaActual' => $paginaActual,
-                'porPagina' => $porPagina,
-                'search' => $request->query('search', ''),
-                'estadisticas' => $estadisticas,
-                'area' => $area,
-                'filtros_aplicados' => array_merge([
-                    'search' => $request->query('search', ''),
-                    'retrasados' => $request->boolean('retrasados', false),
-                ], $filtrosAplicados),
-                'paginacion_info' => [
-                    'pagina_actual' => $paginaActual,
-                    'total_paginas' => ceil($totalPedidos / $porPagina),
-                    'total' => $totalPedidos,
-                    'por_pagina' => $porPagina,
-                    'desde' => ($paginaActual - 1) * $porPagina + 1,
-                    'hasta' => min($paginaActual * $porPagina, $totalPedidos),
-                ]
-            ]);
+            return view($viewName, $datos);
 
         } catch (\Exception $e) {
             \Log::error("Error en obtenerPendientes{$area}: " . $e->getMessage());
@@ -1276,27 +893,7 @@ class PedidosController extends Controller
     }
     public function actualizarObservaciones(Request $request): JsonResponse
     {
-        try {
-            $validated = $request->validate([
-                'id' => 'required|integer|exists:recibo_prendas,id',
-                'observaciones' => 'nullable|string|max:500',
-            ]);
-
-            $result = $this->updateService->actualizarObservaciones(
-                $validated['id'],
-                $validated['observaciones'] ?? null
-            );
-            
-            $statusCode = $result['success'] ? 200 : 400;
-            
-            return response()->json($result, $statusCode);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'errors' => $e->errors()
-            ], 422);
-        }
+        return $this->pedidoActualizacionService->actualizarObservaciones($request);
     }
 
     /**
@@ -1304,27 +901,7 @@ class PedidosController extends Controller
      */
     public function actualizarFecha(Request $request): JsonResponse
     {
-        try {
-            $validated = $request->validate([
-                'id' => 'required|integer|exists:recibo_prendas,id',
-                'fecha_entrega' => 'required|date',
-            ]);
-
-            $result = $this->updateService->actualizarFecha(
-                $validated['id'],
-                $validated['fecha_entrega']
-            );
-            
-            $statusCode = $result['success'] ? 200 : 400;
-            
-            return response()->json($result, $statusCode);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'errors' => $e->errors()
-            ], 422);
-        }
+        return $this->pedidoActualizacionService->actualizarFecha($request);
     }
 
     /**
@@ -1672,141 +1249,7 @@ class PedidosController extends Controller
      */
     public function obtenerDatosFiltro(Request $request, string $tipo): JsonResponse
     {
-        try {
-            $page = $request->get('page', 1);
-            $search = $request->get('search', '');
-            $perPage = 20;
-
-            \Log::info('obtenerDatosFiltro iniciado', [
-                'tipo' => $tipo,
-                'page' => $page,
-                'search' => $search,
-                'path' => request()->path(),
-                'url' => request()->fullUrl()
-            ]);
-
-            // Para el módulo de Costura, usar métodos específicos
-            if (str_contains(request()->path(), 'pendiente-costura') || str_contains(request()->header('referer'), 'pendiente-costura')) {
-                \Log::info('Usando métodos específicos para Costura');
-                switch($tipo) {
-                    case 'numero_pedido':
-                        $datos = $this->filtroService->obtenerNumerosPedidoCostura($search, $page, $perPage);
-                        break;
-                    case 'cliente':
-                        $datos = $this->filtroService->obtenerClientesCostura($search, $page, $perPage);
-                        break;
-                    case 'asesor':
-                        $datos = $this->filtroService->obtenerAsesoresCostura($search, $page, $perPage);
-                        break;
-                    case 'estado':
-                        $datos = $this->filtroService->obtenerEstadosCostura($search, $page, $perPage);
-                        break;
-                    case 'fecha_creacion':
-                        $datos = $this->filtroService->obtenerFechasCreacionCostura($search, $page, $perPage);
-                        break;
-                    case 'fecha':
-                    case 'fecha_entrega':
-                        $datos = $this->filtroService->obtenerFechasCostura($search, $page, $perPage);
-                        break;
-                    default:
-                        \Log::warning('Tipo de filtro no reconocido: ' . $tipo);
-                        $datos = collect();
-                        break;
-                }
-            } elseif (str_contains(request()->path(), 'pendiente-epp') || str_contains(request()->header('referer'), 'pendiente-epp')) {
-                \Log::info('Usando métodos específicos para EPP');
-                switch($tipo) {
-                    case 'numero_pedido':
-                        $datos = $this->filtroService->obtenerNumerosPedidoEpp($search, $page, $perPage);
-                        break;
-                    case 'cliente':
-                        $datos = $this->filtroService->obtenerClientesEpp($search, $page, $perPage);
-                        break;
-                    case 'asesor':
-                        $datos = $this->filtroService->obtenerAsesoresEpp($search, $page, $perPage);
-                        break;
-                    case 'estado':
-                        $datos = $this->filtroService->obtenerEstadosEpp($search, $page, $perPage);
-                        break;
-                    case 'fecha_creacion':
-                        $datos = $this->filtroService->obtenerFechasCreacionEpp($search, $page, $perPage);
-                        break;
-                    case 'fecha':
-                    case 'fecha_entrega':
-                        $datos = $this->filtroService->obtenerFechasEpp($search, $page, $perPage);
-                        break;
-                    default:
-                        \Log::warning('Tipo de filtro no reconocido: ' . $tipo);
-                        $datos = collect();
-                        break;
-                }
-            } else {
-                \Log::info('Usando métodos generales para bodega principal');
-                switch($tipo) {
-                    case 'numero_pedido':
-                        $datos = $this->filtroService->obtenerNumerosPedidoCostura($search, $page, $perPage);
-                        break;
-                    case 'cliente':
-                        $datos = $this->filtroService->obtenerClientesCostura($search, $page, $perPage);
-                        break;
-                    case 'asesor':
-                        $datos = $this->filtroService->obtenerAsesoresCostura($search, $page, $perPage);
-                        break;
-                    case 'estado':
-                        $datos = $this->filtroService->obtenerEstadosCostura($search, $page, $perPage);
-                        break;
-                    case 'fecha_creacion':
-                        $datos = $this->filtroService->obtenerFechasCreacionCostura($search, $page, $perPage);
-                        break;
-                    case 'fecha':
-                    case 'fecha_entrega':
-                        $datos = $this->filtroService->obtenerFechasCostura($search, $page, $perPage);
-                        break;
-                    default:
-                        \Log::warning('Tipo de filtro no reconocido: ' . $tipo);
-                        $datos = collect();
-                        break;
-                }
-            }
-
-            \Log::info('Datos obtenidos', [
-                'total' => $datos->count(),
-                'tipo' => $tipo
-            ]);
-
-            $total = $datos->count();
-            $paginated = $datos->forPage($page, $perPage);
-            
-            $pagination = [
-                'current_page' => $page,
-                'total_pages' => ceil($total / $perPage),
-                'total' => $total,
-                'per_page' => $perPage,
-                'from' => ($page - 1) * $perPage + 1,
-                'to' => min($page * $perPage, $total)
-            ];
-
-            return response()->json([
-                'success' => true,
-                'datos' => $paginated->values()->all(),
-                'paginacion' => $pagination
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerDatosFiltro: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            \Log::error('Request info: ' . json_encode([
-                'url' => request()->fullUrl(),
-                'method' => request()->method(),
-                'tipo' => $tipo,
-                'headers' => request()->headers->all()
-            ]));
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'Error al cargar datos del filtro: ' . $e->getMessage()
-            ], 500);
-        }
+        return $this->pedidoFiltroService->obtenerDatosFiltro($request, $tipo);
     }
 
 
@@ -1818,26 +1261,7 @@ class PedidosController extends Controller
      */
     public function actualizarFechaEntregaDespacho(Request $request, $id): JsonResponse
     {
-        try {
-            $validated = $request->validate([
-                'fecha_entrega_despacho' => 'required|date_format:Y-m-d',
-            ]);
-
-            $result = $this->updateService->actualizarFechaEntregaDespacho(
-                $id,
-                $validated['fecha_entrega_despacho']
-            );
-            
-            $statusCode = $result['success'] ? 200 : 500;
-            
-            return response()->json($result, $statusCode);
-        } catch (\Exception $e) {
-            \Log::error('Error al actualizar fecha de entrega a despacho: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar la fecha'
-            ], 500);
-        }
+        return $this->pedidoActualizacionService->actualizarFechaEntregaDespacho($request, $id);
     }
 
     /**
