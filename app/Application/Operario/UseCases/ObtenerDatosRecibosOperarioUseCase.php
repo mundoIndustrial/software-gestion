@@ -64,6 +64,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
         if ($tipoRecibo === 'PARCIAL' && $parcialId) {
             $prendaId = $request->query('prenda_id');
+            $generoBase = 'CABALLERO';
 
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Obteniendo datos del parcial', [
                 'parcial_id' => $parcialId,
@@ -188,7 +189,17 @@ class ObtenerDatosRecibosOperarioUseCase
                         $id = $prenda['id'] ?? $prenda['prenda_id'] ?? $prenda['prenda_pedido_id'] ?? null;
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
-                    ->map(function ($prenda) use ($parcial) {
+                    ->map(function ($prenda) use ($parcial, $generoBase) {
+                        $generoPrenda = strtoupper(trim((string) (
+                            $prenda['genero']
+                            ?? $prenda['tipo_flujo_tallas']
+                            ?? $prenda['genero_principal']
+                            ?? 'CABALLERO'
+                        )));
+                        if (!in_array($generoPrenda, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                            $generoPrenda = $generoBase;
+                        }
+
                         // Cargar tallas desde la tabla correcta
                         $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
                         $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
@@ -217,11 +228,15 @@ class ObtenerDatosRecibosOperarioUseCase
                         
                         \Log::info('[NORMAL DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
                         
-                        $tallasParcial = collect($tallasRaw)->map(function ($talla) {
+                        $tallasParcial = collect($tallasRaw)->map(function ($talla) use ($generoPrenda) {
                             \Log::info('[NORMAL DEBUG 6] Procesando talla: ' . json_encode($talla));
                             
                             // Soportar tanto acceso como objeto como array
-                            $genero = is_array($talla) ? ($talla['genero'] ?? 'UNISEX') : ($talla->genero ?? 'UNISEX');
+                            $genero = is_array($talla) ? ($talla['genero'] ?? null) : ($talla->genero ?? null);
+                            $genero = strtoupper(trim((string) ($genero ?: $generoPrenda)));
+                            if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                                $genero = $generoPrenda;
+                            }
                             $tallaNombre = is_array($talla) ? ($talla['talla'] ?? null) : ($talla->talla ?? null);
                             $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
                             $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
@@ -389,15 +404,6 @@ class ObtenerDatosRecibosOperarioUseCase
                             'unisex' => $unisex,
                         ];
 
-                        if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
-                            $prenda['procesos'] = array_map(function ($proceso) use ($tallasProceso) {
-                                if (is_array($proceso)) {
-                                    $proceso['tallas'] = $tallasProceso;
-                                }
-                                return $proceso;
-                            }, $prenda['procesos']);
-                        }
-
                         $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
                         $observacionProceso = (string) (DB::table('observaciones_recibos_procesos')
                             ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
@@ -405,19 +411,58 @@ class ObtenerDatosRecibosOperarioUseCase
                             ->where('tipo_proceso', $reciboKey)
                             ->value('observacion') ?? '');
 
+                        $tallaColoresParcial = [];
+                        if (!empty($cantidadesPorTallaYColor)) {
+                            $telaNombre = $prenda['tela_nombre'] ?? $prenda['tela'] ?? null;
+                            foreach ($cantidadesPorTallaYColor as $talla => $porColor) {
+                                $generoParaTalla = $generosPorTalla[$talla] ?? 'UNISEX';
+                                foreach ($porColor as $colorNombre => $cantidad) {
+                                    $tallaColoresParcial[] = [
+                                        'genero' => $generoParaTalla,
+                                        'talla' => $talla,
+                                        'tela_nombre' => $telaNombre,
+                                        'color_nombre' => $colorNombre,
+                                        'cantidad' => (int) $cantidad,
+                                        'referencia' => null,
+                                        'observaciones' => null,
+                                        'imagen_ruta' => null,
+                                    ];
+                                }
+                            }
+                        }
+
+                        $reciboParcialData = [
+                            'id' => $parcial->id,
+                            'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
+                            'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                            'consecutivo_original' => (float) $parcial->consecutivo_original,
+                            'tipo_recibo' => 'PARCIAL',
+                            'area' => $parcial->area,
+                            'encargado' => $parcial->encargado,
+                            'tallas' => $tallasParcial,
+                            'tallas_estructura' => $tallasProceso,
+                            'talla_colores' => $tallaColoresParcial,
+                            'observaciones' => $observacionProceso,
+                            'es_parcial' => true,
+                            'pedido_parcial_id' => (int) $parcial->id,
+                        ];
+
+                        $prenda['procesos'] = [[
+                            'proceso' => 'COSTURA',
+                            'tipo_proceso' => 'COSTURA',
+                            'nombre_proceso' => 'COSTURA',
+                            'es_parcial' => true,
+                            'pedido_parcial_id' => (int) $parcial->id,
+                            'tallas' => $tallasProceso,
+                            'talla_colores' => $tallaColoresParcial,
+                            'ubicaciones' => null,
+                            'observaciones' => $observacionProceso,
+                        ]];
+
                         // Mantener `recibos` como objeto (no array) para que el front lo detecte.
                         $prenda['recibos'] = [
-                            $reciboKey => [
-                                'id' => $parcial->id,
-                                'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
-                                'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
-                                'consecutivo_original' => (float) $parcial->consecutivo_original,
-                                'tipo_recibo' => $parcial->tipo_recibo,
-                                'area' => $parcial->area,
-                                'encargado' => $parcial->encargado,
-                                'tallas' => $tallasParcial,
-                                'observaciones' => $observacionProceso,
-                            ],
+                            'COSTURA' => array_merge($reciboParcialData, ['tipo_recibo' => 'COSTURA']),
+                            'PARCIAL' => $reciboParcialData,
                         ];
 
                         return $prenda;
@@ -431,6 +476,15 @@ class ObtenerDatosRecibosOperarioUseCase
             if (empty($responseData['prendas']) && $parcial->prenda_pedido_id) {
                 $prendaEloquent = PrendaPedido::with(['coloresTelas.color', 'coloresTelas.tela', 'variantes.tipoManga', 'variantes.tipoBroche'])
                     ->find((int) $parcial->prenda_pedido_id);
+
+                $generoPrenda = strtoupper(trim((string) (
+                    $prendaEloquent?->genero
+                    ?? $prendaEloquent?->tipo_flujo_tallas
+                    ?? 'CABALLERO'
+                )));
+                if (!in_array($generoPrenda, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                    $generoPrenda = 'CABALLERO';
+                }
                 
                 $coloresTelas = [];
                 if ($prendaEloquent && $prendaEloquent->coloresTelas) {
@@ -474,11 +528,15 @@ class ObtenerDatosRecibosOperarioUseCase
                 
                 \Log::info('[FALLBACK DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
 
-                $tallasParcial = collect($tallasRaw)->map(function ($talla) {
+                $tallasParcial = collect($tallasRaw)->map(function ($talla) use ($generoPrenda) {
                     \Log::info('[FALLBACK DEBUG 6] Procesando talla: ' . json_encode($talla));
                     
                     // Soportar tanto acceso como objeto como array
-                    $genero = is_array($talla) ? ($talla['genero'] ?? 'UNISEX') : ($talla->genero ?? 'UNISEX');
+                    $genero = is_array($talla) ? ($talla['genero'] ?? null) : ($talla->genero ?? null);
+                    $genero = strtoupper(trim((string) ($genero ?: $generoPrenda)));
+                    if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                        $genero = $generoPrenda;
+                    }
                     $tallaNombre = is_array($talla) ? ($talla['talla'] ?? null) : ($talla->talla ?? null);
                     $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
                     $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
@@ -515,12 +573,43 @@ class ObtenerDatosRecibosOperarioUseCase
                     }
                 }
 
+                $tallaColoresParcial = [];
+                if (!empty($cantidadesPorTallaYColor)) {
+                    $telaNombre = $coloresTelas[0]['tela_nombre'] ?? null;
+                    foreach ($cantidadesPorTallaYColor as $talla => $porColor) {
+                        $generoParaTalla = $generosPorTalla[$talla] ?? 'UNISEX';
+                        foreach ($porColor as $colorNombre => $cantidad) {
+                            $tallaColoresParcial[] = [
+                                'genero' => $generoParaTalla,
+                                'talla' => $talla,
+                                'tela_nombre' => $telaNombre,
+                                'color_nombre' => $colorNombre,
+                                'cantidad' => (int) $cantidad,
+                                'referencia' => null,
+                                'observaciones' => null,
+                                'imagen_ruta' => null,
+                            ];
+                        }
+                    }
+                }
+
+                $reciboParcialData = [
+                    'id' => $parcial->id,
+                    'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
+                    'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                    'consecutivo_original' => (float) $parcial->consecutivo_original,
+                    'tipo_recibo' => 'PARCIAL',
+                    'area' => $parcial->area ?? 'Costura',
+                    'encargado' => $parcial->encargado ?? null,
+                    'tallas' => $tallasParcial,
+                    'tallas_estructura' => $tallasProceso,
+                    'talla_colores' => $tallaColoresParcial,
+                    'observaciones' => $observacionProceso,
+                    'es_parcial' => true,
+                    'pedido_parcial_id' => (int) $parcial->id,
+                ];
+
                 $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
-                $observacionProceso = (string) (DB::table('observaciones_recibos_procesos')
-                    ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
-                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
-                    ->where('tipo_proceso', $reciboKey)
-                    ->value('observacion') ?? '');
                 $responseData['prendas'] = [[
                     'id' => (int) $parcial->prenda_pedido_id,
                     'prenda_id' => (int) $parcial->prenda_pedido_id,
@@ -535,10 +624,11 @@ class ObtenerDatosRecibosOperarioUseCase
                     'manga' => $variante ? ($variante->tipoManga?->nombre ?? $variante->manga) : null,
                     'broche' => $variante ? ($variante->tipoBroche?->nombre ?? $variante->broche) : null,
                     'tallas' => $tallasParcial,
-                    'talla_colores' => [],
+                    'talla_colores' => $tallaColoresParcial,
                     'procesos' => [[
-                        'proceso' => $reciboKey,
-                        'tipo_proceso' => $reciboKey,
+                        'proceso' => 'COSTURA',
+                        'tipo_proceso' => 'COSTURA',
+                        'nombre_proceso' => 'COSTURA',
                         'es_parcial' => true,
                         'pedido_parcial_id' => (int) $parcial->id,
                         'tallas' => [
@@ -546,19 +636,11 @@ class ObtenerDatosRecibosOperarioUseCase
                             'caballero' => $caballero,
                             'unisex' => $unisex,
                         ],
+                        'talla_colores' => $tallaColoresParcial,
                     ]],
                     'recibos' => [
-                        $reciboKey => [
-                            'id' => $parcial->id,
-                            'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
-                            'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
-                            'consecutivo_original' => (float) $parcial->consecutivo_original,
-                            'tipo_recibo' => $parcial->tipo_recibo,
-                            'area' => $parcial->area ?? 'Costura',
-                            'encargado' => $parcial->encargado ?? null,
-                            'tallas' => $tallasParcial,
-                            'observaciones' => $observacionProceso,
-                        ],
+                        'COSTURA' => array_merge($reciboParcialData, ['tipo_recibo' => 'COSTURA']),
+                        'PARCIAL' => $reciboParcialData,
                     ],
                 ]];
 

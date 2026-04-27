@@ -330,7 +330,26 @@ class PedidoPrendaDetalleBuilder
                 $talla->talla = 'SOBREMEDIDA';
             }
             
-            $variantes[] = $this->crearVariantePorTalla($talla, $groupData['coloresEspecificos'], $especificaciones);
+            $colores = $groupData['coloresEspecificos'];
+            
+            // Si hay colores definidos pero la suma es menor al total de la talla, 
+            // completamos con un registro "Sin color" para que no se pierdan unidades en la UI.
+            if (!empty($colores)) {
+                $sumaColores = 0;
+                foreach ($colores as $c) {
+                    $sumaColores += (int)($c['cantidad'] ?? 0);
+                }
+                
+                if ($sumaColores < (int)$talla->cantidad) {
+                    $colores[] = [
+                        'talla_color_id' => null,
+                        'color' => 'SIN COLOR DEFINIDO',
+                        'cantidad' => (int)$talla->cantidad - $sumaColores,
+                    ];
+                }
+            }
+            
+            $variantes[] = $this->crearVariantePorTalla($talla, $colores, $especificaciones);
         }
 
         return $variantes;

@@ -2087,7 +2087,7 @@ window.llenarReciboCosturaMobile = function(data) {
                         const observacionProceso = String(proceso.observaciones || '').trim();
                         
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
-                        // NEW: Enriquecer con talla_colores si disponibles
+                        // En parciales, la fuente válida debe ser exclusivamente el anexo resuelto.
                         let tallasObj = proceso.tallas;
                         if (esReciboParcial) {
                             if (Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
@@ -2096,12 +2096,6 @@ window.llenarReciboCosturaMobile = function(data) {
                             } else if (Array.isArray(proceso.tallas) && proceso.tallas.length > 0) {
                                 console.log('[OPERARIO] Parcial detectado, usando proceso.tallas:', proceso.tallas);
                                 tallasObj = transformarTallasListaParcialAEstructura(proceso.tallas);
-                            } else if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
-                                console.log('[OPERARIO] Parcial detectado, usando talla_colores del parcial:', prenda.talla_colores);
-                                tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
-                            } else if (Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                                console.log('[OPERARIO] Parcial detectado, usando tallas del parcial:', prenda.tallas);
-                                tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
                             }
 
                             if ((!tallasObj || Object.keys(tallasObj).length === 0) && Array.isArray(proceso.tallas_detalle) && proceso.tallas_detalle.length > 0) {
@@ -2141,12 +2135,6 @@ window.llenarReciboCosturaMobile = function(data) {
                             prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0
                         ) {
                             tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
-                        }
-
-                        // Fallback final para anexos: si aún no hay tallas, usar prenda.tallas (lista de pedidos_parciales_tallas)
-                        if (esReciboParcial && (!tallasObj || Object.keys(tallasObj).length === 0) && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                            console.log('[OPERARIO] Parcial fallback final usando prenda.tallas:', prenda.tallas);
-                            tallasObj = transformarTallasListaParcialAEstructura(prenda.tallas);
                         }
 
                         if (tallasObj && typeof tallasObj === 'object') {

@@ -1,4 +1,4 @@
-﻿import { httpJson, httpJsonBody } from '../api/http';
+import { httpJson, httpJsonBody } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 import { abrirModalCostura, cerrarModalCostura } from './modal-asignacion';
 
@@ -9,6 +9,7 @@ export function manejarPasarACostura(btn) {
     const nombre = btn.dataset.nombre;
     const tipoRecibo = btn.dataset.tipoRecibo;
     const recibo = btn.dataset.recibo;
+    const parcialId = btn.dataset.parcialId;
     const btnId = btn.id;
 
     console.log(' Manejar pasar a costura:', {
@@ -17,6 +18,7 @@ export function manejarPasarACostura(btn) {
         nombre,
         tipoRecibo,
         recibo,
+        parcialId,
         area: btn.dataset.area,
         procesoId: btn.dataset.procesoId,
         encargadoCostura: btn.dataset.encargadoCostura,
@@ -28,7 +30,7 @@ export function manejarPasarACostura(btn) {
     if (esDeshacer) {
         deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId);
     } else {
-        abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido);
+        abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido, parcialId);
     }
 }
 

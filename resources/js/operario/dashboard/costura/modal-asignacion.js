@@ -2,12 +2,12 @@ import { httpJson } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
 // Función para abrir el modal (exportada para ser usada en costura.js)
-export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido = null) {
+export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido = null, parcialId = null) {
     const modal = document.getElementById('modalCostura');
     if (!modal) return;
 
     // Guardar datos globales
-    window.datosModalCostura = { pedidoId, prendaId, tipoRecibo, btnId, recibo, nombre, numeroPedido };
+    window.datosModalCostura = { pedidoId, prendaId, tipoRecibo, btnId, recibo, nombre, numeroPedido, parcialId };
     
     // Resetear selección
     window.opcionAsignacionSeleccionada = null;
@@ -261,7 +261,7 @@ function cargarTallasPrenda(prendaId, tipoRecibo) {
         return Promise.resolve([]);
     }
 
-    const { numeroPedido } = window.datosModalCostura;
+    const { numeroPedido, recibo, parcialId } = window.datosModalCostura;
 
     const numeroPedidoCandidatos = [];
     if (numeroPedido !== undefined && numeroPedido !== null) numeroPedidoCandidatos.push(String(numeroPedido));
@@ -270,6 +270,12 @@ function cargarTallasPrenda(prendaId, tipoRecibo) {
     const params = new URLSearchParams();
     params.set('prenda_id', String(prendaId));
     if (tr) params.set('tipo_recibo', tr);
+    
+    // Si tenemos parcialId (es un recibo parcial), lo enviamos prioritariamente
+    if (parcialId) params.set('parcial_id', String(parcialId));
+    
+    // Si tenemos consecutivo de recibo, lo enviamos para filtrar tallas exactas
+    if (recibo) params.set('recibo', String(recibo));
 
     const intentar = (idx) => {
         if (idx >= numeroPedidoCandidatos.length) {
@@ -447,10 +453,11 @@ function agruparTallasPorGeneroYColor(tallas) {
     return grupos;
 }
 
-function construirTallaIdUnico(nombreTalla, color) {
+function construirTallaIdUnico(nombreTalla, color, genero = '') {
     const tallaBase = String(nombreTalla || '').trim();
     const colorNormalizado = normalizarColor(color);
-    return `${tallaBase}_${colorNormalizado}`;
+    const generoNormalizado = normalizarGenero(genero);
+    return `${tallaBase}_${colorNormalizado}_${generoNormalizado}`;
 }
 
 // Función para generar HTML de tallas agrupadas
@@ -485,8 +492,8 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
             `;
             
             tallasColor.forEach(talla => {
-                // Crear un ID único que incluya el color para evitar colisiones
-                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color);
+                // Crear un ID único que incluya el color y género para evitar colisiones
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
                 
                 // Verificar si esta talla específica (con color) está asignada a este módulo
                 let asignado = 0;
@@ -734,8 +741,8 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
             `;
             
             tallasColor.forEach(talla => {
-                // Crear un ID único que incluya el color para evitar colisiones
-                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color);
+                // Crear un ID único que incluya el color y género para evitar colisiones
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
                 
                 // Verificar si esta talla específica (con color) está asignada a este encargado
                 let asignado = 0;
@@ -1106,43 +1113,67 @@ function normalizarColor(color) {
     if (!colorLimpio || colorLimpio === 'sin color') {
         return 'sin_color';
     }
-
     return colorLimpio.replace(/\s+/g, '_');
 }
 
+function normalizarGenero(genero) {
+    const genLimpio = String(genero || '').trim().toLowerCase();
+    if (!genLimpio || genLimpio === 'sin género' || genLimpio === 'sin genero') {
+        return 'sin_genero';
+    }
+    return genLimpio.replace(/\s+/g, '_');
+}
 function parseTallaIdUnico(tallaId) {
     const raw = String(tallaId || '');
     const parts = raw.split('_');
-    const base = parts[0] || raw;
-    const colorNorm = parts.length > 1 ? parts.slice(1).join('_') : '';
-    return { base, colorNorm };
+    
+    // Formato: Talla_Color_Genero
+    // Ejemplo: M_azul_marino_dama
+    
+    if (parts.length < 3) {
+        return { base: parts[0] || raw, colorNorm: parts[1] || '', generoNorm: '' };
+    }
+    
+    const base = parts[0];
+    const generoNorm = parts[parts.length - 1];
+    const colorNorm = parts.slice(1, -1).join('_');
+    
+    return { base, colorNorm, generoNorm };
 }
 
 function getTotalOriginalTallaId(tallaId) {
-    const { base, colorNorm } = parseTallaIdUnico(tallaId);
+    const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
     const tallas = window?.datosDistribucion?.tallas || [];
     const colorObjetivo = colorNorm || 'sin_color';
 
     const item = tallas.find((t) => {
         const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
         if (String(baseT) !== String(base)) return false;
+        
         const c = normalizarColor(t.color);
-        return c === colorObjetivo;
+        if (c !== colorObjetivo) return false;
+        
+        const g = normalizarGenero(t.genero);
+        return g === generoNorm;
     });
 
     return parseInt(item?.cantidad) || 0;
 }
 
 function getColorParaTallaId(tallaId) {
-    const { base, colorNorm } = parseTallaIdUnico(tallaId);
+    const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
     const tallas = window?.datosDistribucion?.tallas || [];
     const colorObjetivo = colorNorm || 'sin_color';
 
     const item = tallas.find((t) => {
         const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
         if (String(baseT) !== String(base)) return false;
+        
         const c = normalizarColor(t.color);
-        return c === colorObjetivo;
+        if (c !== colorObjetivo) return false;
+        
+        const g = normalizarGenero(t.genero);
+        return g === generoNorm;
     });
 
     return item?.color || null;

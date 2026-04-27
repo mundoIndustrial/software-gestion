@@ -501,6 +501,7 @@
                                                         data-area="{{ $areaActual ?? '' }}"
                                                         data-proceso-id="{{ $procesoId }}"
                                                         data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
+                                                        data-parcial-id="{{ $reciboItem['pedido_parcial_id'] ?? '' }}"
                                                         onclick="manejarPasarACostura(this)">
                                                     <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
                                                     {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
@@ -1008,6 +1009,7 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                                     data-area="{{ $areaActual ?? '' }}"
                                                     data-proceso-id="{{ $procesoId }}"
                                                     data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
+                                                    data-parcial-id="{{ $reciboItem['pedido_parcial_id'] ?? '' }}"
                                                     onclick="manejarPasarACostura(this)">
                                                 <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
                                                 {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
