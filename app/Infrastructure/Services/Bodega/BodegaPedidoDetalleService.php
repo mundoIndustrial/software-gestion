@@ -46,7 +46,10 @@ class BodegaPedidoDetalleService
 
         foreach ($recibos as $recibo) {
             try {
+                $timeUseCase = microtime(true);
                 $datosCompletos = $this->obtenerPedidoUseCase->ejecutar($recibo->id);
+                $timeUseCaseEnd = microtime(true);
+                \Log::info('[TIMING] obtenerPedidoUseCase::ejecutar', ['elapsed_ms' => round(($timeUseCaseEnd - $timeUseCase) * 1000, 2)]);
 
                 if (isset($datosCompletos->prendas) && is_array($datosCompletos->prendas)) {
                     $items = array_merge(
@@ -104,6 +107,9 @@ class BodegaPedidoDetalleService
 
     private function procesarPrendas(array $prendas, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
+        $timeStart = microtime(true);
+        \Log::info('[TIMING] Inicio: procesarPrendas', ['prendas_count' => count($prendas)]);
+
         $items = [];
 
         foreach ($prendas as $prendaEnriquecida) {
@@ -113,6 +119,12 @@ class BodegaPedidoDetalleService
                 $items = array_merge($items, $this->procesarVariante($variante, $prendaEnriquecida, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion));
             }
         }
+
+        $timeEnd = microtime(true);
+        \Log::info('[TIMING] FIN: procesarPrendas', [
+            'total_ms' => round(($timeEnd - $timeStart) * 1000, 2),
+            'items_count' => count($items),
+        ]);
 
         return $items;
     }
@@ -150,7 +162,7 @@ class BodegaPedidoDetalleService
         }
 
         $timeEnd = microtime(true);
-        \Log::debug('[TIMING] procesarVariante: ' . round(($timeEnd - $timeStart) * 1000, 2) . 'ms');
+        \Log::info('[TIMING] procesarVariante: ' . round(($timeEnd - $timeStart) * 1000, 2) . 'ms | items: ' . count($items));
 
         return $items;
     }
