@@ -179,7 +179,23 @@
 
         const origenSelect = document.getElementById('nueva-prenda-origen-select');
         if (origenSelect) {
-            origenSelect.value = prenda.origen || (prenda.de_bodega ? 'bodega' : 'confeccion');
+            const origenValue = prenda.origen || (prenda.de_bodega ? 'bodega' : 'confeccion');
+            origenSelect.value = origenValue;
+
+            // Actualizar el atributo selected en el HTML también
+            origenSelect.querySelectorAll('option').forEach(option => {
+                option.removeAttribute('selected');
+            });
+            const optionASeleccionar = origenSelect.querySelector(`option[value="${origenValue}"]`);
+            if (optionASeleccionar) {
+                optionASeleccionar.setAttribute('selected', '');
+            }
+
+            console.log('[setPrendaActualValores] Origen pre-cargado:', {
+                origen: origenValue,
+                value_actual: origenSelect.value,
+                option_seleccionada: optionASeleccionar?.textContent
+            });
         }
 
         const btnGuardar = document.getElementById('btn-guardar-prenda');

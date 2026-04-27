@@ -25,6 +25,14 @@ class PrendaComparisonService
             $cambios['campos_basicos'] = $cambiosCamposBasicos;
         }
 
+        $cambiosOrigen = $this->compararOrigen($beforeSnapshot, $prendaDespues);
+        \Log::info('[PrendaComparisonService] Comparación de origen', [
+            'cantidad_cambios' => count($cambiosOrigen),
+        ]);
+        if (!empty($cambiosOrigen)) {
+            $cambios['origen'] = $cambiosOrigen;
+        }
+
         $cambiosTallas = $this->compararTallas($beforeSnapshot->tallasArray, $prendaDespues);
         \Log::info('[PrendaComparisonService] Comparación de tallas', [
             'cantidad_cambios' => count($cambiosTallas),
@@ -148,6 +156,24 @@ class PrendaComparisonService
                 'tipo' => 'descripcion_modificada',
                 'descripcion_anterior' => $beforeSnapshot->descripcion,
                 'descripcion_nueva' => $prendaDespues->descripcion,
+            ];
+        }
+
+        return $cambios;
+    }
+
+    private function compararOrigen(PrendaBeforeStateSnapshot $beforeSnapshot, PrendaPedido $prendaDespues): array
+    {
+        $cambios = [];
+
+        $origenAnterior = $beforeSnapshot->deBodega === 1 ? 'Bodega' : 'Confección';
+        $origenNuevo = ($prendaDespues->de_bodega ?? 0) === 1 ? 'Bodega' : 'Confección';
+
+        if ($origenAnterior !== $origenNuevo) {
+            $cambios[] = [
+                'tipo' => 'origen_modificado',
+                'origen_anterior' => $origenAnterior,
+                'origen_nuevo' => $origenNuevo,
             ];
         }
 
@@ -309,15 +335,32 @@ class PrendaComparisonService
 
         $mensaje = "[MODIFICADA PRENDA] {$nombrePrenda}\n";
 
-        if (!empty($cambios['campos_basicos'])) {
+        if (!empty($cambios['campos_basicos']) || !empty($cambios['origen'])) {
             $mensaje .= "Información:\n";
-            foreach ($cambios['campos_basicos'] as $cambio) {
-                if ($cambio['tipo'] === 'nombre_modificado') {
-                    $mensaje .= "  • Nombre: \"{$cambio['nombre_anterior']}\" → \"{$cambio['nombre_nuevo']}\"\n";
-                } elseif ($cambio['tipo'] === 'descripcion_modificada') {
-                    $descAnt = substr($cambio['descripcion_anterior'] ?? '', 0, 50);
-                    $descNueva = substr($cambio['descripcion_nueva'] ?? '', 0, 50);
-                    $mensaje .= "  • Descripción: \"{$descAnt}...\" → \"{$descNueva}...\"\n";
+
+            if (!empty($cambios['campos_basicos'])) {
+                foreach ($cambios['campos_basicos'] as $cambio) {
+                    if ($cambio['tipo'] === 'nombre_modificado') {
+                        $mensaje .= "  • Nombre: \"{$cambio['nombre_anterior']}\" → \"{$cambio['nombre_nuevo']}\"\n";
+                    } elseif ($cambio['tipo'] === 'descripcion_modificada') {
+                        $descAnt = $cambio['descripcion_anterior'] ?? '';
+                        $descNueva = $cambio['descripcion_nueva'] ?? '';
+
+                        // Show more characters for descriptions, but keep reasonable length
+                        $maxLen = 150;
+                        $descAntDisplay = strlen($descAnt) > $maxLen ? substr($descAnt, 0, $maxLen) . '...' : $descAnt;
+                        $descNuevaDisplay = strlen($descNueva) > $maxLen ? substr($descNueva, 0, $maxLen) . '...' : $descNueva;
+
+                        $mensaje .= "  • Descripción:\n    Antes: \"{$descAntDisplay}\"\n    Después: \"{$descNuevaDisplay}\"\n";
+                    }
+                }
+            }
+
+            if (!empty($cambios['origen'])) {
+                foreach ($cambios['origen'] as $cambio) {
+                    if ($cambio['tipo'] === 'origen_modificado') {
+                        $mensaje .= "  • Origen: {$cambio['origen_anterior']} → {$cambio['origen_nuevo']}\n";
+                    }
                 }
             }
         }
@@ -347,12 +390,12 @@ class PrendaComparisonService
         }
 
         if (!empty($cambios['colores_telas'])) {
-            $mensaje .= "Colores/Telas:\n";
+            $mensaje .= "Telas:\n";
             foreach ($cambios['colores_telas'] as $cambio) {
                 if ($cambio['tipo'] === 'agregada') {
-                    $mensaje .= "  • Agregado: {$cambio['color']} + {$cambio['tela']}\n";
+                    $mensaje .= "  • Agregada: {$cambio['tela']} en {$cambio['color']}\n";
                 } elseif ($cambio['tipo'] === 'removida') {
-                    $mensaje .= "  • Removido: {$cambio['color']} + {$cambio['tela']}\n";
+                    $mensaje .= "  • Removida: {$cambio['tela']} en {$cambio['color']}\n";
                 }
             }
         }

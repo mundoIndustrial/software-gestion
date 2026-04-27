@@ -180,37 +180,50 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
     private function actualizarCamposBasicos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
         $datosActualizar = [];
-        
+
         if ($dto->nombrePrenda !== null) {
             $datosActualizar['nombre_prenda'] = $dto->nombrePrenda;
         }
-        
+
         if ($dto->descripcion !== null) {
             $datosActualizar['descripcion'] = $dto->descripcion;
         }
-        
+
         if ($dto->deBodega !== null) {
             $datosActualizar['de_bodega'] = $dto->deBodega;
         }
 
         \Log::info('[ActualizarPrendaCompletaUseCase] Actualizando campos básicos', [
             'prenda_id' => $prenda->id,
+            'de_bodega_antes' => $prenda->de_bodega,
             'datos_a_actualizar' => $datosActualizar,
             'de_bodega_tipo' => gettype($dto->deBodega),
             'de_bodega_valor' => $dto->deBodega,
             'de_bodega_es_null' => is_null($dto->deBodega),
+            'incluye_de_bodega_en_actualizar' => isset($datosActualizar['de_bodega']),
         ]);
 
         if (!empty($datosActualizar)) {
             $prenda->update($datosActualizar);
             // Recargar desde BD para asegurar que tiene el valor guardado
             $prenda->refresh();
-            
+
             \Log::info('[ActualizarPrendaCompletaUseCase] Campos básicos actualizados', [
                 'prenda_id' => $prenda->id,
+                'de_bodega_antes' => $prenda->getOriginal('de_bodega'),
                 'de_bodega_guardado_en_bd' => $prenda->de_bodega,
                 'de_bodega_tipo' => gettype($prenda->de_bodega),
                 'de_bodega_entero' => (int) $prenda->de_bodega,
+                'cambio_realizado' => $prenda->getOriginal('de_bodega') !== $prenda->de_bodega,
+            ]);
+        } else {
+            \Log::warning('[ActualizarPrendaCompletaUseCase] Sin datos para actualizar campos básicos', [
+                'prenda_id' => $prenda->id,
+                'dto_campos' => [
+                    'nombrePrenda' => $dto->nombrePrenda,
+                    'descripcion' => $dto->descripcion,
+                    'deBodega' => $dto->deBodega,
+                ]
             ]);
         }
     }
