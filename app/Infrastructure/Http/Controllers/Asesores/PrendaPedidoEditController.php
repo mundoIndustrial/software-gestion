@@ -337,11 +337,16 @@ class PrendaPedidoEditController extends Controller
     public function editPrendaDesdeRecibo(int $prendaId, Request $request): JsonResponse
     {
         try {
+            \Illuminate\Support\Facades\Log::info('[editPrendaDesdeRecibo] Iniciando', ['prendaId' => $prendaId]);
+
             $validated = $request->validate([
                 'descripcion' => 'nullable|string',
                 'de_bodega' => 'required|boolean',
                 'pedido_id' => 'required|integer',
+                'tipo_recibo' => 'nullable|string',
             ]);
+
+            \Illuminate\Support\Facades\Log::info('[editPrendaDesdeRecibo] Validación exitosa', $validated);
 
             $prenda = PrendaPedido::findOrFail($prendaId);
 
@@ -349,14 +354,15 @@ class PrendaPedidoEditController extends Controller
             $descripcionAntes = (string) ($prenda->descripcion ?? '');
             $deBodegaAntes = (bool) $prenda->de_bodega;
 
-            // Actualizar prenda
-            $this->facade->editPrendaFields($prendaId, [
+            // Actualizar prenda directamente
+            $prenda->update([
                 'descripcion' => $validated['descripcion'] ?? null,
                 'de_bodega' => $validated['de_bodega'],
             ]);
 
-            // Recargar para obtener valores nuevos
-            $prenda->refresh();
+            \Illuminate\Support\Facades\Log::info('[editPrendaDesdeRecibo] Prenda actualizada');
+
+            // Obtener valores nuevos
             $descripcionDespues = (string) ($prenda->descripcion ?? '');
             $deBodegaDespues = (bool) $prenda->de_bodega;
 
@@ -375,16 +381,37 @@ class PrendaPedidoEditController extends Controller
                 ? 'Supervisor editó prenda al generar recibo: ' . implode(' | ', $cambios)
                 : 'Supervisor revisó prenda al generar recibo (sin cambios)';
 
+            // Obtener el número de recibo de la tabla consecutivos_recibos_pedidos
+            $tipoReciboNormalizado = strtoupper(str_replace('costura', 'COSTURA', str_replace('reflectivo', 'REFLECTIVO', $validated['tipo_recibo'] ?? '')));
+            $numeroRecibo = 'EDICION_PRENDA';
+
+            if ($tipoReciboNormalizado) {
+                $consecutivo = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $validated['pedido_id'])
+                    ->where('prenda_id', $prendaId)
+                    ->where('tipo_recibo', $tipoReciboNormalizado)
+                    ->first();
+
+                if ($consecutivo && $consecutivo->consecutivo_actual) {
+                    $numeroRecibo = (string) $consecutivo->consecutivo_actual;
+                }
+            }
+
+            $userId = auth()->id();
+            \Illuminate\Support\Facades\Log::info('[editPrendaDesdeRecibo] userId y numeroRecibo', ['userId' => $userId, 'numeroRecibo' => $numeroRecibo]);
+
             \Illuminate\Support\Facades\DB::table('prendas_pedido_novedades_recibo')->insert([
                 'prenda_pedido_id' => $prendaId,
-                'numero_recibo' => null,
+                'numero_recibo' => $numeroRecibo,
                 'novedad_texto' => $textoNovedad,
                 'tipo_novedad' => 'cambio',
-                'creado_por' => auth()->id(),
+                'creado_por' => $userId,
                 'estado_novedad' => 'activa',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            \Illuminate\Support\Facades\Log::info('[editPrendaDesdeRecibo] Novedad registrada');
 
             return $this->json([
                 'success' => true,
@@ -404,6 +431,12 @@ class PrendaPedidoEditController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('[editPrendaDesdeRecibo] Exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return $this->failure('Error al editar prenda: ' . $e->getMessage(), 500);
         }
     }

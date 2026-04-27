@@ -29,6 +29,29 @@
             <p id="parcial-proceso-nombre" style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">-</p>
         </div>
 
+        <!-- Sección de edición de prenda (si es supervisor_pedidos) -->
+        <div id="parcial-editar-prenda-section" style="display: none; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <button onclick="toggleEditarPrendaSeccion()" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 0; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #1f2937; font-size: 14px;">✏️ Editar descripción y origen</span>
+                <span id="parcial-editar-toggle-icon" style="color: #059669; font-size: 18px;">▼</span>
+            </button>
+
+            <div id="parcial-editar-contenido" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #86efac;">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 13px;">Descripción</label>
+                    <textarea id="parcial-editar-descripcion" placeholder="Edita la descripción de la prenda..." style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; box-sizing: border-box;"></textarea>
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 13px;">¿De dónde viene?</label>
+                    <select id="parcial-editar-de-bodega" style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; background-color: white; cursor: pointer;">
+                        <option value="1">De bodega</option>
+                        <option value="0">Confección</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- Error State -->
         <div id="parcial-error" style="display: none; background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; color: #991b1b; margin-bottom: 16px;">
             <p style="margin: 0; font-weight: 600;">Error</p>
@@ -65,13 +88,6 @@
                 </div>
             </div>
 
-            <!-- Notas adicionales -->
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px;">
-                    Notas (opcional):
-                </label>
-                <textarea id="parcial-notas" placeholder="Agrega notas específicas para este recibo parcial..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 80px;"></textarea>
-            </div>
         </div>
 
         <!-- Botones de acción -->
@@ -129,9 +145,7 @@
         window.modalReciboParcialState.mode = options.mode || 'crear_recibo';
         window.modalReciboParcialState.consecutivoReciboId = options.consecutivoReciboId || null;
 
-        // Reset visual para evitar que se arrastre selección/notas de un anexo anterior
-        const notasEl = document.getElementById('parcial-notas');
-        if (notasEl) notasEl.value = '';
+        // Reset visual para evitar que se arrastre selección de un anexo anterior
         const tallasListEl = document.getElementById('parcial-tallas-list');
         if (tallasListEl) tallasListEl.innerHTML = '';
         const cantidadesListEl = document.getElementById('parcial-cantidades-list');
@@ -175,6 +189,40 @@
             botonGuardarEl.innerHTML = modoEntregaParcial
                 ? '<i class="fas fa-check"></i> Guardar entrega'
                 : '<i class="fas fa-check"></i> Crear Recibo';
+        }
+
+        // Mostrar/ocultar sección de edición de prenda (solo para COSTURA, supervisor_pedidos, y no en modo entrega_parcial)
+        const editarPrendaSection = document.getElementById('parcial-editar-prenda-section');
+        // Nota: esSupervisorPedidos viene como string 'true'/'false', comparar con 'true'
+        const esSupervisorPedidos = String(window.selectorRecibosState?.esSupervisorPedidos || '') === 'true';
+        const esCostura = String(tipoProceso || '').toLowerCase() === 'costura';
+        const mostrarEditarPrenda = esSupervisorPedidos && !modoEntregaParcial && esCostura;
+
+        if (editarPrendaSection) {
+            editarPrendaSection.style.display = mostrarEditarPrenda ? 'block' : 'none';
+
+            if (mostrarEditarPrenda) {
+                // Llenar campos con datos actuales de la prenda
+                const descripcionEl = document.getElementById('parcial-editar-descripcion');
+                const deBodegaEl = document.getElementById('parcial-editar-de-bodega');
+
+                if (descripcionEl) {
+                    descripcionEl.value = penda.descripcion || '';
+                }
+                if (deBodegaEl) {
+                    deBodegaEl.value = penda.de_bodega ? '1' : '0';
+                }
+
+                // Asegurar que el contenido expandible está colapsado por defecto
+                const contenidoEl = document.getElementById('parcial-editar-contenido');
+                if (contenidoEl) {
+                    contenidoEl.style.display = 'none';
+                }
+                const toggleIcon = document.getElementById('parcial-editar-toggle-icon');
+                if (toggleIcon) {
+                    toggleIcon.textContent = '▶';
+                }
+            }
         }
 
         // Cargar tallas disponibles
@@ -487,6 +535,18 @@
     /**
      * Guarda el recibo parcial
      */
+    window.toggleEditarPrendaSeccion = function() {
+        const contenido = document.getElementById('parcial-editar-contenido');
+        const icon = document.getElementById('parcial-editar-toggle-icon');
+        if (contenido) {
+            const isVisible = contenido.style.display !== 'none';
+            contenido.style.display = isVisible ? 'none' : 'block';
+            if (icon) {
+                icon.textContent = isVisible ? '▶' : '▼';
+            }
+        }
+    };
+
     window.guardarReciboParcial = async function() {
         const tallasCantidad = window.modalReciboParcialState.tallasCantidad;
         const modoEntregaParcial = window.modalReciboParcialState.mode === 'entrega_parcial';
@@ -514,6 +574,42 @@
         content.style.display = 'none';
 
         try {
+            // Guardar cambios de la prenda si es supervisor_pedidos y hay cambios
+            const seccionEditar = document.getElementById('parcial-editar-prenda-section');
+            if (seccionEditar && seccionEditar.style.display !== 'none') {
+                const descripcionEl = document.getElementById('parcial-editar-descripcion');
+                const deBodegaEl = document.getElementById('parcial-editar-de-bodega');
+
+                if (descripcionEl || deBodegaEl) {
+                    const prendaEditResponse = await fetch(`/api/supervisor-pedidos/prendas-pedido/${window.modalReciboParcialState.prendaId}/editar-recibo`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            descripcion: descripcionEl ? descripcionEl.value || null : null,
+                            de_bodega: deBodegaEl ? (deBodegaEl.value === '1') : null,
+                            pedido_id: window.modalReciboParcialState.pedidoId,
+                            tipo_recibo: window.modalReciboParcialState.tipoProceso,
+                        })
+                    });
+
+                    if (!prendaEditResponse.ok) {
+                        const errorData = await prendaEditResponse.json();
+                        throw new Error(errorData.message || `Error al editar prenda: HTTP ${prendaEditResponse.status}`);
+                    }
+
+                    const prendaEditResult = await prendaEditResponse.json();
+                    if (!prendaEditResult.success) {
+                        throw new Error(prendaEditResult.message || 'Error al editar prenda');
+                    }
+
+                    console.log('[Recibo Parcial] Prenda editada:', prendaEditResult);
+                }
+            }
+
             // Construir datos de las tallas seleccionadas
             const tallasSeleccionadas = [];
             Object.keys(tallasCantidad).forEach(tallaIndex => {
@@ -560,8 +656,7 @@
                     pedido_id: window.modalReciboParcialState.pedidoId,
                     prenda_id: window.modalReciboParcialState.prendaId,
                     tipo_proceso: window.modalReciboParcialState.tipoProceso,
-                    tallas: tallasSeleccionadas,
-                    notas: document.getElementById('parcial-notas').value || null
+                    tallas: tallasSeleccionadas
                 };
 
                 console.log('[Recibo Parcial] Guardando:', payload);
@@ -622,9 +717,7 @@
         if (overlay) overlay.style.display = 'none';
         if (modal) modal.style.display = 'none';
 
-        // Limpiar DOM (notas/selección) para que no se arrastre al siguiente pedido
-        const notasEl = document.getElementById('parcial-notas');
-        if (notasEl) notasEl.value = '';
+        // Limpiar DOM (selección) para que no se arrastre al siguiente pedido
         const tallasListEl = document.getElementById('parcial-tallas-list');
         if (tallasListEl) tallasListEl.innerHTML = '';
         const cantidadesListEl = document.getElementById('parcial-cantidades-list');
@@ -635,6 +728,18 @@
         if (errorEl) errorEl.style.display = 'none';
         const errorMsgEl = document.getElementById('parcial-error-message');
         if (errorMsgEl) errorMsgEl.textContent = '';
+
+        // Limpiar campos de edición de prenda
+        const descripcionEl = document.getElementById('parcial-editar-descripcion');
+        if (descripcionEl) descripcionEl.value = '';
+        const deBodegaEl = document.getElementById('parcial-editar-de-bodega');
+        if (deBodegaEl) deBodegaEl.value = '1';
+        const editarPrendaSection = document.getElementById('parcial-editar-prenda-section');
+        if (editarPrendaSection) editarPrendaSection.style.display = 'none';
+        const contenidoEl = document.getElementById('parcial-editar-contenido');
+        if (contenidoEl) contenidoEl.style.display = 'none';
+        const toggleIcon = document.getElementById('parcial-editar-toggle-icon');
+        if (toggleIcon) toggleIcon.textContent = '▶';
 
         // Limpiar estado
         window.modalReciboParcialState = {
