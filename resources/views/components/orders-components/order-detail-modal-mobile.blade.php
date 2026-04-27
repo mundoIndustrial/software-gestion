@@ -1,4 +1,4 @@
-﻿<link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
+<link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
 
 <style>
     @media (max-width: 768px) {

@@ -189,11 +189,15 @@ class ObtenerDatosRecibosOperarioUseCase
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
                     ->map(function ($prenda) use ($parcial) {
-                        // Cargar tallas desde la tabla correcta: pedidos_parciales_tallas
-                        // (que tiene el campo genero, a diferencia de recibos_por_partes_tallas)
-                        $tallasRaw = DB::table('pedidos_parciales_tallas')
-                            ->where('pedido_parcial_id', (int) $parcial->id)
-                            ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+                        // Cargar tallas desde la tabla correcta
+                        $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
+                        $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
+                        $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
+                        $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
+
+                        $tallasRaw = DB::table($tallasTable)
+                            ->where($foreignKey, (int) $parcial->id)
+                            ->get($columns);
                         
                         \Log::info('[NORMAL DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
                         \Log::info('[NORMAL DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
@@ -442,11 +446,15 @@ class ObtenerDatosRecibosOperarioUseCase
                 $primerColorTela = $coloresTelas[0] ?? null;
                 $variante = $prendaEloquent ? $prendaEloquent->variantes->first() : null;
 
-                // Cargar tallas desde la tabla correcta: pedidos_parciales_tallas
-                // (que tiene el campo genero, a diferencia de recibos_por_partes_tallas)
-                $tallasRaw = DB::table('pedidos_parciales_tallas')
-                    ->where('pedido_parcial_id', (int) $parcial->id)
-                    ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+                // Cargar tallas desde la tabla correcta
+                $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
+                $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
+                $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
+                $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
+
+                $tallasRaw = DB::table($tallasTable)
+                    ->where($foreignKey, (int) $parcial->id)
+                    ->get($columns);
                 
                 \Log::info('[FALLBACK DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
                 \Log::info('[FALLBACK DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
