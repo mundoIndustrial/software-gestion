@@ -836,7 +836,7 @@ async function guardarPedidoCompleto(numeroPedido) {
                     empresa: empresa,  // Guardar empresa
                     cantidad: parseInt(cantidad) || 0,  // Guardar cantidad como número
                     prenda_nombre: nombrePrenda,  // Guardar nombre de la prenda/artículo
-                    pendientes: pendientes || null,
+                    pendientes: pendientes ? parseInt(pendientes) : 0,
                     fecha_entrega_bodega: fecha || null,
                     area: area || null,
                     estado_bodega: estado || null,
@@ -1621,6 +1621,52 @@ document.addEventListener('DOMContentLoaded', function() {
         selector.addEventListener('change', function() {
             colorearFilaPorEstado(this);
             sincronizarFechaEntregaConEstado(this);
+            
+            // Si selecciona "Pendiente", auto-completar y auto-guardar
+            if (this.value === 'Pendiente') {
+                const fila = this.closest('tr');
+                const displayDiv = fila.querySelector('.pendientes-display');
+                const inputOculto = fila.querySelector('.pendientes-input');
+                const totalQty = parseInt(this.getAttribute('data-cantidad')) || 0;
+                
+                // 1. Poner todo en pendiente (totalQty de totalQty)
+                if (inputOculto) {
+                    inputOculto.value = totalQty;
+                }
+                
+                if (displayDiv) {
+                    displayDiv.innerHTML = `<span class="font-bold">Pendiente ${totalQty} de ${totalQty}</span>`;
+                    displayDiv.classList.remove('bg-slate-50', 'text-slate-500');
+                    displayDiv.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+                }
+
+                // 2. Auto-guardar la fila
+                const btnGuardar = fila.querySelector('button[onclick^="guardarFilaCompleta"]');
+                if (btnGuardar) {
+                    btnGuardar.click();
+                }
+            } else if (this.value === '') {
+                // SOLO si cambia al estado vacío "ESTADO", limpiar pendiente
+                const fila = this.closest('tr');
+                const displayDiv = fila.querySelector('.pendientes-display');
+                const inputOculto = fila.querySelector('.pendientes-input');
+                
+                // Solo actuar si había algo pendiente (evita bucles de auto-guardado innecesarios)
+                if (inputOculto && parseInt(inputOculto.value) > 0) {
+                    inputOculto.value = 0;
+                    if (displayDiv) {
+                        displayDiv.innerHTML = `<span class="opacity-50">Sin pendientes</span>`;
+                        displayDiv.classList.add('bg-slate-50', 'text-slate-500');
+                        displayDiv.classList.remove('bg-amber-50', 'text-amber-700', 'border-amber-200');
+                    }
+                    
+                    // Auto-guardar para persistir la limpieza del pendiente
+                    const btnGuardar = fila.querySelector('button[onclick^="guardarFilaCompleta"]');
+                    if (btnGuardar) {
+                        btnGuardar.click();
+                    }
+                }
+            }
         });
     });
 });
@@ -1968,7 +2014,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         empresa: empresa || null,
         cantidad: cantidad ? Number(cantidad) : null,
         prenda_nombre: prendaNombre || null,
-        pendientes: pendientes || null,
+        pendientes: pendientes ? Number(pendientes) : 0,
         fecha_pedido: fechaPedido || null,
         fecha_entrega: fechaEntrega || null,
         fecha_entrega_bodega: estado === 'Entregado' ? (fechaEntrega || null) : null,
@@ -2025,3 +2071,88 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         alert('Error: ' + error.message);
     });
 }
+
+/**
+ * Lógica para Modal de Pendientes
+ */
+let __currentPendienteTarget = null;
+let __currentTotalQty = 0;
+
+window.abrirModalPendientes = function(displayDiv, totalQty) {
+    __currentPendienteTarget = displayDiv;
+    __currentTotalQty = totalQty;
+    
+    const rowHash = displayDiv.getAttribute('data-row-hash');
+    const inputOculto = document.querySelector(`.pendientes-input[data-row-hash="${rowHash}"]`);
+    const valorActual = inputOculto ? parseInt(inputOculto.value) || 0 : 0;
+    
+    document.getElementById('modalPendienteCurrentDisplay').textContent = valorActual;
+    document.getElementById('modalPendienteTotalDisplay').textContent = totalQty;
+    
+    const input = document.getElementById('inputCantidadPendiente');
+    input.value = valorActual || '';
+    input.max = totalQty;
+    
+    const modal = document.getElementById('modalPendientes');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    setTimeout(() => input.focus(), 100);
+};
+
+window.cerrarModalPendientes = function() {
+    const modal = document.getElementById('modalPendientes');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    __currentPendienteTarget = null;
+};
+
+window.confirmarCantidadPendiente = function() {
+    if (!__currentPendienteTarget) return;
+    
+    const input = document.getElementById('inputCantidadPendiente');
+    let valor = parseInt(input.value) || 0;
+    
+    if (valor < 0) valor = 0;
+    if (valor > __currentTotalQty) {
+        alert(`La cantidad pendiente (${valor}) no puede ser mayor al total (${__currentTotalQty})`);
+        return;
+    }
+    
+    const rowHash = __currentPendienteTarget.getAttribute('data-row-hash');
+    const inputOculto = document.querySelector(`.pendientes-input[data-row-hash="${rowHash}"]`);
+    
+    if (inputOculto) {
+        inputOculto.value = valor;
+    }
+    
+    // Actualizar visualmente el div
+    if (valor > 0) {
+        __currentPendienteTarget.innerHTML = `<span class="font-bold">Pendiente ${valor} de ${__currentTotalQty}</span>`;
+        __currentPendienteTarget.classList.remove('bg-slate-50', 'text-slate-500');
+        __currentPendienteTarget.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+    } else {
+        __currentPendienteTarget.innerHTML = `<span class="opacity-50">Sin pendientes</span>`;
+        __currentPendienteTarget.classList.add('bg-slate-50', 'text-slate-500');
+        __currentPendienteTarget.classList.remove('bg-amber-50', 'text-amber-700', 'border-amber-200');
+    }
+    
+    // Auto-guardar después de confirmar
+    const fila = __currentPendienteTarget.closest('tr');
+    if (fila) {
+        const btnGuardar = fila.querySelector('button[onclick^="guardarFilaCompleta"]');
+        if (btnGuardar) {
+            btnGuardar.click();
+        }
+    }
+    
+    cerrarModalPendientes();
+};
+
+// Listener para la tecla Enter en el input de pendientes
+document.getElementById('inputCantidadPendiente')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmarCantidadPendiente();
+    }
+});

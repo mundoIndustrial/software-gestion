@@ -62,7 +62,13 @@ class EntregasDespachoApplicationService
         $conteos = BodegaDetalleTalla::query()
             ->selectRaw('pedido_produccion_id, COUNT(*) as pendientes')
             ->whereIn('pedido_produccion_id', $permitidos)
-            ->where('estado_bodega', 'Entregado')
+            ->where(function($q) {
+                $q->where('estado_bodega', 'Entregado')
+                  ->orWhere(function($q2) {
+                      $q2->where('estado_bodega', 'Pendiente')
+                         ->whereRaw('cantidad > COALESCE(pendientes, 0)');
+                  });
+            })
             ->whereNull('fecha_entrega_despacho')
             ->whereNull('deleted_at')
             ->groupBy('pedido_produccion_id')
@@ -87,6 +93,7 @@ class EntregasDespachoApplicationService
                 'talla',
                 'genero',
                 'cantidad',
+                'pendientes',
                 'area',
                 'estado_bodega',
                 'fecha_entrega_bodega',
@@ -94,18 +101,33 @@ class EntregasDespachoApplicationService
                 'fecha_entrega_despacho',
             ])
             ->where('pedido_produccion_id', $pedidoId)
-            ->where('estado_bodega', 'Entregado')
+            ->where(function($q) {
+                $q->where('estado_bodega', 'Entregado')
+                  ->orWhere('estado_bodega', 'Pendiente');
+            })
             ->whereNull('deleted_at')
             ->orderByRaw('CASE WHEN fecha_entrega_despacho IS NULL THEN 0 ELSE 1 END ASC')
             ->orderByRaw('COALESCE(fecha_entrega_bodega, fecha_entrega, created_at) ASC')
             ->get()
             ->map(function ($row) {
+                $cantidadTotal = (int) ($row->cantidad ?? 0);
+                // Si ya está Entregado, ignoramos cualquier valor de pendientes que haya quedado en la BD
+                $pendientes = $row->estado_bodega === 'Entregado' ? 0 : (int) ($row->pendientes ?? 0);
+                $disponible = $cantidadTotal - $pendientes;
+
+                // Si está en estado Pendiente pero no hay nada disponible para despacho, lo ignoramos
+                if ($row->estado_bodega === 'Pendiente' && $disponible <= 0) {
+                    return null;
+                }
+
                 return [
                     'id' => (int) $row->id,
                     'prenda_nombre' => (string) ($row->prenda_nombre ?? '-'),
                     'talla' => (string) ($row->talla ?? '-'),
                     'genero' => (string) ($row->genero ?? '-'),
-                    'cantidad' => (int) ($row->cantidad ?? 0),
+                    'cantidad_total' => $cantidadTotal,
+                    'cantidad_pendiente' => $pendientes,
+                    'cantidad' => $disponible > 0 ? $disponible : $cantidadTotal,
                     'area' => (string) ($row->area ?? '-'),
                     'estado_bodega' => (string) ($row->estado_bodega ?? ''),
                     'fecha_entrega' => optional($row->fecha_entrega)?->format('Y-m-d'),
@@ -113,6 +135,7 @@ class EntregasDespachoApplicationService
                     'fecha_entrega_despacho' => optional($row->fecha_entrega_despacho)?->format('Y-m-d H:i:s'),
                 ];
             })
+            ->filter()
             ->values()
             ->all();
     }
@@ -129,8 +152,8 @@ class EntregasDespachoApplicationService
             throw new NotFoundHttpException('Detalle de entrega no encontrado');
         }
 
-        if ((string) $detalle->estado_bodega !== 'Entregado') {
-            throw new AccessDeniedHttpException('Solo se pueden marcar detalles en estado Entregado');
+        if (!in_array((string) $detalle->estado_bodega, ['Entregado', 'Pendiente'])) {
+            throw new AccessDeniedHttpException('Solo se pueden marcar detalles en estado Entregado o Pendiente con disponibilidad');
         }
 
         if ($detalle->fecha_entrega_despacho) {

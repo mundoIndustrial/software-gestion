@@ -468,14 +468,30 @@
 
                                                     <!-- PENDIENTES -->
                                                     <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
-                                                        <textarea
-                                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                                        @php
+                                                            $totalQty = $t['cantidad'] ?? 0;
+                                                            $pendValue = (int)($baseItem['pendientes'] ?? 0);
+                                                        @endphp
+                                                        <div
+                                                            class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded cursor-pointer transition
                                                                 @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
-                                                                    bg-blue-50
+                                                                    bg-blue-50 text-blue-700 border-blue-200
+                                                                @elseif($pendValue > 0)
+                                                                    bg-amber-50 text-amber-700 border-amber-200
                                                                 @else
-                                                                    bg-slate-50
+                                                                    bg-slate-50 text-slate-500
                                                                 @endif"
                                                             style="font-family: 'Poppins', sans-serif;"
+                                                            onclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                            data-row-hash="{{ $rowHash }}"
+                                                        >
+                                                            @if($pendValue > 0)
+                                                                <span class="font-bold">Pendiente {{ $pendValue }} de {{ $totalQty }}</span>
+                                                            @else
+                                                                <span class="opacity-50">Sin pendientes</span>
+                                                            @endif
+                                                        </div>
+                                                        <input type="hidden" class="pendientes-input"
                                                             data-row-hash="{{ $rowHash }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
@@ -483,10 +499,7 @@
                                                             data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
-                                                            placeholder="Pendientes..."
-                                                            rows="1"
-                                                            @if($esReadOnly ?? false) disabled @endif
-                                                        >{{ $baseItem['pendientes'] ?? '' }}</textarea>
+                                                            value="{{ $pendValue }}">
                                                     </td>
 
                                                     <!-- OBSERVACIONES -->
@@ -866,24 +879,37 @@
                                                 
                                                 <!-- PENDIENTES -->
                                                 <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
-                                                    <textarea
-                                                        class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                                    @php
+                                                        $totalQty = $item['cantidad_total'] ?? 0;
+                                                        $pendValue = (int)($item['pendientes'] ?? 0);
+                                                    @endphp
+                                                    <div
+                                                        class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded cursor-pointer transition
                                                             @if($item['estado_bodega'] === 'Entregado')
-                                                                bg-blue-50
+                                                                bg-blue-50 text-blue-700 border-blue-200
+                                                            @elseif($pendValue > 0)
+                                                                bg-amber-50 text-amber-700 border-amber-200
                                                             @else
-                                                                bg-slate-50
+                                                                bg-slate-50 text-slate-500
                                                             @endif"
                                                         style="font-family: 'Poppins', sans-serif;"
+                                                        onclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                        data-row-hash="{{ $rowHashSimple }}"
+                                                    >
+                                                        @if($pendValue > 0)
+                                                            <span class="font-bold">Pendiente {{ $pendValue }} de {{ $totalQty }}</span>
+                                                        @else
+                                                            <span class="opacity-50">Sin pendientes</span>
+                                                        @endif
+                                                    </div>
+                                                    <input type="hidden" class="pendientes-input"
                                                         data-row-hash="{{ $rowHashSimple }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
                                                         data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                         data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
                                                         data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
-                                                        placeholder="Pendientes..."
-                                                        rows="1"
-                                                        @if($esReadOnly ?? false) disabled @endif
-                                                    >{{ $item['pendientes'] ?? '' }}</textarea>
+                                                        value="{{ $pendValue }}">
                                                 </td>
                                                 
                                                 <!-- OBSERVACIONES -->
@@ -1130,7 +1156,54 @@
     </div>
 </div>
 
+<!-- Modal de Pendientes -->
+<div id="modalPendientes" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100005;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">📦 Cantidad Pendiente</h2>
+            <button onclick="cerrarModalPendientes()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+        </div>
+        <div class="px-6 py-8">
+            <div class="text-center mb-6">
+                <p class="text-slate-600 text-sm mb-1">Ingrese la cantidad que queda pendiente para este item:</p>
+                <div class="text-2xl font-bold text-slate-900">
+                    Pendiente <span id="modalPendienteCurrentDisplay">0</span> de <span id="modalPendienteTotalDisplay">0</span>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="inputCantidadPendiente" class="block text-sm font-bold text-slate-700 mb-2">Cantidad:</label>
+                <input
+                    type="number"
+                    id="inputCantidadPendiente"
+                    class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-xl font-bold text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="0"
+                    min="0"
+                >
+            </div>
+
+            <div class="flex gap-3">
+                <button
+                    type="button"
+                    onclick="confirmarCantidadPendiente()"
+                    class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition"
+                >
+                    ✓ Confirmar
+                </button>
+                <button
+                    type="button"
+                    onclick="cerrarModalPendientes()"
+                    class="flex-1 px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition"
+                >
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+
 // Variables globales para notas
 window.usuarioActualId = {{ auth()->user()->id }};
 window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false' }};

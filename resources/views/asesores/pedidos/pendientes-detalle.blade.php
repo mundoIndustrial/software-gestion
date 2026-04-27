@@ -318,7 +318,7 @@
                                 <th>Artículo</th>
                                 <th>Área</th>
                                 <th>Talla</th>
-                                <th style="text-align: center;">Cant.</th>
+                                <th style="text-align: center;">Pendiente</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -342,8 +342,14 @@
                                     
                                     $area = $item['area'] ?? '';
                                     $talla = $item['talla'] ?? '';
-                                    $cantidad = $item['cantidad'] ?? ($item['cantidad_total'] ?? 0);
-                                    $pendientes = $item['pendientes'] ?? '';
+                                    $cantidadTotal = $item['cantidad'] ?? ($item['cantidad_total'] ?? 0);
+                                    $pendientes = (int)($item['pendientes'] ?? 0);
+                                    
+                                    // Si no hay valor de pendientes pero el estado es Pendiente, 
+                                    // por defecto es el total (para compatibilidad con registros antiguos)
+                                    if ($pendientes <= 0) {
+                                        $pendientes = $cantidadTotal;
+                                    }
                                     $genero = $item['genero'] ?? null;
                                     $descripcionTexto = $descripcion['descripcion'] ?? null;
                                     $colorNombre = $item['color_nombre'] ?? null;
@@ -422,7 +428,12 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-xs text-black" style="text-align: center;">
-                                        <span class="cantidad-badge">{{ $cantidad }}</span>
+                                        <div class="flex flex-col items-center">
+                                            <span class="pendientes-badge">{{ $pendientes }}</span>
+                                            @if($pendientes != $cantidadTotal)
+                                                <span class="text-[10px] text-slate-400 mt-1">de {{ $cantidadTotal }}</span>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -437,12 +448,16 @@
                         <span class="total-value">{{ count($detalles) }}</span>
                     </div>
                     <div class="total-item">
-                        <span class="total-label">Total Cantidad:</span>
-                        <span class="total-value">
-                            {{ array_sum(array_map(function($d) { 
-                                $d = is_object($d) ? json_decode(json_encode($d), true) : $d;
-                                return $d['cantidad'] ?? ($d['cantidad_total'] ?? 0); 
-                            }, $detalles)) }}
+                        <span class="total-label">Total Pendientes:</span>
+                        <span class="total-value total-pendientes">
+                            @php
+                                $sumaPendientes = array_sum(array_map(function($d) { 
+                                    $d = is_object($d) ? json_decode(json_encode($d), true) : $d;
+                                    $p = (int)($d['pendientes'] ?? 0);
+                                    return $p > 0 ? $p : ($d['cantidad'] ?? ($d['cantidad_total'] ?? 0));
+                                }, $detalles));
+                            @endphp
+                            {{ $sumaPendientes }}
                         </span>
                     </div>
                 </div>

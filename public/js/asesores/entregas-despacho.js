@@ -161,13 +161,17 @@
                     Ya está en despacho
                 </span>`;
 
+                const qtyHtml = (item.cantidad_total && item.cantidad !== item.cantidad_total) 
+                    ? `<b>${item.cantidad}</b> de <b>${item.cantidad_total}</b>`
+                    : `<b>${item.cantidad || 0}</b>`;
+
                 return `
                 <div class="border border-slate-200 rounded-lg p-3 flex flex-col gap-3 bg-white">
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <div class="text-sm font-semibold text-slate-900">${item.prenda_nombre || '-'}</div>
                             <div class="text-xs text-slate-600 mt-1">
-                                Talla: <b>${__displayTalla(item.talla)}</b> · Género: <b>${item.genero || '-'}</b> · Cantidad: <b>${item.cantidad || 0}</b> · Área: <b>${item.area || '-'}</b>
+                                Talla: <b>${__displayTalla(item.talla)}</b> · Género: <b>${item.genero || '-'}</b> · Cantidad: ${qtyHtml} · Área: <b>${item.area || '-'}</b>
                             </div>
                             <div class="text-xs text-slate-500 mt-1">Fecha entrega bodega: ${__formatDateTime(item.fecha_entrega_bodega || item.fecha_entrega)}</div>
                             ${item.fecha_entrega_despacho ? `<div class="text-xs text-blue-600 mt-1">En despacho: ${__formatDateTime(item.fecha_entrega_despacho)}</div>` : ''}
