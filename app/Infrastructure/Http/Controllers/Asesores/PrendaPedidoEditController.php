@@ -12,7 +12,9 @@ use App\Infrastructure\Http\Requests\Asesores\EditVarianteFieldsRequest;
 use App\Infrastructure\Http\Requests\Asesores\EditVarianteColoresRequest;
 use App\Infrastructure\Http\Requests\Asesores\EditVarianteTelasRequest;
 use App\Infrastructure\Http\Requests\Asesores\EditVarianteRequest;
+use App\Models\PrendaPedido;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -323,6 +325,86 @@ class PrendaPedidoEditController extends Controller
 
         } catch (\Exception $e) {
             return $this->failure('Error al actualizar el proceso: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * PATCH /api/supervisor-pedidos/prendas-pedido/{prendaId}/editar-recibo
+     *
+     * Edita descripcion y de_bodega cuando el supervisor genera un recibo.
+     * Registra los cambios en prendas_pedido_novedades_recibo como tipo 'cambio'.
+     */
+    public function editPrendaDesdeRecibo(int $prendaId, Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'descripcion' => 'nullable|string',
+                'de_bodega' => 'required|boolean',
+                'pedido_id' => 'required|integer',
+            ]);
+
+            $prenda = PrendaPedido::findOrFail($prendaId);
+
+            // Guardar valores antes
+            $descripcionAntes = (string) ($prenda->descripcion ?? '');
+            $deBodegaAntes = (bool) $prenda->de_bodega;
+
+            // Actualizar prenda
+            $this->facade->editPrendaFields($prendaId, [
+                'descripcion' => $validated['descripcion'] ?? null,
+                'de_bodega' => $validated['de_bodega'],
+            ]);
+
+            // Recargar para obtener valores nuevos
+            $prenda->refresh();
+            $descripcionDespues = (string) ($prenda->descripcion ?? '');
+            $deBodegaDespues = (bool) $prenda->de_bodega;
+
+            // Registrar la novedad en prendas_pedido_novedades_recibo
+            $cambios = [];
+            if ($descripcionAntes !== $descripcionDespues) {
+                $cambios[] = 'descripción editada';
+            }
+            if ($deBodegaAntes !== $deBodegaDespues) {
+                $tipoBefore = $deBodegaAntes ? 'BODEGA' : 'CONFECCIÓN';
+                $tipoAfter = $deBodegaDespues ? 'BODEGA' : 'CONFECCIÓN';
+                $cambios[] = 'origen: ' . $tipoBefore . ' → ' . $tipoAfter;
+            }
+
+            $textoNovedad = $cambios
+                ? 'Supervisor editó prenda al generar recibo: ' . implode(' | ', $cambios)
+                : 'Supervisor revisó prenda al generar recibo (sin cambios)';
+
+            \Illuminate\Support\Facades\DB::table('prendas_pedido_novedades_recibo')->insert([
+                'prenda_pedido_id' => $prendaId,
+                'numero_recibo' => null,
+                'novedad_texto' => $textoNovedad,
+                'tipo_novedad' => 'cambio',
+                'creado_por' => auth()->id(),
+                'estado_novedad' => 'activa',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Prenda actualizada y revisión registrada',
+                'data' => [
+                    'prenda_id' => $prendaId,
+                    'cambios' => $cambios,
+                ],
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return $this->failure('Prenda no encontrada', 404);
+
+        } catch (ValidationException $e) {
+            return $this->failure('Validación fallida', 422, [
+                'errors' => $e->errors(),
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->failure('Error al editar prenda: ' . $e->getMessage(), 500);
         }
     }
 }

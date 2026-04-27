@@ -74,6 +74,9 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
             ->whereNumber('prendaId')
             ->whereNumber('procesoId')
             ->name('prendas.procesos.actualizar');
+        Route::patch('/prendas-pedido/{prendaId}/editar-recibo', [PrendaPedidoEditController::class, 'editPrendaDesdeRecibo'])
+            ->whereNumber('prendaId')
+            ->name('prendas-pedido.editar-recibo');
         Route::get('/filtro-opciones/{campo}', [SupervisorOrdersApiController::class, 'filterOptions'])
             ->name('filtro-opciones');
         Route::post('/seleccionar/{pedidoId}', [SupervisorOrdersApiController::class, 'select'])

@@ -616,14 +616,97 @@
             const tipoProceso = selectEl?.value || '';
             if (!tipoProceso) return;
 
-            window.generarReciboBodega(prendaId, pedidoId, tipoProceso);
+            if (window.selectorRecibosState?.esSupervisorPedidos) {
+                abrirModalEditarPrendaRecibo(prendaId, pedidoId, tipoProceso);
+            } else {
+                window.generarReciboBodega(prendaId, pedidoId, tipoProceso);
+            }
         } finally {
             if (selectEl) {
                 selectEl.value = '';
             }
         }
     };
-    
+
+    window.editarPrendaReciboState = {
+        prendaId: null,
+        pedidoId: null,
+        tipoProceso: null,
+    };
+
+    window.abrirModalEditarPrendaRecibo = function(prendaId, pedidoId, tipoProceso) {
+        const prenda = window.selectorRecibosState?.prendas?.find(p => p.id === prendaId);
+        if (!prenda) {
+            alert('Prenda no encontrada');
+            return;
+        }
+
+        window.editarPrendaReciboState = { prendaId, pedidoId, tipoProceso };
+
+        document.getElementById('modal-editar-prenda-nombre').textContent = `Prenda: ${prenda.nombre || 'Sin nombre'}`;
+        document.getElementById('modal-editar-descripcion').value = prenda.descripcion || '';
+        document.getElementById('modal-editar-de-bodega').value = prenda.de_bodega ? '1' : '0';
+
+        const modal = document.getElementById('modal-editar-prenda-recibo');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    };
+
+    window.cancelarEditarPrendaRecibo = function() {
+        const modal = document.getElementById('modal-editar-prenda-recibo');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        window.editarPrendaReciboState = { prendaId: null, pedidoId: null, tipoProceso: null };
+    };
+
+    window.guardarEditarPrendaRecibo = async function() {
+        const estado = window.editarPrendaReciboState;
+        if (!estado.prendaId || !estado.pedidoId) {
+            alert('Error: datos incompletos');
+            return;
+        }
+
+        const descripcion = document.getElementById('modal-editar-descripcion').value || null;
+        const deBodega = document.getElementById('modal-editar-de-bodega').value === '1';
+
+        try {
+            const response = await fetch(`/api/supervisor-pedidos/prendas-pedido/${estado.prendaId}/editar-recibo`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    descripcion: descripcion,
+                    de_bodega: deBodega,
+                    pedido_id: estado.pedidoId,
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || 'Error desconocido');
+            }
+
+            mostrarMensajeExito(result.message || 'Prenda actualizada correctamente');
+            window.cancelarEditarPrendaRecibo();
+
+            window.generarReciboBodega(estado.prendaId, estado.pedidoId, estado.tipoProceso);
+
+        } catch (error) {
+            console.error('Error al guardar prenda:', error);
+            alert('Error al guardar los cambios: ' + error.message);
+        }
+    };
+
     // DEBUG: Mostrar roles en consola
     console.log(' User Roles:', window.selectorRecibosState.usuarioRoles);
     window.activarReciboCosturaBase = async function(prendaId) {
@@ -2593,6 +2676,35 @@
     }, true); // Usar capture phase para mayor prioridad
 
 </script>
+
+<!-- Modal de edición de prenda antes de generar recibo -->
+<div id="modal-editar-prenda-recibo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 20px 25px rgba(0,0,0,0.15); width: 90%; max-width: 500px; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #1f2937;">Revisar prenda antes de generar recibo</h3>
+            <button onclick="cancelarEditarPrendaRecibo()" style="background: none; border: none; font-size: 24px; color: #9ca3af; cursor: pointer; padding: 0;">&times;</button>
+        </div>
+        <p id="modal-editar-prenda-nombre" style="margin: 0 0 20px 0; color: #6b7280; font-size: 14px;"></p>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 13px;">Descripción</label>
+            <textarea id="modal-editar-descripcion" placeholder="Ingresa la descripción de la prenda..." style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; box-sizing: border-box;" maxlength="1000"></textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 13px;">¿De dónde viene?</label>
+            <select id="modal-editar-de-bodega" style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 14px; background-color: white; cursor: pointer;">
+                <option value="1">De bodega</option>
+                <option value="0">Confección</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="cancelarEditarPrendaRecibo()" style="padding: 10px 20px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Cancelar</button>
+            <button onclick="guardarEditarPrendaRecibo()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Guardar y continuar</button>
+        </div>
+    </div>
+</div>
 
 <!-- Incluir modal de recibos parciales por talla -->
 @include('components.modals.recibos-parcial-por-talla')
