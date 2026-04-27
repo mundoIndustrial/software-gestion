@@ -166,11 +166,6 @@ class BodegaPedidoConsultaService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
         $estadosPermitidos = $this->obtenerEstadosPermitidos();
 
-        \Log::info('[obtenerDetallePedido] Iniciando busqueda', [
-            'pedidoId' => $pedidoId,
-            'priorizar_numero_pedido' => $priorizarNumeroPedido,
-        ]);
-
         // IMPORTANTE: priorizar búsqueda por ID real para evitar colisiones con numero_pedido
         // Ejemplo: pedidoId=163 puede ser ID de PedidoProduccion, pero también existir numero_pedido=163.
         $primerRecibo = null;
@@ -197,20 +192,9 @@ class BodegaPedidoConsultaService
             }
         }
 
-        \Log::info('[obtenerDetallePedido] ReciboPrenda encontrado', [
-            'tiene_recibo' => !!$primerRecibo,
-            'recibo_numero_pedido' => $primerRecibo?->numero_pedido ?? 'null',
-            'recibo_id' => $primerRecibo?->id ?? 'null',
-        ]);
-
         if (!$primerRecibo || empty($primerRecibo->numero_pedido)) {
             $pedidoProduccion = $pedidoProduccionPorId ?: $pedidoProduccionPorNumero ?: PedidoProduccion::where('id', $pedidoId)
                 ->first();
-
-            \Log::info('[obtenerDetallePedido] ReciboPrenda sin numero_pedido, buscando PedidoProduccion', [
-                'tiene_pedido' => !!$pedidoProduccion,
-                'pedido_numero' => $pedidoProduccion?->numero_pedido ?? 'null',
-            ]);
 
             if (!$pedidoProduccion) {
                 throw new \Exception("Pedido no encontrado (numero_pedido: $pedidoId)");
@@ -251,13 +235,6 @@ class BodegaPedidoConsultaService
         $esAnulada = str_starts_with($estadoPP, 'ANULAD');
         $esEntregada = $estadoPP === 'ENTREGADO';
 
-        \Log::info('[obtenerDetallePedido] Estado del pedido', [
-            'numero_pedido' => $numeroPedido,
-            'estado' => $estadoPP,
-            'es_anulada' => $esAnulada,
-            'es_entregada' => $esEntregada,
-        ]);
-
         if ($usaFallbackPorId) {
             $recibos = ReciboPrenda::with(['asesor'])
                 ->where('id', (int) ($pedidoProduccion?->id ?? $primerRecibo->id ?? $pedidoId))
@@ -267,8 +244,6 @@ class BodegaPedidoConsultaService
                 ? ReciboPrenda::with(['asesor'])->where('numero_pedido', $numeroPedido)->get()
                 : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
         }
-
-        \Log::info('[obtenerDetallePedido] Recibos obtenidos', ['count' => $recibos->count(), 'es_anulada' => $esAnulada, 'es_entregada' => $esEntregada]);
 
         $items = $paraDespacho
             ? $this->detalleService->procesarItemsPedidoParaDespacho($recibos, $rolesDelUsuario, $areasPermitidas)

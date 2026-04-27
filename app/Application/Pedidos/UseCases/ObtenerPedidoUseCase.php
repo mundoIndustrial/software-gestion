@@ -65,11 +65,6 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             }
 
             $filtrarPrendasBodega = $esCortador && !$esApiOperario;
-            if ($filtrarPrendasBodega) {
-                Log::info('[ObtenerPedidoUseCase] Filtrando prendas de bodega para CORTADOR', [
-                    'usuario' => $usuario->name ?? null,
-                ]);
-            }
 
             $modeloEloquent = $this->pedidoDetalleReadService
                 ->findPedidoByIdConRelaciones((int) $pedidoId, $filtrarPrendasBodega);

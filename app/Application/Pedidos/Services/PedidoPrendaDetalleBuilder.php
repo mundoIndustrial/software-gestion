@@ -23,8 +23,6 @@ class PedidoPrendaDetalleBuilder
             $prendasArray = [];
 
             foreach ($modeloEloquent->prendas as $prenda) {
-                Log::info('Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
-
                 $tallasEstructuradas = $this->construirEstructuraTallas($prenda);
                 $variantes = $this->obtenerVariantes($prenda);
                 $colorTela = $this->obtenerColorYTela($prenda);
@@ -85,17 +83,10 @@ class PedidoPrendaDetalleBuilder
                 ];
             }
 
-            Log::info('Prendas procesadas exitosamente', [
-                'pedido_id' => $modeloEloquent->id,
-                'cantidad' => count($prendasArray),
-            ]);
-
             return $prendasArray;
         } catch (\Exception $e) {
-            Log::error('Error obteniendo prendas completas', [
+            Log::error('Error obteniendo prendas completas: ' . $e->getMessage(), [
                 'pedido_id' => $modeloEloquent?->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             return [];
         }
