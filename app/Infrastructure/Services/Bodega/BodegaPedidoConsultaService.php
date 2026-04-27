@@ -161,9 +161,6 @@ class BodegaPedidoConsultaService
 
     public function obtenerDetallePedido(int $pedidoId, bool $paraDespacho = false, bool $priorizarNumeroPedido = false): array
     {
-        $timeStart = microtime(true);
-        \Log::info('[TIMING] Inicio: obtenerDetallePedido', ['pedido_id' => $pedidoId]);
-
         $usuario = auth()->user();
         $rolesDelUsuario = $usuario->getRoleNames()->toArray();
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
@@ -248,24 +245,11 @@ class BodegaPedidoConsultaService
                 : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
         }
 
-        $timeBeforeProcess = microtime(true);
-        \Log::info('[TIMING] Antes de procesarItemsPedido', ['elapsed_ms' => round(($timeBeforeProcess - $timeStart) * 1000, 2)]);
-
         $items = $paraDespacho
             ? $this->detalleService->procesarItemsPedidoParaDespacho($recibos, $rolesDelUsuario, $areasPermitidas)
             : $this->detalleService->procesarItemsPedido($recibos, $rolesDelUsuario, $areasPermitidas);
 
-        $timeAfterProcess = microtime(true);
-        \Log::info('[TIMING] Después de procesarItemsPedido', ['elapsed_ms' => round(($timeAfterProcess - $timeBeforeProcess) * 1000, 2)]);
-
         $items = $this->detalleService->calcularRowspans($items);
-
-        $timeEnd = microtime(true);
-        $totalTime = round(($timeEnd - $timeStart) * 1000, 2);
-        \Log::info('[TIMING] FIN: obtenerDetallePedido', [
-            'total_ms' => $totalTime,
-            'items_count' => count($items),
-        ]);
 
         return [
             'pedido' => [

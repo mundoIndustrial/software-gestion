@@ -36,25 +36,16 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                     'variantes.tipoManga',
                     'variantes.tipoBroche',
                     'anchoMetraje',
-                    'fotos' => function ($q2) {
-                        $q2->orderBy('orden', 'asc');
-                    },
                     'coloresTelas' => function ($q2) {
                         $q2->with([
                             'color',
                             'tela',
-                            'fotos' => function ($q3) {
-                                $q3->orderBy('orden', 'asc');
-                            },
                         ]);
                     },
                     'procesos' => function ($q3) {
                         $q3->with([
                             'tipoProceso',
                             'tallas',
-                            'imagenes' => function ($q4) {
-                                $q4->orderBy('orden', 'asc');
-                            },
                         ])->orderBy('created_at', 'desc');
                     },
                 ]);
@@ -63,9 +54,6 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 $q->withTrashed()
                     ->with([
                         'epp',
-                        'imagenes' => function ($q2) {
-                            $q2->orderBy('orden', 'asc');
-                        },
                     ]);
             },
         ])->find($pedidoId);
