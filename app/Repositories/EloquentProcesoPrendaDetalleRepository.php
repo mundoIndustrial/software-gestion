@@ -166,11 +166,18 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
      */
     private function mapToDomain(ProcesoPrendaDetalleModel $model): ProcesoPrendaDetalle
     {
+        // Decodificar ubicaciones si es string JSON
+        $ubicaciones = $model->ubicaciones;
+        if (is_string($ubicaciones)) {
+            $ubicaciones = json_decode($ubicaciones, true) ?? [];
+        }
+        $ubicaciones = is_array($ubicaciones) ? $ubicaciones : [];
+
         return new ProcesoPrendaDetalle(
             id: $model->id,
             prendaPedidoId: $model->prenda_pedido_id,
             tipoProcesoId: $model->tipo_proceso_id,
-            ubicaciones: $model->ubicaciones ?? [],
+            ubicaciones: $ubicaciones,
             observaciones: $model->observaciones,
             tallasDama: $model->tallas_dama,
             tallasCalabrero: $model->tallas_caballero,

@@ -618,7 +618,7 @@ class ProcesosPrendaDetalleController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo anulado correctamente',
-                'data' => $procesoActualizado->toArray(),
+                'data' => (array) $procesoActualizado,
             ]);
 
         } catch (\DomainException $e) {
