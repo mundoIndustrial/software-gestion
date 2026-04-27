@@ -27,15 +27,7 @@
 </style>
 @endpush
 
-<!-- Overlay de carga -->
-<div id="bodega-loading-overlay" role="status" aria-live="polite" aria-label="Cargando detalles del pedido">
-    <div style="text-align: center;">
-        <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
-            <span class="sr-only">Cargando...</span>
-        </div>
-        <p style="margin-top: 0.75rem; color: #555; font-size: 0.95rem; font-weight: 500;">Cargando detalles del pedido...</p>
-    </div>
-</div>
+{{-- Overlay de carga removido --}}
 
 @section('content')
 <div class="min-h-screen bg-white">
@@ -111,7 +103,7 @@
                                     <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
                                         <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
                                            class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors"
-                                           onclick="mostrarOverlayPedido(event)">
+                                           onclick="abrirDetallePedidoInline(event, {{ $pedidoData['id'] }})">
                                             <span class="material-symbols-rounded text-base">visibility</span>
                                         </a>
                                         <button type="button"
@@ -192,6 +184,20 @@
             @endif
         </div>
     </div>
+</div>
+
+<!-- Drawer: Detalle de pedido inline (sin recargar la pestaña) -->
+<div id="pedidoDetalleDrawer" class="fixed inset-0 z-[10050] hidden" aria-hidden="true">
+    <div id="pedidoDetalleDrawerBackdrop" class="absolute inset-0 bg-black/40"></div>
+    <aside class="absolute right-0 top-0 h-full w-full bg-white shadow-2xl flex flex-col">
+        <div class="relative flex-1">
+            {{-- Loading overlay removido para ver contenido mientras carga --}}
+            <iframe id="pedidoDetalleIframe"
+                    title="Detalle del pedido"
+                    class="w-full h-full border-0"
+                    loading="eager"></iframe>
+        </div>
+    </aside>
 </div>
 
 <!-- Botón flotante para limpiar filtros -->
@@ -949,6 +955,13 @@ function mostrarOverlayPedido(event) {
     event.preventDefault();
     console.log('[BODEGA] 1️⃣ Click en botón "Ver"');
 
+    // Marcar transición para que la vista show no duplique el overlay.
+    try {
+        sessionStorage.setItem('bodega:from-list-transition', '1');
+    } catch (e) {
+        console.warn('[BODEGA] No se pudo guardar flag de transición en sessionStorage');
+    }
+
     const overlay = document.getElementById('bodega-loading-overlay');
     if (overlay) {
         console.log('[BODEGA] 2️⃣ Overlay encontrado, agregando clase is-visible');
@@ -965,5 +978,75 @@ function mostrarOverlayPedido(event) {
         window.location.href = href;
     }, 50);
 }
+
+function abrirDetallePedidoInline(event, pedidoId) {
+    event.preventDefault();
+
+    const target = event.currentTarget;
+    const href = target?.getAttribute('href');
+    const drawer = document.getElementById('pedidoDetalleDrawer');
+    const iframe = document.getElementById('pedidoDetalleIframe');
+    const loading = document.getElementById('pedidoDetalleDrawerLoading');
+
+    if (!href || !drawer || !iframe || !loading) {
+        console.warn('[BODEGA] Drawer no disponible, usando navegación tradicional');
+        mostrarOverlayPedido(event);
+        return;
+    }
+
+    console.log('[BODEGA INLINE] Abriendo detalle inline del pedido:', pedidoId);
+
+    drawer.classList.remove('hidden');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    loading.style.display = 'flex';
+    iframe.onload = function() {
+        loading.style.display = 'none';
+        console.log('[BODEGA INLINE] Detalle completo cargado en panel (misma vista show)');
+    };
+
+    const iframeUrl = new URL(href, window.location.origin);
+    iframeUrl.searchParams.set('embed', '1');
+    iframe.src = iframeUrl.toString();
+}
+
+function cerrarDetallePedidoInline() {
+    const drawer = document.getElementById('pedidoDetalleDrawer');
+    const iframe = document.getElementById('pedidoDetalleIframe');
+    const loading = document.getElementById('pedidoDetalleDrawerLoading');
+
+    if (!drawer) return;
+
+    drawer.classList.add('hidden');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+
+    if (iframe) iframe.src = 'about:blank';
+    if (loading) loading.style.display = 'flex';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const backdrop = document.getElementById('pedidoDetalleDrawerBackdrop');
+
+    if (backdrop) {
+        backdrop.addEventListener('click', cerrarDetallePedidoInline);
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const drawer = document.getElementById('pedidoDetalleDrawer');
+    if (drawer && !drawer.classList.contains('hidden')) {
+        cerrarDetallePedidoInline();
+    }
+});
+
+// Escuchar postMessage desde el iframe para cerrar el drawer
+window.addEventListener('message', function(event) {
+    if (event.data.action === 'cerrarDrawerPedido') {
+        cerrarDetallePedidoInline();
+    }
+});
 </script>
 @endsection
