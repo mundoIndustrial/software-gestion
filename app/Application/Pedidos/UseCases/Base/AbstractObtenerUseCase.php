@@ -178,11 +178,6 @@ abstract class AbstractObtenerUseCase
         // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
         if ($esCortador && !$esApiOperario) {
             $queryBuilder->where('de_bodega', false);
-            
-            \Log::info('[AbstractObtenerUseCase::obtenerPrendas] Filtrando prendas de bodega para CORTADOR', [
-                'pedido_id' => $pedidoId,
-                'usuario' => $usuario->name,
-            ]);
         }
 
         $prendas = $queryBuilder->with([
@@ -222,49 +217,19 @@ abstract class AbstractObtenerUseCase
             })
             ->toArray();
         
-        // DEBUG: Verificar datos de entrega específicamente
-        foreach ($prendas as $index => $prenda) {
-            if (isset($prenda['entrega'])) {
-                \Log::debug("[obtenerPrendas] Prenda {$index} - Datos de entrega:", [
-                    'prenda_id' => $prenda['id'],
-                    'entrega_existe' => !empty($prenda['entrega']),
-                    'entregado' => $prenda['entrega']['entregado'] ?? null,
-                    'usuario_id' => $prenda['entrega']['usuario_id'] ?? null,
-                    'usuario_datos' => $prenda['entrega']['usuario'] ?? null,
-                    'usuario_nombre' => $prenda['entrega']['usuario']['name'] ?? null
-                ]);
-            } else {
-                \Log::debug("[obtenerPrendas] Prenda {$index} - Sin datos de entrega");
-            }
-        }
-        
-        \Log::debug('[obtenerPrendas] QUERY RESULT', [
-            'pedido_id' => $pedidoId,
-            'prendas_count' => count($prendas),
-            'prendas' => $prendas
-        ]);
 
         // Agregar telas_array a cada prenda construido desde coloresTelas
         // y asegurar que de_bodega sea incluido
         foreach ($prendas as &$prenda) {
             $telasArray = [];
-            
-            // DEBUG: Verificar cuál es la clave exacta en el array
+
+            // Verificar cuál es la clave exacta en el array
             $coloresTelasKey = null;
             if (isset($prenda['colores_telas'])) {
                 $coloresTelasKey = 'colores_telas';
             } elseif (isset($prenda['coloresTelas'])) {
                 $coloresTelasKey = 'coloresTelas';
             }
-            
-            \Log::debug('[obtenerPrendas] Buscando colores_telas', [
-                'prenda_id' => $prenda['id'],
-                'claves_disponibles' => array_keys($prenda),
-                'clave_encontrada' => $coloresTelasKey,
-                'tiene_colores_telas' => isset($prenda['colores_telas']),
-                'tiene_coloresTelas' => isset($prenda['coloresTelas']),
-                'de_bodega' => $prenda['de_bodega'] ?? 'NO EXISTE'
-            ]);
             
             if ($coloresTelasKey && isset($prenda[$coloresTelasKey]) && is_array($prenda[$coloresTelasKey])) {
                 foreach ($prenda[$coloresTelasKey] as $colorTela) {
@@ -293,12 +258,6 @@ abstract class AbstractObtenerUseCase
                         'imagenes' => $fotos
                     ];
                 }
-                
-                \Log::debug('[obtenerPrendas] telas_array construido', [
-                    'prenda_id' => $prenda['id'],
-                    'cantidad_telas' => count($telasArray),
-                    'telas' => $telasArray
-                ]);
             }
             
             $prenda['telas_array'] = $telasArray;
@@ -336,8 +295,6 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerProcesos(int $pedidoId): array
     {
-        \Log::info('[AbstractObtenerUseCase] Buscando procesos del pedido', ['pedidoId' => $pedidoId]);
-        
         $procesosModelos = \App\Models\PedidosProcesosPrendaDetalle::whereHas('prenda', function ($q) use ($pedidoId) {
             $q->where('pedido_produccion_id', $pedidoId);
         })
@@ -348,20 +305,14 @@ abstract class AbstractObtenerUseCase
         // Transformar procesos para convertir tallas al formato correcto
         $procesos = $procesosModelos->map(function ($proc) {
             $procArray = $proc->toArray();
-            
-            \Log::info('[AbstractObtenerUseCase] Proceso antes de transformar tallas', [
-                'proceso_id' => $procArray['id'],
-                'tallas_crudas' => $procArray['tallas'] ?? 'no encontradas',
-                'cantidad_tallas_crudas' => isset($procArray['tallas']) ? count($procArray['tallas']) : 0
-            ]);
-            
+
             // Transformar tallas de array a objeto indexado por genero
             $tallasTransformadas = [
                 'dama' => [],
                 'caballero' => [],
                 'unisex' => []
             ];
-            
+
             if (isset($procArray['tallas']) && is_array($procArray['tallas'])) {
                 foreach ($procArray['tallas'] as $talla) {
                     $genero = strtolower($talla['genero'] ?? 'dama');
@@ -371,23 +322,10 @@ abstract class AbstractObtenerUseCase
                     $tallasTransformadas[$genero][$talla['talla']] = (int)$talla['cantidad'];
                 }
             }
-            
-            \Log::info('[AbstractObtenerUseCase] Proceso después de transformar tallas', [
-                'proceso_id' => $procArray['id'],
-                'tallas_transformadas' => $tallasTransformadas,
-                'cantidad_dama' => count($tallasTransformadas['dama']),
-                'cantidad_caballero' => count($tallasTransformadas['caballero']),
-                'cantidad_unisex' => count($tallasTransformadas['unisex'])
-            ]);
-            
+
             $procArray['tallas'] = $tallasTransformadas;
             return $procArray;
         })->toArray();
-
-        \Log::info('[AbstractObtenerUseCase] Procesos encontrados', [
-            'pedidoId' => $pedidoId,
-            'cantidad' => count($procesos)
-        ]);
 
         return $procesos;
     }

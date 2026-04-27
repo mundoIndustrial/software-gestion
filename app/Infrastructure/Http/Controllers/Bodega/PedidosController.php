@@ -405,40 +405,38 @@ class PedidosController extends Controller
     public function show(Request $request, $pedidoId)
     {
         try {
+            // Activar performance tracking si se solicita vía header
+            $enablePerf = $request->header('X-Perf-Debug') === 'true';
+            $tracker = null;
+
+            if ($enablePerf) {
+                $tracker = new \App\Support\QueryPerformanceTracker();
+                \DB::listen(function ($event) use ($tracker) {
+                    $tracker->recordQuery($event);
+                });
+                $tracker->startPhase('obtenerDetallePedido');
+            }
+
             // Buscar por ID, no por numero_pedido
             $pedidoProduccion = PedidoProduccion::findOrFail((int) $pedidoId);
-            
+
             // Marcar pedido como visto por numero_pedido.
             PedidoProduccion::where('numero_pedido', $pedidoProduccion->numero_pedido)
                 ->update(['viewed_at' => Carbon::now()]);
-            
+
             $datos = $this->bodegaPedidoService->obtenerDetallePedido((int) $pedidoProduccion->numero_pedido, false, true);
-            
-            \Log::debug('[PedidosController@show] Datos obtenidos del servicio', [
-                'items_count' => count($datos['items'] ?? []),
-                'items_tipos' => array_unique(array_map(fn($item) => $item['tipo'] ?? 'unknown', $datos['items'] ?? [])),
-                'items_areas' => array_unique(array_map(fn($item) => $item['area'] ?? 'null', $datos['items'] ?? [])),
-                'rolesDelUsuario' => $this->getUserRoles(),
-            ]);
-            
+
+            if ($tracker) {
+                $tracker->endPhase('obtenerDetallePedido');
+                $tracker->startPhase('procesarDatos');
+            }
+
             // Verificar si el usuario es de solo lectura
             $rolesDelUsuario = $this->getUserRoles();
             $esReadOnly = $this->isReadOnly();
-            
-            // Log antes de filtrar
-            $itemsAntesDeFiltro = $datos['items'] ?? [];
-            \Log::debug('[PedidosController@show] Items ANTES de filtro', [
-                'count' => count($itemsAntesDeFiltro),
-                'items' => array_map(fn($item) => [
-                    'tipo' => $item['tipo'] ?? 'unknown',
-                    'area' => $item['area'] ?? 'null',
-                    'estado_bodega' => $item['estado_bodega'] ?? 'null'
-                ], $itemsAntesDeFiltro)
-            ]);
-            
+
             // Filtrar items según el rol del usuario
             if (in_array('EPP-Bodega', $rolesDelUsuario)) {
-                // EPP-Bodega: solo ver EPP pendientes
                 if (isset($datos['items']) && is_array($datos['items'])) {
                     $datos['items'] = array_filter($datos['items'], function($item) {
                         return ($item['area'] ?? '') === 'EPP' && ($item['estado_bodega'] ?? '') === 'Pendiente';
@@ -446,7 +444,6 @@ class PedidosController extends Controller
                     $datos['items'] = array_values($datos['items']);
                 }
             } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
-                // Costura-Bodega: solo ver Costura pendientes
                 if (isset($datos['items']) && is_array($datos['items'])) {
                     $datos['items'] = array_filter($datos['items'], function($item) {
                         return ($item['area'] ?? '') === 'Costura' && ($item['estado_bodega'] ?? '') === 'Pendiente';
@@ -454,21 +451,33 @@ class PedidosController extends Controller
                     $datos['items'] = array_values($datos['items']);
                 }
             }
-            
-            // Log después de filtrar
-            \Log::debug('[PedidosController@show] Items DESPUÉS de filtro', [
-                'count' => count($datos['items'] ?? []),
-                'filtro_aplicado' => in_array('EPP-Bodega', $rolesDelUsuario) ? 'EPP-Bodega' : (in_array('Costura-Bodega', $rolesDelUsuario) ? 'Costura-Bodega' : 'ninguno')
-            ]);
-            
-            // Agregar la variable esReadOnly a los datos
+
             $datos['esReadOnly'] = $esReadOnly;
-            
+
+            if ($tracker) {
+                $tracker->endPhase('procesarDatos');
+                $tracker->logFull();
+            }
+
+            if ($request->boolean('inline') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $datos,
+                ]);
+            }
+
             return view('bodega.show', $datos);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@show: ' . $e->getMessage());
-            
+
+            if ($request->boolean('inline') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cargar los detalles del pedido: ' . $e->getMessage(),
+                ], 500);
+            }
+
             return back()->with('error', 'Error al cargar los detalles del pedido: ' . $e->getMessage());
         }
     }

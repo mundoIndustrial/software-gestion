@@ -56,10 +56,6 @@ class BodegaPedidoDetalleService
 
                 if (isset($datosCompletos->epps) && is_array($datosCompletos->epps)) {
                     $eppsProcesados = $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
-                    \Log::debug('[procesarItemsPedido] EPPs procesados', [
-                        'cantidad' => count($eppsProcesados),
-                        'areas' => array_map(fn ($epp) => $epp['area'] ?? 'null', $eppsProcesados),
-                    ]);
                     $items = array_merge($items, $eppsProcesados);
                 }
             } catch (\Exception $e) {
@@ -159,13 +155,6 @@ class BodegaPedidoDetalleService
         $hijosPorPadre = $todosLosEppsBD->groupBy('homologado_de');
         $eppsEnriquecidosPorId = collect($epps)->keyBy(fn ($epp) => $epp['pedido_epp_id'] ?? null);
 
-        \Log::debug('[procesarEpps] Iniciando procesamiento', [
-            'cantidad_epps' => count($epps),
-            'cantidad_epps_bd_con_trashed' => $todosLosEppsBD->count(),
-            'numero_pedido' => $recibo->numero_pedido,
-            'epps_ids' => array_map(fn ($epp) => $epp['pedido_epp_id'] ?? 'null', $epps),
-        ]);
-
         $eppsOriginales = $todosLosEppsBD->whereNull('homologado_de')->values();
         foreach ($eppsOriginales as $eppOriginal) {
             $pedidoEppIdOriginal = (int) $eppOriginal->id;
@@ -179,13 +168,8 @@ class BodegaPedidoDetalleService
             // Si el EPP está eliminado (deleted_at IS NOT NULL) y no tiene versiones más nuevas
             // (es decir, no fue homologado a otro EPP), entonces no debe aparecer en la vista
             $tieneVersionesMasNuevas = !$hijosPorPadre->get($pedidoEppIdActual, collect())->isEmpty();
-            
+
             if ($pedidoEppActual->deleted_at !== null && !$tieneVersionesMasNuevas) {
-                \Log::info('[procesarEpps] 🗑️ EPP eliminado sin homologación - No se mostrará', [
-                    'epp_id' => $pedidoEppIdActual,
-                    'deleted_at' => $pedidoEppActual->deleted_at,
-                    'numero_pedido' => $recibo->numero_pedido,
-                ]);
                 continue;
             }
 
@@ -204,18 +188,7 @@ class BodegaPedidoDetalleService
                 $pedidoProduccion,
                 $historialeHomologaciones
             );
-
-            \Log::debug('[procesarEpps] Cadena EPP procesada con item actual', [
-                'pedido_epp_id_original' => $pedidoEppIdOriginal,
-                'pedido_epp_id_actual' => $pedidoEppIdActual,
-                'historial_cambios' => count($historialeHomologaciones),
-            ]);
         }
-
-        \Log::debug('[procesarEpps] Resultado final', [
-            'items_creados' => count($items),
-            'numero_pedido' => $recibo->numero_pedido,
-        ]);
 
         return $items;
     }
@@ -639,14 +612,6 @@ class BodegaPedidoDetalleService
             'updated_at' => $bodegaDataBase?->updated_at ? Carbon::parse($bodegaDataBase->updated_at)->format('Y-m-d H:i:s') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
-
-        \Log::debug('[obtenerDatosBodega] Resultado final', [
-            'numeroPedido' => $numeroPedido,
-            'talla' => $talla,
-            'area' => $resultado[WarehouseConstants::FIELD_AREA],
-            'estado_bodega' => $resultado[WarehouseConstants::FIELD_ESTADO_BODEGA],
-            'bodegaDataBase_exists' => $bodegaDataBase ? true : false,
-        ]);
 
         return $resultado;
     }
