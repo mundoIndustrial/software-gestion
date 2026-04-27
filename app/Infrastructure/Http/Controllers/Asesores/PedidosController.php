@@ -120,6 +120,14 @@ class PedidosController
                 'pedido_id' => $pedido->id,
             ]);
 
+            $novedades = $pedido->getAttribute('novedades');
+            Log::info('[PedidosController] ENVIANDO AL FRONTEND', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->getAttribute('numero_pedido'),
+                'novedades_length' => strlen($novedades ?? ''),
+                'ultima_novedad_preview' => substr($novedades ?? '', -150),
+            ]);
+
             return $this->json($pedido);
         } catch (\Exception $e) {
             Log::error('[PedidosController] Error obteniendo pedido', [

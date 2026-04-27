@@ -261,10 +261,23 @@ class PrendasPedidoController
                 'prenda_id' => $prenda->id,
             ]);
 
+            // Fetch updated pedido with novedades to return to frontend
+            $pedidoActualizado = \App\Models\PedidoProduccion::find($id);
+            if ($pedidoActualizado) {
+                Log::info('[PrendasPedidoController] Pedido actualizado encontrado', [
+                    'pedido_id' => $id,
+                    'novedades_length' => strlen($pedidoActualizado->novedades ?? ''),
+                    'ultima_novedad_preview' => substr($pedidoActualizado->novedades ?? '', -150),
+                ]);
+            }
+
             return $this->json([
                 'success' => true,
                 'message' => 'Prenda actualizada correctamente en la base de datos',
                 'prenda'  => PrendaPedidoResource::make($prenda)->resolve(),
+                'data' => [
+                    'novedades' => $pedidoActualizado?->novedades ?? '',
+                ],
             ]);
 
         } catch (ValidationException $e) {

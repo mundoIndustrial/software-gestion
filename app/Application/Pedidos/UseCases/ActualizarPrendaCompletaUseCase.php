@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Domain\Pedidos\UseCases\ActualizarPrendaCompletaUseCaseContract;
 
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
+use App\Application\Pedidos\DTOs\PrendaBeforeStateSnapshot;
 use App\Application\Pedidos\Services\PrendaPostUpdateHydrationService;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
@@ -13,6 +14,7 @@ use App\Domain\Pedidos\Repositories\PrendaPedidoTallaReadRepository;
 use App\Domain\Pedidos\Services\PrendaTransformerServiceContract;
 use App\Infrastructure\Services\Pedidos\PrendaAsignacionesColoresUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaColoresTelasUpdaterService;
+use App\Infrastructure\Services\Pedidos\PrendaComparisonService;
 use App\Infrastructure\Services\Pedidos\PrendaFotosTelasUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaImagenDeletionService;
 use App\Infrastructure\Services\Pedidos\PrendaNovedadService;
@@ -49,6 +51,7 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         private readonly PrendaFotosTelasUpdaterService $prendaFotosTelasUpdaterService,
         private readonly PrendaProcesosUpdaterService $prendaProcesosUpdaterService,
         private readonly PrendaNovedadService $prendaNovedadService,
+        private readonly PrendaComparisonService $prendaComparisonService,
         private readonly PrendaPedidoTallaReadRepository $prendaPedidoTallaReadRepository,
         private readonly PrendaPedidoReadRepository $prendaPedidoReadRepository,
         private readonly PedidoProduccionReadService $pedidoProduccionReadService,
@@ -59,11 +62,16 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
     {
         // CENTRALIZADO: Validar prenda existe (trait)
         $prenda = $this->prendaPedidoReadRepository->obtenerPorId($dto->prendaId);
-        
+
         $this->validarObjetoExiste(
             $prenda,
             'Prenda',
             $dto->prendaId
+        );
+
+        // Capturar estado antes como arrays inmutables (para evitar cambios por cachés de Eloquent)
+        $beforeSnapshot = PrendaBeforeStateSnapshot::fromPrenda(
+            $prenda->load('tallas', 'fotos', 'coloresTelas', 'procesos')
         );
 
         \Log::info('[ActualizarPrendaCompletaUseCase] Iniciando actualizacion', [
@@ -118,18 +126,27 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
             $dto->fotosProcesoNuevo ?? [],
             $dto->fotosProcesoTallasNuevo ?? []
         );
-        // 8. Guardar novedad en pedido_produccion
-        $this->prendaNovedadService->guardarNovedadModificacion($prenda, $dto->novedad);
+
+        // 8. Generar resumen de cambios automático y guardar novedad
+        $prenda = PrendaPedido::find($prenda->id)->load('tallas', 'fotos', 'coloresTelas', 'procesos');
+        $resumenCambios = $this->prendaComparisonService->generarResumenCambios(
+            $beforeSnapshot,
+            $prenda
+        );
+
+        $novedadFinal = $resumenCambios ?? $dto->novedad;
+        $this->prendaNovedadService->guardarNovedadModificacion($prenda, $novedadFinal);
+
         // 9. Mantener campo explícito de tipo de flujo de tallas sincronizado
         $this->sincronizarTipoFlujoTallasPersistido($prenda);
-        
+
         // Tocar el updated_at del pedido padre (modificar prenda = actualización del pedido)
         $prenda->pedidoProduccion()->touch();
-        
+
         // DESELECCIONAR PEDIDO para todos los supervisores cuando se actualiza una prenda
         // Esto asegura que cuando se recargue la tabla el pedido no esté marcado
         $this->pedidoProduccionReadService->deselectOrderForAllUsers($prenda->pedido_produccion_id);
-        
+
         return $this->postUpdateHydrationService->hidratarParaRespuesta($prenda);
     }
 

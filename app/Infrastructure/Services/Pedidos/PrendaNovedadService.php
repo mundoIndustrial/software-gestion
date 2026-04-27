@@ -110,8 +110,27 @@ class PrendaNovedadService
         $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Modifico la prenda \"{$nombrePrenda}\" - {$textoNovedad}";
         $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : '') . $novedadConInfo;
 
+        Log::info('[PrendaNovedadService] ANTES DE GUARDAR', [
+            'prenda_id' => $prenda->id,
+            'pedido_id' => $pedido->id,
+            'novedades_actuales' => $novedadesActuales,
+            'novedad_a_agregar' => $textoNovedad,
+            'novedad_con_info' => $novedadConInfo,
+            'novedades_finales_length' => strlen($novedadesActualizadas),
+        ]);
+
         $pedido->update([
             'novedades' => $novedadesActualizadas,
+        ]);
+
+        // VERIFICAR QUÉ SE GUARDÓ
+        $pedidoRecargado = $pedido->fresh();
+        Log::info('[PrendaNovedadService] DESPUÉS DE GUARDAR - VERIFICACIÓN', [
+            'prenda_id' => $prenda->id,
+            'pedido_id' => $pedido->id,
+            'novedades_en_bd' => $pedidoRecargado->novedades,
+            'novedades_length' => strlen($pedidoRecargado->novedades ?? ''),
+            'ultima_linea' => substr($pedidoRecargado->novedades ?? '', -100),
         ]);
 
         Log::info('[PrendaNovedadService] Novedad de modificacion guardada', [

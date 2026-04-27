@@ -190,13 +190,21 @@
                 ...window.datosEdicionPedido.prendas[prendaIndex],
                 ...prendaActualizada,
             };
-            return;
+        } else {
+            Object.assign(window.datosEdicionPedido.prendas[prendaIndex], datos);
+            if (datos.nombre_prenda) {
+                window.datosEdicionPedido.prendas[prendaIndex].nombre = datos.nombre_prenda;
+                window.datosEdicionPedido.prendas[prendaIndex].nombre_prenda = datos.nombre_prenda;
+            }
         }
 
-        Object.assign(window.datosEdicionPedido.prendas[prendaIndex], datos);
-        if (datos.nombre_prenda) {
-            window.datosEdicionPedido.prendas[prendaIndex].nombre = datos.nombre_prenda;
-            window.datosEdicionPedido.prendas[prendaIndex].nombre_prenda = datos.nombre_prenda;
+        // Update pedido novedades with the fresh data from backend
+        if (result?.data?.novedades) {
+            window.datosEdicionPedido.novedades = result.data.novedades;
+            console.log('[PedidosAdapter] Novedades actualizadas desde backend:', {
+                novedades_length: result.data.novedades.length,
+                ultima_novedad_preview: result.data.novedades.slice(-150)
+            });
         }
     }
 

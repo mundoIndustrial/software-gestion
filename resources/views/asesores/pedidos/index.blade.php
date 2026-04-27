@@ -1442,36 +1442,15 @@
             novedades = 'Sin novedades registradas';
         }
 
-        // Procesar novedades: dividir por '\n\n' para obtener bloques
+        // Dividir por '\n\n' para obtener bloques (cada novedad es un bloque)
         let bloques = novedades.split('\n\n').filter(b => b.trim());
         let htmlContenido = '';
 
         // Invertir bloques para mostrar el más reciente primero
         bloques.reverse();
 
+        // Renderizar cada bloque tal como está (sin intentar parsear formato específico)
         bloques.forEach((bloque, index) => {
-            const lineas = bloque.split('\n').filter(l => l.trim());
-            if (lineas.length === 0) return;
-
-            const primerLinea = lineas[0];
-            const restoLineas = lineas.slice(1);
-
-            // Intentar extraer información del formato [Usuario - Rol - Fecha]
-            const matchInfo = primerLinea.match(/\[(.*?)\](.*)$/);
-            let info = '';
-            let descripcion = '';
-
-            if (matchInfo) {
-                info = matchInfo[1];
-                descripcion = matchInfo[2].trim() || restoLineas.join('\n').trim();
-            } else {
-                descripcion = bloque.trim();
-            }
-
-            const infoSafe = escapeHtml(info);
-            const descripcionSafe = escapeHtml(descripcion);
-
-            // Estilo alternado para mejor visualización
             const bgColor = index % 2 === 0 ? '#dbeafe' : '#f0f9ff';
             const borderColor = index % 2 === 0 ? '#0284c7' : '#06b6d4';
 
@@ -1487,20 +1466,6 @@
                     width: 100%;
                     box-sizing: border-box;
                 ">
-                    ${info ? `
-                        <div style="
-                            font-weight: 600;
-                            color: #0c4a6e;
-                            font-size: 0.85rem;
-                            margin-bottom: 0.5rem;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                        ">
-                            <span style="font-size: 1rem;">👤</span>
-                            <span>${infoSafe}</span>
-                        </div>
-                    ` : ''}
                     <div style="
                         color: #1e40af;
                         line-height: 1.5;
@@ -1509,29 +1474,11 @@
                         overflow-wrap: break-word;
                         white-space: pre-wrap;
                     ">
-                        ${descripcionSafe}
+                        ${escapeHtml(bloque.trim())}
                     </div>
                 </div>
             `;
         });
-
-        // Si no hay bloques procesados, mostrar contenido como está
-        if (htmlContenido === '') {
-            htmlContenido = `
-                <div style="
-                    padding: 1rem;
-                    background: #f0f9ff;
-                    border-left: 4px solid #06b6d4;
-                    border-radius: 6px;
-                    color: #1e40af;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                    white-space: pre-wrap;
-                ">
-                    ${escapeHtml(novedades)}
-                </div>
-            `;
-        }
 
         const numeroPedidoSafe = escapeHtml(numeroPedido);
 

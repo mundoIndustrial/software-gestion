@@ -38,13 +38,6 @@ final class PrendaEdicionBloqueoService
         'PENDIENTE_PLOOTER',
         'INSUMOS_PEDIDOS',
     ];
-    private const TIPOS_PROCESO_BODEGA_BLOQUEO = [
-        'BORDADO',
-        'ESTAMPADO',
-        'DTF',
-        'SUBLIMADO',
-        'REFLECTIVO',
-    ];
 
     private const ESTADOS_PEDIDO_HABILITAN_EDICION = [
         'DEVUELTO_A_ASESORA',
@@ -71,6 +64,15 @@ final class PrendaEdicionBloqueoService
         }
 
         if ($this->pedidoBloqueadoPorEstado($estadoPedido)) {
+            $estadoNormalizado = $this->normalizarTexto((string) $estadoPedido);
+
+            if ($estadoNormalizado === 'EN_EJECUCION') {
+                $prendaBodegaSinProcesos = $this->esPrendaBodegaSinProcesos($prendaId);
+                if ($prendaBodegaSinProcesos) {
+                    return null;
+                }
+            }
+
             return [
                 'bloqueada' => true,
                 'puede_editar' => false,
@@ -362,49 +364,31 @@ final class PrendaEdicionBloqueoService
             return null;
         }
 
-        $procesoBloqueante = DB::table('pedidos_procesos_prenda_detalles as ppd')
-            ->join('tipos_procesos as tp', 'tp.id', '=', 'ppd.tipo_proceso_id')
+        $procesoAsociado = DB::table('pedidos_procesos_prenda_detalles as ppd')
             ->where('ppd.prenda_pedido_id', $prendaId)
             ->whereNull('ppd.deleted_at')
-            ->whereRaw('UPPER(TRIM(ppd.estado)) = ?', ['APROBADO'])
-            ->whereIn(DB::raw('UPPER(TRIM(tp.nombre))'), self::TIPOS_PROCESO_BODEGA_BLOQUEO)
-            ->selectRaw('UPPER(TRIM(tp.nombre)) as tipo_proceso')
+            ->select('ppd.id', 'ppd.estado')
             ->first();
 
-        if (!$procesoBloqueante) {
+        if (!$procesoAsociado) {
             return null;
         }
 
-        $tipoProceso = strtoupper(trim((string) $procesoBloqueante->tipo_proceso));
-        $consecutivo = DB::table('consecutivos_recibos_pedidos')
-            ->where('pedido_produccion_id', $pedidoId)
-            ->where('prenda_id', $prendaId)
-            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoProceso])
-            ->whereNotNull('consecutivo_actual')
-            ->orderByDesc('id')
-            ->first();
+        $mensaje = "Esta prenda de bodega ya tiene procesos asociados, por ende no se puede editar. Comunicate con el lider de produccion.";
 
-        if (!$consecutivo) {
-            return null;
-        }
-
-        $tipoVisible = ucwords(strtolower($tipoProceso));
-        $mensaje = "Esta prenda de bodega ya tiene proceso {$tipoVisible} aprobado y consecutivo generado, por ende no se puede editar. Comunicate con el lider de produccion.";
-
-        Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_BODEGA_PROCESO_APROBADO', [
+        Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_BODEGA_TIENE_PROCESOS', [
             'pedido_id' => $pedidoId,
             'prenda_id' => $prendaId,
-            'tipo_proceso' => $tipoProceso,
-            'consecutivo' => $consecutivo->consecutivo_actual ?? null,
+            'estado_proceso' => $procesoAsociado->estado ?? null,
         ]);
 
         return [
             'bloqueada' => true,
             'puede_editar' => false,
             'mensaje' => $mensaje,
-            'consecutivo' => $consecutivo->consecutivo_actual ?? null,
-            'estado' => $consecutivo->estado ?? null,
-            'area' => $this->normalizarArea($consecutivo->area ?? null),
+            'consecutivo' => null,
+            'estado' => $procesoAsociado->estado ?? null,
+            'area' => null,
             'estado_pedido' => $this->obtenerEstadoPedido($pedidoId),
         ];
     }
@@ -417,6 +401,13 @@ final class PrendaEdicionBloqueoService
             return null;
         }
 
+        $prendaActual = DB::table('prendas_pedido')
+            ->where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereNull('deleted_at')
+            ->select('de_bodega')
+            ->first();
+
         $pedidoTienePrendasDeBodega = DB::table('prendas_pedido')
             ->where('pedido_produccion_id', $pedidoId)
             ->whereNull('deleted_at')
@@ -426,6 +417,17 @@ final class PrendaEdicionBloqueoService
         if ($pedidoTienePrendasDeBodega) {
             if ($this->prendaTieneConsecutivoDevueltoAsesor($pedidoId, $prendaId)) {
                 return null;
+            }
+
+            if ($prendaActual && (int) ($prendaActual->de_bodega ?? 0) === 1) {
+                $tieneProcesos = DB::table('pedidos_procesos_prenda_detalles')
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+                if (!$tieneProcesos) {
+                    return null;
+                }
             }
 
             $mensaje = 'Este pedido tiene al menos una prenda de bodega. Solo se pueden editar o eliminar prendas cuando el pedido este en DEVUELTO_A_ASESORA/DEVUELTO_ASESOR o cuando la prenda tenga consecutivo DEVUELTO.';
@@ -504,5 +506,25 @@ final class PrendaEdicionBloqueoService
         }
 
         return false;
+    }
+
+    private function esPrendaBodegaSinProcesos(int $prendaId): bool
+    {
+        $prenda = DB::table('prendas_pedido')
+            ->where('id', $prendaId)
+            ->whereNull('deleted_at')
+            ->select('de_bodega')
+            ->first();
+
+        if (!$prenda || (int) ($prenda->de_bodega ?? 0) !== 1) {
+            return false;
+        }
+
+        $tieneProcesos = DB::table('pedidos_procesos_prenda_detalles')
+            ->where('prenda_pedido_id', $prendaId)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        return !$tieneProcesos;
     }
 }

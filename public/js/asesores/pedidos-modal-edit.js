@@ -199,13 +199,21 @@ async function guardarCambiosPedido(pedidoId, datosActualizados) {
  */
 function actualizarFilaTabla(pedidoId, pedidoActualizado) {
     try {
+        console.log('[actualizarFilaTabla] FRONTEND RECIBIENDO', {
+            pedido_id: pedidoId,
+            numero_pedido: pedidoActualizado.numero_pedido,
+            novedades: pedidoActualizado.novedades,
+            novedades_length: pedidoActualizado.novedades?.length || 0,
+            ultima_novedad_preview: pedidoActualizado.novedades?.slice(-150) || 'sin novedades'
+        });
+
         // Buscar la fila correspondiente en la tabla
         const filas = document.querySelectorAll('[data-pedido-row]');
-        
+
         filas.forEach((fila) => {
             // Verificar si esta fila corresponde al pedido actualizado
             const btnEditarEnFila = fila.querySelector(`button[onclick*="editarPedido(${pedidoId})"]`);
-            
+
             if (btnEditarEnFila) {
                 // Actualizar cliente
                 const cellasCliente = fila.querySelectorAll('div');
@@ -213,11 +221,15 @@ function actualizarFilaTabla(pedidoId, pedidoActualizado) {
                 if (cellasCliente[indiceCliente]) {
                     cellasCliente[indiceCliente].textContent = pedidoActualizado.cliente || '-';
                 }
-                
+
                 // Actualizar novedades
                 let indiceNovedades = 6; // Índice aproximado de la celda de novedades
                 if (cellasCliente[indiceNovedades]) {
                     if (pedidoActualizado.novedades && pedidoActualizado.novedades.trim()) {
+                        console.log('[actualizarFilaTabla] ACTUALIZANDO CELDA DE NOVEDADES', {
+                            contenido: pedidoActualizado.novedades,
+                            length: pedidoActualizado.novedades.length
+                        });
                         cellasCliente[indiceNovedades].textContent = pedidoActualizado.novedades;
                         cellasCliente[indiceNovedades].style.cursor = 'pointer';
                         cellasCliente[indiceNovedades].onclick = function() {
