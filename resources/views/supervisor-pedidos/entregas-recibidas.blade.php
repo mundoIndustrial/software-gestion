@@ -265,7 +265,7 @@
                                     @php
                                         $fechaEntrega = $fila->fecha_entrega_movimiento ?? $fila->fecha_entrega;
                                     @endphp
-                                    <strong>{{ $fechaEntrega ? \Carbon\Carbon::parse($fechaEntrega)->format('d/m/Y H:i') : '-' }}</strong>
+                                    <strong>{{ $fechaEntrega ? \Carbon\Carbon::parse($fechaEntrega)->format('d/m/Y h:i A') : '-' }}</strong>
                                 </div>
                                 <div class="er-muted">{{ $fila->usuario_entrega ?? '-' }}</div>
                             </div>
@@ -273,7 +273,7 @@
                             <div style="border-top: 1px solid #e5e7eb; padding-top: 0.5rem;">
                                 <div style="font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">Recibido</div>
                                 <div>
-                                    <strong>{{ $fila->fecha_recibido ? \Carbon\Carbon::parse($fila->fecha_recibido)->format('d/m/Y H:i') : '-' }}</strong>
+                                    <strong>{{ $fila->fecha_recibido ? \Carbon\Carbon::parse($fila->fecha_recibido)->format('d/m/Y h:i A') : '-' }}</strong>
                                 </div>
                                 <div class="er-muted">{{ $fila->usuario_recibido ?? '-' }}</div>
                             </div>

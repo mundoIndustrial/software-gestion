@@ -1,9 +1,9 @@
-﻿// --- PedidoRepository.js ---
+// --- PedidoRepository.js ---
 /**
  * Domain Layer - Repository Interface
  * =====================================================
  * Define el contrato que deben cumplir todas las implementaciones
- * de acceso a datos para el modulo supervisor-pedidos.
+ * de acceso a datos para el módulo supervisor-pedidos.
  *
  * DDD Principle: El dominio no conoce detalles de infraestructura.
  */
@@ -20,7 +20,7 @@ class PedidoRepository {
         throw new Error('getFilterOptions() debe ser implementado por subclases');
     }
 
-    // ===== SELECCION =====
+    // ===== SELECCIÓN =====
 
     /**
      * Marca un pedido como seleccionado
@@ -48,10 +48,10 @@ class PedidoRepository {
         throw new Error('getSelections() debe ser implementado por subclases');
     }
 
-    // ===== EDICION DE PEDIDO =====
+    // ===== EDICIÓN DE PEDIDO =====
 
     /**
-     * Obtiene datos del pedido para edicion
+     * Obtiene datos del pedido para edición
      * @param {number|string} ordenId
      * @returns {Promise<{success: boolean, orden: Object, colores: Array, telas: Array}>}
      */
@@ -89,10 +89,10 @@ class PedidoRepository {
         throw new Error('calculateEstimatedDate() debe ser implementado por subclases');
     }
 
-    // ===== NAVEGACION AJAX =====
+    // ===== NAVEGACIÓN AJAX =====
 
     /**
-     * Obtiene contenido HTML de una pagina via AJAX
+     * Obtiene contenido HTML de una página via AJAX
      * @param {string} url
      * @returns {Promise<string>} HTML string
      */
@@ -139,8 +139,8 @@ if (typeof module !== 'undefined' && module.exports) {
 /**
  * Infrastructure Layer - PedidoApiRepository
  * =====================================================
- * Implementacion concreta del PedidoRepository usando SharedHttpClient.
- * Centraliza TODAS las llamadas API del modulo supervisor-pedidos.
+ * Implementación concreta del PedidoRepository usando SharedHttpClient.
+ * Centraliza TODAS las llamadas API del módulo supervisor-pedidos.
  *
  * Dependencias:
  *   - window.SharedHttpClient (shared/infrastructure/HttpClient.js)
@@ -160,7 +160,7 @@ class PedidoApiRepository extends PedidoRepository {
         return response?.data ?? response;
     }
 
-    // ===== SELECCION =====
+    // ===== SELECCIÓN =====
 
     async selectOrder(pedidoId) {
         const response = await this.http.post(`/api/supervisor-pedidos/seleccionar/${encodeURIComponent(pedidoId)}`, {});
@@ -184,7 +184,7 @@ class PedidoApiRepository extends PedidoRepository {
         return payload;
     }
 
-    // ===== EDICION DE PEDIDO =====
+    // ===== EDICIÓN DE PEDIDO =====
 
     async getOrderEditData(ordenId) {
         return await this.http.get(`/ordenes/${encodeURIComponent(ordenId)}/editar-pedido`);
@@ -204,7 +204,7 @@ class PedidoApiRepository extends PedidoRepository {
         });
     }
 
-    // ===== NAVEGACION AJAX =====
+    // ===== NAVEGACIÓN AJAX =====
 
     async fetchPageContent(url) {
         const sourceUrl = new URL(url, window.location.origin);
@@ -212,7 +212,7 @@ class PedidoApiRepository extends PedidoRepository {
         const response = await this.http.get(apiPath);
 
         if (!response?.success || !response?.data?.html) {
-            throw new Error('Respuesta invalida al cargar fragmento de Ordenes');
+            throw new Error('Respuesta inválida al cargar fragmento de órdenes');
         }
 
         return response.data.html;
@@ -224,14 +224,14 @@ class PedidoApiRepository extends PedidoRepository {
         const response = await this.http.get(apiPath);
 
         if (!response?.success || !response?.data) {
-            throw new Error('Respuesta invalida al cargar Ordenes');
+            throw new Error('Respuesta inválida al cargar órdenes');
         }
 
         return response.data;
     }
 }
 
-// Error especi­fico de infraestructura
+// Error específico de infraestructura
 class PedidoRepositoryError extends Error {
     constructor(message, originalError = null) {
         super(message);
@@ -253,11 +253,11 @@ if (typeof module !== 'undefined' && module.exports) {
 /**
  * Application Layer - FilterService
  * =====================================================
- * Logica de negocio para filtros de la tabla de pedidos.
+ * Lógica de negocio para filtros de la tabla de pedidos.
  * Gestiona estado de filtros en URL y carga opciones del servidor.
  *
  * Responsabilidades:
- *   - Leer/escribir parametros de filtro en la URL
+ *   - Leer/escribir parámetros de filtro en la URL
  *   - Cargar opciones de filtro desde el repositorio
  *   - Navegar con AJAX (SPA-like) dentro de supervisor-pedidos
  */
@@ -345,7 +345,7 @@ class FilterService {
      * Navega a una URL usando AJAX (reemplaza contenido del contenedor)
      * @param {string} urlString - URL destino
      * @param {{pushState?: boolean}} options
-     * @returns {Promise<boolean>} true si la navegacion fue exitosa
+     * @returns {Promise<boolean>} true si la navegación fue exitosa
      */
     async navigateAjax(urlString, options = {}) {
         const { pushState = true } = options;
@@ -382,7 +382,7 @@ class FilterService {
 
             return true;
         } catch (e) {
-            console.error('[FilterService] Error en navegacion AJAX:', e);
+            console.error('[FilterService] Error en navegación AJAX:', e);
             let shouldHardReload = true;
             try {
                 const currentUrl = new URL(window.location.href, window.location.origin).toString();
@@ -435,7 +435,7 @@ if (typeof module !== 'undefined' && module.exports) {
 /**
  * Application Layer - SelectionService
  * =====================================================
- * Logica de negocio para selección múltiple de pedidos.
+ * Lógica de negocio para selección múltiple de pedidos.
  * Persiste el estado de selección en el servidor.
  *
  * Responsabilidades:
@@ -521,7 +521,7 @@ class OrderEditService {
     }
 
     /**
-     * Carga los datos del pedido para edicion
+     * Carga los datos del pedido para edición
      * @param {number|string} ordenId
      * @returns {Promise<{orden: Object, colores: Array, telas: Array}>}
      */
@@ -544,7 +544,7 @@ class OrderEditService {
     }
 
     /**
-     * Guarda cambios del formulario de edicion
+     * Guarda cambios del formulario de edición
      * @param {number|string} ordenId
      * @param {FormData} formData
      * @returns {Promise<{success: boolean, message: string}>}
@@ -584,7 +584,7 @@ class OrderEditService {
     }
 
     /**
-     * Marca una imagen para eliminacion diferida (dentro del modal)
+     * Marca una imagen para eliminación diferida (dentro del modal)
      * @param {number|string} imageId
      */
     markImageForDeletion(imageId) {
@@ -594,7 +594,7 @@ class OrderEditService {
     }
 
     /**
-     * Obtiene las imagenes marcadas para eliminacion
+     * Obtiene las imágenes marcadas para eliminación
      * @returns {number[]}
      */
     getMarkedImages() {
@@ -602,7 +602,7 @@ class OrderEditService {
     }
 
     /**
-     * Limpia la lista de imagenes pendientes de eliminacion
+     * Limpia la lista de imágenes pendientes de eliminación
      */
     clearMarkedImages() {
         this._imagenesParaEliminar = [];
@@ -653,13 +653,13 @@ if (typeof module !== 'undefined' && module.exports) {
  * Dependencias (cargar ANTES de este archivo):
  *   1. shared/bootstrap.js             → window.shared
  *   2. core/domain/PedidoRepository.js  → PedidoRepository
- *   3. core/infrastructure/PedidoApiRepository.js â†’ PedidoApiRepository
- *   4. core/application/FilterService.js      â†’ FilterService
- *   5. core/application/SelectionService.js   â†’ SelectionService
- *   6. core/application/OrderEditService.js   â†’ OrderEditService
+ *   3. core/infrastructure/PedidoApiRepository.js → PedidoApiRepository
+ *   4. core/application/FilterService.js      → FilterService
+ *   5. core/application/SelectionService.js   → SelectionService
+ *   6. core/application/OrderEditService.js   → OrderEditService
  *   7. core/bootstrap.js (este archivo)
  *
- * Despues de cargar:
+ * Después de cargar:
  *   window.supervisorPedidos.filterService     → FilterService
  *   window.supervisorPedidos.selectionService  → SelectionService
  *   window.supervisorPedidos.orderEditService  → OrderEditService
@@ -670,9 +670,9 @@ if (typeof module !== 'undefined' && module.exports) {
 (function() {
     'use strict';
 
-    // ===== VALIDACION ESTRICTA =====
+    // ===== VALIDACIÓN ESTRICTA =====
     if (!window.shared?.isReady) {
-        throw new Error('[SP Bootstrap] window.shared no esta disponible. Carga shared/bootstrap.js ANTES.');
+        throw new Error('[SP Bootstrap] window.shared no está disponible. Carga shared/bootstrap.js ANTES.');
     }
 
     if (typeof PedidoApiRepository === 'undefined') {
@@ -695,7 +695,7 @@ if (typeof module !== 'undefined' && module.exports) {
         return;
     }
 
-    // ===== INSTANCIACION (bottom-up) =====
+    // ===== INSTANCIACIÓN (bottom-up) =====
 
     // 1. Infrastructure - Repository (inyectar SharedHttpClient)
     const repository = new PedidoApiRepository(window.shared.http);
@@ -715,4 +715,3 @@ if (typeof module !== 'undefined' && module.exports) {
         version: '2.0.0',
     });
 })();
-
