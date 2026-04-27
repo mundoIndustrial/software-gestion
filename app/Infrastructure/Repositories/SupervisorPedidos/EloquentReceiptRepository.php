@@ -98,7 +98,9 @@ class EloquentReceiptRepository implements ReceiptRepository
             ->where('id', $receiptId)
             ->update([
                 'activo' => 0,
-                'observaciones' => $notes,
+                'notas' => $notes,
+                'estado' => 'ANULADO',
+                'area' => 'ANULADO',
                 'updated_at' => now(),
             ]);
 

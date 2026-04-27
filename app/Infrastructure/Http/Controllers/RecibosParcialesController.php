@@ -623,6 +623,7 @@ class RecibosParcialesController extends Controller
                     ->where('id', $consecutivo->id)
                     ->update([
                         'estado' => 'ANULADO',
+                        'area' => 'ANULADO',
                         'activo' => 0,
                         'updated_at' => now(),
                     ]);
@@ -632,6 +633,7 @@ class RecibosParcialesController extends Controller
                     ->where('id', $id)
                     ->update([
                         'estado' => 'ANULADO',
+                        'area' => 'ANULADO',
                         'activo' => 0,
                         'updated_at' => now(),
                     ]);
@@ -661,6 +663,76 @@ class RecibosParcialesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al anular anexo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Anula un recibo normal (BORDADO, ESTAMPADO, DTF, SUBLIMADO, etc.)
+     * usando el consecutivo_recibo_id
+     * POST /api/recibos/{reciboId}/anular
+     */
+    public function anularRecebitoGeneral(int $reciboId)
+    {
+        try {
+            // Validar permisos
+            if (!auth()->user()->hasRole(['supervisor_pedidos', 'admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para anular recibos'
+                ], 403);
+            }
+
+            // Obtener el recibo
+            $recibo = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $reciboId)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Anular el recibo
+                DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $reciboId)
+                    ->update([
+                        'estado' => 'ANULADO',
+                        'area' => 'ANULADO',
+                        'activo' => 0,
+                        'updated_at' => now(),
+                    ]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo anulado correctamente',
+                'data' => [
+                    'id' => (int) $reciboId,
+                    'estado' => 'ANULADO',
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('[RecibosParcialesController@anularRecebitoGeneral] Error:', [
+                'message' => $e->getMessage(),
+                'reciboId' => $reciboId,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular recibo',
                 'error' => $e->getMessage(),
             ], 500);
         }
