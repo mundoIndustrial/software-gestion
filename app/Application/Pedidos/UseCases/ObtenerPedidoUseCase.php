@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 {
     private bool $filtrarProcesosPendientes = false;
+    private bool $modoBodega = false;
 
     public function __construct(
         PedidoRepository $pedidoRepository,
@@ -33,9 +34,10 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     private readonly PedidoPrendaDetalleBuilder $prendaDetalleBuilder;
     private readonly PedidoEppDetalleBuilder $eppDetalleBuilder;
 
-    public function ejecutar(int $pedidoId, bool $filtrarProcesosPendientes = false): PedidoResponseDTO
+    public function ejecutar(int $pedidoId, bool $filtrarProcesosPendientes = false, bool $modoBodega = false): PedidoResponseDTO
     {
         $this->filtrarProcesosPendientes = $filtrarProcesosPendientes;
+        $this->modoBodega = $modoBodega;
         return $this->obtenerYEnriquecer($pedidoId);
     }
 
@@ -74,7 +76,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 $respuesta = $this->crearRespuestaPedidoNoEncontrado();
             } else {
                 $prendasCompletas = $this->prendaDetalleBuilder
-                    ->construirPrendasCompletas($modeloEloquent, $modeloEloquent->estado, $this->filtrarProcesosPendientes);
+                    ->construirPrendasCompletas($modeloEloquent, $modeloEloquent->estado, $this->filtrarProcesosPendientes, $this->modoBodega);
 
                 // IMPORTANTE: Usar eppsConTrashed para incluir EPPs soft-deleted (necesario para historial de homologaciones)
                 $modeloEloquent->setRelation('epps', $modeloEloquent->eppsConTrashed()->get());

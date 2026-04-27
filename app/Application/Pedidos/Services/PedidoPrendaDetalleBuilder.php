@@ -12,7 +12,7 @@ class PedidoPrendaDetalleBuilder
     {
     }
 
-    public function construirPrendasCompletas($modeloEloquent, ?string $estadoPedido = null, bool $filtrarProcesosPendientes = false): array
+    public function construirPrendasCompletas($modeloEloquent, ?string $estadoPedido = null, bool $filtrarProcesosPendientes = false, bool $modoBodega = false): array
     {
         try {
             if (!$modeloEloquent || !$modeloEloquent->prendas) {
@@ -26,30 +26,43 @@ class PedidoPrendaDetalleBuilder
                 $tallasEstructuradas = $this->construirEstructuraTallas($prenda);
                 $variantes = $this->obtenerVariantes($prenda);
                 $colorTela = $this->obtenerColorYTela($prenda);
-                $imagenes = $this->obtenerImagenesPrenda($prenda);
-                $imagenesTela = $this->obtenerImagenesTela($prenda);
+                $imagenes = $modoBodega ? [] : $this->obtenerImagenesPrenda($prenda);
+                $imagenesTela = $modoBodega ? [] : $this->obtenerImagenesTela($prenda);
                 $coloresTelas = $this->obtenerColoresTelasCompletos($prenda);
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda, $estadoPedido, $filtrarProcesosPendientes);
 
+                // En modo bodega, ancho y metraje sin detalles pesados
                 $anchoMetraje = [];
-                if ($prenda->anchoMetraje) {
+                if ($modoBodega) {
                     $anchoMetraje = [
-                        'ancho' => $prenda->anchoMetraje->ancho,
-                        'metraje' => $prenda->anchoMetraje->metraje,
-                        'metrajes_por_color' => $this->obtenerMetrajesPorColorPrenda((int) $modeloEloquent->id, (int) $prenda->id),
-                        'tipo_modo' => $prenda->anchoMetraje->tipo_modo,
-                        'contenido_mano' => $prenda->anchoMetraje->contenido_mano,
-                        'observaciones' => $prenda->anchoMetraje->observaciones ?? null,
+                        'ancho' => $prenda->anchoMetraje?->ancho,
+                        'metraje' => $prenda->anchoMetraje?->metraje,
+                        'metrajes_por_color' => [],
+                        'tipo_modo' => $prenda->anchoMetraje?->tipo_modo,
+                        'contenido_mano' => $prenda->anchoMetraje?->contenido_mano,
+                        'observaciones' => $prenda->anchoMetraje?->observaciones ?? null,
                     ];
                 } else {
-                    $anchoMetraje = [
-                        'ancho' => null,
-                        'metraje' => null,
-                        'metrajes_por_color' => [],
-                        'tipo_modo' => null,
-                        'contenido_mano' => null,
-                        'observaciones' => null,
-                    ];
+                    $anchoMetraje = [];
+                    if ($prenda->anchoMetraje) {
+                        $anchoMetraje = [
+                            'ancho' => $prenda->anchoMetraje->ancho,
+                            'metraje' => $prenda->anchoMetraje->metraje,
+                            'metrajes_por_color' => $this->obtenerMetrajesPorColorPrenda((int) $modeloEloquent->id, (int) $prenda->id),
+                            'tipo_modo' => $prenda->anchoMetraje->tipo_modo,
+                            'contenido_mano' => $prenda->anchoMetraje->contenido_mano,
+                            'observaciones' => $prenda->anchoMetraje->observaciones ?? null,
+                        ];
+                    } else {
+                        $anchoMetraje = [
+                            'ancho' => null,
+                            'metraje' => null,
+                            'metrajes_por_color' => [],
+                            'tipo_modo' => null,
+                            'contenido_mano' => null,
+                            'observaciones' => null,
+                        ];
+                    }
                 }
 
                 $prendasArray[] = [

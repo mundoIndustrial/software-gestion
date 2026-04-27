@@ -47,7 +47,7 @@ class BodegaPedidoDetalleService
         foreach ($recibos as $recibo) {
             try {
                 $timeUseCase = microtime(true);
-                $datosCompletos = $this->obtenerPedidoUseCase->ejecutar($recibo->id);
+                $datosCompletos = $this->obtenerPedidoUseCase->ejecutar($recibo->id, false, true);
                 $timeUseCaseEnd = microtime(true);
                 \Log::info('[TIMING] obtenerPedidoUseCase::ejecutar', ['elapsed_ms' => round(($timeUseCaseEnd - $timeUseCase) * 1000, 2)]);
 
