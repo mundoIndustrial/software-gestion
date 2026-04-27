@@ -41,17 +41,6 @@ class CheckRole
             $rolesIds = [(int) $user->role_id];
         }
 
-        // Debug logging solo en desarrollo
-        if (config('app.debug')) {
-            \Log::info('[CHECKROLE-DEBUG] Datos del usuario', [
-                'usuario_id' => $user->id,
-                'usuario_email' => $user->email,
-                'ruta_actual' => $request->path(),
-                'roles_ids' => $rolesIds,
-                'roles_string_recibido' => $roles,
-                'roles_requeridos' => $requiredRoles,
-            ]);
-        }
 
         // Obtener nombres de roles del usuario (usar cache de sesión)
         $cacheKey = "user_roles_{$user->id}";
