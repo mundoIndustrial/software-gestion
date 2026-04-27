@@ -110,6 +110,7 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 'estado',
                 'area',
                 'created_at',
+                'updated_at',
             ])
             ->get();
 

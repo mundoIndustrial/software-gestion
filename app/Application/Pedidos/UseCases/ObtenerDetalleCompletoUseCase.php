@@ -385,6 +385,7 @@ class ObtenerDetalleCompletoUseCase
                         // Fecha de activación visible en recibo dinámico
                         // (consecutivos_recibos_pedidos.created_at).
                         'created_at' => $c->created_at,
+                        'updated_at' => $c->updated_at,
                     ];
                 }
             }

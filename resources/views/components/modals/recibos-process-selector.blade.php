@@ -357,6 +357,16 @@
         background: #10b981; /* Verde */
     }
 
+    .proceso-estado.anulado {
+        background: #6b7280; /* Gris */
+    }
+
+    .proceso-estado.anulado s {
+        text-decoration: line-through;
+        text-decoration-color: currentColor;
+        text-decoration-thickness: 2px;
+    }
+
     .proceso-arrow {
         color: #3b82f6;
         font-size: 20px;
@@ -977,11 +987,16 @@
                 let estadoRecibo = 'PENDIENTE';
                 let numeroRecibo = null;
                 let activoValue = 0;
-                
+
+                console.log('[DEBUG RECIBO BASE] reciboBaseActual:', reciboBaseActual);
+
                 if (reciboBaseActual) {
                     // Nuevo formato: objeto con datos completos
                     if (typeof reciboBaseActual === 'object' && reciboBaseActual.activo !== undefined) {
-                        estadoRecibo = reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE';
+                        const estadoNormalizado = String(reciboBaseActual.estado || '').toUpperCase().trim();
+                        console.log('[DEBUG RECIBO BASE] estadoNormalizado:', estadoNormalizado, 'activo:', reciboBaseActual.activo);
+                        estadoRecibo = reciboBaseActual.activo === 1 ? 'APROBADO' : (estadoNormalizado === 'ANULADO' ? 'ANULADO' : 'PENDIENTE');
+                        console.log('[DEBUG RECIBO BASE] estadoRecibo calculado:', estadoRecibo);
                         numeroRecibo = reciboBaseActual.consecutivo_actual || null;
                         activoValue = reciboBaseActual.activo;
                     } 
@@ -1002,6 +1017,7 @@
                     activo: activoValue, // Agregar campo activo para referencia
                     consecutivo_recibo_id: reciboBaseActual?.id || null,
                 };
+                console.log('[DEBUG] reciboBase agregado:', reciboBase);
                 // Agregar recibo base (permite tanto costura como costura-bodega)
                 recibos.push(reciboBase);
             }
@@ -1027,10 +1043,13 @@
                     }
                 }
                 
+                const estadoProceso = String(proc.estado || '').toUpperCase();
+                console.log('[DEBUG PROCESO ADICIONAL] proc:', proc, 'estadoProceso:', estadoProceso);
+
                 recibos.push({
                     tipo: tipoProceso,
                     nombre: proc.nombre_proceso || tipoProceso,  // Usar nombre_proceso para anexos (ej: "BORDADO ANEXO 1")
-                    estado: proc.estado || "",
+                    estado: estadoProceso,
                     es_base: false,
                     // Copiar propiedades de anexos si existen
                     es_parcial: proc.es_parcial || false,
@@ -1045,7 +1064,11 @@
             
             parciales.forEach((parcial, index) => {
                 // Determinar el estado del parcial
-                const estadoParcial = parcial.activo === 1 ? 'APROBADO' : (parcial.estado || 'PENDIENTE');
+                console.log('[DEBUG PARCIAL] parcial:', parcial);
+                const estadoNormalizadoParcial = String(parcial.estado || '').toUpperCase().trim();
+                console.log('[DEBUG PARCIAL] estadoNormalizadoParcial:', estadoNormalizadoParcial, 'activo:', parcial.activo);
+                const estadoParcial = parcial.activo === 1 ? 'APROBADO' : (estadoNormalizadoParcial || 'PENDIENTE');
+                console.log('[DEBUG PARCIAL] estadoParcial calculado:', estadoParcial);
                 const tipoParcial = String(parcial.tipo_recibo || '').toUpperCase() === 'COSTURA-BODEGA'
                     ? 'COSTURA'
                     : String(parcial.tipo_recibo || '');
@@ -1240,7 +1263,7 @@
                         if (recibo.activo !== undefined) {
                             // Nuevo formato: usar campo 'activo' explícito
                             estaActivo = recibo.activo === 1;
-                            puedeActivar = recibo.activo === 0;
+                            puedeActivar = recibo.activo === 0 && String(recibo.estado).toUpperCase() !== 'ANULADO';
                             
                             console.log('[renderizarPrendasEnSelector] DEBUG - Recibo base con campo activo:', {
                                 activo: recibo.activo,
@@ -1310,10 +1333,26 @@
                     console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
                     
                     const pedidoId = window.selectorRecibosState?.pedidoId;
-                    
+
+                    // Construir contenido del estado con fecha si está anulado
+                    let estadoContent = estadoLabel;
+                    if (String(recibo.estado).toUpperCase() === 'ANULADO' && recibo.updated_at) {
+                        const fechaAnulado = new Date(recibo.updated_at);
+                        const fechaFormato = fechaAnulado.toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                        });
+                        const horaFormato = fechaAnulado.toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        estadoContent = `<s>${estadoLabel}</s> ${fechaFormato} ${horaFormato}`;
+                    }
+
                     html += `
-                        <div class="proceso-item ${reciboClass}" 
-                             data-prenda-id="${prenda.id}" 
+                        <div class="proceso-item ${reciboClass}"
+                             data-prenda-id="${prenda.id}"
                              data-tipo-string="${tipoString}"
                              data-es-parcial="${esParcial}"
                              data-pedido-parcial-id="${parcialId || ''}"
@@ -1321,7 +1360,7 @@
                              onclick="seleccionarProcesoConDataAttributes(this)">
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
-                                ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoLabel}</span>` : ''}
+                                ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoContent}</span>` : ''}
                                 ${''}
                             </div>
                             <div class="proceso-acciones">

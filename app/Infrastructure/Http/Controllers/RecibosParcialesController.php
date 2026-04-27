@@ -633,7 +633,6 @@ class RecibosParcialesController extends Controller
                     ->where('id', $id)
                     ->update([
                         'estado' => 'ANULADO',
-                        'area' => 'ANULADO',
                         'activo' => 0,
                         'updated_at' => now(),
                     ]);
