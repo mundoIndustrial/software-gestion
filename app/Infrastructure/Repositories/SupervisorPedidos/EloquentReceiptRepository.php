@@ -384,7 +384,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                     ->whereNull('ppar.deleted_at');
             })
             ->select([
-                'crp.aprobado_insumos_en as fecha_creacion',
+                'crp.created_at as fecha_creacion',
                 'crp.consecutivo_actual as numero_recibo',
                 'crp.prenda_id as prenda_id',
                 'p.cliente',
@@ -399,7 +399,7 @@ class EloquentReceiptRepository implements ReceiptRepository
             ])
             ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) = ?', ['REFLECTIVO'])
             ->where('crp.activo', 1)
-            ->orderBy('crp.aprobado_insumos_en', 'desc');
+            ->orderBy('crp.created_at', 'desc');
 
         $this->applyPendingReceiptFilters($query, $filters);
 
