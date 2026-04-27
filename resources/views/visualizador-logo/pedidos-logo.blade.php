@@ -30,7 +30,7 @@
             <!-- Container -->
             <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0;">
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                    <div style="{{ $isMinimalLogoRole ? '' : 'zoom: 0.75;' }}">
+                    <div style="{{ $isMinimalLogoRole ? 'zoom: 0.75;' : 'zoom: 0.75;' }}">
                     <!-- Header -->
                     <div style="
                         min-width: {{ $isMinimalLogoRole ? '900px' : '1900px' }};
@@ -38,7 +38,7 @@
                         color: white;
                         padding: 1rem 1.5rem;
                         display: grid;
-                        grid-template-columns: {{ $isMinimalLogoRole ? '100px 200px 340px 180px 140px' : '100px 120px 200px 300px 170px 230px 190px 260px 160px' }};
+                        grid-template-columns: {{ $isBordador ? '100px 200px 120px 340px 180px 140px' : ($isMinimalLogoRole ? '100px 200px 340px 180px 140px' : '100px 120px 200px 300px 170px 230px 190px 260px 160px') }};
                         gap: 1rem;
                         font-weight: 700;
                         font-size: 0.9rem;
@@ -46,6 +46,24 @@
                         letter-spacing: 0.05em;
                     ">
                         <div style="color: #cbd5e1;">Acciones</div>
+                        @if($isBordador)
+                            <div style="color: #cbd5e1;">
+                                Número Recibo
+                            </div>
+                            <div style="color: #cbd5e1;">Cantidad</div>
+                        @endif
+                        @if(!$isBordador)
+                            <div style="color: #cbd5e1;">
+                                @if($isMinimalLogoRole)
+                                    Número Recibo
+                                @else
+                                    <div class="th-wrapper">
+                                        <span>Número Recibo</span>
+                                        <button class="btn-filter-column" type="button" data-column="numero_recibo" onclick="openLogoColumnFilter('numero_recibo', 'Número Recibo')"><i class="fas fa-filter"></i><span class="filter-badge" data-badge="numero_recibo">0</span></button>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                         @if(!$isMinimalLogoRole)
                             <div style="color: #cbd5e1;">
                                 <div class="th-wrapper">
@@ -54,16 +72,6 @@
                                 </div>
                             </div>
                         @endif
-                        <div style="color: #cbd5e1;">
-                            @if($isMinimalLogoRole)
-                                Número Recibo
-                            @else
-                                <div class="th-wrapper">
-                                    <span>Número Recibo</span>
-                                    <button class="btn-filter-column" type="button" data-column="numero_recibo" onclick="openLogoColumnFilter('numero_recibo', 'Número Recibo')"><i class="fas fa-filter"></i><span class="filter-badge" data-badge="numero_recibo">0</span></button>
-                                </div>
-                            @endif
-                        </div>
                         <div style="color: #cbd5e1;">
                             @if($isMinimalLogoRole)
                                 Cliente
@@ -875,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
-                        grid-template-columns: 100px 200px 340px 180px 140px;
+                        grid-template-columns: 100px 200px 120px 340px 180px 140px;
                         gap: 1rem;
                         padding: 1rem 1.5rem;
                         align-items: center;
@@ -908,6 +916,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                         <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
+                        <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; text-align: center;">${recibo.cantidad_total || '-'}</div>
                         <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
                         <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                         <div style="display: flex; justify-content: center;">

@@ -7,6 +7,7 @@ use App\Models\PrendaReciboCompletado;
 use App\Services\CalculadorDiasService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 final class ListPedidosLogoUseCase
 {
@@ -93,6 +94,10 @@ final class ListPedidosLogoUseCase
             }
 
             if ($isMinimalLogoRole) {
+                // Obtener tallas para calcular cantidad total
+                $tallas = $this->obtenerTallasPrenda($proceso->prenda_pedido_id, $proceso->pedido_parcial_id);
+                $cantidadTotal = $this->calcularCantidadTotalTallas($tallas);
+                
                 return [
                     'id' => $proceso->id,
                     'numero_recibo' => $proceso->numero_recibo_consecutivo,
@@ -107,6 +112,7 @@ final class ListPedidosLogoUseCase
                     'pedido_parcial_id' => $pedidoParcialId,
                     'fecha_activacion' => $proceso->fecha_activacion ?? null,
                     'completado' => $completado,
+                    'cantidad_total' => $cantidadTotal,
                 ];
             }
 
@@ -175,5 +181,37 @@ final class ListPedidosLogoUseCase
         $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
 
         return $this->procesoReadRepository->buscarValoresColumna($columna, $busqueda, $tipoProcesoIds);
+    }
+
+    /**
+     * Obtener tallas de una prenda (normal o parcial)
+     */
+    private function obtenerTallasPrenda(int $prendaPedidoId, ?int $pedidoParcialId = null): array
+    {
+        if ($pedidoParcialId) {
+            // Es un recibo parcial, obtener tallas del parcial
+            return DB::table('pedidos_parciales_tallas as ppt')
+                ->join('pedidos_parciales as pp', 'pp.id', '=', 'ppt.pedido_parcial_id')
+                ->where('ppt.pedido_parcial_id', $pedidoParcialId)
+                ->where('pp.prenda_pedido_id', $prendaPedidoId)
+                ->select('ppt.talla', 'ppt.cantidad')
+                ->get()
+                ->toArray();
+        } else {
+            // Es un recibo normal, obtener tallas de la prenda
+            return DB::table('prenda_pedido_tallas as ppt')
+                ->where('ppt.prenda_pedido_id', $prendaPedidoId)
+                ->select('ppt.talla', 'ppt.cantidad')
+                ->get()
+                ->toArray();
+        }
+    }
+
+    /**
+     * Calcular cantidad total sumando todas las tallas
+     */
+    private function calcularCantidadTotalTallas(array $tallas): int
+    {
+        return array_sum(array_column($tallas, 'cantidad'));
     }
 }
