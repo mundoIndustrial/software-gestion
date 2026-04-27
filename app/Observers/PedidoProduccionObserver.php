@@ -62,6 +62,17 @@ class PedidoProduccionObserver
                 return;
             }
 
+            // No disparar evento si el pedido no tiene número de pedido (es un borrador)
+            // o si el estado es 'pendiente_cartera' (el supervisor no debe verlo aún)
+            if (empty($pedido->numero_pedido) || strtolower((string)$pedido->estado) === 'pendiente_cartera') {
+                Log::info('[PedidoProduccionObserver] Pedido omitido para broadcast PedidoCreado', [
+                    'pedido_id' => $pedido->id,
+                    'estado' => $pedido->estado,
+                    'tiene_numero' => !empty($pedido->numero_pedido)
+                ]);
+                return;
+            }
+
             Log::info('[PedidoProduccionObserver]  Pedido creado, disparando evento broadcast síncrono', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,

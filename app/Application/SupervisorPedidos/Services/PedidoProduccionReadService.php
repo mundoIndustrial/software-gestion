@@ -567,7 +567,9 @@ class PedidoProduccionReadService
 
     private function applyStatusFilters($query): void
     {
-        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA', 'Entregado']);
+        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA', 'Entregado'])
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '');
     }
 
     private function applyHiddenFilter($query, ListOrdersRequest $request): void
