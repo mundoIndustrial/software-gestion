@@ -6,6 +6,7 @@ use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Operario\Repositories\PedidoProduccionOperarioReadRepository;
 use App\Domain\Operario\Repositories\ReciboParcialReadRepository;
 use App\Models\ReciboPorPartes;
+use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -424,9 +425,22 @@ class ObtenerDatosRecibosOperarioUseCase
             // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vacía,
             // construir una prenda mínima para que el recibo parcial siempre renderice descripción/tallas.
             if (empty($responseData['prendas']) && $parcial->prenda_pedido_id) {
-                $prendaBase = DB::table('prendas_pedido')
-                    ->where('id', (int) $parcial->prenda_pedido_id)
-                    ->first(['id', 'nombre_prenda', 'descripcion']);
+                $prendaEloquent = PrendaPedido::with(['coloresTelas.color', 'coloresTelas.tela', 'variantes.tipoManga', 'variantes.tipoBroche'])
+                    ->find((int) $parcial->prenda_pedido_id);
+                
+                $coloresTelas = [];
+                if ($prendaEloquent && $prendaEloquent->coloresTelas) {
+                    foreach ($prendaEloquent->coloresTelas as $ct) {
+                        $coloresTelas[] = [
+                            'tela_nombre' => $ct->tela?->nombre,
+                            'color_nombre' => $ct->color?->nombre,
+                            'referencia' => $ct->referencia ?? $ct->tela?->referencia,
+                        ];
+                    }
+                }
+
+                $primerColorTela = $coloresTelas[0] ?? null;
+                $variante = $prendaEloquent ? $prendaEloquent->variantes->first() : null;
 
                 // Cargar tallas desde la tabla correcta: pedidos_parciales_tallas
                 // (que tiene el campo genero, a diferencia de recibos_por_partes_tallas)
@@ -503,9 +517,15 @@ class ObtenerDatosRecibosOperarioUseCase
                     'id' => (int) $parcial->prenda_pedido_id,
                     'prenda_id' => (int) $parcial->prenda_pedido_id,
                     'prenda_pedido_id' => (int) $parcial->prenda_pedido_id,
-                    'nombre' => (string) ($prendaBase->nombre_prenda ?? 'PRENDA'),
-                    'nombre_prenda' => (string) ($prendaBase->nombre_prenda ?? 'PRENDA'),
-                    'descripcion' => (string) ($prendaBase->descripcion ?? ''),
+                    'nombre' => (string) ($prendaEloquent->nombre_prenda ?? 'PRENDA'),
+                    'nombre_prenda' => (string) ($prendaEloquent->nombre_prenda ?? 'PRENDA'),
+                    'descripcion' => (string) ($prendaEloquent->descripcion ?? ''),
+                    'tela' => $primerColorTela['tela_nombre'] ?? null,
+                    'color' => $primerColorTela['color_nombre'] ?? null,
+                    'ref' => $primerColorTela['referencia'] ?? null,
+                    'colores_telas' => $coloresTelas,
+                    'manga' => $variante ? ($variante->tipoManga?->nombre ?? $variante->manga) : null,
+                    'broche' => $variante ? ($variante->tipoBroche?->nombre ?? $variante->broche) : null,
                     'tallas' => $tallasParcial,
                     'talla_colores' => [],
                     'procesos' => [[

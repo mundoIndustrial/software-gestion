@@ -168,7 +168,7 @@ abstract class AbstractObtenerUseCase
 
         $esApiOperario = false;
         try {
-            $esApiOperario = request()->is('api/operario/*');
+            $esApiOperario = request()->is('api/operario/*') || request()->is('operario/api/*');
         } catch (\Exception $e) {
             $esApiOperario = false;
         }
