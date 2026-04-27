@@ -28,6 +28,9 @@ class BodegaPedidoDetalleService
 
     public function procesarItemsPedido(Collection $recibos, array $rolesDelUsuario, array $areasPermitidas, bool $paraDespacho = false): array
     {
+        $timeStart = microtime(true);
+        \Log::info('[TIMING] Inicio: procesarItemsPedido', ['recibos_count' => $recibos->count()]);
+
         $items = [];
         $primerRecibo = $recibos->first();
         $numeroPedido = trim((string) ($primerRecibo?->numero_pedido ?? ''));
@@ -66,6 +69,12 @@ class BodegaPedidoDetalleService
                 ]);
             }
         }
+
+        $timeEnd = microtime(true);
+        \Log::info('[TIMING] FIN: procesarItemsPedido', [
+            'total_ms' => round(($timeEnd - $timeStart) * 1000, 2),
+            'items_count' => count($items),
+        ]);
 
         return $items;
     }
@@ -110,6 +119,7 @@ class BodegaPedidoDetalleService
 
     private function procesarVariante(array $variante, array $prendaEnriquecida, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
+        $timeStart = microtime(true);
         $coloresDetalle = $variante['colores_detalle'] ?? null;
 
         if (!is_array($coloresDetalle) || empty($coloresDetalle)) {
@@ -139,11 +149,17 @@ class BodegaPedidoDetalleService
             );
         }
 
+        $timeEnd = microtime(true);
+        \Log::debug('[TIMING] procesarVariante: ' . round(($timeEnd - $timeStart) * 1000, 2) . 'ms');
+
         return $items;
     }
 
     private function procesarEpps(array $epps, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
+        $timeStart = microtime(true);
+        \Log::info('[TIMING] Inicio: procesarEpps', ['epps_count' => count($epps)]);
+
         $items = [];
 
         $todosLosEppsBD = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoProduccion?->id)
@@ -189,6 +205,12 @@ class BodegaPedidoDetalleService
                 $historialeHomologaciones
             );
         }
+
+        $timeEnd = microtime(true);
+        \Log::info('[TIMING] FIN: procesarEpps', [
+            'total_ms' => round(($timeEnd - $timeStart) * 1000, 2),
+            'items_count' => count($items),
+        ]);
 
         return $items;
     }
@@ -519,6 +541,7 @@ class BodegaPedidoDetalleService
 
     private function obtenerDatosBodega(?string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, ?int $tallaColorId = null, ?int $prendaId = null, ?string $genero = null): array
     {
+        $timeStart = microtime(true);
         $numeroPedido = trim((string) $numeroPedido);
         if ($numeroPedido === '') {
             \Log::warning('[obtenerDatosBodega] numeroPedido vacío/null, devolviendo defaults', [
@@ -612,6 +635,9 @@ class BodegaPedidoDetalleService
             'updated_at' => $bodegaDataBase?->updated_at ? Carbon::parse($bodegaDataBase->updated_at)->format('Y-m-d H:i:s') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
+
+        $timeEnd = microtime(true);
+        \Log::debug('[TIMING] obtenerDatosBodega: ' . round(($timeEnd - $timeStart) * 1000, 3) . 'ms');
 
         return $resultado;
     }
