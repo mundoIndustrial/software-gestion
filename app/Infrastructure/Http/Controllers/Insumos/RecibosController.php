@@ -147,7 +147,9 @@ class RecibosController extends Controller
                     : ($notasActuales . PHP_EOL . $lineaNovedad);
 
                 $recibo->update([
-                    'estado' => 'Anulada',
+                    'estado' => 'ANULADO',
+                    'area' => 'ANULADO',
+                    'activo' => 0,
                     'notas' => $notasActualizadas,
                 ]);
 
@@ -168,7 +170,7 @@ class RecibosController extends Controller
                     broadcast(new PedidoActualizado(
                         pedido: $pedido->fresh(),
                         asesor: $asesor,
-                        changedFields: ['recibo_estado' => 'Anulada'],
+                        changedFields: ['recibo_estado' => 'ANULADO'],
                         action: 'updated'
                     ))->toOthers();
                 }
