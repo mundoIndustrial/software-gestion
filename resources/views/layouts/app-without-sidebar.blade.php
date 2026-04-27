@@ -8,6 +8,7 @@
 
     <div class="main-content" id="mainContent">
         <!-- Top Navigation Moderna -->
+        @unless(request()->boolean('embed'))
         <header class="top-nav">
             <div class="nav-left">
                 <button class="mobile-toggle" id="mobileToggle">
@@ -143,6 +144,7 @@
                 </div>
             </div>
         </header>
+        @endunless
 
         <!-- Page Content -->
         <main class="page-content">

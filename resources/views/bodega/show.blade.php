@@ -28,6 +28,27 @@
 
 @section('content')
 
+<script>
+    (function() {
+        try {
+            const fromListTransition = sessionStorage.getItem('bodega:from-list-transition') === '1';
+            window.__bodegaSkipInitialOverlay = fromListTransition;
+
+            if (fromListTransition) {
+                sessionStorage.removeItem('bodega:from-list-transition');
+
+                // Inyectar estilo antes de renderizar el overlay para evitar parpadeo.
+                const style = document.createElement('style');
+                style.id = 'bodega-skip-initial-overlay-style';
+                style.textContent = '#bodega-loading-overlay { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }';
+                document.head.appendChild(style);
+            }
+        } catch (e) {
+            window.__bodegaSkipInitialOverlay = false;
+        }
+    })();
+</script>
+
 <!-- Overlay de carga -->
 <div id="bodega-loading-overlay" class="is-visible" role="status" aria-live="polite" aria-label="Cargando detalles del pedido">
     <div style="text-align: center;">
@@ -61,10 +82,11 @@
                     @endif
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('gestion-bodega.pedidos') }}" 
-                       class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
+                    <button type="button"
+                            onclick="volverDesdeDetalle()"
+                            class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
                         ← Volver
-                    </a>
+                    </button>
                     @if($pedido['id'])
                         <button type="button"
                                 onclick="abrirModalFactura({{ $pedido['id'] }})"
@@ -1519,11 +1541,24 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         if (overlay) {
             console.log('[BODEGA SHOW] Overlay encontrado en DOMContentLoaded');
             console.log('[BODEGA SHOW] Clases actuales:', overlay.className);
+
+            if (window.__bodegaSkipInitialOverlay) {
+                overlay.classList.remove('is-visible');
+                const skipStyle = document.getElementById('bodega-skip-initial-overlay-style');
+                if (skipStyle) skipStyle.remove();
+                console.log('[BODEGA SHOW] 🔄 Flujo continuo detectado (desde listado): overlay inicial omitido');
+            }
+
             setupOverlayObserver();
         }
     });
 
     window.addEventListener('load', function() {
+        if (window.__bodegaSkipInitialOverlay) {
+            console.log('[BODEGA SHOW] ✅ Carga completada en flujo continuo (sin segundo overlay)');
+            return;
+        }
+
         console.log('[BODEGA SHOW] 7️⃣ LOAD evento disparado - TODO cargado (CSS, JS, imágenes)');
 
         // Esperar a que se complete el rendering del navegador
@@ -1552,6 +1587,16 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
         requestAnimationFrame(hideOverlay);
     });
+
+    function volverDesdeDetalle() {
+        if (window.self !== window.parent) {
+            // Estamos dentro de un iframe, enviar mensaje al padre para cerrar
+            window.parent.postMessage({ action: 'cerrarDrawerPedido' }, '*');
+        } else {
+            // No estamos en un iframe, navegar normalmente
+            window.location.href = '{{ route("gestion-bodega.pedidos") }}';
+        }
+    }
 </script>
 
 @endsection
