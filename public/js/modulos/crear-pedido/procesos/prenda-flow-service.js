@@ -252,6 +252,33 @@ class PrendaFlowService {
     }
 
     _validarDatosFormulario(prendaData) {
+        const tallasConCantidadCero = [];
+        const cantidadTalla = prendaData?.cantidad_talla && typeof prendaData.cantidad_talla === 'object'
+            ? prendaData.cantidad_talla
+            : {};
+
+        Object.entries(cantidadTalla).forEach(([genero, tallas]) => {
+            if (!tallas || typeof tallas !== 'object') return;
+            Object.entries(tallas).forEach(([talla, cantidad]) => {
+                const cantidadNormalizada = Number(cantidad);
+                if (!Number.isFinite(cantidadNormalizada) || cantidadNormalizada <= 0) {
+                    tallasConCantidadCero.push(`${genero} ${talla}`);
+                }
+            });
+        });
+
+        if (tallasConCantidadCero.length > 0) {
+            const previewTallas = tallasConCantidadCero.slice(0, 3).join(', ');
+            const extra = tallasConCantidadCero.length > 3
+                ? ` y ${tallasConCantidadCero.length - 3} más`
+                : '';
+            this.ui?.notificationService?.advertencia(
+                `No se puede agregar la prenda: hay tallas con cantidad 0 (${previewTallas}${extra}).`
+            );
+            debugLog('[gestion-items-pedido] Validación FALLIDA: tallas con cantidad 0', tallasConCantidadCero);
+            return false;
+        }
+
         const tieneTallas = prendaData.cantidad_talla &&
             Object.values(prendaData.cantidad_talla).some(genero => Object.keys(genero).length > 0);
 
