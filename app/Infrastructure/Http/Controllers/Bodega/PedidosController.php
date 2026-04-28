@@ -627,9 +627,14 @@ class PedidosController extends Controller
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
                 ->whereNotNull('bodega_detalles_talla.numero_pedido')
                 ->where('bodega_detalles_talla.numero_pedido', '!=', '')
-                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
-                ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
-                ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
+                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->select(
+                    'bodega_detalles_talla.*',
+                    'pedidos_produccion.created_at as pedido_created_at'
+                )
+                ->orderBy('pedidos_produccion.created_at', 'desc')
+                ->orderBy('bodega_detalles_talla.numero_pedido', 'desc')
+                ->orderBy('bodega_detalles_talla.id', 'desc');
 
             // Aplicar búsqueda si existe
             if ($request->filled('search')) {
@@ -670,9 +675,14 @@ class PedidosController extends Controller
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
                 ->whereNotNull('bodega_detalles_talla.numero_pedido')
                 ->where('bodega_detalles_talla.numero_pedido', '!=', '')
-                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
-                ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
-                ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
+                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->select(
+                    'bodega_detalles_talla.*',
+                    'pedidos_produccion.created_at as pedido_created_at'
+                )
+                ->orderBy('pedidos_produccion.created_at', 'desc')
+                ->orderBy('bodega_detalles_talla.numero_pedido', 'desc')
+                ->orderBy('bodega_detalles_talla.id', 'desc');
 
             // Aplicar búsqueda si existe
             if ($request->filled('search')) {
@@ -714,7 +724,7 @@ class PedidosController extends Controller
             // Agregar datos
             $row = 2;
             foreach ($epp_pendientes as $item) {
-                $fechaPedido = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '—';
+                $fechaPedido = $item->pedido_created_at ? \Carbon\Carbon::parse($item->pedido_created_at)->format('d/m/Y') : '—';
                 $fechaEntrega = $item->fecha_entrega ? \Carbon\Carbon::parse($item->fecha_entrega)->format('d/m/Y') : '—';
 
                 $sheet->setCellValue('A' . $row, $fechaPedido);

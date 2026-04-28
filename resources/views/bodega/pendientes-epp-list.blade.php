@@ -101,10 +101,10 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @php
-                                // Agrupar por fecha
                                 $epp_agrupado = [];
                                 foreach ($epp_pendientes as $item) {
-                                    $fecha = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') : 'sin-fecha';
+                                    $fechaBase = $item->pedido_created_at ?? null;
+                                    $fecha = $fechaBase ? \Carbon\Carbon::parse($fechaBase)->format('Y-m-d') : 'sin-fecha';
                                     if (!isset($epp_agrupado[$fecha])) {
                                         $epp_agrupado[$fecha] = [];
                                     }
@@ -140,7 +140,15 @@
                                             {{ $item->prenda_nombre ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 text-center font-semibold text-black">
-                                            {{ $item->cantidad ?? 0 }}
+                                            @php
+                                                $pendienteValor = is_string($item->pendientes ?? null)
+                                                    ? trim($item->pendientes)
+                                                    : $item->pendientes;
+                                                $cantidadMostrar = ($pendienteValor !== null && $pendienteValor !== '')
+                                                    ? $pendienteValor
+                                                    : ($item->cantidad ?? 0);
+                                            @endphp
+                                            {{ $cantidadMostrar }}
                                         </td>
                                         <td class="px-6 py-4 text-slate-700">
                                             <div class="flex items-center gap-2">
@@ -377,4 +385,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-
