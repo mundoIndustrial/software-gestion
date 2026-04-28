@@ -3,10 +3,12 @@
 namespace App\Observers;
 
 use App\Models\BodegaDetalleTalla;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class BodegaDetalleTallaObserver
 {
+    private const BOGOTA_TZ = 'America/Bogota';
     /**
      * Handle the BodegaDetalleTalla "creating" event.
      * Se ejecuta antes de crear el registro.
@@ -15,7 +17,7 @@ class BodegaDetalleTallaObserver
     {
         // Si se está creando con estado Pendiente y no tiene fecha_pendiente, asignarla
         if ($bodegaDetalleTalla->estado_bodega === 'Pendiente' && !$bodegaDetalleTalla->fecha_pendiente) {
-            $bodegaDetalleTalla->fecha_pendiente = now();
+            $bodegaDetalleTalla->fecha_pendiente = Carbon::now(self::BOGOTA_TZ);
             
             Log::info('[BodegaDetalleTallaObserver] Nueva fila creada con estado Pendiente', [
                 'numero_pedido' => $bodegaDetalleTalla->numero_pedido,
@@ -45,7 +47,7 @@ class BodegaDetalleTallaObserver
         
         // Si el estado cambió a Pendiente y no tiene fecha_pendiente, asignarla
         if ($estadoNuevo === 'Pendiente' && $estadoAnterior !== 'Pendiente') {
-            $bodegaDetalleTalla->fecha_pendiente = now();
+            $bodegaDetalleTalla->fecha_pendiente = Carbon::now(self::BOGOTA_TZ);
             
             Log::info('[BodegaDetalleTallaObserver] Estado cambiado a Pendiente', [
                 'numero_pedido' => $bodegaDetalleTalla->numero_pedido,
@@ -95,4 +97,3 @@ class BodegaDetalleTallaObserver
         //
     }
 }
-

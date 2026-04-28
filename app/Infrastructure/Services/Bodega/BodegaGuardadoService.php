@@ -8,11 +8,13 @@ use App\Models\BodegaDetalleTalla;
 use App\Models\BodegaAuditoria;
 use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class BodegaGuardadoService implements BodegaGuardadoServiceContract
 {
     private const ERROR_AL_GUARDAR = 'Error al guardar: ';
+    private const BOGOTA_TZ = 'America/Bogota';
 
     /**
      * Guardar una fila individual de bodega_detalles_talla (crear o actualizar)
@@ -51,15 +53,20 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
             $estadoBodega = $datosValidados['estado_bodega'] ?? null;
             $estadoAnterior = $detalleAnterior?->estado_bodega ?? null;
             $fechaEntregaBodega = null;
+            $fechaEntrega = $datosValidados['fecha_entrega'] ?? null;
 
             // Si se ingresó una fecha_entrega_bodega manualmente, usarla
             if ($estadoBodega === 'Entregado') {
+                $ahoraBogota = Carbon::now(self::BOGOTA_TZ);
+                // Para entregas guardamos timestamp real del momento en hora local de Bogota.
+                $fechaEntrega = $ahoraBogota;
+
                 if (!empty($datosValidados['fecha_entrega_bodega'])) {
-                    $fechaEntregaBodega = $datosValidados['fecha_entrega_bodega'];
+                    $fechaEntregaBodega = $ahoraBogota;
                 } elseif ($estadoAnterior !== 'Entregado') {
-                    $fechaEntregaBodega = now();
+                    $fechaEntregaBodega = $ahoraBogota;
                 } else {
-                    $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? now();
+                    $fechaEntregaBodega = $detalleAnterior?->fecha_entrega_bodega ?? $ahoraBogota;
                 }
             } else {
                 $fechaEntregaBodega = null;
@@ -81,7 +88,7 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
                 'prenda_nombre' => $prendaNombre,
                 'pendientes' => $datosValidados['pendientes'] ?? null,
                 'fecha_pedido' => $datosValidados['fecha_pedido'] ?? null,
-                'fecha_entrega' => $datosValidados['fecha_entrega'] ?? null,
+                'fecha_entrega' => $fechaEntrega,
                 'area' => $datosValidados['area'] ?? null,
                 'estado_bodega' => $estadoBodega,
                 'fecha_entrega_bodega' => $fechaEntregaBodega,
@@ -362,8 +369,8 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
 
         $payload = [
             'estado_bodega' => $estadoBodega,
-            'fecha_entrega_bodega' => $estadoBodega === 'Entregado' ? now() : null,
-            'updated_at' => now(),
+            'fecha_entrega_bodega' => $estadoBodega === 'Entregado' ? Carbon::now(self::BOGOTA_TZ) : null,
+            'updated_at' => Carbon::now(self::BOGOTA_TZ),
         ];
 
         BodegaDetalleTalla::withTrashed()
