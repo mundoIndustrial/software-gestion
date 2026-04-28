@@ -44,6 +44,7 @@ use App\Application\SupervisorPedidos\DTOs\SelectOrderRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Exceptions\AuthenticationException;
@@ -118,12 +119,18 @@ class SupervisorOrdersController extends Controller
      */
     public function index(Request $request)
     {
-        $params = $request->query();
-        $params['user_id'] = $request->user()?->id;
-        $requestDTO = new ListOrdersRequest($params);
-        $response = $this->listOrdersUseCase->execute($requestDTO);
+        // Optimización: evitar consulta pesada duplicada en SSR.
+        // La tabla se hidrata únicamente desde API vía OrdenesLoader.
+        $ordenes = new LengthAwarePaginator(
+            collect(),
+            0,
+            15,
+            1,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        $estados = [];
+        $pedidosSeleccionados = [];
 
-        extract($response->toArray());
         return view('supervisor-pedidos.index', compact('ordenes', 'estados', 'pedidosSeleccionados'));
     }
 

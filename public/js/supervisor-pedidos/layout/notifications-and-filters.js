@@ -293,11 +293,19 @@
             window.location.href = '/supervisor-pedidos?aprobacion=pendiente';
         }
 
-        // Cargar notificaciones al iniciar
+        function runWhenIdle(callback, timeout = 1500) {
+            if (typeof callback !== 'function') return;
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(() => callback(), { timeout });
+                return;
+            }
+            setTimeout(callback, 350);
+        }
+
+        // Inicialización liviana: suscripción realtime en idle, sin fetch pesado inmediato.
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof isCartera === 'undefined' || !isCartera) {
-                cargarNotificacionesPendientes();
-                onEchoReady(() => suscribirNotificacionesRealtime());
+                runWhenIdle(() => onEchoReady(() => suscribirNotificacionesRealtime()));
             }
         });
 
@@ -453,9 +461,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (isCarteraRoute()) return;
 
-            cargarBadgeSidebarPedidos();
-            cargarBadgeSidebarControlCalidad();
-            onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
+            runWhenIdle(() => {
+                cargarBadgeSidebarPedidos();
+                cargarBadgeSidebarControlCalidad();
+                onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
+            }, 2200);
         });
 
         // Recargar contador cada 30 segundos (solo en supervisores)

@@ -67,6 +67,10 @@ window.limpiarParametrosVacios = function (event) {
     var finalUrl = queryParams ? baseUrl + '?' + queryParams : baseUrl;
 
     console.log('[Search] URL final:', finalUrl);
+    if (typeof window.navegarSupervisorPedidos === 'function' && String(window.location.pathname || '').startsWith('/supervisor-pedidos')) {
+        window.navegarSupervisorPedidos(finalUrl);
+        return;
+    }
+
     window.location.href = finalUrl;
 };
-

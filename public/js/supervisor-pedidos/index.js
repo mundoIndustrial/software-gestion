@@ -491,6 +491,29 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarIndicadoresFiltros();
     refreshVerButtonsBodegaBadges();
 
+    // Buscar sin recargar toda la pagina: filtra por AJAX en la tabla.
+    const searchForm = document.querySelector('form.search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const action = searchForm.getAttribute('action') || window.location.pathname;
+            const url = new URL(action, window.location.origin);
+            const formData = new FormData(searchForm);
+
+            for (const [key, rawValue] of formData.entries()) {
+                const value = String(rawValue ?? '').trim();
+                if (value === '') continue;
+                url.searchParams.set(key, value);
+            }
+
+            // Siempre resetear paginacion al filtrar desde el buscador.
+            url.searchParams.delete('page');
+
+            navegarSupervisorPedidos(url.toString());
+        });
+    }
+
     // La tabla ya llega renderizada por Blade en la carga inicial.
     // Evitamos un segundo fetch AJAX inmediato que duplicaba trabajo y retrasaba la vista.
     if (!document.querySelector('#supervisorPedidosIndexContent [data-pedido-row="true"]')) {
@@ -581,6 +604,19 @@ function _spRenderBadgeOnVerButton(button, pendingCount) {
 async function refreshVerButtonsBodegaBadges() {
     const buttons = Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'));
     if (buttons.length === 0) return;
+
+    // Optimizacion: en vistas filtradas por busqueda no bloquear con batch de badges.
+    // Los badges se pueden resolver al abrir cada menu "Ver".
+    try {
+        const currentUrl = new URL(window.location.href);
+        const busqueda = (currentUrl.searchParams.get('busqueda') || '').trim();
+        if (busqueda !== '') {
+            buttons.forEach((b) => _spRenderBadgeOnVerButton(b, 0));
+            return;
+        }
+    } catch (_) {
+        // noop
+    }
 
     // Extraer todos los pedido_ids
     const pedidoIds = buttons

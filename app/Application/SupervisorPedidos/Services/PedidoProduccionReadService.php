@@ -638,10 +638,19 @@ class PedidoProduccionReadService
             return;
         }
 
-        $busqueda = $request->getBusqueda();
-        $query->where(function ($q) use ($busqueda) {
-            $q->where('numero_pedido', 'like', '%' . $busqueda . '%')
-                ->orWhere('cliente', 'like', '%' . $busqueda . '%');
+        $busqueda = trim((string) $request->getBusqueda());
+        $esNumerica = ctype_digit($busqueda);
+
+        $query->where(function ($q) use ($busqueda, $esNumerica) {
+            if ($esNumerica) {
+                // Prioriza igualdad/prefijo en número para permitir mejor uso de índices.
+                $q->where('numero_pedido', '=', $busqueda)
+                    ->orWhere('numero_pedido', 'like', $busqueda . '%');
+            } else {
+                $q->where('numero_pedido', 'like', '%' . $busqueda . '%');
+            }
+
+            $q->orWhere('cliente', 'like', '%' . $busqueda . '%');
         });
     }
 
@@ -717,6 +726,14 @@ class PedidoProduccionReadService
 
     private function orderAndPaginate($query, ListOrdersRequest $request)
     {
+        // Para búsquedas puntuales evitar ORDER BY correlacionado costoso.
+        if ($request->getBusqueda()) {
+            return $query
+                ->orderBy('pedidos_produccion.created_at', 'desc')
+                ->paginate($request->getPerPage(), ['pedidos_produccion.*'], 'page', $request->getPage())
+                ->appends($request->getAppends());
+        }
+
         return $query
             ->orderByRaw('GREATEST(
                 COALESCE((

@@ -59,11 +59,17 @@ class SupervisorOrdersApiController extends Controller
         $params['user_id'] = $request->user()?->id;
 
         $response = $this->listOrdersUseCase->execute(new ListOrdersRequest($params));
+        extract($response->toArray());
+
+        $html = View::make('supervisor-pedidos.partials.tabla-ordenes', compact('ordenes', 'estados', 'pedidosSeleccionados'))
+            ->render();
 
         return response()->json([
             'success' => true,
             'message' => 'Ordenes recuperadas correctamente',
-            'data' => $response->toArray(),
+            'data' => array_merge($response->toArray(), [
+                'html' => $html,
+            ]),
         ]);
     }
 
