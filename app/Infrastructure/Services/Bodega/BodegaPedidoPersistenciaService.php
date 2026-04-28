@@ -7,6 +7,7 @@ use App\Application\Services\EntregaService;
 use App\Models\BodegaDetallesTalla;
 use App\Models\CosturaBodegaDetalle;
 use App\Models\EppBodegaDetalle;
+use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -315,9 +316,111 @@ class BodegaPedidoPersistenciaService
             $updateBase
         );
 
+        if (
+            $areaDefault === WarehouseConstants::AREA_EPP
+            && in_array($estadoNuevo, [WarehouseConstants::STATE_DELIVERED, WarehouseConstants::STATE_PENDING], true)
+            && !empty($validatedData[WarehouseConstants::FIELD_PEDIDO_EPP_ID])
+        ) {
+            $this->sincronizarEstadoBodegaCadenaHomologacionEpp(
+                $pedido,
+                (int) $validatedData[WarehouseConstants::FIELD_PEDIDO_EPP_ID],
+                $estadoNuevo
+            );
+        }
+
         $pedido->touch();
 
         return $guardado;
+    }
+
+    private function sincronizarEstadoBodegaCadenaHomologacionEpp(
+        PedidoProduccion $pedido,
+        int $pedidoEppIdActual,
+        string $estadoBodega
+    ): void {
+        try {
+            $idsCadena = $this->obtenerIdsCadenaHomologacion($pedido->id, $pedidoEppIdActual);
+
+            if (count($idsCadena) <= 1) {
+                return;
+            }
+
+            $payload = [
+                WarehouseConstants::FIELD_ESTADO_BODEGA => $estadoBodega,
+                'updated_at' => now(),
+            ];
+
+            $payload['fecha_entrega_bodega'] = $estadoBodega === WarehouseConstants::STATE_DELIVERED
+                ? now()
+                : null;
+
+            BodegaDetallesTalla::withTrashed()
+                ->where(WarehouseConstants::FIELD_PEDIDO_PRODUCCION_ID, $pedido->id)
+                ->whereIn(WarehouseConstants::FIELD_PEDIDO_EPP_ID, $idsCadena)
+                ->update($payload);
+
+            \Log::info('[BODEGA][HOMOLOGACION_EPP] Estado_bodega sincronizado en cadena homologada', [
+                'pedido_produccion_id' => $pedido->id,
+                'pedido_epp_id_actual' => $pedidoEppIdActual,
+                'ids_cadena' => $idsCadena,
+                'estado_bodega' => $estadoBodega,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('[BODEGA][HOMOLOGACION_EPP] No se pudo sincronizar estado_bodega', [
+                'pedido_produccion_id' => $pedido->id,
+                'pedido_epp_id_actual' => $pedidoEppIdActual,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function obtenerIdsCadenaHomologacion(int $pedidoProduccionId, int $pedidoEppIdActual): array
+    {
+        $epps = PedidoEpp::withTrashed()
+            ->where('pedido_produccion_id', $pedidoProduccionId)
+            ->get(['id', 'homologado_de']);
+
+        if ($epps->isEmpty()) {
+            return [$pedidoEppIdActual];
+        }
+
+        $porId = $epps->keyBy('id');
+        $hijosPorPadre = $epps->groupBy('homologado_de');
+
+        $idsCadena = collect([$pedidoEppIdActual]);
+
+        // Subir hasta el original
+        $cursor = $pedidoEppIdActual;
+        $maxIntentos = 100;
+        $intentos = 0;
+        while ($intentos < $maxIntentos) {
+            $intentos++;
+            $actual = $porId->get($cursor);
+            if (!$actual || !$actual->homologado_de) {
+                break;
+            }
+
+            $idsCadena->push((int) $actual->homologado_de);
+            $cursor = (int) $actual->homologado_de;
+        }
+
+        // Bajar por toda la cadena/ramas homologadas
+        $cola = $idsCadena->unique()->values()->all();
+        $visitados = collect($cola);
+        while (!empty($cola)) {
+            $padre = array_shift($cola);
+            $hijos = $hijosPorPadre->get($padre, collect());
+            foreach ($hijos as $hijo) {
+                $hijoId = (int) $hijo->id;
+                if ($visitados->contains($hijoId)) {
+                    continue;
+                }
+                $visitados->push($hijoId);
+                $cola[] = $hijoId;
+            }
+        }
+
+        return $visitados->unique()->values()->all();
     }
 
     private function dispararEventoTiempoReal(array $validatedData)

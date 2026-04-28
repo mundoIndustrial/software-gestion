@@ -6,6 +6,7 @@ use App\Domain\Bodega\Services\BodegaGuardadoServiceContract;
 
 use App\Models\BodegaDetalleTalla;
 use App\Models\BodegaAuditoria;
+use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
 use Illuminate\Http\Request;
 
@@ -100,6 +101,18 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
                 $criteriosBusqueda,
                 $datosGuardar
             );
+
+            if (
+                ($datosValidados['area'] ?? null) === 'EPP'
+                && !empty($datosValidados['pedido_epp_id'])
+                && in_array((string) $estadoBodega, ['Entregado', 'Pendiente'], true)
+            ) {
+                $this->sincronizarEstadoBodegaCadenaHomologacionEpp(
+                    (int) $pedido->id,
+                    (int) $datosValidados['pedido_epp_id'],
+                    (string) $estadoBodega
+                );
+            }
             
             $esNuevo = !$detalleAnterior;
             
@@ -334,5 +347,81 @@ class BodegaGuardadoService implements BodegaGuardadoServiceContract
         }
 
         return $this->{$method}(...$arguments);
+    }
+
+    private function sincronizarEstadoBodegaCadenaHomologacionEpp(
+        int $pedidoProduccionId,
+        int $pedidoEppIdActual,
+        string $estadoBodega
+    ): void {
+        $idsCadena = $this->obtenerIdsCadenaHomologacion($pedidoProduccionId, $pedidoEppIdActual);
+
+        if (count($idsCadena) <= 1) {
+            return;
+        }
+
+        $payload = [
+            'estado_bodega' => $estadoBodega,
+            'fecha_entrega_bodega' => $estadoBodega === 'Entregado' ? now() : null,
+            'updated_at' => now(),
+        ];
+
+        BodegaDetalleTalla::withTrashed()
+            ->where('pedido_produccion_id', $pedidoProduccionId)
+            ->whereIn('pedido_epp_id', $idsCadena)
+            ->update($payload);
+
+        \Log::info('[GUARDAR FILA][HOMOLOGACION_EPP] estado_bodega sincronizado', [
+            'pedido_produccion_id' => $pedidoProduccionId,
+            'pedido_epp_id_actual' => $pedidoEppIdActual,
+            'ids_cadena' => $idsCadena,
+            'estado_bodega' => $estadoBodega,
+        ]);
+    }
+
+    private function obtenerIdsCadenaHomologacion(int $pedidoProduccionId, int $pedidoEppIdActual): array
+    {
+        $epps = PedidoEpp::withTrashed()
+            ->where('pedido_produccion_id', $pedidoProduccionId)
+            ->get(['id', 'homologado_de']);
+
+        if ($epps->isEmpty()) {
+            return [$pedidoEppIdActual];
+        }
+
+        $porId = $epps->keyBy('id');
+        $hijosPorPadre = $epps->groupBy('homologado_de');
+
+        $idsCadena = collect([$pedidoEppIdActual]);
+
+        $cursor = $pedidoEppIdActual;
+        $maxIntentos = 100;
+        $intentos = 0;
+        while ($intentos < $maxIntentos) {
+            $intentos++;
+            $actual = $porId->get($cursor);
+            if (!$actual || !$actual->homologado_de) {
+                break;
+            }
+            $idsCadena->push((int) $actual->homologado_de);
+            $cursor = (int) $actual->homologado_de;
+        }
+
+        $cola = $idsCadena->unique()->values()->all();
+        $visitados = collect($cola);
+        while (!empty($cola)) {
+            $padre = array_shift($cola);
+            $hijos = $hijosPorPadre->get($padre, collect());
+            foreach ($hijos as $hijo) {
+                $hijoId = (int) $hijo->id;
+                if ($visitados->contains($hijoId)) {
+                    continue;
+                }
+                $visitados->push($hijoId);
+                $cola[] = $hijoId;
+            }
+        }
+
+        return $visitados->unique()->values()->all();
     }
 }
