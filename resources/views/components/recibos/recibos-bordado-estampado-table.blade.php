@@ -169,7 +169,7 @@
             Mostrando {{ $recibos->firstItem() }} a {{ $recibos->lastItem() }} de {{ $recibos->total() }} registros
         </div>
         <div class="pagination-wrapper" id="pagination-wrapper">
-            {{ $recibos->appends(request()->query())->links('pagination::bootstrap-4') }}
+            {{ $recibos->appends(request()->query())->links('vendor.pagination.bootstrap-custom') }}
         </div>
     </div>
 
