@@ -645,6 +645,116 @@ class RegistroOrdenController extends Controller
     }
 
     /**
+     * Búsqueda AJAX de recibos de bordado/estampado
+     */
+    public function searchRecibosBordadoEstampado(Request $request)
+    {
+        $searchTerm = $request->input('search', '');
+        $page = $request->input('page', 1);
+        $perPage = 25;
+
+        $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
+            busqueda: $searchTerm
+        );
+        $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
+
+        $allProcesses = collect($response->getProcesses());
+
+        // Obtener áreas por prenda
+        $prendaIds = $allProcesses
+            ->map(fn ($proceso) => (int) (is_array($proceso) ? ($proceso['prenda_id'] ?? 0) : ($proceso->prenda_id ?? 0)))
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $areasPorPrenda = [];
+        if (!empty($prendaIds)) {
+            $rowsArea = \DB::table('prenda_areas_logo_pedido')
+                ->select(['prenda_pedido_id', 'area'])
+                ->whereIn('prenda_pedido_id', $prendaIds)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->get();
+
+            foreach ($rowsArea as $row) {
+                $prendaId = (int) ($row->prenda_pedido_id ?? 0);
+                if ($prendaId <= 0 || isset($areasPorPrenda[$prendaId])) {
+                    continue;
+                }
+                $areasPorPrenda[$prendaId] = (string) ($row->area ?? '');
+            }
+        }
+
+        // Paginar los resultados
+        $currentPage = $page;
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allProcesses->slice($offset, $perPage)->values(),
+            $allProcesses->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        // Normalizar datos
+        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda) {
+            $procesoArray = (array) $proceso;
+            $numeroRecibo = (string) ($procesoArray['numero_recibo'] ?? '');
+            $tipoRecibo = (string) ($procesoArray['tipo_recibo'] ?? '');
+            $nombrePrenda = (string) ($procesoArray['nombre_prenda'] ?? '');
+            $cliente = (string) ($procesoArray['cliente'] ?? '');
+            $cantidad = (int) ($procesoArray['cantidad_total_prendas'] ?? 0);
+            $fechaCreacion = $procesoArray['fecha_creacion'] ?? null;
+            $prendaId = (int) ($procesoArray['prenda_id'] ?? 0);
+            $areaRaw = strtoupper((string) ($areasPorPrenda[$prendaId] ?? 'PENDIENTE'));
+            $areaNormalizada = match ($areaRaw) {
+                'ESTAMPANDO', 'ESTAMPADO' => 'Estampado',
+                'BORDANDO', 'BORDADO' => 'Bordado',
+                'CORTE_Y_APLIQUE' => 'Corte',
+                'PENDIENTE_CONFIRMAR', 'PENDIENTE_DISENO', 'PENDIENTE' => 'Pendiente',
+                default => ucfirst(strtolower(str_replace('_', ' ', $areaRaw))),
+            };
+
+            return [
+                'id' => (int) ($procesoArray['id'] ?? ($index + 1)),
+                'pedido_produccion_id' => (int) ($procesoArray['pedido_id'] ?? 0),
+                'prenda_id' => $prendaId,
+                'consecutivo_actual' => $numeroRecibo,
+                'tipo_recibo' => $tipoRecibo !== '' ? $tipoRecibo : 'BORDADO',
+                'area' => $areaNormalizada,
+                'cantidad_total' => $cantidad,
+                'descripcion_detallada' => trim($nombrePrenda) !== '' ? ('PRENDA: ' . $nombrePrenda) : 'PRENDA: SIN DESCRIPCIÓN',
+                'created_at' => $fechaCreacion,
+                'pedido_info' => [
+                    'cliente' => $cliente !== '' ? $cliente : 'N/A',
+                    'fecha_creacion_orden' => $fechaCreacion,
+                ],
+            ];
+        })->toArray();
+
+        $currentPage = $procesosConCantidad->currentPage();
+        $total = $procesosConCantidad->total();
+        $from = $total > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+        $to = $from + count($recibosNormalizados) - 1;
+
+        return response()->json([
+            'success' => true,
+            'recibos' => $recibosNormalizados,
+            'total' => $total,
+            'total_cantidad' => $total,
+            'current_page' => $currentPage,
+            'last_page' => $procesosConCantidad->lastPage(),
+            'from' => $from,
+            'to' => $to
+        ]);
+    }
+
+    /**
      * Obtener datos de un recibo de reflectivo especifico como JSON
      */
     public function getReciboReflectivoJson($reciboId)

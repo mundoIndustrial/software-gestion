@@ -96,8 +96,8 @@ const NavSearch = {
             return;
         }
 
-        // Si estamos en recibos-costura, no hacer nada (la búsqueda se maneja localmente)
-        if (window.location.pathname.includes('recibos-costura')) {
+        // Si estamos en recibos-costura o recibos-bordado-estampado, no hacer nada (la búsqueda se maneja localmente)
+        if (window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('recibos-bordado-estampado')) {
             return;
         }
 
@@ -137,9 +137,9 @@ const NavSearch = {
      * Realizar búsqueda
      */
     async performSearch(query, page = 1) {
-        
-        // Si estamos en recibos-costura, no hacer nada (la búsqueda se maneja localmente)
-        if (window.location.pathname.includes('recibos-costura')) {
+
+        // Si estamos en recibos-costura o recibos-bordado-estampado, no hacer nada (la búsqueda se maneja localmente)
+        if (window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('recibos-bordado-estampado')) {
             return;
         }
 

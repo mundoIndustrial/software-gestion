@@ -846,6 +846,12 @@ class RecibosCostruaModule {
 // Auto-inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // NO inicializar si estamos en vista de bordado/estampado
+        if (window.__SKIP_RECIBOS_TABLE_INIT__ === true) {
+            console.log('[bundle.js] Saltando inicialización de módulo de costura (vista: bordado/estampado)');
+            return;
+        }
+
         const modulo = new RecibosCostruaModule();
         await modulo.init();
 

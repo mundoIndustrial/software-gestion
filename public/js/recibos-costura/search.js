@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
         searchUrl = '/recibos-costura/search';
     } else if (window.location.pathname === '/recibos-reflectivo') {
         searchUrl = '/recibos-reflectivo/search';
+    } else if (window.location.pathname === '/recibos-bordado-estampado') {
+        searchUrl = '/recibos-bordado-estampado/search';
     } else {
         return; // No estamos en una página de recibos
     }
@@ -166,12 +168,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función simplificada para generar HTML de fila (debería coincidir con el blade)
     function generateRowHTML(recibo) {
+        // Si estamos en la página de bordado-estampado, usar un template diferente
+        if (window.location.pathname === '/recibos-bordado-estampado') {
+            return generateBordadoEstampadoRowHTML(recibo);
+        }
+
         const diasClase = getDiasClass(recibo.dias_calculados);
-        
+
         return `
-            <tr class="${diasClase}" 
-                data-orden-id="${recibo.id || ''}" 
-                data-pedido-id="${recibo.pedido_produccion_id || ''}" 
+            <tr class="${diasClase}"
+                data-orden-id="${recibo.id || ''}"
+                data-pedido-id="${recibo.pedido_produccion_id || ''}"
                 data-numero-recibo="${recibo.consecutivo_actual || ''}">
                 
                 <!-- Acciones -->
@@ -262,6 +269,93 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Encargado orden -->
                 <td>
                     <span style="font-weight: 600; color: #374151;">${recibo.encargado_orden || '-'}</span>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Función para generar HTML de fila para bordado/estampado (8 columnas específicas)
+    function generateBordadoEstampadoRowHTML(recibo) {
+        // Determinación del tipo (BORDADO o ESTAMPADO)
+        const tipo = recibo.tipo_recibo ? recibo.tipo_recibo.toUpperCase() : 'BORDADO';
+        const tipoBadgeColor = tipo === 'BORDADO' ? '#2563eb' : '#0f766e';
+
+        // Determinación del área
+        let areaRecibo = recibo.area || 'Pendiente';
+        let areaBadge = 'bg-secondary';
+        if (areaRecibo.includes('Corte')) {
+            areaBadge = 'bg-success';
+        } else if (areaRecibo.includes('Estampado')) {
+            areaBadge = 'bg-warning';
+        } else if (areaRecibo.includes('Bordado')) {
+            areaBadge = 'bg-purple';
+        } else if (areaRecibo.includes('Pendiente')) {
+            areaBadge = 'bg-info';
+        }
+
+        return `
+            <tr data-orden-id="${recibo.id || ''}"
+                data-pedido-id="${recibo.pedido_produccion_id || ''}"
+                data-numero-recibo="${recibo.consecutivo_actual || ''}">
+
+                <!-- Acciones -->
+                <td class="acciones-column" style="text-align: center; position: relative;">
+                    <button class="btn-ver-dropdown"
+                        title="Ver Opciones"
+                        data-menu-id="menu-recibo-${recibo.id || ''}"
+                        data-pedido-id="${recibo.pedido_produccion_id || ''}"
+                        data-prenda-id="${recibo.prenda_id || ''}"
+                        data-numero-recibo="${recibo.consecutivo_actual || ''}"
+                        data-tipo-recibo="${tipo}"
+                        data-es-parcial="false"
+                        data-recibo-id="${recibo.id || ''}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+
+                <!-- Área -->
+                <td>
+                    <span class="badge ${areaBadge}" style="display: inline-block;">
+                        ${areaRecibo}
+                    </span>
+                </td>
+
+                <!-- N° Recibo -->
+                <td style="text-align: center;">
+                    <span style="font-weight: 600;">${recibo.consecutivo_actual || '-'}</span>
+                </td>
+
+                <!-- Tipo de Recibo -->
+                <td style="text-align: center;">
+                    <span style="display:inline-block;padding:3px 8px;border-radius:999px;background:${tipoBadgeColor};color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;">
+                        ${tipo}
+                    </span>
+                </td>
+
+                <!-- Cliente -->
+                <td style="text-align: center;">
+                    ${recibo.pedido_info?.cliente ? `<span>${recibo.pedido_info.cliente}</span>` : '<span class="text-muted">N/A</span>'}
+                </td>
+
+                <!-- Descripción -->
+                <td data-descripcion-detallada="${recibo.descripcion_detallada || ''}">
+                    <div class="table-cell" style="flex: 10;">
+                        <div class="cell-content" style="justify-content: flex-start;">
+                            <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${recibo.descripcion_detallada ? recibo.descripcion_detallada.substring(0, 50) + (recibo.descripcion_detallada.length > 50 ? '...' : '') : 'Sin prenda'}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Cantidad -->
+                <td>
+                    ${recibo.cantidad_total && recibo.cantidad_total > 0 ? `<span style="font-weight: 600; color: #059669;">${recibo.cantidad_total}</span>` : '<span class="text-muted">-</span>'}
+                </td>
+
+                <!-- Fecha de creación -->
+                <td>
+                    ${recibo.pedido_info && recibo.pedido_info.fecha_creacion_orden ? formatFechaHTML(recibo.pedido_info.fecha_creacion_orden) : '<span class="text-muted">-</span>'}
                 </td>
             </tr>
         `;

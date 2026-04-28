@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Recibos Bordado/Estampado')
+@section('title', 'Recibos de Bordado/Estampado')
 
 @section('content')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <!-- Table Component -->
-            <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
+            <x-recibos.recibos-bordado-estampado-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
         </div>
     </div>
 </div>
@@ -353,11 +353,22 @@
 @endpush
 
 @push('scripts')
-<!-- 
+<!-- Limpiar datos residuales de costura antes de cargar módulos -->
+<script>
+    window.__VISTA_TIPO__ = 'bordado-estampado';
+    window.__SKIP_RECIBOS_TABLE_INIT__ = true;
+    if (typeof window.pedidosRecibosModule !== 'undefined') {
+        delete window.pedidosRecibosModule;
+    }
+    localStorage.removeItem('recibos_costura_state');
+    sessionStorage.removeItem('recibos_costura_state');
+</script>
+
+<!--
     ============================================
     PHASE 2: Módulo Modular DDD Recibos Costura
     ============================================
-    
+
     Bundle compilado con:
     - Domain Layer: Value Objects (EstadoRecibo, AreaRecibo, etc)
     - Infrastructure: API Client + State Manager
@@ -372,11 +383,12 @@
 <!-- Toast Notification Service - Servicio centralizado de notificaciones -->
 <script src="{{ asset('js/recibos-costura/services/ToastNotificationService.js') }}"></script>
 
-<!-- Filter Module - Sistema de filtrado de tabla -->
-<script src="{{ asset('js/recibos-costura/modules/FilterModule.js') }}"></script>
 
 <!-- Dropdown Service - Sistema de dropdowns -->
 <script src="{{ asset('js/recibos-costura/services/DropdownService.js') }}"></script>
+
+<!-- Search Module - Sistema de búsqueda AJAX -->
+<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
 
 <!-- Costura Notification Bell Service - Sistema de notificaciones de campana -->
 <script src="{{ asset('js/recibos-costura/services/CosturaNotificationBellService.js') }}"></script>
@@ -393,8 +405,29 @@
 <!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
 <script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
 
-<!-- Search Module - Sistema de búsqueda AJAX -->
-<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
+
+<script>
+// Script de inicialización para bordado/estampado - Prevenir datos de costura
+(() => {
+    // Limpiar datos de costura del DOM antes de que se inicialicen los módulos
+    const limpiarDatosCostura = () => {
+        document.querySelectorAll('[data-vista-tipo="costura"]').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // Marcar tabla como bordado/estampado
+        const tabla = document.querySelector('.modern-table');
+        if (tabla) {
+            tabla.setAttribute('data-vista-tipo', 'bordado-estampado');
+        }
+    };
+
+    limpiarDatosCostura();
+    document.addEventListener('DOMContentLoaded', limpiarDatosCostura);
+    setTimeout(limpiarDatosCostura, 100);
+    setTimeout(limpiarDatosCostura, 500);
+})();
+</script>
 
 <script>
 (() => {
@@ -516,10 +549,6 @@
 
 <script>
 (() => {
-    const TABLE_SELECTOR = '.modern-table';
-    const TIPO_HEADER_CLASS = 'tipo-recibo-header';
-    const TIPO_CELL_CLASS = 'tipo-recibo-cell';
-    const COLUMNAS_OCULTAS = ['estado', 'total_dias', 'novedades', 'fecha_estimada', 'encargado'];
 
     const normalizarTipo = (rawTipo) => {
         const tipo = String(rawTipo || '').trim().toUpperCase();
@@ -647,21 +676,10 @@
         });
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        aplicarColumnaTipo();
-        ocultarColumnasFijas();
-
-        const tbody = document.querySelector(`${TABLE_SELECTOR} tbody`);
-        if (!tbody) return;
-
-        const observer = new MutationObserver(() => {
-            aplicarColumnaTipo();
-            ocultarColumnasFijas();
-        });
-        observer.observe(tbody, { childList: true, subtree: true });
-    });
 })();
 </script>
+
+
 @endpush
 
 
