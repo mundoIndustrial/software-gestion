@@ -35,9 +35,12 @@ use App\Application\Pedidos\UseCases\Orders\GetAreaRecienteUseCase;
 use App\Application\UseCases\Receipts\GetReceiptJsonUseCase;
 use App\Application\UseCases\Receipts\ContarRecibosEjecutandoUseCase;
 use App\Application\UseCases\Receipts\MarcarReciboVistoUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetPendingEmbroideryStampingReceiptsUseCase;
+use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest;
 use App\Services\FestivosColombiaService;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class RegistroOrdenController extends Controller
 {
@@ -74,6 +77,7 @@ class RegistroOrdenController extends Controller
     protected $getAreaRecienteUseCase;
     protected $contarRecibosEjecutandoUseCase;
     protected $marcarReciboVistoUseCase;
+    protected $getPendingEmbroideryStampingReceiptsUseCase;
 
     public function __construct(
         RegistroOrdenValidationService $validationService,
@@ -106,7 +110,8 @@ class RegistroOrdenController extends Controller
         GetReceiptJsonUseCase $getReceiptJsonUseCase,
         GetAreaRecienteUseCase $getAreaRecienteUseCase,
         ContarRecibosEjecutandoUseCase $contarRecibosEjecutandoUseCase,
-        MarcarReciboVistoUseCase $marcarReciboVistoUseCase
+        MarcarReciboVistoUseCase $marcarReciboVistoUseCase,
+        GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase
     )
     {
         $this->validationService = $validationService;
@@ -140,6 +145,7 @@ class RegistroOrdenController extends Controller
         $this->getAreaRecienteUseCase = $getAreaRecienteUseCase;
         $this->contarRecibosEjecutandoUseCase = $contarRecibosEjecutandoUseCase;
         $this->marcarReciboVistoUseCase = $marcarReciboVistoUseCase;
+        $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
     }
 
     public function getNextPedido()
@@ -339,6 +345,165 @@ class RegistroOrdenController extends Controller
             $datos['recibos'] = collect($datos['recibos']);
         }
         return view('registros.recibos-reflectivo', $datos);
+    }
+
+    /**
+     * Vista nueva fuera de supervisor para pendientes de bordado/estampado.
+     */
+    public function recibosBordadoEstampado(Request $request)
+    {
+        $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
+            busqueda: $request->input('busqueda')
+        );
+        $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
+
+        $allProcesses = collect($response->getProcesses());
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(10, min($perPage, 100));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = max(0, ($currentPage - 1) * $perPage);
+
+        $procesosConCantidad = new LengthAwarePaginator(
+            $allProcesses->slice($offset, $perPage)->values(),
+            $allProcesses->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        $prendaIds = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) (is_array($proceso) ? ($proceso['prenda_id'] ?? 0) : ($proceso->prenda_id ?? 0)))
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $areasPorPrenda = [];
+        if (!empty($prendaIds)) {
+            $rowsArea = \DB::table('prenda_areas_logo_pedido')
+                ->select(['prenda_pedido_id', 'area'])
+                ->whereIn('prenda_pedido_id', $prendaIds)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->get();
+
+            foreach ($rowsArea as $row) {
+                $prendaId = (int) ($row->prenda_pedido_id ?? 0);
+                if ($prendaId <= 0 || isset($areasPorPrenda[$prendaId])) {
+                    continue;
+                }
+                $areasPorPrenda[$prendaId] = (string) ($row->area ?? '');
+            }
+        }
+
+        $tiposRecibo = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => strtoupper(trim((string) (is_array($proceso) ? ($proceso['tipo_recibo'] ?? '') : ($proceso->tipo_recibo ?? '')))))
+            ->filter(fn ($tipo) => $tipo !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        $numerosRecibo = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) (is_array($proceso) ? ($proceso['numero_recibo'] ?? 0) : ($proceso->numero_recibo ?? 0)))
+            ->filter(fn ($numero) => $numero > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $createdPorReciboKey = [];
+        if (!empty($prendaIds) && !empty($tiposRecibo) && !empty($numerosRecibo)) {
+            $rowsConsecutivos = \DB::table('consecutivos_recibos_pedidos')
+                ->select(['prenda_id', 'tipo_recibo', 'consecutivo_actual', 'created_at'])
+                ->whereIn('prenda_id', $prendaIds)
+                ->whereIn('tipo_recibo', $tiposRecibo)
+                ->whereIn('consecutivo_actual', $numerosRecibo)
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get();
+
+            foreach ($rowsConsecutivos as $row) {
+                $prendaId = (int) ($row->prenda_id ?? 0);
+                $tipo = strtoupper(trim((string) ($row->tipo_recibo ?? '')));
+                $numero = (int) ($row->consecutivo_actual ?? 0);
+                if ($prendaId <= 0 || $tipo === '' || $numero <= 0) {
+                    continue;
+                }
+
+                $key = $prendaId . '|' . $tipo . '|' . $numero;
+                if (!isset($createdPorReciboKey[$key])) {
+                    $createdPorReciboKey[$key] = $row->created_at;
+                }
+            }
+        }
+
+        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda, $createdPorReciboKey) {
+            $procesoArray = (array) $proceso;
+            $numeroRecibo = (string) ($procesoArray['numero_recibo'] ?? '');
+            $tipoRecibo = (string) ($procesoArray['tipo_recibo'] ?? '');
+            $nombrePrenda = (string) ($procesoArray['nombre_prenda'] ?? '');
+            $cliente = (string) ($procesoArray['cliente'] ?? '');
+            $asesor = (string) ($procesoArray['asesor'] ?? '');
+            $cantidad = (int) ($procesoArray['cantidad_total_prendas'] ?? 0);
+            $fechaCreacion = $procesoArray['fecha_creacion'] ?? null;
+            $prendaId = (int) ($procesoArray['prenda_id'] ?? 0);
+            $tipoReciboUpper = strtoupper(trim($tipoRecibo !== '' ? $tipoRecibo : 'BORDADO'));
+            $numeroReciboInt = (int) $numeroRecibo;
+            $reciboKey = $prendaId . '|' . $tipoReciboUpper . '|' . $numeroReciboInt;
+            $fechaCreacionDesdeConsecutivo = $createdPorReciboKey[$reciboKey] ?? null;
+            if ($fechaCreacionDesdeConsecutivo) {
+                $fechaCreacion = $fechaCreacionDesdeConsecutivo;
+            }
+            $areaRaw = strtoupper((string) ($areasPorPrenda[$prendaId] ?? 'PENDIENTE'));
+            $areaNormalizada = match ($areaRaw) {
+                'ESTAMPANDO', 'ESTAMPADO' => 'Estampado',
+                'BORDANDO', 'BORDADO' => 'Bordado',
+                'CORTE_Y_APLIQUE' => 'Corte',
+                'PENDIENTE_CONFIRMAR', 'PENDIENTE_DISENO', 'PENDIENTE' => 'Pendiente',
+                default => ucfirst(strtolower(str_replace('_', ' ', $areaRaw))),
+            };
+
+            return [
+                'id' => (int) ($procesoArray['id'] ?? ($index + 1)),
+                'pedido_produccion_id' => (int) ($procesoArray['pedido_id'] ?? 0),
+                'prenda_id' => $prendaId,
+                'consecutivo_actual' => $numeroRecibo,
+                'tipo_recibo' => $tipoRecibo !== '' ? $tipoRecibo : 'BORDADO',
+                'estado' => 'En Ejecución',
+                'area' => $areaNormalizada,
+                'dias_calculados' => 0,
+                'cantidad_total' => $cantidad,
+                'descripcion_detallada' => trim($nombrePrenda) !== '' ? ('PRENDA: ' . $nombrePrenda) : 'PRENDA: SIN DESCRIPCIÓN',
+                'novedades' => '',
+                'encargado_orden' => $asesor !== '' ? $asesor : '-',
+                'fecha_creacion' => $fechaCreacion,
+                'created_at' => $fechaCreacion,
+                'fecha_estimada' => null,
+                'pedido_info' => [
+                    'cliente' => $cliente !== '' ? $cliente : 'N/A',
+                    'fecha_creacion_orden' => $fechaCreacion,
+                ],
+            ];
+        });
+
+        $recibos = new LengthAwarePaginator(
+            $recibosNormalizados,
+            $procesosConCantidad->total(),
+            $procesosConCantidad->perPage(),
+            $procesosConCantidad->currentPage(),
+            [
+                'path' => $procesosConCantidad->path(),
+                'query' => $request->query(),
+            ]
+        );
+
+        $totalCantidadGlobal = (int) $allProcesses->sum(function ($proceso) {
+            return (int) (is_array($proceso) ? ($proceso['cantidad_total_prendas'] ?? 0) : ($proceso->cantidad_total_prendas ?? 0));
+        });
+
+        return view('registros.recibos-bordado-estampado', compact('recibos', 'totalCantidadGlobal'));
     }
 
     /**

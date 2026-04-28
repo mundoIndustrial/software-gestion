@@ -432,6 +432,14 @@
               <span class="menu-label">Recibos de Reflectivo</span>
             </a>
           </li>
+          <li class="submenu-item">
+            <a href="{{ route('registros.recibos-bordado-estampado') }}"
+               class="menu-link {{ request()->routeIs('registros.recibos-bordado-estampado') ? 'active' : '' }}"
+               aria-label="Ver pendientes bordado y estampado">
+              <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+              <span class="menu-label">Recibos Bordado/Estampado</span>
+            </a>
+          </li>
           @if(auth()->user()->hasRole('admin'))
           <li class="submenu-item">
             <a href="/recibos-bodega"

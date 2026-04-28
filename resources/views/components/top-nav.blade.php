@@ -4,7 +4,7 @@
             <span class="material-symbols-rounded">menu</span>
         </button>
         <div class="breadcrumb-section">
-            @if(request()->is('recibos-costura'))
+            @if(request()->is('recibos-costura') || request()->is('recibos-bordado-estampado'))
                 <h1 class="page-title">Recibos de Costura</h1>
             @elseif(request()->is('recibos-bodega'))
                 <h1 class="page-title">Recibos Bodega</h1>
@@ -19,7 +19,7 @@
             $currentRoute = Route::currentRouteName();
             $currentPath = request()->path();
             $isCotizacionesPendientes = $currentRoute === 'cotizaciones.pendientes';
-            $isRecibosCostura = $currentPath === 'recibos-costura';
+            $isRecibosCostura = $currentPath === 'recibos-costura' || $currentPath === 'recibos-bordado-estampado';
             $isRecibosBodega = $currentPath === 'recibos-bodega';
             $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
             $searchPlaceholder = $isRecibosBodega
