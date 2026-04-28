@@ -78,9 +78,10 @@ class RecibosQueryService
             $page = (int) $request->get('page', 1);
             $perPage = 10;
 
+            // 🔧 ORDENAMIENTO: Primero por número de recibo (descendente), luego por fecha
             $paginador = $query
-                ->orderByDesc('consecutivos_recibos_pedidos.ultima_actividad')
                 ->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')
+                ->orderByRaw('COALESCE(consecutivos_recibos_pedidos.ultima_actividad, consecutivos_recibos_pedidos.created_at) DESC')
                 ->paginate($perPage, ['*'], 'page', $page);
 
             $timeQueryEnd = microtime(true);
