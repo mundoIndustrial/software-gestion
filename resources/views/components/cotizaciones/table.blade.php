@@ -62,7 +62,7 @@
                                             @elseif($cot->tipo === 'PL')
                                                 Combinada
                                             @elseif($cot->tipo === 'EPP')
-                                                EPP
+                                                Cliente
                                             @else
                                                 {{ $cot->tipo ?? 'N/A' }}
                                             @endif

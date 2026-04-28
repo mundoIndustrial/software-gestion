@@ -453,7 +453,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Abrir el modal
                 const modal = document.getElementById('modalEditarEPP');
                 if (modal) {
-                    modal.classList.remove('hidden');
+                    if (typeof window.establecerVisibilidadModalEditarEPP === 'function') {
+                        window.establecerVisibilidadModalEditarEPP(true);
+                    } else {
+                        modal.classList.remove('hidden');
+                        modal.style.display = 'flex';
+                        modal.setAttribute('aria-hidden', 'false');
+                        document.body.style.overflow = 'hidden';
+                    }
                     console.log('[Cotizacion] Modal de edición abierto');
                 }
                 
@@ -694,6 +701,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const modal = document.getElementById('modalEditarEPP');
                 if (modal) {
                     modal.classList.add('hidden');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
                 }
             }
             
