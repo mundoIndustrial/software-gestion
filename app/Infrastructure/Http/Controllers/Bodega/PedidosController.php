@@ -104,11 +104,12 @@ class PedidosController extends Controller
                 ]);
             }
 
-            // 🚀 CACHE: Cachear por 60 segundos en el navegador
-            // Cuando el usuario hace "volver", usa el caché en lugar de recargar
+            // 🚀 CACHE: Deshabilitar caché del navegador para asegurar datos frescos
+            // Al volver atrás, el navegador DEBE consultar al servidor
             return response($response)
-                ->header('Cache-Control', 'public, max-age=60')
-                ->header('ETag', md5($request->fullUrl() . auth()->id()));
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
             
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@index: ' . $e->getMessage());
@@ -152,8 +153,9 @@ class PedidosController extends Controller
             }
 
             return response($response)
-                ->header('Cache-Control', 'public, max-age=60')
-                ->header('ETag', md5($request->fullUrl() . auth()->id()));
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@anulados: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los pedidos anulados: ' . $e->getMessage());
@@ -196,8 +198,9 @@ class PedidosController extends Controller
             }
 
             return response($response)
-                ->header('Cache-Control', 'public, max-age=60')
-                ->header('ETag', md5($request->fullUrl() . auth()->id()));
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@entregados: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los pedidos entregados: ' . $e->getMessage());
