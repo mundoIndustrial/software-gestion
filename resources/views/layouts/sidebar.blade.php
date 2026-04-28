@@ -811,6 +811,10 @@
 
 @if(auth()->user()->hasRole(['despacho', 'asesor', 'admin', 'supervisor_gerencia']))
 <script>
+  const shouldSkipPendientesPolling =
+    window.location.pathname.includes('/recibos-bodega');
+
+  if (!shouldSkipPendientesPolling) {
   // Cargar contador de pendientes
   function actualizarContadorPendientes() {
     fetch('/despacho/api/pendientes-todos?per_page=1')
@@ -844,5 +848,6 @@
   
   // Actualizar cada 30 segundos
   setInterval(actualizarContadorPendientes, 30000);
+  }
 </script>
 @endif

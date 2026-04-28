@@ -1,4 +1,4 @@
-<!-- Tabla de Recibos de Costura -->
+﻿<!-- Tabla de Recibos de Costura -->
 <div class="table-scroll-container recibos-costura-scale-90">
     <table class="table table-striped table-hover modern-table">
         <thead class="table-header">
@@ -29,8 +29,8 @@
                 </th>
                 <th style="width: 120px;">
                     <div class="th-wrapper">
-                        <span>Total de días</span>
-                        <button class="btn-filter-column" type="button" data-column="total_dias" onclick="openColumnFilter('total_dias', 'Total de días')">
+                        <span>Total de dí­as</span>
+                        <button class="btn-filter-column" type="button" data-column="total_dias" onclick="openColumnFilter('total_dias', 'Total de dí­as')">
                             <i class="fas fa-filter"></i>
                             <span class="filter-badge" data-badge="total_dias">0</span>
                         </button>
@@ -161,10 +161,10 @@
                             </span>
                         </td>
                         
-                        <!-- Área del Recibo (del proceso más reciente) -->
+                        <!-- Area del Recibo (del proceso mas reciente) -->
                         <td>
                             @php
-                                // Usar el área del recibo guardada en la BD en lugar del área general del pedido
+                                // Usar el Area del recibo guardada en la BD en lugar del Area general del pedido
                                 $areaRecibo = $recibo['area'] ?? $recibo['pedido_info']['area'] ?? 'Insumos';
                                 $puedeAgregarProceso = stripos((string) $areaRecibo, 'Corte') !== false;
                                 $areaBadge = 'bg-secondary';
@@ -175,9 +175,9 @@
                                 } elseif (strpos($areaRecibo, 'Costura') !== false) {
                                     $areaBadge = 'bg-primary'; // Azul principal - importante
                                 } elseif (strpos($areaRecibo, 'Estampado') !== false) {
-                                    $areaBadge = 'bg-warning'; // Amarillo/ámbar - visible para estampado
+                                    $areaBadge = 'bg-warning'; // Amarillo/Ambar - visible para estampado
                                 } elseif (strpos($areaRecibo, 'Bordado') !== false) {
-                                    $areaBadge = 'bg-purple'; // Púrpura - elegante para bordado (cambio de bg-danger)
+                                    $areaBadge = 'bg-purple'; // Purpura - elegante para bordado (cambio de bg-danger)
                                 }
                             @endphp
                             <span class="badge {{ $areaBadge }} area-badge-clickable"
@@ -192,16 +192,16 @@
                             </span>
                         </td>
                         
-                        <!-- Total de días -->
+                        <!-- Total de dias -->
                         <td style="text-align: center;">
                             @if(isset($recibo['dias_calculados']))
                                 @if($recibo['dias_calculados'] == 0)
                                     <span class="badge bg-secondary" style="font-weight: 600;">
-                                        {{ $recibo['dias_calculados'] }} días
+                                        {{ $recibo['dias_calculados'] }} dí­as
                                     </span>
                                 @else
                                     <span class="badge @if($recibo['dias_calculados'] >= 14) bg-danger @elseif($recibo['dias_calculados'] >= 5) bg-warning @else bg-success @endif" style="font-weight: 600;">
-                                        {{ $recibo['dias_calculados'] }} días
+                                        {{ $recibo['dias_calculados'] }} dí­as
                                     </span>
                                 @endif
                             @else
@@ -223,7 +223,7 @@
                             @endif
                         </td>
                         
-                        <!-- Descripción (Recibo de Costura) -->
+                        <!-- Descripcion (Recibo de Costura) -->
                         <td data-descripcion-detallada="{{ $recibo['descripcion_detallada'] ?? '' }}">
                             @php
                                 $nombreMostrar = $recibo['descripcion_detallada'] ?? '';
@@ -235,7 +235,7 @@
                             @endphp
                             
                             <div class="table-cell" style="flex: 10;">
-                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }}, '{{ $recibo['consecutivo_actual'] ?? '' }}', {{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}, {{ $recibo['pedido_parcial_id'] ?? 'null' }})">
+                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL]  Click en descripcion'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripcion', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }}, '{{ $recibo['consecutivo_actual'] ?? '' }}', {{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}, {{ $recibo['pedido_parcial_id'] ?? 'null' }})">
                                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                         {{ $nombreMostrar ?: 'Sin prenda' }}
                                     </span>
@@ -255,31 +255,9 @@
                         <!-- Novedades -->
                         <td>
                             @php
-                                // Obtener las novedades específicas de prendas para este recibo
-                                $novedadesRecibo = [];
-                                $novedadesTexto = '';
-                                if ($recibo['pedido_info']) {
-                                    $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
-                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                                        foreach ($pedido->prendas as $prenda) {
-                                            // Obtener novedades de esta prenda para este número de recibo
-                                            $novedadesPrenda = $prenda->novedadesRecibo()
-                                                ->where('numero_recibo', $recibo['consecutivo_actual'])
-                                                ->orderBy('creado_en', 'desc')
-                                                ->get();
-                                            
-                                            foreach ($novedadesPrenda as $novedad) {
-                                                // Limpiar el texto de la novedad para evitar problemas
-                                                $textoLimpio = str_replace(["\r", "\n", "'", '"'], " ", $novedad->novedad_texto);
-                                                $novedadesRecibo[] = $textoLimpio;
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Concatenar todas las novedades para mostrar
-                                    if (!empty($novedadesRecibo)) {
-                                        $novedadesTexto = implode(" | ", $novedadesRecibo);
-                                    }
+                                $novedadesTexto = trim((string) ($recibo['novedades'] ?? ''));
+                                if ($novedadesTexto === 'Sin novedades') {
+                                    $novedadesTexto = '';
                                 }
                             @endphp
                             <div class="table-cell" style="flex: 0 0 120px;">
@@ -303,7 +281,7 @@
                             </div>
                         </td>
                         
-                        <!-- Fecha de creación -->
+                        <!-- Fecha de creacion -->
                         <td>
                             @if(!empty($recibo['es_parcial']) && !empty($recibo['created_at']))
                                 <span>{{ \Carbon\Carbon::parse($recibo['created_at'])->format('d/m/Y') }}</span>
@@ -338,7 +316,7 @@
                             @endif
                         </td>
                         
-                        <!-- Encargado orden (Proceso más reciente) -->
+                        <!-- Encargado orden (Proceso mas reciente) -->
                         <td>
                             @php
                                 $encargadoProceso = '-';
@@ -349,17 +327,17 @@
                                         $prendaId = isset($recibo['prenda_id']) ? (int) $recibo['prenda_id'] : null;
                                         $numeroRecibo = (int) $recibo['consecutivo_actual'];
 
-                                        // Construcción de la query más específica y ordenada
+                                        // Construccion de la query mas especi­fica y ordenada
                                         $query = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
                                             ->where('numero_recibo', $numeroRecibo)
                                             ->whereNull('deleted_at');
 
-                                        // Si tenemos prenda_id, añadir esa condición también
+                                        // Si tenemos prenda_id, añadir esa condicion tambien
                                         if (!empty($prendaId)) {
                                             $query->where('prenda_pedido_id', $prendaId);
                                         }
 
-                                        // Obtener el proceso más reciente: primero por fecha_fin DESC, luego por created_at DESC
+                                        // Obtener el proceso mas reciente: primero por fecha_fin DESC, luego por created_at DESC
                                         $procesoMasReciente = $query
                                             ->orderByDesc('fecha_fin')
                                             ->orderByDesc('created_at')
@@ -391,7 +369,7 @@
     </table>
 </div>
 
-<!-- Controles de Paginación -->
+<!-- Controles de Paginacion -->
 @if($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator)
     <div class="pagination-container mt-4" data-pagination-current-url="{{ request()->fullUrl() }}">
         <div class="pagination-info text-muted mb-2">
@@ -423,7 +401,7 @@
     </div>
 </div>
 
-<!-- Botón flotante para limpiar todos los filtros -->
+<!-- Boton flotante para limpiar todos los filtros -->
 <button id="floating-clear-filters" class="floating-clear-filters" type="button" onclick="clearAllFilters()">
     <i class="fas fa-broom"></i>
     <div class="floating-clear-filters-tooltip">Limpiar filtros</div>

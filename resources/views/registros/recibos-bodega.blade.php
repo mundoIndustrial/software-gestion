@@ -6,8 +6,83 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+            <div class="mb-3 d-flex justify-content-end">
+                <button type="button" id="openReciboBodegaModalBtn" class="btn btn-primary">
+                    Registrar recibo
+                </button>
+            </div>
+
             <!-- Table Component -->
             <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
+        </div>
+    </div>
+</div>
+
+<div id="reciboBodegaCreateModal" class="custom-recibo-modal" aria-hidden="true">
+    <div class="custom-recibo-modal__backdrop" data-close-recibo-modal="true"></div>
+    <div class="custom-recibo-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reciboBodegaCreateModalTitle">
+        <div class="custom-recibo-modal__header">
+            <div>
+                <p class="custom-recibo-modal__eyebrow">Nuevo registro</p>
+                <h2 id="reciboBodegaCreateModalTitle" class="mb-0">Registrar recibo de bodega</h2>
+            </div>
+            <button type="button" class="custom-recibo-modal__close-btn" data-close-recibo-modal="true" aria-label="Cerrar">X</button>
+        </div>
+
+        <div class="custom-recibo-modal__body">
+            <form id="reciboBodegaCreateForm">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3 class="section-title">Prendas</h3>
+                    </div>
+
+                    <div id="prendasContainer" class="prendas-container">
+                        <div class="prenda-card" data-prenda-index="0">
+                            <div class="prenda-header">
+                                <span class="prenda-number">1</span>
+                                <button type="button" class="btn-delete eliminar-prenda-btn" style="display: none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="prenda-content">
+                                <div class="form-group">
+                                    <label class="form-label-small">Descripcion de la prenda</label>
+                                    <input type="text" name="prenda[0]" class="form-input-compact" placeholder="Ej: Polo roja" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label-small">Detalles adicionales</label>
+                                    <textarea name="descripcion[0]" rows="2" class="form-textarea" placeholder="Ej: Pegar bolsillo en la parte frontal"></textarea>
+                                </div>
+
+                                <div class="tallas-section">
+                                    <label class="form-label-small">Tallas y Cantidades</label>
+                                    <div class="tallas-list">
+                                        <div>
+                                            <input type="text" name="talla[0][]" placeholder="Talla (ej: XS)" required>
+                                            <input type="number" name="cantidad[0][]" placeholder="Cantidad" min="1" required>
+                                            <button type="button" class="eliminar-talla-btn">x</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-add-talla anadir-talla-btn" data-prenda-index="0">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
+                                        </svg>
+                                        Anadir talla
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="custom-recibo-modal__footer">
+                    <button type="button" class="custom-recibo-btn custom-recibo-btn--secondary" data-close-recibo-modal="true">Cancelar</button>
+                    <button type="submit" class="custom-recibo-btn custom-recibo-btn--primary">Guardar recibo</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -155,7 +230,7 @@
     left: 100%;
 }
 
-/* Colores personalizados para badges de área */
+/* Colores personalizados para badges de Area */
 .badge.bg-purple {
     background-color: #8b5cf6 !important;
     color: white !important;
@@ -354,50 +429,357 @@
         left: 100%;
     }
 }
+
+.custom-recibo-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 10000100;
+}
+
+.custom-recibo-modal.is-open {
+    display: block;
+}
+
+.custom-recibo-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.custom-recibo-modal__dialog {
+    position: relative;
+    width: min(920px, 95vw);
+    max-height: 90vh;
+    overflow: auto;
+    margin: 4vh auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 0;
+    border: 1px solid #dbeafe;
+    box-shadow: 0 30px 70px rgba(2, 6, 23, 0.35);
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.custom-recibo-modal.is-open .custom-recibo-modal__dialog {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.custom-recibo-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.custom-recibo-modal__eyebrow {
+    margin: 0 0 4px 0;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.custom-recibo-modal__close-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #1f2937;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.custom-recibo-modal__body {
+    padding: 18px 22px 14px;
+}
+
+.custom-recibo-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 14px;
+}
+
+.custom-recibo-btn {
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.custom-recibo-btn--secondary {
+    border-color: #d1d5db;
+    background: #fff;
+    color: #374151;
+}
+
+.custom-recibo-btn--primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+}
+
+#reciboBodegaCreateModal .section-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+#reciboBodegaCreateModal .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#reciboBodegaCreateModal .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+#reciboBodegaCreateModal .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+#reciboBodegaCreateModal .form-label-small {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+#reciboBodegaCreateModal .form-input-compact,
+#reciboBodegaCreateModal .form-textarea,
+#reciboBodegaCreateModal .tallas-list input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+    color: #1f2937;
+    font-size: 14px;
+    transition: all .2s ease;
+}
+
+#reciboBodegaCreateModal .form-input-compact:focus,
+#reciboBodegaCreateModal .form-textarea:focus,
+#reciboBodegaCreateModal .tallas-list input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+#reciboBodegaCreateModal .form-textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+#reciboBodegaCreateModal .prendas-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+#reciboBodegaCreateModal .prenda-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+#reciboBodegaCreateModal .prenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+#reciboBodegaCreateModal .prenda-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    font-weight: 700;
+}
+
+#reciboBodegaCreateModal .prenda-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#reciboBodegaCreateModal .tallas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+#reciboBodegaCreateModal .tallas-list > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+#reciboBodegaCreateModal .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    cursor: pointer;
+}
+
+#reciboBodegaCreateModal .btn-icon svg,
+#reciboBodegaCreateModal .btn-delete svg,
+#reciboBodegaCreateModal .btn-add-talla svg {
+    width: 18px;
+    height: 18px;
+}
+
+#reciboBodegaCreateModal .btn-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fee2e2;
+    color: #dc2626;
+    cursor: pointer;
+}
+
+#reciboBodegaCreateModal .btn-add-talla {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #2563eb;
+    font-weight: 600;
+    padding: 9px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+#reciboBodegaCreateModal .eliminar-talla-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #fca5a5;
+    background: #fff;
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    #reciboBodegaCreateModal .custom-recibo-modal__dialog {
+        width: 96vw;
+        margin: 2vh auto;
+    }
+
+    #reciboBodegaCreateModal .section-card {
+        padding: 14px;
+    }
+}
 </style>
 @endpush
 
 @push('scripts')
-<!-- 
-    ============================================
-    PHASE 2: Módulo Modular DDD Recibos Costura
-    ============================================
-    
-    Bundle compilado con:
-    - Domain Layer: Value Objects (EstadoRecibo, AreaRecibo, etc)
-    - Infrastructure: API Client + State Manager
-    - Presentation: Table Controller + Dropdown + Modal Handlers
-    - Initializer: Auto-bootstrap + listeners
--->
-<script src="{{ asset('js/recibos-costura/bundle.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('reciboBodegaCreateModal');
+    const openBtn = document.getElementById('openReciboBodegaModalBtn');
+    const prendasContainer = document.getElementById('prendasContainer');
+    const form = document.getElementById('reciboBodegaCreateForm');
 
-<!-- Legacy Scripts Component (MANTENER POR COMPATIBILIDAD) -->
-<x-recibos.recibos-costura-scripts />
+    if (!modal || !openBtn || !prendasContainer || !form) return;
 
-<!-- Toast Notification Service - Servicio centralizado de notificaciones -->
-<script src="{{ asset('js/recibos-costura/services/ToastNotificationService.js') }}"></script>
+    const closeModal = () => {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    };
 
-<!-- Filter Module - Sistema de filtrado de tabla -->
-<script src="{{ asset('js/recibos-costura/modules/FilterModule.js') }}"></script>
+    const openModal = () => {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    };
 
-<!-- Dropdown Service - Sistema de dropdowns -->
-<script src="{{ asset('js/recibos-costura/services/DropdownService.js') }}"></script>
+    openBtn.addEventListener('click', openModal);
 
-<!-- Costura Notification Bell Service - Sistema de notificaciones de campana -->
-<script src="{{ asset('js/recibos-costura/services/CosturaNotificationBellService.js') }}"></script>
+    modal.addEventListener('click', function (event) {
+        if (event.target.matches('[data-close-recibo-modal=\"true\"]')) closeModal();
+    });
 
-<!-- Realtime Recibo Listener - Sistema de escucha en tiempo real de eventos -->
-<script src="{{ asset('js/recibos-costura/services/RealtimeReciboListener.js') }}"></script>
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeModal();
+    });
 
-<!-- Tracking Modal Controller - Controlador de modal de seguimiento -->
-<script src="{{ asset('js/recibos-costura/controllers/TrackingModalController.js') }}"></script>
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        closeModal();
+    });
 
-<!-- Add Process Modal Controller - Controlador de modal para agregar procesos -->
-<script src="{{ asset('js/recibos-costura/controllers/AddProcessModalController.js') }}"></script>
+    function bindPrendaActions(prendaCard) {
+        const prendaIndex = parseInt(prendaCard.dataset.prendaIndex || '0', 10);
+        const addTallaBtn = prendaCard.querySelector('.anadir-talla-btn');
+        const tallasList = prendaCard.querySelector('.tallas-list');
 
-<!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
-<script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
+        if (addTallaBtn && tallasList) {
+            addTallaBtn.addEventListener('click', function () {
+                const tallaRow = document.createElement('div');
+                tallaRow.innerHTML = `
+                    <input type="text" name="talla[${prendaIndex}][]" placeholder="Talla (ej: XS)" required>
+                    <input type="number" name="cantidad[${prendaIndex}][]" placeholder="Cantidad" min="1" required>
+                    <button type="button" class="eliminar-talla-btn">x</button>
+                `;
+                tallasList.appendChild(tallaRow);
+            });
+        }
+    }
 
-<!-- Search Module - Sistema de búsqueda AJAX -->
-<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
+    prendasContainer.addEventListener('click', function (event) {
+        if (!event.target.classList.contains('eliminar-talla-btn')) return;
+        const tallasList = event.target.closest('.tallas-list');
+        if (!tallasList) return;
+        const rows = tallasList.querySelectorAll(':scope > div');
+        if (rows.length > 1) event.target.closest('div')?.remove();
+    });
+
+    prendasContainer.querySelectorAll('.prenda-card').forEach(bindPrendaActions);
+});
+</script>
 @endpush

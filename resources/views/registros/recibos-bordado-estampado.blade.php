@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Recibos de Bordado/Estampado')
 
@@ -157,7 +157,7 @@
     left: 100%;
 }
 
-/* Colores personalizados para badges de área */
+/* Colores personalizados para badges de Area */
 .badge.bg-purple {
     background-color: #8b5cf6 !important;
     color: white !important;
@@ -360,7 +360,45 @@
 @endpush
 
 @push('scripts')
-<!-- Limpiar datos residuales de costura antes de cargar módulos -->
+<script>
+// Optimización de rendimiento en esta vista:
+// silencia logs de debug muy ruidosos del módulo de recibos
+// (no afecta errores, solo evita sobrecarga de consola en render).
+(() => {
+    if (window.__RECIBOS_BORDADO_LOG_FILTER__) return;
+    window.__RECIBOS_BORDADO_LOG_FILTER__ = true;
+
+    const noisyPrefixes = [
+        '[Formatters',
+        '[ReceiptRenderer',
+        '[ReceiptBuilder',
+        '[PedidosRecibosModule',
+        '[printReceiptModal',
+        '[toggleFactura-PRM',
+    ];
+
+    const originalLog = console.log.bind(console);
+    const originalWarn = console.warn.bind(console);
+
+    const shouldSkip = (args) => {
+        if (!args || args.length === 0) return false;
+        const first = String(args[0] ?? '');
+        return noisyPrefixes.some((prefix) => first.includes(prefix));
+    };
+
+    console.log = (...args) => {
+        if (shouldSkip(args)) return;
+        originalLog(...args);
+    };
+
+    console.warn = (...args) => {
+        if (shouldSkip(args)) return;
+        originalWarn(...args);
+    };
+})();
+</script>
+
+<!-- Limpiar datos residuales de costura antes de cargar modulos -->
 <script>
     window.__VISTA_TIPO__ = 'bordado-estampado';
     window.__SKIP_RECIBOS_TABLE_INIT__ = true;
@@ -371,52 +409,11 @@
     sessionStorage.removeItem('recibos_costura_state');
 </script>
 
-<!--
-    ============================================
-    PHASE 2: Módulo Modular DDD Recibos Costura
-    ============================================
-
-    Bundle compilado con:
-    - Domain Layer: Value Objects (EstadoRecibo, AreaRecibo, etc)
-    - Infrastructure: API Client + State Manager
-    - Presentation: Table Controller + Dropdown + Modal Handlers
-    - Initializer: Auto-bootstrap + listeners
--->
-<script src="{{ asset('js/recibos-costura/bundle.js') }}"></script>
-
-<!-- Legacy Scripts Component (MANTENER POR COMPATIBILIDAD) -->
-<x-recibos.recibos-costura-scripts />
-
-<!-- Toast Notification Service - Servicio centralizado de notificaciones -->
-<script src="{{ asset('js/recibos-costura/services/ToastNotificationService.js') }}"></script>
-
-
-<!-- Dropdown Service - Sistema de dropdowns -->
-<script src="{{ asset('js/recibos-costura/services/DropdownService.js') }}"></script>
-
-<!-- Search Module - Sistema de búsqueda AJAX -->
-<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
-
-<!-- Costura Notification Bell Service - Sistema de notificaciones de campana -->
-<script src="{{ asset('js/recibos-costura/services/CosturaNotificationBellService.js') }}"></script>
-
-<!-- Realtime Recibo Listener - Sistema de escucha en tiempo real de eventos -->
-<script src="{{ asset('js/recibos-costura/services/RealtimeReciboListener.js') }}"></script>
-
-<!-- Tracking Modal Controller - Controlador de modal de seguimiento -->
-<script src="{{ asset('js/recibos-costura/controllers/TrackingModalController.js') }}"></script>
-
-<!-- Add Process Modal Controller - Controlador de modal para agregar procesos -->
-<script src="{{ asset('js/recibos-costura/controllers/AddProcessModalController.js') }}"></script>
-
-<!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
-<script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
-
 
 <script>
-// Script de inicialización para bordado/estampado - Prevenir datos de costura
+// Script de inicializacion para bordado/estampado - Prevenir datos de costura
 (() => {
-    // Limpiar datos de costura del DOM antes de que se inicialicen los módulos
+    // Limpiar datos de costura del DOM antes de que se inicialicen los modulos
     const limpiarDatosCostura = () => {
         document.querySelectorAll('[data-vista-tipo="costura"]').forEach(el => {
             el.style.display = 'none';
@@ -438,8 +435,9 @@
 
 <script>
 (() => {
-    let pendingOpen = null;
-    let modulePollStarted = false;
+    let bridgeLoadingPromise = null;
+    const BRIDGE_SCRIPT_ID = 'pedidos-recibos-loader-bridge';
+    let openSeq = 0;
 
     const parseBool = (value) => {
         const normalized = String(value ?? '').trim().toLowerCase();
@@ -458,11 +456,102 @@
         typeof window.pedidosRecibosModule.abrirRecibo === 'function'
     );
 
-    const tryInstantiateModule = () => {
-        if (!window.pedidosRecibosModule && typeof window.PedidosRecibosModule === 'function') {
-            window.pedidosRecibosModule = new window.PedidosRecibosModule();
+    const hasOpenApi = () => (
+        typeof window.openOrderDetailModalWithProcess === 'function' ||
+        typeof window.openOrderDetailModalWithParcial === 'function' ||
+        isRecibosModuleReady()
+    );
+
+    const waitForBridgeReady = (maxAttempts = 40, delayMs = 100) => new Promise((resolve) => {
+        let attempts = 0;
+        const check = () => {
+            attempts += 1;
+            if (hasOpenApi()) {
+                resolve(true);
+                return;
+            }
+            if (attempts >= maxAttempts) {
+                resolve(false);
+                return;
+            }
+            setTimeout(check, delayMs);
+        };
+        check();
+    });
+
+    const ensureBridgeLoaded = async () => {
+        if (hasOpenApi()) return true;
+
+        if (!bridgeLoadingPromise) {
+            bridgeLoadingPromise = new Promise((resolve) => {
+                const existing = document.getElementById(BRIDGE_SCRIPT_ID);
+                if (existing) {
+                    resolve(true);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.id = BRIDGE_SCRIPT_ID;
+                script.type = 'module';
+                script.src = "{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ time() }}";
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
+            });
         }
+
+        await bridgeLoadingPromise;
+        return waitForBridgeReady();
     };
+
+    const waitForModalVisible = (timeoutMs = 8000) => new Promise((resolve) => {
+        const startedAt = performance.now();
+        const tick = () => {
+            const wrapper = document.getElementById('order-detail-modal-wrapper');
+            const overlay = document.getElementById('modal-overlay');
+            const visible = !!wrapper && !!overlay &&
+                wrapper.style.display !== 'none' &&
+                overlay.style.display !== 'none';
+
+            if (visible) {
+                resolve(true);
+                return;
+            }
+
+            if (performance.now() - startedAt >= timeoutMs) {
+                resolve(false);
+                return;
+            }
+
+            requestAnimationFrame(tick);
+        };
+        tick();
+    });
+
+    const waitForContentRendered = (timeoutMs = 8000) => new Promise((resolve) => {
+        const startedAt = performance.now();
+        const tick = () => {
+            const pedidoEl = document.getElementById('order-pedido');
+            const clienteEl = document.getElementById('cliente-value');
+            const descripcionEl = document.getElementById('order-description');
+            const hasPedido = !!pedidoEl && String(pedidoEl.textContent || '').trim() !== '';
+            const hasCliente = !!clienteEl && String(clienteEl.textContent || '').trim() !== '';
+            const hasDescripcion = !!descripcionEl && String(descripcionEl.innerHTML || '').trim() !== '';
+
+            if (hasPedido || hasCliente || hasDescripcion) {
+                resolve(true);
+                return;
+            }
+
+            if (performance.now() - startedAt >= timeoutMs) {
+                resolve(false);
+                return;
+            }
+
+            requestAnimationFrame(tick);
+        };
+        tick();
+    });
 
     const openDirect = (payload) => {
         if (!payload || !payload.pedidoId) return;
@@ -488,39 +577,7 @@
         }
     };
 
-    const startModulePoll = () => {
-        if (modulePollStarted) return;
-        modulePollStarted = true;
-
-        let attempts = 0;
-        const maxAttempts = 80;
-
-        const poll = () => {
-            attempts += 1;
-            tryInstantiateModule();
-
-            if (isRecibosModuleReady()) {
-                if (pendingOpen) {
-                    const payload = pendingOpen;
-                    pendingOpen = null;
-                    openDirect(payload);
-                }
-                modulePollStarted = false;
-                return;
-            }
-
-            if (attempts < maxAttempts) {
-                setTimeout(poll, 50);
-            } else {
-                console.warn('[recibos-bordado-estampado] Modulo de recibos aun no disponible');
-                modulePollStarted = false;
-            }
-        };
-
-        poll();
-    };
-
-    document.addEventListener('click', function (event) {
+    document.addEventListener('click', async function (event) {
         const btnVer = event.target.closest('.btn-ver-dropdown');
         if (!btnVer) return;
 
@@ -543,13 +600,37 @@
             return;
         }
 
-        if (isRecibosModuleReady()) {
+        const seq = ++openSeq;
+        const label = `[PerfRecibo][#${seq}] pedido=${payload.pedidoId} prenda=${payload.prendaId ?? 'NA'} recibo=${payload.numeroRecibo ?? 'NA'}`;
+        const t0 = performance.now();
+        console.info(`${label} click`);
+
+        if (hasOpenApi()) {
+            const tApi = performance.now();
             openDirect(payload);
+            const modalVisible = await waitForModalVisible();
+            const tVisible = performance.now();
+            const contentReady = await waitForContentRendered();
+            const tReady = performance.now();
+            console.info(`${label} openApiReadyMs=${(tApi - t0).toFixed(1)} modalVisibleMs=${(tVisible - t0).toFixed(1)} contentReadyMs=${(tReady - t0).toFixed(1)} modalVisible=${modalVisible} contentReady=${contentReady}`);
             return;
         }
 
-        pendingOpen = payload;
-        startModulePoll();
+        const tBridgeStart = performance.now();
+        const ready = await ensureBridgeLoaded();
+        const tBridgeEnd = performance.now();
+        if (!ready) {
+            console.warn(`${label} bridgeReady=false bridgeWaitMs=${(tBridgeEnd - tBridgeStart).toFixed(1)}`);
+            return;
+        }
+
+        const tApi = performance.now();
+        openDirect(payload);
+        const modalVisible = await waitForModalVisible();
+        const tVisible = performance.now();
+        const contentReady = await waitForContentRendered();
+        const tReady = performance.now();
+        console.info(`${label} bridgeWaitMs=${(tBridgeEnd - tBridgeStart).toFixed(1)} openApiReadyMs=${(tApi - t0).toFixed(1)} modalVisibleMs=${(tVisible - t0).toFixed(1)} contentReadyMs=${(tReady - t0).toFixed(1)} modalVisible=${modalVisible} contentReady=${contentReady}`);
     }, true);
 })();
 </script>
@@ -593,7 +674,7 @@
             String(texto || '')
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
-                .replace(/°/g, 'o')
+                .replace(/Â°/g, 'o')
                 .replace(/[^\w\s]/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim()
