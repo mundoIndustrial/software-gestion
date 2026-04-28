@@ -482,7 +482,8 @@
                                                                     bg-slate-50 text-slate-500
                                                                 @endif"
                                                             style="font-family: 'Poppins', sans-serif;"
-                                                            onclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                            ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                            title="Doble clic para editar pendientes"
                                                             data-row-hash="{{ $rowHash }}"
                                                         >
                                                             @if($pendValue > 0)
@@ -893,7 +894,8 @@
                                                                 bg-slate-50 text-slate-500
                                                             @endif"
                                                         style="font-family: 'Poppins', sans-serif;"
-                                                        onclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                        ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                        title="Doble clic para editar pendientes"
                                                         data-row-hash="{{ $rowHashSimple }}"
                                                     >
                                                         @if($pendValue > 0)

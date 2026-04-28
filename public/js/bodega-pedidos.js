@@ -1628,17 +1628,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const displayDiv = fila.querySelector('.pendientes-display');
                 const inputOculto = fila.querySelector('.pendientes-input');
                 const totalQty = parseInt(this.getAttribute('data-cantidad')) || 0;
-                
-                // 1. Poner todo en pendiente (totalQty de totalQty)
-                if (inputOculto) {
-                    inputOculto.value = totalQty;
+                const vieneDelModal = this.getAttribute('data-pending-from-modal') === '1';
+                const pendienteGuardado = parseInt(inputOculto?.value) || 0;
+                const pendienteMostrado = pendienteGuardado > 0 ? pendienteGuardado : totalQty;
+
+                // Si el cambio viene del modal de pendientes, la cantidad ya fue digitada.
+                if (!vieneDelModal) {
+                    if (inputOculto) {
+                        inputOculto.value = pendienteMostrado;
+                    }
+
+                    if (displayDiv) {
+                        displayDiv.innerHTML = `<span class="font-bold">Pendiente ${pendienteMostrado} de ${totalQty}</span>`;
+                        displayDiv.classList.remove('bg-slate-50', 'text-slate-500');
+                        displayDiv.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+                    }
                 }
-                
-                if (displayDiv) {
-                    displayDiv.innerHTML = `<span class="font-bold">Pendiente ${totalQty} de ${totalQty}</span>`;
-                    displayDiv.classList.remove('bg-slate-50', 'text-slate-500');
-                    displayDiv.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
-                }
+
+                this.removeAttribute('data-pending-from-modal');
 
                 // 2. Auto-guardar la fila
                 const btnGuardar = fila.querySelector('button[onclick^="guardarFilaCompleta"]');
@@ -2146,6 +2153,50 @@ window.confirmarCantidadPendiente = function() {
         }
     }
     
+    cerrarModalPendientes();
+};
+
+// Override para preservar la cantidad digitada cuando el estado se fuerza desde el modal.
+window.confirmarCantidadPendiente = function() {
+    if (!__currentPendienteTarget) return;
+
+    const input = document.getElementById('inputCantidadPendiente');
+    let valor = parseInt(input.value) || 0;
+
+    if (valor < 0) valor = 0;
+    if (valor > __currentTotalQty) {
+        alert(`La cantidad pendiente (${valor}) no puede ser mayor al total (${__currentTotalQty})`);
+        return;
+    }
+
+    const rowHash = __currentPendienteTarget.getAttribute('data-row-hash');
+    const inputOculto = document.querySelector(`.pendientes-input[data-row-hash="${rowHash}"]`);
+    const fila = __currentPendienteTarget.closest('tr');
+    const estadoSelect = fila ? fila.querySelector('.estado-select') : null;
+
+    if (inputOculto) {
+        inputOculto.value = valor;
+    }
+
+    if (estadoSelect) {
+        estadoSelect.setAttribute('data-pending-from-modal', '1');
+        estadoSelect.value = 'Pendiente';
+    }
+
+    if (valor > 0) {
+        __currentPendienteTarget.innerHTML = `<span class="font-bold">Pendiente ${valor} de ${__currentTotalQty}</span>`;
+        __currentPendienteTarget.classList.remove('bg-slate-50', 'text-slate-500');
+        __currentPendienteTarget.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+    } else {
+        __currentPendienteTarget.innerHTML = `<span class="opacity-50">Sin pendientes</span>`;
+        __currentPendienteTarget.classList.add('bg-slate-50', 'text-slate-500');
+        __currentPendienteTarget.classList.remove('bg-amber-50', 'text-amber-700', 'border-amber-200');
+    }
+
+    if (estadoSelect) {
+        estadoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     cerrarModalPendientes();
 };
 
