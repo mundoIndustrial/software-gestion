@@ -451,9 +451,9 @@
           <li class="submenu-item">
             <a href="{{ route('registros.recibos-bordado-estampado') }}"
                class="menu-link {{ request()->routeIs('registros.recibos-bordado-estampado') ? 'active' : '' }}"
-               aria-label="Ver pendientes bordado y estampado">
+               aria-label="Ver recibos de logo">
               <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
-              <span class="menu-label">Recibos Bordado/Estampado</span>
+              <span class="menu-label">Recibos de Logo</span>
             </a>
           </li>
           @if(auth()->user()->hasRole('admin'))
