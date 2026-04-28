@@ -166,8 +166,8 @@ class PrendaComparisonService
     {
         $cambios = [];
 
-        $origenAnterior = $beforeSnapshot->deBodega === 1 ? 'Bodega' : 'Confección';
-        $origenNuevo = ($prendaDespues->de_bodega ?? 0) === 1 ? 'Bodega' : 'Confección';
+        $origenAnterior = (bool) $beforeSnapshot->deBodega ? 'Bodega' : 'Confección';
+        $origenNuevo = (bool) ($prendaDespues->de_bodega ?? false) ? 'Bodega' : 'Confección';
 
         if ($origenAnterior !== $origenNuevo) {
             $cambios[] = [

@@ -38,7 +38,7 @@
                                     <span class="material-symbols-rounded">location_on</span>ORIGEN *
                                 </label>
                                 <select id="nueva-prenda-origen-select" class="form-input">
-p                                    <option value="" disabled selected>— Seleccionar origen —</option>
+                                    <option value="" disabled selected>— Seleccionar origen —</option>
                                     <option value="bodega">Bodega</option>
                                     <option value="confeccion">Confección</option>
                                 </select>
