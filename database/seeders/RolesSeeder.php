@@ -81,6 +81,11 @@ class RolesSeeder extends Seeder
                 'description' => 'Administrador Costura - Acceso a tableros de órdenes (costura)',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'visualizador_recibos_logo',
+                'description' => 'Visualizador de Recibos Bordado/Estampado - Solo puede acceder a la vista de recibos bordado y estampado',
+                'requires_credentials' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

@@ -25,6 +25,11 @@ class DashboardController extends Controller
             return redirect()->route('login');
         }
 
+        if ($user->hasRole('visualizador_recibos_logo')) {
+            \Log::info(' Redirigiendo a registros.recibos-bordado-estampado');
+            return redirect()->route('registros.recibos-bordado-estampado');
+        }
+
         \Log::info(' Usuario autenticado', [
             'user_id' => $user->id,
             'user_name' => $user->name,
@@ -491,4 +496,3 @@ class DashboardController extends Controller
         return response()->json($data);
     }
 }
-

@@ -11,7 +11,7 @@
 <!-- Sidebar principal -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <a href="{{ route('dashboard') }}" class="logo-wrapper" aria-label="Ir al Dashboard">
+    <a href="{{ auth()->check() && auth()->user()->hasRole('visualizador_recibos_logo') ? route('registros.recibos-bordado-estampado') : route('dashboard') }}" class="logo-wrapper" aria-label="Ir al Dashboard">
       <img src="{{ asset('images/logo2.png') }}"
            alt="Logo Mundo Industrial"
            class="header-logo"
@@ -24,6 +24,22 @@
   </div>
 
   <div class="sidebar-content">
+    @if(auth()->user()->hasRole('visualizador_recibos_logo'))
+    <div class="menu-section">
+      <span class="menu-section-title">Recibos</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('registros.recibos-bordado-estampado') }}"
+           class="menu-link {{ request()->routeIs('registros.recibos-bordado-estampado') ? 'active' : '' }}"
+           aria-label="Recibos Bordado y Estampado">
+          <span class="material-symbols-rounded" aria-hidden="true">image</span>
+          <span class="menu-label">Recibos Logo</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    @else
     <!-- DESPACHO: Menú simplificado solo Gestión de Bodega -->
     @if(auth()->user()->hasRole('despacho'))
     <div class="menu-section">
@@ -782,6 +798,7 @@
       </li>
       </ul>
     </div>
+    @endif
     @endif
     @endif
     @endif

@@ -39,7 +39,7 @@ Route::get('/storage/pedidos/{path}', [App\Infrastructure\Http\Controllers\Stora
 // ========================================
 require base_path('routes/insumos.php');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access', 'block-costura-reflectivo-dashboard'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access', 'block-costura-reflectivo-dashboard', 'restrict-visualizador-recibos-logo'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

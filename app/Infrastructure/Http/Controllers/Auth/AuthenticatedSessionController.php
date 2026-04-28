@@ -42,6 +42,11 @@ class AuthenticatedSessionController extends Controller
             'roles_ids' => json_encode($user->roles_ids ?? []),
         ]);
 
+        if ($user && $user->hasRole('visualizador_recibos_logo')) {
+            \Log::info('→ Redirigiendo a registros.recibos-bordado-estampado');
+            return redirect(route('registros.recibos-bordado-estampado', absolute: false));
+        }
+
         if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
             \Log::info('→ Redirigiendo a visualizador-logo.pedidos-logo');
             return redirect(route('visualizador-logo.pedidos-logo', absolute: false));

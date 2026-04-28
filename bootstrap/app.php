@@ -82,6 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'bodega-access' => \App\Http\Middleware\CheckBodegaAccess::class,
             'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
             'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
+            'restrict-visualizador-recibos-logo' => \App\Http\Middleware\RestrictVisualizadorRecibosLogo::class,
             'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
             'redirect-to-login' => \App\Http\Middleware\RedirectToLoginIfUnauthenticated::class,
             'operario-access' => \App\Http\Middleware\OperarioAccess::class,
@@ -101,6 +102,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Add security headers middleware globally
         $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
+
+        // Restringir al rol visualizador_recibos_logo a su vista única de recibos
+        $middleware->append(\App\Http\Middleware\RestrictVisualizadorRecibosLogo::class);
         
         // Restrict bodega roles to bodega routes only
         $middleware->append(\App\Http\Middleware\RestrictBodegaRoles::class);
