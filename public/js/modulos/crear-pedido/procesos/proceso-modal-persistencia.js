@@ -1,4 +1,4 @@
-/**
+﻿/**
  * proceso-modal-persistencia.js
  * Extraccion de persistencia/guardado del modal de procesos.
  */
@@ -359,21 +359,81 @@ function _procesoGenerico_postGuardar(modoAntesDeCerrar) {
 }
 procesoModalModules.persistencia.postGuardar = _procesoGenerico_postGuardar;
 
+function _procesoGenerico_limpiarResaltadoUbicaciones() {
+    const inputUbicacion = document.getElementById('input-ubicacion-nueva');
+    const seccionUbicaciones = inputUbicacion?.closest('.form-section');
+    if (!seccionUbicaciones) return;
+    seccionUbicaciones.style.border = '';
+    seccionUbicaciones.style.borderRadius = '';
+    seccionUbicaciones.style.padding = '';
+    seccionUbicaciones.style.background = '';
+    seccionUbicaciones.style.boxShadow = '';
+    const label = seccionUbicaciones.querySelector('label[for="input-ubicacion-nueva"]');
+    if (label) {
+        label.style.color = '';
+        label.style.fontWeight = '';
+        label.style.fontSize = '';
+    }
+    const mensajeAnterior = seccionUbicaciones.querySelector('.ubicaciones-warning-inline');
+    if (mensajeAnterior) {
+        mensajeAnterior.remove();
+    }
+}
+function _procesoGenerico_resaltarUbicacionesFaltantes(mensaje) {
+    const inputUbicacion = document.getElementById('input-ubicacion-nueva');
+    const seccionUbicaciones = inputUbicacion?.closest('.form-section');
+    if (!seccionUbicaciones) return;
+    seccionUbicaciones.style.border = '3px solid #dc2626';
+    seccionUbicaciones.style.borderRadius = '10px';
+    seccionUbicaciones.style.padding = '12px';
+    seccionUbicaciones.style.background = '#fef2f2';
+    seccionUbicaciones.style.boxShadow = '0 0 0 4px rgba(220, 38, 38, 0.18)';
+    const label = seccionUbicaciones.querySelector('label[for="input-ubicacion-nueva"]');
+    if (label) {
+        label.style.color = '#b91c1c';
+        label.style.fontWeight = '900';
+        label.style.fontSize = '1.05rem';
+    }
+    let warningInline = seccionUbicaciones.querySelector('.ubicaciones-warning-inline');
+    if (!warningInline) {
+        warningInline = document.createElement('div');
+        warningInline.className = 'ubicaciones-warning-inline';
+        warningInline.style.cssText = 'margin-top: 0.75rem; color: #b91c1c; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;';
+        seccionUbicaciones.appendChild(warningInline);
+    }
+    warningInline.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.4rem;">warning</span><span>${mensaje}</span>`;
+    if (typeof inputUbicacion.focus === 'function') {
+        inputUbicacion.focus();
+    }
+}
+function _procesoGenerico_mostrarModalAdvertenciaUbicaciones(mensaje) {
+    void mensaje;
+}
+
 globalThis.agregarProcesoAlPedido = function() {
     if (!procesoModalState.procesoActual) {
         alert('Error: no hay proceso seleccionado');
         return;
     }
-
+    const ubicacionesAgregadas = Array.isArray(globalThis.ubicacionesProcesoSeleccionadas)
+        ? globalThis.ubicacionesProcesoSeleccionadas.length
+        : 0;
+    const textoUbicacionPendiente = document.getElementById('input-ubicacion-nueva')?.value?.trim() || '';
+    if (ubicacionesAgregadas === 0) {
+        const mensajeAdvertencia = textoUbicacionPendiente.length > 0
+            ? 'Debes agregar la ubicacion con el boton + antes de continuar.'
+            : 'Debes agregar al menos una ubicacion del proceso antes de continuar.';
+        _procesoGenerico_resaltarUbicacionesFaltantes(mensajeAdvertencia);
+        _procesoGenerico_mostrarModalAdvertenciaUbicaciones(mensajeAdvertencia);
+        return;
+    }
+    _procesoGenerico_limpiarResaltadoUbicaciones();
     try {
         const { imagenesValidas } = procesoModalModules.persistencia.obtenerImagenesParaGuardar();
         const { datos, ubicacionesClonadas } = procesoModalModules.persistencia.construirDatosProceso(imagenesValidas);
-
         procesoModalModules.persistencia.persistirDatosProceso(datos, ubicacionesClonadas);
-
         const modoAntesDeCerrar = procesoModalState.modoActual;
         procesoModalDebug('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
-
         procesoModalModules.persistencia.postGuardar(modoAntesDeCerrar);
     } catch (error) {
         console.error('[agregarProcesoAlPedido] Error:', error);
@@ -415,3 +475,4 @@ globalThis.obtenerModoActual = function() {
 };
 
 })(globalThis);
+
