@@ -7,7 +7,14 @@
     <div class="row">
         <div class="col-12">
             <!-- Table Component -->
-            <x-recibos.recibos-bordado-estampado-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
+            <x-recibos.recibos-bordado-estampado-table
+                :recibos="$recibos"
+                :totalCantidadGlobal="$totalCantidadGlobal ?? 0"
+                :tipoFiltro="$tipoFiltro ?? 'BORDADO'"
+                :conteoBordado="$conteoBordado ?? 0"
+                :conteoEstampado="$conteoEstampado ?? 0"
+                :conteoDtf="$conteoDtf ?? 0"
+                :conteoSublimado="$conteoSublimado ?? 0" />
         </div>
     </div>
 </div>
@@ -554,12 +561,19 @@
         const tipo = String(rawTipo || '').trim().toUpperCase();
         if (tipo.includes('ESTAMP')) return 'ESTAMPADO';
         if (tipo.includes('BORD')) return 'BORDADO';
+        if (tipo.includes('DTF')) return 'DTF';
+        if (tipo.includes('SUBLI')) return 'SUBLIMADO';
         return tipo || '-';
     };
 
     const crearBadgeTipo = (tipo) => {
-        const isBordado = tipo === 'BORDADO';
-        const color = isBordado ? '#2563eb' : '#0f766e';
+        const colorByTipo = {
+            BORDADO: '#2563eb',
+            ESTAMPADO: '#0f766e',
+            DTF: '#7c3aed',
+            SUBLIMADO: '#ea580c',
+        };
+        const color = colorByTipo[tipo] || '#475569';
         return `<span style="display:inline-block;padding:3px 8px;border-radius:999px;background:${color};color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;">${tipo}</span>`;
     };
 
@@ -679,8 +693,65 @@
 })();
 </script>
 
+<script>
+(() => {
+    const initFloatingClear = () => {
+        const searchInput = document.getElementById('navSearchInput');
+        if (!searchInput) return;
+
+        let btn = document.getElementById('floating-clear-search-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'floating-clear-search-btn';
+            btn.type = 'button';
+            btn.textContent = 'Limpiar filtro';
+            btn.style.cssText = [
+                'position:fixed',
+                'right:20px',
+                'bottom:24px',
+                'z-index:100000',
+                'display:none',
+                'padding:10px 14px',
+                'border:none',
+                'border-radius:999px',
+                'background:#0f172a',
+                'color:#fff',
+                'font-size:12px',
+                'font-weight:700',
+                'box-shadow:0 10px 20px rgba(15,23,42,.28)',
+                'cursor:pointer'
+            ].join(';');
+            document.body.appendChild(btn);
+        }
+
+        const toggleBtn = () => {
+            const hasTerm = String(searchInput.value || '').trim().length > 0;
+            btn.style.display = hasTerm ? 'block' : 'none';
+        };
+
+        const clearSearch = () => {
+            const clearBtn = document.getElementById('navSearchClear');
+            if (clearBtn) {
+                clearBtn.click();
+            } else {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            btn.style.display = 'none';
+        };
+
+        searchInput.addEventListener('input', toggleBtn);
+        btn.addEventListener('click', clearSearch);
+        toggleBtn();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFloatingClear);
+        return;
+    }
+    initFloatingClear();
+})();
+</script>
+
 
 @endpush
-
-
-

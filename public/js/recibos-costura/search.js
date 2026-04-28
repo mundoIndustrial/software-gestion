@@ -278,7 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateBordadoEstampadoRowHTML(recibo) {
         // Determinación del tipo (BORDADO o ESTAMPADO)
         const tipo = recibo.tipo_recibo ? recibo.tipo_recibo.toUpperCase() : 'BORDADO';
-        const tipoBadgeColor = tipo === 'BORDADO' ? '#2563eb' : '#0f766e';
+        const tipoBadgeColors = { BORDADO: '#2563eb', ESTAMPADO: '#0f766e', DTF: '#7c3aed', SUBLIMADO: '#ea580c' };
+        const tipoBadgeColor = tipoBadgeColors[tipo] || '#475569';
 
         // Determinación del área
         let areaRecibo = recibo.area || 'Pendiente';
@@ -606,3 +607,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+

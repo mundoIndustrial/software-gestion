@@ -352,12 +352,59 @@ class RegistroOrdenController extends Controller
      */
     public function recibosBordadoEstampado(Request $request)
     {
+        $tiposPermitidos = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'];
+        $tipoFiltro = strtoupper((string) $request->query('tipo', 'BORDADO'));
+        if (!in_array($tipoFiltro, $tiposPermitidos, true)) {
+            $tipoFiltro = 'BORDADO';
+        }
+
         $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
             busqueda: $request->input('busqueda')
         );
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
 
-        $allProcesses = collect($response->getProcesses());
+        $allProcesses = collect($response->getProcesses())
+            ->sortByDesc(function ($proceso) {
+                $item = (array) $proceso;
+                $numeroRecibo = (int) ($item['numero_recibo'] ?? 0);
+                $fechaCreacion = strtotime((string) ($item['fecha_creacion'] ?? '')) ?: 0;
+
+                // Prioriza recibos más recientes y desempata por consecutivo de recibo.
+                return sprintf('%010d-%010d', $numeroRecibo, $fechaCreacion);
+            })
+            ->values();
+
+        $conteoBordado = $allProcesses->filter(function ($proceso) {
+            $item = (array) $proceso;
+            return strtoupper((string) ($item['tipo_recibo'] ?? '')) === 'BORDADO';
+        })->count();
+        $conteoEstampado = $allProcesses->filter(function ($proceso) {
+            $item = (array) $proceso;
+            return strtoupper((string) ($item['tipo_recibo'] ?? '')) === 'ESTAMPADO';
+        })->count();
+        $conteoDtf = $allProcesses->filter(function ($proceso) {
+            $item = (array) $proceso;
+            return strtoupper((string) ($item['tipo_recibo'] ?? '')) === 'DTF';
+        })->count();
+        $conteoSublimado = $allProcesses->filter(function ($proceso) {
+            $item = (array) $proceso;
+            return strtoupper((string) ($item['tipo_recibo'] ?? '')) === 'SUBLIMADO';
+        })->count();
+
+        $allProcesses = $allProcesses->filter(function ($proceso) use ($tipoFiltro) {
+            $item = (array) $proceso;
+            return strtoupper((string) ($item['tipo_recibo'] ?? '')) === $tipoFiltro;
+        })
+        ->sortByDesc(function ($proceso) {
+            $item = (array) $proceso;
+            $numeroRecibo = (int) ($item['numero_recibo'] ?? 0);
+            $fechaCreacion = strtotime((string) ($item['fecha_creacion'] ?? '')) ?: 0;
+
+            // Garantiza orden descendente dentro del tipo filtrado.
+            return sprintf('%010d-%010d', $numeroRecibo, $fechaCreacion);
+        })
+        ->values();
+
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
@@ -503,7 +550,15 @@ class RegistroOrdenController extends Controller
             return (int) (is_array($proceso) ? ($proceso['cantidad_total_prendas'] ?? 0) : ($proceso->cantidad_total_prendas ?? 0));
         });
 
-        return view('registros.recibos-bordado-estampado', compact('recibos', 'totalCantidadGlobal'));
+        return view('registros.recibos-bordado-estampado', compact(
+            'recibos',
+            'totalCantidadGlobal',
+            'tipoFiltro',
+            'conteoBordado',
+            'conteoEstampado',
+            'conteoDtf',
+            'conteoSublimado'
+        ));
     }
 
     /**
@@ -658,7 +713,16 @@ class RegistroOrdenController extends Controller
         );
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
 
-        $allProcesses = collect($response->getProcesses());
+        $allProcesses = collect($response->getProcesses())
+            ->sortByDesc(function ($proceso) {
+                $item = (array) $proceso;
+                $numeroRecibo = (int) ($item['numero_recibo'] ?? 0);
+                $fechaCreacion = strtotime((string) ($item['fecha_creacion'] ?? '')) ?: 0;
+
+                // Mantener el mismo criterio descendente de la vista principal.
+                return sprintf('%010d-%010d', $numeroRecibo, $fechaCreacion);
+            })
+            ->values();
 
         // Obtener áreas por prenda
         $prendaIds = $allProcesses
@@ -1408,3 +1472,7 @@ class RegistroOrdenController extends Controller
     }
 
 }
+
+
+
+

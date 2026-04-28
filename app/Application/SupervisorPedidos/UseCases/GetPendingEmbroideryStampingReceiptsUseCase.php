@@ -29,7 +29,7 @@ class GetPendingEmbroideryStampingReceiptsUseCase
                 ->all();
 
             $parcialIds = $procesosPendientes
-                ->map(fn ($proceso) => $this->extractParcialIdFromNotes($proceso->recibo_notas ?? null))
+                ->map(fn ($proceso) => $this->resolveParcialId($proceso))
                 ->filter(fn ($id) => $id !== null)
                 ->unique()
                 ->values()
@@ -39,7 +39,7 @@ class GetPendingEmbroideryStampingReceiptsUseCase
             $cantidadPorParcial = $this->receiptRepository->sumQuantitiesByPartialIds($parcialIds);
 
             $procesosConCantidad = $procesosPendientes->map(function ($proceso) use ($cantidadPorPrenda, $cantidadPorParcial) {
-                $parcialId = $this->extractParcialIdFromNotes($proceso->recibo_notas ?? null);
+                $parcialId = $this->resolveParcialId($proceso);
 
                 if ($parcialId !== null) {
                     $proceso->cantidad_total_prendas = (int) ($cantidadPorParcial[$parcialId] ?? 0);
@@ -54,6 +54,16 @@ class GetPendingEmbroideryStampingReceiptsUseCase
         } catch (\Exception $e) {
             throw $e;
         }
+    }
+
+    private function resolveParcialId(object $proceso): ?int
+    {
+        $parcialId = isset($proceso->pedido_parcial_id) ? (int) $proceso->pedido_parcial_id : 0;
+        if ($parcialId > 0) {
+            return $parcialId;
+        }
+
+        return $this->extractParcialIdFromNotes($proceso->recibo_notas ?? null);
     }
 
     private function extractParcialIdFromNotes(?string $notas): ?int

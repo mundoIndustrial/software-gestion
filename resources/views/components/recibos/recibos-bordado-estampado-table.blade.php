@@ -1,4 +1,30 @@
-<!-- Tabla de Recibos de Bordado/Estampado - Versión Limpia -->
+@php
+    $tipoActivo = strtoupper((string) ($tipoFiltro ?? 'BORDADO'));
+    if (!in_array($tipoActivo, ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'], true)) {
+        $tipoActivo = 'BORDADO';
+    }
+@endphp
+
+<div class="recibos-tipo-tabs" id="recibosTipoTabs">
+    <a class="recibos-tipo-tab {{ $tipoActivo === 'BORDADO' ? 'is-active' : '' }}"
+       href="{{ request()->fullUrlWithQuery(['tipo' => 'BORDADO', 'page' => 1]) }}">
+        Bordado <span class="tab-count">{{ (int) ($conteoBordado ?? 0) }}</span>
+    </a>
+    <a class="recibos-tipo-tab {{ $tipoActivo === 'ESTAMPADO' ? 'is-active' : '' }}"
+       href="{{ request()->fullUrlWithQuery(['tipo' => 'ESTAMPADO', 'page' => 1]) }}">
+        Estampado <span class="tab-count">{{ (int) ($conteoEstampado ?? 0) }}</span>
+    </a>
+    <a class="recibos-tipo-tab {{ $tipoActivo === 'DTF' ? 'is-active' : '' }}"
+       href="{{ request()->fullUrlWithQuery(['tipo' => 'DTF', 'page' => 1]) }}">
+        DTF <span class="tab-count">{{ (int) ($conteoDtf ?? 0) }}</span>
+    </a>
+    <a class="recibos-tipo-tab {{ $tipoActivo === 'SUBLIMADO' ? 'is-active' : '' }}"
+       href="{{ request()->fullUrlWithQuery(['tipo' => 'SUBLIMADO', 'page' => 1]) }}">
+        Sublimado <span class="tab-count">{{ (int) ($conteoSublimado ?? 0) }}</span>
+    </a>
+</div>
+
+<!-- Tabla de Recibos de Bordado/Estampado -->
 <div class="table-scroll-container recibos-costura-scale-90" data-vista-tipo="bordado-estampado">
     <table class="table table-striped table-hover modern-table" data-vista-tipo="bordado-estampado">
         <thead class="table-header">
@@ -9,37 +35,26 @@
                         <path d="M8 12h8M12 8v8"></path>
                     </svg>
                 </th>
-                <th style="width: auto; min-width: 120px;">
-                    <span>Área</span>
-                </th>
-                <th style="width: 120px;">
-                    <span>N° Recibo</span>
-                </th>
-                <th style="width: 120px; text-align: center;">
-                    <span>Tipo</span>
-                </th>
-                <th style="width: 150px;">
-                    <span>Cliente</span>
-                </th>
-                <th style="width: auto;">
-                    <span>Descripción</span>
-                </th>
-                <th style="width: 100px;">
-                    <span>Cantidad</span>
-                </th>
-                <th style="width: 150px;">
-                    <span>Fecha de creación</span>
-                </th>
+                <th style="width: auto; min-width: 120px;"><span>Area</span></th>
+                <th style="width: 120px;"><span>N Recibo</span></th>
+                <th style="width: 120px; text-align: center;"><span>Tipo</span></th>
+                <th style="width: 150px;"><span>Cliente</span></th>
+                <th style="width: auto;"><span>Descripcion</span></th>
+                <th style="width: 100px;"><span>Cantidad</span></th>
+                <th style="width: 150px;"><span>Fecha de creacion</span></th>
             </tr>
         </thead>
         <tbody id="tablaRecibosBody">
             @if($recibos->count() > 0)
                 @foreach($recibos as $recibo)
+                    @php
+                        $tipoRecibo = strtoupper((string) ($recibo['tipo_recibo'] ?? 'BORDADO'));
+                    @endphp
                     <tr data-orden-id="{{ $recibo['id'] }}"
                         data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
-                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}">
+                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
+                        data-tipo-recibo="{{ $tipoRecibo }}">
 
-                        <!-- Acciones -->
                         <td class="acciones-column" style="text-align: center; position: relative;">
                             <button class="btn-ver-dropdown"
                                 title="Ver Opciones"
@@ -47,14 +62,13 @@
                                 data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
                                 data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
                                 data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
-                                data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'BORDADO' }}"
+                                data-tipo-recibo="{{ $tipoRecibo }}"
                                 data-es-parcial="false"
                                 data-recibo-id="{{ $recibo['id'] ?? '' }}">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
 
-                        <!-- Área -->
                         <td>
                             @php
                                 $areaRecibo = $recibo['area'] ?? 'Pendiente';
@@ -74,23 +88,26 @@
                             </span>
                         </td>
 
-                        <!-- N° Recibo -->
                         <td style="text-align: center;">
                             <span style="font-weight: 600;">{{ $recibo['consecutivo_actual'] }}</span>
                         </td>
 
-                        <!-- Tipo de Recibo -->
                         <td style="text-align: center;">
                             @php
-                                $tipo = strtoupper($recibo['tipo_recibo'] ?? 'BORDADO');
-                                $tipoBadge = ($tipo === 'BORDADO') ? '#2563eb' : '#0f766e';
+                                $tipo = $tipoRecibo;
+                                $tipoBadge = match ($tipo) {
+                                    'BORDADO' => '#2563eb',
+                                    'ESTAMPADO' => '#0f766e',
+                                    'DTF' => '#7c3aed',
+                                    'SUBLIMADO' => '#ea580c',
+                                    default => '#475569',
+                                };
                             @endphp
                             <span style="display:inline-block;padding:3px 8px;border-radius:999px;background:{{ $tipoBadge }};color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;">
                                 {{ $tipo }}
                             </span>
                         </td>
 
-                        <!-- Cliente -->
                         <td style="text-align: center;">
                             @if($recibo['pedido_info'])
                                 <span>{{ $recibo['pedido_info']['cliente'] }}</span>
@@ -99,7 +116,6 @@
                             @endif
                         </td>
 
-                        <!-- Descripción -->
                         <td data-descripcion-detallada="{{ $recibo['descripcion_detallada'] ?? '' }}">
                             @php
                                 $nombreMostrar = $recibo['descripcion_detallada'] ?? '';
@@ -116,7 +132,6 @@
                             </div>
                         </td>
 
-                        <!-- Cantidad -->
                         <td>
                             @if(isset($recibo['cantidad_total']) && $recibo['cantidad_total'] > 0)
                                 <span style="font-weight: 600; color: #059669;">{{ $recibo['cantidad_total'] }}</span>
@@ -125,7 +140,6 @@
                             @endif
                         </td>
 
-                        <!-- Fecha de creación -->
                         <td>
                             @if($recibo['pedido_info'] && isset($recibo['pedido_info']['fecha_creacion_orden']))
                                 <span>{{ \Carbon\Carbon::parse($recibo['pedido_info']['fecha_creacion_orden'])->format('d/m/Y') }}</span>
@@ -149,7 +163,6 @@
     </table>
 </div>
 
-<!-- Controles de Paginación -->
 @if($recibos instanceof \Illuminate\Pagination\LengthAwarePaginator)
     <div class="pagination-container mt-4" data-pagination-current-url="{{ request()->fullUrl() }}">
         <div class="pagination-info text-muted mb-2">
@@ -163,3 +176,41 @@
     <script src="{{ asset('js/recibos-costura/pagination.js') }}?v={{ time() }}"></script>
 @endif
 
+<style>
+.recibos-tipo-tabs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.recibos-tipo-tab {
+    text-decoration: none;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.recibos-tipo-tab .tab-count {
+    margin-left: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    padding: 2px 7px;
+    font-size: 11px;
+}
+.recibos-tipo-tab.is-active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+.recibos-tipo-tab.is-active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+</style>

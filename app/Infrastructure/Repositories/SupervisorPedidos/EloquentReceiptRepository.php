@@ -236,6 +236,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 $join->on('ppar.pedido_produccion_id', '=', 'crp.pedido_produccion_id')
                     ->whereRaw('COALESCE(ppar.prenda_pedido_id, 0) = COALESCE(crp.prenda_id, 0)')
                     ->whereColumn('ppar.tipo_recibo', 'crp.tipo_recibo')
+                    ->whereColumn('ppar.consecutivo_actual', 'crp.consecutivo_actual')
                     ->where('ppar.activo', 1)
                     ->whereNull('ppar.deleted_at');
             })
@@ -249,6 +250,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'pp.nombre_prenda',
                 'crp.id as recibo_id',
                 'pp.id as prenda_id',
+                'ppar.id as pedido_parcial_id',
                 'crp.notas as recibo_notas',
                 DB::raw('COALESCE(crp.aprobado_insumos_en, ppd.fecha_aprobacion, ppar.updated_at, crp.created_at) as fecha_aprobacion'),
                 'rfl.fecha_llegada',
