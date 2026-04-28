@@ -26,6 +26,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/filter-column-options/{column}', [RegistroOrdenController::class, 'getColumnFilterOptions'])->name('registros.filter-column-options');
     Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
     Route::get('/recibos-costura/search', [RegistroOrdenController::class, 'searchRecibosCostura'])->name('registros.recibos-costura-search');
+    Route::get('/recibos-bodega', [RegistroOrdenController::class, 'recibosBodega'])->name('registros.recibos-bodega');
     Route::get('/recibos-reflectivo', [RegistroOrdenController::class, 'recibosReflectivo'])->name('registros.recibos-reflectivo');
     Route::get('/recibos-reflectivo/search', [RegistroOrdenController::class, 'searchRecibosReflectivo'])->name('registros.recibos-reflectivo-search');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');

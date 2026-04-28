@@ -89,7 +89,7 @@
                 }
             });
         </script>
-    @elseif(request()->is('recibos-costura'))
+    @elseif(request()->is('recibos-costura') || request()->is('recibos-bodega'))
         <script>
             // Función de búsqueda específica para recibos de costura
             function initSearchBar() {
@@ -122,8 +122,8 @@
             }
             
             function performRecibosSearch(searchTerm) {
-                // Solo ejecutar si estamos en la página de recibos-costura o registros
-                if (!window.location.pathname.includes('recibos-costura') && !window.location.pathname.includes('/registros')) {
+                // Solo ejecutar si estamos en la página de recibos-costura/recibos-bodega o registros
+                if (!window.location.pathname.includes('recibos-costura') && !window.location.pathname.includes('recibos-bodega') && !window.location.pathname.includes('/registros')) {
                     return;
                 }
                 
@@ -135,6 +135,7 @@
                 
                 // Determinar columna de búsqueda según la vista
                 const isRecibosCostura = window.location.pathname.includes('recibos-costura');
+                const isRecibosBodega = window.location.pathname.includes('recibos-bodega');
                 // Para registros: Pedido está en columna 5 (después de Área)
                 // Para recibos-costura: N° Recibo está en columna 4
                 const searchColumnIndex = isRecibosCostura ? 4 : 5;
@@ -162,6 +163,14 @@
                             if (!match && cells.length > 5) {
                                 const cliente = cells[5].textContent.trim();
                                 if (cliente.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                    match = true;
+                                }
+                            }
+                        } else if (isRecibosBodega) {
+                            // Para recibos-bodega: buscar solo por N° Recibo (sin columna cliente)
+                            if (!match && cells.length > 4) {
+                                const numeroRecibo = cells[4].textContent.trim();
+                                if (numeroRecibo === searchTerm || numeroRecibo.startsWith(searchTerm)) {
                                     match = true;
                                 }
                             }
@@ -204,13 +213,13 @@
                     }
                 });
                 
-                const searchType = isRecibosCostura ? 'Recibo' : 'Pedido';
+                const searchType = (isRecibosCostura || isRecibosBodega) ? 'Recibo' : 'Pedido';
                 console.log(`[Búsqueda ${searchType}] Término: "${searchTerm}" - Filas visibles: ${visibleCount}/${rows.length}`);
             }
             
             // Función para limpiar búsqueda específica de recibos
             function clearRecibosSearch() {
-                if (!window.location.pathname.includes('recibos-costura')) {
+                if (!window.location.pathname.includes('recibos-costura') && !window.location.pathname.includes('recibos-bodega')) {
                     return;
                 }
                 
@@ -276,8 +285,8 @@ function limpiarTodosFiltros() {
     // Limpiar filtros activos
     window.activeFilters = {};
     
-    // Limpiar búsqueda específica si estamos en recibos-costura o registros
-    if (window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('/registros')) {
+    // Limpiar búsqueda específica si estamos en recibos-costura/recibos-bodega o registros
+    if (window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('recibos-bodega') || window.location.pathname.includes('/registros')) {
         const searchInput = document.getElementById('navSearchInput');
         if (searchInput) {
             searchInput.value = '';

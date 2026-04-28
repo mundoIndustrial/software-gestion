@@ -6,6 +6,8 @@
         <div class="breadcrumb-section">
             @if(request()->is('recibos-costura'))
                 <h1 class="page-title">Recibos de Costura</h1>
+            @elseif(request()->is('recibos-bodega'))
+                <h1 class="page-title">Recibos Bodega</h1>
             @elseif(request()->is('entregas-completas*'))
                 <h1 class="page-title">Seguimiento Entregas Despacho</h1>
             @else
@@ -18,11 +20,14 @@
             $currentPath = request()->path();
             $isCotizacionesPendientes = $currentRoute === 'cotizaciones.pendientes';
             $isRecibosCostura = $currentPath === 'recibos-costura';
+            $isRecibosBodega = $currentPath === 'recibos-bodega';
             $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
-            $searchPlaceholder = $isRecibosCostura ? 'Buscar recibos por número o cliente...' : ($isCotizacionesPendientes ? 'Buscar por número, cliente o asesora...' : 'Buscar por número o cliente...');
-            $searchAriaLabel = $isRecibosCostura ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes');
+            $searchPlaceholder = $isRecibosBodega
+                ? 'Buscar recibos por número...'
+                : (($isRecibosCostura || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : 'Buscar por número o cliente...');
+            $searchAriaLabel = ($isRecibosCostura || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes');
         @endphp
-        @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura)
+        @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosBodega)
         <div class="nav-search-container">
             <div class="nav-search-wrapper">
                 <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
@@ -47,7 +52,7 @@
 
     <div class="nav-right">
         <!-- Campana de Costura -->
-        @if(request()->is('recibos-costura'))
+        @if(request()->is('recibos-costura') || request()->is('recibos-bodega'))
         <div class="costura-notification-container">
             <button id="costuraBellBtn" class="costura-bell-btn" title="Recibos en ejecución - Área Corte" aria-label="Notificaciones de costura">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -68,7 +73,7 @@
         </div>
         @endif
 
-        @if(Route::currentRouteName() === 'cotizaciones.pendientes' || request()->is('recibos-costura'))
+        @if(Route::currentRouteName() === 'cotizaciones.pendientes' || request()->is('recibos-costura') || request()->is('recibos-bodega'))
         <button 
             id="btnLimpiarFiltros"
             onclick="limpiarTodosFiltros()"
@@ -349,3 +354,5 @@
         </div>
     </div>
 </header>
+
+

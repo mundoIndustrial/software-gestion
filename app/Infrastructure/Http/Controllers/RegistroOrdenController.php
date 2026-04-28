@@ -21,6 +21,7 @@ use App\Application\Pedidos\UseCases\Orders\EditFullOrderUseCase;
 use App\Application\Pedidos\UseCases\Orders\AddNovedadUseCase;
 use App\Application\Pedidos\UseCases\Orders\SaveDiaEntregaUseCase;
 use App\Application\UseCases\Receipts\GetSewingReceiptsUseCase;
+use App\Application\UseCases\Receipts\GetBodegaReceiptsUseCase;
 use App\Application\Pedidos\UseCases\Orders\FilterOrdersUseCase;
 use App\Application\Pedidos\UseCases\Orders\SearchOrdersUseCase;
 use App\Application\UseCases\Receipts\GetReflectiveReceiptsUseCase;
@@ -60,6 +61,7 @@ class RegistroOrdenController extends Controller
     protected $addNovedadUseCase;
     protected $saveDiaEntregaUseCase;
     protected $getSewingReceiptsUseCase;
+    protected $getBodegaReceiptsUseCase;
     protected $filterOrdersUseCase;
     protected $searchOrdersUseCase;
     protected $getReflectiveReceiptsUseCase;
@@ -92,6 +94,7 @@ class RegistroOrdenController extends Controller
         AddNovedadUseCase $addNovedadUseCase,
         SaveDiaEntregaUseCase $saveDiaEntregaUseCase,
         GetSewingReceiptsUseCase $getSewingReceiptsUseCase,
+        GetBodegaReceiptsUseCase $getBodegaReceiptsUseCase,
         FilterOrdersUseCase $filterOrdersUseCase,
         SearchOrdersUseCase $searchOrdersUseCase,
         GetReflectiveReceiptsUseCase $getReflectiveReceiptsUseCase,
@@ -124,6 +127,7 @@ class RegistroOrdenController extends Controller
         $this->addNovedadUseCase = $addNovedadUseCase;
         $this->saveDiaEntregaUseCase = $saveDiaEntregaUseCase;
         $this->getSewingReceiptsUseCase = $getSewingReceiptsUseCase;
+        $this->getBodegaReceiptsUseCase = $getBodegaReceiptsUseCase;
         $this->filterOrdersUseCase = $filterOrdersUseCase;
         $this->searchOrdersUseCase = $searchOrdersUseCase;
         $this->getReflectiveReceiptsUseCase = $getReflectiveReceiptsUseCase;
@@ -310,6 +314,18 @@ class RegistroOrdenController extends Controller
             $datos['recibos'] = collect($datos['recibos']);
         }
         return view('registros.recibos-costura', $datos);
+    }
+
+    /**
+     * Mostrar recibos de bodega (vista independiente con mismo diseño de costura)
+     */
+    public function recibosBodega(Request $request)
+    {
+        $datos = $this->getBodegaReceiptsUseCase->execute($request);
+        if (!($datos['recibos'] instanceof \Illuminate\Pagination\LengthAwarePaginator)) {
+            $datos['recibos'] = collect($datos['recibos']);
+        }
+        return view('registros.recibos-bodega', $datos);
     }
 
     /**

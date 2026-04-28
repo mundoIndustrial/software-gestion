@@ -434,9 +434,9 @@
           </li>
           @if(auth()->user()->hasRole('admin'))
           <li class="submenu-item">
-            <a href="/recibos-costura"
-               class="menu-link {{ request()->is('recibos-costura') ? 'active' : '' }}"
-               aria-label="Ver recibos de costura">
+            <a href="/recibos-bodega"
+               class="menu-link {{ request()->is('recibos-bodega') ? 'active' : '' }}"
+               aria-label="Ver recibos de bodega">
               <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
               <span class="menu-label">Recibos Bodega</span>
             </a>
