@@ -219,13 +219,35 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->where('consecutivo_original', $recibo->consecutivo_actual)
                             ->exists();
 
+                        $parcialId = null;
+                        $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                        if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                            $parcialId = (int) $matches[1];
+                        }
+                        $esParcial = $parcialId !== null;
+
+                        $creadoEn = $recibo->created_at;
+                        if ($esParcial) {
+                            try {
+                                $parcialCreatedAt = \DB::table('pedidos_parciales')
+                                    ->where('id', $parcialId)
+                                    ->whereNull('deleted_at')
+                                    ->value('created_at');
+                                if (!empty($parcialCreatedAt)) {
+                                    $creadoEn = $parcialCreatedAt;
+                                }
+                            } catch (\Exception $e) {
+                                // Mantener created_at del recibo si falla
+                            }
+                        }
+
                         return [
                             'id' => $recibo->id,
                             'tipo_recibo' => $recibo->tipo_recibo,
                             'consecutivo_actual' => $recibo->consecutivo_actual,
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
-                            'creado_en' => $recibo->created_at,
+                            'creado_en' => $creadoEn,
                             'area' => $recibo->area,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
@@ -234,6 +256,8 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'completado_corte' => $completadoCorte,
                             'completado_costura' => $completadoCostura,
                             'completado_control_calidad' => $completadoControlCalidad,
+                            'es_parcial' => $esParcial,
+                            'pedido_parcial_id' => $parcialId,
                             'tiene_parciales' => $tieneParciales,
                         ];
                     })->toArray();

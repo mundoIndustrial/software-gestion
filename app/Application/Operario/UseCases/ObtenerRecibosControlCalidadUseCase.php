@@ -65,6 +65,7 @@ class ObtenerRecibosControlCalidadUseCase
                     'crp.prenda_id',
                     'crp.tipo_recibo',
                     'crp.consecutivo_actual',
+                    'crp.notas',
                     'pp.cliente'
                 )
                 ->get();
@@ -78,6 +79,13 @@ class ObtenerRecibosControlCalidadUseCase
                 $prenda = $this->prendaRepository->obtenerPorId((int) $reciboNormal->prenda_id);
 
                 if ($prenda) {
+                    $parcialId = null;
+                    $notas = isset($reciboNormal->notas) ? (string) $reciboNormal->notas : '';
+                    if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                        $parcialId = (int) $matches[1];
+                    }
+                    $esParcial = $parcialId !== null;
+
                     $recibosEnCC[] = [
                         'id' => $reciboNormal->id,
                         'pedido_produccion_id' => (int) $reciboNormal->pedido_produccion_id,
@@ -87,7 +95,8 @@ class ObtenerRecibosControlCalidadUseCase
                         'cliente' => $reciboNormal->cliente,
                         'tipo_recibo' => $reciboNormal->tipo_recibo,
                         'consecutivo_actual' => $reciboNormal->consecutivo_actual,
-                        'es_parcial' => false,
+                        'es_parcial' => $esParcial,
+                        'parcial_id' => $parcialId,
                         'tiene_parciales' => false,
                     ];
 

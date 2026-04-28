@@ -89,6 +89,13 @@ class ControlCalidadController extends Controller
                 ->where('tipo_recibo', $recibo->tipo_recibo)
                 ->exists();
 
+            $parcialId = null;
+            $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+            if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $parcialId = (int) $matches[1];
+            }
+            $esParcial = $parcialId !== null;
+
             return [
                 'prenda_id' => $prenda->id ?? 0,
                 'pedido_id' => $pedido->id ?? 0,
@@ -107,6 +114,8 @@ class ControlCalidadController extends Controller
                     'notas' => $recibo->notas,
                     'creado_en' => $recibo->created_at,
                     'area' => $recibo->area,
+                    'es_parcial' => $esParcial,
+                    'parcial_id' => $parcialId,
                 ]],
                 'total_recibos' => 1,
                 'fecha_creacion' => $recibo->created_at,

@@ -308,6 +308,10 @@ export function initReciboFilters() {
                 nombrePrenda: recibo.nombre_prenda,
                 numeroRecibo: recibo.consecutivo_actual,
             });
+            const esParcial = Boolean(recibo.es_parcial || recibo.parcial_id || recibo.pedido_parcial_id || recibo.id_parcial);
+            const parcialId = recibo.parcial_id || recibo.pedido_parcial_id || recibo.id_parcial || null;
+            const consecutivoParcial = recibo.consecutivo_parcial || recibo.consecutivo_actual || '';
+            const tipoReciboNav = esParcial ? 'PARCIAL' : tipoRecibo;
             const distribucionBtn = recibo.tiene_parciales 
                 ? `<button class="btn-ver-distribucion" 
                         onclick="abrirDistribucionReciboCC(this, '${tipoRecibo}');"
@@ -349,7 +353,7 @@ export function initReciboFilters() {
                         
                         <div class="orden-buttons">
                             <button class="btn-ver-recibo-parcial" 
-                                    onclick="window.location.href='/operario/pedido/${recibo.numero_pedido}?prenda_id=${recibo.prenda_id}&tipo_recibo=${tipoRecibo}&consecutivo=${recibo.consecutivo_actual}'">
+                                    onclick="abrirDetallesRecibos('${recibo.numero_pedido}', ${recibo.prenda_id}, '${String(recibo.nombre_prenda || '').replace(/'/g, "\\'")}', '${tipoReciboNav}', ${parcialId ? Number(parcialId) : 'null'}, '${String(consecutivoParcial).replace(/'/g, "\\'")}')">
                                 <span class="material-symbols-rounded">visibility</span>
                                 VER RECIBO
                             </button>
