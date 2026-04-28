@@ -4,7 +4,9 @@
             <span class="material-symbols-rounded">menu</span>
         </button>
         <div class="breadcrumb-section">
-            @if(request()->is('recibos-costura') || request()->is('recibos-bordado-estampado'))
+            @if(request()->is('recibos-bordado-estampado'))
+                <h1 class="page-title">Recibos de Logo</h1>
+            @elseif(request()->is('recibos-costura'))
                 <h1 class="page-title">Recibos de Costura</h1>
             @elseif(request()->is('recibos-bodega'))
                 <h1 class="page-title">Recibos Bodega</h1>
@@ -354,5 +356,4 @@
         </div>
     </div>
 </header>
-
 
