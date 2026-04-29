@@ -776,6 +776,58 @@
 
 <script>
 (() => {
+    const endpoint = "{{ route('api.recibos-bordado-estampado.toggle-check-logo') }}";
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    const applyState = (btn, checked) => {
+        btn.dataset.checked = checked ? '1' : '0';
+        btn.classList.toggle('is-checked', checked);
+        btn.style.borderColor = checked ? '#16a34a' : '#cbd5e1';
+        btn.style.background = checked ? '#16a34a' : '#ffffff';
+        btn.style.color = checked ? '#ffffff' : '#64748b';
+    };
+
+    document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.btn-check-recibo-logo');
+        if (!btn) return;
+
+        const consecutivoReciboId = Number(btn.dataset.consecutivoReciboId || 0);
+        if (!consecutivoReciboId) return;
+
+        const nextChecked = btn.dataset.checked !== '1';
+        applyState(btn, nextChecked);
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    consecutivo_recibo_id: consecutivoReciboId,
+                    checked: nextChecked,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo guardar el check.');
+            }
+        } catch (error) {
+            applyState(btn, !nextChecked);
+            console.error('[recibos-bordado-estampado] error guardando check logo', error);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+})();
+</script>
+
+<script>
+(() => {
     const initFloatingClear = () => {
         const searchInput = document.getElementById('navSearchInput');
         if (!searchInput) return;

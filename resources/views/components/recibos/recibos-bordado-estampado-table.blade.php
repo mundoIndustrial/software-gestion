@@ -3,6 +3,7 @@
     if (!in_array($tipoActivo, ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'], true)) {
         $tipoActivo = 'BORDADO';
     }
+    $puedeGestionarCheckLogo = auth()->check() && auth()->user()->hasRole('visualizador_recibos_logo');
 @endphp
 
 <div class="recibos-tipo-tabs" id="recibosTipoTabs">
@@ -29,7 +30,7 @@
     <table class="table table-striped table-hover modern-table" data-vista-tipo="bordado-estampado">
         <thead class="table-header">
             <tr>
-                <th class="acciones-column" style="width: 60px; text-align: center;">
+                <th class="acciones-column" style="width: 130px; min-width: 130px; text-align: center;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle;">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8M12 8v8"></path>
@@ -55,18 +56,35 @@
                         data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                         data-tipo-recibo="{{ $tipoRecibo }}">
 
-                        <td class="acciones-column" style="text-align: center; position: relative;">
-                            <button class="btn-ver-dropdown"
-                                title="Ver Opciones"
-                                data-menu-id="menu-recibo-{{ $recibo['id'] }}"
-                                data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
-                                data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
-                                data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
-                                data-tipo-recibo="{{ $tipoRecibo }}"
-                                data-es-parcial="false"
-                                data-recibo-id="{{ $recibo['id'] ?? '' }}">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                        <td class="acciones-column" style="text-align: center; position: relative; width: 130px; min-width: 130px;">
+                            @php
+                                $checkLogo = (bool) ($recibo['check_logo_recibo'] ?? false);
+                                $consecutivoReciboId = (int) ($recibo['consecutivo_recibo_id'] ?? 0);
+                            @endphp
+                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;min-width:100px;">
+                                <button class="btn-ver-dropdown"
+                                    title="Ver Opciones"
+                                    data-menu-id="menu-recibo-{{ $recibo['id'] }}"
+                                    data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
+                                    data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
+                                    data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
+                                    data-tipo-recibo="{{ $tipoRecibo }}"
+                                    data-es-parcial="false"
+                                    data-recibo-id="{{ $recibo['id'] ?? '' }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                @if($puedeGestionarCheckLogo)
+                                    <button
+                                        type="button"
+                                        class="btn-check-recibo-logo {{ $checkLogo ? 'is-checked' : '' }}"
+                                        title="Marcar recibido"
+                                        data-consecutivo-recibo-id="{{ $consecutivoReciboId }}"
+                                        data-checked="{{ $checkLogo ? '1' : '0' }}"
+                                        style="width:30px;height:30px;border-radius:8px;border:1px solid {{ $checkLogo ? '#16a34a' : '#cbd5e1' }};background:{{ $checkLogo ? '#16a34a' : '#ffffff' }};color:{{ $checkLogo ? '#ffffff' : '#64748b' }};display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s ease;">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                @endif
+                            </div>
                         </td>
 
                         <td>
@@ -177,6 +195,20 @@
 @endif
 
 <style>
+.table-scroll-container[data-vista-tipo="bordado-estampado"] .table-header th:nth-child(1) {
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+}
+
+.table-scroll-container[data-vista-tipo="bordado-estampado"] .modern-table tbody tr td:nth-child(1) {
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+    padding: 8px 8px !important;
+    overflow: visible !important;
+}
+
 .recibos-tipo-tabs {
     display: flex;
     gap: 10px;

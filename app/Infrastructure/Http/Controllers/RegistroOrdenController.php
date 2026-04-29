@@ -41,6 +41,7 @@ use App\Services\FestivosColombiaService;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class RegistroOrdenController extends Controller
 {
@@ -461,9 +462,10 @@ class RegistroOrdenController extends Controller
             ->all();
 
         $createdPorReciboKey = [];
+        $reciboIdPorKey = [];
         if (!empty($prendaIds) && !empty($tiposRecibo) && !empty($numerosRecibo)) {
             $rowsConsecutivos = \DB::table('consecutivos_recibos_pedidos')
-                ->select(['prenda_id', 'tipo_recibo', 'consecutivo_actual', 'created_at'])
+                ->select(['id', 'prenda_id', 'tipo_recibo', 'consecutivo_actual', 'created_at'])
                 ->whereIn('prenda_id', $prendaIds)
                 ->whereIn('tipo_recibo', $tiposRecibo)
                 ->whereIn('consecutivo_actual', $numerosRecibo)
@@ -483,10 +485,25 @@ class RegistroOrdenController extends Controller
                 if (!isset($createdPorReciboKey[$key])) {
                     $createdPorReciboKey[$key] = $row->created_at;
                 }
+                if (!isset($reciboIdPorKey[$key])) {
+                    $reciboIdPorKey[$key] = (int) ($row->id ?? 0);
+                }
             }
         }
 
-        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda, $createdPorReciboKey) {
+        $reciboIds = collect($reciboIdPorKey)->filter(fn ($id) => (int) $id > 0)->values()->all();
+        $checksActivos = [];
+        $userId = Auth::id();
+        if (!empty($reciboIds) && $userId) {
+            $checksActivos = \DB::table('recibos_logo_checks')
+                ->where('user_id', (int) $userId)
+                ->whereIn('consecutivo_recibo_id', $reciboIds)
+                ->where('checked', true)
+                ->pluck('checked', 'consecutivo_recibo_id')
+                ->toArray();
+        }
+
+        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda, $createdPorReciboKey, $reciboIdPorKey, $checksActivos) {
             $procesoArray = (array) $proceso;
             $numeroRecibo = (string) ($procesoArray['numero_recibo'] ?? '');
             $tipoRecibo = (string) ($procesoArray['tipo_recibo'] ?? '');
@@ -499,6 +516,7 @@ class RegistroOrdenController extends Controller
             $tipoReciboUpper = strtoupper(trim($tipoRecibo !== '' ? $tipoRecibo : 'BORDADO'));
             $numeroReciboInt = (int) $numeroRecibo;
             $reciboKey = $prendaId . '|' . $tipoReciboUpper . '|' . $numeroReciboInt;
+            $consecutivoReciboId = (int) ($reciboIdPorKey[$reciboKey] ?? 0);
             $fechaCreacionDesdeConsecutivo = $createdPorReciboKey[$reciboKey] ?? null;
             if ($fechaCreacionDesdeConsecutivo) {
                 $fechaCreacion = $fechaCreacionDesdeConsecutivo;
@@ -528,6 +546,8 @@ class RegistroOrdenController extends Controller
                 'fecha_creacion' => $fechaCreacion,
                 'created_at' => $fechaCreacion,
                 'fecha_estimada' => null,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
+                'check_logo_recibo' => (bool) ($checksActivos[$consecutivoReciboId] ?? false),
                 'pedido_info' => [
                     'cliente' => $cliente !== '' ? $cliente : 'N/A',
                     'fecha_creacion_orden' => $fechaCreacion,
@@ -909,6 +929,50 @@ class RegistroOrdenController extends Controller
             \Log::error('Error al marcar recibo como visto: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al marcar el recibo como visto'], 500);
         }
+    }
+
+    /**
+     * Guardar el check (chulo) de un recibo para el usuario actual.
+     */
+    public function toggleCheckReciboLogo(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->hasRole('visualizador_recibos_logo')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado para gestionar el check de recibos logo.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'consecutivo_recibo_id' => 'required|integer|exists:consecutivos_recibos_pedidos,id',
+            'checked' => 'required|boolean',
+        ]);
+
+        $userId = (int) $user->id;
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no autenticado.',
+            ], 401);
+        }
+
+        \DB::table('recibos_logo_checks')->upsert(
+            [[
+                'consecutivo_recibo_id' => (int) $validated['consecutivo_recibo_id'],
+                'user_id' => (int) $userId,
+                'checked' => (bool) $validated['checked'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]],
+            ['consecutivo_recibo_id', 'user_id'],
+            ['checked', 'updated_at']
+        );
+
+        return response()->json([
+            'success' => true,
+            'checked' => (bool) $validated['checked'],
+        ]);
     }
 
     /**
