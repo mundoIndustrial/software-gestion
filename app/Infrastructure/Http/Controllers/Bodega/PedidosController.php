@@ -292,12 +292,46 @@ class PedidosController extends Controller
                 $datos['items'] = array_filter($datos['items'], function($item) use ($area) {
                     return ($item['area'] ?? '') === $area && ($item['estado_bodega'] ?? '') === 'Pendiente';
                 });
-                
+
                 // Reindexar el array después del filtro
                 $datos['items'] = array_values($datos['items']);
 
+                // Para EPP: excluir items que apunten a un pedido_epp que esté eliminado
+                if ($area === 'EPP') {
+                    $pedidoEppIds = array_filter(array_map(fn($item) => $item['pedido_epp_id'] ?? null, $datos['items']));
+
+                    if (!empty($pedidoEppIds)) {
+                        // Obtener EPPs eliminados que fueron homologados (tienen versiones más nuevas)
+                        $eppsEliminadosConVersiones = DB::table('pedido_epp')
+                            ->whereIn('id', $pedidoEppIds)
+                            ->whereNotNull('deleted_at')
+                            ->get()
+                            ->pluck('id')
+                            ->toArray();
+
+                        // Excluir items que apunten a EPPs eliminados
+                        if (!empty($eppsEliminadosConVersiones)) {
+                            $datos['items'] = array_filter($datos['items'], function($item) use ($eppsEliminadosConVersiones) {
+                                return !in_array($item['pedido_epp_id'] ?? null, $eppsEliminadosConVersiones);
+                            });
+                            $datos['items'] = array_values($datos['items']);
+                        }
+                    }
+                }
+
+                // DEBUG: Items después del filtro de eliminados
+                \Log::debug('[showPendientesPorArea] Items después de filtrar eliminados', [
+                    'area' => $area,
+                    'total_items' => count($datos['items']),
+                    'items' => array_map(fn($item) => [
+                        'prenda' => $item['prenda_nombre'] ?? null,
+                        'pedido_epp_id' => $item['pedido_epp_id'] ?? null,
+                        'estado_bodega' => $item['estado_bodega'] ?? null,
+                    ], $datos['items']),
+                ]);
+
                 // Normalizar campos para la vista
-                $datos['items'] = array_map(function($item) {
+                $datos['items'] = array_map(function($item) use ($pedidoProduccion) {
                     if (!isset($item['cantidad']) && isset($item['cantidad_total'])) {
                         $item['cantidad'] = $item['cantidad_total'];
                     }
@@ -310,10 +344,32 @@ class PedidosController extends Controller
 
                     // Si es un EPP, obtener el historial de homologaciones
                     if (($item['area'] ?? '') === 'EPP' && !empty($item['pedido_epp_id'] ?? null)) {
-                        $historial = $this->eppHomologacionService->obtenerHistorialHomologaciones(
-                            $item['pedido_epp_id'],
-                            $pedidoProduccion->id ?? null
-                        );
+                        $pedidoEppIdActual = $item['pedido_epp_id'];
+
+                        // Buscar en pedido_epp si este es una versión homologada
+                        $pedidoEppRecord = \App\Models\PedidoEpp::withTrashed()
+                            ->find($pedidoEppIdActual);
+
+                        // Si es una versión homologada (tiene homologado_de), usar el original para obtener el historial
+                        $pedidoEppIdParaHistorial = $pedidoEppRecord && $pedidoEppRecord->homologado_de
+                            ? $pedidoEppRecord->homologado_de
+                            : $pedidoEppIdActual;
+
+                        // Obtener la cadena completa de homologaciones
+                        $todaLaCadena = $this->obtenerCadenaEppCompleta($pedidoEppIdParaHistorial);
+                        $historial = [];
+                        foreach ($todaLaCadena as $pedidoEpp) {
+                            $historial[] = [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'epp_id' => $pedidoEpp->epp_id,
+                                'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? 'EPP sin nombre',
+                                'cantidad' => $pedidoEpp->cantidad,
+                                'fecha_creacion' => $pedidoEpp->created_at?->format('Y-m-d H:i'),
+                                'deleted_at' => $pedidoEpp->deleted_at?->format('Y-m-d H:i'),
+                                'observaciones' => $pedidoEpp->observaciones ?? '',
+                                'es_original' => $pedidoEpp->homologado_de === null,
+                            ];
+                        }
 
                         $item['tiene_historial'] = count($historial) > 1;
                         $item['historial_homologaciones'] = $historial;
@@ -324,6 +380,55 @@ class PedidosController extends Controller
 
                     return $item;
                 }, $datos['items']);
+
+                // En EPP, ocultar filas antiguas de homologación y dejar solo la versión vigente.
+                // Así se muestra una sola fila con badge "(homologado)" + botón "Ver cambios".
+                if ($area === 'EPP') {
+                    // Primero: filtrar por items con historial
+                    $datos['items'] = array_values(array_filter($datos['items'], function ($item) {
+                        if (!($item['tiene_historial'] ?? false)) {
+                            return true;
+                        }
+
+                        $historial = $item['historial_homologaciones'] ?? [];
+                        if (count($historial) <= 1) {
+                            return true;
+                        }
+
+                        $ultimo = end($historial);
+                        $ultimoPedidoEppId = $ultimo['pedido_epp_id'] ?? null;
+                        $ultimoNombre = trim((string) ($ultimo['epp_nombre'] ?? ''));
+                        $pedidoEppIdItem = $item['pedido_epp_id'] ?? null;
+                        $nombreItem = trim((string) ($item['prenda_nombre'] ?? ''));
+
+                        // Priorizar match por ID; fallback por nombre para casos legacy.
+                        if ($pedidoEppIdItem && $ultimoPedidoEppId) {
+                            return (int) $pedidoEppIdItem === (int) $ultimoPedidoEppId;
+                        }
+
+                        return $ultimoNombre !== '' && mb_strtoupper($nombreItem) === mb_strtoupper($ultimoNombre);
+                    }));
+
+                    // Segundo: eliminar duplicados por prenda_nombre, manteniendo el más reciente (ID más alto)
+                    $itemsPorPrenda = [];
+                    foreach ($datos['items'] as $item) {
+                        $nombre = trim((string) ($item['prenda_nombre'] ?? ''));
+                        if (empty($nombre)) continue;
+
+                        if (!isset($itemsPorPrenda[$nombre])) {
+                            $itemsPorPrenda[$nombre] = $item;
+                        } else {
+                            // Si ya existe, mantener el que tiene el ID más alto (más reciente)
+                            $idActual = (int) ($item['id'] ?? 0);
+                            $idExistente = (int) ($itemsPorPrenda[$nombre]['id'] ?? 0);
+                            if ($idActual > $idExistente) {
+                                $itemsPorPrenda[$nombre] = $item;
+                            }
+                        }
+                    }
+
+                    $datos['items'] = array_values($itemsPorPrenda);
+                }
                 
                 // Actualizar contadores si existen
                 if (isset($datos['estadisticas'])) {
@@ -429,6 +534,20 @@ class PedidosController extends Controller
 
             $datos = $this->bodegaPedidoService->obtenerDetallePedido((int) $pedidoProduccion->numero_pedido, false, true);
 
+            // DEBUG: Log de items de EPP encontrados
+            $itemsEpp = array_filter($datos['items'] ?? [], fn($item) => ($item['area'] ?? '') === 'EPP');
+            \Log::debug('[show] Items EPP encontrados', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedidoProduccion->numero_pedido,
+                'total_items_epp' => count($itemsEpp),
+                'items_epp' => array_map(fn($item) => [
+                    'id' => $item['id'] ?? null,
+                    'prenda_nombre' => $item['prenda_nombre'] ?? null,
+                    'estado_bodega' => $item['estado_bodega'] ?? null,
+                    'pedido_epp_id' => $item['pedido_epp_id'] ?? null,
+                ], $itemsEpp),
+            ]);
+
             if ($tracker) {
                 $tracker->endPhase('obtenerDetallePedido');
                 $tracker->startPhase('procesarDatos');
@@ -453,6 +572,37 @@ class PedidosController extends Controller
                     });
                     $datos['items'] = array_values($datos['items']);
                 }
+            }
+
+            // Eliminar duplicados de EPP, manteniendo solo la versión más reciente por prenda
+            if (isset($datos['items']) && is_array($datos['items'])) {
+                $itemsPorPrenda = [];
+                foreach ($datos['items'] as $item) {
+                    if (($item['area'] ?? '') !== 'EPP') {
+                        // Para no-EPP, mantener todos
+                        $itemsPorPrenda[] = $item;
+                        continue;
+                    }
+
+                    $nombre = trim((string) ($item['prenda_nombre'] ?? ''));
+                    if (empty($nombre)) {
+                        $itemsPorPrenda[] = $item;
+                        continue;
+                    }
+
+                    $key = 'epp_' . $nombre;
+                    if (!isset($itemsPorPrenda[$key])) {
+                        $itemsPorPrenda[$key] = $item;
+                    } else {
+                        // Si ya existe, mantener el que tiene el ID más alto (más reciente)
+                        $idActual = (int) ($item['id'] ?? 0);
+                        $idExistente = (int) ($itemsPorPrenda[$key]['id'] ?? 0);
+                        if ($idActual > $idExistente) {
+                            $itemsPorPrenda[$key] = $item;
+                        }
+                    }
+                }
+                $datos['items'] = array_values($itemsPorPrenda);
             }
 
             $datos['esReadOnly'] = $esReadOnly;
@@ -1299,11 +1449,57 @@ class PedidosController extends Controller
     public function togglePedidoVisto($pedidoId): JsonResponse
     {
         $success = $this->notificacionService->togglePedidoVisto($pedidoId);
-        
+
         return response()->json([
             'success' => $success,
             'visto' => $success ? true : false
         ]);
+    }
+
+    /**
+     * Obtener la cadena completa de EPPs homologados
+     */
+    private function obtenerCadenaEppCompleta(int $pedidoEppIdOriginal): \Illuminate\Support\Collection
+    {
+        $cadena = collect();
+        $eppsVisitados = collect();
+        $eppIdActual = $pedidoEppIdOriginal;
+        $intentos = 0;
+        $maxIntentos = 30;
+
+        while ($eppIdActual !== null && $intentos < $maxIntentos) {
+            $intentos++;
+
+            if ($eppsVisitados->contains($eppIdActual)) {
+                \Log::warning('[obtenerCadenaEppCompleta] Ciclo detectado', [
+                    'pedido_epp_id' => $eppIdActual,
+                    'epps_visitados' => $eppsVisitados->toArray(),
+                ]);
+                break;
+            }
+
+            $eppsVisitados->push($eppIdActual);
+
+            // Cargar este EPP
+            $epp = \App\Models\PedidoEpp::withTrashed()
+                ->with('epp')
+                ->find($eppIdActual);
+
+            if (!$epp) {
+                break;
+            }
+
+            $cadena->push($epp);
+
+            // Buscar el siguiente en la cadena (homologado_de = eppIdActual)
+            $siguiente = \App\Models\PedidoEpp::where('homologado_de', $eppIdActual)
+                ->withTrashed()
+                ->first();
+
+            $eppIdActual = $siguiente?->id;
+        }
+
+        return $cadena;
     }
 
 }

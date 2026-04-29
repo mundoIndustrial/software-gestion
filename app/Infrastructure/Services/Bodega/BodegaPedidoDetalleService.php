@@ -153,7 +153,19 @@ class BodegaPedidoDetalleService
 
         $eppsPorId = $todosLosEppsBD->keyBy('id');
         $hijosPorPadre = $todosLosEppsBD->groupBy('homologado_de');
-        $eppsEnriquecidosPorId = collect($epps)->keyBy(fn ($epp) => $epp['pedido_epp_id'] ?? null);
+
+        // Filtrar EPPs para excluir los que fueron reemplazados (deleted_at IS NOT NULL y tienen versiones más nuevas)
+        $eppsValidos = $todosLosEppsBD->filter(function ($epp) use ($hijosPorPadre) {
+            if ($epp->deleted_at === null) {
+                return true;
+            }
+            // Si está deleted pero tiene versiones más nuevas (fue homologado), incluirlo
+            return !$hijosPorPadre->get($epp->id, collect())->isEmpty();
+        })->pluck('id')->toArray();
+
+        $eppsEnriquecidosPorId = collect($epps)
+            ->filter(fn ($epp) => in_array($epp['pedido_epp_id'] ?? null, $eppsValidos))
+            ->keyBy(fn ($epp) => $epp['pedido_epp_id'] ?? null);
 
         $eppsOriginales = $todosLosEppsBD->whereNull('homologado_de')->values();
         foreach ($eppsOriginales as $eppOriginal) {

@@ -158,18 +158,18 @@
                                                     {{ $pedido['visto'] ? 'checked' : '' }}
                                                 >
                                             @else
-                                                <span class="text-slate-300">—</span>
+                                                <span class="text-slate-300">–</span>
                                             @endif
                                         </td>
                                     @endif
                                     <td class="px-6 py-4 font-medium text-black">{{ $pedido['numero_pedido'] }}</td>
-                                    <td class="px-6 py-4 text-black">{{ $pedido['cliente'] ?? '—' }}</td>
-                                    <td class="px-6 py-4 text-black">{{ $pedido['asesor'] ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-black">{{ $pedido['cliente'] ?? '–' }}</td>
+                                    <td class="px-6 py-4 text-black">{{ $pedido['asesor'] ?? '–' }}</td>
                                     <td class="px-6 py-4 text-black">
                                         @if($pedido['created_at'])
                                             {{ \Carbon\Carbon::parse($pedido['created_at'])->format('d/m/Y') }}
                                         @else
-                                            <span class="text-slate-400">—</span>
+                                            <span class="text-slate-400">–</span>
                                         @endif
                                     </td>
                                     {{-- Comentada columna de estado
@@ -185,27 +185,75 @@
 
                 <!-- Paginación -->
                 <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+                    @php
+                        $totalPaginas = max(1, (int) ceil($totalPedidos / $porPagina));
+                        $itemsEnPagina = count($pedidosPorPagina ?? []);
+                        $desde = $itemsEnPagina > 0 ? (($paginaActual - 1) * $porPagina + 1) : 0;
+                        $hasta = $itemsEnPagina > 0 ? ($desde + $itemsEnPagina - 1) : 0;
+                    @endphp
                     <div class="text-sm text-slate-600">
-                        Mostrando {{ ($paginaActual - 1) * $porPagina + 1 }} a {{ min($paginaActual * $porPagina, $totalPedidos) }}
-                        de {{ $totalPedidos }} resultados
+                        @if($totalPaginas > 1)
+                            Mostrando {{ $desde }} a {{ $hasta }}
+                            de {{ $totalPedidos }} resultados
+                        @else
+                            Total de resultados: {{ $totalPedidos }}
+                        @endif
                     </div>
                     <div class="flex items-center gap-2">
                         @if($paginaActual > 1)
-                            <a href="{{ request()->fullUrlWithQuery(['page' => $paginaActual - 1]) }}"
-                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
-                                ← Anterior
+                            <a href="{{ request()->fullUrlWithQuery(['page' => 1]) }}"
+                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                               title="Primera página">
+                                &laquo;
                             </a>
+                        @else
+                            <span class="px-3 py-2 border border-slate-200 text-slate-300 text-sm font-medium rounded cursor-not-allowed"
+                                  title="Primera página">
+                                &laquo;
+                            </span>
                         @endif
-                        
-                        <span class="px-3 py-2 bg-slate-100 text-slate-900 text-sm font-medium rounded">
-                            Página {{ $paginaActual }} de {{ ceil($totalPedidos / $porPagina) }}
-                        </span>
-                        
-                        @if($paginaActual < ceil($totalPedidos / $porPagina))
-                            <a href="{{ request()->fullUrlWithQuery(['page' => $paginaActual + 1]) }}"
-                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
-                                Siguiente →
+
+                        @if($paginaActual > 1)
+                            <a href="{{ request()->fullUrlWithQuery(['page' => $paginaActual - 1]) }}"
+                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                               title="Página anterior">
+                                &lsaquo;
                             </a>
+                        @else
+                            <span class="px-3 py-2 border border-slate-200 text-slate-300 text-sm font-medium rounded cursor-not-allowed"
+                                  title="Página anterior">
+                                &lsaquo;
+                            </span>
+                        @endif
+
+                        <span class="px-3 py-2 bg-slate-100 text-slate-900 text-sm font-medium rounded">
+                            Página {{ $paginaActual }} de {{ $totalPaginas }}
+                        </span>
+
+                        @if($paginaActual < $totalPaginas)
+                            <a href="{{ request()->fullUrlWithQuery(['page' => $paginaActual + 1]) }}"
+                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                               title="Página siguiente">
+                                &rsaquo;
+                            </a>
+                        @else
+                            <span class="px-3 py-2 border border-slate-200 text-slate-300 text-sm font-medium rounded cursor-not-allowed"
+                                  title="Página siguiente">
+                                &rsaquo;
+                            </span>
+                        @endif
+
+                        @if($paginaActual < $totalPaginas)
+                            <a href="{{ request()->fullUrlWithQuery(['page' => $totalPaginas]) }}"
+                               class="px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                               title="Última página">
+                                &raquo;
+                            </a>
+                        @else
+                            <span class="px-3 py-2 border border-slate-200 text-slate-300 text-sm font-medium rounded cursor-not-allowed"
+                                  title="Última página">
+                                &raquo;
+                            </span>
                         @endif
                     </div>
                 </div>
@@ -213,7 +261,7 @@
                 <div class="text-center py-12">
                     <span class="material-symbols-rounded text-slate-300 text-6xl">inventory_2</span>
                     <p class="text-slate-500 font-medium mt-4">No hay pedidos pendientes de EPP</p>
-                    <p class="text-slate-400 text-sm mt-2">No se encontraron registros con estado "Pendiente" en el área "EPP"</p>
+                    <p class="text-slate-400 text-sm mt-2">No se encontraron registros con estado "Pendiente" en el Área "EPP"</p>
                     <p class="text-slate-300 text-xs mt-2">Usa el buscador para encontrar pedidos específicos</p>
                 </div>
             @endif
@@ -235,7 +283,7 @@
                     <span class="material-symbols-rounded text-slate-500">close</span>
                 </button>
             </div>
-            
+
             <!-- Buscador dentro del modal -->
             <div class="relative">
                 <input
@@ -255,8 +303,8 @@
                 </button>
             </div>
         </div>
-        
-        <!-- Contenido dinámico del modal con scroll -->
+
+        <!-- Contenido dinamico del modal con scroll -->
         <div class="flex-1 overflow-y-auto">
             <div class="px-6 py-4 border-b border-slate-200 flex-shrink-0">
                 <div class="flex items-center justify-between">
@@ -274,11 +322,11 @@
                 </div>
             </div>
             <div id="contenidoModal" class="px-6 py-4">
-                <!-- Contenido dinámico se cargará aquí -->
+                <!-- Contenido dinamico se cargara aqui -->
             </div>
         </div>
-        
-        <!-- Botones de acción -->
+
+        <!-- Botones de accion -->
         <div class="p-6 border-t border-slate-200 flex-shrink-0">
             <div class="flex gap-3">
                 <button
@@ -354,16 +402,16 @@ function abrirModalFiltros(tipoFiltro) {
     tipoFiltroActual = tipoFiltro;
     paginaActual = 1;
     terminoBusqueda = '';
-    
+
     // Configurar el modal según el tipo de filtro
     const modal = document.getElementById('modalFiltros');
     const titulo = modal.querySelector('h3');
     const buscador = document.getElementById('buscadorModal');
-    
+
     // Limpiar buscador
     buscador.value = '';
-    
-    // Configurar título según el tipo de filtro
+
+    // Configurar titulo segun el tipo de filtro
     switch(tipoFiltro) {
         case 'numero_pedido':
             titulo.textContent = 'Filtrar por Número de Pedido';
@@ -387,15 +435,15 @@ function abrirModalFiltros(tipoFiltro) {
         default:
             titulo.textContent = 'Filtrar Pedidos';
     }
-    
+
     // Mostrar modal
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
-    
+
     // Cargar datos del filtro
     cargarDatosFiltro();
-    
+
     // Enfocar buscador
     setTimeout(() => buscador.focus(), 100);
 }
@@ -409,10 +457,10 @@ function cerrarModalFiltros() {
 function cargarDatosFiltro() {
     const contenidoModal = document.getElementById('contenidoModal');
     contenidoModal.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">Cargando...</span></div>';
-    
+
     // URL para obtener datos de filtro
     const url = `/gestion-bodega/filtro-datos/${tipoFiltro}?page=${paginaActual}&search=${terminoBusqueda}`;
-    
+
     fetch(url, {
         method: 'GET',
         headers: {
@@ -438,16 +486,16 @@ function cargarDatosFiltro() {
 function renderizarContenidoModal(datos) {
     const contenidoModal = document.getElementById('contenidoModal');
     let html = '<div class="space-y-2">';
-    
+
     // Extraer los datos del objeto de respuesta
     const datosArray = datos.datos || datos;
-    
+
     if (Array.isArray(datosArray) && datosArray.length > 0) {
         datosArray.forEach(item => {
             const valor = item.valor || item;
             const cantidad = item.cantidad || 0;
             const label = typeof valor === 'string' ? valor : String(valor);
-            
+
             html += `
                 <label class="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
                     <input type="checkbox" value="${label}" class="filtro-checkbox mr-3">
@@ -459,13 +507,13 @@ function renderizarContenidoModal(datos) {
     } else {
         html += '<div class="text-center py-8 text-slate-500">No hay datos disponibles</div>';
     }
-    
+
     html += '</div>';
     contenidoModal.innerHTML = html;
-    
+
     // Actualizar contador
     actualizarContadorSeleccionados();
-    
+
     // Agregar event listeners a los checkboxes
     document.querySelectorAll('.filtro-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', actualizarContadorSeleccionados);
@@ -475,11 +523,11 @@ function renderizarContenidoModal(datos) {
 function buscarEnModal() {
     const termino = document.getElementById('buscadorModal').value.toLowerCase();
     const checkboxes = document.querySelectorAll('.filtro-checkbox');
-    
+
     checkboxes.forEach(checkbox => {
         const label = checkbox.closest('label');
         const texto = label.textContent.toLowerCase();
-        
+
         if (texto.includes(termino)) {
             label.style.display = 'flex';
         } else {
@@ -492,15 +540,15 @@ function toggleSeleccionarTodo() {
     const checkboxes = document.querySelectorAll('.filtro-checkbox');
     const btn = document.getElementById('btnSeleccionarTodo');
     const visibleCheckboxes = Array.from(checkboxes).filter(cb => cb.closest('label').style.display !== 'none');
-    
+
     if (visibleCheckboxes.length === 0) return;
-    
+
     const todosSeleccionados = visibleCheckboxes.every(cb => cb.checked);
-    
+
     visibleCheckboxes.forEach(checkbox => {
         checkbox.checked = !todosSeleccionados;
     });
-    
+
     btn.textContent = todosSeleccionados ? 'Deseleccionar todo' : 'Seleccionar todo';
     actualizarContadorSeleccionados();
 }
@@ -509,11 +557,11 @@ function actualizarContadorSeleccionados() {
     const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
     const contador = document.getElementById('contadorSeleccionados');
     contador.textContent = checkboxes.length;
-    
+
     const btn = document.getElementById('btnSeleccionarTodo');
     const visibleCheckboxes = Array.from(document.querySelectorAll('.filtro-checkbox'))
         .filter(cb => cb.closest('label').style.display !== 'none');
-    
+
     if (visibleCheckboxes.length > 0) {
         const todosSeleccionados = visibleCheckboxes.every(cb => cb.checked);
         btn.textContent = todosSeleccionados ? 'Deseleccionar todo' : 'Seleccionar todo';
@@ -523,47 +571,49 @@ function actualizarContadorSeleccionados() {
 function aplicarFiltros() {
     const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
     const valoresSeleccionados = Array.from(checkboxes).map(cb => cb.value);
-    
+
     if (valoresSeleccionados.length === 0) {
         alert('Por favor selecciona al menos una opción');
         return;
     }
-    
+
     // Construir URL con filtros
     const url = new URL(window.location);
     url.searchParams.set(tipoFiltroActual, valoresSeleccionados.join(','));
-    
+    url.searchParams.set('page', '1');
+
     // Redirigir con los filtros aplicados
     window.location.href = url.toString();
 }
 
-// Función para limpiar todos los filtros
+// Funcion para limpiar todos los filtros
 function limpiarTodosLosFiltros() {
-    // Redirigir a la misma página sin parámetros de filtro
+    // Redirigir a la misma pagina sin parametros de filtro
     const url = new URL(window.location);
     const params = new URLSearchParams(url.search);
-    
-    // Eliminar todos los parámetros de filtro
-    const parametrosFiltro = ['numero_pedido', 'cliente', 'asesor', 'estado', 'fecha_entrega', 'retrasados'];
+
+    // Eliminar todos los parametros de filtro
+    const parametrosFiltro = ['numero_pedido', 'cliente', 'asesor', 'estado', 'fecha_creacion', 'fecha_entrega', 'retrasados'];
     parametrosFiltro.forEach(param => params.delete(param));
-    
-    // Mantener solo el parámetro de búsqueda si existe
-    const search = params.get('search');
-    const nuevaUrl = url.pathname + (search ? '?search=' + search : '');
-    
+
+    // Limpieza total: sin filtros, sin busqueda y sin página
+    params.delete('search');
+    params.delete('page');
+    const nuevaUrl = url.pathname;
+
     // Redirigir
     window.location.href = nuevaUrl;
 }
 
-// Función para verificar si hay filtros activos y mostrar/ocultar el botón flotante
+// Funcion para verificar si hay filtros activos y mostrar/ocultar el boton flotante
 function verificarFiltrosActivos() {
     const url = new URL(window.location);
     const params = new URLSearchParams(url.search);
-    
-    const filtrosActivos = ['numero_pedido', 'cliente', 'asesor', 'estado', 'fecha_entrega', 'retrasados'];
+
+    const filtrosActivos = ['numero_pedido', 'cliente', 'asesor', 'estado', 'fecha_creacion', 'fecha_entrega', 'retrasados'];
     const tieneFiltros = filtrosActivos.some(filtro => params.get(filtro));
-    
-    // Mostrar u ocultar botón flotante
+
+    // Mostrar u ocultar boton flotante
     const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
     if (btnLimpiarFiltros) {
         if (tieneFiltros) {
@@ -574,7 +624,7 @@ function verificarFiltrosActivos() {
     }
 }
 
-// Verificar filtros cuando se carga la página
+// Verificar filtros cuando se carga la pagina
 document.addEventListener('DOMContentLoaded', function() {
     verificarFiltrosActivos();
 });

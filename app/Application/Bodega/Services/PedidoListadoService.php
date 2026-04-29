@@ -12,15 +12,36 @@ class PedidoListadoService
 
     public function obtenerPendientesPorArea(Request $request, string $area): array
     {
+        \Log::info('[PendientesPorArea] Request recibido', [
+            'area' => $area,
+            'full_url' => $request->fullUrl(),
+            'query' => $request->query(),
+            'user_id' => auth()->id(),
+        ]);
+
         $query = $this->construirQueryBase($area);
         $query = $this->aplicarBusqueda($query, $request, $area);
         $query = $this->aplicarFiltros($query, $request, $filtrosAplicados);
         $query = $this->aplicarRetrasados($query, $request);
 
-        $totalPedidos = $this->obtenerTotal($query);
-        $paginaActual = (int) $request->get('page', 1);
-        $pedidos = $this->obtenerPaginados($query, $paginaActual);
-        $pedidosFormateados = $this->formatearResultados($pedidos, $area);
+        $paginaSolicitada = max(1, (int) $request->get('page', 1));
+        $paginador = $query
+            ->orderBy(\DB::raw('CAST(bodega_detalles_talla.numero_pedido AS UNSIGNED)'), 'desc')
+            ->paginate(self::ITEMS_PER_PAGE, ['*'], 'page', $paginaSolicitada);
+
+        $totalPedidos = (int) $paginador->total();
+        $paginaActual = (int) $paginador->currentPage();
+        $pedidosFormateados = $this->formatearResultados(collect($paginador->items()), $area);
+
+        \Log::info('[PendientesPorArea] Resultado', [
+            'area' => $area,
+            'total_pedidos' => $totalPedidos,
+            'pagina_actual' => $paginaActual,
+            'por_pagina' => self::ITEMS_PER_PAGE,
+            'filtros_aplicados' => $filtrosAplicados ?? [],
+            'search' => $request->query('search', ''),
+            'query' => $request->query(),
+        ]);
 
         return [
             'pedidosPorPagina' => $pedidosFormateados,

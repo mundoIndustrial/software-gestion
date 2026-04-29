@@ -222,7 +222,7 @@ class FormModule {
 
         // REFLECTIVO - Capturar datos de paso 4
         console.log(' FormModule - Intentando capturar reflectivo...');
-        console.log('   âœ“ typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
+        console.log('    typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
         
         if (typeof capturePrendasReflectivoPaso4 === 'function') {
             const prendasReflectivo = capturePrendasReflectivoPaso4();
@@ -465,7 +465,7 @@ class FormModule {
             const errorList = Object.entries(data.errors)
                 .map(([field, messages]) => {
                     const errorMsg = Array.isArray(messages) ? messages.join(', ') : messages;
-                    return `â€¢ ${field}: ${errorMsg}`;
+                    return ` ${field}: ${errorMsg}`;
                 })
                 .join('\n');
             mensaje += '\n\nDetalles:\n' + errorList;

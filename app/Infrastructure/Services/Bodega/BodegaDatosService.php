@@ -24,6 +24,7 @@ class BodegaDatosService implements BodegaDatosServiceContract
             // Obtener todos los detalles para este pedido
             $detalles = DB::table('bodega_detalles_talla')
                 ->where('numero_pedido', $numeroPedido)
+                ->whereNull('deleted_at')
                 ->get();
             
             \Log::info('Detalles encontrados', ['count' => $detalles->count(), 'pedido_id' => $pedidoProduccion?->id]);
@@ -165,14 +166,44 @@ class BodegaDatosService implements BodegaDatosServiceContract
                 
                 // Si es un EPP, obtener el pedido_epp_id
                 if ($detalle->area === 'EPP') {
-                    // Buscar el pedido_epp correspondiente
-                    $pedidoEpp = DB::table('pedido_epp')
-                        ->where('pedido_produccion_id', $pedidoProduccion?->id)
-                        ->where('cantidad', $detalle->cantidad)
-                        ->orderBy('id', 'asc')
-                        ->first(['id']);
-                    
-                    $items[count($items) - 1]['pedido_epp_id'] = $pedidoEpp?->id ?? null;
+                    // Si ya viene enlazado desde bodega_detalles_talla, usarlo como fuente principal.
+                    $pedidoEppId = !empty($detalle->pedido_epp_id) ? (int) $detalle->pedido_epp_id : null;
+
+                    if (!$pedidoEppId && $pedidoProduccion?->id) {
+                        // 1) Match principal: nombre actual del EPP + cantidad + registro vigente (no soft-deleted).
+                        $pedidoEpp = DB::table('pedido_epp')
+                            ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
+                            ->where('pedido_epp.pedido_produccion_id', $pedidoProduccion->id)
+                            ->whereNull('pedido_epp.deleted_at')
+                            ->where('epps.nombre_completo', $detalle->prenda_nombre)
+                            ->where('pedido_epp.cantidad', $detalle->cantidad)
+                            ->orderByDesc('pedido_epp.id')
+                            ->first(['pedido_epp.id']);
+
+                        // 2) Fallback: solo por nombre vigente.
+                        if (!$pedidoEpp) {
+                            $pedidoEpp = DB::table('pedido_epp')
+                                ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
+                                ->where('pedido_epp.pedido_produccion_id', $pedidoProduccion->id)
+                                ->whereNull('pedido_epp.deleted_at')
+                                ->where('epps.nombre_completo', $detalle->prenda_nombre)
+                                ->orderByDesc('pedido_epp.id')
+                                ->first(['pedido_epp.id']);
+                        }
+
+                        // 3) Fallback final para no romper escenarios legacy.
+                        if (!$pedidoEpp) {
+                            $pedidoEpp = DB::table('pedido_epp')
+                                ->where('pedido_produccion_id', $pedidoProduccion->id)
+                                ->where('cantidad', $detalle->cantidad)
+                                ->orderByDesc('id')
+                                ->first(['id']);
+                        }
+
+                        $pedidoEppId = $pedidoEpp?->id ? (int) $pedidoEpp->id : null;
+                    }
+
+                    $items[count($items) - 1]['pedido_epp_id'] = $pedidoEppId;
                 }
             }
             
