@@ -226,7 +226,7 @@
         }
     </style>
 </head>
-<body data-user-role="control-calidad">
+<body data-module="control-calidad" data-user-role="control-calidad">
     <div id="loading-overlay">
         <div style="position: relative; width: 80px; height: 80px;">
             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation: spin 2s linear infinite;">

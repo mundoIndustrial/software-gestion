@@ -171,6 +171,7 @@ function shouldAutoInitializeEcho() {
         moduleName === 'supervisor-pedidos' ||
         moduleName === 'insumos-materiales' ||
         moduleName === 'cartera' ||
+        moduleName === 'control-calidad' ||
         notificationsUi === 'asesores'
     );
 }
