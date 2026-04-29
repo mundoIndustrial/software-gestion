@@ -13,12 +13,12 @@ use Illuminate\Support\Collection;
 
 class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 {
-   
+
     public function obtenerPrendasConRecibosTodosCostura(): Collection
     {
         // Vista global: listar todos los recibos COSTURA activos (incluye módulos 1/2/3)
         // Filtra por:
-        // - Área: "Costura" y "Corte" 
+        // - Área: "Costura" y "Corte"
         // - Encargado: Debe estar asignado (no vacío/null)
         // - EXCLUYE: Recibos asignados a usuarios con rol costura-reflectivo
         $usuarioFake = new User();
@@ -31,7 +31,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         // Obtener usuarios con rol costura-reflectivo para excluirlos
         $rolCosturaReflectivoId = \App\Models\Role::where('name', 'costura-reflectivo')->value('id');
         $usuariosCosturaReflectivo = collect();
-        
+
         if ($rolCosturaReflectivoId) {
             $usuariosCosturaReflectivo = \App\Models\User::query()
                 ->where(function ($q) use ($rolCosturaReflectivoId) {
@@ -53,8 +53,14 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->get();
 
         // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
+        // Se añade el ID de parcial si existe para permitir múltiples parciales de una misma prenda
         $recibos = $recibos->unique(function ($recibo) {
-            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
+            $notas = (string) ($recibo->notas ?? '');
+            $parcialSuffix = '';
+            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $parcialSuffix = '_p' . $matches[1];
+            }
+            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo . $parcialSuffix;
         })->values();
 
         // Agrupar por prenda (o por pedido si es sin prenda_id)
@@ -98,7 +104,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
                     $areaRecibo = strtolower(trim((string) ($recibo->area ?? '')));
                     $numeroRecibo = $recibo->consecutivo_actual;
-                    
+
                     // Buscar el proceso según el área
                     if ($areaRecibo === 'costura') {
                         $proceso = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
@@ -280,7 +286,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
     public function obtenerPrendasConRecibos(User $usuario): Collection
     {
-        
+
         $tipoOperario = $this->obtenerTipoOperario($usuario);
 
         \Log::info(' [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [
@@ -315,7 +321,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     ? ['Costura', 'Control de Calidad', 'Control Calidad']
                     : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']))
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
-        
+
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
         // y permitir ver recibos en Costura solo si aún NO hay encargado en proceso Costura
         if ($tipoOperario === 'cortador') {
@@ -334,12 +340,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         if ($tipoOperario === 'confeccion-sobremedida') {
             $query->whereIn('area', ['Costura']);
         }
-        
+
         $recibos = $query->orderBy('created_at', 'desc')->get();
 
         if ($tipoOperario === 'cortador') {
             $usuarioNombre = strtolower(trim($usuario->name));
-            
+
             // Obtener TODAS las prendas donde el usuario es encargado de Corte
             $prendasDelCortador = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
@@ -349,18 +355,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
             $recibos = $recibos->filter(function ($recibo) use ($prendasDelCortador) {
                 $area = strtolower(trim((string) ($recibo->area ?? '')));
-                
+
                 // Si está en área Costura, verificar que sea prenda asignada al cortador
                 if ($area === 'costura') {
                     if (empty($recibo->prenda_id)) {
                         return false;
                     }
-                    
+
                     //  CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
                     if (!$prendasDelCortador->contains($recibo->prenda_id)) {
                         return false;
                     }
-                    
+
                     // Además, solo si aún no hay encargado de Costura asignado
                     $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                         ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
@@ -369,7 +375,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
                     return !$procesoCostura || empty($procesoCostura->encargado);
                 }
-                
+
                 // Área Corte: incluir siempre
                 return true;
             })->values();
@@ -378,7 +384,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         // Para visualizador_plooter: mostrar solo recibos del área Corte que estén asignados a él
         if ($tipoOperario === 'visualizador_plooter') {
             $usuarioNombre = strtolower(trim($usuario->name));
-            
+
             // Obtener TODAS las prendas donde el usuario es encargado de Corte
             $prendasDelUsuario = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
@@ -392,12 +398,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 if ($area !== 'corte') {
                     return false;
                 }
-                
+
                 // Validar que tenga prenda_id
                 if (empty($recibo->prenda_id)) {
                     return false;
                 }
-                
+
                 // Solo mostrar prendas donde el usuario es encargado de Corte
                 return $prendasDelUsuario->contains($recibo->prenda_id);
             })->values();
@@ -409,7 +415,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 'usuario' => $usuario->name,
                 'recibos_costura_actuales' => $recibos->count()
             ]);
-            
+
             // Buscar PRENDAS con proceso REFLECTIVO (tipo_proceso_id = 1) en estado APROBADO
             // tipo_proceso_id = 1 es Reflectivo según tipos_procesos tabla
             $prendasReflectivoAprobadas = PedidosProcesosPrendaDetalle::where('tipo_proceso_id', 1)
@@ -418,11 +424,11 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->get()
                 ->pluck('prenda')
                 ->unique('id');
-            
+
             \Log::info(' [REFLECTIVO APROBADOS] Prendas con PROCESO REFLECTIVO aprobado encontradas', [
                 'total_prendas_reflectivo_aprobadas' => count($prendasReflectivoAprobadas)
             ]);
-            
+
             // Para cada prenda con reflectivo aprobado, buscar si tiene recibo REFLECTIVO
             foreach ($prendasReflectivoAprobadas as $prendaAprobada) {
                 if (!$prendaAprobada || !$prendaAprobada->pedidoProduccion) {
@@ -440,7 +446,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 // Si existe recibo REFLECTIVO con proceso aprobado, agregarlo SIN validar encargado ni área
                 if ($reciboReflectivo) {
                     $recibos->push($reciboReflectivo);
-                    
+
                     \Log::info(' [REFLECTIVO APROBADO AGREGADO]', [
                         'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
                         'prenda_id' => $prendaAprobada->id,
@@ -473,18 +479,28 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     'ids' => $recibosReflectivoAnexos->pluck('id')->values()->all(),
                 ]);
             }
-            
+
             // Re-ordenar por fecha y eliminar duplicados (misma prenda_id + tipo_recibo)
             $recibos = $recibos->sortByDesc('created_at')
                 ->unique(function ($recibo) {
-                    return $recibo->prenda_id . '_' . $recibo->tipo_recibo;
+                    $notas = (string) ($recibo->notas ?? '');
+                    $parcialSuffix = '';
+                    if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                        $parcialSuffix = '_p' . $matches[1];
+                    }
+                    return $recibo->prenda_id . '_' . $recibo->tipo_recibo . $parcialSuffix;
                 })
                 ->values();
         }
 
         // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
         $recibos = $recibos->unique(function ($recibo) {
-            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
+            $notas = (string) ($recibo->notas ?? '');
+            $parcialSuffix = '';
+            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $parcialSuffix = '_p' . $matches[1];
+            }
+            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo . $parcialSuffix;
         })->values();
 
         // vista-costura: ver recibos COSTURA en área Costura, pero REFLECTIVO en cualquier área
@@ -493,17 +509,17 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->filter(function ($recibo) {
                     $area = strtolower(trim((string) ($recibo->area ?? '')));
                     $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
-                    
+
                     // Mostrar COSTURA solo si está en área costura
                     if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
                         return $area === 'costura';
                     }
-                    
+
                     // Mostrar REFLECTIVO sin importar el área
                     if ($tipoRecibo === 'REFLECTIVO') {
                         return true;
                     }
-                    
+
                     return false;
                 })
                 ->values();
@@ -515,12 +531,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->filter(function ($recibo) {
                     $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
                     $area = strtolower(trim((string) ($recibo->area ?? '')));
-                    
+
                     // COSTURA: solo si área es Costura
                     if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
                         return $area === 'costura';
                     }
-                    
+
                     // REFLECTIVO: mostrar sin importar el área, PERO no mostrar si ya pasó a Control de Calidad
                     if ($tipoRecibo === 'REFLECTIVO') {
                         // Verificar si el área es Control de Calidad (ya pasó)
@@ -533,7 +549,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         }
                         return true;
                     }
-                    
+
                     return false;
                 })
                 ->values();
@@ -548,14 +564,20 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             'incluye_reflectivos_aprobados' => ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') ? 'SI' : 'NO'
         ]);
 
-        // Agrupar por prenda (o por pedido si es REFLECTIVO sin prenda_id)
+        // Agrupar por prenda (o por pedido si es REFLECTIVO sin prenda_id) e incluir ID de parcial si existe
         $prendasAgrupadas = $recibos->groupBy(function ($recibo) {
+            $parcialId = '';
+            $notas = (string) ($recibo->notas ?? '');
+            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $parcialId = '_' . $matches[1];
+            }
+            
             // Si tiene prenda_id, agrupar por prenda
             if ($recibo->prenda_id) {
-                return 'prenda_' . $recibo->prenda_id;
+                return 'prenda_' . $recibo->prenda_id . $parcialId;
             }
             // Si no tiene prenda_id (REFLECTIVO), agrupar por pedido
-            return 'pedido_' . $recibo->pedido_produccion_id;
+            return 'pedido_' . $recibo->pedido_produccion_id . $parcialId;
         })->flatMap(function ($recibosDelaPrenda) use ($tipoOperario, $usuario) {
             $primeRecibo = $recibosDelaPrenda->first();
             
@@ -571,13 +593,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 \Log::info(' [Filtro 0] No se pudo obtener prenda o pedido');
                 return [];
             }
-            
+
             // Validar que prenda y pedido existan
             if (!$prenda || !$pedido) {
                 \Log::info(' [Filtro 1] Prenda o pedido no existe');
                 return [];
             }
-            
+
             \Log::info(' [Prenda Validada]', [
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
@@ -586,7 +608,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
             // Separar recibos por tipo - crear una entrada para cada tipo
             $recibosPorTipo = $recibosDelaPrenda->groupBy('tipo_recibo');
-            
+
             $resultados = [];
             foreach ($recibosPorTipo as $tipoRecibo => $recibosDelTipo) {
                 // Validaciones específicas por tipo de recibo
@@ -609,7 +631,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                             ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                             ->exists();
-                        
+
                         if (!$tieneProcesoCorte) {
                             \Log::info(' [Filtro CORTADOR] No tiene proceso Corte asignado a ESTA PRENDA', [
                                 'prenda_id' => $prenda->id,
@@ -632,13 +654,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ]);
                         } else if ($tipoOperario === 'costurero' || $tipoOperario === 'confeccion-sobremedida') {
                             $usuarioNombre = strtolower(trim($usuario->name));
-                            
+
                             // Buscar proceso Costura específicamente para esta prenda
                             $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                                 ->where('prenda_pedido_id', $prenda->id)
                                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                                 ->first();
-                            
+
                             if (!$procesoCosturaDelaPrenda || !$procesoCosturaDelaPrenda->encargado) {
                                 \Log::info(' [Filtro COSTURERO] Prenda sin proceso Costura asignado', [
                                     'prenda_id' => $prenda->id,
@@ -647,9 +669,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                 ]);
                                 continue;
                             }
-                            
+
                             $encargadoDelProceso = strtolower(trim($procesoCosturaDelaPrenda->encargado));
-                            
+
                             if ($encargadoDelProceso !== $usuarioNombre) {
                                 \Log::info(' [Filtro COSTURERO] Usuario no es encargado de la prenda', [
                                     'prenda_id' => $prenda->id,
@@ -659,7 +681,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                 ]);
                                 continue;
                             }
-                            
+
                             \Log::info(' [Filtro COSTURERO] ✓ Usuario es encargado de esta prenda', [
                                 'prenda_id' => $prenda->id,
                                 'pedido_id' => $pedido->id,
@@ -671,15 +693,15 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             // Para lider-reflectivo: el encargado debe tener rol costura-reflectivo
                             $usuarioNombre = strtolower(trim($usuario->name));
                             $usuarioLiderReflectivo = $usuario->hasRole('lider-reflectivo');
-                            
+
                             // Buscar encargado en el proceso Costura
                             $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                                 ->where('prenda_pedido_id', $prenda->id)
                                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                                 ->first();
-                                
+
                             $encargadoAsignado = $procesoCosturaDelaPrenda ? strtolower(trim((string)$procesoCosturaDelaPrenda->encargado)) : null;
-                            
+
                             if (!$encargadoAsignado) {
                                 \Log::info(' [Filtro COSTURA-REFLECTIVO] Sin encargado asignado', [
                                     'prenda_id' => $prenda->id,
@@ -687,7 +709,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                 ]);
                                 continue;
                             }
-                            
+
                             if ($usuarioLiderReflectivo) {
                                 // lider-reflectivo: verificar que el encargado tenga rol costura-reflectivo
                                 $encargadoUsuario = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [$encargadoAsignado])->first();
@@ -712,7 +734,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                     continue;
                                 }
                             }
-                            
+
                             \Log::info(' [Filtro COSTURA-REFLECTIVO/LIDER-REFLECTIVO] Recibo de COSTURA visible', [
                                 'prenda_id' => $prenda->id,
                                 'numero_pedido' => $pedido->numero_pedido,
@@ -817,10 +839,19 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         continue;
                     }
                 }
-                
+
+                // Identificar si alguno es parcial
+                $primerRecibo = $recibosDelTipo->first();
+                $parcialIdPadre = null;
+                $notasPadre = (string) ($primerRecibo->notas ?? '');
+                if (preg_match('/parcial_id:(\d+)/i', $notasPadre, $matches)) {
+                    $parcialIdPadre = (int) $matches[1];
+                }
+
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
+                    'pedido_parcial_id' => $parcialIdPadre,
                     'numero_pedido' => $pedido->numero_pedido,
                     'cliente' => $pedido->cliente,
                     'nombre_prenda' => $prenda->nombre_prenda,
@@ -846,17 +877,33 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->latest('created_at')
                             ->first();
 
-                        $procesoCostura = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                        $parcialId = null;
+                        $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                        if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                            $parcialId = (int) $matches[1];
+                        }
+                        $esParcial = $parcialId !== null;
+
+                        // Buscar el proceso más relevante para este tipo de recibo
+                        // Nota: REFLECTIVO también busca el proceso 'costura' ya que es un tipo de recibo, no un proceso
+                        $procesoNombreBuscado = 'costura';
+
+                        $procesoCosturaQuery = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                             ->where('prenda_pedido_id', $recibo->prenda_id)
-                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                            ->where('numero_recibo', $recibo->consecutivo_actual)
-                            ->where(function ($query) {
-                                $query->whereNull('numero_recibo_parcial')
-                                      ->orWhere('numero_recibo_parcial', 0);
-                            })
-                            ->whereNull('deleted_at')
-                            ->latest('created_at')
-                            ->first();
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', [$procesoNombreBuscado])
+                            ->whereNull('deleted_at');
+
+                        if ($esParcial) {
+                            $procesoCosturaQuery->where('numero_recibo_parcial', $recibo->consecutivo_actual);
+                        } else {
+                            $procesoCosturaQuery->where('numero_recibo', $recibo->consecutivo_actual)
+                                ->where(function ($query) {
+                                    $query->whereNull('numero_recibo_parcial')
+                                          ->orWhere('numero_recibo_parcial', 0);
+                                });
+                        }
+
+                        $procesoCostura = $procesoCosturaQuery->latest('created_at')->first();
 
                         $procesoCorte = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
@@ -869,12 +916,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->where('id_recibo', $recibo->id)
                             ->where('area', 'corte')
                             ->exists();
-                        
+
                         $completadoCostura = \DB::table('prenda_recibo_completado')
-                            ->where('id_recibo', $recibo->id)
                             ->where('area', 'costura')
+                            ->where(function($q) use ($recibo, $parcialId) {
+                                if ($parcialId) {
+                                    $q->where('id_parcial', $parcialId);
+                                } else {
+                                    $q->where('id_recibo', $recibo->id);
+                                }
+                            })
                             ->exists();
-                        
+
                         $completadoControlCalidad = \DB::table('prenda_recibo_completado')
                             ->where('id_recibo', $recibo->id)
                             ->where(function($query) {
@@ -904,7 +957,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                 // Mantener created_at del recibo si falla
                             }
                         }
-                        
+
                         return [
                             'id' => $recibo->id,
                             'tipo_recibo' => $recibo->tipo_recibo,
@@ -932,7 +985,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     'fecha_creacion' => $prenda->created_at,
                 ];
             }
-            
+
             return $resultados;
         })->values();
 
@@ -946,6 +999,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         return $prendasAgrupadas
             ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
+            ->unique(function ($item) {
+                $parcialId = $item['pedido_parcial_id'] ?? null;
+                $isReciboPorPartes = $item['es_recibo_por_partes'] ?? false;
+                $prefix = $isReciboPorPartes ? 'rx_' : 'an_';
+                return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
+            })
             ->sortByDesc(function ($item) {
                 return $item['fecha_creacion'] ?? null;
             })
@@ -954,7 +1013,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
     /**
      * Obtener prendas para cortador (basado en procesos/encargado, no recibos)
-     * Los cortadores no tienen tipo de recibo propio, se filtran por 
+     * Los cortadores no tienen tipo de recibo propio, se filtran por
      * procesos de "Corte" donde el usuario sea el encargado
      */
     private function obtenerPrendasParaCortador(User $usuario): Collection
@@ -967,7 +1026,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->get()
             ->filter(function ($pedido) use ($usuarioNormalizado) {
                 $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)->get();
-                
+
                 if ($procesos->isEmpty()) {
                     return false;
                 }
@@ -977,7 +1036,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         return false;
                     }
                     $encargadoNormalizado = strtolower(trim($proceso->encargado));
-                    
+
                     // Buscar procesos asignados al usuario
                     return $encargadoNormalizado === $usuarioNormalizado;
                 });
@@ -1078,7 +1137,8 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             }
 
             $tipoParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
-            $procesoObjetivo = $tipoParcial === 'REFLECTIVO' ? 'reflectivo' : 'costura';
+            // Nota: REFLECTIVO también busca el proceso 'costura' ya que es un tipo de recibo, no un proceso
+            $procesoObjetivo = 'costura';
 
             $proceso = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
@@ -1158,6 +1218,8 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
+                    'pedido_parcial_id' => $parcial->id,
+                    'es_recibo_por_partes' => true,
                     'numero_pedido' => $pedido->numero_pedido,
                     'cliente' => $pedido->cliente,
                     'nombre_prenda' => $prenda->nombre_prenda,
@@ -1277,3 +1339,4 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         return 'desconocido';
     }
 }
+
